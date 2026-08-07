@@ -120,6 +120,55 @@ change and what to re-audit later.
   `tools/link_census.py` clusters undefined symbols by subsystem; `tools/classify_undefined.py`
   splits game symbols into data sections vs functions using the decomp's symbols.txt.
 
+## Phase 3 — boot-crawl decisions
+
+- **Entry architecture**: the port's `main` initializes Aurora, opens the user's disc image via
+  `aurora_dvd_open`, then calls the game's `gameMain`. The game's own loop stays in charge;
+  `VIWaitForRetrace` (port shim) is the frame pump — it ends the Aurora frame, processes events
+  (window close exits), begins the next frame, and fires the game's retrace callbacks.
+- **MEM1 is 64MB** (GC had 24MB): 64-bit pointers and structs inflate the game's memory layout;
+  the retail carve-up (mmInit regions + heap headers) overflows 24MB.
+- **GXWGFifo is unusable on PC** — Aurora's PC contract is typed vertex submission. All 697
+  direct pokes across 15 TUs were converted to GXPosition3f32-family calls (attribute mapped
+  from each site's vertex descriptor); raw BP/XF command writes (GPU metrics, hang recovery in
+  pi_videoinit.c) were deleted as PC-meaningless. PNMTXIDX bytes go through GXPosition1x8
+  (byte-stream identical).
+- **Pointer-through-int fixes** (the recurring 64-bit disease): videoInit/50.c arena alignment
+  casts; mm.c allocator internals (mmAllocFromRegion returns uintptr_t); musyx
+  `salAiDmaBuffer`; ARQ upload passes the real pointer to Aurora's widened ARQPostRequest;
+  `gMapRomListBuffers`/`gResourceFileBuffers` arrays; generated zero-init data symbols are
+  over-allocated (2×, min 16B) because several hold host pointers now.
+- **mm.c `MmGlobalLayout` overlay removed**: retail aliased separate globals at fixed byte
+  offsets from `gMmStoreArray` (0x3F00 → region table); the port references the real symbols.
+  The layout STATIC_ASSERTs compile to no-ops on PC, which is why it failed silently.
+- **DSP handshake is synchronous**: DSPAddTask fires the task's `init_cb` immediately; musyx's
+  clear-flag-then-wait ordering in `salInitDsp` was swapped (hardware fired the callback via
+  interrupt after the clear; the swap is behavior-identical on GC).
+- **DVDFileInfo pool slots** use `sizeof(DVDFileInfo)` (GC hardcoded 0x40; Aurora's is larger —
+  pool overflow wrote into read-only pages).
+- **The IPL ROM font doesn't exist on PC**: `gameTextBuildSystemFontAtlas` bails when OSLoadFont
+  reports no font; debug text is dark until a replacement font ships.
+- **Main thread**: OSGetCurrentThread returns a static thread object with state RUNNING.
+- The one direct low-memory read (`*(u32*)0x800000f8`, bus clock) uses OS_BUS_CLOCK.
+- **pi_dolphin.c fully de-truncated** (agent audit): 508 strict int↔pointer conversion errors →
+  0; the `MldfTables`/`MldfNames` GC-address overlays eliminated in favor of the real symbols
+  (offset equivalences verified against decomp symbols.txt); in-flight `DVDFileInfo*` moved to
+  a typed side array; the video flip queue carries `void*[3]` elements.
+- **hudDrawColored takes `Texture*`** (was pointer-as-int). Two upstream chains still carry
+  textures as u32 and only bridge via casts at their call sites: `getReflectionTexture1()`
+  (newshadows) and `getObjectShadowDrawParams`'s d1 out-param (objprint) — widen these when
+  their code paths run (save UI, object shadows).
+
+## Where the boot-crawl stands
+
+Boot progresses through: Aurora init → disc mount → full game `init()` — video, 64MB arena,
+heap regions, loading-screen textures, camera, text renderer (font atlas skipped), controllers,
+complete MusyX audio init (synchronous DSP), `initLoadFiles` disc reads, shadow procedural
+textures — **and draws the loading screen** (`runLoadingScreens` → `hudDrawColored`). Current
+frontier: the game's video-flip/DVD thread paths under the single-threaded model
+(`OSCreateThread`/`OSSleepThread` stubs) — next session decides whether to implement real
+threads (SDL) or a cooperative pump.
+
 ## Workflow
 
 - `tools/compile_progress.py` sweeps all game TUs with `-fsyntax-only`; `--update` rewrites

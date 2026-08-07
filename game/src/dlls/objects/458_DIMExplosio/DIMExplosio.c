@@ -303,26 +303,17 @@ void explosion_render(GameObject* obj, int renderArg2, int renderArg3, int rende
                 GXBegin(GX_QUADS, GX_VTXFMT2, 4);
                 {
                     f32 fc, fb, fa;
-                    GXWGFifo.f32 = (fa = -1.0f);
-                    GXWGFifo.f32 = fa;
-                    GXWGFifo.f32 = (fb = sExplosionZero[0]);
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = (fc = sExplosionBaseScale[0]);
-                    GXWGFifo.f32 = fa;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fa;
-                    GXWGFifo.f32 = fc;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fb;
-                    GXWGFifo.f32 = fc;
+                    fa = -1.0f;
+                    fb = sExplosionZero[0];
+                    GXPosition3f32(fa, fa, fb);
+                    GXTexCoord2f32(fb, fb);
+                    fc = sExplosionBaseScale[0];
+                    GXPosition3f32(fc, fa, fb);
+                    GXTexCoord2f32(fc, fb);
+                    GXPosition3f32(fc, fc, fb);
+                    GXTexCoord2f32(fc, fc);
+                    GXPosition3f32(fa, fc, fb);
+                    GXTexCoord2f32(fb, fc);
                 }
             }
             cursor += sizeof(DimExplosionFlame);

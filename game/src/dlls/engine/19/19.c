@@ -253,16 +253,16 @@ static void waterfx_buildSplashDisplayList(void) {
         GXBegin(GX_TRIANGLESTRIP, GX_VTXFMT2, 16);
         for (m = 7; m >= 0; m--) {
             a[0] = m * 3;
-            GXWGFifo.u8 = a[0];
-            GXWGFifo.u8 = a[0];
-            GXWGFifo.u16 = k;
-            GXWGFifo.u16 = m;
-            GXWGFifo.u16 = m * 16 + k;
-            GXWGFifo.u8 = a[0];
-            GXWGFifo.u8 = a[0];
-            GXWGFifo.u16 = (k + 1) % 16;
-            GXWGFifo.u16 = m;
-            GXWGFifo.u16 = m * 16 + (k + 1) % 16;
+            GXPosition1x8(a[0]);
+            GXTexCoord1x8(a[0]);
+            GXPosition1x16(k);
+            GXColor1x16(m);
+            GXTexCoord1x16(m * 16 + k);
+            GXPosition1x8(a[0]);
+            GXTexCoord1x8(a[0]);
+            GXPosition1x16((k + 1) % 16);
+            GXColor1x16(m);
+            GXTexCoord1x16(m * 16 + (k + 1) % 16);
         }
     }
     gWaterfxSplashDisplayListSize = GXEndDisplayList();
@@ -568,9 +568,7 @@ void waterfx_render(int obj, int renderParam)
                 vz = d->z - playerMapOffsetZ;
                 vy = d->y;
                 vx = d->x - playerMapOffsetX;
-                GXWGFifo.f32 = vx;
-                GXWGFifo.f32 = vy;
-                GXWGFifo.f32 = vz;
+                GXPosition3f32(vx, vy, vz);
             }
         }
         if (gWaterfxWakeCount != 0)

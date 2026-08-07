@@ -23,7 +23,7 @@ volatile u32 salLastTick;
 volatile u32 salCallbackActive;
 volatile u32 salDspCallbackPending;
 volatile u32 salDspCallbackEnabled;
-u32 salAiDmaBuffer;
+uintptr_t salAiDmaBuffer;
 SalAiCallback salAiCallback;
 
 static inline void callUserCallback(void)
@@ -95,7 +95,7 @@ void dspResumeCallback(void* task)
  */
 int salInitAi(SalAiCallback userCallback, u32 unused, u32* outSampleCount)
 {
-    if ((salAiDmaBuffer = (u32)salMalloc(SAL_AI_DMA_BUFFER_SIZE)) != 0)
+    if ((salAiDmaBuffer = (uintptr_t)salMalloc(SAL_AI_DMA_BUFFER_SIZE)) != 0)
     {
         memset((void*)salAiDmaBuffer, 0, SAL_AI_DMA_BUFFER_SIZE);
         DCFlushRange((void*)salAiDmaBuffer, SAL_AI_DMA_BUFFER_SIZE);

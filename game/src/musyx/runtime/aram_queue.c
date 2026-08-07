@@ -58,7 +58,7 @@ void aramUploadData(void* src, u32 dst, u32 size, u32 mode, void (*callback)(u32
             queue->slots[queue->head].callbackArg = callbackArg;
             ARQPostRequest(&queue->slots[queue->head].request, queue->slots[queue->head].request.owner,
                            queue->slots[queue->head].request.type, queue->slots[queue->head].request.priority,
-                           queue->slots[queue->head].request.source, queue->slots[queue->head].request.dest,
+                           (uintptr_t)src, queue->slots[queue->head].request.dest,
                            queue->slots[queue->head].request.length, queue->slots[queue->head].request.callback);
             queue->count += 1;
             queue->head = (queue->head + 1) % ARAM_TRANSFER_QUEUE_CAPACITY;

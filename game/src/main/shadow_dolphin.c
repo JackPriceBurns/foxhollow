@@ -616,9 +616,7 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
                 b2 = v1->z;
                 b1 = v1->y;
                 b0 = v1->x;
-                GXWGFifo.f32 = b0;
-                GXWGFifo.f32 = b1;
-                GXWGFifo.f32 = b2;
+                GXPosition3f32(b0, b1, b2);
             }
             w0 += 3;
         }

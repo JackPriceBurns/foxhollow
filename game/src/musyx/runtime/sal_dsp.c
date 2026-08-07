@@ -272,8 +272,8 @@ int salInitDsp(u32 flags)
     sDspTask.task.priority = 0;
 
     DSPInit();
-    DSPAddTask(&sDspTask.task);
     salDspInitIsDone = 0;
+    DSPAddTask(&sDspTask.task);
     sndEnd();
     while (salDspInitIsDone == 0)
     {

@@ -1,10 +1,13 @@
 #include <aurora/aurora.h>
+#include <aurora/dvd.h>
 #include <aurora/event.h>
 #include <aurora/main.h>
-#include <dolphin/gx.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+
+int gameMain(int argc, char** argv);
+void foxhollowFramePumpInit(void);
 
 static void log_callback(AuroraLogLevel level, const char* module, const char* message, unsigned int len) {
   const char* levelStr;
@@ -35,56 +38,34 @@ static void log_callback(AuroraLogLevel level, const char* module, const char* m
   }
 }
 
-static void draw(void) {
-  GXSetCopyClear(
-      (GXColor){
-          .r = 26,
-          .g = 58,
-          .b = 34,
-          .a = 255,
-      },
-      GX_MAX_Z24);
+static const char* disc_path(int argc, char* argv[]) {
+  if (argc > 1) {
+    return argv[1];
+  }
+  return getenv("FOXHOLLOW_DISC");
 }
 
 int main(int argc, char* argv[]) {
+  const char* disc = disc_path(argc, argv);
+  if (!disc) {
+    fprintf(stderr, "usage: foxhollow <path-to-disc.iso|rvz>\n(or set FOXHOLLOW_DISC)\n");
+    return 1;
+  }
+
   const AuroraConfig config = {
       .appName = "Foxhollow",
       .logCallback = &log_callback,
-      .mem1Size = MEM1_DEFAULT_SIZE,
+      .mem1Size = 64 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
-  AuroraInfo initInfo = aurora_initialize(argc, argv, &config);
+  aurora_initialize(argc, argv, &config);
 
-  bool exiting = false;
-  bool paused = false;
-  while (!exiting) {
-    const AuroraEvent* event = aurora_update();
-    while (event != NULL && event->type != AURORA_NONE) {
-      switch (event->type) {
-      case AURORA_EXIT:
-        exiting = true;
-        break;
-      case AURORA_PAUSED:
-        paused = true;
-        break;
-      case AURORA_UNPAUSED:
-        paused = false;
-        break;
-      case AURORA_WINDOW_RESIZED:
-        initInfo.windowSize = event->windowSize;
-        break;
-      default:
-        break;
-      }
-      ++event;
-    }
-    if (exiting || paused || !aurora_begin_frame()) {
-      continue;
-    }
-    draw();
-    aurora_end_frame();
+  if (!aurora_dvd_open(disc)) {
+    fprintf(stderr, "foxhollow: failed to open disc image: %s\n", disc);
+    aurora_shutdown();
+    return 1;
   }
 
-  aurora_shutdown();
-  return 0;
+  foxhollowFramePumpInit();
+  return gameMain(argc, argv);
 }

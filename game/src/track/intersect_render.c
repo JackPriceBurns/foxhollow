@@ -559,29 +559,17 @@ void screenImageDraw(u8 alpha)
     GXSetCurrentMtx(GX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
     GXSetCurrentMtx(GX_PNMTX0);
@@ -672,29 +660,17 @@ void doSpiritVisionFilter(void)
     GXSetCurrentMtx(GX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
     GXSetTevSwapModeTable(GX_TEV_SWAP0, GX_CH_RED, GX_CH_GREEN, GX_CH_BLUE, GX_CH_ALPHA);
@@ -793,29 +769,17 @@ void doColorFilter(u8* mod)
     GXSetCurrentMtx(GX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -1038,29 +1002,17 @@ void doDistortionFilter(f32* pos, f32 radius, u8* mod, f32 angle)
     GXSetCurrentMtx(GX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -1972,33 +1924,21 @@ void hudDrawRect(int x1, int y1, int x2, int y2, GXColor color)
     GXSetNumTevStages(1);
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1 << 2;
-    GXWGFifo.s16 = y1 << 2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1 << 2, y1 << 2, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2 << 2;
-    GXWGFifo.s16 = y1 << 2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2 << 2, y1 << 2, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2 << 2;
-    GXWGFifo.s16 = y2 << 2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2 << 2, y2 << 2, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1 << 2;
-    GXWGFifo.s16 = y2 << 2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1 << 2, y2 << 2, -8);
+    GXTexCoord2f32(zero, zero);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2051,33 +1991,21 @@ void drawViewFinderLine(f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, f32 x4, 
     GXSetNumTevStages(1);
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx1;
-    GXWGFifo.s16 = fy1;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx1, fy1, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx2;
-    GXWGFifo.s16 = fy2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx2, fy2, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx3;
-    GXWGFifo.s16 = fy3;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx3, fy3, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx4;
-    GXWGFifo.s16 = fy4;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx4, fy4, -8);
+    GXTexCoord2f32(zero, zero);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2128,26 +2056,17 @@ void hudDrawTriangle(f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, GXColor col
     GXSetNumTevStages(1);
     GXBegin(GX_TRIANGLES, GX_VTXFMT1, 3);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx1;
-    GXWGFifo.s16 = fy1;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx1, fy1, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx2;
-    GXWGFifo.s16 = fy2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx2, fy2, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = fx3;
-    GXWGFifo.s16 = fy3;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(fx3, fy3, -8);
+    GXTexCoord2f32(zero, zero);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2163,33 +2082,21 @@ void drawOrthoTexturedQuad(int x1, int y1, int x2, int y2, f32 u1, f32 v1, f32 u
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1;
-    GXWGFifo.s16 = y1;
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1, y1, z);
+    GXTexCoord2f32(u1, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2;
-    GXWGFifo.s16 = y1;
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u2;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2, y1, z);
+    GXTexCoord2f32(u2, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2;
-    GXWGFifo.s16 = y2;
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u2;
-    GXWGFifo.f32 = v2;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2, y2, z);
+    GXTexCoord2f32(u2, v2);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1;
-    GXWGFifo.s16 = y2;
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v2;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1, y2, z);
+    GXTexCoord2f32(u1, v2);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2205,33 +2112,21 @@ void textRenderChar(int x1, int y1, int x2, int y2, f32 u1, f32 v1, f32 u2, f32 
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1;
-    GXWGFifo.s16 = y1;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1, y1, -8);
+    GXTexCoord2f32(u1, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2;
-    GXWGFifo.s16 = y1;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u2;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2, y1, -8);
+    GXTexCoord2f32(u2, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x2;
-    GXWGFifo.s16 = y2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u2;
-    GXWGFifo.f32 = v2;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x2, y2, -8);
+    GXTexCoord2f32(u2, v2);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = x1;
-    GXWGFifo.s16 = y2;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v2;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(x1, y2, -8);
+    GXTexCoord2f32(u1, v2);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2310,33 +2205,21 @@ void drawPartialTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale, int
 
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, sy, -8);
+    GXTexCoord2f32(u0, v0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
+    GXTexCoord2f32(u1, v0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8));
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8)), -8);
+    GXTexCoord2f32(u1, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8));
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8)), -8);
+    GXTexCoord2f32(u0, v1);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2389,21 +2272,13 @@ void drawRect(f32 sx, f32 sy, int x, int y)
     sy = 4.0f * sy;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -0x18C;
+    GXPosition3s16(sx, sy, -0x18C);
 
-    GXWGFifo.s16 = (s16)(sx + (f32)((u32)x * 4));
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -0x18C;
+    GXPosition3s16((s16)(sx + (f32)((u32)x * 4)), sy, -0x18C);
 
-    GXWGFifo.s16 = (s16)(sx + (f32)((u32)x * 4));
-    GXWGFifo.s16 = (s16)(sy + (f32)((u32)y * 4));
-    GXWGFifo.s16 = -0x18C;
+    GXPosition3s16((s16)(sx + (f32)((u32)x * 4)), (s16)(sy + (f32)((u32)y * 4)), -0x18C);
 
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = (s16)(sy + (f32)((u32)y * 4));
-    GXWGFifo.s16 = -0x18C;
+    GXPosition3s16(sx, (s16)(sy + (f32)((u32)y * 4)), -0x18C);
 
     Camera_RebuildProjectionMatrix();
     GXSetColorUpdate(GX_TRUE);
@@ -2509,33 +2384,21 @@ void drawScaledTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale, int 
     }
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, sy, -8);
+    GXTexCoord2f32(u0, v0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
+    GXTexCoord2f32(u1, v0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)h);
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)h), -8);
+    GXTexCoord2f32(u1, v1);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)h);
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v1;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, (s16)(sy + (f32)(u32)h), -8);
+    GXTexCoord2f32(u0, v1);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -2547,7 +2410,7 @@ void drawScaledTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale, int 
  * "raster passthrough" (TevColorIn 0xF/0xF/0xF/0xE) and "K-tint replace"
  * (TevColorIn 0xF/0xE/0x8/0xF).
  */
-void hudDrawColored(int obj, int x, int y, u32* color, int scale, int flag)
+void hudDrawColored(Texture* obj, int x, int y, u32* color, int scale, int flag)
 {
     f32 zero = 0.0f;
     f32 one = 1.0f;
@@ -2620,33 +2483,21 @@ void hudDrawColored(int obj, int x, int y, u32* color, int scale, int flag)
         h = ((((Texture*)obj)->height << 2) * (u16)scale) / 256;
         GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-        GXWGFifo.u8 = 0x3C;
-        GXWGFifo.s16 = (s16)(x << 2);
-        GXWGFifo.s16 = (s16)(y << 2);
-        GXWGFifo.s16 = -8;
-        GXWGFifo.f32 = zero;
-        GXWGFifo.f32 = zero;
+        GXPosition1x8(0x3C);
+        GXPosition3s16((s16)(x << 2), (s16)(y << 2), -8);
+        GXTexCoord2f32(zero, zero);
 
-        GXWGFifo.u8 = 0x3C;
-        GXWGFifo.s16 = (s16)((x << 2) + w);
-        GXWGFifo.s16 = (s16)(y << 2);
-        GXWGFifo.s16 = -8;
-        GXWGFifo.f32 = one;
-        GXWGFifo.f32 = zero;
+        GXPosition1x8(0x3C);
+        GXPosition3s16((s16)((x << 2) + w), (s16)(y << 2), -8);
+        GXTexCoord2f32(one, zero);
 
-        GXWGFifo.u8 = 0x3C;
-        GXWGFifo.s16 = (s16)((x << 2) + w);
-        GXWGFifo.s16 = (s16)((y << 2) + h);
-        GXWGFifo.s16 = -8;
-        GXWGFifo.f32 = one;
-        GXWGFifo.f32 = one;
+        GXPosition1x8(0x3C);
+        GXPosition3s16((s16)((x << 2) + w), (s16)((y << 2) + h), -8);
+        GXTexCoord2f32(one, one);
 
-        GXWGFifo.u8 = 0x3C;
-        GXWGFifo.s16 = (s16)(x << 2);
-        GXWGFifo.s16 = (s16)((y << 2) + h);
-        GXWGFifo.s16 = -8;
-        GXWGFifo.f32 = zero;
-        GXWGFifo.f32 = one;
+        GXPosition1x8(0x3C);
+        GXPosition3s16((s16)(x << 2), (s16)((y << 2) + h), -8);
+        GXTexCoord2f32(zero, one);
     }
     Camera_RebuildProjectionMatrix();
 }
@@ -2728,33 +2579,21 @@ void drawTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale)
     sy = 4.0f * sy;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, sy, -8);
+    GXTexCoord2f32(zero, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = sy;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = one;
-    GXWGFifo.f32 = zero;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
+    GXTexCoord2f32(one, zero);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = (s16)(sx + (f32)(u32)w);
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)h);
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = one;
-    GXWGFifo.f32 = one;
+    GXPosition1x8(0x3C);
+    GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)h), -8);
+    GXTexCoord2f32(one, one);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = sx;
-    GXWGFifo.s16 = (s16)(sy + (f32)(u32)h);
-    GXWGFifo.s16 = -8;
-    GXWGFifo.f32 = zero;
-    GXWGFifo.f32 = one;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(sx, (s16)(sy + (f32)(u32)h), -8);
+    GXTexCoord2f32(zero, one);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -3596,21 +3435,13 @@ void drawViewFinderAperture(f32 sx, f32 sy, u8 a, u8 flag)
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
+    GXPosition3s16(0, 0, -8);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
+    GXPosition3s16(0x280, 0, -8);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
+    GXPosition3s16(0x280, 0x1E0, -8);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
+    GXPosition3s16(0, 0x1E0, -8);
 
     Camera_RebuildProjectionMatrix();
     GXSetCurrentMtx(GX_PNMTX0);
@@ -3762,29 +3593,17 @@ void drawSnowFlashOverlay(f32 s1, u8 flashAlpha, void* vec, f32 s2, u8 alpha0, u
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
     GXSetCurrentMtx(GX_PNMTX0);
@@ -3903,42 +3722,18 @@ void doHeatEffect(u8 alpha)
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = a2;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = a2;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1e0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = a1;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1e0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = 0;
-    GXWGFifo.u8 = a1;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition3s16(0, 0, -8);
+    GXColor4u8(0, 0, 0, a2);
+    GXTexCoord2s16(0, 0);
+    GXPosition3s16(0x280, 0, -8);
+    GXColor4u8(0, 0, 0, a2);
+    GXTexCoord2s16(0x80, 0);
+    GXPosition3s16(0x280, 0x1e0, -8);
+    GXColor4u8(0, 0, 0, a1);
+    GXTexCoord2s16(0x80, 0x80);
+    GXPosition3s16(0, 0x1e0, -8);
+    GXColor4u8(0, 0, 0, a1);
+    GXTexCoord2s16(0, 0x80);
     Camera_RebuildProjectionMatrix();
     GXSetCurrentMtx(GX_PNMTX0);
 }
@@ -3999,33 +3794,21 @@ void renderMotionBlur(f32 alpha)
     GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0, 0, -8);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0x280, 0, -8);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0, 0x1E0, -8);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
 }
@@ -4264,49 +4047,25 @@ void doBlurFilter(f32 wx, f32 wy, f32 wz, u8 param4, u8 param5)
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0, 0, -8);
+    GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
+    GXTexCoord2s16(0, 0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0x280, 0, -8);
+    GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
+    GXTexCoord2s16(0x80, 0);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0x280;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.s16 = 0x80;
-    GXWGFifo.s16 = 0x80;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0x280, 0x1E0, -8);
+    GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
+    GXTexCoord2s16(0x80, 0x80);
 
-    GXWGFifo.u8 = 0x3C;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x1E0;
-    GXWGFifo.s16 = -8;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.u8 = 0xFF;
-    GXWGFifo.s16 = 0;
-    GXWGFifo.s16 = 0x80;
+    GXPosition1x8(0x3C);
+    GXPosition3s16(0, 0x1E0, -8);
+    GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
+    GXTexCoord2s16(0, 0x80);
 
     Camera_RebuildProjectionMatrix();
 }

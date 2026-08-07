@@ -838,7 +838,10 @@ void gameTextBuildSystemFontAtlas(void)
     }
     bufA = mmAlloc(sizeA, 0x1a, 0);
     bufB = mmAlloc(sizeB, 0x1a, 0);
-    OSLoadFont(bufB, bufA);
+    if (OSLoadFont(bufB, bufA) == 0)
+    {
+        return;
+    }
     if (charset->glyphCount == 0)
     {
         if (gGameTextFontIsSjis)

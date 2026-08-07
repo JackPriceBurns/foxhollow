@@ -93,8 +93,7 @@ extern char sSnowPrintSnowCloudInvalidCloudId[];
 
 static inline void snowFifoTexCoord2s16(s16 s, s16 t)
 {
-    GXWGFifo.s16 = s;
-    GXWGFifo.s16 = t;
+    GXTexCoord2s16(s, t);
 }
 
 f32 lightningGetRemainingFraction(void)
@@ -194,11 +193,8 @@ static void lightningDrawStrand(f32* from, f32* to, u8 width, f32 segScale, int*
             a2 = from[2];
             a1 = from[1];
             a0 = from[0];
-            GXWGFifo.f32 = a0;
-            GXWGFifo.f32 = a1;
-            GXWGFifo.f32 = a2;
-            GXWGFifo.f32 = 0.0f;
-            GXWGFifo.f32 = 0.0f;
+            GXPosition3f32(a0, a1, a2);
+            GXTexCoord2f32(0.0f, 0.0f);
             px = from[0];
             py = from[1];
             pz = from[2];
@@ -229,11 +225,8 @@ static void lightningDrawStrand(f32* from, f32* to, u8 width, f32 segScale, int*
             e1 += offset[1];
             e0 = px;
             e0 += offset[0];
-            GXWGFifo.f32 = e0;
-            GXWGFifo.f32 = e1;
-            GXWGFifo.f32 = e2;
-            GXWGFifo.f32 = 0.0f;
-            GXWGFifo.f32 = 0.0f;
+            GXPosition3f32(e0, e1, e2);
+            GXTexCoord2f32(0.0f, 0.0f);
         }
         else
         {
@@ -241,11 +234,8 @@ static void lightningDrawStrand(f32* from, f32* to, u8 width, f32 segScale, int*
             b2 = to[2];
             b1 = to[1];
             b0 = to[0];
-            GXWGFifo.f32 = b0;
-            GXWGFifo.f32 = b1;
-            GXWGFifo.f32 = b2;
-            GXWGFifo.f32 = 0.0f;
-            GXWGFifo.f32 = 0.0f;
+            GXPosition3f32(b0, b1, b2);
+            GXTexCoord2f32(0.0f, 0.0f);
         }
     }
     if (getHudHiddenFrameCount() == 0)
@@ -938,23 +928,17 @@ int snowPrintSnowCloud(void* arg, int cloudId)
         quadOffsetZ = ((f32*)p)[part->quadIndex * 11 + 1034];
         vz[2] = quadOffsetZ * part->fallSpeed + part->z;
         puv = attr.uvs.uv;
-        GXWGFifo.f32 = (f64)qx[0];
-        GXWGFifo.f32 = (f64)qy[0];
-        GXWGFifo.f32 = (f64)qz[0];
+        GXPosition3f32((f64)qx[0], (f64)qy[0], (f64)qz[0]);
         ut = puv[1];
         us = puv[0];
         snowFifoTexCoord2s16(us, ut);
         puv += 2;
-        GXWGFifo.f32 = (f64)qx[1];
-        GXWGFifo.f32 = (f64)qy[1];
-        GXWGFifo.f32 = (f64)qz[1];
+        GXPosition3f32((f64)qx[1], (f64)qy[1], (f64)qz[1]);
         ut = puv[1];
         us = puv[0];
         snowFifoTexCoord2s16(us, ut);
         puv += 2;
-        GXWGFifo.f32 = (f64)qx[2];
-        GXWGFifo.f32 = (f64)qy[2];
-        GXWGFifo.f32 = (f64)qz[2];
+        GXPosition3f32((f64)qx[2], (f64)qy[2], (f64)qz[2]);
         ut = puv[1];
         us = puv[0];
         snowFifoTexCoord2s16(us, ut);

@@ -34,7 +34,7 @@ extern f32 lbl_803E1D00;
 
 void runLoadingScreens(void)
 {
-    int textureSlot;
+    Texture* textureSlot;
     u8 dvdErrorActive;
     u32 color;
     union
@@ -60,7 +60,7 @@ void runLoadingScreens(void)
                      gTitleScreenInitFadeFrames);
         }
 
-        textureSlot = (int)gTitleScreenInitLoadingTextures[0];
+        textureSlot = gTitleScreenInitLoadingTextures[0];
         if (gGameTextFontIsSjis != 0)
         {
             colorBuf.bytes[0] = 0;
@@ -145,14 +145,14 @@ static inline void initLoadingScreenTexturesBody(void)
     int textureSize;
     u16 textureHeight;
     int i;
-    int arenaHi;
+    uintptr_t arenaHi;
     Texture** textureSlot;
     Texture* textureHeader;
     GXTexObj* texObj;
     u16 textureWidth;
     GXTexFmt textureFormat;
 
-    arenaHi = (int)OSGetArenaHi() - 0x40000;
+    arenaHi = (uintptr_t)OSGetArenaHi() - 0x40000;
     for (i = 0, textureSlot = gTitleScreenInitLoadingTextures; i < 3; textureSlot++, i++)
     {
         *textureSlot = (Texture*)arenaHi;

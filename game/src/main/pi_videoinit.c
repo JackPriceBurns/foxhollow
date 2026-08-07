@@ -97,15 +97,15 @@ void videoInit(void* unusedRenderMode, int unusedArg)
     GXSetDispCopySrc(0, 0, gRenderModeObj->fbWidth, gRenderModeObj->efbHeight);
     gDispCopyYScaleLines = GXSetDispCopyYScale((f32)gRenderModeObj->xfbHeight / gRenderModeObj->efbHeight);
     fbSize = (u16)((gRenderModeObj->fbWidth + 0xf) & ~0xf) * gDispCopyYScaleLines * 2;
-    externalFrameBuffer0 = (void*)(((u32)arenaLo + 0x1f) & ~0x1f);
+    externalFrameBuffer0 = (void*)(((uintptr_t)arenaLo + 0x1f) & ~0x1f);
     fbSize += 0x1f;
-    externalFrameBuffer1 = (void*)(((u32)externalFrameBuffer0 + fbSize) & ~0x1f);
-    arenaLo = (u8*)(((u32)externalFrameBuffer1 + fbSize) & ~0x1f);
+    externalFrameBuffer1 = (void*)(((uintptr_t)externalFrameBuffer0 + fbSize) & ~0x1f);
+    arenaLo = (u8*)(((uintptr_t)externalFrameBuffer1 + fbSize) & ~0x1f);
     OSSetArenaLo(arenaLo);
     arenaLo = OSInitAlloc(arenaLo, arenaHi, 1);
     OSSetArenaLo(arenaLo);
-    arenaLo = (u8*)(((u32)arenaLo + 0x1f) & ~0x1f);
-    arenaHi = (u8*)((u32)arenaHi & ~0x1f);
+    arenaLo = (u8*)(((uintptr_t)arenaLo + 0x1f) & ~0x1f);
+    arenaHi = (u8*)((uintptr_t)arenaHi & ~0x1f);
     OSSetCurrentHeap(OSCreateHeap(arenaLo, arenaHi));
     VIConfigure(gRenderModeObj);
     GXInitFifoBase(&fifo, externalFrameBuffer0, 0x10000);
@@ -114,7 +114,7 @@ void videoInit(void* unusedRenderMode, int unusedArg)
     GXInitFifoLimits(gGxFifoObj, gGxFifoSize - 0x4000, (gGxFifoSize * 3) >> 2);
     GXSetCPUFifo(gGxFifoObj);
     GXSetGPFifo(gGxFifoObj);
-    Queue_Init(&gVideoFlipQueue, gVideoFlipQueueBuffer, 10, 0xc);
+    Queue_Init(&gVideoFlipQueue, gVideoFlipQueueBuffer, 10, 3 * sizeof(void*));
     OSInitThreadQueue((OSThreadQueue*)&gVideoFlipWaitQueue);
     VISetPreRetraceCallback(videoSwapFrameBuffers);
     VISetPostRetraceCallback(gpuErrorHandler);
@@ -340,25 +340,9 @@ void gxSetGPMetricsEnabled(int enabled)
     if ((u8)enabled != 0)
     {
         GXSetGPMetric(GX_PERF0_NONE, GX_PERF1_NONE);
-        GXWGFifo.u8 = 0x61;
-        GXWGFifo.u32 = 0x2402c004;
-        GXWGFifo.u8 = 0x61;
-        GXWGFifo.u32 = 0x23000020;
-        GXWGFifo.u8 = 0x10;
-        GXWGFifo.u16 = 0;
-        GXWGFifo.u16 = 0x1006;
-        GXWGFifo.u32 = 0x84400;
     }
     else
     {
-        GXWGFifo.u8 = 0x61;
-        GXWGFifo.u32 = 0x24000000;
-        GXWGFifo.u8 = 0x61;
-        GXWGFifo.u32 = 0x23000000;
-        GXWGFifo.u8 = 0x10;
-        GXWGFifo.u16 = 0;
-        GXWGFifo.u16 = 0x1006;
-        GXWGFifo.u32 = 0;
     }
 }
 void gxDisableGpuHangRecovery(void)
@@ -378,7 +362,7 @@ void waitNextFrame(void)
 
     OSStopStopwatch(&gFrameStopwatch);
     gFrameElapsedMs =
-        (u64)OSCheckStopwatch(&gFrameStopwatch) / (f32)(u32)((*(u32*)0x800000f8 >> 2) / 1000);
+        (u64)OSCheckStopwatch(&gFrameStopwatch) / (f32)(u32)((OS_BUS_CLOCK >> 2) / 1000);
     OSResetStopwatch(&gFrameStopwatch);
     OSStartStopwatch(&gFrameStopwatch);
     timeDelta = 60.0f * (0.001f * gFrameElapsedMs);

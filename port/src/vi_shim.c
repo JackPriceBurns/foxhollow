@@ -1,5 +1,8 @@
 #include <dolphin/types.h>
 #include <dolphin/vi.h>
+#include <aurora/aurora.h>
+#include <aurora/event.h>
+#include <stdlib.h>
 #include "shim_log.h"
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
@@ -8,8 +11,34 @@ static VIRetraceCallback sPreRetraceCallback;
 static VIRetraceCallback sPostRetraceCallback;
 static void* sNextFrameBuffer;
 static u32 sRetraceCount;
+static int sFrameOpen;
+
+static void pump_events(void) {
+  const AuroraEvent* event = aurora_update();
+  while (event != NULL && event->type != AURORA_NONE) {
+    if (event->type == AURORA_EXIT) {
+      exit(0);
+    }
+    ++event;
+  }
+}
+
+void foxhollowFramePumpInit(void) {
+  pump_events();
+  sFrameOpen = aurora_begin_frame();
+}
 
 void VIWaitForRetrace(void) {
+  if (sFrameOpen) {
+    aurora_end_frame();
+    sFrameOpen = 0;
+  }
+  pump_events();
+  while (!aurora_begin_frame()) {
+    pump_events();
+  }
+  sFrameOpen = 1;
+
   sRetraceCount++;
   if (sPreRetraceCallback) {
     sPreRetraceCallback(sRetraceCount);

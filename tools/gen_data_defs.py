@@ -56,25 +56,36 @@ def load_symbols_txt():
 
 
 def undefined_game_syms():
-    syms = []
-    with open(os.path.join(ROOT, "port", "undefined.txt")) as f:
-        for line in f:
-            bucket, name = line.split()
-            if bucket == "game":
-                syms.append(name)
-    return syms
+    import glob as _glob
+    out = subprocess.run(
+        ["nm", os.path.join(ROOT, "build", "libgame.a")],
+        capture_output=True, text=True, errors="replace",
+    ).stdout
+    refs = {m.group(1) for m in re.finditer(r"^ +U _(\w+)$", out, re.M)}
+    defs = {m.group(1) for m in re.finditer(r"^[0-9a-f ]* [TDBSCtdbsc] _(\w+)$", out, re.M)}
+    others = [os.path.join(ROOT, "build", "libport_shims.a")]
+    others += _glob.glob(os.path.join(ROOT, "build", "extern", "aurora", "**", "*.a"), recursive=True)
+    for lib in others:
+        if not os.path.exists(lib):
+            continue
+        out2 = subprocess.run(["nm", lib], capture_output=True, text=True, errors="replace").stdout
+        skip_member = False
+        for line in out2.splitlines():
+            mh = re.match(r"(?:.*\()?([\w.-]+\.o)\)?:$", line)
+            if mh:
+                skip_member = "game_data_gen" in mh.group(1)
+                continue
+            if skip_member:
+                continue
+            m = re.match(r"^[0-9a-f ]* [TDBSCtdbsc] _(\w+)$", line)
+            if m:
+                defs.add(m.group(1))
+    return sorted(refs - defs)
 
 
 def emit_zero(name, size):
-    if size == 1:
-        return f"u8 {name};\n"
-    if size == 2:
-        return f"u16 {name};\n"
-    if size == 4:
-        return f"u32 {name};\n"
-    if size == 8:
-        return f"u64 {name};\n"
-    return f"u8 {name}[{size:#x}] __attribute__((aligned(8)));\n"
+    padded = max(16, size * 2)
+    return f"u8 {name}[{padded:#x}] __attribute__((aligned(8)));\n"
 
 
 def emit_init(name, raw):

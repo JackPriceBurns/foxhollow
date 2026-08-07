@@ -1,7 +1,8 @@
 #include <dolphin/os.h>
 #include "shim_log.h"
 
-static OSThread* sCurrentThread;
+static OSThread sMainThread = { .state = OS_THREAD_STATE_RUNNING };
+static OSThread* sCurrentThread = &sMainThread;
 
 BOOL OSCreateThread(OSThread* thread, void* (*func)(void*), void* param, void* stack, u32 stackSize, s32 priority, u16 attributes) {
   (void)func; (void)param; (void)stack; (void)stackSize; (void)priority; (void)attributes;

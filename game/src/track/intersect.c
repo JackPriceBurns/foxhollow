@@ -449,45 +449,33 @@ void waterFxDraw(void)
                 pz = quad->v[2];
                 py = quad->v[1];
                 px = quad->v[0];
-                GXWGFifo.f32 = px;
-                GXWGFifo.f32 = py;
-                GXWGFifo.f32 = pz;
+                GXPosition3f32(px, py, pz);
             }
-            GXWGFifo.f32 = sLeft;
-            GXWGFifo.f32 = tTop;
+            GXTexCoord2f32(sLeft, tTop);
             {
                 f32 px, py, pz;
                 pz = quad->v[5];
                 py = quad->v[4];
                 px = quad->v[3];
-                GXWGFifo.f32 = px;
-                GXWGFifo.f32 = py;
-                GXWGFifo.f32 = pz;
+                GXPosition3f32(px, py, pz);
             }
-            GXWGFifo.f32 = sRight;
-            GXWGFifo.f32 = tTop;
+            GXTexCoord2f32(sRight, tTop);
             {
                 f32 px, py, pz;
                 pz = quad->v[8];
                 py = quad->v[7];
                 px = quad->v[6];
-                GXWGFifo.f32 = px;
-                GXWGFifo.f32 = py;
-                GXWGFifo.f32 = pz;
+                GXPosition3f32(px, py, pz);
             }
-            GXWGFifo.f32 = sRight;
-            GXWGFifo.f32 = tBot;
+            GXTexCoord2f32(sRight, tBot);
             {
                 f32 px, py, pz;
                 pz = quad->v[11];
                 py = quad->v[10];
                 px = quad->v[9];
-                GXWGFifo.f32 = px;
-                GXWGFifo.f32 = py;
-                GXWGFifo.f32 = pz;
+                GXPosition3f32(px, py, pz);
             }
-            GXWGFifo.f32 = sLeft;
-            GXWGFifo.f32 = tBot;
+            GXTexCoord2f32(sLeft, tBot);
         }
     }
     Camera_ApplyFullViewport();

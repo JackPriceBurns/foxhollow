@@ -167,22 +167,14 @@ typedef struct StaffEffectParams {
     f32 posZ;
 } StaffEffectParams;
 
-#define GXWGFifo (*(volatile PPCWGPipe*)0xCC008000)
-
 static inline void swipePos3f32(const f32 x, const f32 y, const f32 z) {
-    GXWGFifo.f32 = x;
-    GXWGFifo.f32 = y;
-    GXWGFifo.f32 = z;
+    GXPosition3f32(x, y, z);
 }
 static inline void swipeColor4u8(const u8 r, const u8 g, const u8 b, const u8 a) {
-    GXWGFifo.u8 = r;
-    GXWGFifo.u8 = g;
-    GXWGFifo.u8 = b;
-    GXWGFifo.u8 = a;
+    GXColor4u8(r, g, b, a);
 }
 static inline void swipeTexCoord2f32(const f32 s, const f32 t) {
-    GXWGFifo.f32 = s;
-    GXWGFifo.f32 = t;
+    GXTexCoord2f32(s, t);
 }
 
 void staffUpdateAttackEffects(GameObject* obj, GameObject* player) {

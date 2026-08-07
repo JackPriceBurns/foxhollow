@@ -38,13 +38,28 @@ if (FOXHOLLOW_GAME_SOURCES)
 endif ()
 
 add_executable(foxhollow src/main.c)
-target_link_libraries(foxhollow PRIVATE aurora::core aurora::gx aurora::main aurora::vi)
+target_link_libraries(foxhollow PRIVATE
+        port_shims
+        aurora::core aurora::gx aurora::main aurora::vi
+        aurora::os aurora::pad aurora::dvd aurora::card
+        aurora::mtx aurora::si aurora::gd aurora::ms)
+if (TARGET game)
+    if (APPLE)
+        target_link_options(foxhollow PRIVATE -Wl,-force_load,$<TARGET_FILE:game>)
+    else ()
+        target_link_options(foxhollow PRIVATE
+                -Wl,--whole-archive $<TARGET_FILE:game> -Wl,--no-whole-archive)
+    endif ()
+    add_dependencies(foxhollow game)
+    set_target_properties(foxhollow PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
+endif ()
 
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include)
 target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
 target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char)
+target_link_libraries(port_shims PRIVATE aurora::core)
 
 if (TARGET game)
     add_executable(linkcheck EXCLUDE_FROM_ALL src/main.c)

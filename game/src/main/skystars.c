@@ -62,9 +62,7 @@ GXColor gNewCloudStarFogColor = {0};
 
 static inline void starFifoPosition3s16(s16 x, s16 y, s16 z)
 {
-    GXWGFifo.s16 = x;
-    GXWGFifo.s16 = y;
-    GXWGFifo.s16 = z;
+    GXPosition3s16(x, y, z);
 }
 
 SkyStarColorRange gNewCloudStarColorRanges[SKY_STAR_COLOR_RANGE_COUNT] = {
@@ -340,8 +338,7 @@ void initSkyStars(void)
                 PSMTXMultVecSR(rotationA, &starPosition, &starPosition);
             }
             starFifoPosition3s16(starPosition.x, starPosition.y, starPosition.z);
-            GXWGFifo.s16 = 0;
-            GXWGFifo.s16 = 0;
+            GXTexCoord2s16(0, 0);
         }
         gNewCloudStarDisplayListSizes[displayListIndex] = GXEndDisplayList();
     }

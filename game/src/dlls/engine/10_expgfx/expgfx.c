@@ -86,8 +86,6 @@ typedef struct ExpgfxBillboardAngles
 } ExpgfxBillboardAngles;
 
 
-#define GXWGFifo (*(volatile ExpgfxWGPipe*)0xCC008000)
-
 #define EXPGFX_Y_VELOCITY_POSITIVE_LIMIT 15.0f
 #define EXPGFX_Y_VELOCITY_FAST_STEP -0.03f
 #define EXPGFX_Y_VELOCITY_SLOW_STEP -0.003f
@@ -3911,9 +3909,7 @@ void drawGlow(u32 slotPoolBase, int poolIndex)
                     {
                         alpha = (int)((f32)alpha * ((-viewDepth) - 2.5f) / ((-gExpgfxNearFadeDepth) - 2.5f));
                     }
-                    GXWGFifo.f32 = worldX;
-                    GXWGFifo.f32 = worldY;
-                    GXWGFifo.f32 = worldZ;
+                    GXPosition3f32(worldX, worldY, worldZ);
                     {
                         u8 colorR;
                         u8 colorG;
@@ -3921,18 +3917,14 @@ void drawGlow(u32 slotPoolBase, int poolIndex)
                         colorB = quad->colorB;
                         colorG = quad->colorG;
                         colorR = quad->colorR;
-                        GXWGFifo.u8 = colorR;
-                        GXWGFifo.u8 = colorG;
-                        GXWGFifo.u8 = colorB;
+                        GXColor4u8(colorR, colorG, colorB, alpha);
                     }
-                    GXWGFifo.u8 = alpha;
                     {
                         s16 texU;
                         s16 texV;
                         texV = vertexStream->texT;
                         texU = vertexStream->texS;
-                        GXWGFifo.s16 = texU;
-                        GXWGFifo.s16 = texV;
+                        GXTexCoord2s16(texU, texV);
                     }
                     vertexStream++;
                 }

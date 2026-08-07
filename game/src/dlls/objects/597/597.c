@@ -117,27 +117,19 @@ char sSnowBikeVelDebugFmt[] = "vel %f\n";
 f32 gSnowBikeWindVolume;
 Texture* sSnowBikeTrailTexture;
 
-#define GXWGFifo (*(volatile PPCWGPipe*)0xCC008000)
-
 static inline void shPos3f32(const f32 x, const f32 y, const f32 z)
 {
-    GXWGFifo.f32 = x;
-    GXWGFifo.f32 = y;
-    GXWGFifo.f32 = z;
+    GXPosition3f32(x, y, z);
 }
 
 static inline void shColor4u8(u8 r, u8 g, u8 b, u8 a)
 {
-    GXWGFifo.u8 = r;
-    GXWGFifo.u8 = g;
-    GXWGFifo.u8 = b;
-    GXWGFifo.u8 = a;
+    GXColor4u8(r, g, b, a);
 }
 
 static inline void shTexCoord2f32(const f32 s, const f32 t)
 {
-    GXWGFifo.f32 = s;
-    GXWGFifo.f32 = t;
+    GXTexCoord2f32(s, t);
 }
 
 void SnowBike_DrawTrails(int p1, char* table)

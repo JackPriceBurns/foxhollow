@@ -1080,8 +1080,6 @@ int pauseMenuHoloRenderFn(int* this, int* p2, int p3)
     GXSetVtxDesc(GX_VA_NRM, GX_DIRECT);
     return 1;
 }
-#define GXWGFifo (*(volatile PPCWGPipe*)0xCC008000)
-
 void pauseMenuTextDrawFn(int x0, int y0, int x1, int y1, f32 u0, f32 v0, f32 u1, f32 v1)
 {
     f32 scale;
@@ -1104,29 +1102,17 @@ void pauseMenuTextDrawFn(int x0, int y0, int x1, int y1, f32 u0, f32 v0, f32 u1,
     y1 *= scale;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
     z = (s16)(gPauseMenuTextZ << 2);
-    GXWGFifo.s16 = (s16)(x0 + 0x500);
-    GXWGFifo.s16 = (s16)(y0 + 0x3c0);
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v0;
+    GXPosition3s16((s16)(x0 + 0x500), (s16)(y0 + 0x3c0), z);
+    GXTexCoord2f32(u0, v0);
     z = (s16)(gPauseMenuTextZ << 2);
-    GXWGFifo.s16 = (s16)(x1 + 0x500);
-    GXWGFifo.s16 = (s16)(y0 + 0x3c0);
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v0;
+    GXPosition3s16((s16)(x1 + 0x500), (s16)(y0 + 0x3c0), z);
+    GXTexCoord2f32(u1, v0);
     z = (s16)(gPauseMenuTextZ << 2);
-    GXWGFifo.s16 = (s16)(x1 + 0x500);
-    GXWGFifo.s16 = (s16)(y1 + 0x3c0);
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
+    GXPosition3s16((s16)(x1 + 0x500), (s16)(y1 + 0x3c0), z);
+    GXTexCoord2f32(u1, v1);
     z = (s16)(gPauseMenuTextZ << 2);
-    GXWGFifo.s16 = (s16)(x0 + 0x500);
-    GXWGFifo.s16 = (s16)(y1 + 0x3c0);
-    GXWGFifo.s16 = z;
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v1;
+    GXPosition3s16((s16)(x0 + 0x500), (s16)(y1 + 0x3c0), z);
+    GXTexCoord2f32(u0, v1);
 }
 void pauseMenuDrawTextureRegion(void* this, f32 f1, f32 f2, int p4, u8 p5, int p6, int p7, int p8, int p9)
 {
@@ -1139,26 +1125,14 @@ void pauseMenuDrawTextureRegion(void* this, f32 f1, f32 f2, int p4, u8 p5, int p
     u1 = (f32)(u32)(p6 + p8) / ((Texture*)this)->width;
     v1 = (f32)(u32)(p7 + p9) / ((Texture*)this)->height;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
-    GXWGFifo.s16 = f1;
-    GXWGFifo.s16 = f2;
-    GXWGFifo.s16 = (s16)(p4 << 2);
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v0;
-    GXWGFifo.s16 = (s16)(f1 + (f32)(u32)(p6 << 2));
-    GXWGFifo.s16 = f2;
-    GXWGFifo.s16 = (s16)(p4 << 2);
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v0;
-    GXWGFifo.s16 = (s16)(f1 + (f32)(u32)(p6 << 2));
-    GXWGFifo.s16 = (s16)(f2 + (f32)(u32)(p7 << 2));
-    GXWGFifo.s16 = (s16)(p4 << 2);
-    GXWGFifo.f32 = u1;
-    GXWGFifo.f32 = v1;
-    GXWGFifo.s16 = f1;
-    GXWGFifo.s16 = (s16)(f2 + (f32)(u32)(p7 << 2));
-    GXWGFifo.s16 = (s16)(p4 << 2);
-    GXWGFifo.f32 = u0;
-    GXWGFifo.f32 = v1;
+    GXPosition3s16(f1, f2, (s16)(p4 << 2));
+    GXTexCoord2f32(u0, v0);
+    GXPosition3s16((s16)(f1 + (f32)(u32)(p6 << 2)), f2, (s16)(p4 << 2));
+    GXTexCoord2f32(u1, v0);
+    GXPosition3s16((s16)(f1 + (f32)(u32)(p6 << 2)), (s16)(f2 + (f32)(u32)(p7 << 2)), (s16)(p4 << 2));
+    GXTexCoord2f32(u1, v1);
+    GXPosition3s16(f1, (s16)(f2 + (f32)(u32)(p7 << 2)), (s16)(p4 << 2));
+    GXTexCoord2f32(u0, v1);
 }
 
 
@@ -1196,26 +1170,14 @@ void gameUiDrawTextureRegion(void* texture, f32 x, f32 y, int depth, u8 alpha, i
         vb = tv;
     }
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
-    GXWGFifo.s16 = x;
-    GXWGFifo.s16 = y;
-    GXWGFifo.s16 = (s16)(depth << 2);
-    GXWGFifo.f32 = ua;
-    GXWGFifo.f32 = va;
-    GXWGFifo.s16 = (s16)(x + (f32)(u32)scaledWidth);
-    GXWGFifo.s16 = y;
-    GXWGFifo.s16 = (s16)(depth << 2);
-    GXWGFifo.f32 = ub;
-    GXWGFifo.f32 = va;
-    GXWGFifo.s16 = (s16)(x + (f32)(u32)scaledWidth);
-    GXWGFifo.s16 = (s16)(y + (f32)(u32)scaledHeight);
-    GXWGFifo.s16 = (s16)(depth << 2);
-    GXWGFifo.f32 = ub;
-    GXWGFifo.f32 = vb;
-    GXWGFifo.s16 = x;
-    GXWGFifo.s16 = (s16)(y + (f32)(u32)scaledHeight);
-    GXWGFifo.s16 = (s16)(depth << 2);
-    GXWGFifo.f32 = ua;
-    GXWGFifo.f32 = vb;
+    GXPosition3s16(x, y, (s16)(depth << 2));
+    GXTexCoord2f32(ua, va);
+    GXPosition3s16((s16)(x + (f32)(u32)scaledWidth), y, (s16)(depth << 2));
+    GXTexCoord2f32(ub, va);
+    GXPosition3s16((s16)(x + (f32)(u32)scaledWidth), (s16)(y + (f32)(u32)scaledHeight), (s16)(depth << 2));
+    GXTexCoord2f32(ub, vb);
+    GXPosition3s16(x, (s16)(y + (f32)(u32)scaledHeight), (s16)(depth << 2));
+    GXTexCoord2f32(ua, vb);
 }
 
 void pauseMenuDrawElement(void* element, f32 fx, f32 fy, int depthZ, u8 paletteIndex, int scalePercent, int flags)
@@ -1229,28 +1191,16 @@ void pauseMenuDrawElement(void* element, f32 fx, f32 fy, int depthZ, u8 paletteI
     fx = 4.0f * fx;
     fy = 4.0f * fy;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
-    GXWGFifo.s16 = fx;
-    GXWGFifo.s16 = fy;
-    GXWGFifo.s16 = (s16)(depthZ << 2);
+    GXPosition3s16(fx, fy, (s16)(depthZ << 2));
     c0 = 0.0f;
-    GXWGFifo.f32 = c0;
-    GXWGFifo.f32 = c0;
-    GXWGFifo.s16 = (s16)(fx + (f32)(u32)dx);
-    GXWGFifo.s16 = fy;
-    GXWGFifo.s16 = (s16)(depthZ << 2);
+    GXTexCoord2f32(c0, c0);
+    GXPosition3s16((s16)(fx + (f32)(u32)dx), fy, (s16)(depthZ << 2));
     c1 = 1.0f;
-    GXWGFifo.f32 = c1;
-    GXWGFifo.f32 = c0;
-    GXWGFifo.s16 = (s16)(fx + (f32)(u32)dx);
-    GXWGFifo.s16 = (s16)(fy + (f32)(u32)dy);
-    GXWGFifo.s16 = (s16)(depthZ << 2);
-    GXWGFifo.f32 = c1;
-    GXWGFifo.f32 = c1;
-    GXWGFifo.s16 = fx;
-    GXWGFifo.s16 = (s16)(fy + (f32)(u32)dy);
-    GXWGFifo.s16 = (s16)(depthZ << 2);
-    GXWGFifo.f32 = c0;
-    GXWGFifo.f32 = c1;
+    GXTexCoord2f32(c1, c0);
+    GXPosition3s16((s16)(fx + (f32)(u32)dx), (s16)(fy + (f32)(u32)dy), (s16)(depthZ << 2));
+    GXTexCoord2f32(c1, c1);
+    GXPosition3s16(fx, (s16)(fy + (f32)(u32)dy), (s16)(depthZ << 2));
+    GXTexCoord2f32(c0, c1);
 }
 void pauseMenuSetHoloTransform(f32 f1, f32 f2, f32 f3, f32 f4, u16 a, u16 b, u16 c)
 {
@@ -5728,7 +5678,7 @@ void pauseMenuDoSave(void)
             {
                 getObjectShadowDrawParams(gGameUiHudAnimObjects[i], &texture, &scale, &x, &y);
                 colorA = colorB;
-                hudDrawColored(texture, x, y, (u32*)&colorA, (s32)(lbl_803E20B8 * scale), 1);
+                hudDrawColored((Texture*)texture, x, y, (u32*)&colorA, (s32)(lbl_803E20B8 * scale), 1);
             }
         }
     }

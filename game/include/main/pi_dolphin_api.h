@@ -51,6 +51,6 @@ extern s16 gObjMapBlockInfo[];
 extern s16 sMapFileNameAdjacencyTable[];
 extern char sAssetIndexOverflowError[];
 
-extern u32 gResourceFileBuffers[];
+extern uintptr_t gResourceFileBuffers[];
 
 #endif /* MAIN_PI_DOLPHIN_API_H_ */

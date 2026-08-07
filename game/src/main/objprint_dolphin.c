@@ -893,9 +893,7 @@ void objRenderAttachment(GameObject* obj, int* p2)
                 c = v[2];
                 b = v[1];
                 a = v[0];
-                GXWGFifo.s16 = a;
-                GXWGFifo.s16 = b;
-                GXWGFifo.s16 = c;
+                GXPosition3s16(a, b, c);
                 {
                     u8 b2;
                     u8 c2;
@@ -903,15 +901,12 @@ void objRenderAttachment(GameObject* obj, int* p2)
                     c2 = tri[8];
                     b2 = tri[7];
                     a2 = tri[6];
-                    GXWGFifo.u8 = a2;
-                    GXWGFifo.u8 = b2;
-                    GXWGFifo.u8 = c2;
+                    GXNormal3s8(a2, b2, c2);
                 }
                 uv = uvs + *idx * 2;
                 b = uv[1];
                 a = uv[0];
-                GXWGFifo.s16 = a;
-                GXWGFifo.s16 = b;
+                GXTexCoord2s16(a, b);
                 idx++;
             }
             off += 0xa;
@@ -3458,7 +3453,7 @@ void objRenderModel(GameObject* obj)
     gObjShadowColor[3] = obj->anim.modelState->shadowAlpha;
     getObjectShadowDrawParams(obj, &d1, &d2, &d3, &d4);
     col = *(u32*)gObjShadowColor;
-    hudDrawColored(d1, d3, d4, &col, (s32)(256.0f * d2), 1);
+    hudDrawColored((Texture*)(uintptr_t)d1, d3, d4, &col, (s32)(256.0f * d2), 1);
 }
 
 void objSetRenderingShadowPass(u8 x)

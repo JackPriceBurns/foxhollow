@@ -45,19 +45,14 @@ f32 gCloudOverridePositionZ;
 
 f32 gCloudActionGlareQuadSize[2] = {8000.0f, 0.0f};
 
-#define GXWGFifo (*(volatile PPCWGPipe*)0xCC008000)
-
 static inline void GXPos3f32(f32 x, f32 y, f32 z)
 {
-    GXWGFifo.f32 = x;
-    GXWGFifo.f32 = y;
-    GXWGFifo.f32 = z;
+    GXPosition3f32(x, y, z);
 }
 
 static inline void GXTex2f32(f32 s, f32 t)
 {
-    GXWGFifo.f32 = s;
-    GXWGFifo.f32 = t;
+    GXTexCoord2f32(s, t);
 }
 
 void cloudClearOverridePosition(void)
