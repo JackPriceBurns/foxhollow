@@ -458,7 +458,7 @@ void lightningRender(LightningEffect* p)
     sfaSrand(savedSeed);
 }
 
-extern inline float sqrtf__inline(float x)
+static inline float sqrtf__inline(float x)
 {
     volatile float y;
     if (x > 0.0f)

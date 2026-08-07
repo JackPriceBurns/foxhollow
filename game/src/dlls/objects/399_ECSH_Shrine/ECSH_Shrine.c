@@ -402,7 +402,7 @@ void ecshShrine_free(GameObject* obj) {
         ModelLightStruct_free(state->light);
         state->light = NULL;
     }
-    objFreeObjectType((int)obj, ECSH_SHRINE_OBJ_GROUP);
+    objFreeObjectType(obj, ECSH_SHRINE_OBJ_GROUP);
     mainSetBits(GAMEBIT_IN_KRAZOA_SHRINE, 0);
     mainSetBits(GAMEBIT_SHRINE_MUSIC_LOCK, 1);
     mainSetBits(GAMEBIT_WMRelated0A7F, 1);
@@ -827,7 +827,7 @@ void ecshShrine_init(GameObject* obj, const s8* placement) {
     byteValue = mainGetBit(GAMEBIT_K1_SHRINE_INTRO_TEXT_TRIGGER);
     state->introTextLatch = byteValue;
     gECSHShrineActiveObject = obj;
-    objAddObjectType((int)obj, ECSH_SHRINE_OBJ_GROUP);
+    objAddObjectType(obj, ECSH_SHRINE_OBJ_GROUP);
     obj->userData1 = ECSH_SHRINE_LOAD_TIMER_START;
     if (state->light == NULL) {
         state->light = objCreateLight(NULL, 1);

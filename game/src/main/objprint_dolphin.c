@@ -2246,9 +2246,10 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
     }
     if (gObjCachedModel != (u32)m)
     {
-        GXSetArray(GX_VA_POS,
-                   (void*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1], 6);
-        GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords, 4);
+        GXSetArray(GX_VA_POS, ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1],
+                   ((ModelFileHeader*)m)->vertexCount * 6, 6, false);
+        GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords,
+                   ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
         gObjCachedModel = (u32)m;
     }
     shaderSetGxFlags(obj, m, (u8*)((ModelFileHeader*)m)->renderOps);
@@ -2466,8 +2467,8 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         gxSetZMode_(0, GX_LEQUAL, 0);
         GXSetCullMode(GX_CULL_NONE);
     }
-    GXSetArray(GX_VA_POS,
-               (void*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1], 6);
+    GXSetArray(GX_VA_POS, ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1],
+               ((ModelFileHeader*)m)->vertexCount * 6, 6, false);
     done = 0;
     while (!done)
     {
@@ -2880,19 +2881,19 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             _gxSetFogParams();
         }
     }
-    GXSetArray(GX_VA_POS,
-               (void*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1], 6);
+    GXSetArray(GX_VA_POS, ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1],
+               ((ModelFileHeader*)m)->vertexCount * 6, 6, false);
     if (((ModelFileHeader*)m)->flags24 & 8)
     {
-        GXSetArray(GX_VA_NRM, ((ObjModel*)am)->normalBuf, 9);
+        GXSetArray(GX_VA_NRM, ((ObjModel*)am)->normalBuf, ((ModelFileHeader*)m)->normalCount * 9, 9, false);
     }
     else
     {
-        GXSetArray(GX_VA_NRM, ((ObjModel*)am)->normalBuf, 3);
+        GXSetArray(GX_VA_NRM, ((ObjModel*)am)->normalBuf, ((ModelFileHeader*)m)->normalCount * 3, 3, false);
     }
-    GXSetArray(GX_VA_CLR0, ((ModelFileHeader*)m)->colors, 2);
-    GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords, 4);
-    GXSetArray(GX_VA_TEX1, ((ModelFileHeader*)m)->texCoords, 4);
+    GXSetArray(GX_VA_CLR0, ((ModelFileHeader*)m)->colors, ((ModelFileHeader*)m)->colorCount * 2, 2, false);
+    GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
+    GXSetArray(GX_VA_TEX1, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
     done = 0;
     while (!done)
     {

@@ -1463,7 +1463,7 @@ void ktrex_free(GameObject* obj)
 {
     int i;
     gKTRexRuntime = obj->extra;
-    objFreeObjectType((int)obj, KTREX_OBJGROUP);
+    objFreeObjectType(obj, KTREX_OBJGROUP);
     (*gBaddieControlInterface)->releaseState(obj, gKTRexRuntime, 0);
     Stack_Free(gKTRexState->stack);
     if (gKTRexResource != NULL)

@@ -21,6 +21,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(AURORA_ENABLE_DVD ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
 
@@ -32,9 +33,32 @@ if (FOXHOLLOW_GAME_SOURCES)
     add_library(game STATIC ${FOXHOLLOW_GAME_SOURCES})
     target_include_directories(game PRIVATE port/include extern/aurora/include game/include game)
     target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1 TARGET_PC=1)
-    target_compile_options(game PRIVATE -std=gnu11 -fsigned-char -w
+    target_compile_options(game PRIVATE -std=gnu11 -fsigned-char -fcommon -w
             -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
 endif ()
 
 add_executable(foxhollow src/main.c)
 target_link_libraries(foxhollow PRIVATE aurora::core aurora::gx aurora::main aurora::vi)
+
+file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
+add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
+target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include)
+target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
+target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char)
+
+if (TARGET game)
+    add_executable(linkcheck EXCLUDE_FROM_ALL src/main.c)
+    target_link_libraries(linkcheck PRIVATE
+            port_shims
+            aurora::core aurora::gx aurora::main aurora::vi
+            aurora::os aurora::pad aurora::dvd aurora::card
+            aurora::mtx aurora::si aurora::gd aurora::ms)
+    if (APPLE)
+        target_link_options(linkcheck PRIVATE -Wl,-force_load,$<TARGET_FILE:game>)
+    else ()
+        target_link_options(linkcheck PRIVATE
+                -Wl,--whole-archive $<TARGET_FILE:game> -Wl,--no-whole-archive)
+    endif ()
+    add_dependencies(linkcheck game)
+    set_target_properties(linkcheck PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
+endif ()

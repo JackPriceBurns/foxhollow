@@ -68,7 +68,7 @@ void FuelCell_free(GameObject* obj) {
     }
 
     if (state->flags.active) {
-        objFreeObjectType((int)obj, FUEL_CELL_OBJECT_GROUP);
+        objFreeObjectType(obj, FUEL_CELL_OBJECT_GROUP);
     }
 }
 
@@ -196,7 +196,7 @@ void FuelCell_update(GameObject* obj) {
                 if (!state->flags.active) {
                     Sfx_AddLoopedObjectSound((u32)obj, SFXTRIG_pk_fuelcell_fizz);
                     state->flags.active = 1;
-                    objAddObjectType((int)obj, FUEL_CELL_OBJECT_GROUP);
+                    objAddObjectType(obj, FUEL_CELL_OBJECT_GROUP);
                 } else if (state->flags.resetPosition) {
                     obj->anim.localPosX = placement->base.posX;
                     obj->anim.localPosY = placement->base.posY;
@@ -217,7 +217,7 @@ void FuelCell_update(GameObject* obj) {
         } else if (state->flags.active) {
             state->flags.active = 0;
             Sfx_RemoveLoopedObjectSound((u32)obj, SFXTRIG_pk_fuelcell_fizz);
-            objFreeObjectType((int)obj, FUEL_CELL_OBJECT_GROUP);
+            objFreeObjectType(obj, FUEL_CELL_OBJECT_GROUP);
         }
     }
 }

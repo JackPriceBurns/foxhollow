@@ -17483,8 +17483,8 @@ void playerFree(GameObject* obj, int flag)
             mm_free(e);
         off += 0xb0;
     }
-    objFreeObjectType((int)obj, 0);
-    objFreeObjectType((int)obj, PLAYER_OBJGROUP);
+    objFreeObjectType(obj, 0);
+    objFreeObjectType(obj, PLAYER_OBJGROUP);
     ObjModelChain_Free((ObjModelChain*)gPlayerModelChain);
 }
 
@@ -18332,8 +18332,8 @@ void objLoadPlayerFromSave(int obj)
     u8* pathState;
 
     gPlayerHitReactionVariant = 0;
-    objAddObjectType(obj, 0);
-    objAddObjectType(obj, PLAYER_OBJGROUP);
+    objAddObjectType((GameObject*)obj, 0);
+    objAddObjectType((GameObject*)obj, PLAYER_OBJGROUP);
     objSetSlot((GameObject*)obj, 0x3c);
     ObjMsg_AllocQueue((GameObject*)obj, 0x14);
     ((GameObject*)obj)->animEventCallback = (void*)player_SeqFn;

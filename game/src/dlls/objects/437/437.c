@@ -821,7 +821,7 @@ void Lightfoot_free(GameObject* obj, int preserveChildren) {
     int count;
     int i;
 
-    objFreeObjectType((u32)obj, DLL1B5_OBJECT_GROUP);
+    objFreeObjectType(obj, DLL1B5_OBJECT_GROUP);
     count = obj->childCount;
     for (i = 0; i < count; i++) {
         child = obj->childObjs[0];

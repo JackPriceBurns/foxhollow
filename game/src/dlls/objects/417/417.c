@@ -614,7 +614,7 @@ void NW_mammoth_free(GameObject* obj) {
     NwMammothState* state;
 
     state = (NwMammothState*)obj->extra;
-    objFreeObjectType((int)obj, NW_MAMMOTH_GROUP_ID);
+    objFreeObjectType(obj, NW_MAMMOTH_GROUP_ID);
     if ((state->runtimeFlags & NW_MAMMOTH_RUNTIME_UI_MESSAGE) != 0) {
         (*gGameUIInterface)->airMeterSetShutdown();
     }
@@ -810,7 +810,7 @@ void NW_mammoth_init(GameObject* obj, NwMammothPlacement* placement, int isReloa
                     pathParam.values);
         (*gPathControlInterface)->attachObject(obj, path);
     }
-    objAddObjectType((int)obj, NW_MAMMOTH_GROUP_ID);
+    objAddObjectType(obj, NW_MAMMOTH_GROUP_ID);
 }
 
 const f32 gNwMammothDefaultAnimStepScale = 0.005f;

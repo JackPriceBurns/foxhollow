@@ -802,7 +802,7 @@ void DR_EarthWarrior_free(GameObject* obj)
     {
         ObjModelChain_Free(state->sub.modelChain);
     }
-    objFreeObjectType((int)obj, DREARTHWARRIOR_OBJGROUP);
+    objFreeObjectType(obj, DREARTHWARRIOR_OBJGROUP);
     if (state->sub.flags994.b02)
     {
         (*gGameUIInterface)->airMeterShutdown();
@@ -1106,7 +1106,7 @@ void DR_EarthWarrior_init(GameObject* obj, DREarthWarriorPlacement* def)
     u8* pathState;
     obj->anim.rotX = (s16)(def->spawnYaw << 8);
     obj->animEventCallback = DR_EarthWarrior_SeqFn;
-    objAddObjectType((int)obj, DREARTHWARRIOR_OBJGROUP);
+    objAddObjectType(obj, DREARTHWARRIOR_OBJGROUP);
     state->sub.setupVariant = def->setupVariant;
     state->sub.turnThreshold = 5;
     state->sub.talkSequenceId = -1;

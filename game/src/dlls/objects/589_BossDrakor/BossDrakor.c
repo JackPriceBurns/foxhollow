@@ -550,7 +550,7 @@ void bossdrakor_free(GameObject* obj)
 {
     BossDrakorState* inner = (BossDrakorState*)(obj)->extra;
     BossDrakorState* s = inner;
-    objFreeObjectType((int)obj, BOSSDRAKOR_OBJGROUP);
+    objFreeObjectType(obj, BOSSDRAKOR_OBJGROUP);
     if ((obj)->childObjs[0] != NULL)
     {
         ObjLink_DetachChild(obj, obj->childObjs[0]);
@@ -980,7 +980,7 @@ void bossdrakor_init(GameObject* obj, BossdrakorPlacement* init)
     s->textTimer = fz;
     inner->flags198.b10 = 1;
     storeZeroToFloatParam(&s->attackTimer);
-    objAddObjectType((int)obj, BOSSDRAKOR_OBJGROUP);
+    objAddObjectType(obj, BOSSDRAKOR_OBJGROUP);
     storeZeroToFloatParam(&s->jawAnimTimer);
     (obj)->animEventCallback = bossdrakor_seqFn;
     Music_Trigger(MUSICTRIG_LVF_Tracking, 1);

@@ -417,8 +417,8 @@ int EdibleMushroom_getExtraSize(void) {
 }
 
 void EdibleMushroom_free(GameObject* obj) {
-    objFreeObjectType((int)obj, EDIBLE_MUSHROOM_GROUP_ID);
-    objFreeObjectType((int)obj, EDIBLE_MUSHROOM_SECONDARY_GROUP_ID);
+    objFreeObjectType(obj, EDIBLE_MUSHROOM_GROUP_ID);
+    objFreeObjectType(obj, EDIBLE_MUSHROOM_SECONDARY_GROUP_ID);
 }
 
 void EdibleMushroom_hitDetect(GameObject* obj) {
@@ -602,8 +602,8 @@ void EdibleMushroom_init(GameObject* obj, EdibleMushroomPlacement* placement) {
         state->previousTargetDistance = z;
     }
 
-    objAddObjectType((int)obj, EDIBLE_MUSHROOM_SECONDARY_GROUP_ID);
-    objAddObjectType((int)obj, EDIBLE_MUSHROOM_GROUP_ID);
+    objAddObjectType(obj, EDIBLE_MUSHROOM_SECONDARY_GROUP_ID);
+    objAddObjectType(obj, EDIBLE_MUSHROOM_GROUP_ID);
 
     if (obj->anim.romDefNo == EDIBLE_MUSHROOM_WHITE_ALIAS_ID) {
         state->collectedGameBitId = GAMEBIT_ITEM_WhiteShroom_Count;

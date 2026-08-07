@@ -278,7 +278,7 @@ void shopitem_free(GameObject* obj)
     switch ((obj)->anim.romDefNo)
     {
     case SHOPITEM_SEQ_SPARKLE:
-        objFreeObjectType((int)obj, FUEL_CELL_OBJECT_GROUP);
+        objFreeObjectType(obj, FUEL_CELL_OBJECT_GROUP);
         break;
     }
 }
@@ -453,7 +453,7 @@ void shopitem_init(GameObject* obj, ShopItemDef* data)
         break;
     case SHOPITEM_SEQ_SPARKLE:
         ObjModel_SetPostRenderCallback(Obj_GetActiveModel(obj), shopitem_sparkleBlendSetup);
-        objAddObjectType((int)obj, FUEL_CELL_OBJECT_GROUP);
+        objAddObjectType(obj, FUEL_CELL_OBJECT_GROUP);
         break;
     }
 }

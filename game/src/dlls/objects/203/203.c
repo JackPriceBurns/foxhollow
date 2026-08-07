@@ -348,7 +348,7 @@ int dll_CB_getObjectTypeId(void) {
 void dll_CB_free(GameObject* obj) {
     GroundBaddieState* state = obj->extra;
 
-    objFreeObjectType((int)obj, DLL_CB_OBJGROUP);
+    objFreeObjectType(obj, DLL_CB_OBJGROUP);
     {
         GameObject* child = obj->childObjs[0];
 

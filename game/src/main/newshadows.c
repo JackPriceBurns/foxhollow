@@ -321,20 +321,6 @@ u8 gSurfaceSfxTable[0xD8] = {
     0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x09, 0x00,
 };
 
-extern inline float sqrtf(float x)
-{
-    volatile float y;
-    if (x > 0.0f)
-    {
-        double guess = __frsqrte((double)x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        y = (float)(x * guess);
-        return y;
-    }
-    return x;
-}
 
 extern const f32 lbl_803DED38;
 extern const f32 lbl_803DED40;

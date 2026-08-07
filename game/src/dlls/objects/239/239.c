@@ -960,7 +960,7 @@ void pushable_free(GameObject* obj) {
         gPushableSavedIdentCount = savedIdentIndex + 1;
         gPushableSavedIdents[savedIdentIndex] = ident;
     }
-    objFreeObjectType((int)obj, PUSHABLE_OBJECT_GROUP);
+    objFreeObjectType(obj, PUSHABLE_OBJECT_GROUP);
 }
 
 void pushable_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int fwdArg5, s8 visible) {
@@ -1249,7 +1249,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     }
     obj->anim.rotX = setup->rotXByte << 8;
     obj->anim.localPosY = PUSHABLE_COLLISION_RADIUS + setup->base.posY;
-    objAddObjectType((int)obj, PUSHABLE_OBJECT_GROUP);
+    objAddObjectType(obj, PUSHABLE_OBJECT_GROUP);
     objSetSlot(obj, PUSHABLE_OBJECT_SLOT);
     obj->animEventCallback = pushable_SeqFn;
     state = obj->extra;

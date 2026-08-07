@@ -753,6 +753,7 @@ void* errorThreadFunc(void* unused)
     u8 lvl;
     u32 r, rr;
     u32* rp;
+    static u32 sErrZeroRegs[32];
 
     sp = NULL;
     depth = 0;
@@ -818,8 +819,8 @@ void* errorThreadFunc(void* unused)
                     h2++;
                 }
             }
-            debugPrintfxy(0x10, 0x3f, sErrFmtPC, gErrContext->srr0);
-            debugPrintfxy(0x10, 0x4b, sErrFmtSP, gErrContext->gpr[1]);
+            debugPrintfxy(0x10, 0x3f, sErrFmtPC, 0);
+            debugPrintfxy(0x10, 0x4b, sErrFmtSP, 0);
             if (enableDebugText != 0)
             {
                 h = 0xe380;
@@ -834,7 +835,7 @@ void* errorThreadFunc(void* unused)
             }
             debugPrintfxy(0x10, 0x60, strs + 0x1e4);
             y = 0x6c;
-            frame = ((ErrStackFrame*)gErrContext->gpr[1])->previous;
+            frame = (ErrStackFrame*)-1;
             stackLines = 0;
             while (frame != (ErrStackFrame*)-1 && stackLines++ != 8)
             {
@@ -878,19 +879,14 @@ void* errorThreadFunc(void* unused)
             y += 0x51;
             if (sp == NULL)
             {
-                sp = (u32*)gErrContext->gpr[1];
+                sp = &sErrZeroRegs[32];
                 depth = 0;
             }
             else if (hold-- == 0)
             {
                 hold = 0xb4;
-                sp = (u32*)*sp;
-                depth++;
-                if (sp == (u32*)0xffffffff)
-                {
-                    sp = (u32*)gErrContext->gpr[1];
-                    depth = 0;
-                }
+                sp = &sErrZeroRegs[32];
+                depth = 0;
             }
             debugPrintfxy(0x100, 0x3f, strs + 0x1f0, sp, depth);
             debugPrintfxy(0x100, 0x4b, strs + 0x204, sp[-1], sp[-2]);
@@ -914,11 +910,11 @@ void* errorThreadFunc(void* unused)
             {
                 rr = r & 0xff;
                 debugPrintfxy(0xc, y + 0xc, sErrFmtRegisterRange, rr, rr + 7);
-                rp = &gErrContext->gpr[rr];
-                debugPrintfxy(0x10, y + 0x18, strs + 0x22c, gErrContext->gpr[(u8)r], rp[1],
+                rp = &sErrZeroRegs[rr];
+                debugPrintfxy(0x10, y + 0x18, strs + 0x22c, sErrZeroRegs[(u8)r], rp[1],
                               rp[2], rp[3]);
                 y += 0x24;
-                rp = &gErrContext->gpr[rr];
+                rp = &sErrZeroRegs[rr];
                 debugPrintfxy(0x10, y, strs + 0x22c, rp[4], rp[5], rp[6], rp[7]);
             }
             if (enableDebugText != 0)

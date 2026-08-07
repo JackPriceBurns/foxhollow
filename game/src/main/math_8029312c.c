@@ -17,19 +17,6 @@ float sqrtfHighPrecision(float value) {
     return 0.0f;
 }
 
-float sqrtf(float value) {
-    float reciprocalSqrt;
-    float halfValue;
-
-    if (value != 0.0f) {
-        reciprocalSqrt = (float)__frsqrte(value);
-        halfValue = 0.5f * value;
-        reciprocalSqrt = reciprocalSqrt * (1.5f - reciprocalSqrt * (halfValue * reciprocalSqrt));
-        return reciprocalSqrt * value;
-    }
-
-    return 0.0f;
-}
 
 float invSqrt(float value) {
     float reciprocalSqrt;

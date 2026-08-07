@@ -9,6 +9,7 @@ dlls/engine/15/15.c
 dlls/engine/16/16.c
 dlls/engine/17/17.c
 dlls/engine/18/18.c
+dlls/engine/19/19.c
 dlls/engine/1_camcontrol/camcontrol.c
 dlls/engine/2/2.c
 dlls/engine/2/maketex.c
@@ -308,6 +309,7 @@ dlls/objects/311_AlphaAnimat/AlphaAnimat.c
 dlls/objects/312_GroundAnima/GroundAnima.c
 dlls/objects/313_HitAnimator/HitAnimator.c
 dlls/objects/314_VisAnimator/VisAnimator.c
+dlls/objects/315_WallAnimato/WallAnimato.c
 dlls/objects/316_XYZAnimator/XYZAnimator.c
 dlls/objects/317_ExplodeAnim/ExplodeAnim.c
 dlls/objects/318/318.c
@@ -727,6 +729,7 @@ main/audio_sfx.c
 main/audio_stream.c
 main/camera.c
 main/curves.c
+main/dll_80136a40.c
 main/fileio.c
 main/gameloop.c
 main/gameloop_buttonobj.c
@@ -750,7 +753,9 @@ main/object.c
 main/objhits.c
 main/objlib.c
 main/objprint.c
+main/objprint_dolphin.c
 main/pad.c
+main/pi_dolphin.c
 main/pi_pathsearch.c
 main/pi_videoinit.c
 main/rand.c
@@ -762,6 +767,7 @@ main/shadow_dolphin.c
 main/sincosf.c
 main/skystars.c
 main/subtitle.c
+main/tex_dolphin.c
 main/textrender.c
 main/textrender_boxtex.c
 main/textrender_drawbox.c
@@ -813,9 +819,6 @@ musyx/runtime/sal_dsp_irq.c
 musyx/runtime/sal_dsp_irqinit.c
 musyx/runtime/sal_studio.c
 musyx/runtime/sal_volume.c
-musyx/runtime/snd3d.c
-musyx/runtime/snd3d_calc.c
-musyx/runtime/snd3d_room.c
 musyx/runtime/snd3dgroup.c
 musyx/runtime/snd_core.c
 musyx/runtime/snd_groups.c

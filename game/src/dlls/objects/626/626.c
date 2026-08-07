@@ -363,7 +363,7 @@ int hightop_stateHandler07(GameObject* obj, HighTopRuntime* stateArg)
         rt->substate = 5;
         stateArg->baddie.moveSpeed = 0.004f;
         rt->lookController.modeBits &= ~1;
-        objFreeObjectType((int)obj, HIGHTOP_OBJGROUP);
+        objFreeObjectType(obj, HIGHTOP_OBJGROUP);
     }
     if (stateArg->baddie.moveDone != 0)
     {
@@ -995,7 +995,7 @@ int HighTop_getObjectTypeId(void)
     return HIGHTOP_OBJECT_TYPE_ID;
 }
 
-void HighTop_free(int obj)
+void HighTop_free(GameObject* obj)
 {
     objFreeObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
     objFreeObjectType(obj, HIGHTOP_OBJGROUP);
@@ -1210,8 +1210,8 @@ void HighTop_init(GameObject* obj, HighTopPlacement* placement)
     {
         node->flags |= 0xa10;
     }
-    objAddObjectType((int)obj, PLAYER_VEHICLE_OBJGROUP);
-    objAddObjectType((int)obj, HIGHTOP_OBJGROUP);
+    objAddObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
+    objAddObjectType(obj, HIGHTOP_OBJGROUP);
     (*gPlayerInterface)->init(obj, runtime, 11, 1);
     runtime->baddie.gravity = 0.17f;
     pathState = (u8*)&runtime->baddie + 4;

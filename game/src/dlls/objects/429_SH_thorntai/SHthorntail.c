@@ -895,7 +895,7 @@ void SHthorntail_free(GameObject* obj) {
     if (activeConfigToken == placement->configToken) {
         gSHthorntailActiveConfigToken = SHTHORNTAIL_CONFIG_TOKEN_NONE;
     }
-    objFreeObjectType((int)obj, SHTHORNTAIL_OBJECT_GROUP);
+    objFreeObjectType(obj, SHTHORNTAIL_OBJECT_GROUP);
 }
 
 void SHthorntail_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -1141,5 +1141,5 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
     obj->animEventCallback = SHthorntail_updateLevelControlState;
     dll_2E_initState(obj, (MoveLibState*)runtime, 0xffffdc72, 0x2aaa, 3);
     dll_2E_setReattackDelay((MoveLibState*)runtime, 400, 0x78);
-    objAddObjectType((int)obj, SHTHORNTAIL_OBJECT_GROUP);
+    objAddObjectType(obj, SHTHORNTAIL_OBJECT_GROUP);
 }

@@ -302,7 +302,7 @@ void DR_LaserCannon_free(GameObject* obj)
     {
         Obj_FreeObject(state->warningObject);
     }
-    objFreeObjectType((int)obj, DR_LASERCANNON_GROUP_ID);
+    objFreeObjectType(obj, DR_LASERCANNON_GROUP_ID);
 }
 
 void DR_LaserCannon_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible)
@@ -594,7 +594,7 @@ void DR_LaserCannon_init(GameObject* obj, DrLaserCannonSetup* setup)
         Obj_RemoveFromUpdateList(obj);
         ObjHits_DisableObject(obj);
     }
-    objAddObjectType((int)obj, DR_LASERCANNON_GROUP_ID);
+    objAddObjectType(obj, DR_LASERCANNON_GROUP_ID);
     state->beamObject = 0;
     state->flags.b3 = 0;
     (obj)->anim.rotX = (s16)(setup->initialYaw << 8);

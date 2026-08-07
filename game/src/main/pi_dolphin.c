@@ -5360,7 +5360,7 @@ void gpuErrorHandler(u32 retraceCount)
         {
             debugPrintfxy(0x32, 0x8c, strs + 0x400e4);
         }
-        debugPrintfxy(0x32, 0xa0, sProgramCounterFormat, gVideoWaitThread->context.srr0);
+        debugPrintfxy(0x32, 0xa0, sProgramCounterFormat, 0);
     }
 }
 void logGpuHang(void);

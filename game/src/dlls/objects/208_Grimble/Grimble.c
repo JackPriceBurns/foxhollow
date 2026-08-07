@@ -703,7 +703,7 @@ int grimble_getObjectTypeId(void) {
 void grimble_free(GameObject* obj) {
     GroundBaddieState* state = obj->extra;
 
-    objFreeObjectType((u32)obj, GRIMBLE_OBJECT_GROUP);
+    objFreeObjectType(obj, GRIMBLE_OBJECT_GROUP);
     (*gBaddieControlInterface)->releaseState(obj, state, 0);
 }
 

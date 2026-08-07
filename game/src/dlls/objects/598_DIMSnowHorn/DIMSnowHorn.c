@@ -1122,7 +1122,7 @@ int DIMSnowHorn1_getObjectTypeId(void)
 
 void DIMSnowHorn1_free(GameObject* obj)
 {
-    objFreeObjectType((int)obj, DIMSNOWHORN1_OBJGROUP);
+    objFreeObjectType(obj, DIMSNOWHORN1_OBJGROUP);
 }
 
 void DIMSnowHorn1_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -1455,7 +1455,7 @@ void DIMSnowHorn1_init(GameObject* obj, DIMSnowHorn1Placement* def, int spawnFla
     s8 idx;
     (obj)->anim.rotX = (s16)(def->spawnRot << 8);
     (obj)->animEventCallback = (void*)DIMSnowHorn1_animEventCallback;
-    objAddObjectType((int)obj, DIMSNOWHORN1_OBJGROUP);
+    objAddObjectType(obj, DIMSNOWHORN1_OBJGROUP);
     inner = (obj)->extra;
     inner->mode = def->spawnVariant;
     inner->advanceCountThreshold = 5;

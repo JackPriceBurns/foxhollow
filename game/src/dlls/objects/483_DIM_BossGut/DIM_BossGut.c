@@ -168,7 +168,7 @@ void DIM_BossGut2_free(GameObject* obj) {
     if (light != NULL) {
         ModelLightStruct_free(light);
     }
-    objFreeObjectType((int)obj, DIMBOSSGUT2_OBJGROUP);
+    objFreeObjectType(obj, DIMBOSSGUT2_OBJGROUP);
     childObj = obj->childObjs[0];
     if (childObj != NULL) {
         Obj_FreeObject(childObj);

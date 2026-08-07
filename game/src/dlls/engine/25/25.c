@@ -213,7 +213,7 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     b1 = flags & 1;
     if (b1 == 0 && (flags & 0x20) == 0)
     {
-        objAddObjectType((int)obj, DLL19_OBJGROUP);
+        objAddObjectType(obj, DLL19_OBJGROUP);
         ObjMsg_AllocQueue(obj, 4);
     }
     (*gPlayerInterface)->init(obj, state, moveArg0, moveArg1);

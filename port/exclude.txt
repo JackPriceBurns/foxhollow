@@ -1,0 +1,4 @@
+# TUs never compiled standalone: fragments of amalgamation TUs (the group file is the real TU)
+musyx/runtime/snd3d.c
+musyx/runtime/snd3d_calc.c
+musyx/runtime/snd3d_room.c

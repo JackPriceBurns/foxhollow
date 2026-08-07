@@ -294,7 +294,7 @@ void kytesmum_free(GameObject* obj)
     KytesMumSetup* setup = (KytesMumSetup*)(obj)->anim.placementData;
     if (setup->mode != 0)
     {
-        objFreeObjectType((int)obj, KYTESMUM_OBJGROUP);
+        objFreeObjectType(obj, KYTESMUM_OBJGROUP);
     }
 }
 
@@ -404,7 +404,7 @@ void kytesmum_init(GameObject* obj, KytesMumSetup* setup)
         runtime->moveSet = &moveSets[1];
         runtime->updateCallback = (KytesMumUpdateCallback)kytesmum_updateNearPlayerCallback;
         runtime->eventSfxTable = (s16*)&gKytesMumRoamEventSfxTable;
-        objAddObjectType((int)obj, KYTESMUM_OBJGROUP);
+        objAddObjectType(obj, KYTESMUM_OBJGROUP);
         if (runtime->questComplete != 0)
         {
             Obj_RemoveFromUpdateList(obj);

@@ -712,7 +712,7 @@ void SB_CloudRunner_free(GameObject* obj)
     }
     Resource_Release((void*)state->resource);
     state->resource = 0;
-    objFreeObjectType((int)obj, SBCLOUDRUNNER_OBJGROUP);
+    objFreeObjectType(obj, SBCLOUDRUNNER_OBJGROUP);
 }
 
 
@@ -838,7 +838,7 @@ void SB_CloudRunner_init(GameObject* obj)
     state->texture1 = textureLoadAsset(3085);
     state->resource = (int)Resource_Acquire(121, 1);
     ObjHits_SetTargetMask(obj, 1);
-    objAddObjectType((int)obj, SBCLOUDRUNNER_OBJGROUP);
+    objAddObjectType(obj, SBCLOUDRUNNER_OBJGROUP);
 }
 
 

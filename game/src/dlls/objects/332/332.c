@@ -312,8 +312,8 @@ int babyCloudRunner_getObjectTypeId(void) {
 }
 
 void babyCloudRunner_free(GameObject* obj) {
-    objFreeObjectType((int)obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
-    objFreeObjectType((int)obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
+    objFreeObjectType(obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
+    objFreeObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
 }
 
 void babyCloudRunner_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
@@ -347,8 +347,8 @@ void babyCloudRunner_update(GameObject* obj) {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         state->captureFlags &= ~BABYCLOUDRUNNER_CAPTURE_ACTIVE;
         Obj_RemoveFromUpdateList(obj);
-        objFreeObjectType((int)obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
-        objFreeObjectType((int)obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
+        objFreeObjectType(obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
+        objFreeObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
     }
     if (state->runnerState == BABYCLOUDRUNNER_STATE_CHASED && mainGetBit(BABYCLOUDRUNNER_AIR_METER_GAME_BIT) != 0) {
         (*gObjectTriggerInterface)->runSequence(BABYCLOUDRUNNER_SEQUENCE_METER_EMPTY, obj, -1);
@@ -364,8 +364,8 @@ void babyCloudRunner_update(GameObject* obj) {
             obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
             state->captureFlags &= ~BABYCLOUDRUNNER_CAPTURE_ACTIVE;
             Obj_RemoveFromUpdateList(obj);
-            objFreeObjectType((int)obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
-            objFreeObjectType((int)obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
+            objFreeObjectType(obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
+            objFreeObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
             obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         } else {
             obj->userData1 = obj->userData1 - 1;
@@ -510,7 +510,7 @@ void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement) 
     ObjMsg_AllocQueue(obj, BABYCLOUDRUNNER_MESSAGE_QUEUE_CAPACITY);
     obj->animEventCallback = babyCloudRunner_sequenceCallback;
     obj->anim.rotX = (s16)(placement->initialYaw << 8);
-    objAddObjectType((int)obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
+    objAddObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
     state = obj->extra;
     state->unknown0B0 = 0;
     state->unknown0B4 = 0;
@@ -530,7 +530,7 @@ void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement) 
         obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
         state->captureFlags = state->captureFlags & ~BABYCLOUDRUNNER_CAPTURE_ACTIVE;
         Obj_RemoveFromUpdateList(obj);
-        objFreeObjectType((int)obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
+        objFreeObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
     } else {
         state->runnerIndex = placement->runnerGameBit - GAMEBIT_CFRelated02FC;
         if (obj->anim.romDefNo == BABYCLOUDRUNNER_AMBIENT_OBJECT_ID) {
@@ -543,7 +543,7 @@ void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement) 
             }
             state->curveSpeed = 2.0f;
             state->mutterSfxTable = gBabyCloudRunnerMutterSfxTable;
-            objAddObjectType((int)obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
+            objAddObjectType(obj, BABYCLOUDRUNNER_SECONDARY_OBJECT_GROUP);
         }
         state->stateFlags.atRoost = 0;
     }

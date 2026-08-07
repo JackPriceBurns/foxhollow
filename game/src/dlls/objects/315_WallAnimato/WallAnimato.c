@@ -88,8 +88,8 @@ int WallAnimator_getExtraSize(void) {
 }
 
 void WallAnimator_free(GameObject* obj) {
-    objFreeObjectType((int)obj, WALL_ANIMATOR_GROUP_CLIMBABLE);
-    objFreeObjectType((int)obj, WALL_ANIMATOR_GROUP_SECONDARY);
+    objFreeObjectType(obj, WALL_ANIMATOR_GROUP_CLIMBABLE);
+    objFreeObjectType(obj, WALL_ANIMATOR_GROUP_SECONDARY);
 }
 
 void WallAnimator_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {

@@ -62,7 +62,7 @@ int barrelgener_getObjectTypeId(void)
 
 void barrelgener_free(GameObject* obj)
 {
-    objFreeObjectType((int)obj, BARREL_GENERATOR_OBJECT_GROUP);
+    objFreeObjectType(obj, BARREL_GENERATOR_OBJECT_GROUP);
 }
 
 void barrelgener_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -118,7 +118,7 @@ void barrelgener_update(GameObject* obj)
                 releasedBarrel->anim.velocityZ = releaseVelocity;
                 releasedBarrel->anim.velocityY = releaseVelocity;
                 releasedBarrel->anim.velocityX = releaseVelocity;
-                objAddObjectType((int)state->queuedObject, GUNPOWDER_BARREL_OBJECT_GROUP);
+                objAddObjectType(state->queuedObject, GUNPOWDER_BARREL_OBJECT_GROUP);
                 state->queuedObject = NULL;
             }
         }
@@ -142,7 +142,7 @@ void barrelgener_init(GameObject* obj)
 {
     BarrelGeneratorState* state = (obj)->extra;
 
-    objAddObjectType((int)obj, BARREL_GENERATOR_OBJECT_GROUP);
+    objAddObjectType(obj, BARREL_GENERATOR_OBJECT_GROUP);
     state->releaseAnimPlaying = 0;
     state->queuedObject = NULL;
     storeZeroToFloatParam(&state->releaseTimer);

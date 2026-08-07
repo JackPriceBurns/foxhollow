@@ -1087,10 +1087,10 @@ void setupToRenderMapBlock(MapBlockData* block, void* posMtx)
     GXLoadNrmMtxImm(tmp, GX_PNMTX0);
     PSMTXConcat((MtxPtr)gCameraLightPerspectiveMatrix, (MtxPtr)posMtx, out);
     GXLoadTexMtxImm(out, GX_TEXMTX2, GX_MTX3x4);
-    GXSetArray(GX_VA_POS, block->vertices, 6);
-    GXSetArray(GX_VA_CLR0, block->vertexColors, 2);
-    GXSetArray(GX_VA_TEX0, block->vertexTexCoords, 4);
-    GXSetArray(GX_VA_TEX1, block->vertexTexCoords, 4);
+    GXSetArray(GX_VA_POS, block->vertices, block->vertexCount * 6, 6, false);
+    GXSetArray(GX_VA_CLR0, block->vertexColors, block->colorCount * 2, 2, false);
+    GXSetArray(GX_VA_TEX0, block->vertexTexCoords, block->texCoordCount * 4, 4, false);
+    GXSetArray(GX_VA_TEX1, block->vertexTexCoords, block->texCoordCount * 4, 4, false);
 }
 
 void renderMapBlock(MapBlockData* block, u8 type)

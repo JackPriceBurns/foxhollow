@@ -237,7 +237,7 @@ void windLift_free(GameObject* obj) {
     if (player == NULL || Player_GetLiftVelocityY((int)player) == 0.0f) {
         Music_Trigger(MUSICTRIG_DIM_Cavern, 0);
     }
-    objFreeObjectType((int)obj, CFWINDLIFT_OBJECT_GROUP);
+    objFreeObjectType(obj, CFWINDLIFT_OBJECT_GROUP);
 }
 
 void windLift_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -407,7 +407,7 @@ void windLift_init(GameObject* obj, WindLiftPlacement* placement) {
             windLift_resetSlot(&slotState->slots[i]);
         }
     }
-    objAddObjectType((int)obj, CFWINDLIFT_OBJECT_GROUP);
+    objAddObjectType(obj, CFWINDLIFT_OBJECT_GROUP);
 }
 
 void windLift_release(void) {

@@ -200,7 +200,7 @@ void waterfx_drawSplashBurst(WaterParticle* s)
         colorOut += 4;
     }
     DCStoreRange(s->vtxColors, 32);
-    GXSetArray(GX_VA_CLR0, s->vtxColors, 4);
+    GXSetArray(GX_VA_CLR0, s->vtxColors, sizeof(s->vtxColors), 4, false);
     GXSetCullMode(GX_CULL_FRONT);
     GXCallDisplayList(gWaterfxSplashDisplayList, gWaterfxSplashDisplayListSize);
     GXSetCullMode(GX_CULL_BACK);
@@ -537,8 +537,8 @@ void waterfx_render(int obj, int renderParam)
         if (gWaterfxSplashCount != 0)
         {
             setupWaterReflectionTev(gWaterfxSplashTexture0, gWaterfxSplashTexture1);
-            GXSetArray(GX_VA_POS, gWaterfxSplashPosArray, 0xc);
-            GXSetArray(GX_VA_TEX0, gWaterfxSplashTexCoordArray, 8);
+            GXSetArray(GX_VA_POS, gWaterfxSplashPosArray, 192, 0xc, false);
+            GXSetArray(GX_VA_TEX0, gWaterfxSplashTexCoordArray, 1024, 8, false);
             GXClearVtxDesc();
             GXSetVtxDesc(GX_VA_PNMTXIDX, GX_DIRECT);
             GXSetVtxDesc(GX_VA_TEX0MTXIDX, GX_DIRECT);

@@ -388,7 +388,7 @@ GameObject* trickyFindNearestUsableBaddie(GameObject* origin, f32 maxRadius, int
             v2 = mainGetBit(g2);
         }
 
-        if (objIsObjectType(*objs, TRICKY_BADDIE_TARGET_OBJGROUP) == 0 && obj_extra > 0.0f && v1 == 0 && v2 != 0) {
+        if (objIsObjectType((GameObject*)*objs, TRICKY_BADDIE_TARGET_OBJGROUP) == 0 && obj_extra > 0.0f && v1 == 0 && v2 != 0) {
             if (((GameObject*)*objs)->anim.romDefNo != TRICKY_SEQID_WHIRLPOOL) {
                 if ((*gMapEventInterface)->shouldNotSaveTime(*(int*)((char*)data + 0x14)) != 0) {
                     if (allowSpecialTypes == 0) {
@@ -6890,7 +6890,7 @@ void Tricky_free(GameObject* obj, int shouldKeepFlameChildren) {
     freeAndNull((void**)&state->pathSearches[6].nodes);
     freeAndNull((void**)&state->pathSearches[7].nodes);
     freeAndNull((void**)&state->pathSearches[8].nodes);
-    objFreeObjectType((int)obj, TRICKY_OBJGROUP);
+    objFreeObjectType(obj, TRICKY_OBJGROUP);
     (*gExpgfxInterface)->freeSource(objId);
     if ((shouldKeepFlameChildren == 0) &&
         ((state->stateFlags & TRICKY_STATE_FLAG_CHILDREN_ACTIVE) != 0)) {
@@ -7765,7 +7765,7 @@ void Tricky_init(GameObject* obj) {
         mainSetBits(GAMEBIT_ITEM_TrickyBall_Usable, 1);
     }
     (obj)->animEventCallback = tricky_SeqFn;
-    objAddObjectType((int)obj, TRICKY_OBJGROUP);
+    objAddObjectType(obj, TRICKY_OBJGROUP);
     pathSearchInit(&state->pathSearches[0]);
     pathSearchInit(&state->pathSearches[1]);
     pathSearchInit(&state->pathSearches[2]);

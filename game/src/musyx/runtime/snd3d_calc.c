@@ -49,21 +49,6 @@ static u8 lbl_803CD710[0x50];
 #define S3D_CTRL_14BIT_LIMIT             0x3fff
 #define S3D_GROUP_KEY_STEREO_LIMIT       0x80000000
 
-extern inline f32 sqrtf(f32 x)
-{
-    volatile f32 y;
-
-    if (x > 0.0f)
-    {
-        f64 guess = __frsqrte((f64)x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        y = (f32)(x * guess);
-        return y;
-    }
-    return x;
-}
 
 static inline u8 clip127(u8 value)
 {

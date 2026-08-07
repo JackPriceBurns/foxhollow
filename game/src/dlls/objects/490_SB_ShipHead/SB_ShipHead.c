@@ -58,7 +58,7 @@ int SB_ShipHead_getObjectTypeId(void) {
 }
 
 void SB_ShipHead_free(GameObject* obj) {
-    objFreeObjectType((u32)obj, SB_SHIP_HEAD_OBJECT_GROUP);
+    objFreeObjectType(obj, SB_SHIP_HEAD_OBJECT_GROUP);
 }
 
 void SB_ShipHead_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -240,7 +240,7 @@ void SB_ShipHead_update(GameObject* obj) {
 void SB_ShipHead_init(GameObject* obj) {
     SBShipHeadState* state = obj->extra;
 
-    objAddObjectType((u32)obj, SB_SHIP_HEAD_OBJECT_GROUP);
+    objAddObjectType(obj, SB_SHIP_HEAD_OBJECT_GROUP);
     ObjMsg_AllocQueue(obj, 10);
     state->health = 4;
     state->swayB += 1.0f;

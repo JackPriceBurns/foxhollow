@@ -110,7 +110,7 @@ int EnemyMushroom_getObjectTypeId(GameObject* obj) {
 
 void EnemyMushroom_free(GameObject* obj) {
     (*gExpgfxInterface)->freeSource((u32)obj);
-    objFreeObjectType((int)obj, ENEMY_MUSHROOM_OBJECT_GROUP);
+    objFreeObjectType(obj, ENEMY_MUSHROOM_OBJECT_GROUP);
 }
 
 void EnemyMushroom_render(GameObject* obj, u32 flags, u32 texData, u32 colorTable, u32 modelState, char visible) {
@@ -407,7 +407,7 @@ void EnemyMushroom_init(GameObject* obj, EnemyMushroomPlacement* placement, int 
     if (flags == 0) {
         EnemyMushroom_resetToSpawn(obj, state, 0);
     }
-    objAddObjectType((int)obj, ENEMY_MUSHROOM_OBJECT_GROUP);
+    objAddObjectType(obj, ENEMY_MUSHROOM_OBJECT_GROUP);
 }
 
 void EnemyMushroom_release(void) {

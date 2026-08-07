@@ -1153,7 +1153,7 @@ void SB_Galleon_free(GameObject* obj, int leavingMap) {
         textureFree((Texture*)((void*)gSbGalleonSkyTexB));
         gSbGalleonSkyTexB = 0;
     }
-    objFreeObjectType((u32)obj, SBGALLEON_OBJGROUP);
+    objFreeObjectType(obj, SBGALLEON_OBJGROUP);
     if (state->musicLatch != 0 && leavingMap == 0) {
         state->musicLatch = 0;
     }
@@ -1255,7 +1255,7 @@ void SB_Galleon_init(GameObject* obj) {
     SBGalleonState* state = (SBGalleonState*)obj->extra;
     ObjHitsPriorityState* hitState;
     gSbGalleon = obj;
-    objAddObjectType((u32)obj, SBGALLEON_OBJGROUP);
+    objAddObjectType(obj, SBGALLEON_OBJGROUP);
     objSetSlot(obj, 0x5a);
     obj->animEventCallback = SB_Galleon_SeqFn;
     state->posX = obj->anim.localPosX;

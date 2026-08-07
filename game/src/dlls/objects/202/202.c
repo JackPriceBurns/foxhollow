@@ -1080,7 +1080,7 @@ void iceBaddie_free(GameObject* obj) {
     GroundBaddieState* state = obj->extra;
 
     CameraShake_Disable();
-    objFreeObjectType((int)obj, ICEBADDIE_OBJGROUP);
+    objFreeObjectType(obj, ICEBADDIE_OBJGROUP);
     {
         GameObject* child = (GameObject*)obj->childObjs[0];
         if (child != NULL) {

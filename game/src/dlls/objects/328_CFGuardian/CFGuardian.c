@@ -509,7 +509,7 @@ int cfguardian_updateMain(GameObject* obj) {
                         homeDistY = state->home.y - obj->anim.localPosY;
                         homeDistY = (homeDistY >= 0.0f) ? homeDistY : -homeDistY;
                         if (homeDistY < 80.0f) {
-                            objAddObjectType((int)obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
+                            objAddObjectType(obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
                             state->questState = CFGUARDIAN_STATE_FLY_TO_TALK;
                             ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
                         }
@@ -530,7 +530,7 @@ int cfguardian_updateMain(GameObject* obj) {
                     ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
                     ObjAnim_SetCurrentEventStepFrames((ObjAnimComponent*)obj, 0x32);
                     obj->anim.velocityY = 0.0f;
-                    objFreeObjectType((int)obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
+                    objFreeObjectType(obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
                     {
                         f32 zero = 0.0f;
                         obj->anim.velocityX = zero;

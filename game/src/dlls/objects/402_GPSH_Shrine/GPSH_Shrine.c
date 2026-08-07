@@ -216,7 +216,7 @@ void gpshShrine_free(GameObject* obj) {
         state->light = NULL;
     }
     gameTimerStop();
-    objFreeObjectType((int)obj, GPSH_SHRINE_OBJ_GROUP);
+    objFreeObjectType(obj, GPSH_SHRINE_OBJ_GROUP);
     Music_Trigger(MUSICTRIG_DIM_Snow, 0);
     Music_Trigger(MUSICTRIG_CC_Visit1, 0);
     Music_Trigger(MUSICTRIG_vfp_walkabout, 0);

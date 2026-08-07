@@ -2008,7 +2008,7 @@ void SnowBike_free(GameObject* obj)
     SnowBikeState* state;
 
     state = obj->extra;
-    objFreeObjectType((int)obj, SNOWBIKE_OBJGROUP);
+    objFreeObjectType(obj, SNOWBIKE_OBJGROUP);
     i = 0;
     p = (char*)state;
     for (; i < 9; i++)
@@ -2470,7 +2470,7 @@ void SnowBike_init(GameObject* obj, SnowBikePlacement* params, int flag)
     s->posSnapshotY = obj->anim.localPosY;
     s->posSnapshotZ = obj->anim.localPosZ;
     obj->animEventCallback = SnowBike_SeqFn;
-    objAddObjectType((int)obj, SNOWBIKE_OBJGROUP);
+    objAddObjectType(obj, SNOWBIKE_OBJGROUP);
     if (flag == 0)
     {
         i = 0;

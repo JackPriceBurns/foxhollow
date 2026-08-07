@@ -1073,8 +1073,8 @@ void DR_CloudRunner_free(GameObject* obj)
 {
     CloudRunnerState* inner = (obj)->extra;
     mainSetBits(0x7aa, inner->airTimeRemaining);
-    objFreeObjectType((int)obj, DRCLOUDRUNNER_OBJGROUP);
-    objFreeObjectType((int)obj, PLAYER_VEHICLE_OBJGROUP);
+    objFreeObjectType(obj, DRCLOUDRUNNER_OBJGROUP);
+    objFreeObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
     (*gGameUIInterface)->airMeterShutdown();
 }
 
@@ -1277,7 +1277,7 @@ void DR_CloudRunner_init(GameObject* obj, DRCloudRunnerPlacement* def)
     int savedSlot;
     (obj)->anim.rotX = (s16)(def->spawnRot << 8);
     (obj)->animEventCallback = DR_CloudRunner_SeqFn;
-    objAddObjectType((int)obj, DRCLOUDRUNNER_OBJGROUP);
+    objAddObjectType(obj, DRCLOUDRUNNER_OBJGROUP);
     inner = obj->extra;
     inner->spawnVariant = def->spawnVariant;
     inner->unkBAE = 5;
@@ -1302,7 +1302,7 @@ void DR_CloudRunner_init(GameObject* obj, DRCloudRunnerPlacement* def)
     DR_CloudRunner_setupPath(obj, (CloudRunnerState*)inner, inner->flagsBC0.b20);
     dll_2E_initState(obj, &inner->moveLib, -0x11c7, 0x1555, 1);
     dll_2E_setReattackDelay((MoveLibState*)((u8*)inner + 0x4c4), 0x12c, 0x78);
-    objAddObjectType((int)obj, PLAYER_VEHICLE_OBJGROUP);
+    objAddObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
     inner->flagsBC0.b01 = 0;
 }
 

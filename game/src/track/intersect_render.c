@@ -82,20 +82,6 @@ f32 gScreenImageIndTexMtx1[2][3] = {{0.5f, 0.0f, 0.0f}, {0.0f, 0.5f, 0.0f}};
 f32 gScreenImageIndTexMtx2[2][3] = {{0.5f, 0.0f, 0.0f}, {0.0f, 0.5f, 0.0f}};
 f32 gWhirlpoolIndTexMtx[2][3] = {{0.5f, 0.0f, 0.0f}, {0.0f, 0.5f, 0.0f}};
 
-extern inline float sqrtf(float x)
-{
-    volatile float y;
-    if (x > 0.0f)
-    {
-        double guess = __frsqrte((double)x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        guess = 0.5 * guess * (3.0 - guess * guess * x);
-        y = (float)(x * guess);
-        return y;
-    }
-    return x;
-}
 
 typedef struct StageCountTable
 {

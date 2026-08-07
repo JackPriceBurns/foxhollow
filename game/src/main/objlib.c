@@ -74,7 +74,7 @@ typedef struct ObjectTypeIndexTable {
 
 STATIC_ASSERT(sizeof(ObjectTypeIndexTable) == 0x58);
 
-u32 gObjectTypeList[OBJTYPE_LIST_MAX];
+uintptr_t gObjectTypeList[OBJTYPE_LIST_MAX];
 extern ObjectTypeIndexTable gObjectTypeIndices;
 
 typedef struct ObjContactCallbackEntry {
@@ -172,8 +172,9 @@ typedef struct ObjPathPoint {
     s8 modelIndex[6];
 } ObjPathPoint;
 
-int objIsObjectType(u32 obj, int group) {
-    u32* entry;
+int objIsObjectType(GameObject* obj, int group) {
+    uintptr_t h = (uintptr_t)obj;
+    uintptr_t* entry;
     u32 index;
     u32 limit;
     u32 limitXorIndex;
@@ -184,7 +185,7 @@ int objIsObjectType(u32 obj, int group) {
     }
     index = gObjectTypeIndices.offsets[group];
     limit = gObjectTypeIndices.offsets[group + 1];
-    for (entry = gObjectTypeList + index; ((int)index < (int)limit && (obj != *entry));
+    for (entry = gObjectTypeList + index; ((int)index < (int)limit && (h != *entry));
          entry = entry + 1, index = index + 1) {
     }
     limitXorIndex = limit ^ index;
@@ -193,9 +194,9 @@ int objIsObjectType(u32 obj, int group) {
     return (u32)(halfDiff - limitXorIndex) >> 0x1f;
 }
 
-int objGetNearestType(int group, float* point, float* maxDistance) {
-    u32* entry;
-    u32 nearest;
+GameObject* objGetNearestType(int group, float* point, float* maxDistance) {
+    uintptr_t* entry;
+    uintptr_t nearest;
     int index;
     int limit;
     float distanceSq;
@@ -223,11 +224,11 @@ int objGetNearestType(int group, float* point, float* maxDistance) {
     if (nearest != 0) {
         *maxDistance = sqrtf(bestDistanceSq);
     }
-    return nearest;
+    return (GameObject*)nearest;
 }
 
 GameObject* objGetNearestTypeToExcludingSelf(int group, GameObject* obj, float* maxDistance) {
-    u32* entry;
+    uintptr_t* entry;
     GameObject* nearest;
     int index;
     int limit;
@@ -264,7 +265,7 @@ GameObject* objGetNearestTypeToExcludingSelf(int group, GameObject* obj, float* 
 }
 
 GameObject* objGetNearestTypeTo(int group, GameObject* obj, float* maxDistance) {
-    u32* entry;
+    uintptr_t* entry;
     GameObject* nearest;
     GameObject* o;
     int index;
@@ -313,12 +314,13 @@ GameObject** objGetAllOfType(int group, int* countOut) {
     return (GameObject**)(gObjectTypeList + gObjectTypeIndices.offsets[group]);
 }
 
-void objFreeObjectType(int obj, int group) {
+void objFreeObjectType(GameObject* obj, int group) {
+    uintptr_t h = (uintptr_t)obj;
     u8* offset;
     u8 count;
     int index;
     int limit;
-    u32* entries;
+    uintptr_t* entries;
 
     if ((group < 0) || (group >= OBJTYPE_COUNT)) {
         return;
@@ -328,7 +330,7 @@ void objFreeObjectType(int obj, int group) {
     offset += group;
     limit = offset[1];
     entries = gObjectTypeList + index;
-    while ((index < limit) && (*entries != obj)) {
+    while ((index < limit) && (*entries != h)) {
         entries++;
         index++;
     }
@@ -351,13 +353,14 @@ void objFreeObjectType(int obj, int group) {
     }
 }
 
-int objGetObjectType(u32 obj) {
+int objGetObjectType(GameObject* obj) {
+    uintptr_t h = (uintptr_t)obj;
     int group;
     int objectIndex;
 
     for (objectIndex = 0; objectIndex < (int)(u32)gObjectTypeListCount; objectIndex++) {
-        u32 entryObj = gObjectTypeList[objectIndex];
-        if (entryObj == obj) {
+        uintptr_t entryObj = gObjectTypeList[objectIndex];
+        if (entryObj == h) {
             group = 0;
             while (((int)(u32)gObjectTypeIndices.offsets[group] <= objectIndex) && (group < OBJTYPE_INDEX_COUNT)) {
                 group++;
@@ -370,13 +373,14 @@ int objGetObjectType(u32 obj) {
 
 char sObjAddObjectTypeReachedMaxTypes[38] = "objAddObjectType: Reached MAXTYPES!!\n\000";
 
-void objAddObjectType(int obj, int group) {
+void objAddObjectType(GameObject* obj, int group) {
+    uintptr_t h = (uintptr_t)obj;
     u8* offset;
     int count;
     int index;
     int limit;
     int insertIndex;
-    u32* entries;
+    uintptr_t* entries;
 
     if ((group < 0) || (group >= OBJTYPE_COUNT)) {
         return;
@@ -391,7 +395,7 @@ void objAddObjectType(int obj, int group) {
     limit = offset[1];
     entries = gObjectTypeList + insertIndex;
     for (index = insertIndex; index < limit; index++) {
-        if (*entries == obj) {
+        if (*entries == h) {
             return;
         }
         entries++;
@@ -405,7 +409,7 @@ void objAddObjectType(int obj, int group) {
         *entries = entries[-1];
         entries--;
     }
-    gObjectTypeList[insertIndex] = obj;
+    gObjectTypeList[insertIndex] = h;
     group++;
     offset = gObjectTypeIndices.offsets + group;
     while (group <= OBJTYPE_COUNT) {

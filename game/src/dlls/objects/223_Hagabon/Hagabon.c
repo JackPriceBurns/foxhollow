@@ -182,7 +182,7 @@ int Hagabon_getObjectTypeId(void) {
 
 void Hagabon_free(GameObject* objAddress) {
     void** curveSlot = objAddress->extra;
-    objFreeObjectType((int)objAddress, HAGABON_OBJECT_GROUP);
+    objFreeObjectType(objAddress, HAGABON_OBJECT_GROUP);
     Sfx_StopFromObject(objAddress, SFXTRIG_en_twiggysnap11);
     if (*curveSlot != NULL) {
         mm_free(*curveSlot);

@@ -29,12 +29,28 @@ FLAGS = [
 ]
 
 
+def excluded():
+    path = os.path.join(ROOT, "port", "exclude.txt")
+    if not os.path.exists(path):
+        return set()
+    out = set()
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                out.add(line)
+    return out
+
+
 def all_sources():
+    skip = excluded()
     out = []
     for dirpath, _, files in os.walk(GAME_SRC):
         for f in sorted(files):
             if f.endswith(".c"):
-                out.append(os.path.relpath(os.path.join(dirpath, f), GAME_SRC))
+                rel = os.path.relpath(os.path.join(dirpath, f), GAME_SRC)
+                if rel not in skip:
+                    out.append(rel)
     return sorted(out)
 
 

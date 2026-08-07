@@ -145,7 +145,7 @@ void dbegg_processMessages(GameObject* obj)
             case 18:
                 if ((eggState->flags119 & 0x20) == 0)
                 {
-                    objFreeObjectType((int)obj, DBEGG_OBJGROUP);
+                    objFreeObjectType(obj, DBEGG_OBJGROUP);
                 }
                 ObjHits_DisableObject(obj);
                 eggState->mode = DBEGG_MODE_HELD;
@@ -175,7 +175,7 @@ void dbegg_processMessages(GameObject* obj)
                 vecRotateZXY(buf.rotation, &obj->anim.velocityX);
             }
             case 16:
-                objAddObjectType((int)obj, DBEGG_OBJGROUP);
+                objAddObjectType(obj, DBEGG_OBJGROUP);
             case 20:
                 eggState->mode = DBEGG_MODE_FALLING;
                 (obj)->anim.resetHitboxFlags = (u8)((obj)->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
@@ -189,7 +189,7 @@ void dbegg_processMessages(GameObject* obj)
                 }
                     Obj_RemoveFromUpdateList(obj);
                 (obj)->anim.flags = (s16)((obj)->anim.flags | OBJANIM_FLAG_HIDDEN);
-                objFreeObjectType((int)obj, DBEGG_OBJGROUP);
+                objFreeObjectType(obj, DBEGG_OBJGROUP);
                 break;
             }
         }
@@ -245,7 +245,7 @@ void dbegg_setupFromDef(GameObject* obj, u8* state)
     ((DbEggState*)state)->mode = (u8)(mainGetBit(config->activateGameBit) != 0 ? 5 : 12);
     if (((DbEggState*)state)->mode == 5)
     {
-        objAddObjectType((int)obj, DBEGG_OBJGROUP);
+        objAddObjectType(obj, DBEGG_OBJGROUP);
     }
     {
         f32 fz = 0.0f;
@@ -450,7 +450,7 @@ int dbegg_getObjectTypeId(void)
     return 0x8;
 }
 
-void dbegg_free(int obj)
+void dbegg_free(GameObject* obj)
 {
     objFreeObjectType(obj, DBEGG_OBJGROUP);
 }
@@ -689,7 +689,7 @@ void dbegg_update(GameObject* obj)
                 playerObj = Obj_GetPlayerObject();
                 pickupState = obj->extra;
                 placement = (DbeggPlacement*)(obj)->anim.placementDataAddress;
-                objFreeObjectType((int)obj, DBEGG_OBJGROUP);
+                objFreeObjectType(obj, DBEGG_OBJGROUP);
                 pickupState->mode = DBEGG_MODE_RELEASED;
                 mainSetBits(0x3c4, 1);
                 mainSetBits(0x86d, 1);
@@ -796,7 +796,7 @@ void dbegg_update(GameObject* obj)
         case DBEGG_MODE_GATED_RESPAWN:
             if (mainGetBit(data->activateGameBit) != 0)
             {
-                objAddObjectType((int)obj, DBEGG_OBJGROUP);
+                objAddObjectType(obj, DBEGG_OBJGROUP);
                 egg->mode = DBEGG_MODE_FALLING;
             }
             break;
@@ -860,7 +860,7 @@ void dbegg_update(GameObject* obj)
                         GameObject* playerObj = Obj_GetPlayerObject();
                         pickupState = obj->extra;
                         placement = (DbeggPlacement*)(obj)->anim.placementDataAddress;
-                        objFreeObjectType((int)obj, DBEGG_OBJGROUP);
+                        objFreeObjectType(obj, DBEGG_OBJGROUP);
                         pickupState->mode = DBEGG_MODE_RELEASED;
                         mainSetBits(0x3c4, 1);
                         mainSetBits(0x86d, 1);

@@ -2511,9 +2511,9 @@ void enemy_free(GameObject* obj, int flag)
         hagabonMK2_stopLoopSfx((int)obj, (u8*)state);
         break;
     case ENEMY_WHIRLPOOL_OBJ:
-        if (objIsObjectType((u32)obj, ENEMY_OBJGROUP_SECONDARY) != 0)
+        if (objIsObjectType(obj, ENEMY_OBJGROUP_SECONDARY) != 0)
         {
-            objFreeObjectType((int)obj, ENEMY_OBJGROUP_SECONDARY);
+            objFreeObjectType(obj, ENEMY_OBJGROUP_SECONDARY);
         }
         break;
     }
@@ -2531,7 +2531,7 @@ void enemy_free(GameObject* obj, int flag)
         }
     }
     (*gExpgfxInterface)->freeSource((int)obj);
-    objFreeObjectType((int)obj, ENEMY_OBJGROUP);
+    objFreeObjectType(obj, ENEMY_OBJGROUP);
 }
 
 void enemy_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -3013,7 +3013,7 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
         {
             ((EnemyState*)state)->flags2E4 = ((EnemyState*)state)->flags2E4 & -39;
         }
-        objAddObjectType((int)obj, ENEMY_OBJGROUP);
+        objAddObjectType(obj, ENEMY_OBJGROUP);
         ((EnemyState*)state)->prevActionId = 7;
         ((EnemyState*)state)->actionId = 2;
         if (*(void**)state == NULL)

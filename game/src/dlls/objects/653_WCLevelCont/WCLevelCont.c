@@ -746,7 +746,7 @@ void wclevelcont_free(GameObject* obj)
     WcLevelControlState* state = obj->extra;
     u8 mode;
 
-    objFreeObjectType((int)obj, WCLEVELCONT_OBJGROUP);
+    objFreeObjectType(obj, WCLEVELCONT_OBJGROUP);
     mode = state->mode;
     if (mode == 1)
     {
@@ -897,7 +897,7 @@ void wclevelcont_init(GameObject* obj)
     {
         state->mode = WCLEVELCTL_MODE_SEQUENCE;
     }
-    objAddObjectType((int)obj, WCLEVELCONT_OBJGROUP);
+    objAddObjectType(obj, WCLEVELCONT_OBJGROUP);
     mainSetBits(0x226, 1);
     mainSetBits(0x2a6, 1);
     mainSetBits(0x206, 1);

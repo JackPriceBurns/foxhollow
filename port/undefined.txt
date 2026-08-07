@@ -1,0 +1,3 @@
+os OSGetResetButtonState
+os OSSetErrorHandler
+os OSWakeupThread

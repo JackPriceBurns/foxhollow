@@ -973,7 +973,7 @@ static void objFreeObjdef(u8* obj, int flag)
     (*gExpgfxInterface)->freeOwner3((u32)(GameObject*)obj);
     if (((ObjAnimComponent*)obj)->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE)
     {
-        objFreeObjectType((u32)obj, OBJECT_OBJGROUP_HITBOX);
+        objFreeObjectType(obj, OBJECT_OBJGROUP_HITBOX);
         if (flag == 0)
         {
             count = 0;
@@ -1021,7 +1021,7 @@ static void objFreeObjdef(u8* obj, int flag)
     }
     if (((ObjAnimComponent*)obj)->modelInstance->group8RegistrationCount > 0)
     {
-        objFreeObjectType((u32)obj, OBJECT_OBJGROUP_GROUP8);
+        objFreeObjectType(obj, OBJECT_OBJGROUP_GROUP8);
     }
     if (((ObjAnimComponent*)obj)->modelState != NULL)
     {
@@ -1083,10 +1083,10 @@ static void objFreeObjdef(u8* obj, int flag)
     {
         Obj_ClearModelColorFadeRecursive((GameObject*)obj);
     }
-    group = objGetObjectType((u32)obj);
+    group = objGetObjectType(obj);
     if (group != 0)
     {
-        objFreeObjectType((u32)obj, group - 1);
+        objFreeObjectType(obj, group - 1);
     }
     {
         s16 type;
@@ -1830,7 +1830,7 @@ void Obj_RegisterObject(GameObject* obj, int flags)
     }
     if (object->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE)
     {
-        objAddObjectType((u32)obj, OBJECT_OBJGROUP_HITBOX);
+        objAddObjectType(obj, OBJECT_OBJGROUP_HITBOX);
         if (object->activeHitboxMode != 0x5a && (object->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE))
         {
             object->activeHitboxMode = 0x5a;
@@ -1862,7 +1862,7 @@ void Obj_RegisterObject(GameObject* obj, int flags)
     }
     if (object->modelInstance->group8RegistrationCount > 0)
     {
-        objAddObjectType((u32)obj, OBJECT_OBJGROUP_GROUP8);
+        objAddObjectType(obj, OBJECT_OBJGROUP_GROUP8);
     }
     if (object->modelInstance->flags & 1)
     {

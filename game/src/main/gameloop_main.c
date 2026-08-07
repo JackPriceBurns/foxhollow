@@ -960,7 +960,7 @@ void init(void)
     OSReport(sMainFinishedInitMessage);
 }
 
-int main(int argc, char** argv)
+int gameMain(int argc, char** argv)
 {
     gameState = GAME_STATE_BOOTING;
     gGameLoopInitComplete = 0;
