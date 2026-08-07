@@ -1,0 +1,272 @@
+/*
+ * GF_LevelCon (DLL 0x2BB) - "GalleonForce" level controller object.
+ *
+ * Its anim-event callback (gf_levelcon_SeqFn) reacts to
+ * sequence event opcodes that drive the sky/weather presets (skyFn_*
+ * + getEnvfxAct), warp/credits flow at the end of the level, and a
+ * countdown-driven on-screen text prompt (gameTextShow 0x476). It also
+ * finds the level's linked point-light and scroll objects (by their
+ * placement def ids 0x477E3 / 0x4A946 / 0x4A947) and toggles / scrolls
+ * them per frame.
+ */
+#include "main/dll/dll_02C0_front.h"
+#include "main/frame_timing.h"
+#include "main/lightmap_api.h"
+#include "main/map_load.h"
+#include "main/model_engine.h"
+#include "main/obj_list.h"
+#include "main/pi_dolphin_api.h"
+#include "main/rcp_dolphin_api.h"
+#include "main/screen_transition.h"
+#include "main/sky_api.h"
+#include "main/render_envfx_api.h"
+#include "main/dll/dll_02BB_gflevelcon.h"
+#include "main/gametext_show_api.h"
+#include "main/dll/LGT/dll_02A9_lgtpointlight.h"
+#include "main/object_render.h"
+#include "dlls/object_descriptor.h"
+#include "main/objseq.h"
+
+/* sequence event opcodes consumed by gf_levelcon_SeqFn */
+#define GFLEVELCON_SEQEV_NONE          0
+#define GFLEVELCON_SEQEV_SKY_PRESET_A  1
+#define GFLEVELCON_SEQEV_SKY_PRESET_B  2
+#define GFLEVELCON_SEQEV_LIGHT_ON      3
+#define GFLEVELCON_SEQEV_LIGHT_OFF     4
+#define GFLEVELCON_SEQEV_SKY_PRESET_C  5
+#define GFLEVELCON_SEQEV_LOAD_MAP      6
+#define GFLEVELCON_SEQEV_UNLOCK_LEVELS 7
+#define GFLEVELCON_SEQEV_START_PROMPT  8
+#define GFLEVELCON_SEQEV_CREDITS       9
+#define GFLEVELCON_SEQEV_SKY_PRESET_D  10
+#define GFLEVELCON_SEQEV_SKY_PRESET_E  11
+
+/* placement def ids of the linked objects gf_levelcon_findLinkedObjects
+   caches into its state (point light + two scrolling textures) */
+#define GFLEVELCON_LINK_LIGHT    0x477E3
+#define GFLEVELCON_LINK_SCROLL_A 0x4A946
+#define GFLEVELCON_LINK_SCROLL_B 0x4A947
+
+/* Arwing-projectile child object ids; each spawn installs
+ * arwprojectile_setLifetime/placeForward on the returned object and casts
+ * the setup buffer to GfProjectileSetup. */
+#define GFLEVELCON_CHILD_OBJ_PROJECTILE_SPREAD 0x80d
+#define GFLEVELCON_CHILD_OBJ_PROJECTILE_AIMED  0x7e4
+#define GFLEVELCON_CHILD_OBJ_PROJECTILE_RING   0x859
+/* Object loaded at the nearest def-0x7e5 marker in andross_spawnBombCollector, cached in
+ * obj->extra+0x10 and faded in. */
+#define GFLEVELCON_CHILD_OBJ_MARKER_ATTACH 0x608
+
+/* env-effect ids activated alongside the sky presets (index-style; each id is
+ * shared by two presets - A/D, B/E, C - so roles stay opaque) */
+#define GFLEVELCON_ENVFX_A 0x21f
+#define GFLEVELCON_ENVFX_B 0x21d
+#define GFLEVELCON_ENVFX_C 0x21e
+
+ObjectDescriptor gGF_LevelConObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)gf_levelcon_initialise,
+    (ObjectDescriptorCallback)gf_levelcon_release,
+    0,
+    (ObjectDescriptorCallback)gf_levelcon_init,
+    (ObjectDescriptorCallback)gf_levelcon_update,
+    (ObjectDescriptorCallback)gf_levelcon_hitDetect,
+    (ObjectDescriptorCallback)gf_levelcon_render,
+    (ObjectDescriptorCallback)gf_levelcon_free,
+    (ObjectDescriptorCallback)gf_levelcon_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)gf_levelcon_getExtraSize,
+};
+
+void gf_levelcon_findLinkedObjects(GameObject* obj)
+{
+    GfLevelconFindLinkedObjectsState* state = obj->extra;
+    GameObject** objects;
+    int objectIndex;
+    int objectCount;
+    GameObject* linkedObj;
+
+    state->light = 0;
+    state->scrollA = 0;
+    state->scrollB = 0;
+    objects = ObjList_GetObjects(&objectIndex, &objectCount);
+    for (; objectIndex < objectCount; objectIndex++)
+    {
+        linkedObj = (GameObject*)objects[objectIndex];
+        if ((GameObject*)linkedObj != obj && linkedObj->anim.placementData != NULL)
+        {
+            switch (linkedObj->anim.placement->ident)
+            {
+            case GFLEVELCON_LINK_LIGHT:
+                state->light = (int)linkedObj;
+                break;
+            case GFLEVELCON_LINK_SCROLL_A:
+                state->scrollA = (int)linkedObj;
+                break;
+            case GFLEVELCON_LINK_SCROLL_B:
+                state->scrollB = (int)linkedObj;
+                break;
+            }
+        }
+    }
+}
+
+int gf_levelcon_SeqFn(GameObject* obj, int eventId, ObjSeqState* animUpdate)
+{
+    GfLevelconHandleScriptEventsState* state = obj->extra;
+    int i;
+    f32 skyRed;
+    f32 skyGreen;
+    f32 skyBlue;
+
+    animUpdate->movementState = 0;
+    for (i = 0; i < animUpdate->eventCount; i++)
+    {
+        switch (animUpdate->eventIds[i])
+        {
+        case GFLEVELCON_SEQEV_NONE:
+            break;
+        case GFLEVELCON_SEQEV_SKY_PRESET_A:
+            skySetLightsEnabled(7, 1, 0);
+            skySetBaseColor(7, 0x96, 0xc8, 0xf0, 0, 0);
+            skySetLightDirection(7, -0.1f, -0.5f, -0.2f);
+            getEnvfxAct(obj, obj, GFLEVELCON_ENVFX_A, 0);
+            break;
+        case GFLEVELCON_SEQEV_START_PROMPT:
+            state->promptTimer = 476.0f;
+            break;
+        case GFLEVELCON_SEQEV_SKY_PRESET_B:
+            skySetLightsEnabled(7, 1, 0);
+            skyRed = 112.5f;
+            skyGreen = 150.0f;
+            skyBlue = 180.0f;
+            skySetBaseColor(7, skyRed, skyGreen, skyBlue, 0, 0);
+            skySetLightDirection(7, -0.5f, -1.0f, -0.5f);
+            getEnvfxAct(obj, obj, GFLEVELCON_ENVFX_B, 0);
+            break;
+        case GFLEVELCON_SEQEV_LIGHT_ON:
+            gf_levelcon_findLinkedObjects(obj);
+            if (state->light != 0)
+            {
+                pointlight_setEffectState((GameObject*)state->light, 1);
+            }
+            break;
+        case GFLEVELCON_SEQEV_LIGHT_OFF:
+            gf_levelcon_findLinkedObjects(obj);
+            if (state->light != 0)
+            {
+                pointlight_setEffectState((GameObject*)state->light, 0);
+            }
+            break;
+        case GFLEVELCON_SEQEV_SKY_PRESET_C:
+            skySetLightsEnabled(7, 1, 0);
+            skySetBaseColor(7, 0x96, 0xc8, 0xf0, 0, 0);
+            skySetLightDirection(7, 1.0f, -1.0f, -0.5f);
+            getEnvfxAct(obj, obj, GFLEVELCON_ENVFX_C, 0);
+            break;
+        case GFLEVELCON_SEQEV_LOAD_MAP:
+            loadMapAndParent(0x29);
+            break;
+        case GFLEVELCON_SEQEV_UNLOCK_LEVELS:
+            unlockLevel(0, 0, 1);
+            unlockLevel(0, 1, 1);
+            mapUnload(mapGetDirIdx(0xb), 0x20000000);
+            break;
+        case GFLEVELCON_SEQEV_CREDITS:
+            unlockLevel(0, 0, 1);
+            loadUiDll(4);
+            warpToMap(0x12, 0);
+            creditsStart();
+            break;
+        case GFLEVELCON_SEQEV_SKY_PRESET_D:
+            skySetLightsEnabled(7, 1, 0);
+            skySetBaseColor(7, 0x96, 0xc8, 0xf0, 0, 0);
+            skySetLightDirection(7, 0.5f, -1.0f, -0.5f);
+            getEnvfxAct(obj, obj, GFLEVELCON_ENVFX_A, 0);
+            break;
+        case GFLEVELCON_SEQEV_SKY_PRESET_E:
+            skySetLightsEnabled(7, 1, 0);
+            skyRed = 112.5f;
+            skyGreen = 150.0f;
+            skyBlue = 180.0f;
+            skySetBaseColor(7, skyRed, skyGreen, skyBlue, 0, 0);
+            skySetLightDirection(7, 0.5f, -1.0f, -0.5f);
+            getEnvfxAct(obj, obj, GFLEVELCON_ENVFX_B, 0);
+            break;
+        }
+    }
+
+    if (state->promptTimer > 0.0f)
+    {
+        gameTextShow(0x476);
+        state->promptTimer -= timeDelta;
+        if (state->promptTimer < 0.0f)
+        {
+            state->promptTimer = 0.0f;
+        }
+    }
+
+    {
+        s16* scroll = state->scrollA;
+        if (scroll != NULL)
+        {
+            *scroll += (s16)(256.0f * timeDelta);
+        }
+    }
+    {
+        s16* scroll = state->scrollB;
+        if (scroll != NULL)
+        {
+            *scroll -= (s16)(256.0f * timeDelta);
+        }
+    }
+    return 0;
+}
+
+int gf_levelcon_getExtraSize(void)
+{
+    return 0x10;
+}
+
+int gf_levelcon_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void gf_levelcon_free(void)
+{
+    setIsOvercast(1);
+}
+
+void gf_levelcon_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
+{
+    if (visible != 0)
+    {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void gf_levelcon_hitDetect(void)
+{
+}
+
+void gf_levelcon_update(GameObject* obj)
+{
+    obj->animEventCallback = gf_levelcon_SeqFn;
+}
+
+void gf_levelcon_init(GameObject* obj)
+{
+    setIsOvercast(0);
+    (*gScreenTransitionInterface)->step(0x258, SCREEN_TRANSITION_BLACK);
+}
+
+void gf_levelcon_release(void)
+{
+}
+
+void gf_levelcon_initialise(void)
+{
+}

@@ -1,0 +1,237 @@
+#include "main/texture.h"
+#include "main/frame_timing.h"
+#include "main/textrender_api.h"
+#include "main/dll/dll_0040_credits.h"
+#include "dlls/object_descriptor.h"
+
+#define CREDITS_TEXTURE_ID 0xC5
+
+void* gCreditsTexture;
+u8 gCreditsPageIndex;
+void* gCreditsText;
+f32 gCreditsElapsedTime;
+CreditsPage gCreditsPages[] = {
+    {
+        {
+            {128, 216, 536, 560, {255, 0, 0}},
+        },
+        536,
+        560,
+        1,
+    },
+    {
+        {
+            {824, 864, 1052, 1112, {0, 8, 0}},
+            {824, 864, 1052, 1112, {1, 9, 1}},
+        },
+        1052,
+        1112,
+        2,
+    },
+    {
+        {
+            {1200, 1240, 1884, 1944, {2, 1, 0}},
+            {1200, 1240, 1468, 1524, {3, 2, 1}},
+            {1240, 1280, 1526, 1584, {4, 3, 1}},
+            {1280, 1320, 1586, 1644, {5, 4, 1}},
+            {1320, 1360, 1644, 1704, {6, 5, 1}},
+            {1360, 1400, 1704, 1764, {7, 6, 1}},
+            {1400, 1440, 1762, 1824, {8, 7, 1}},
+            {1440, 1482, 1824, 1884, {9, 8, 1}},
+            {1482, 1526, 1884, 1944, {10, 9, 1}},
+        },
+        1884,
+        1944,
+        9,
+    },
+    {
+        {
+            {2030, 2070, 2528, 2588, {11, 6, 0}},
+            {2030, 2070, 2414, 2468, {12, 7, 1}},
+            {2070, 2110, 2470, 2528, {13, 8, 1}},
+            {2110, 2150, 2528, 2588, {14, 9, 1}},
+        },
+        2528,
+        2588,
+        4,
+    },
+    {
+        {
+            {2982, 3020, 3572, 3632, {15, 1, 0}},
+            {2982, 3020, 3334, 3392, {16, 2, 1}},
+            {3022, 3062, 3390, 3452, {17, 3, 1}},
+            {3062, 3102, 3452, 3512, {18, 4, 1}},
+            {3102, 3142, 3512, 3572, {19, 5, 1}},
+            {3142, 3184, 3572, 3632, {20, 6, 1}},
+        },
+        3572,
+        3632,
+        6,
+    },
+    {
+        {
+            {3784, 3824, 4378, 4438, {21, 3, 0}},
+            {3784, 3824, 4188, 4258, {22, 4, 1}},
+            {3824, 3864, 4254, 4318, {23, 5, 1}},
+            {3864, 3904, 4316, 4378, {24, 6, 1}},
+            {3904, 3946, 4378, 4438, {25, 7, 1}},
+        },
+        4378,
+        4438,
+        5,
+    },
+    {
+        {
+            {4540, 4580, 4946, 5006, {26, 7, 0}},
+            {4540, 4580, 4880, 4946, {27, 8, 1}},
+            {4580, 4622, 4946, 5006, {28, 9, 1}},
+        },
+        4946,
+        5006,
+        3,
+    },
+    {
+        {
+            {5094, 5134, 5316, 5376, {29, 1, 0}},
+            {5094, 5134, 5316, 5376, {30, 2, 1}},
+            {5284, 5324, 5516, 5576, {31, 3, 0}},
+            {5284, 5324, 5516, 5576, {32, 4, 1}},
+            {5486, 5526, 5688, 5746, {33, 5, 0}},
+            {5486, 5526, 5688, 5746, {34, 6, 1}},
+        },
+        5688,
+        5746,
+        6,
+    },
+    {
+        {
+            {6030, 6070, 6468, 6528, {35, 6, 0}},
+            {6030, 6070, 6340, 6408, {36, 7, 1}},
+            {6070, 6110, 6406, 6468, {37, 8, 1}},
+            {6110, 6150, 6468, 6528, {38, 9, 1}},
+        },
+        6468,
+        6528,
+        4,
+    },
+    {
+        {
+            {6766, 6806, 7290, 7350, {39, 8, 0}},
+            {6766, 6806, 7290, 7350, {40, 9, 1}},
+        },
+        7290,
+        7350,
+        2,
+    },
+};
+
+void Credits_render(void)
+{
+}
+
+void Credits_frameEnd(void)
+{
+}
+
+int Credits_frameStart(void)
+{
+    u8 idx;
+    int i;
+    f32 cur;
+    f32 elapsed;
+    f32 frac;
+    CreditsLine* line;
+    u8 alpha;
+    int off[1];
+
+    idx = gCreditsPageIndex;
+    if (idx < 10)
+    {
+        elapsed = gCreditsElapsedTime + timeDelta;
+        gCreditsElapsedTime = elapsed;
+        if (elapsed >= gCreditsPages[idx].endTime)
+        {
+            gCreditsPageIndex = idx + 1;
+        }
+        if (gCreditsPageIndex < 10)
+        {
+            i = 0;
+            off[0] = 0;
+            cur = *(f32*)&gCreditsElapsedTime;
+            for (; i < gCreditsPages[gCreditsPageIndex].count; off[0] += 16, i++)
+            {
+                line = (CreditsLine*)((char*)gCreditsPages[gCreditsPageIndex].lines + off[0]);
+                if (cur < line->t0)
+                {
+                    alpha = 0;
+                }
+                else if (cur < line->t1)
+                {
+                    frac = (cur - line->t0) / (f32)(line->t1 - line->t0);
+                    if (frac < 0.0f)
+                    {
+                        frac = 0.0f;
+                    }
+                    else if (frac > 1.0f)
+                    {
+                        frac = 1.0f;
+                    }
+                    alpha = 255.0f * frac;
+                }
+                else if (cur < line->t2)
+                {
+                    alpha = 0xff;
+                }
+                else if (cur < line->t3)
+                {
+                    frac = (cur - line->t2) / (f32)(line->t3 - line->t2);
+                    if (frac < 0.0f)
+                    {
+                        frac = 0.0f;
+                    }
+                    else if (frac > 1.0f)
+                    {
+                        frac = 1.0f;
+                    }
+                    alpha = 0xff - (int)(255.0f * frac);
+                }
+                else
+                {
+                    alpha = 0;
+                }
+                line->alpha = alpha;
+                if (cur >= line->t0 && cur <= line->t3 && cur >= gCreditsPages[gCreditsPageIndex].scrollStartTime)
+                {
+                    line->y = 8.0f * (timeDelta / 60.0f) + line->y;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+void Credits_release(void)
+{
+    textureFree((Texture*)(gCreditsTexture));
+}
+
+void Credits_initialise(void)
+{
+    gCreditsTexture = textureLoadAsset(CREDITS_TEXTURE_ID);
+    gCreditsText = gameTextGet(0x1FD);
+    gCreditsPageIndex = 0;
+    gCreditsElapsedTime = 0.0f;
+}
+
+ObjectDescriptor6 gCreditsDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
+    (ObjectDescriptorCallback)Credits_initialise,
+    (ObjectDescriptorCallback)Credits_release,
+    0,
+    (ObjectDescriptorCallback)Credits_frameStart,
+    (ObjectDescriptorCallback)Credits_frameEnd,
+    (ObjectDescriptorCallback)Credits_render,
+};

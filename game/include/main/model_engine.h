@@ -1,0 +1,106 @@
+#ifndef MAIN_MODEL_ENGINE_H_
+#define MAIN_MODEL_ENGINE_H_
+
+#include "global.h"
+#include "main/game_timer.h"
+#include "main/model_engine_ui_api.h"
+#include "main/model_render_instrs_api.h"
+
+typedef struct RingBufferQueue {
+    s16 count;
+    s16 capacity;
+    s16 elemSize;
+    s16 unused;
+    s16 writeIndex;
+    s16 readIndex;
+    void* data;
+} RingBufferQueue;
+
+typedef struct ObjLinkedList {
+    s16 count;
+    s16 nextOffset;
+    int head;
+} ObjLinkedList;
+
+typedef struct ModelList {
+    s16* entries;
+    s16* end;
+    s16* capacityEnd;
+    u8 dataSize;
+    u8 strideShorts;
+    u8 pad0E[2];
+    s16* iter;
+} ModelList;
+
+typedef struct UiDllVTable {
+    void* field0;
+    int (*frameStart)(void);
+    void (*frameEnd)(void);
+    void (*draw)(int arg0, int arg1, int arg2);
+    void (*setState)(int state);
+} UiDllVTable;
+
+extern UiDllVTable** gModelEngineCurUiDllRes;
+extern u8 gModelEngineTimerState;
+extern s8 gModelEngineTimerFlags;
+extern int gModelEnginePendingUiDll;
+extern int curUiDll;
+extern int gModelEnginePrevUiDll;
+extern f32 gModelEngineTimerDuration;
+extern f32 gModelEngineTimerValue;
+extern s32 gModelEngineHudNumber;
+extern s32 gMenuState;
+extern char sModelEngineHudNumberFormat[];
+extern char gModelEngineTextBuf[];
+extern s32 gModelEngineUiDllResourceIds[];
+extern char sModelEngineTimerDigitFormat[];
+extern char sModelEngineTimerColonText[];
+extern char sModelEngineTimerDotText[];
+extern int gModelEngineTimerDigitPairXOffset;
+extern int gModelEngineTimerFieldXStride;
+extern int gModelEngineTimerColonX;
+extern int gModelEngineTimerDotX;
+
+u8* modelRenderDecodeAdpcm(u8* compressed, int sampleCount, ModelRenderInstrsState* output, int bitStride,
+                          u8 encodedBitWidth);
+int modelRenderCopyPackedSamples(ModelRenderInstrsState* src, ModelRenderInstrsState* dst, int count, int gap,
+                                 u8 bitWidth);
+
+int Queue_GetCount(RingBufferQueue* queue);
+BOOL Queue_IsEmpty(RingBufferQueue* queue);
+void Queue_Peek(RingBufferQueue* queue, void* dst);
+void Queue_Pop(RingBufferQueue* queue, void* dst);
+void Queue_Push(RingBufferQueue* queue, void* src);
+void Queue_Init(RingBufferQueue* queue, void* data, int capacity, int elemSize);
+BOOL Stack_IsEmpty(RingBufferQueue* stack);
+BOOL Stack_IsFull(RingBufferQueue* stack);
+void Stack_Pop(RingBufferQueue* stack, void* dst);
+void Stack_Push(RingBufferQueue* stack, void* src);
+void Stack_Free(RingBufferQueue* stack);
+RingBufferQueue* Queue_Alloc(int capacity, int elemSize);
+
+void objList_remove(ObjLinkedList* list, int item);
+void objListAdd(ObjLinkedList* list, int prev, int item);
+void objListInit(ObjLinkedList* list, s16 nextOffset);
+BOOL model_findIdxInModelList(ModelList* list, void* header, int* outIndex);
+BOOL ModelList_getHeader(ModelList* list, int index, void* outHeader);
+void model_adjustModelList(ModelList* list, int index);
+void modelInitModelList(ModelList* list, s16 index, void* header);
+ModelList* allocModelStruct(int capacity, int dataSize);
+
+int getPrevUiDll(void);
+void loadUiDll(int index);
+void menuSetState(s32 value);
+void hudNumberRender(void* context);
+void hudNumberSet(s32 value);
+f32 gameTimerGetElapsedMilliseconds(void);
+f32 gameTimerGetValue(void);
+void curUiDllDraw(int a, int b, int c, int d);
+void uiDll_runFrameEndAndLoadNext(void);
+int uiDll_runFrameStartAndLoadNext(void);
+void setCurUiDll(int idx);
+UiDllVTable** getCurUiDllInterface(void);
+void initGameTimer(void);
+void gameTimerRun(void* context);
+
+#endif /* MAIN_MODEL_ENGINE_H_ */

@@ -1,0 +1,152 @@
+#ifndef MAIN_OBJHITS_TYPES_H_
+#define MAIN_OBJHITS_TYPES_H_
+
+#include "global.h"
+#include "types.h"
+
+#define OBJHITS_PRIORITY_HIT_COUNT 3
+
+#define OBJHITBOX_CONTACT_OBJECT_COUNT 3
+
+/*
+ * ObjHitboxTransformState - the per-hitbox runtime record at
+ * ObjAnimComponent+0x58 (also reached as ObjHitbox.transformState).
+ * objhits.c allocates it and keeps the current/previous collision and
+ * model matrices in the 0x100-byte matrix block; the tail holds the
+ * objects currently in contact with the hitbox. Lives here rather than
+ * in objhits.h so dll object code (which includes this types header,
+ * not the full objhits.h) can read the contact list.
+ */
+typedef struct ObjHitboxTransformState {
+  f32 matrices[4][4][4];
+  void* contactObjects[OBJHITBOX_CONTACT_OBJECT_COUNT];
+  u8 activeMatrixIndex;
+  u8 resetFrames;
+  u8 pad10E;
+  s8 contactObjectCount;
+} ObjHitboxTransformState;
+
+STATIC_ASSERT(offsetof(ObjHitboxTransformState, contactObjects) == 0x100);
+STATIC_ASSERT(offsetof(ObjHitboxTransformState, activeMatrixIndex) == 0x10C);
+STATIC_ASSERT(offsetof(ObjHitboxTransformState, resetFrames) == 0x10D);
+STATIC_ASSERT(offsetof(ObjHitboxTransformState, contactObjectCount) == 0x10F);
+STATIC_ASSERT(sizeof(ObjHitboxTransformState) == 0x110);
+
+/*
+ * ObjHitsPriorityState.contactFlags (state+0xAD s8) contact-kind markers.
+ * The producer objhits.c sets exactly one per contact based on the struck
+ * hit-volume's kind: kind==0 -> KIND0, kind!=0 -> KIND_NONZERO. Consumers
+ * (dll object states) read the nonzero-kind bit and the nonzero-ness of the
+ * field. Field is s8, so a bare int constant folds identically.
+ */
+#define OBJHITS_CONTACT_FLAG_KIND0        0x1 /* contact with a kind-0 hit volume */
+#define OBJHITS_CONTACT_FLAG_KIND_NONZERO 0x2 /* contact with a nonzero-kind hit volume */
+
+
+/* ObjHitsPriorityState.flags (state+0xAC s16) state bits. Moved here from
+ * objhits.h so DLL object states (which include this types header, not the
+ * full objhits.h) can name the flag they set/test on the priority-state. */
+#define OBJHITS_PRIORITY_STATE_ENABLED 0x0001
+#define OBJHITS_PRIORITY_STATE_NO_SEPARATION_RESPONSE 0x0002
+#define OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED 0x0008
+#define OBJHITS_PRIORITY_STATE_POSITION_DIRTY 0x0040
+#define OBJHITS_PRIORITY_STATE_HIT_EXCLUDED 0x0100 /* object skipped when scanning candidate hit pairs (set by collectible.c on pickup/hide before ObjHits_DisableObject; read in ObjHits_Update) */
+#define OBJHITS_PRIORITY_STATE_TRACK_CONTACT 0x0200
+#define OBJHITS_PRIORITY_STATE_IMMOVABLE 0x0400 /* suppresses separation-response displacement of the contacted partner (dbegg.c sets while flocking, cfguardian.c clears on landing; read in the separation-response pass) */
+#define OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED 0x2000
+
+typedef struct ObjHitsPriorityState {
+  u8 pad00[0x0C];
+  f32 primaryRadiusSquared;
+  f32 localPosX;
+  f32 localPosY;
+  f32 localPosZ;
+  f32 worldPosX;
+  f32 worldPosY;
+  f32 worldPosZ;
+  f32 primaryRadiusY;
+  f32 primaryRadiusXZ;
+  f32 secondaryRadiusY;
+  f32 secondaryRadiusXZ;
+  f32 sweepRadiusX;
+  f32 contactPosX;
+  f32 contactPosY;
+  f32 contactPosZ;
+  u32 objectHitMask;
+  u32 skeletonHitMask;
+  u32 lastHitObject;
+  u8 pad54[0x58 - 0x54];
+  s16 capsuleScale;
+  s16 primaryRadius;
+  s16 primaryCapsuleOffsetA;
+  s16 primaryCapsuleOffsetB;
+  s16 flags;
+  u8 shapeFlags;
+  u8 pad63;
+  s16 secondaryRadius;
+  s16 secondaryCapsuleOffsetA;
+  s16 secondaryCapsuleOffsetB;
+  u8 lateralResponseWeight;
+  u8 axialResponseWeight;
+  s8 objectPairPriority;
+  u8 objectPairHitVolume;
+  s8 hitVolumePriority;
+  s8 hitVolumeId;
+  s8 suppressOutgoingHits;
+  s8 priorityHitCount;
+  s8 sphereIndices[OBJHITS_PRIORITY_HIT_COUNT];
+  s8 priorities[OBJHITS_PRIORITY_HIT_COUNT];
+  u8 hitVolumes[OBJHITS_PRIORITY_HIT_COUNT];
+  u8 pad7B;
+  int hitObjects[OBJHITS_PRIORITY_HIT_COUNT];
+  f32 hitPosX[OBJHITS_PRIORITY_HIT_COUNT];
+  f32 hitPosY[OBJHITS_PRIORITY_HIT_COUNT];
+  f32 hitPosZ[OBJHITS_PRIORITY_HIT_COUNT];
+  s8 contactHitVolume;
+  s8 contactFlags;
+  u8 activeHitboxMode;
+  u8 resetHitboxMode;
+#ifdef OBJHITS_STATE_INDEX_S8
+  s8 stateIndex;
+#else
+  u8 stateIndex;
+#endif
+  u8 padB1;
+  u16 trackContactMask;
+  u8 sourceMask;
+  u8 targetMask;
+  u8 secondaryShapeFlags;
+} ObjHitsPriorityState;
+
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, activeHitboxMode) == 0xAE);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, resetHitboxMode) == 0xAF);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, stateIndex) == 0xB0);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryRadiusSquared) == 0x0C);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, localPosX) == 0x10);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, worldPosX) == 0x1C);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryRadiusY) == 0x28);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryRadiusXZ) == 0x2C);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryRadiusY) == 0x30);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryRadiusXZ) == 0x34);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, sweepRadiusX) == 0x38);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, objectHitMask) == 0x48);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, skeletonHitMask) == 0x4C);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, lastHitObject) == 0x50);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, capsuleScale) == 0x58);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryRadius) == 0x5A);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryCapsuleOffsetA) == 0x5C);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, primaryCapsuleOffsetB) == 0x5E);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, flags) == 0x60);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, shapeFlags) == 0x62);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryRadius) == 0x64);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryCapsuleOffsetA) == 0x66);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryCapsuleOffsetB) == 0x68);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, lateralResponseWeight) == 0x6A);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, axialResponseWeight) == 0x6B);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, suppressOutgoingHits) == 0x70);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, priorityHitCount) == 0x71);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, contactFlags) == 0xAD);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, trackContactMask) == 0xB2);
+STATIC_ASSERT(offsetof(ObjHitsPriorityState, secondaryShapeFlags) == 0xB6);
+
+#endif

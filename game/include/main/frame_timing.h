@@ -1,0 +1,19 @@
+#ifndef MAIN_FRAME_TIMING_H_
+#define MAIN_FRAME_TIMING_H_
+
+#include "types.h"
+
+/*
+ * Per-frame timing globals (set by the main-loop / platform interface in
+ * pi_dolphin). timeDelta is the elapsed time for this frame, used to
+ * integrate motion; oneOverTimeDelta is its reciprocal; framesThisStep is
+ * the number of game frames advanced.
+ */
+extern f32 timeDelta;
+extern f32 oneOverTimeDelta;
+extern u8 framesThisStep;
+extern u8 framesThisStepUnclamped;
+
+void setFrameCountdown(s8 count);
+
+#endif

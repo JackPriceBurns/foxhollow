@@ -1,0 +1,44 @@
+#ifndef MAIN_DLL_ARW_DLL_029F_ARWBOMBCOLL_H
+#define MAIN_DLL_ARW_DLL_029F_ARWBOMBCOLL_H
+
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
+
+typedef struct ARWBombCollSetup
+{
+    ObjPlacement base;
+    s8 rotXByte;
+    u8 pad19[0x24 - 0x19];
+} ARWBombCollSetup;
+
+typedef struct ArwBombFlags
+{
+    u8 collected : 1;
+    u8 shotOpen : 1;
+} ArwBombFlags;
+
+typedef struct ARWBombCollState
+{
+    f32 lifetime;
+    ArwBombFlags flags;
+    u8 pad05[3];
+} ARWBombCollState;
+
+STATIC_ASSERT(sizeof(ARWBombCollSetup) == 0x24);
+STATIC_ASSERT(offsetof(ARWBombCollSetup, rotXByte) == 0x18);
+STATIC_ASSERT(sizeof(ArwBombFlags) == 0x1);
+STATIC_ASSERT(sizeof(ARWBombCollState) == 0x8);
+STATIC_ASSERT(offsetof(ARWBombCollState, flags) == 0x04);
+
+int ARWBombColl_getExtraSize(void);
+int ARWBombColl_getObjectTypeId(void);
+void ARWBombColl_free(void);
+void ARWBombColl_hitDetect(void);
+void ARWBombColl_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale);
+void ARWBombColl_init(GameObject* obj, ARWBombCollSetup* setup);
+void ARWBombColl_release(void);
+void ARWBombColl_initialise(void);
+void ARWBombColl_update(GameObject* obj);
+void arwbombcoll_setLifetime(GameObject* obj, int lifetime);
+
+#endif

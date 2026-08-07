@@ -1,0 +1,565 @@
+/*
+ * WM_sun (DLL 0x020E) - finale sky and crystal objects at Warlock
+ * Mountain on Dinosaur Planet.
+ *
+ * The crystal rises as Krazoa Spirits return. The sun layers drive the
+ * finale quake, environment effects, fade, and view-dependent glare.
+ */
+#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dlls/object_descriptor.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/camera.h"
+#include "main/dll/WM/dll_020E_wmsun.h"
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/mapEventTypes.h"
+#include "main/object_render.h"
+#include "main/objtexture.h"
+#include "main/render_envfx_api.h"
+#include "main/vecmath.h"
+#include "main/audio/sfx_play_api.h"
+#include "main/lightmap_api.h"
+#include "main/mm.h"
+#include "sys/objects/lifecycle.h"
+#include "main/objseq.h"
+
+s16 gWmSunEnvfxTimer;
+s16 lbl_803DDCAE;
+s16 lbl_803DDCAC;
+s16 lbl_803DDCAA;
+s16 gWmSunQuakeTimer;
+f32 gWmSunGlareDamping;
+f32 gWmSunGlareIntensity;
+
+/* Object variants handled by this DLL. */
+#define WMSUN_SEQID_CRYSTAL 0x262
+#define WMSUN_SEQID_SUN     0x2bd
+
+/* Env-fx ids co-activated when the envfx timer expires (getEnvfxAct 3rd arg) */
+#define WMSUN_ENVFX_A 0x30
+#define WMSUN_ENVFX_B 0x34
+
+#define WM_SUN_PI 3.1415927f
+const Vec3f gWmSunGlareDir = {0.0f, 0.0f, -1.0f};
+const Vec3f gWmSunGlareSun = {0.0f, 0.0f, -1.0f};
+
+int wmsun_animEventCallback(GameObject* obj, int unused, ObjSeqState* actor)
+{
+    actor->flags = -1;
+    actor->movementState = 0;
+    return 0;
+}
+
+/* The sun-glare flicker: measures the angle between the camera->sun
+   ray and the camera facing; staring near the sun (cos > 0.5) ramps
+   the flicker intensity (sin curve + random jitter, damped through
+   gWmSunGlareDamping), looking away decays it. */
+void wmsun_updateGlare(GameObject* obj)
+{
+    Vec3f dir;
+    Vec3f sun;
+    WmSunGlare g;
+    Camera* cam;
+    f32 dx, dy, dz, len;
+    f32 dot, prod, denom;
+    f32 hy, hz, cosang, hlen;
+    f32 f;
+    f32 cz;
+
+    dir = gWmSunGlareDir;
+    sun = gWmSunGlareSun;
+    obj->anim.rotX += 400;
+    g.vx = 0.0f;
+    g.vy = 0.0f;
+    g.vz = 0.0f;
+    g.intensity = 1.0f;
+    g.ang[2] = 0;
+    g.ang[1] = 0;
+    g.ang[0] = obj->anim.rotX;
+    cam = Camera_GetCurrent();
+    if (cam != NULL)
+    {
+        g.ang[0] = 0x8000 - cam->yaw;
+        vecRotateZXY(g.ang, &sun.x);
+        dx = obj->anim.localPosX - cam->x;
+        dy = obj->anim.localPosY - cam->y;
+        dz = obj->anim.localPosZ - cam->z;
+        len = sqrtf(dz * dz + (dx * dx + dy * dy));
+        if (len != 0.0f)
+        {
+            dx = dx / len;
+            dy = dy / len;
+            dz = dz / len;
+        }
+        dot = dz * sun.z + (dx * sun.x + dy * sun.y);
+        prod = (dz * dz + (dx * dx + dy * dy)) * (denom = sun.z * sun.z + (sun.x * sun.x + sun.y * sun.y));
+        if (prod)
+        {
+            denom = sqrtf(prod);
+        }
+        cz = 0.0f;
+        if (denom != cz)
+        {
+            cosang = dot / denom;
+        }
+        else
+        {
+            cosang = cz;
+        }
+        hy = 0.0f;
+        if (cosang > hy)
+        {
+            dot = obj->anim.localPosX - cam->x;
+            hz = obj->anim.localPosZ - cam->z;
+            hlen = sqrtf(hz * hz + (dot * dot + hy));
+            if (hlen != 0.0f)
+            {
+                dot = dot / hlen;
+                hy = hy / hlen;
+                hz = hz / hlen;
+            }
+            len = dir.y;
+            f = dir.z;
+            prod = f * f + (dir.x * dir.x + len * len);
+            prod = prod * (hz * hz + (dot * dot + hy * hy));
+            if (prod)
+            {
+                sqrtf(prod);
+            }
+            if (cosang > 0.5f)
+            {
+                g.vx = 20.0f * dot;
+                g.vy = 0.0f;
+                g.vz = 20.0f * hz;
+                f = mathSinf(WM_SUN_PI * (32767.0f * (cosang - 0.5f)) / 32768.0f) - gWmSunGlareIntensity;
+                if (f > 0.1f || f < -0.1f)
+                {
+                    gWmSunGlareIntensity = gWmSunGlareIntensity + f / timeDelta;
+                }
+                g.intensity = gWmSunGlareIntensity;
+                if (gWmSunGlareIntensity > 0.2f)
+                {
+                    if (gWmSunGlareDamping < 4.0f)
+                    {
+                        gWmSunGlareDamping = gWmSunGlareDamping + (gWmSunGlareIntensity - 0.2f) / 100.0f;
+                    }
+                    f = g.intensity - gWmSunGlareDamping;
+                    g.intensity = f;
+                    if (f < 0.2f)
+                    {
+                        g.intensity = 0.2f;
+                    }
+                }
+                else
+                {
+                    gWmSunGlareDamping = gWmSunGlareDamping - (gWmSunGlareIntensity - 0.2f) / 20.0f;
+                }
+                g.intensity = 0.0005f * (f32)randomGetRange(0, 0x1e) + g.intensity;
+                if (gWmSunGlareIntensity > 0.05f)
+                {
+                    gWmSunGlareIntensity = gWmSunGlareIntensity - 0.0002f;
+                }
+                g.ang[2] = 0;
+                g.ang[1] = 0;
+                g.ang[0] = 65535.0f * cosang;
+            }
+            else
+            {
+                f = cz - gWmSunGlareIntensity;
+                if (f > 0.001f)
+                {
+                    gWmSunGlareIntensity = oneOverTimeDelta * f + gWmSunGlareIntensity;
+                }
+                else if (f < -0.001f)
+                {
+                    gWmSunGlareIntensity = oneOverTimeDelta * f + gWmSunGlareIntensity;
+                }
+                if (gWmSunGlareDamping > 0.0f)
+                {
+                    gWmSunGlareDamping = -(0.01f * timeDelta - gWmSunGlareDamping);
+                    if (gWmSunGlareDamping < 0.0f)
+                    {
+                        gWmSunGlareDamping = 0.0f;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (gWmSunGlareDamping > hy)
+            {
+                gWmSunGlareDamping = -(0.01f * timeDelta - gWmSunGlareDamping);
+                if (gWmSunGlareDamping < hy)
+                {
+                    gWmSunGlareDamping = hy;
+                }
+            }
+        }
+    }
+}
+
+int wmsun_getExtraSize(void)
+{
+    return 0x10;
+}
+
+int wmsun_getObjectTypeId(void)
+{
+    return 0x0;
+}
+
+void wmsun_free(GameObject* obj)
+{
+    WmSunState* state = obj->extra;
+    if (state->glareParams != NULL)
+    {
+        mm_free(state->glareParams);
+    }
+    state->glareParams = NULL;
+}
+
+void wmsun_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
+{
+    WmSunState* state = (obj)->extra;
+    if (vis != 0 && state->renderEnabled != 0)
+    {
+        lightmapObjectRenderBegin(p2, 0x10000);
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+        lightmapObjectRenderEnd(p2, 0x10000);
+    }
+}
+
+void wmsun_hitDetect(void)
+{
+}
+
+void wmsun_update(GameObject* obj)
+{
+    ObjAnimComponent* objAnim;
+    WmSunState* state = (obj)->extra;
+    s16 thresh;
+    s16 mult;
+    f32 spd;
+    ObjTextureRuntimeSlot* t;
+    s8 bank;
+    u8 curAlpha;
+    s16 newAlpha;
+
+    objAnim = &obj->anim;
+    thresh = 0;
+    mult = 1;
+    spd = 0.0f;
+    if ((obj)->anim.romDefNo == WMSUN_SEQID_CRYSTAL) /* WM_Crystal */
+    {
+        if (mainGetBit(0x38f) != 0)
+        {
+            Obj_FreeObject(obj);
+        }
+        else
+        {
+            t = objFindTexture(obj, 1, 0);
+            if (t != NULL)
+            {
+                t->offsetT -= 0x10;
+                if (t->offsetT < -0x3e0)
+                {
+                    t->offsetT = 0;
+                }
+            }
+            if (mainGetBit(0x21b) != 0)
+            {
+                thresh = 100;
+            }
+            if (mainGetBit(0x21c) != 0)
+            {
+                thresh = 200;
+            }
+            if (mainGetBit(GAMEBIT_WM_SpiritHead1Fired) != 0)
+            {
+                thresh = 400;
+            }
+            if (mainGetBit(0x21f) != 0)
+            {
+                thresh = 800;
+            }
+            if (mainGetBit(0x221) != 0)
+            {
+                thresh = 0x640;
+            }
+            if (mainGetBit(0x222) != 0)
+            {
+                thresh = 0x1900;
+                mult = 3;
+                spd = 0.00375f;
+            }
+            if (state->riseStep < thresh)
+            {
+                state->riseStep = state->riseStep + framesThisStep * mult;
+                (obj)->anim.rootMotionScale = -(spd * timeDelta - (obj)->anim.rootMotionScale);
+                (obj)->anim.localPosY = 50.0f * (spd * timeDelta) + (obj)->anim.localPosY;
+            }
+            else if (mainGetBit(0x222) != 0 && mainGetBit(GAMEBIT_WM_FinaleQuakeActive) == 0)
+            {
+                mainSetBits(GAMEBIT_WM_FinaleQuakeActive, 1);
+                mainSetBits(0x370, 0);
+                state->renderEnabled = 0;
+            }
+            if (mainGetBit(GAMEBIT_WM_FinaleQuakeActive) == 0 && state->riseStep > 0x960 &&
+                randomGetRange(0, 100) == 0)
+            {
+                CameraShake_SetOffset(0.8f * ((f32)(state->riseStep - 0x960) / 2400.0f));
+                mainSetBits(0x370, 1);
+            }
+            (obj)->anim.rotX += state->riseStep;
+            if (state->renderEnabled == 0)
+            {
+                Obj_FreeObject(obj);
+            }
+        }
+        return;
+    }
+    if ((obj)->anim.romDefNo == 0x2c2)
+    {
+        if (mainGetBit(0x38f) != 0)
+        {
+            curAlpha = objAnim->alpha;
+            if (curAlpha < 0xfa)
+            {
+                newAlpha = curAlpha + framesThisStep;
+            }
+            if (newAlpha > 0xfa)
+            {
+                newAlpha = 0xfa;
+            }
+            objAnim->alpha = newAlpha;
+            t = objFindTexture(obj, 0, 0);
+            if (t != NULL)
+            {
+                t->offsetS = t->offsetS - framesThisStep * 8;
+                if (t->offsetS < -0x3e0)
+                {
+                    t->offsetS = 0;
+                }
+            }
+        }
+        return;
+    }
+    if (mainGetBit(0x38f) != 0)
+    {
+        bank = objAnim->bankIndex;
+        if (bank == 0 && (curAlpha = objAnim->alpha) != 0xff)
+        {
+            if (curAlpha < 0xff)
+            {
+                newAlpha = curAlpha + framesThisStep;
+            }
+            if (newAlpha > 0xff)
+            {
+                newAlpha = 0xff;
+            }
+            objAnim->alpha = newAlpha;
+        }
+        else if (bank == 1 && (curAlpha = objAnim->alpha) != 0x55)
+        {
+            if (curAlpha < 0x55)
+            {
+                newAlpha = curAlpha + framesThisStep;
+            }
+            if (newAlpha > 0x55)
+            {
+                newAlpha = 0x55;
+            }
+            objAnim->alpha = newAlpha;
+        }
+        else if (bank == 2 && (curAlpha = objAnim->alpha) != 0x19)
+        {
+            if (curAlpha < 0x19)
+            {
+                newAlpha = curAlpha + framesThisStep;
+            }
+            if (newAlpha > 0x19)
+            {
+                newAlpha = 0x19;
+            }
+            objAnim->alpha = newAlpha;
+        }
+        if (objAnim->bankIndex == 0)
+        {
+            if (randomGetRange(0, 0x96) == 0)
+            {
+                randomGetRange(0, 0xffff);
+                randomGetRange(0, 0xffff);
+                randomGetRange(0, 0xffff);
+                Sfx_PlayFromObject(obj, SFXTRIG_en_icecrk16);
+            }
+            wmsun_updateGlare(obj);
+        }
+    }
+    else
+    {
+        (obj)->anim.rotZ += state->spinStep;
+        (obj)->anim.rotX += state->riseStep;
+        if (mainGetBit(GAMEBIT_WM_FinaleQuakeActive) != 0 && objAnim->bankIndex == 0)
+        {
+            if (lbl_803DDCAA == 0)
+            {
+                if (gWmSunQuakeTimer > 600 && randomGetRange(0, 10) == 0)
+                {
+                    CameraShake_SetOffset(2.8f); /* 2.8f */
+                }
+                if (gWmSunQuakeTimer > 0)
+                {
+                    gWmSunQuakeTimer -= framesThisStep;
+                    if (gWmSunQuakeTimer <= 0)
+                    {
+                        gWmSunQuakeTimer = 0;
+                        mainSetBits(GAMEBIT_WM_FinaleQuakeActive, 0);
+                        mainSetBits(0x38f, 1);
+                    }
+                }
+            }
+            if (gWmSunEnvfxTimer == 0)
+            {
+                if (lbl_803DDCAE > 0)
+                {
+                    lbl_803DDCAE -= framesThisStep;
+                    if (lbl_803DDCAE < 0)
+                    {
+                        lbl_803DDCAE = 0;
+                    }
+                }
+            }
+            else
+            {
+                if (gWmSunEnvfxTimer > 0)
+                {
+                    gWmSunEnvfxTimer -= framesThisStep;
+                    if (gWmSunEnvfxTimer <= 0)
+                    {
+                        gWmSunEnvfxTimer = 0;
+                        getEnvfxAct(obj, obj, WMSUN_ENVFX_A, 0);
+                        getEnvfxAct(obj, obj, WMSUN_ENVFX_B, 0);
+                    }
+                }
+                if (randomGetRange(0, 8) == 0)
+                {
+                    CameraShake_SetOffset(2.8f);
+                }
+            }
+        }
+    }
+}
+
+void wmsun_init(GameObject* obj, WmSunMapData* mapData)
+{
+    ObjAnimComponent* objAnim;
+    WmSunState* state = obj->extra;
+    u8 mapAct;
+    int bank;
+    int j;
+    s16 i;
+    s16 mode;
+
+    objAnim = &obj->anim;
+    obj->animEventCallback = wmsun_animEventCallback;
+    mapAct = (*gMapEventInterface)->getMapAct((int)obj->anim.mapEventSlot);
+    if (mapAct == 3 && mainGetBit(0x21b) == 0)
+    {
+        mainSetBits(0x21b, 1);
+    }
+    state->glareParams = NULL;
+    state->renderEnabled = 1;
+    mode = obj->anim.romDefNo;
+    if (mode == WMSUN_SEQID_CRYSTAL) /* WM_Crystal */
+    {
+        obj->anim.rotX = (s16)(mapData->rotXByte << 8);
+        state->riseStep = 100;
+        if (mapData->rootMotionScaleParam >= 1000)
+        {
+            obj->anim.rootMotionScale = mapData->rootMotionScaleParam / 1000.0f;
+        }
+        else
+        {
+            obj->anim.rootMotionScale = 1.0f;
+        }
+    }
+    else if (mode == WMSUN_SEQID_SUN) /* WM_sun */
+    {
+        gWmSunEnvfxTimer = 800;
+        lbl_803DDCAE = 800;
+        lbl_803DDCAC = 800;
+        lbl_803DDCAA = 800;
+        gWmSunQuakeTimer = 800;
+        obj->anim.rotX = (s16)(mapData->rotXByte << 8);
+        if (mapData->rootMotionScaleParam >= 0)
+        {
+            obj->anim.rootMotionScale = mapData->rootMotionScaleParam / 1000.0f;
+        }
+        else
+        {
+            obj->anim.rootMotionScale = 1.0f;
+        }
+        *(u8*)&objAnim->bankIndex = mapData->bankIndex;
+        bank = objAnim->bankIndex;
+        if (bank == 0)
+        {
+            state->riseStep = randomGetRange(300, 600);
+            state->spinStep = randomGetRange(300, 600);
+        }
+        else if (bank == 1)
+        {
+            state->riseStep = randomGetRange(500, 800);
+            state->spinStep = randomGetRange(500, 800);
+        }
+        else if (bank == 2)
+        {
+            state->riseStep = randomGetRange(700, 1000);
+            state->spinStep = randomGetRange(700, 1000);
+        }
+        objAnim->alpha = 0;
+    }
+    else if (mode == 0x2c2)
+    {
+        state->glareParams = (WmSunGlareParams*)mmAlloc(sizeof(WmSunGlareParams), 0xe, 0);
+        i = 0x14;
+        j = 0x28;
+        while (i != 0)
+        {
+            j -= 2;
+            i--;
+            ((WmSunGlareParams*)((u8*)state->glareParams + j))->angleOffsets[0] = 0;
+            ((WmSunGlareParams*)((u8*)state->glareParams + j))->flickerTimers[0] = randomGetRange(10, 0x14);
+            ((WmSunGlareParams*)((u8*)state->glareParams + j))->alphaValues[0] = randomGetRange(0x50, 0xff);
+        }
+        objAnim->alpha = 0;
+        if (mapData->rootMotionScaleParam != 0)
+        {
+            obj->anim.rootMotionScale = 1.0f / ((f32)mapData->rootMotionScaleParam / 1000.0f);
+        }
+    }
+}
+
+void wmsun_release(void)
+{
+}
+
+void wmsun_initialise(void)
+{
+}
+
+ObjectDescriptor gWM_sunObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)wmsun_initialise,
+    (ObjectDescriptorCallback)wmsun_release,
+    0,
+    (ObjectDescriptorCallback)wmsun_init,
+    (ObjectDescriptorCallback)wmsun_update,
+    (ObjectDescriptorCallback)wmsun_hitDetect,
+    (ObjectDescriptorCallback)wmsun_render,
+    (ObjectDescriptorCallback)wmsun_free,
+    (ObjectDescriptorCallback)wmsun_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)wmsun_getExtraSize,
+};

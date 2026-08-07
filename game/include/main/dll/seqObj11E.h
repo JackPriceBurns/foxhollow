@@ -1,0 +1,37 @@
+#ifndef MAIN_DLL_SEQOBJ11E_H_
+#define MAIN_DLL_SEQOBJ11E_H_
+
+#include "main/audio/sfx_ids.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
+#include "game/objects/object_setup.h"
+#include "game/objects/object.h"
+#include "main/objhits.h"
+#include "main/dll/curve_walker.h"
+#include "main/dll/rom_curve_interface.h"
+#include "main/dll/baddie_state.h"
+#include "main/objtexture.h"
+
+/*
+ * Setup buffer gcRobotLight_init fills for a spawned child object (0x24 bytes from
+ * Obj_AllocObjectSetup). Embeds the common ObjPlacement head; the class byte at
+ * 0x18 is left unwritten and 0x19 / 0x20 carry class-specific slots this handler
+ * seeds. Names beyond the head are generic (provenance is the raw store offsets).
+ */
+typedef struct Seq11EChildSetup
+{
+    ObjPlacement head;     /* 0x00: common placement head (type id also stored at +0x00) */
+    u8 pad18;              /* 0x18: class byte (unwritten here) */
+    u8 unk19;              /* 0x19 */
+    u8 pad1A[0x20 - 0x1A]; /* 0x1A */
+    s16 unk20;             /* 0x20 */
+    u8 pad22[0x24 - 0x22]; /* 0x22 */
+} Seq11EChildSetup;
+
+STATIC_ASSERT(offsetof(Seq11EChildSetup, unk19) == 0x19);
+STATIC_ASSERT(offsetof(Seq11EChildSetup, unk20) == 0x20);
+STATIC_ASSERT(sizeof(Seq11EChildSetup) == 0x24);
+
+GameObject* gcRobotLight_init(GameObject* obj, int childId);
+
+#endif

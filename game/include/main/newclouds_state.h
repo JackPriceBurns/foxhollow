@@ -1,0 +1,138 @@
+#ifndef MAIN_NEWCLOUDS_STATE_H_
+#define MAIN_NEWCLOUDS_STATE_H_
+
+#include "global.h"
+
+/*
+ * NewCloud - per-cloud working record (gNewClouds[i] / the NC_CLOUD and
+ * D7_CLOUD macros in newclouds.c). The owner and separately allocated flake
+ * buffer head the record; the simulation body before 0x1378 remains untyped.
+ */
+/*
+ * SnowQuad - per-quad geometry record in the NewCloud body at offset
+ * 0x1008 (20 entries, 0x2C bytes each). verts[] is a 3x3 matrix of
+ * the quad's local-space corner coordinates.
+ */
+typedef struct SnowQuad {
+    f32 verts[9];
+    u16 angVelA;
+    u16 angVelB;
+    u16 angA;
+    u16 angB;
+} SnowQuad;
+
+STATIC_ASSERT(sizeof(SnowQuad) == 0x2C);
+
+/*
+ * SnowFlake - per-flake state for NewCloud::flakes. The buffer contains
+ * NewCloud::flakeCount entries.
+ */
+typedef struct SnowFlake {
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 fallSpeed;
+    u16 angle;
+    u16 quadIndex;
+    s8 size;
+    s8 spin;
+    u8 texLayer;
+    u8 unk17;
+} SnowFlake;
+
+STATIC_ASSERT(sizeof(SnowFlake) == 0x18);
+
+typedef struct NewCloud {
+    void* owner;
+    SnowFlake* flakes;
+    u8 unk0008[0x1370];
+    f32 flakeMinX;
+    u8 unk137C[0x4];
+    f32 flakeMinZ;
+    u8 unk1384[0x4];
+    f32 flakeCenterY;
+    u8 unk138C[0x4];
+    f32 driftSpeed;
+    u8 unk1394[0x8];
+    f32 flakeMaxX;
+    u8 unk13A0[0x10];
+    f32 flakeMaxZ;
+    u8 unk13B4[0x24];
+    f32 lastPosX;
+    f32 lastPosY;
+    f32 lastPosZ;
+    f32 curPosX;
+    f32 curPosY;
+    f32 curPosZ;
+    s32 cloudId;
+    s32 cloudType;
+    s32 despawning;
+    s32 flakeCount;
+    s32 active;
+    u8 unk1404[0x4];
+    s32 waveWriteIdx;
+    f32 worldPosX;
+    f32 worldPosY;
+    f32 worldPosZ;
+    f32 cloudHeight;
+    f32 scale;
+    f32 windVelX;
+    f32 windVelZ;
+    f32 unk1428;
+    f32 flakeFillRate;
+    f32 flakeDrainRate;
+    f32 activeFlakes;
+    f32 driftScale;
+    f32 driftLimit;
+    f32 driftOffset;
+    f32 driftRate;
+    s16 lightningTimer;
+    u8 flags144A;
+    u8 lightningFlags; /* 0x144B: lightning cadence bits (NEWCLOUD_LTG_*), set from CloudSpawnParams.flags59 */
+    u8 unk144C;
+    u8 stationary;
+    u8 anchoredToObj;
+    u8 finished;
+    u8 unk1450;
+    u8 spinEnabled;
+    u8 followCamera;
+    u8 posInitialized;
+} NewCloud;
+
+STATIC_ASSERT(offsetof(NewCloud, owner) == 0x0);
+STATIC_ASSERT(offsetof(NewCloud, flakes) == 0x4);
+STATIC_ASSERT(offsetof(NewCloud, flakeMinX) == 0x1378);
+STATIC_ASSERT(offsetof(NewCloud, cloudType) == 0x13F4);
+STATIC_ASSERT(offsetof(NewCloud, lightningTimer) == 0x1448);
+STATIC_ASSERT(offsetof(NewCloud, flags144A) == 0x144A);
+STATIC_ASSERT(offsetof(NewCloud, posInitialized) == 0x1453);
+STATIC_ASSERT(sizeof(NewCloud) == 0x1454);
+
+/*
+ * CloudSpawnParams - the spawn-config blob passed to newClouds() /
+ * newclouds_updateEnvfxAct() (the `params` argument). Only the offsets read in
+ * newclouds.c are named; the rest of the record is padded.
+ */
+typedef struct CloudSpawnParams {
+    f32 driftBase;      /* 0x00 */
+    f32 heightBase;     /* 0x04 */
+    f32 driftMax;       /* 0x08: read and written (clamped up to driftMin) */
+    u8 unk0C[0x18];
+    u16 envfxActId;     /* 0x24: 1-based ENVFXACT record id; (id-1) saved into the savegame env-state cloud slot (+0xE/0x10/0x12) and replayed via getEnvfxActImmediately on map setup */
+    u16 cloudIndex;     /* 0x26: index into gNewClouds[] */
+    u16 flakeCount;     /* 0x28 */
+    u16 fillDivisor;    /* 0x2A */
+    u16 drainDivisor;   /* 0x2C */
+    u8 unk2E[0x2A];
+    u8 flags58;         /* 0x58 */
+    u8 flags59;         /* 0x59 */
+    u8 sizeClass;           /* 0x5A */
+    u8 spinClass;           /* 0x5B */
+    u8 cloudType;       /* 0x5C */
+    u8 stationaryInit;     /* 0x5D */
+} CloudSpawnParams;
+
+STATIC_ASSERT(offsetof(CloudSpawnParams, envfxActId) == 0x24);
+STATIC_ASSERT(offsetof(CloudSpawnParams, cloudType) == 0x5C);
+
+#endif

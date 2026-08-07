@@ -1,0 +1,341 @@
+#ifndef DLLS_OBJECT_DESCRIPTOR_H_
+#define DLLS_OBJECT_DESCRIPTOR_H_
+
+#include "game/objects/object_interface.h"
+#include "global.h"
+
+typedef void (*ObjectDescriptorCallback)(void);
+typedef int (*ObjectDescriptorExtraSizeCallback)(void);
+
+typedef struct ObjectDescriptor4 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback slot03;
+} ObjectDescriptor4;
+
+typedef struct ObjectDescriptor4WithPadding {
+    ObjectDescriptor4 descriptor;
+    u32 padding;
+} ObjectDescriptor4WithPadding;
+
+typedef struct ObjectDescriptor6 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback slot03;
+    ObjectDescriptorCallback slot04;
+    ObjectDescriptorCallback slot05;
+} ObjectDescriptor6;
+
+typedef struct ObjectDescriptor {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+} ObjectDescriptor;
+
+typedef struct ObjectDescriptor10WithPadding {
+    ObjectDescriptor descriptor;
+    u32 padding;
+} ObjectDescriptor10WithPadding;
+
+typedef struct ObjectDescriptor11ExtraSize {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+} ObjectDescriptor11ExtraSize;
+
+typedef struct ObjectDescriptor11WithPadding {
+    ObjectDescriptor11ExtraSize descriptor;
+    u32 padding;
+} ObjectDescriptor11WithPadding;
+
+typedef struct ObjectDescriptor12 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+} ObjectDescriptor12;
+
+typedef struct ObjectDescriptor12WithPadding {
+    ObjectDescriptor12 descriptor;
+    u32 padding;
+} ObjectDescriptor12WithPadding;
+
+typedef struct ObjectDescriptor13 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+} ObjectDescriptor13;
+
+typedef struct ObjectDescriptor13WithPadding {
+    ObjectDescriptor13 descriptor;
+    u32 padding;
+} ObjectDescriptor13WithPadding;
+
+typedef struct ObjectDescriptor14 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+} ObjectDescriptor14;
+
+typedef struct ObjectDescriptor15 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+} ObjectDescriptor15;
+
+typedef struct ObjectDescriptor16 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+    ObjectDescriptorCallback slot0F;
+} ObjectDescriptor16;
+
+typedef struct ObjectDescriptor16WithPadding {
+    ObjectDescriptor16 descriptor;
+    u32 padding;
+} ObjectDescriptor16WithPadding;
+
+typedef struct ObjectDescriptor17 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+    ObjectDescriptorCallback slot0F;
+    ObjectDescriptorCallback slot10;
+} ObjectDescriptor17;
+
+typedef struct ObjectDescriptor20 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+    ObjectDescriptorCallback slot0F;
+    ObjectDescriptorCallback slot10;
+    ObjectDescriptorCallback slot11;
+    ObjectDescriptorCallback slot12;
+    ObjectDescriptorCallback slot13;
+} ObjectDescriptor20;
+
+typedef struct ObjectDescriptor21 {
+    ObjectDescriptor20 descriptor;
+    ObjectDescriptorCallback slot14;
+} ObjectDescriptor21;
+
+typedef struct ObjectDescriptor23 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+    ObjectDescriptorCallback slot0F;
+    ObjectDescriptorCallback slot10;
+    ObjectDescriptorCallback slot11;
+    ObjectDescriptorCallback slot12;
+    ObjectDescriptorCallback slot13;
+    ObjectDescriptorCallback slot14;
+    ObjectDescriptorCallback slot15;
+    ObjectDescriptorCallback slot16;
+} ObjectDescriptor23;
+
+typedef struct ObjectDescriptor24 {
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    ObjectDescriptorCallback initialise;
+    ObjectDescriptorCallback release;
+    ObjectDescriptorCallback slot02;
+    ObjectDescriptorCallback init;
+    ObjectDescriptorCallback update;
+    ObjectDescriptorCallback hitDetect;
+    ObjectDescriptorCallback render;
+    ObjectDescriptorCallback free;
+    ObjectDescriptorCallback getObjectTypeId;
+    ObjectDescriptorExtraSizeCallback getExtraSize;
+    ObjectDescriptorCallback slot0A;
+    ObjectDescriptorCallback slot0B;
+    ObjectDescriptorCallback slot0C;
+    ObjectDescriptorCallback slot0D;
+    ObjectDescriptorCallback slot0E;
+    ObjectDescriptorCallback slot0F;
+    ObjectDescriptorCallback slot10;
+    ObjectDescriptorCallback slot11;
+    ObjectDescriptorCallback slot12;
+    ObjectDescriptorCallback slot13;
+    ObjectDescriptorCallback slot14;
+    ObjectDescriptorCallback slot15;
+    ObjectDescriptorCallback slot16;
+    ObjectDescriptorCallback slot17;
+} ObjectDescriptor24;
+
+typedef struct ObjectDescriptor24WithPadding {
+    ObjectDescriptor24 descriptor;
+    u32 padding;
+} ObjectDescriptor24WithPadding;
+
+#define OBJECT_DESCRIPTOR_FLAGS_4_SLOTS  0x00030000
+#define OBJECT_DESCRIPTOR_FLAGS_5_SLOTS  0x00040000
+#define OBJECT_DESCRIPTOR_FLAGS_6_SLOTS  0x00050000
+#define OBJECT_DESCRIPTOR_FLAGS_10_SLOTS 0x00090000
+#define OBJECT_DESCRIPTOR_FLAGS_11_SLOTS 0x000A0000
+#define OBJECT_DESCRIPTOR_FLAGS_12_SLOTS 0x000B0000
+#define OBJECT_DESCRIPTOR_FLAGS_13_SLOTS 0x000C0000
+#define OBJECT_DESCRIPTOR_FLAGS_14_SLOTS 0x000D0000
+#define OBJECT_DESCRIPTOR_FLAGS_15_SLOTS 0x000E0000
+#define OBJECT_DESCRIPTOR_FLAGS_16_SLOTS 0x000F0000
+#define OBJECT_DESCRIPTOR_FLAGS_17_SLOTS 0x00100000
+#define OBJECT_DESCRIPTOR_FLAGS_20_SLOTS 0x00130000
+#define OBJECT_DESCRIPTOR_FLAGS_23_SLOTS 0x00160000
+#define OBJECT_DESCRIPTOR_FLAGS_24_SLOTS 0x00170000
+
+#endif /* DLLS_OBJECT_DESCRIPTOR_H_ */

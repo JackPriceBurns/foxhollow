@@ -1,0 +1,549 @@
+#include "main/dll/partfxspawn_struct.h"
+#include "main/dll_000A_expgfx.h"
+#include "main/dll/dll_0027_effect14.h"
+#include "main/vecmath.h"
+
+#define EFFECT_FLAG_HAS_SRC 0x200000
+
+PartFxSpawnParams gEffect14SharedSrcParams;
+
+
+ObjectDescriptor6 Effect14_funcs = {
+    0,
+    0,
+    0,
+    0x00050000,
+    (ObjectDescriptorCallback)Effect14_initialise,
+    (ObjectDescriptorCallback)Effect14_release,
+    0,
+    (ObjectDescriptorCallback)Effect14_func03_nop,
+    (ObjectDescriptorCallback)Effect14_spawnObject,
+    (ObjectDescriptorCallback)Effect14_func05_nop,
+};
+
+int Effect14_spawnObject(GameObject* obj, int id, PartFxSpawnParams* src, u32 flags, u8 srcByte, u16* extraArgs)
+{
+    PartFxSpawnParams rotCtx;
+    PartFxSpawn p;
+    u32 hasOffset;
+
+    if (obj == NULL)
+    {
+        return -1;
+    }
+    hasOffset = flags & EFFECT_FLAG_HAS_SRC;
+    if (hasOffset != 0)
+    {
+        if (src == NULL)
+        {
+            return -1;
+        }
+        p.sourcePosX = src->posX;
+        p.sourcePosY = src->posY;
+        p.sourcePosZ = src->posZ;
+        p.sourceScale = src->scale;
+        p.rot2 = src->rotZ;
+        p.rot1 = src->rotY;
+        p.rot0 = src->rotX;
+        p.srcFlag = srcByte;
+    }
+    p.flagsA = 0;
+    p.flagsB = 0;
+    p.idByte = id;
+    p.attachedSource = obj;
+    p.posX = 0.0f;
+    p.posY = 0.0f;
+    p.posZ = 0.0f;
+    p.velX = 0.0f;
+    p.velY = 0.0f;
+    p.velZ = 0.0f;
+    p.scale = 0.0f;
+    p.count = 0;
+    p.unk04 = -1;
+    p.alpha = 0xff;
+    p.linkGroup = 0;
+    p.kind = 0;
+    p.colD = 0xffff;
+    p.colE = 0xffff;
+    p.colF = 0xffff;
+    p.colA = 0xffff;
+    p.colB = 0xffff;
+    p.colC = 0xffff;
+    switch (id)
+    {
+    case 0x4b0:
+        if (extraArgs == NULL)
+        {
+            return 0;
+        }
+        p.alpha = *extraArgs >> 1;
+        p.scale = 0.0003f * p.alpha;
+        p.count = 1;
+        p.flagsA = 0x80000;
+        p.flagsB = 0x800;
+        p.kind = 0xc7e;
+        break;
+    case 0x4b1:
+        p.velX = 0.02f * (f32)randomGetRange(-100, 100);
+        p.velY = 0.01f * (f32)randomGetRange(-0x19, 0x96);
+        p.velZ = 0.02f * (f32)randomGetRange(-100, 100);
+        p.count = 100;
+        p.scale = 0.003f;
+        p.flagsA = 0x1180200;
+        p.flagsB = 0x4000800;
+        p.kind = 0x167;
+        p.colD = 0xff00;
+        p.colE = 0xff00;
+        p.colF = 0xff00;
+        p.colA = 0xff00;
+        p.colB = 0;
+        p.colC = 0;
+        p.flagsB = 0x20;
+        break;
+    case 0x4b2:
+        p.count = 0x46;
+        p.scale = 0.2f;
+        p.flagsA = 0x100100;
+        p.flagsB = 0x4000800;
+        p.kind = 0x73;
+        p.colD = 0xff00;
+        p.colE = 0xff00;
+        p.colF = 0xff00;
+        p.colA = 0xff00;
+        p.colB = 0;
+        p.colC = 0xff00;
+        p.flagsB = 0x20;
+        p.alpha = 0x7f;
+        break;
+    case 0x4b3:
+        p.count = 0x23;
+        p.scale = 0.16f;
+        p.flagsA = 0x100200;
+        p.flagsB = 0x4000800;
+        p.kind = 0x73;
+        break;
+    case 0x4b4:
+        p.posX = (f32)randomGetRange(-1, 1);
+        p.posY = (f32)randomGetRange(-7, 7);
+        p.posZ = (f32)randomGetRange(-1, 1);
+        p.velX = 0.01f * (f32)randomGetRange(-7, 7);
+        p.velY = 0.01f * (f32)randomGetRange(0, 0x1e);
+        p.velZ = 0.01f * (f32)randomGetRange(-7, 7);
+        p.scale = 0.0002f * (f32)randomGetRange(0x32, 100);
+        p.alpha = randomGetRange(0x5c, 0xc0);
+        p.count = randomGetRange(0x32, 0x50);
+        p.flagsA = 0x1180000;
+        p.flagsB = 0x4400820;
+        p.kind = 0x30;
+        p.colD = 0;
+        p.colE = randomGetRange(0, 0xffff);
+        p.colF = randomGetRange(0, 0xffff);
+        p.colA = 0;
+        p.colB = 0xff00;
+        p.colC = randomGetRange(0, 0xffff);
+        break;
+    case 0x4b5:
+        if (extraArgs != NULL)
+        {
+            p.velX = *(f32*)extraArgs;
+            p.velY = *((f32*)extraArgs + 1);
+            p.velZ = *((f32*)extraArgs + 2);
+        }
+        p.scale = 0.008f;
+        p.count = 0x5f;
+        p.flagsA = 0x1180200;
+        p.flagsB = 0x4000820;
+        p.kind = 0x62;
+        p.colD = 0;
+        p.colE = randomGetRange(0x8000, 0xffff);
+        p.colF = 0;
+        p.colA = randomGetRange(0, 0x8000);
+        p.colB = randomGetRange(0, 0xffff);
+        p.colC = 0;
+        break;
+    case 0x4b6:
+        if (extraArgs != NULL)
+        {
+            p.velX = *(f32*)extraArgs;
+            p.velY = *((f32*)extraArgs + 1);
+            p.velZ = *((f32*)extraArgs + 2);
+        }
+        p.alpha = 0x40;
+        p.scale = 0.025f;
+        p.count = 0x32;
+        p.flagsA = 0x180110;
+        p.flagsB = 0x4000800;
+        p.kind = 0x62;
+        break;
+    case 0x4b7:
+        p.posX = (f32)randomGetRange(-0x14, 0x14);
+        p.posY = 5.0f;
+        p.posZ = (f32)randomGetRange(-0x14, 0x14);
+        p.velX = 0.01f * (f32)randomGetRange(-100, 100);
+        p.velY = 0.01f * (f32)randomGetRange(0, 0x32);
+        p.velZ = 0.01f * (f32)randomGetRange(-100, 100);
+        p.scale = 0.01f;
+        p.count = 0x28;
+        p.flagsA = 0x80200;
+        p.kind = 0x5f;
+        p.alpha = 0x3f;
+        break;
+    case 0x4b8:
+        if (extraArgs != NULL)
+        {
+            p.velX = *(f32*)extraArgs;
+            p.velY = *((f32*)extraArgs + 1);
+            p.velZ = *((f32*)extraArgs + 2);
+        }
+        p.count = 0x25;
+        p.scale = 0.0035f;
+        p.flagsA = 0x80200;
+        p.flagsB = 0x4000800;
+        if (randomGetRange(0, 2) == 0)
+        {
+            p.kind = 0xc0e;
+        }
+        else
+        {
+            p.kind = randomGetRange(0x156, 0x157);
+        }
+        break;
+    case 0x4ba:
+        p.posX = (f32)randomGetRange(-7, 7);
+        p.posY = (f32)randomGetRange(-7, 7);
+        p.posZ = (f32)randomGetRange(-7, 7);
+        p.velX = 0.025f * (f32)randomGetRange(-0x32, 0x32);
+        p.velY = 0.025f * (f32)randomGetRange(-0x32, 0x32);
+        p.velZ = 0.025f * (f32)randomGetRange(-0x32, 0x32);
+        p.scale = 0.01f;
+        p.count = 0x28;
+        p.alpha = 0x96;
+        p.flagsA = 0x1080200;
+        p.kind = 0x62;
+        p.colD = 0;
+        p.colE = 0xffff;
+        p.colF = 0;
+        p.colA = 0xffff;
+        p.colB = 0xffff;
+        p.colC = 0x7fff;
+        p.flagsB = 0x4000820;
+        break;
+    case 0x4bb:
+        p.count = 0x24;
+        p.scale = 0.08f;
+        p.flagsA = 0x100200;
+        p.kind = 0x27;
+        p.colD = 0xff00;
+        p.colE = 0xff00;
+        p.colF = 0xff00;
+        p.colA = 0;
+        p.colB = 0xff00;
+        p.colC = 0;
+        p.flagsB = 0x4000820;
+        break;
+    case 0x4bc:
+        if (extraArgs == NULL)
+        {
+            return 0;
+        }
+        p.posX = 0.003921f * ((f32)p.alpha * (f32)randomGetRange(-10, 10));
+        p.posY = 0.003921f * ((f32)p.alpha * (f32)randomGetRange(0, 10));
+        p.posZ = 0.003921f * ((f32)p.alpha * (f32)randomGetRange(-10, 10));
+        p.alpha = *(u32*)extraArgs;
+        p.scale = 0.0001f * p.alpha + 0.0001f;
+        p.count = randomGetRange(0xf, 0x1e);
+        p.flagsA = 0xc1080100;
+        p.flagsB = 0x800;
+        p.kind = 0xdb;
+        break;
+    case 0x4bd:
+        p.posX = (f32)randomGetRange(-5, 5);
+        p.posY = (f32)randomGetRange(0, 0xf);
+        p.posZ = (f32)randomGetRange(-5, 5);
+        p.velY = 0.05f;
+        p.scale = 0.001f * (f32)randomGetRange(5, 10);
+        p.count = randomGetRange(0x3c, 0x5a);
+        p.alpha = 0x5a;
+        p.flagsA = 0xc0180200;
+        p.kind = 0x5f;
+        p.colD = 0xff00;
+        p.colE = 0xff00;
+        p.colF = 0;
+        p.colA = 0xff00;
+        p.colB = 0;
+        p.colC = 0x8000;
+        p.flagsB = 0x4000820;
+        break;
+    case 0x4be:
+        p.posX = (f32)randomGetRange(-0x1c2, 0x1c2);
+        p.posY = 300.0f;
+        p.posZ = (f32)randomGetRange(-0x1c2, 0x1c2);
+        p.velX = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.velY = 0.03f * (f32)randomGetRange(0, 0x14);
+        p.velZ = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.scale = 0.0005f * (f32)randomGetRange(0, 10) + 0.003945f;
+        p.count = randomGetRange(0xbe, 0xfa);
+        p.flagsA = 0x81488000;
+        p.kind = randomGetRange(0, 2) + 0x208;
+        p.colD = 0x2000;
+        p.colE = 0x8000;
+        p.colF = 0xc000;
+        p.colA = 0xc000;
+        p.colB = 0xff00;
+        p.colC = 0xff00;
+        p.flagsB = 0x20;
+        break;
+    case 0x4bf:
+        p.posX = (f32)randomGetRange(-0x6e, 0x6e);
+        p.posY = 100.0f;
+        p.posZ = (f32)randomGetRange(-0x3c, 0x3c);
+        p.scale = 0.0022f;
+        p.count = 100;
+        p.flagsA = 0x11000004;
+        p.kind = 0x151;
+        p.colD = 0xff00;
+        p.colE = 0x4000;
+        p.colF = 0;
+        p.colA = 0x4000;
+        p.colB = 0xc800;
+        p.colC = 0;
+        p.unk04 = 0x4c0;
+        p.flagsB = 0x20;
+        break;
+    case 0x4c0:
+        p.posY = -2.0f;
+        p.count = 0x4b;
+        p.scale = 0.00014f * (f32)(int)p.count;
+        p.flagsA = 0xa100200;
+        p.kind = 0x56;
+        break;
+    case 0x4c1:
+        p.velX = 0.01f * (f32)randomGetRange(-5, 5);
+        p.velY = 0.01f * (f32)randomGetRange(-5, 5);
+        p.velZ = 0.01f * (f32)randomGetRange(-5, 5);
+        p.posX = (f32)randomGetRange(-0x78, 0x78);
+        p.posY = (f32)(int)(randomGetRange(-1, 1) * 0xc);
+        p.posZ = (f32)randomGetRange(-0x46, 0x46);
+        p.scale = 0.02f;
+        p.count = 200;
+        p.flagsA = 0xa100100;
+        p.kind = 0xc10;
+        p.colD = 0xff00;
+        p.colE = 0xff00;
+        p.colF = 0;
+        p.colA = 0xff00;
+        p.colB = 0;
+        p.colC = 0x8000;
+        p.flagsB = 0x20;
+        break;
+    case 0x4c2:
+        p.velX = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.velZ = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.scale = 0.006f;
+        p.count = 0x46;
+        p.flagsA = 0xa100200;
+        p.flagsB = 0x1000800;
+        p.kind = 0x5f;
+        p.alpha = 0x40;
+        break;
+    case 0x4c3:
+        p.velX = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.velZ = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.posX = (f32)randomGetRange(-400, 400);
+        p.posZ = (f32)randomGetRange(-400, 400);
+        p.scale = 0.1f;
+        p.count = 600;
+        p.alpha = 0x7f;
+        p.flagsA = 0xa100100;
+        p.kind = 0x62;
+        break;
+    case 0x4c4:
+        p.scale = 0.1f;
+        p.count = randomGetRange(100, 300);
+        p.alpha = 0xb4;
+        p.flagsA = 0x80180208;
+        p.kind = 0x62;
+        break;
+    case 0x4c5:
+        if (src == NULL)
+        {
+            gEffect14SharedSrcParams.posX = 0.0f;
+            gEffect14SharedSrcParams.posY = 0.0f;
+            gEffect14SharedSrcParams.posZ = 0.0f;
+            gEffect14SharedSrcParams.scale = 1.0f;
+            gEffect14SharedSrcParams.rotX = 0;
+            gEffect14SharedSrcParams.rotY = 0;
+            gEffect14SharedSrcParams.rotZ = 0;
+        }
+        p.velX = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.velY = 0.01f * (f32)randomGetRange(-0x14, 0x14);
+        p.velZ = -0.5f * (f32)randomGetRange(10, 0x1e);
+        rotCtx.posX = 0.0f;
+        rotCtx.posY = 0.0f;
+        rotCtx.posZ = 0.0f;
+        rotCtx.scale = 1.0f;
+        rotCtx.rotZ = obj->anim.rotZ;
+        rotCtx.rotY = obj->anim.rotY;
+        rotCtx.rotX = obj->anim.rotX;
+        vecRotateZXY(&rotCtx.rotX, &p.velX);
+        p.flagsA = 0x3000000;
+        p.flagsB = 0x200000;
+        p.scale = 0.01f;
+        p.alpha = 0xff;
+        p.count = 0x32;
+        p.kind = 0x151;
+        break;
+    case 0x4c6:
+        p.alpha = 0x40;
+        p.scale = 0.05f;
+        p.count = 1;
+        p.flagsA = 0x6000000;
+        p.kind = 0x45b;
+        p.sourcePosX = 0.0f;
+        p.sourcePosY = 0.0f;
+        p.sourcePosZ = 0.0f;
+        p.sourceScale = 1.0f;
+        p.rot2 = obj->anim.rotZ;
+        p.rot1 = obj->anim.rotY;
+        p.rot0 = obj->anim.rotX;
+        break;
+    case 0x4c7:
+        p.alpha = 0x40;
+        p.scale = 0.07f;
+        p.count = 1;
+        p.flagsA = 0x6000000;
+        p.kind = 0x45b;
+        p.sourcePosX = 0.0f;
+        p.sourcePosY = 0.0f;
+        p.sourcePosZ = 0.0f;
+        p.sourceScale = 1.0f;
+        p.rot2 = obj->anim.rotZ;
+        p.rot1 = obj->anim.rotY;
+        p.rot0 = obj->anim.rotX;
+        break;
+    case 0x4c8:
+        p.posX = 0.9f * (f32)randomGetRange(-10, 10);
+        p.posY = 0.9f * (f32)randomGetRange(-10, 10);
+        p.posZ = 0.9f * (f32)randomGetRange(-10, 10);
+        p.scale = 0.005f;
+        p.count = randomGetRange(0x4b, 100);
+        p.alpha = 0x7f;
+        p.flagsA = 0x1080200;
+        p.kind = 0x151;
+        break;
+    case 0x4c9:
+        p.count = randomGetRange(0x3c, 100);
+        p.velX = 0.05f * (f32)randomGetRange(-0x32, 0x32);
+        p.velY = 0.04f * (f32)(int)p.count;
+        p.velZ = 0.05f * (f32)randomGetRange(-0x32, 0x32);
+        p.scale = 0.003f;
+        p.flagsA = 0x3000000;
+        p.flagsB = 0x600020;
+        p.kind = 0x20d;
+        p.alpha = 0xff;
+        p.colA = 0xffff;
+        p.colB = 0xffff;
+        p.colC = 0xffff;
+        p.colD = 0xffff;
+        p.colE = 0x4000;
+        p.colF = 0;
+        break;
+    case 0x4ca:
+        p.posX = 0.03f * (f32)randomGetRange(-200, 200);
+        p.posZ = 0.03f * (f32)randomGetRange(-200, 200);
+        p.velY = 0.12 * (f32)randomGetRange(0xf, 0x2d);
+        p.scale = 0.00055f * (f32)randomGetRange(6, 0xc);
+        p.count = randomGetRange(0x46, 0x82);
+        p.flagsA = 0x1580000;
+        p.flagsB = 0x400000;
+        p.kind = 0x23b;
+        p.alpha = 0xff;
+        break;
+    case 0x4cb:
+        p.velY = 0.1f * (f32)randomGetRange(8, 10);
+        p.scale = 0.002f * (f32)randomGetRange(6, 10);
+        p.count = randomGetRange(0x3c, 0x78);
+        p.flagsA = 0x80080000;
+        p.flagsB = 0x4440820;
+        p.colA = 0xffff;
+        p.colB = 0xffff;
+        p.colC = 0;
+        p.colD = 0xffff;
+        p.colE = 0;
+        p.colF = 0;
+        p.kind = 0xc0b;
+        p.alpha = 0x40;
+        break;
+    case 0x4cc:
+        p.count = randomGetRange(0x3c, 100);
+        p.velX = 0.05f * (f32)randomGetRange(-0x32, 0x32);
+        p.velY = 0.04f * (f32)(int)p.count;
+        p.velZ = 0.05f * (f32)randomGetRange(-0x32, 0x32);
+        p.scale = 0.003f;
+        p.flagsA = 0x3000000;
+        p.flagsB = 0x600020;
+        p.kind = 0x20d;
+        p.alpha = 0xff;
+        p.colA = 0xffff;
+        p.colB = 0xffff;
+        p.colC = 0xffff;
+        p.colD = 0x4000;
+        p.colE = 0xffff;
+        p.colF = 0;
+        break;
+    case 0x4cd:
+        p.velY = 0.1f * (f32)randomGetRange(8, 10);
+        p.scale = 0.002f * (f32)randomGetRange(6, 10);
+        p.count = randomGetRange(0x3c, 0x78);
+        p.flagsA = 0x80080000;
+        p.flagsB = 0x4440820;
+        p.colA = 0xffff;
+        p.colB = 0xffff;
+        p.colC = 0;
+        p.colD = 0;
+        p.colE = 0xffff;
+        p.colF = 0;
+        p.kind = 0xc0b;
+        p.alpha = 0x40;
+        break;
+    default:
+        return -1;
+    }
+    p.flagsA = p.flagsA | flags;
+    if (((p.flagsA & 1) != 0) && ((p.flagsA & 2) != 0))
+    {
+        p.flagsA ^= 2LL;
+    }
+    if ((p.flagsA & 1) != 0)
+    {
+        if (hasOffset != 0)
+        {
+            p.posX = p.posX + p.sourcePosX;
+            p.posY = p.posY + p.sourcePosY;
+            p.posZ = p.posZ + p.sourcePosZ;
+        }
+        else if (p.attachedSource != NULL)
+        {
+            p.posX = p.posX + ((GameObject*)p.attachedSource)->anim.worldPosX;
+            p.posY = p.posY + ((GameObject*)p.attachedSource)->anim.worldPosY;
+            p.posZ = p.posZ + ((GameObject*)p.attachedSource)->anim.worldPosZ;
+        }
+    }
+    return (*gExpgfxInterface)->spawnEffect(&p, -1, id, 0);
+}
+
+void Effect14_func05_nop(void)
+{
+}
+
+void Effect14_func03_nop(void)
+{
+}
+
+void Effect14_release(void)
+{
+}
+
+void Effect14_initialise(void)
+{
+}

@@ -1,0 +1,156 @@
+#ifndef GAME_OBJECTS_OBJECT_H_
+#define GAME_OBJECTS_OBJECT_H_
+
+#include "game/objects/object_fwd.h"
+#include "global.h"
+#include "main/objanim_internal.h"
+
+typedef struct ObjMsgQueue ObjMsgQueue;
+
+/*
+ * GameObject - the engine-wide object record passed around as "obj" /
+ * "int obj" / "u8 *obj" throughout src/main and the DLLs. Its head
+ * (0x00..0xAF) is exactly ObjAnimComponent (rot @0/2/4, localPos
+ * @0xC/10/14, worldPos @0x18/1C/20, velocity @0x24/28/2C, classId @0x44,
+ * placementData @0x4C, modelInstance @0x50, ... - see
+ * objanim_internal.h, layout STATIC_ASSERTed there). The tail below is
+ * named from engine-side evidence only:
+ *  - 0xB0 u16: object.c/objseq.c/light.c (obj->objectFlags, engine-wide)
+ *  - 0xB4 s16: baddieControl.c/object.c/objseq.c
+ *  - 0xB8 ptr: the per-class extra state block (BaddieState /
+ *    ObjSeqState / GroundBaddieState live here - see baddie_state.h)
+ *  - 0xBC..0xC8 ptrs: anim.c/object.c/objseq.c list links + callbacks
+ *  - 0xE4/0xE5/0xE6/0xEB: object.c bookkeeping bytes
+ *  - 0xF4/0xF8 s32: userData1/userData2, generic per-instance scratch
+ *  - 0xFC/0x100/0x104 f32: object.c
+ * The record extends past 0x10C; total size unverified - do not take
+ * sizeof(GameObject) or index arrays of it.
+ *
+ * Width discipline (per CLAUDE.md recipe #77): the pointer fields here
+ * are routinely null-tested through *(int *) in matched code (cmpwi).
+ * Keep those spellings via launders - *(int *)&obj->extra != 0 - rather
+ * than retyping the test to a pointer compare.
+ */
+struct GameObject {
+    ObjAnimComponent anim;
+    u16 objectFlags; /* obj+0xB0 flag word; 9 object families STATIC_ASSERT
+        this name (Checkpoint4/CmbSrc/EnemyMushroom/Laser/MagicPlant/...) */
+    union {
+        u8 unkB2[2];
+        s16 romListBit; /* index in the loaded romlist page's object bitset */
+    };
+    s16 seqIndex; /* obj+0xB4 trigger-sequence index (-1 = none, -2 = pending);
+        passed to ObjectTriggerInterface.endSequence(seqIndex) */
+    u8 unkB6[2];
+    void* extra;             /* per-class state block */
+    void* animEventCallback; /* obj+0xBC anim-event callback slot;
+        LinkALevelControlObject/EarthWalkerObject STATIC_ASSERT this at 0xBC */
+    void* pendingParentObj;  /* obj+0xC0: object whose anim.parent this object
+        inherits in Obj_ApplyPendingParentLinks (set by objseq, cleared after) */
+    void* ownerObj;          /* obj+0xC4 owner-ward chain link (newObj->ownerObj = obj at
+        spawn; objprint walks it to the chain root for shadow state; some DLL
+        classes reuse the slot as f32 scratch via launders) */
+    void* childObjs[5];      /* obj+0xC8..0xD8 child-object slots, childCount used;
+        Obj_*ModelColorFadeRecursive walks them (childScan += 4 loop) */
+    ObjMsgQueue* msgQueue; /* obj+0xDC per-object message queue, allocated by
+        ObjMsg_AllocQueue and released in the object free path */
+    u8 unkE0[4];
+    u8 hitVolumeIndex;   /* index into anim.hitVolumeBounds/hitVolumeTransforms +
+        modelInstance->hitVolumes (active hit-volume node) */
+    u8 colorFadeFlags;   /* obj+0xE5 bits 1/2 queried by getters, 4 toggled, 8
+        suppresses the fade tick (Obj_*ModelColorFade* family) */
+    s16 colorFadeFrames; /* obj+0xE6 frames left; -= framesThisStep, <=0 with
+        no ownerObj -> Obj_ClearModelColorFadeRecursive */
+    u8 hintTextIdx;      /* obj+0xE8 written by objSetHintTextIdx (clamped <=4) */
+    u8 contactRefCount;
+    u8 unkEA;
+    u8 childCount;
+    u8 colorFadeRed;
+    u8 colorFadeGreen;
+    u8 colorFadeBlue;
+    u8 colorFadeAlpha; /* obj+0xEF written from the fade alpha each tick */
+    u8 fadeCounter;    /* obj+0xF0 ++ toward the fade limit each tick */
+    u8 sphereMapIntensity; /* obj+0xF1: r=g=b konst gray of the sphere-map TEV stage (addSphereMapTexStage and the objprint fuzz/render stages); inherited parent->child; player.c ramps it 4/frame toward skyGetSlotBlendAlpha(2) as its floor */
+    u8 lightColorSlot; /* obj+0xF2: sky-light / ambient object-color slot */
+    u8 unkF3;
+    s32 userData1; /* obj+0xF4/0xF8: two generic per-instance scratch words. No
+        engine file reads or writes them - every access is in an object-class
+        file, and each class picks its own role and width: countdown timer
+        (iceball/kaldachomspit/mmshwaterspike, -= timeDelta), one-shot latch
+        (worldplanet/suntemple/collectible), gamebit bool (enemy/lightfoot),
+        object handle (worldobj ObjList_FindObjectByIdLegacy), status enum
+        (linklevcontrol LEVCON_SAVE_STATUS_*), f32 via launder
+        (drakorhoverpad), s16 half-word (dll_0127), packed event ids
+        (mmshwaterspike). Declared s32 = the widest common access; classes
+        needing another type launder through a cast. Deliberately NOT given a
+        role name - the role belongs to the class, not the engine. */
+    s32 userData2;
+    f32 externalVelX; /* obj+0xFC..0x104: velocity imparted externally
+        (carrier object's velocity / move-data velocity), added to
+        anim.velocity in the localPos integration */
+    f32 externalVelY;
+    f32 externalVelZ;
+    void* afterBonesCallback; /* obj+0x108: run by the render path immediately
+        after ObjModel_UpdateAnimMatrices has rebuilt the bone matrices, and
+        only for the object that owns them. Every installer allocates an
+        ObjModelChain first, then points this at the routine that advances it
+        (baddieAfterUpdateBonesCb, playerDoTailAnims,
+        dim2prisonmammoth_updateModelChain). */
+};
+
+STATIC_ASSERT(offsetof(GameObject, anim) == 0x00);
+STATIC_ASSERT(offsetof(GameObject, anim.worldPosX) == 0x18);
+STATIC_ASSERT(offsetof(GameObject, objectFlags) == 0xB0);
+
+/*
+ * GameObject.objectFlags (obj+0xB0 u16) bit names. Values are the
+ * engine-wide consensus recovered from the per-class file-local
+ * *_OBJFLAG_* defines that name the identical bit across dozens of
+ * consumers (SET-condition + READ-behavior agree on the meaning):
+ *  - 0x40 FREED: object freed/pending-free marker.
+ *  - 0x400 SHADOW_DISABLED: suppresses the object's projected shadow; set by
+ *    DeathSeq and cleared when NW_mammoth enables its model shadow.
+ *  - 0x800 RENDERED: set by the render path, cleared each frame
+ *    (objprint/lightmap), queried to know an object drew this frame.
+ *  - 0x1000 PARENT_SLACK: object attached to a parent (parent-slack); read
+ *    across a dozen classes (CF/tricky/enemy/objfx/minimap...) to gate
+ *    player/tricky behavior, cleared by player.c on detach.
+ *  - 0x2000 HITDETECT_DISABLED: cleared for collision; class init OR's it
+ *    in to suppress hit detection (object.c hitdetect gate).
+ *  - 0x4000 HIDDEN: suppresses render; paired with HITDETECT_DISABLED on
+ *    hide (main.c/light.c/many class inits).
+ *  - 0x8000 UPDATE_DISABLED: object.c update loop skips the tick when set.
+ * Field is u16, so a bare int constant folds identically for |= / & / &~.
+ */
+#define OBJECT_OBJFLAG_FREED              0x40
+#define OBJECT_OBJFLAG_SHADOW_DISABLED    0x400
+#define OBJECT_OBJFLAG_RENDERED           0x800
+#define OBJECT_OBJFLAG_PARENT_SLACK       0x1000
+#define OBJECT_OBJFLAG_HITDETECT_DISABLED 0x2000
+#define OBJECT_OBJFLAG_HIDDEN             0x4000
+#define OBJECT_OBJFLAG_UPDATE_DISABLED    0x8000
+
+/*
+ * GameObject.colorFadeFlags (obj+0xE5 u8) bit names, the freeze / color-fade
+ * state machine (Obj_*ModelColorFade* family in object.c). Cross-file
+ * consensus SET+READ: object.c owns the state machine; objprint_dolphin.c
+ * and lightmap.c read ACTIVE/OVERRIDE on the render path. Field is u8, so a
+ * bare int constant folds identically for |= / & / &~.
+ */
+#define OBJ_COLOR_FADE_FLAG_FROZEN     0x1  /* freeze render attachment active (objIsFrozen) */
+#define OBJ_COLOR_FADE_FLAG_ACTIVE     0x2  /* color fade running (objGetFlagsE5_2) */
+#define OBJ_COLOR_FADE_FLAG_INCREASING 0x4  /* ping-pong direction: alpha rising */
+#define OBJ_COLOR_FADE_FLAG_INFINITE   0x8  /* no frame countdown / never auto-clears */
+#define OBJ_COLOR_FADE_FLAG_OVERRIDE   0x10 /* solid color override (not a fade) */
+
+STATIC_ASSERT(offsetof(GameObject, extra) == 0xB8);
+STATIC_ASSERT(offsetof(GameObject, hitVolumeIndex) == 0xE4);
+STATIC_ASSERT(offsetof(GameObject, colorFadeAlpha) == 0xEF);
+STATIC_ASSERT(offsetof(GameObject, colorFadeRed) == 0xEC);
+STATIC_ASSERT(offsetof(GameObject, colorFadeGreen) == 0xED);
+STATIC_ASSERT(offsetof(GameObject, colorFadeBlue) == 0xEE);
+STATIC_ASSERT(offsetof(GameObject, lightColorSlot) == 0xF2);
+STATIC_ASSERT(offsetof(GameObject, userData1) == 0xF4);
+STATIC_ASSERT(offsetof(GameObject, externalVelZ) == 0x104);
+
+#endif /* GAME_OBJECTS_OBJECT_H_ */

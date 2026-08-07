@@ -1,0 +1,214 @@
+#ifndef MAIN_DLL_CURVES_H_
+#define MAIN_DLL_CURVES_H_
+
+#include "game/objects/object.h"
+#include "main/track_dolphin_api.h"
+#include "global.h"
+#include "types.h"
+#include "main/dll/curve_walker.h"
+#include "main/dll/dll_0015_save_settings.h"
+#include "main/dll/rom_curve_def.h"
+#include "main/dll/savegame_object_api.h"
+#include "main/dll/player_spirit_api.h"
+
+typedef struct GameObject GameObject;
+
+#define ROMCURVE_MAX_CURVES                     0x514
+#define ROMCURVE_POINT_SIZE                     0x18
+#define ROMCURVE_LINK_ID_STRIDE                 sizeof(u32)
+#define ROMCURVE_LINK_ID_NONE                   0xffffffff
+#define ROMCURVE_LINK_SEARCH_RESULT_COUNT       ROMCURVE_LINK_COUNT
+#define ROMCURVE_LINK_SEARCH_QUEUE_CAPACITY     0x28
+#define ROMCURVE_TYPE_ACTION                    0x15
+#define ROMCURVE_TYPE_SPECIAL_ANGLE_8           0x08
+#define ROMCURVE_TYPE_SPECIAL_ANGLE_1A          0x1a
+#define ROMCURVE_TYPE_SCALE_OVERRIDE_15         0x15
+#define ROMCURVE_TYPE_SCALE_OVERRIDE_16         0x16
+/* RomCurve objdef Type field (offset 0x19): selects which curve network an
+ * object's "find nearby curve" query targets. Only literal type checks
+ * confirmed in live code are named; see docs/wiki/Curves.md for the full list. */
+#define ROMCURVE_TYPE_HAGABON_MK2                     0x03 /* firecrawler.c hagabonMK2 (DLL 0xC9) */
+#define ROMCURVE_TYPE_DIM2_PATHGEN                    0x15 /* == ROMCURVE_TYPE_ACTION; curves_findByAction */
+#define ROMCURVE_TYPE_16                              0x16 /* curves_findNearestOfType16 */
+#define ROMCURVE_TYPE_17                              0x17 /* curves_findEnclosingLoopOfType17 */
+#define ROMCURVE_TYPE_CURVEFISH                       0x23 /* CurveFish path query */
+#define ROMCURVE_TYPE_TRICKY                          0x24 /* Objfsa_FindNearest(Enabled)CurveType24 */
+#define ROMCURVE_GETCURVES_MAX_POINTS                 0x23
+#define ROMCURVE_POINT_TYPE_WATER                     0x0e
+#define CURVES_COLLISION_STATE_SIZE                   0x268
+#define CURVES_COLLISION_STATE_ACTIVE                 0x04000000
+#define CURVES_COLLISION_STATE_LOCAL_POINTS           0x00000008
+#define CURVES_COLLISION_STATE_HIT_SEGMENTS           0x00002000
+#define CURVES_COLLISION_STATE_SECONDARY_LOCAL_POINTS 0x02000000
+#define CURVES_COLLISION_STATE_X_ROTATION_ONLY        0x00000020
+#define CURVES_COLLISION_STATE_KEEP_POSITION          0x00100000
+#define CURVES_POINT_COUNT_LOCAL_MASK                 0x0f
+#define CURVES_POINT_COUNT_SEGMENT_MASK               0xf0
+#define CURVES_POINT_COUNT_SEGMENT_SHIFT              4
+#define CURVES_COLLISION_SUBTYPE_NONE                 0
+#define CURVES_COLLISION_SUBTYPE_OBJECT               1
+#define CURVES_COLLISION_SUBTYPE_POINT                2
+
+typedef struct TrackGroundHit TrackGroundHit;
+
+extern RomCurveDef* romCurves[ROMCURVE_MAX_CURVES];
+extern int nRomCurves;
+extern RomCurveDef* gRomCurveLastFindStart;
+extern RomCurveDef* gRomCurveLastFindEnd;
+extern TrackGroundHit sCurvesHitPoints[ROMCURVE_GETCURVES_MAX_POINTS];
+extern char sCurvesMaxRomCurvesExceeded[];
+
+#include "main/dll/rom_curve_segment_projection.h"
+
+typedef struct CurvesCollisionState
+{
+    u32 flags;
+    f32* segmentLocalPoints;
+    f32 points[4][3];           /* 0x008 world-space segment points; double as trace ends */
+    f32 traceStart[4][3];       /* 0x038 per-point raised trace starts */
+    f32 segmentHitPlanes[4][4]; /* 0x068 trace hit-plane records (x,y,z,d) */
+    f32 segmentRadii[4];
+    s8 segmentHitTypes[4];
+    s8 segmentSourceTypes[4];
+    u8 pad0C0[4];
+    GameObject* traceHitObj; /* 0x0C4 */
+    u8 pad0C8[0x0D4 - 0x0C8];
+    s16 traceHitCount; /* 0x0D4 copied into surfaceCounter after segment traces */
+    u8 pad0D6[2];
+    GameObject* contactObj; /* 0x0D8 latest trace hit forwarded to ObjHits_AddContactObject */
+    f32* localPointPositions;
+    f32* localPointRadii;
+    f32 localPointWorld[4][3];  /* 0x0E4 localPointPositions transformed to world */
+    f32 localPointTarget[4][3]; /* 0x114 raised copies; bbox-swept against localPointWorld */
+    f32 localHitPlanes[4][4];   /* 0x144 local-point hit scratch */
+    u8 pad184[0x198 - 0x184];
+    s16 tiltPitch;       /* 0x198 smoothed toward tiltPitchTarget */
+    s16 tiltRoll;        /* 0x19A */
+    s16 tiltPitchTarget; /* 0x19C from surface normal */
+    s16 tiltRollTarget;  /* 0x19E */
+    f32 surfaceNormalX;  /* 0x1A0 */
+    f32 surfaceNormalY;
+    f32 surfaceNormalZ;
+    f32 resultFloorGap;   /* 0x1AC latest-point copies of the arrays below */
+    f32 resultCeilingY;   /* 0x1B0 */
+    f32 resultWaterDepth; /* 0x1B4 */
+    f32 resultFloorY;     /* 0x1B8 */
+    f32 resultWaterY;     /* 0x1BC */
+    f32 floorGap[4];      /* 0x1C0 posY - floorY per point */
+    f32 ceilingY[4];      /* 0x1D0 */
+    f32 waterDepth[4];    /* 0x1E0 waterY - posY */
+    f32 floorY[4];        /* 0x1F0 */
+    f32 waterY[4];        /* 0x200 type-0xE surface height */
+    f32 waterNormalX[4];  /* 0x210 */
+    f32 waterNormalY[4];  /* 0x220 init 1.0 */
+    f32 waterNormalZ[4];  /* 0x230 */
+    TrackQueryBounds hitBounds; /* 0x240 swept-sphere bounds */
+    u8 heightPadding;
+    u8 pad259[2];
+    s8 subtype;
+    u8 pointCounts;
+    s8 primaryHitType;
+    u8 localPointHitMask;
+    u8 surfaceHitMask;
+    u8 surfaceFlags;
+    s8 surfaceCounter;
+    u8 updateMode;
+    s8 secondaryHitType;
+    u8 activeTimer;
+    u8 pad265[CURVES_COLLISION_STATE_SIZE - 0x265];
+} CurvesCollisionState;
+
+
+STATIC_ASSERT(sizeof(RomCurveSegmentProjection) == 0x24);
+STATIC_ASSERT(offsetof(RomCurveSegmentProjection, endX) == 0x0C);
+STATIC_ASSERT(offsetof(RomCurveSegmentProjection, nearestX) == 0x18);
+
+STATIC_ASSERT(sizeof(CurvesCollisionState) == CURVES_COLLISION_STATE_SIZE);
+STATIC_ASSERT(offsetof(CurvesCollisionState, flags) == 0x00);
+STATIC_ASSERT(offsetof(CurvesCollisionState, segmentLocalPoints) == 0x04);
+STATIC_ASSERT(offsetof(CurvesCollisionState, segmentRadii) == 0xA8);
+STATIC_ASSERT(offsetof(CurvesCollisionState, segmentHitTypes) == 0xB8);
+STATIC_ASSERT(offsetof(CurvesCollisionState, segmentSourceTypes) == 0xBC);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localPointPositions) == 0xDC);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localPointRadii) == 0xE0);
+STATIC_ASSERT(offsetof(CurvesCollisionState, points) == 0x008);
+STATIC_ASSERT(offsetof(CurvesCollisionState, traceStart) == 0x038);
+STATIC_ASSERT(offsetof(CurvesCollisionState, segmentHitPlanes) == 0x068);
+STATIC_ASSERT(offsetof(CurvesCollisionState, traceHitObj) == 0x0C4);
+STATIC_ASSERT(offsetof(CurvesCollisionState, contactObj) == 0x0D8);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localHitPlanes) == 0x144);
+STATIC_ASSERT(offsetof(CurvesCollisionState, tiltPitch) == 0x198);
+STATIC_ASSERT(offsetof(CurvesCollisionState, surfaceNormalX) == 0x1A0);
+STATIC_ASSERT(offsetof(CurvesCollisionState, resultFloorGap) == 0x1AC);
+STATIC_ASSERT(offsetof(CurvesCollisionState, traceHitCount) == 0x0D4);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localPointWorld) == 0x0E4);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localPointTarget) == 0x114);
+STATIC_ASSERT(offsetof(CurvesCollisionState, floorGap) == 0x1C0);
+STATIC_ASSERT(offsetof(CurvesCollisionState, waterY) == 0x200);
+STATIC_ASSERT(offsetof(CurvesCollisionState, waterNormalZ) == 0x230);
+STATIC_ASSERT(offsetof(CurvesCollisionState, hitBounds) == 0x240);
+STATIC_ASSERT(offsetof(CurvesCollisionState, heightPadding) == 0x258);
+STATIC_ASSERT(offsetof(CurvesCollisionState, subtype) == 0x25B);
+STATIC_ASSERT(offsetof(CurvesCollisionState, pointCounts) == 0x25C);
+STATIC_ASSERT(offsetof(CurvesCollisionState, primaryHitType) == 0x25D);
+STATIC_ASSERT(offsetof(CurvesCollisionState, localPointHitMask) == 0x25E);
+STATIC_ASSERT(offsetof(CurvesCollisionState, updateMode) == 0x262);
+STATIC_ASSERT(offsetof(CurvesCollisionState, secondaryHitType) == 0x263);
+STATIC_ASSERT(offsetof(CurvesCollisionState, activeTimer) == 0x264);
+
+int RomCurve_projectPointToAdjacentWindow(int* curveIds, f32 x, f32 y, f32 z, f32* outLateralOffset,
+                                          f32* outVerticalOffset, f32* outPhase);
+int curves_isPointInsideLoop(int curveId, f32 x, f32 y, f32 z, f32* outDistance);
+int curves_findNearestOfType16(f32 x, f32 y, f32 z, int queryAll);
+int RomCurve_func13(u32 curveId, int typeFilter, int matchValue, int* outLink);
+int RomCurve_findLinkTowardNearestOfType(RomCurveDef* curve, int typeFilter, int actionFilter, int* previousCurveId);
+int RomCurve_getRandomLinkedOfTypes(RomCurveDef* curve, int* types, int typeCount, int* previousLinkId);
+int curves_findByAction(int action);
+f32 curves_distXZ(f32 x, f32 z, u32 curveId);
+f32 curves_distToObj(GameObject* obj, u32 curveId);
+f32 curves_find(int type, int action, f32 x, f32 y, f32 z, f32* outX, f32* outY, f32* outZ);
+RomCurveDef* RomCurve_findByIdWithIndex(u32 curveId, int* outIndex);
+int RomCurve_buildRandomPoints(RomCurveDef* curve, f32* outX, f32* outY, f32* outZ, s8* outTypes);
+int RomCurve_countRandomPoints(RomCurveDef* curve);
+int RomCurve_buildAdjacentWindowPoints(u32* curveIds, float* outX, float* outY, float* outZ);
+void RomCurve_getAdjacentWindow(RomCurveDef* curve, int* outIds);
+int RomCurve_getFarthestAdjacentLink(RomCurveDef* curve, int excludeLinkId, f32 x, f32 y, f32 z);
+f32 RomCurve_distanceToSegment(f32 x, f32 y, f32 z, RomCurveSegmentProjection* segment);
+int RomCurve_getRandomBlockedLink(RomCurveDef* curve, int excludeLinkId);
+int RomCurve_getLinkIds(RomCurveDef* curve, int excludeLinkId, int* outIds);
+int RomCurve_getRandomUnblockedLink(RomCurveDef* curve, int excludeLinkId);
+RomCurveDef* RomCurve_getById(u32 curveId);
+int RomCurve_find(f32 x, f32 y, f32 z, int* types, int typeCount, int action);
+void RomCurve_remove(RomCurveDef* curve);
+void RomCurve_add(RomCurveDef* curve);
+void curves_initialise(void);
+void RomCurve_release(void);
+void curves_countRandomPoints(GameObject* obj, CurvesCollisionState* state);
+void curves_resolveSingleTrace(GameObject* obj, CurvesCollisionState* state);
+void curves_resolveAveragedSegments(GameObject* obj, CurvesCollisionState* state);
+void curves_updateSurfaceTilt(short* obj, int state);
+void curves_snapToNearestSurface(GameObject* obj, CurvesCollisionState* state);
+void curves_resolveWaterFloorCeiling(GameObject* obj, CurvesCollisionState* state);
+void curves_updateLocalPointCollision(GameObject* obj, CurvesCollisionState* state);
+void curves_preparePointCollisionFrame(int obj, CurvesCollisionState* state);
+void curves_updateLocalPointTransforms(int obj, CurvesCollisionState* state);
+void curves_reset(GameObject* obj, CurvesCollisionState* state);
+f32 curves_sampleHeight(GameObject* obj, f32 x, f32 baseY, f32 z, f32 height);
+TrackGroundHit* curves_getCurves(GameObject* obj, f32 x, f32 z, u32* outCount, int queryAll);
+void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, f32 step);
+void curves_setSegmentCollision(CurvesCollisionState* state, int count, f32* segmentLocalPoints, f32* radii, s8* types);
+void curves_updateQueryBounds(GameObject* obj, CurvesCollisionState* state, f32 step);
+void curves_setLocalPointCollisionEx(CurvesCollisionState* state, int pointCount, f32* localPointPositions,
+                                     f32* localPointRadii, int primaryHitType, int secondaryHitType);
+void curves_clear(CurvesCollisionState* state, int updateMode, u32 flags, int subtype);
+void saveFileStruct_setCheatActive(u8 optionIndex, u8 active);
+
+/* extern-cleanup: defining-file public prototypes */
+void* getLastSavedGameTexts(void);
+
+void curves_gatherTrackTriangles(GameObject* obj, CurvesCollisionState* state);
+void curves_setLocalPointCollision(CurvesCollisionState* state, int pointCount, f32* localPointPositions, f32* localPointRadii, int primaryHitType);
+void dll_15_initialise_nop(void);
+void dll_15_release_nop(void);
+
+#endif /* MAIN_DLL_CURVES_H_ */

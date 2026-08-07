@@ -1,0 +1,28 @@
+#include "musyx/hw_sample.h"
+#include "musyx/dsp_voice_state.h"
+
+void hwSetVirtualSampleLoopBuffer(int slot, u32 valueA, u32 valueB)
+{
+    dspVoice[slot].vSampleInfo.loopBufferAddr = (void*)valueA;
+    dspVoice[slot].vSampleInfo.loopBufferLength = valueB;
+}
+
+u32 hwGetVirtualSampleState(u32 voice)
+{
+    return dspVoice[voice].vSampleInfo.inLoopBuffer;
+}
+
+u8 hwGetSampleType(int slot)
+{
+    return dspVoice[slot].smp_info.compType;
+}
+
+u16 hwGetSampleID(int slot)
+{
+    return dspVoice[slot].smp_id;
+}
+
+void hwSetStreamLoopPS(int slot, u8 value)
+{
+    dspVoice[slot].streamLoopPS = value;
+}

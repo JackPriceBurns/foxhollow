@@ -1,0 +1,365 @@
+/*
+ * vfplift (DLL 0x21D, VFPLift / VFPLift1 / VFPLift2 / VFPLift3) - the
+ * rising/lowering platform lifts in the Volcano Force Point Temple.
+ *
+ * Three lift variants share this code, dispatched by seq id in
+ * VFPLift_update:
+ *  - lift 1 (0x3B7): gated behind four "gate" game bits (or map-event
+ *    act 2); once all are set it plays its ready trigger, then toggles
+ *    raised/lowered on interaction;
+ *  - lifts 2/3 (0x3BF / 0x53F): a plain interact-to-toggle platform,
+ *    each variant using its own raised height offset.
+ * Interacting with a lift disables the A-button prompt, runs the
+ * raise/lower trigger sequence, plays the move sfx, and writes the
+ * toggle game bit. hitDetect enables/disables the object's hit volume
+ * from the hit-disable game bit.
+ */
+#include "dlls/object_descriptor.h"
+#include "sys/objects.h"
+#include "main/gamebits.h"
+#include "main/mapEventTypes.h"
+#include "main/objseq.h"
+#include "main/object_render.h"
+#include "main/dll/expgfx_interface.h"
+#include "main/dll/VF/dll_021D_vfplift.h"
+#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx_stop_channel_api.h"
+#include "main/pad_api.h"
+
+#define VFPLIFT1_OBJTYPE             0x3b7
+#define VFPLIFT2_OBJTYPE             0x3bf
+#define VFPLIFT3_OBJTYPE             0x53f
+#define VFPLIFT1_READY_GAMEBIT       0x4ee
+#define VFPLIFT1_GATE_GAMEBIT_0      0x507
+#define VFPLIFT1_GATE_GAMEBIT_1      0x508
+#define VFPLIFT1_GATE_GAMEBIT_2      0x509
+#define VFPLIFT1_GATE_GAMEBIT_3      0x50a
+#define VFPLIFT_TRIGGER_RAISE        0
+#define VFPLIFT_TRIGGER_LOWER        1
+#define VFPLIFT1_TRIGGER_READY       4
+#define VFPLIFT_INTERACT_BUTTON_MASK 0x100
+#define VFPLIFT_SFX_MOVE             0x113
+#define VFPLIFT_SFX_CHANNEL_MOVE     8
+#define VFPLIFT_STATE_IDLE           0
+#define VFPLIFT_STATE_LOWERED        3
+#define VFPLIFT_STATE_RAISED         4
+
+static const f32 gVfpLift1RaisedHeight = 307.0f;
+
+static inline VfpLiftState* vfplift_getState(GameObject* obj)
+{
+    return obj->extra;
+}
+
+static inline f32 vfplift_getModelY(GameObject* obj)
+{
+    VfpLiftPlacement* setup = *(VfpLiftPlacement**)&obj->anim.placementData;
+
+    return setup->base.posY;
+}
+
+static inline void vfplift_trigger(int triggerId, void* obj)
+{
+    (*gObjectTriggerInterface)->runSequence(triggerId, obj, -1);
+}
+
+static inline void vfplift_setObjectHitEnabled(GameObject* obj)
+{
+    obj->anim.resetHitboxFlags = (obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
+}
+
+static inline f32 vfplift23_getRaisedOffset(int objType)
+{
+    f32 offset;
+
+    offset = 0.0f;
+    if (objType == VFPLIFT3_OBJTYPE)
+    {
+        offset = 310.0f;
+    }
+    else if (objType == VFPLIFT2_OBJTYPE)
+    {
+        offset = 372.5f;
+    }
+    return offset;
+}
+
+int VFPLift_SeqFn(GameObject* obj)
+{
+    vfplift_getState(obj)->forceRaised = 1;
+    return 0;
+}
+
+void vfplift23_updateState(GameObject* obj)
+{
+    VfpLiftPlacement* setup;
+    VfpLiftState* state;
+    f32 raisedOffset;
+
+    setup = (VfpLiftPlacement*)(obj)->anim.placementData;
+    state = (VfpLiftState*)(obj)->extra;
+    raisedOffset = 0.0f;
+    if ((obj)->anim.romDefNo == VFPLIFT3_OBJTYPE)
+    {
+        raisedOffset = 310.0f;
+    }
+    else if ((obj)->anim.romDefNo == VFPLIFT2_OBJTYPE)
+    {
+        raisedOffset = 372.5f;
+    }
+    if (state->applyHeight != 0)
+    {
+        (obj)->anim.localPosY = setup->base.posY + raisedOffset;
+        state->applyHeight = 0;
+    }
+    if (state->mode == VFPLIFT_STATE_RAISED || state->mode >= VFPLIFT_STATE_RAISED ||
+        state->mode < VFPLIFT_STATE_LOWERED)
+    {
+        vfplift_setObjectHitEnabled(obj);
+        if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+        {
+            buttonDisable(0, VFPLIFT_INTERACT_BUTTON_MASK);
+            vfplift_trigger(VFPLIFT_TRIGGER_LOWER, obj);
+            state->mode = VFPLIFT_STATE_LOWERED;
+            Sfx_PlayFromObject(obj, VFPLIFT_SFX_MOVE);
+            Sfx_StopObjectChannel(obj, VFPLIFT_SFX_CHANNEL_MOVE);
+            mainSetBits(state->toggleGameBit, 0);
+        }
+        else
+        {
+            if (mainGetBit(state->toggleGameBit) == 0)
+            {
+                state->mode = VFPLIFT_STATE_LOWERED;
+                (obj)->anim.localPosY = setup->base.posY;
+            }
+        }
+    }
+    else
+    {
+        vfplift_setObjectHitEnabled(obj);
+        if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+        {
+            buttonDisable(0, VFPLIFT_INTERACT_BUTTON_MASK);
+            vfplift_trigger(VFPLIFT_TRIGGER_RAISE, obj);
+            state->mode = VFPLIFT_STATE_RAISED;
+            Sfx_PlayFromObject(obj, VFPLIFT_SFX_MOVE);
+            Sfx_StopObjectChannel(obj, VFPLIFT_SFX_CHANNEL_MOVE);
+            mainSetBits(state->toggleGameBit, 1);
+        }
+        else
+        {
+            if (mainGetBit(state->toggleGameBit) != 0)
+            {
+                state->mode = VFPLIFT_STATE_RAISED;
+                (obj)->anim.localPosY = setup->base.posY + raisedOffset;
+            }
+        }
+    }
+}
+
+void vfplift1_updateState(GameObject* obj)
+{
+    VfpLiftPlacement* setup;
+    VfpLiftState* state;
+    void* player;
+    s16 gate[4];
+
+    setup = (VfpLiftPlacement*)(obj)->anim.placementData;
+    state = (VfpLiftState*)(obj)->extra;
+    player = Obj_GetPlayerObject();
+    (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+    if (player == NULL)
+    {
+        return;
+    }
+
+    gate[0] = mainGetBit(VFPLIFT1_GATE_GAMEBIT_0);
+    gate[1] = mainGetBit(VFPLIFT1_GATE_GAMEBIT_1);
+    gate[2] = mainGetBit(VFPLIFT1_GATE_GAMEBIT_2);
+    gate[3] = mainGetBit(VFPLIFT1_GATE_GAMEBIT_3);
+    if ((*gMapEventInterface)->getMapAct((obj)->anim.mapEventSlot) == 2)
+    {
+        gate[0] = 1;
+        gate[1] = gate[0];
+        gate[2] = gate[0];
+        gate[3] = gate[0];
+    }
+    if (gate[0] != 0 && gate[1] != 0 && gate[2] != 0 && gate[3] != 0 && state->mode == VFPLIFT_STATE_IDLE &&
+        mainGetBit(VFPLIFT1_READY_GAMEBIT) == 0)
+    {
+        vfplift_trigger(VFPLIFT1_TRIGGER_READY, obj);
+        mainSetBits(VFPLIFT1_READY_GAMEBIT, 1);
+    }
+    if (state->applyHeight != 0 || (state->forceRaised != 0 && state->mode == VFPLIFT_STATE_IDLE))
+    {
+        (obj)->anim.localPosY = setup->base.posY + *(f32*)&gVfpLift1RaisedHeight;
+        state->applyHeight = 0;
+        state->forceRaised = 0;
+        state->mode = VFPLIFT_STATE_RAISED;
+    }
+    if (state->mode == VFPLIFT_STATE_IDLE)
+    {
+        return;
+    }
+    if (state->mode == VFPLIFT_STATE_RAISED || state->mode >= VFPLIFT_STATE_RAISED ||
+        state->mode < VFPLIFT_STATE_LOWERED)
+    {
+        vfplift_setObjectHitEnabled(obj);
+        if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+        {
+            buttonDisable(0, VFPLIFT_INTERACT_BUTTON_MASK);
+            vfplift_trigger(VFPLIFT_TRIGGER_LOWER, obj);
+            state->mode = VFPLIFT_STATE_LOWERED;
+            Sfx_PlayFromObject(obj, VFPLIFT_SFX_MOVE);
+            Sfx_StopObjectChannel(obj, VFPLIFT_SFX_CHANNEL_MOVE);
+            mainSetBits(state->toggleGameBit, 1);
+        }
+        else
+        {
+            if (mainGetBit(state->toggleGameBit) != 0)
+            {
+                state->mode = VFPLIFT_STATE_LOWERED;
+                (obj)->anim.localPosY = setup->base.posY;
+            }
+        }
+    }
+    else
+    {
+        vfplift_setObjectHitEnabled(obj);
+        if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+        {
+            buttonDisable(0, VFPLIFT_INTERACT_BUTTON_MASK);
+            vfplift_trigger(VFPLIFT_TRIGGER_RAISE, obj);
+            state->mode = VFPLIFT_STATE_RAISED;
+            Sfx_PlayFromObject(obj, VFPLIFT_SFX_MOVE);
+            Sfx_StopObjectChannel(obj, VFPLIFT_SFX_CHANNEL_MOVE);
+            mainSetBits(state->toggleGameBit, 0);
+        }
+        else
+        {
+            if (mainGetBit(state->toggleGameBit) == 0)
+            {
+                state->mode = VFPLIFT_STATE_RAISED;
+                (obj)->anim.localPosY = setup->base.posY + *(f32*)&gVfpLift1RaisedHeight;
+            }
+        }
+    }
+}
+
+int VFPLift_getExtraSize(void)
+{
+    return 0x20;
+}
+
+int VFPLift_getObjectTypeId(void)
+{
+    return 0x0;
+}
+
+void VFPLift_free(int obj)
+{
+    (*gExpgfxInterface)->freeSource2((u32)obj);
+}
+
+void VFPLift_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
+{
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void VFPLift_hitDetect(GameObject* obj)
+{
+    VfpLiftState* state = vfplift_getState(obj);
+
+    if (state->hitDisableGameBit != -1 && mainGetBit(state->hitDisableGameBit) == 0)
+    {
+        (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+    }
+    else if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_DISABLED) != 0)
+    {
+        (obj)->anim.resetHitboxFlags ^= INTERACT_FLAG_DISABLED;
+    }
+}
+
+void VFPLift_update(GameObject* obj)
+{
+    int romDefNo;
+    Obj_GetPlayerObject();
+    romDefNo = (obj)->anim.romDefNo;
+    if (romDefNo == VFPLIFT1_OBJTYPE)
+    {
+        vfplift1_updateState(obj);
+    }
+    else if (romDefNo == VFPLIFT2_OBJTYPE)
+    {
+        vfplift23_updateState(obj);
+    }
+    else if (romDefNo == VFPLIFT3_OBJTYPE)
+    {
+        vfplift23_updateState(obj);
+    }
+}
+
+void VFPLift_init(GameObject* obj, VfpLiftPlacement* init)
+{
+    VfpLiftState* state = obj->extra;
+    obj->animEventCallback = VFPLift_SeqFn;
+    obj->anim.rotX = (s16)(init->rotXByte << 8);
+    state->mode = VFPLIFT_STATE_IDLE;
+    state->hitDisableGameBit = init->hitDisableGameBit;
+    state->toggleGameBit = init->toggleGameBit;
+    state->travelDistance = (f32)(s32)init->travelDistance;
+    state->mapEventNo = init->mapEventNo;
+    state->anim[0] = 0;
+    state->anim[1] = 0;
+    state->anim[2] = 0;
+    state->anim[3] = 0;
+    if (obj->anim.romDefNo == VFPLIFT2_OBJTYPE)
+    {
+        if (mainGetBit(state->toggleGameBit) != 0)
+        {
+            state->mode = VFPLIFT_STATE_RAISED;
+            state->applyHeight = 1;
+        }
+        else
+        {
+            state->mode = VFPLIFT_STATE_LOWERED;
+        }
+    }
+    if (obj->anim.romDefNo == VFPLIFT1_OBJTYPE && mainGetBit(VFPLIFT1_READY_GAMEBIT) != 0)
+    {
+        if (mainGetBit(state->toggleGameBit) != 0)
+        {
+            state->mode = VFPLIFT_STATE_LOWERED;
+        }
+        else
+        {
+            state->mode = VFPLIFT_STATE_RAISED;
+            state->applyHeight = 1;
+        }
+    }
+}
+
+void VFPLift_release(void)
+{
+}
+
+void VFPLift_initialise(void)
+{
+}
+
+ObjectDescriptor gVFPLiftObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)VFPLift_initialise,
+    (ObjectDescriptorCallback)VFPLift_release,
+    0,
+    (ObjectDescriptorCallback)VFPLift_init,
+    (ObjectDescriptorCallback)VFPLift_update,
+    (ObjectDescriptorCallback)VFPLift_hitDetect,
+    (ObjectDescriptorCallback)VFPLift_render,
+    (ObjectDescriptorCallback)VFPLift_free,
+    (ObjectDescriptorCallback)VFPLift_getObjectTypeId,
+    VFPLift_getExtraSize,
+};

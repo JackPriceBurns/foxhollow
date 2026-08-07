@@ -1,0 +1,3 @@
+source: github.com/zcanann/SFA-Decomp
+commit: efab99b48437af0bde4ec48b5f9a1a13629ae0b2
+vendored: src/main src/dlls src/track src/musyx include (minus include/dolphin)

@@ -1,0 +1,316 @@
+/*
+ * LGTDirectio (DLL 682) - a placeable directional light.
+ *
+ * init creates a ModelLight of kind DIRECTIONAL and configures its direction,
+ * diffuse colour (or the live ambient colour when the
+ * DIRECTIONALLIGHT_FLAG_USE_AMBIENT_COLOR flag is set), initial colour fade and
+ * selection priority. update spins the light by its per-axis rotation speeds,
+ * toggles it from its enableBit game bit and refreshes the ambient colour each
+ * frame when requested.
+ *
+ * directionallight_debugEdit is a developer tool reached from update: pressing
+ * Z toggles edit mode, Up/Down cycle through DIRECTIONALLIGHT_DEBUG_FIELD_COUNT
+ * editable fields (rotX, rotY, then the diffuse and target RGB channels) and
+ * Left/Right nudge the selected field, echoing the value through the debug
+ * text helper logPrintf.
+ */
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/debug.h"
+#include "dolphin/pad.h"
+#include "main/dll/LGT/dll_02AA_lgtdirectionallight.h"
+#include "main/object_render.h"
+#include "main/pad.h"
+#include "main/sky.h"
+#include "main/model_light.h"
+
+const f32 gDirectionalLightInitialDirection[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+const f32 gDirectionalLightInitialFadeDuration = 0.0f;
+
+#define DIRECTIONALLIGHT_FLAG_USE_AMBIENT_COLOR 0x01
+#define DIRECTIONALLIGHT_DEBUG_FIELD_COUNT      8
+struct DirectionalLightObjDescriptorLayout gDirectionalLightObjDescriptor = {
+    0,
+    0,
+    0,
+    0x90000,
+    {
+        (void (*)(void))directionallight_initialise,
+        (void (*)(void))directionallight_release,
+        0,
+        (void (*)(void))directionallight_init,
+        (void (*)(void))directionallight_update,
+        (void (*)(void))directionallight_hitDetect,
+        (void (*)(void))directionallight_render,
+        (void (*)(void))directionallight_free,
+        (void (*)(void))directionallight_getObjectTypeId,
+        (void (*)(void))directionallight_getExtraSize,
+    },
+    "Mode: YAW\n",
+    "Angle: %d\n",
+    "Mode: PITCH\n",
+    "Mode: DIFFUSE COLOUR RED\n",
+    "Colour: %d\n",
+    "Mode: DIFFUSE COLOUR GREEN\n",
+    "Mode: DIFFUSE COLOUR BLUE\n",
+    "Mode: SPECULAR COLOUR RED\n",
+    "Mode: SPECULAR COLOUR GREEN\n",
+    "Mode: SPECULAR COLOUR BLUE\n",
+};
+
+void directionallight_debugEdit(GameObject* obj, DirectionalLightState* state)
+{
+    struct DirectionalLightObjDescriptorLayout* desc = &gDirectionalLightObjDescriptor;
+    u16 buttons = getButtonsJustPressed(0);
+
+    if ((buttons & PAD_TRIGGER_Z) != 0)
+    {
+        state->debugEditing ^= 1;
+    }
+    if (state->debugEditing == 0)
+    {
+        return;
+    }
+    if ((buttons & PAD_BUTTON_UP) != 0)
+    {
+        state->debugField += 1;
+    }
+    if ((buttons & PAD_BUTTON_DOWN) != 0)
+    {
+        state->debugField -= 1;
+    }
+    if (state->debugField >= DIRECTIONALLIGHT_DEBUG_FIELD_COUNT)
+    {
+        state->debugField = 0;
+    }
+    if (state->debugField < 0)
+    {
+        state->debugField = DIRECTIONALLIGHT_DEBUG_FIELD_COUNT - 1;
+    }
+
+    switch (state->debugField)
+    {
+    case 0:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            obj->anim.rotX -= 0x3e8;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            obj->anim.rotX += 0x3e8;
+        }
+        logPrintf(desc->debugModeYaw);
+        logPrintf(desc->debugAngleFormat, obj->anim.rotX);
+        break;
+    case 1:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            obj->anim.rotY -= 0x3e8;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            obj->anim.rotY += 0x3e8;
+        }
+        logPrintf(desc->debugModePitch);
+        logPrintf(desc->debugAngleFormat, obj->anim.rotY);
+        break;
+    case 2:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->diffuseR -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->diffuseR += 5;
+        }
+        logPrintf(desc->debugModeDiffuseRed);
+        logPrintf(desc->debugColourFormat, state->diffuseR);
+        break;
+    case 3:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->diffuseG -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->diffuseG += 5;
+        }
+        logPrintf(desc->debugModeDiffuseGreen);
+        logPrintf(desc->debugColourFormat, state->diffuseG);
+        break;
+    case 4:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->diffuseB -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->diffuseB += 5;
+        }
+        logPrintf(desc->debugModeDiffuseBlue);
+        logPrintf(desc->debugColourFormat, state->diffuseB);
+        break;
+    case 5:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->targetR -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->targetR += 5;
+        }
+        logPrintf(desc->debugModeSpecularRed);
+        logPrintf(desc->debugColourFormat, state->targetR);
+        break;
+    case 6:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->targetG -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->targetG += 5;
+        }
+        logPrintf(desc->debugModeSpecularGreen);
+        logPrintf(desc->debugColourFormat, state->targetG);
+        break;
+    case 7:
+        if ((buttons & PAD_BUTTON_LEFT) != 0)
+        {
+            state->targetB -= 5;
+        }
+        if ((buttons & PAD_BUTTON_RIGHT) != 0)
+        {
+            state->targetB += 5;
+        }
+        logPrintf(desc->debugModeSpecularBlue);
+        logPrintf(desc->debugColourFormat, state->targetB);
+        break;
+    }
+}
+
+int directionallight_getExtraSize(void)
+{
+    return sizeof(DirectionalLightState);
+}
+
+int directionallight_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void directionallight_free(GameObject* obj)
+{
+    DirectionalLightState* state = obj->extra;
+    if (state->light != NULL)
+    {
+        ModelLightStruct_free(state->light);
+    }
+}
+
+void directionallight_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale)
+{
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void directionallight_hitDetect(void)
+{
+}
+
+void directionallight_update(GameObject* obj)
+{
+    u8 colorR, colorG, colorB;
+    DirectionalLightState* state = (obj)->extra;
+    DirectionalLightSetup* setup = (DirectionalLightSetup*)(obj)->anim.placementData;
+
+    if (state->light == NULL)
+    {
+        return;
+    }
+
+    (obj)->anim.rotX = (s16)((f32)setup->rotXSpeed * timeDelta + (f32)(obj)->anim.rotX);
+    (obj)->anim.rotY = (s16)((f32)setup->rotYSpeed * timeDelta + (f32)(obj)->anim.rotY);
+
+    if (state->enabled != 0)
+    {
+        if (mainGetBit(setup->enableBit) == 0)
+        {
+            state->enabled = 0;
+            modelLightStruct_setEnabled(state->light, 0, 1.0f);
+        }
+        if ((setup->flags & DIRECTIONALLIGHT_FLAG_USE_AMBIENT_COLOR) != 0)
+        {
+            skyGetSunColor(0, &colorR, &colorG, &colorB);
+            modelLightStruct_setDiffuseColor(state->light, colorR, colorG, colorB, 0xff);
+        }
+    }
+    else
+    {
+        if (mainGetBit(setup->enableBit) != 0)
+        {
+            state->enabled = 1;
+            modelLightStruct_setEnabled(state->light, 1, 1.0f);
+        }
+    }
+
+    directionallight_debugEdit(obj, state);
+}
+
+void directionallight_init(GameObject* obj, DirectionalLightSetup* setup)
+{
+    u8 colorR, colorG, colorB;
+    Vec3f vec;
+    DirectionalLightSetup* setupData = setup;
+    DirectionalLightState* state = (obj)->extra;
+
+    vec = *(Vec3f*)gDirectionalLightInitialDirection;
+
+    (obj)->anim.rotX = (s16)(setupData->rotXByte << 8);
+    (obj)->anim.rotY = (s16)(setupData->rotYByte << 8);
+
+    if (state->light == NULL)
+    {
+        state->light = objCreateLight(obj, 1);
+    }
+
+    if (state->light != NULL)
+    {
+        modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_DIRECTIONAL);
+        modelLightStruct_setTransformMode(state->light, setupData->eventName);
+        modelLightStruct_setDirection(state->light, vec.x, vec.y, vec.z);
+
+        if ((setupData->flags & DIRECTIONALLIGHT_FLAG_USE_AMBIENT_COLOR) != 0)
+        {
+            skyGetSunColor(0, &colorR, &colorG, &colorB);
+            modelLightStruct_setDiffuseColor(state->light, colorR, colorG, colorB, 0xff);
+            modelLightStruct_setDiffuseTargetColor(state->light, colorR, colorG, colorB, 0xff);
+        }
+        else
+        {
+            modelLightStruct_setDiffuseColor(state->light, setupData->diffuseR, setupData->diffuseG,
+                                             setupData->diffuseB, 0xff);
+            modelLightStruct_setDiffuseTargetColor(state->light, setupData->targetR, setupData->targetG,
+                                                   setupData->targetB, 0xff);
+        }
+
+        {
+            const f32* initialFadeDuration = &gDirectionalLightInitialFadeDuration;
+            modelLightStruct_setEnabled(state->light, setupData->enabled, *initialFadeDuration);
+        }
+        state->enabled = setupData->enabled;
+        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, setupData->colorFadeFrames);
+
+        if (setupData->selectionPriority != 0)
+        {
+            modelLightStruct_setSelectionPriority(state->light, setupData->selectionPriority);
+        }
+    }
+}
+
+void directionallight_release(void)
+{
+}
+
+void directionallight_initialise(void)
+{
+}

@@ -1,0 +1,163 @@
+#ifndef MUSYX_DSP_VOICE_H_
+#define MUSYX_DSP_VOICE_H_
+
+#include "global.h"
+#include "musyx/adsr.h"
+#include "musyx/snd_types.h"
+
+/* Canonical SAL DSP voice/studio records (upstream musyx names, layouts
+ * verified against hw_* codegen and the matched hw_dspctrl recovery).
+ * _PB/_SPB stay defined in main/unknown/autos/musyx_dsp.h, which includes
+ * this header; standalone consumers see them as incomplete types. */
+
+typedef struct SAMPLE_INFO {
+    u32 info;        /* 0x00 */
+    void *addr;      /* 0x04 */
+    void *extraData; /* 0x08 */
+    u32 offset;      /* 0x0c */
+    u32 length;      /* 0x10 */
+    u32 loop;        /* 0x14 */
+    u32 loopLength;  /* 0x18 */
+    u8 compType;     /* 0x1c */
+} SAMPLE_INFO; /* size 0x20 */
+
+typedef struct VSampleInfo {
+    void *loopBufferAddr; /* 0x00 */
+    u32 loopBufferLength; /* 0x04 */
+    u8 inLoopBuffer;      /* 0x08 */
+} VSampleInfo;
+
+#define SAMPLE_TYPE_ADPCM         0
+#define SAMPLE_TYPE_ADPCM_PLUS    1
+#define SAMPLE_TYPE_PCM16         2
+#define SAMPLE_TYPE_PCM8          3
+#define SAMPLE_TYPE_STREAM_ADPCM  4
+#define SAMPLE_TYPE_VIRTUAL_ADPCM 5
+
+#define DSP_VOICE_UPDATE_COUNT       5
+#define DSP_VOICE_CHANGE_VOLUME      0x1
+#define DSP_VOICE_CHANGE_AUX_A       0x2
+#define DSP_VOICE_CHANGE_AUX_B       0x4
+#define DSP_VOICE_CHANGE_PITCH       0x8
+#define DSP_VOICE_CHANGE_ADSR        0x10
+#define DSP_VOICE_CHANGE_BREAK       0x20
+#define DSP_VOICE_CHANGE_KEYOFF      0x40
+#define DSP_VOICE_CHANGE_POLYPHASE   0x80
+#define DSP_VOICE_CHANGE_SRC_TYPE    0x100
+#define DSP_VOICE_CHANGE_ITD         0x200
+#define DSP_VOICE_ITD_ENABLED_FLAG   0x80000000
+
+#define DSP_VOICE_STATE_INACTIVE 0
+#define DSP_VOICE_STATE_STARTUP  1
+#define DSP_VOICE_STATE_ACTIVE   2
+
+typedef struct DSPvoice {
+    struct _PB *pb;             /* 0x00 */
+    void *patchData;            /* 0x04 */
+    void *itdBuffer;            /* 0x08 */
+    struct DSPvoice *next;      /* 0x0c */
+    struct DSPvoice *prev;      /* 0x10 */
+    struct DSPvoice *nextAlien; /* 0x14 */
+    u32 mesgCallBackUserValue;  /* 0x18 */
+    u32 prio;                   /* 0x1c */
+    u32 currentAddr;            /* 0x20 */
+    u32 changed[DSP_VOICE_UPDATE_COUNT]; /* 0x24 */
+    u32 pitch[DSP_VOICE_UPDATE_COUNT];   /* 0x38 */
+    u16 volL;                   /* 0x4c */
+    u16 volR;                   /* 0x4e */
+    u16 volS;                   /* 0x50 */
+    u16 volLa;                  /* 0x52 */
+    u16 volRa;                  /* 0x54 */
+    u16 volSa;                  /* 0x56 */
+    u16 volLb;                  /* 0x58 */
+    u16 volRb;                  /* 0x5a */
+    u16 volSb;                  /* 0x5c */
+    u16 lastVolL;               /* 0x5e */
+    u16 lastVolR;               /* 0x60 */
+    u16 lastVolS;               /* 0x62 */
+    u16 lastVolLa;              /* 0x64 */
+    u16 lastVolRa;              /* 0x66 */
+    u16 lastVolSa;              /* 0x68 */
+    u16 lastVolLb;              /* 0x6a */
+    u16 lastVolRb;              /* 0x6c */
+    u16 lastVolSb;              /* 0x6e */
+    u16 smp_id;                 /* 0x70 */
+    SAMPLE_INFO smp_info;       /* 0x74 */
+    VSampleInfo vSampleInfo;    /* 0x94 */
+    u8 streamLoopPS;            /* 0xa0 */
+    ADSR_VARS adsr;             /* 0xa4: flat adsr.h layout (offset-identical
+                                 * to upstream's data.dls arm; see playbook
+                                 * u64/width notes) */
+    u16 srcTypeSelect;          /* 0xcc */
+    u16 srcCoefSelect;          /* 0xce */
+    u16 itdShiftL;              /* 0xd0 */
+    u16 itdShiftR;              /* 0xd2 */
+    u8 singleOffset;            /* 0xd4 */
+    struct {
+        u32 posHi;
+        u32 posLo;
+        u32 pitch;
+    } playInfo;                 /* 0xd8 */
+    struct {
+        u8 pitch;
+        u8 vol;
+        u8 volA;
+        u8 volB;
+    } lastUpdate;               /* 0xe4 */
+    u32 virtualSampleID;        /* 0xe8 */
+    u8 state;                   /* 0xec */
+    u8 postBreak;               /* 0xed */
+    u8 startupBreak;            /* 0xee */
+    u8 studio;                  /* 0xef */
+    u32 flags;                  /* 0xf0 */
+} DSPvoice; /* size 0xf4 */
+
+STATIC_ASSERT(offsetof(DSPvoice, prio) == 0x1c);
+STATIC_ASSERT(offsetof(DSPvoice, volL) == 0x4c);
+STATIC_ASSERT(offsetof(DSPvoice, smp_id) == 0x70);
+STATIC_ASSERT(offsetof(DSPvoice, smp_info) == 0x74);
+STATIC_ASSERT(offsetof(DSPvoice, adsr) == 0xa4);
+STATIC_ASSERT(offsetof(DSPvoice, itdShiftL) == 0xd0);
+STATIC_ASSERT(offsetof(DSPvoice, lastUpdate) == 0xe4);
+STATIC_ASSERT(offsetof(DSPvoice, state) == 0xec);
+STATIC_ASSERT(sizeof(DSPvoice) == 0xf4);
+
+typedef struct DSPhostDPop {
+    s32 l, r, s, lA, rA, sA, lB, rB, sB;
+} DSPhostDPop;
+
+typedef struct DSPinput {
+    u8 studio;  /* 0x00 */
+    u16 vol;    /* 0x02 */
+    u16 volA;   /* 0x04 */
+    u16 volB;   /* 0x06 */
+    SND_STUDIO_INPUT *desc; /* 0x08 */
+} DSPinput;
+
+#define DSP_STUDIO_STATE_INACTIVE 0
+#define DSP_STUDIO_STATE_ACTIVE   1
+#define DSP_STUDIO_AUX_BUFFER_COUNT 3
+
+typedef struct DSPstudioinfo {
+    struct _SPB *spb;         /* 0x00 */
+    DSPhostDPop hostDPopSum;  /* 0x04 */
+    s32 *main[2];             /* 0x28 */
+    s32 *auxA[DSP_STUDIO_AUX_BUFFER_COUNT]; /* 0x30 */
+    s32 *auxB[DSP_STUDIO_AUX_BUFFER_COUNT]; /* 0x3c */
+    DSPvoice *voiceRoot;      /* 0x48 */
+    DSPvoice *alienVoiceRoot; /* 0x4c */
+    u8 state;                 /* 0x50 */
+    u8 isMaster;              /* 0x51 */
+    u8 numInputs;             /* 0x52 */
+    SND_STUDIO_TYPE type;     /* 0x54 */
+    DSPinput in[7];           /* 0x58 */
+    SynthAuxCallback auxAHandler; /* 0xac */
+    SynthAuxCallback auxBHandler; /* 0xb0 */
+    void *auxAUser;           /* 0xb4 */
+    void *auxBUser;           /* 0xb8 */
+} DSPstudioinfo; /* size 0xbc */
+
+STATIC_ASSERT(offsetof(DSPstudioinfo, auxAHandler) == 0xac);
+STATIC_ASSERT(sizeof(DSPstudioinfo) == 0xbc);
+
+#endif /* MUSYX_DSP_VOICE_H_ */

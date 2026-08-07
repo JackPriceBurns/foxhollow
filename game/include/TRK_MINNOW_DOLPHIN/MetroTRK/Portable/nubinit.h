@@ -1,0 +1,6 @@
+#ifndef METROTRK_PORTABLE_NUBINIT_H
+#define METROTRK_PORTABLE_NUBINIT_H
+
+#include "PowerPC_EABI_Support/MetroTRK/trk.h"
+
+#endif /* METROTRK_PORTABLE_NUBINIT_H */

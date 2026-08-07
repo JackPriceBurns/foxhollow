@@ -1,0 +1,138 @@
+/*
+ * DustMoteSou (DLL 0x02B2) - an ambient particle-effect emitter object.
+ *
+ * A placement-only object: it carries no per-instance extra state
+ * (getExtraSize == 0) and does no rendering or hit detection. Its init
+ * sets the model orientation from the placement bytes and flags the
+ * object to spawn effects; its update spawns a particle effect every
+ * tick, gated on an optional game bit.
+ *
+ * The effect spawned depends on the animation sequence the placement
+ * selected:
+ *   - DUSTMOTESOU_SEQ_TAIL_LIGHT -> a masked hit effect (trailing light),
+ *   - DUSTMOTESOU_SEQ_FIREWORK   -> the firework hit-detect spawner,
+ *   - otherwise (dust mote)      -> one of three burst styles chosen by
+ *     mapData->burstMode (box / arced / directional), seeded with the
+ *     placement's per-axis spread.
+ *
+ * The effectId / paramA / paramB fields gate each per-branch spawn: a zero
+ * id or required param skips that branch. The gameBit field gates all
+ * spawning when non-(-1) and clear.
+ */
+#include "main/dll_000A_expgfx.h"
+#include "main/dll/dll_02B2_dustmotesou.h"
+#include "main/gamebits.h"
+#include "main/objfx.h"
+
+int dustmotesou_getExtraSize(void)
+{
+    return 0;
+}
+
+int dustmotesou_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void dustmotesou_free(GameObject* obj)
+{
+    (*gExpgfxInterface)->freeSource2((u32)obj);
+}
+
+void dustmotesou_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
+{
+    if (visible == 0)
+    {
+        return;
+    }
+}
+
+void dustmotesou_hitDetect(void)
+{
+}
+
+void dustmotesou_update(GameObject* source)
+{
+    DustMoteSouMapData* mapData = (DustMoteSouMapData*)source->anim.placementData;
+
+    if (mapData->gameBit != -1 && mainGetBit(mapData->gameBit) == 0)
+    {
+        return;
+    }
+    if (source->anim.romDefNo == DUSTMOTESOU_SEQ_TAIL_LIGHT)
+    {
+        if (mapData->effectId == 0 || mapData->effectParamA == 0)
+        {
+            return;
+        }
+        objfx_spawnMaskedHitEffect(source, mapData->scale, mapData->effectId, mapData->effectParamA,
+                                   mapData->effectParamB, 0);
+        return;
+    }
+    if (source->anim.romDefNo == DUSTMOTESOU_SEQ_FIREWORK)
+    {
+        if (mapData->effectId == 0 || mapData->effectParamA == 0)
+        {
+            return;
+        }
+        objfx_spawnHitEffectBurst(source, mapData->scale, mapData->effectId, mapData->effectParamA,
+                            mapData->effectParamB, NULL);
+        return;
+    }
+    if (mapData->effectId == 0 || mapData->effectParamA == 0 || mapData->effectParamB == 0)
+    {
+        return;
+    }
+    if (mapData->burstMode == DUSTMOTESOU_BURST_BOX)
+    {
+        objfx_spawnBoxBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+                            mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
+                            (f32)(u32)mapData->spreadY, (f32)(u32)mapData->spreadZ, NULL, 0);
+    }
+    else if (mapData->burstMode == DUSTMOTESOU_BURST_ARCED)
+    {
+        objfx_spawnArcedBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+                             mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
+                             (f32)(u32)mapData->spreadY,
+                              (f32)(u32)mapData->spreadZ, 0, 0);
+    }
+    else
+    {
+        objfx_spawnDirectionalBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+                                    mapData->effectParamB, mapData->effectFlags,
+                                    (f32)(u32)mapData->spreadX, NULL, 0);
+    }
+}
+
+void dustmotesou_init(GameObject* source, DustMoteSouMapData* mapData)
+{
+    source->anim.rotZ = (s16)(mapData->rotZ << 8);
+    source->anim.rotY = (s16)(mapData->rotY << 8);
+    source->anim.rotX = (s16)(mapData->rotX << 8);
+    source->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
+}
+
+void dustmotesou_release(void)
+{
+}
+
+void dustmotesou_initialise(void)
+{
+}
+
+ObjectDescriptor gDustMoteSouObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dustmotesou_initialise,
+    (ObjectDescriptorCallback)dustmotesou_release,
+    0,
+    (ObjectDescriptorCallback)dustmotesou_init,
+    (ObjectDescriptorCallback)dustmotesou_update,
+    (ObjectDescriptorCallback)dustmotesou_hitDetect,
+    (ObjectDescriptorCallback)dustmotesou_render,
+    (ObjectDescriptorCallback)dustmotesou_free,
+    (ObjectDescriptorCallback)dustmotesou_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)dustmotesou_getExtraSize,
+};

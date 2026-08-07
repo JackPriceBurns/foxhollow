@@ -1,0 +1,227 @@
+/*
+ * LinkA level-control sequence object (FireObject).
+ *
+ * A scripted level-progression controller placed in the LinkA map. It runs
+ * trigger sequence 0 every update and reacts to that sequence's anim events
+ * (LinkALevControl_seqFn), branching on the current map-event mode (getMapAct of
+ * its map-event slot):
+ *   - OPEN_PATH:  defrag memory, enable object groups, unlock Lightfoot and
+ *                 load/lock the destination map for the active mode.
+ *   - WARP:       warp to the mode's destination map (mode 2 picks one of
+ *                 three routes from game bits) and load the UI DLL.
+ *   - UNLOAD_NEIGHBOR_MAP: unload the adjacent map for the active mode.
+ * init unlocks the starting level, disables the object's hit detection,
+ * sets three progression game bits, kicks an env-fx act and fades the active
+ * music channels. A looping object sound is kept alive while sequences run.
+ */
+#include "main/audio/sfx_keep_alive_api.h"
+#include "main/dll/dll_0238_linkalevco.h"
+#include "main/map_load.h"
+#include "main/model_engine.h"
+#include "main/pi_dolphin_api.h"
+#include "main/rcp_dolphin_api.h"
+#include "main/sky_api.h"
+#include "main/audio/music_api.h"
+#include "main/gamebits.h"
+#include "main/object_render.h"
+#include "main/objseq.h"
+#include "main/mapEventTypes.h"
+
+#define LINKA_LEVCONTROL_LOOP_SFX_ID 0x48B
+
+/* getMapAct mode is a small progression index 0..3 with no semantic label. */
+
+#define LINKA_LEVCONTROL_ANIM_EVENT_OPEN_PATH           1
+#define LINKA_LEVCONTROL_ANIM_EVENT_WARP                2
+#define LINKA_LEVCONTROL_ANIM_EVENT_UNLOAD_NEIGHBOR_MAP 3
+
+#define LINKA_LEVCONTROL_MAP_ID_7  7
+#define LINKA_LEVCONTROL_MAP_ID_0B 0x0B
+#define LINKA_LEVCONTROL_MAP_ID_17 0x17
+
+#define LINKA_LEVCONTROL_WARP_ID_SHRINE        2
+#define LINKA_LEVCONTROL_WARP_ID_MODE2_ROUTE_A 0x20
+#define LINKA_LEVCONTROL_WARP_ID_MODE2_ROUTE_B 0x22
+#define LINKA_LEVCONTROL_WARP_ID_MODE3         0x0F
+
+#define LINKA_LEVCONTROL_MODE2_RESET_GAMEBIT      0x405
+#define LINKA_LEVCONTROL_MODE2_ROUTE_A_GAMEBIT    0xBFD
+#define LINKA_LEVCONTROL_MODE2_ROUTE_B_GAMEBIT    0x0FF
+#define LINKA_LEVCONTROL_MODE2_ROUTE_C_GAMEBIT    0xC6E
+#define LINKA_LEVCONTROL_LIGHTFOOT_UNLOCK_GAMEBIT 0x1ED
+
+#define LINKA_LEVCONTROL_INIT_GAMEBIT_0      0x90D
+#define LINKA_LEVCONTROL_INIT_GAMEBIT_1      0x90E
+#define LINKA_LEVCONTROL_INIT_GAMEBIT_2      0x90F
+#define LINKA_LEVCONTROL_MUSIC_FADE_TIME 0x2EE
+
+/* per-instance extra block reserved by the object system; unused by this TU */
+#define LINKA_LEVCONTROL_EXTRA_SIZE 4
+
+
+int LinkALevControl_seqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
+{
+    int stateIndex;
+    u8 mode;
+    u8 eventId;
+    int mapDir;
+
+    mode = (u8)(*gMapEventInterface)->getMapAct((int)obj->anim.mapEventSlot);
+    Sfx_KeepAliveLoopedObjectSound(0, LINKA_LEVCONTROL_LOOP_SFX_ID);
+    for (stateIndex = 0; stateIndex < animUpdate->eventCount; stateIndex++)
+    {
+        eventId = animUpdate->eventIds[stateIndex];
+        if (eventId == LINKA_LEVCONTROL_ANIM_EVENT_OPEN_PATH)
+        {
+            defragMemory(0);
+            switch (mode)
+            {
+            case 0:
+            case 1:
+                (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_7, 0, 0);
+                (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_7, 2, 0);
+                (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_7, 3, 0);
+                (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_7, 7, 0);
+                (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_7, 10, 0);
+                (*gMapEventInterface)->setObjGroupStatus(10, 7, 0);
+                mainSetBits(LINKA_LEVCONTROL_LIGHTFOOT_UNLOCK_GAMEBIT, 1);
+                loadMapAndParent(LINKA_LEVCONTROL_MAP_ID_17);
+                mapDir = mapGetDirIdx(LINKA_LEVCONTROL_MAP_ID_17);
+                lockLevel(mapDir, 0);
+                break;
+            case 2:
+                loadMapAndParent(LINKA_LEVCONTROL_MAP_ID_0B);
+                mapDir = mapGetDirIdx(LINKA_LEVCONTROL_MAP_ID_0B);
+                lockLevel(mapDir, 0);
+                break;
+            case 3:
+                loadMapAndParent(LINKA_LEVCONTROL_MAP_ID_7);
+                mapDir = mapGetDirIdx(LINKA_LEVCONTROL_MAP_ID_7);
+                lockLevel(mapDir, 0);
+                break;
+            }
+        }
+        else if (eventId == LINKA_LEVCONTROL_ANIM_EVENT_WARP)
+        {
+            switch (mode)
+            {
+            case 0:
+            case 1:
+                warpToMap(LINKA_LEVCONTROL_WARP_ID_SHRINE, 0);
+                break;
+            case 2:
+                mainSetBits(LINKA_LEVCONTROL_MODE2_RESET_GAMEBIT, 0);
+                if (mainGetBit(LINKA_LEVCONTROL_MODE2_ROUTE_B_GAMEBIT) != 0)
+                {
+                    (*gMapEventInterface)->setMapAct(LINKA_LEVCONTROL_MAP_ID_0B, 3);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 8, 1);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 9, 1);
+                    warpToMap(LINKA_LEVCONTROL_WARP_ID_MODE2_ROUTE_B, 0);
+                }
+                else if (mainGetBit(LINKA_LEVCONTROL_MODE2_ROUTE_A_GAMEBIT) != 0)
+                {
+                    (*gMapEventInterface)->setMapAct(LINKA_LEVCONTROL_MAP_ID_0B, 2);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 5, 1);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 6, 1);
+                    warpToMap(LINKA_LEVCONTROL_WARP_ID_MODE2_ROUTE_A, 0);
+                }
+                else if (mainGetBit(LINKA_LEVCONTROL_MODE2_ROUTE_C_GAMEBIT) != 0)
+                {
+                    (*gMapEventInterface)->setMapAct(LINKA_LEVCONTROL_MAP_ID_0B, 4);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 8, 1);
+                    (*gMapEventInterface)->setObjGroupStatus(LINKA_LEVCONTROL_MAP_ID_0B, 9, 1);
+                    warpToMap(LINKA_LEVCONTROL_WARP_ID_MODE2_ROUTE_B, 0);
+                }
+                break;
+            case 3:
+                warpToMap(LINKA_LEVCONTROL_WARP_ID_MODE3, 0);
+                break;
+            }
+            loadUiDll(1);
+        }
+        else if (eventId == LINKA_LEVCONTROL_ANIM_EVENT_UNLOAD_NEIGHBOR_MAP)
+        {
+            switch (mode)
+            {
+            case 0:
+            case 1:
+            case 2:
+                mapDir = mapGetDirIdx(LINKA_LEVCONTROL_MAP_ID_7);
+                mapUnload(mapDir, 0x20000000);
+                break;
+            case 3:
+                mapDir = mapGetDirIdx(LINKA_LEVCONTROL_MAP_ID_0B);
+                mapUnload(mapDir, 0x20000000);
+                break;
+            }
+        }
+    }
+    return 0;
+}
+
+int LinkALevControl_getExtraSize(void)
+{
+    return LINKA_LEVCONTROL_EXTRA_SIZE;
+}
+
+int LinkALevControl_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void LinkALevControl_free(void)
+{
+}
+
+void LinkALevControl_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
+{
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void LinkALevControl_hitDetect(void)
+{
+}
+
+void LinkALevControl_update(GameObject* obj)
+{
+    (*gObjectTriggerInterface)->runSequence(0, obj, 0xffffffff);
+}
+
+void LinkALevControl_init(GameObject* obj)
+{
+    u32 flags;
+    obj->animEventCallback = LinkALevControl_seqFn;
+    unlockLevel(0, 0, 1);
+    flags = obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED;
+    obj->objectFlags = flags;
+    skySetEnvFxFlags(0);
+    mainSetBits(LINKA_LEVCONTROL_INIT_GAMEBIT_0, 1);
+    mainSetBits(LINKA_LEVCONTROL_INIT_GAMEBIT_1, 1);
+    mainSetBits(LINKA_LEVCONTROL_INIT_GAMEBIT_2, 1);
+    Music_StopChannelsByPriorityGroup(3, MUSIC_CHANNEL_STOP_FADE, LINKA_LEVCONTROL_MUSIC_FADE_TIME);
+}
+
+void LinkALevControl_release(void)
+{
+}
+
+void LinkALevControl_initialise(void)
+{
+}
+
+ObjectDescriptor gFireObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    LinkALevControl_initialise,
+    LinkALevControl_release,
+    0,
+    (ObjectDescriptorCallback)LinkALevControl_init,
+    (ObjectDescriptorCallback)LinkALevControl_update,
+    LinkALevControl_hitDetect,
+    (ObjectDescriptorCallback)LinkALevControl_render,
+    LinkALevControl_free,
+    (ObjectDescriptorCallback)LinkALevControl_getObjectTypeId,
+    LinkALevControl_getExtraSize,
+};

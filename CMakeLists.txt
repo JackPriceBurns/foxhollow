@@ -24,5 +24,17 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
 
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS port/compiling.txt)
+file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/port/compiling.txt FOXHOLLOW_GAME_SOURCES)
+list(FILTER FOXHOLLOW_GAME_SOURCES EXCLUDE REGEX "^ *(#|$)")
+if (FOXHOLLOW_GAME_SOURCES)
+    list(TRANSFORM FOXHOLLOW_GAME_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/game/src/)
+    add_library(game STATIC ${FOXHOLLOW_GAME_SOURCES})
+    target_include_directories(game PRIVATE port/include extern/aurora/include game/include game)
+    target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1 TARGET_PC=1)
+    target_compile_options(game PRIVATE -std=gnu11 -fsigned-char -w
+            -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
+endif ()
+
 add_executable(foxhollow src/main.c)
 target_link_libraries(foxhollow PRIVATE aurora::core aurora::gx aurora::main aurora::vi)

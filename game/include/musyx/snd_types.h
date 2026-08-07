@@ -1,0 +1,35 @@
+#ifndef MUSYX_SND_TYPES_H_
+#define MUSYX_SND_TYPES_H_
+
+#include "types.h"
+
+typedef enum SND_STUDIO_TYPE {
+    SND_STUDIO_TYPE_STD = 0,
+    SND_STUDIO_TYPE_DPL2,
+    SND_STUDIO_TYPE_RESERVED1,
+    SND_STUDIO_TYPE_RESERVED2,
+} SND_STUDIO_TYPE;
+
+typedef struct SND_STUDIO_INPUT {
+    u8 vol;
+    u8 volA;
+    u8 volB;
+    u8 srcStudio;
+} SND_STUDIO_INPUT;
+
+typedef struct SynthAuxInfo {
+    union {
+        struct {
+            s32* left;
+            s32* right;
+            s32* surround;
+        } bufferUpdate;
+        struct {
+            u16 para[4];
+        } parameterUpdate;
+    } data;
+} SynthAuxInfo;
+
+typedef void (*SynthAuxCallback)(u8 reason, SynthAuxInfo* info, void* user);
+
+#endif /* MUSYX_SND_TYPES_H_ */
