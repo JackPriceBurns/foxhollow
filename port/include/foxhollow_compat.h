@@ -15,6 +15,18 @@ static inline unsigned int __cvt_fp2unsigned(double x) {
   return (unsigned int)x;
 }
 
+static inline unsigned int fhSwap32(unsigned int v) { return __builtin_bswap32(v); }
+static inline unsigned short fhSwap16(unsigned short v) { return __builtin_bswap16(v); }
+static inline void fhSwapU32Array(void* p, unsigned long words) {
+  unsigned int* w = (unsigned int*)p;
+  while (words--) {
+    *w = __builtin_bswap32(*w);
+    w++;
+  }
+}
+
+void fhSwapResidentTabs(void);
+void fhSwapTabBufferOnce(void* buf, unsigned int words);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
 

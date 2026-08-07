@@ -136,14 +136,14 @@ typedef struct
     u8 type;
     u8 _2[2];
     int resourceId;
-    int dest;
+    uintptr_t dest;
     int argC;
     int offset;
-    int arg14;
-    int arg18;
+    uintptr_t arg14;
+    uintptr_t arg18;
     int arg1c;
-    int arg20;
-    int arg24;
+    uintptr_t arg20;
+    uintptr_t arg24;
     int arg28;
 } AssetReq;
 static void loadAsset(AssetReq* req)
@@ -193,10 +193,10 @@ void animationLoad(void** out, int animId, int moveIndex, u8* cache, struct ObjA
     gGameLoopAssetReq.pending = 1;
     gGameLoopAssetReq.type = 7;
     gGameLoopAssetReq.resourceId = (s16)animId;
-    gGameLoopAssetReq.dest = (int)out;
+    gGameLoopAssetReq.dest = (uintptr_t)out;
     gGameLoopAssetReq.argC = (s16)moveIndex;
-    gGameLoopAssetReq.arg20 = (int)cache;
-    gGameLoopAssetReq.arg24 = (int)animDef;
+    gGameLoopAssetReq.arg20 = (uintptr_t)cache;
+    gGameLoopAssetReq.arg24 = (uintptr_t)animDef;
     loadAsset(&gGameLoopAssetReq);
 }
 
@@ -205,7 +205,7 @@ void loadTextureFile(void** out, int assetId)
     gGameLoopAssetReq.pending = 1;
     gGameLoopAssetReq.type = 3;
     gGameLoopAssetReq.resourceId = assetId;
-    gGameLoopAssetReq.dest = (int)out;
+    gGameLoopAssetReq.dest = (uintptr_t)out;
     loadAsset(&gGameLoopAssetReq);
 }
 
@@ -214,7 +214,7 @@ void getTabEntry(void* dst, int fileId, int offset, int size)
     gGameLoopAssetReq.pending = 1;
     gGameLoopAssetReq.type = 2;
     gGameLoopAssetReq.resourceId = fileId;
-    gGameLoopAssetReq.dest = (int)dst;
+    gGameLoopAssetReq.dest = (uintptr_t)dst;
     gGameLoopAssetReq.offset = offset;
     gGameLoopAssetReq.argC = size;
     loadAsset(&gGameLoopAssetReq);
@@ -225,7 +225,7 @@ void loadAssetFileById(void* out, int fileId)
     gGameLoopAssetReq.pending = 1;
     gGameLoopAssetReq.type = 0;
     gGameLoopAssetReq.resourceId = fileId;
-    gGameLoopAssetReq.dest = (int)out;
+    gGameLoopAssetReq.dest = (uintptr_t)out;
     loadAsset(&gGameLoopAssetReq);
 }
 

@@ -219,6 +219,41 @@ struct ZlbHeader
 #define DVD_FI_LENGTH(fi) ((fi)->length)
 
 /* header of a packed rom section (romlist blocks, MAPS.BIN sections) */
+
+static void fhFixPackHeader(volatile u32* w)
+{
+    int i;
+    if (w[0] == 0xedfeecfa)
+    {
+        w[0] = 0xfacefeed;
+        for (i = 1; i < 4; i++)
+        {
+            w[i] = fhSwap32(w[i]);
+        }
+        return;
+    }
+    if (((char*)w)[0] == 'Z' && ((char*)w)[1] == 'L' && ((char*)w)[2] == 'B')
+    {
+        for (i = 2; i < 4; i++)
+        {
+            if (w[i] >= 0x01000000)
+            {
+                w[i] = fhSwap32(w[i]);
+            }
+        }
+        return;
+    }
+    if (w[0] == 0xe0e0e0e0 || w[0] == 0xfacefeed)
+    {
+        for (i = 1; i < 4; i++)
+        {
+            if (w[i] >= 0x01000000)
+            {
+                w[i] = fhSwap32(w[i]);
+            }
+        }
+    }
+}
 struct PackHeader
 {
     u32 magic;            /* 0xFACEFEED = zlb-packed, 0xE0E0E0E0 = stored raw */
@@ -1644,6 +1679,7 @@ int mapUnload(int mapId, int flags)
 
 int mergeTableFiles(void* table, int id, int idx, int count_)
 {
+    fhSwapResidentTabs();
     u32* tbl = table;
     int i = 0;
     int e1 = 0;
@@ -4341,6 +4377,7 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
         else if (fileId == 0x2b || fileId == 0x46)
         {
             struct PackHeader* hdr = (struct PackHeader*)(qptr + offsetFlags);
+            fhFixPackHeader((volatile u32*)hdr);
             if (hdr->magic == 0xe0e0e0e0)
             {
                 memcpy(destBuf, (void*)(qptr + ((hdr->auxSize + 0x18) + (intptr_t)hdr - (intptr_t)qptr)),
@@ -4356,6 +4393,7 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
         else if (fileId == 0x23 || fileId == 0x4d)
         {
             fileBuf = qptr + (offsetFlags & 0xffffff);
+            fhFixPackHeader((volatile u32*)fileBuf);
             decompSize = ZLB_HDR(fileBuf)->decompressedSize;
             zlbDecompress((u8*)(fileBuf + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf, &decompSize);
             DCStoreRange(destBuf, decompSize);
@@ -4545,6 +4583,7 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
             AtomicSList_Push(gDvdFileInfoPool, fi);
         }
         hdr = (struct PackHeader*)(gResourceFileBuffers[0x1d] + romOffset);
+        fhFixPackHeader((volatile u32*)hdr);
         if (hdr->magic == 0xfacefeed)
         {
             zlbDecompress((u8*)(gMapRomListBuffers[mapIndex] + 0x10), hdr->compressedSize, (u8*)destBuf, &hdr->decompressedSize);
@@ -4555,6 +4594,7 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
 
 void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
+    fhSwapResidentTabs();
     int idx = -1;
     if (gResourceFileBuffers[0x20] != 0 || gResourceFileBuffers[0x4b] != 0)
     {
@@ -4658,6 +4698,7 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
 
 void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
+    fhSwapResidentTabs();
     int idx = -1;
     if (gResourceFileBuffers[0x23] != 0 || gResourceFileBuffers[0x4d] != 0)
     {
@@ -4668,19 +4709,19 @@ void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
         OSRestoreInterrupts(s);
         f478 = gResourceFileBuffers[0x24];
         f520 = gResourceFileBuffers[0x4e];
-        if ((texId & 0x80000000) != 0 && (flags & 0x200) == 0)
+        if ((texId & 0x80000000) != 0 && (flags & 0x200) == 0 && gResourceFileBuffers[0x4d] != 0)
         {
             idx = 0x4d;
         }
-        else if ((texId & 0x40000000) != 0 && (flags & 0x100) == 0)
+        else if ((texId & 0x40000000) != 0 && (flags & 0x100) == 0 && gResourceFileBuffers[0x23] != 0)
         {
             idx = 0x23;
         }
-        else if (f478 != 0 && (flags & 0x100) == 0)
+        else if (f478 != 0 && (flags & 0x100) == 0 && gResourceFileBuffers[0x23] != 0)
         {
             idx = 0x23;
         }
-        else if (f520 != 0 && (flags & 0x200) == 0)
+        else if (f520 != 0 && (flags & 0x200) == 0 && gResourceFileBuffers[0x4d] != 0)
         {
             idx = 0x4d;
         }
@@ -4709,6 +4750,7 @@ void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
 
 void texPreGetMipmap(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
+    fhSwapResidentTabs();
     uintptr_t base = gResourceFileBuffers[0x4f];
     if (base != 0)
     {
@@ -5081,6 +5123,7 @@ u8 initLoadFiles(void)
     }
     if (gPendingDvdReadCount == 0)
     {
+        fhSwapResidentTabs();
         if (((gAssetLoadInFlightFlags & 0x100) == 0 || (gAssetLoadInFlightFlags & 0x400) == 0) &&
             ((gAssetLoadCompletedFlags & 0x100) == 0 || (gAssetLoadCompletedFlags & 0x400) == 0))
         {

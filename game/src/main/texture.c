@@ -554,6 +554,7 @@ static inline void loadTextureBank(int bank, int fileId)
     int n = 0;
 
     p = getCurrentDataFile(fileId);
+    fhSwapTabBufferOnce(p, gResourceFileSizes[fileId] / 4);
     gRcpTexBankTable[bank] = p;
     if (gRcpTexBankTable == NULL)
     {

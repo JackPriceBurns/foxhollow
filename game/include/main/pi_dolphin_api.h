@@ -52,5 +52,6 @@ extern s16 sMapFileNameAdjacencyTable[];
 extern char sAssetIndexOverflowError[];
 
 extern uintptr_t gResourceFileBuffers[];
+extern u32 gResourceFileSizes[];
 
 #endif /* MAIN_PI_DOLPHIN_API_H_ */
