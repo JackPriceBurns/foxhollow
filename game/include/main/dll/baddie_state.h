@@ -6,6 +6,7 @@
 #include "global.h"
 #include "main/objprint_character_api.h"
 #include "main/voxmaps.h"
+#include "main/dll/curves_collision_state.h"
 
 struct GameObject;
 struct BaddieState;
@@ -43,6 +44,9 @@ typedef void (*BaddieStateExitFn)(struct GameObject* obj, struct BaddieState* st
  */
 typedef struct BaddieState {
     int flags0; /* actor-state flags; player climbing sets bit 0x200000 */
+    union {
+    CurvesCollisionState curvesCollision;
+    struct {
     int flags4; /* secondary actor-state flags; player climbing sets bits 0x100000/0x8000000 */
     u8 unk08[0x14 - 0x8];
     f32 posX; /* copied into spawned contact objects as position */
@@ -57,8 +61,7 @@ typedef struct BaddieState {
     u8 padB9[0xBC - 0xB9];
     u8 paletteSlot; /* indexes the palette table (paletteIndex = gIceBaddiePaletteIndexTable[slot]) */
     u8 unkBD[0xC4 - 0xBD];
-    void *contactObj; /* GameObject*; its anim.romDefNo (0x5d/0x99/0x1db/0x223) switches a sfx override (intersect.c) */
-    u8 unkC8[0x118 - 0xC8];
+    u8 padC4[0x118 - 0xC4];
     f32 unk118; /* a local-space point carried through a reparent exactly like
         anim.localPos: player.c playerReparentPreservingWorldTransform pushes it to world space through the old
         parent and pulls it back through the new one. No other reader in the tree. */
@@ -89,6 +92,9 @@ typedef struct BaddieState {
 #define BADDIE_SURFACE_HAS_NEARBY_FLOOR 0x10
     s8 surfaceFlags; /* per-frame ground/surface contact flags, same field the dll_00C9 enemy view calls surfaceFlags; bits 0x1/0x2/0x10/0x20 are ground-contact channels (mask 0x33 = "touching ground at all") */
     u8 unk265[0x26C - 0x265];
+    };
+    };
+    void* contactObj; /* GameObject*; its anim.romDefNo (0x5d/0x99/0x1db/0x223) switches a sfx override (intersect.c) */
     s16 unk26C; /* the shared player-interface init writes its two mode arguments here */
     s16 unk26E;
     s16 substate; /* CA-family substate 0..5; gates the map-event re-register when != 3 */

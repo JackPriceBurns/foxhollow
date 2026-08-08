@@ -301,7 +301,10 @@ f32 gStandardAspectRatio = 1.3333334f;
 /* Linear search by pointer identity through the shadow entry table.
  * Clears the active flag when the entry matches the needle. */
 
-extern uintptr_t gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
+extern Texture* gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
+extern Texture* gNewShadowCastTextures[NEW_SHADOW_MAX_CAST_TEXTURES];
+extern NewShadowCastSlot gNewShadowCastSlots[NEW_SHADOW_MAX_CASTERS];
+extern NewShadowCaster gNewShadowCasterTable[NEW_SHADOW_MAX_QUEUED_CASTERS];
 extern Texture* gNewShadowNoiseTexFrames[0x10];
 extern f32 gNewShadowPlacements[0x112];
 u8 gSurfaceSfxTable[0xD8] = {
@@ -569,7 +572,7 @@ void renderObjectShadowTexture(GameObject* obj)
         gxSetZMode_(1, GX_LEQUAL, 1);
         GXSetTexCopySrc(0x100, 0xb0, 0x80, 0x80);
         GXSetTexCopyDst(0x80, 0x80, GX_CTF_B8, GX_FALSE);
-        GXCopyTex((Texture*)gNewShadowFrameTextures[gNewShadowFrameIndex] + 1, GX_TRUE);
+        GXCopyTex(gNewShadowFrameTextures[gNewShadowFrameIndex] + 1, GX_TRUE);
         boxBlurTexture((u8*)gNewShadowFrameTextures[(gNewShadowFrameIndex + 1) % NEW_SHADOW_FRAME_COUNT], 0x80,
                        0x10, 0);
         obj->anim.modelState->shadowScale = 1.0f / sc;
@@ -587,10 +590,10 @@ void renderObjectShadowTexture(GameObject* obj)
     obj->anim.modelState->shadowOffsetY -= 64.0f * obj->anim.modelState->shadowScale;
 }
 
-static void sortShadowEntriesDescending(ShadowSortEntry* arr, int count) {
+static void sortShadowEntriesDescending(NewShadowCaster* arr, int count) {
     int gap = 1;
     int i, j;
-    ShadowSortEntry tmp;
+    NewShadowCaster tmp;
     int limit = (count - 1) / 9;
     while (gap <= limit) {
         gap = gap * 3 + 1;
@@ -599,7 +602,7 @@ static void sortShadowEntriesDescending(ShadowSortEntry* arr, int count) {
         for (i = gap + 1; i <= count; i++) {
             tmp = arr[i - 1];
             j = i;
-            while (j > gap && arr[j - gap - 1].dist < tmp.dist) {
+            while (j > gap && arr[j - gap - 1].scale < tmp.scale) {
                 arr[j - 1] = arr[j - gap - 1];
                 j -= gap;
             }
@@ -627,7 +630,6 @@ void renderShadows(int unused0, int unused1, int unused2)
     Vec vA, direction;
     Vec dot24, proj;
     Camera* slot;
-    NewShadowData* shadowData = (NewShadowData*)gNewShadowEntries;
     void* layerTables;
     u32 blocks;
     f32 sCamZ, savedFovY, vAx, vAz, orthoHalf;
@@ -643,7 +645,7 @@ void renderShadows(int unused0, int unused1, int unused2)
     if (gNewShadowCasterCount == 0)
         return;
     CameraShake_Disable();
-    sortShadowEntriesDescending((ShadowSortEntry*)shadowData->casters, gNewShadowCasterCount);
+    sortShadowEntriesDescending(gNewShadowCasterTable, gNewShadowCasterCount);
     Camera_SetCurrentViewIndex(1);
     slot = Camera_GetCurrent();
     savedFovY = Camera_GetFovY();
@@ -664,7 +666,7 @@ void renderShadows(int unused0, int unused1, int unused2)
     texIdx = 0;
     slotIdx = 0;
     casterIdx = 0;
-    casterPtr = shadowData->casters;
+    casterPtr = gNewShadowCasterTable;
     mc54p = &mc54[0];
     vAzp = &vA.x + 2;
     vAyp = &vA.x + 1;
@@ -686,8 +688,7 @@ void renderShadows(int unused0, int unused1, int unused2)
             memcpy(&obj->anim.localPos, &modelState->overrideWorldPosX, sizeof(Vec3f));
             memcpy(&obj->anim.worldPos, &modelState->overrideWorldPosX, sizeof(Vec3f));
         }
-        castSlot = (NewShadowCastSlot*)(((u8)slotIdx * sizeof(NewShadowCastSlot) + offsetof(NewShadowData, castSlots)) +
-                                         (uintptr_t)shadowData);
+        castSlot = &gNewShadowCastSlots[(u8)slotIdx];
         castSlot->alpha = alpha;
         if ((u8)texIdx < NEW_SHADOW_MAX_CAST_TEXTURES && (kind = casterPtr->flags) != 0)
         {
@@ -801,7 +802,7 @@ void renderShadows(int unused0, int unused1, int unused2)
                 PSMTXConcat((MtxPtr)castSlot->textureMtx, viewMtx, (MtxPtr)castSlot->textureMtx);
                 obj->anim.modelState->shadowCastSlot = castSlot;
                 {
-                    Texture** texturePool = shadowData->castTextures;
+                    Texture** texturePool = gNewShadowCastTextures;
                     texture = texturePool + (u8)texIdx;
                     castSlot->texture = *texture;
                     castSlot->mode = gShadowCastModeTable[(u8)texIdx];
@@ -887,7 +888,7 @@ void renderShadows(int unused0, int unused1, int unused2)
         GXSetCopyFilter(0, renderMode->sample_pattern, 0, renderMode->vfilter);
         GXSetTexCopySrc(0, 0, 0x100, 0x100);
         GXSetTexCopyDst(0x100, 0x100, GX_CTF_R8, GX_FALSE);
-        GXCopyTex(shadowData->castTextures[1] + 1, GX_TRUE);
+        GXCopyTex(gNewShadowCastTextures[1] + 1, GX_TRUE);
         GXPixModeSync();
         setDisplayCopyFilter();
     }
@@ -1041,7 +1042,7 @@ void getNewShadowCausticTexture(uintptr_t* p)
 }
 
 
-void getObjectShadowDrawParams(GameObject* obj, u32* outTexture, f32* outScale, int* outX, int* outY)
+void getObjectShadowDrawParams(GameObject* obj, Texture** outTexture, f32* outScale, int* outX, int* outY)
 {
     int idx = (gNewShadowFrameIndex + 1) % NEW_SHADOW_FRAME_COUNT;
     *outTexture = gNewShadowFrameTextures[idx];
@@ -1494,12 +1495,12 @@ void newShadowsInitProceduralTextures(void)
 
 
 f32 gNewShadowPlacements[0x112];
-uintptr_t gNewShadowCastTextures[NEW_SHADOW_MAX_CAST_TEXTURES];
+Texture* gNewShadowCastTextures[NEW_SHADOW_MAX_CAST_TEXTURES];
 NewShadowCastSlot gNewShadowCastSlots[NEW_SHADOW_MAX_CASTERS];
 NewShadowCaster gNewShadowCasterTable[NEW_SHADOW_MAX_QUEUED_CASTERS];
 Texture* gNewShadowNoiseTexFrames[0x10];
 Texture* gNewShadowTextureTable[8][4];
-uintptr_t gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
+Texture* gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
 
 
 static inline void fillDiskTexture(void)
@@ -1755,9 +1756,8 @@ void allocLotsOfTextures(void)
     f32 rc2;
     Texture* frameTexture;
     f32 rc;
-    NewShadowData* shadowData = (NewShadowData*)gNewShadowEntries;
-    Texture** renderTargets = shadowData->castTextures;
-    Texture** frameTextures = shadowData->frameTextures;
+    Texture** renderTargets = gNewShadowCastTextures;
+    Texture** frameTextures = gNewShadowFrameTextures;
     f32 cy;
     int off;
     f32 cx;
@@ -1987,54 +1987,10 @@ void allocLotsOfTextures(void)
     frameTextures[2] = frameTexture;
     GXTexModeSync();
 
+    for (i = 0; i < NEW_SHADOW_ENTRY_COUNT; i++)
     {
-        u8* entryBytes;
-        for (i = 0, entryBytes = (u8*)shadowData; i < 0x20; i += 0x10)
-        {
-            entryBytes[0x010] = 0;
-            entryBytes[0x011] = 1;
-            entryBytes[0x024] = 0;
-            entryBytes[0x025] = 1;
-            entryBytes[0x038] = 0;
-            entryBytes[0x039] = 1;
-            entryBytes[0x04c] = 0;
-            entryBytes[0x04d] = 1;
-            entryBytes[0x060] = 0;
-            entryBytes[0x061] = 1;
-            entryBytes[0x074] = 0;
-            entryBytes[0x075] = 1;
-            entryBytes[0x088] = 0;
-            entryBytes[0x089] = 1;
-            entryBytes[0x09c] = 0;
-            entryBytes[0x09d] = 1;
-            entryBytes[0x0b0] = 0;
-            entryBytes[0x0b1] = 1;
-            entryBytes[0x0c4] = 0;
-            entryBytes[0x0c5] = 1;
-            entryBytes[0x0d8] = 0;
-            entryBytes[0x0d9] = 1;
-            entryBytes[0x0ec] = 0;
-            entryBytes[0x0ed] = 1;
-            entryBytes[0x100] = 0;
-            entryBytes[0x101] = 1;
-            entryBytes[0x114] = 0;
-            entryBytes[0x115] = 1;
-            entryBytes[0x128] = 0;
-            entryBytes[0x129] = 1;
-            entryBytes[0x13c] = 0;
-            entryBytes[0x13d] = 1;
-            entryBytes += 0x140;
-        }
-        entryBytes = (u8*)shadowData + i * 0x14;
-        for (; i < 0x21; i++)
-        {
-            int k;
-            for (k = 0; k < 2; k++)
-            {
-                entryBytes[0x10 + k] = (u8)k;
-            }
-            entryBytes += 0x14;
-        }
+        gNewShadowEntries[i].isActive = 0;
+        gNewShadowEntries[i].state = 1;
     }
     GXInvalidateTexAll();
     testAndSet_onlyUseHeap3(saved);

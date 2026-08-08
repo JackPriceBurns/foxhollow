@@ -138,12 +138,8 @@ static void Rcp_DrawWarpDistortionMesh(f32 a, f32 b) /* params unused; callers p
                 {
                     bulge = 0.0f;
                 }
-                *(volatile f32*)0xCC008000 = x0;
-                *(volatile f32*)0xCC008000 = y;
-                *(volatile f32*)0xCC008000 = meshZ;
-                *(volatile f32*)0xCC008000 = x0;
-                *(volatile f32*)0xCC008000 = y;
-                *(volatile f32*)0xCC008000 = bulge;
+                GXPosition3f32(x0, y, meshZ);
+                GXNormal3f32(x0, y, bulge);
                 distSq = x1 * x1 + ySq;
                 if (distSq < half)
                 {
@@ -153,12 +149,8 @@ static void Rcp_DrawWarpDistortionMesh(f32 a, f32 b) /* params unused; callers p
                 {
                     bulge = 0.0f;
                 }
-                *(volatile f32*)0xCC008000 = x1;
-                *(volatile f32*)0xCC008000 = y;
-                *(volatile f32*)0xCC008000 = meshZ;
-                *(volatile f32*)0xCC008000 = x1;
-                *(volatile f32*)0xCC008000 = y;
-                *(volatile f32*)0xCC008000 = bulge;
+                GXPosition3f32(x1, y, meshZ);
+                GXNormal3f32(x1, y, bulge);
             }
         }
         gRcpWarpDistortListSize = GXEndDisplayList();

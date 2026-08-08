@@ -46,15 +46,6 @@ typedef struct SplashQuad
 STATIC_ASSERT(sizeof(RippleEntry) == 0x10);
 STATIC_ASSERT(sizeof(SplashQuad) == 0x38);
 
-typedef struct WaterFxState
-{
-    f32 scales[4];
-    Texture* textures[4];
-    RippleEntry ripples[0x100];
-    SplashQuad quads[0x100];
-} WaterFxState;
-STATIC_ASSERT(offsetof(WaterFxState, textures) == 0x10);
-STATIC_ASSERT(offsetof(WaterFxState, ripples) == 0x20);
 STATIC_ASSERT(offsetof(WaterFxState, quads) == 0x1020);
 STATIC_ASSERT(sizeof(WaterFxState) == 0x4820);
 

@@ -485,7 +485,6 @@ void waterFxDraw(void)
 
 void waterFxSpawnContactEffect(u8* obj, f32* pos, u8 flip, u8 type)
 {
-    WaterFxState* base;
     f32 x, y, z;
     f32 ax, px;
     f32 ay, py, az, pz;
@@ -496,7 +495,6 @@ void waterFxSpawnContactEffect(u8* obj, f32* pos, u8 flip, u8 type)
     Vec norm;
     f32 fscale;
 
-    base = (WaterFxState*)gWaterFxState;
     if (((GameObject*)obj)->anim.classId == 1)
     {
         gWaterFxBank = ((GameObject*)obj)->anim.bankIndex;
@@ -511,12 +509,12 @@ void waterFxSpawnContactEffect(u8* obj, f32* pos, u8 flip, u8 type)
     {
         if (type == 1)
         {
-            base->ripples[gWaterRippleWriteIdx].x = pos[0];
-            base->ripples[gWaterRippleWriteIdx].y = 2.0f + pos[1];
-            base->ripples[gWaterRippleWriteIdx].z = pos[2];
-            base->ripples[gWaterRippleWriteIdx].id = *(s16*)obj;
-            base->ripples[gWaterRippleWriteIdx].alpha = 0xff;
-            base->ripples[gWaterRippleWriteIdx].flip = flip;
+            gWaterRipples[gWaterRippleWriteIdx].x = pos[0];
+            gWaterRipples[gWaterRippleWriteIdx].y = 2.0f + pos[1];
+            gWaterRipples[gWaterRippleWriteIdx].z = pos[2];
+            gWaterRipples[gWaterRippleWriteIdx].id = *(s16*)obj;
+            gWaterRipples[gWaterRippleWriteIdx].alpha = 0xff;
+            gWaterRipples[gWaterRippleWriteIdx].flip = flip;
             gWaterRippleWriteIdx++;
             if (gWaterRippleWriteIdx >= 0x100)
             {
@@ -536,7 +534,7 @@ void waterFxSpawnContactEffect(u8* obj, f32* pos, u8 flip, u8 type)
         PSVECCrossProduct(&perp, &norm, &axis);
         PSVECNormalize(&axis, &axis);
         PSVECNormalize(&perp, &perp);
-        fscale = base->scales[gWaterFxBank];
+        fscale = gWaterFxState[gWaterFxBank];
         PSVECScale(&axis, &axis, fscale);
         PSVECScale(&perp, &perp, fscale);
         x = pos[0];
@@ -545,31 +543,31 @@ void waterFxSpawnContactEffect(u8* obj, f32* pos, u8 flip, u8 type)
         ax = axis.x;
         xm = x - ax;
         px = perp.x;
-        base->quads[gWaterQuadWriteIdx].v[0] = xm - px;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[0] = xm - px;
         ay = axis.y;
         ym = y - ay;
         py = perp.y;
-        base->quads[gWaterQuadWriteIdx].v[1] = ym - py;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[1] = ym - py;
         az = axis.z;
         zm = z - az;
         pz = perp.z;
-        base->quads[gWaterQuadWriteIdx].v[2] = zm - pz;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[2] = zm - pz;
         x += ax;
-        base->quads[gWaterQuadWriteIdx].v[3] = x - px;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[3] = x - px;
         y += ay;
-        base->quads[gWaterQuadWriteIdx].v[4] = y - py;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[4] = y - py;
         z += az;
-        base->quads[gWaterQuadWriteIdx].v[5] = z - pz;
-        base->quads[gWaterQuadWriteIdx].v[6] = px + x;
-        base->quads[gWaterQuadWriteIdx].v[7] = py + y;
-        base->quads[gWaterQuadWriteIdx].v[8] = pz + z;
-        base->quads[gWaterQuadWriteIdx].v[9] = px + xm;
-        base->quads[gWaterQuadWriteIdx].v[10] = py + ym;
-        base->quads[gWaterQuadWriteIdx].v[11] = pz + zm;
-        base->quads[gWaterQuadWriteIdx].angle = 0x10000 - *(s16*)obj;
-        base->quads[gWaterQuadWriteIdx].type = type;
-        base->quads[gWaterQuadWriteIdx].alpha = 0xff;
-        base->quads[gWaterQuadWriteIdx].flip = flip;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[5] = z - pz;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[6] = px + x;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[7] = py + y;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[8] = pz + z;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[9] = px + xm;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[10] = py + ym;
+        gWaterSplashQuads[gWaterQuadWriteIdx].v[11] = pz + zm;
+        gWaterSplashQuads[gWaterQuadWriteIdx].angle = 0x10000 - *(s16*)obj;
+        gWaterSplashQuads[gWaterQuadWriteIdx].type = type;
+        gWaterSplashQuads[gWaterQuadWriteIdx].alpha = 0xff;
+        gWaterSplashQuads[gWaterQuadWriteIdx].flip = flip;
         gWaterQuadWriteIdx++;
         if (gWaterQuadWriteIdx >= 0x100)
         {
@@ -617,9 +615,8 @@ void waterFxSetDisabled(int disabled)
 void waterFxInit(void)
 {
     int i;
-    WaterFxState* waterFx = (WaterFxState*)gWaterFxState;
-    SplashQuad* quads = waterFx->quads;
-    RippleEntry* ripples = waterFx->ripples;
+    SplashQuad* quads = gWaterSplashQuads;
+    RippleEntry* ripples = gWaterRipples;
 
     for (i = 0; i < 16; i++)
     {
@@ -658,14 +655,14 @@ void waterFxInit(void)
         quads += 16;
         ripples += 16;
     }
-    waterFx->textures[0] = textureLoadAsset(0x19);
-    waterFx->textures[1] = textureLoadAsset(0x18);
-    waterFx->textures[2] = textureLoadAsset(0x1A);
-    waterFx->textures[3] = textureLoadAsset(0x646);
-    waterFx->scales[0] = 4.0f;
-    waterFx->scales[1] = 5.0f;
-    waterFx->scales[2] = 5.0f;
-    waterFx->scales[3] = 8.0f;
+    gWaterFxTextures[0] = textureLoadAsset(0x19);
+    gWaterFxTextures[1] = textureLoadAsset(0x18);
+    gWaterFxTextures[2] = textureLoadAsset(0x1A);
+    gWaterFxTextures[3] = textureLoadAsset(0x646);
+    gWaterFxState[0] = 4.0f;
+    gWaterFxState[1] = 5.0f;
+    gWaterFxState[2] = 5.0f;
+    gWaterFxState[3] = 8.0f;
     gWaterFxDisabled = 0;
     gWaterQuadWriteIdx = 0;
     gWaterRippleWriteIdx = 0;

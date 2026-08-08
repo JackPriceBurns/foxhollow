@@ -268,7 +268,7 @@ void playerDrawTeleportAnim(GameObject* obj);
 void playerRenderPostEffects(GameObject* obj, PlayerState* inner, int a, int b, int c);
 GameObject* playerFindNearestLookTarget(GameObject* obj);
 void playerCastSpell(GameObject* a, PlayerState* b, int c);
-void playerRefreshCollisionState(GameObject* obj, void* p2, int flags);
+void playerRefreshCollisionState(GameObject* obj, PlayerState* p2, int flags);
 void playerCalcWaterCurrent(f32* outX, f32* outZ, f32 p3, GameObject* player);
 void playerUpdateLookAndLean(GameObject* obj, BaddieState* baddie, PlayerState* player, f32 turnInput);
 void playerUpdateCameraTargetLookAngles(GameObject* obj, PlayerState* state, PlayerState* inner);
@@ -7638,7 +7638,7 @@ int playerState11(GameObject* obj, PlayerState* state)
     case 0x41a:
         if (((PlayerState*)state)->baddie.moveDone != 0)
         {
-            playerRefreshCollisionState(obj, inner + 4, 5);
+            playerRefreshCollisionState(obj, inner, 5);
             ((PlayerState*)state)->baddie.nextStateExitFn = playerStagedRestoreCameraUnlessClimbing;
             return -0x13;
         }
@@ -7662,7 +7662,7 @@ int playerState11(GameObject* obj, PlayerState* state)
         break;
     }
     }
-    playerRefreshCollisionState(obj, inner + 4, 5);
+    playerRefreshCollisionState(obj, inner, 5);
     return 0;
 }
 
@@ -8997,7 +8997,7 @@ int playerStateGrabLedge(GameObject* obj, PlayerState* state)
             ObjAnim_SetCurrentMove(obj, lbl_80332EF0[6], 0.0f, 0);
             ((PlayerState*)state)->baddie.moveSpeed = 0.008f;
             gPlayerCurrentMoveId = 6;
-            playerRefreshCollisionState(obj, inner + 4, 5);
+            playerRefreshCollisionState(obj, inner, 5);
             ((PlayerState*)state)->baddie.nextStateExitFn = NULL;
             return 0xd;
         }
@@ -9063,7 +9063,7 @@ int playerStateGrabLedge(GameObject* obj, PlayerState* state)
     }
     }
     inner->cameraFlags |= 4;
-    playerRefreshCollisionState(obj, inner + 4, 5);
+    playerRefreshCollisionState(obj, inner, 5);
     return 0;
 }
 
@@ -9097,7 +9097,7 @@ int playerState09(GameObject* obj, PlayerState* state)
             ObjAnim_SetCurrentMove(obj, lbl_80332EF0[6], fz, 0);
             gPlayerCurrentMoveId = 6;
             ((PlayerState*)state)->baddie.moveSpeed = 0.008f;
-            playerRefreshCollisionState(obj, inner + 4, 5);
+            playerRefreshCollisionState(obj, inner, 5);
             ((PlayerState*)state)->baddie.nextStateExitFn = NULL;
             return 0xd;
         }
@@ -9143,7 +9143,7 @@ int playerState09(GameObject* obj, PlayerState* state)
         break;
     }
     }
-    playerRefreshCollisionState(obj, inner + 4, 5);
+    playerRefreshCollisionState(obj, inner, 5);
     return 0;
 }
 
@@ -12890,17 +12890,17 @@ void playerCastSpell(GameObject* a, PlayerState* b, int c)
     ((PlayerState*)b)->animState = c;
 }
 
-void playerRefreshCollisionState(GameObject* obj, void* p2, int flags)
+void playerRefreshCollisionState(GameObject* obj, PlayerState* p2, int flags)
 {
     u8 f = (u8)flags;
-    CurvesCollisionState* q = (CurvesCollisionState*)((char*)p2 + 4);
+    CurvesCollisionState* q = &p2->baddie.curvesCollision;
     if (f & 1)
     {
-        curves_updateLocalPointTransforms(obj, (CurvesCollisionState*)q);
+        curves_updateLocalPointTransforms(obj, q);
     }
     if (f & 2)
     {
-        curves_preparePointCollisionFrame(obj, (CurvesCollisionState*)((char*)p2 + 4));
+        curves_preparePointCollisionFrame(obj, q);
         q->points[2][0] = obj->anim.worldPosX;
         q->points[2][1] = 35.0f + obj->anim.worldPosY;
         q->points[2][2] = obj->anim.worldPosZ;
@@ -17776,9 +17776,9 @@ void playerDoHitDetection(GameObject* obj)
     {
         ((PlayerState*)inner)->baddie.physicsActive = 0;
     }
-    (*gPathControlInterface)->update((void*)obj, (void*)(inner + 4), timeDelta);
-    (*gPathControlInterface)->apply((void*)obj, (void*)(inner + 4));
-    (*gPathControlInterface)->advance((void*)obj, (void*)(inner + 4), timeDelta);
+    (*gPathControlInterface)->update((void*)obj, &((PlayerState*)inner)->baddie.curvesCollision, timeDelta);
+    (*gPathControlInterface)->apply((void*)obj, &((PlayerState*)inner)->baddie.curvesCollision);
+    (*gPathControlInterface)->advance((void*)obj, &((PlayerState*)inner)->baddie.curvesCollision, timeDelta);
     ObjModelChain_AdvancePhase((ObjModelChain*)gPlayerModelChain);
     if (!(((PlayerState*)inner)->cutsceneTimer >= 6.0f))
     {
@@ -18310,8 +18310,9 @@ void playerUpdate(GameObject* obj)
             ((PlayerState*)inner)->queuedBitCount = 0;
             *(s16*)obj = ((PlayerState*)inner)->targetYaw;
             objAudioDispatchEventMask(obj, ((PlayerState*)inner)->baddie.eventFlags,
-                                      ((PlayerState*)inner)->animSoundId, (void*)(inner + 0x3c4),
-                                      (void*)(inner + 4), ((PlayerState*)inner)->baddie.animSpeedA, 1.0f);
+                                      ((PlayerState*)inner)->animSoundId, ((PlayerState*)inner)->footPoints,
+                                      &((PlayerState*)inner)->baddie.curvesCollision,
+                                      ((PlayerState*)inner)->baddie.animSpeedA, 1.0f);
         }
     }
 }
@@ -18324,7 +18325,7 @@ void objLoadPlayerFromSave(GameObject* obj)
     int i;
     f32 fz;
     SaveGameCharacterPosition* me;
-    u8* pathState;
+    CurvesCollisionState* pathState;
 
     gPlayerHitReactionVariant = 0;
     objAddObjectType((GameObject*)obj, 0);
@@ -18359,11 +18360,13 @@ void objLoadPlayerFromSave(GameObject* obj)
     inner->unk8BF = 0;
     (*gPlayerInterface)->init((void*)obj, (void*)inner, 0x42, 1);
     inner->baddie.orientationAxesOut = inner->orientationAxes;
-    pathState = (u8*)&inner->baddie + 4;
+    pathState = &inner->baddie.curvesCollision;
     (*gPathControlInterface)->init(pathState, 1, 0x400a7, 1);
-    (*gPathControlInterface)->setLocalPointCollision(pathState, 1, base + 0x130, &lbl_803DC6C0, 1);
-    (*gPathControlInterface)->setup(pathState, 2, base + 0x118, lbl_803DC6B8, lbl_803DC6A4);
-    pathState[0x258] = 0x64;
+    (*gPathControlInterface)
+        ->setLocalPointCollision(pathState, 1, gPlayerAnimSpeedThresholds.groundCollisionPoint, &lbl_803DC6C0, 1);
+    (*gPathControlInterface)
+        ->setup(pathState, 2, gPlayerAnimSpeedThresholds.bodyCollisionPoints, lbl_803DC6B8, lbl_803DC6A4);
+    pathState->heightPadding = 0x64;
     playerRefreshCollisionState((GameObject*)obj, inner, 0xff);
     Player_GetObjHitsState((GameObject*)(obj))->trackContactMask = 0x29;
     ((GameObject*)obj)->anim.alpha = 0xff;

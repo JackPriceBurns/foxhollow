@@ -34,6 +34,25 @@ typedef struct TrackQueryBounds
 
 STATIC_ASSERT(sizeof(TrackQueryBounds) == 0x18);
 
+typedef struct TrackHitResults
+{
+    f32 planes[4][4];
+    f32 radii[4];
+    u8 surfaceTypes[4];
+    u8 queryTypes[4];
+    u8 triangleFlags[4];
+    void* objects[4];
+    s16 hitCount;
+    u8 hitMask;
+    u8 pad6F;
+} TrackHitResults;
+
+STATIC_ASSERT(offsetof(TrackHitResults, radii) == 0x40);
+STATIC_ASSERT(offsetof(TrackHitResults, surfaceTypes) == 0x50);
+STATIC_ASSERT(offsetof(TrackHitResults, queryTypes) == 0x54);
+STATIC_ASSERT(offsetof(TrackHitResults, triangleFlags) == 0x58);
+
+
 struct Shader;
 struct MapBlockData;
 enum HitQueryMask

@@ -27,6 +27,7 @@
 #include "main/objtype.h"
 #include "main/obj_list.h"
 #include "main/objhits.h"
+#include "main/dll/player_state.h"
 #include "main/objseq.h"
 #include "main/loaded_file_flags.h"
 #include "main/resource.h"
@@ -1730,7 +1731,7 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags)
     {
     case 0:
     case 0x1f:
-        extra = 0x8e0;
+        extra = sizeof(PlayerState);
         break;
     default:
         if (((GameObject*)tmpl)->anim.dll != 0 &&
