@@ -397,13 +397,13 @@ void loadNextMap(void)
 
 void warpToMap(int idx, s8 transType)
 {
-    WarpDestination* p = (WarpDestination*)gMapInfoBuffer;
+    u8* p = gMapInfoBuffer;
     getTabEntry(p, MLDF_FILEID_WARPTAB_BIN, idx << 4, 16);
-    gRcpPendingWarpDest.x = p->x;
-    gRcpPendingWarpDest.y = p->y;
-    gRcpPendingWarpDest.z = p->z;
-    gRcpPendingWarpDest.layer = p->layer;
-    gRcpPendingWarpDest.angle = p->angle;
+    gRcpPendingWarpDest.x = *(f32*)&(u32){fhSwap32(*(u32*)(p + 0x00))};
+    gRcpPendingWarpDest.y = *(f32*)&(u32){fhSwap32(*(u32*)(p + 0x04))};
+    gRcpPendingWarpDest.z = *(f32*)&(u32){fhSwap32(*(u32*)(p + 0x08))};
+    gRcpPendingWarpDest.layer = (s16)fhSwap16(*(u16*)(p + 0x0c));
+    gRcpPendingWarpDest.angle = (s16)fhSwap16(*(u16*)(p + 0x0e));
     gPendingWarpIndex = (s16)idx;
     gWarpRequested = 1;
     *(s8*)&gRcpWarpTransitionType = transType;
@@ -1652,7 +1652,7 @@ void mapSetup(int layerOffset, f32 x, int* outMapId, int* outMapDataFileId, f32 
     if (curMapType == MAPTYPE_SUBMAP)
     {
         lbl_803DCEB6 = mapId;
-        lbl_803DCEB4 = mapInfo->objType;
+        lbl_803DCEB4 = (s16)fhSwap16((u16)mapInfo->objType);
     }
     *outMapId = mapId;
     if (mapId != -1)

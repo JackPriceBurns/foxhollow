@@ -158,30 +158,13 @@ extern u8 gExtendedMapActLookup[SAVEGAME_EXTENDED_MAP_COUNT];
 
 MapBitTransient gTransientMapBits[SAVEGAME_TRANSIENT_MAP_BIT_COUNT];
 
-typedef struct SaveGameRecord
-{
-    MapBitTransient transientMapBits[SAVEGAME_TRANSIENT_MAP_BIT_COUNT];
-    u32 mapObjGroupStatuses[SAVEGAME_MAP_COUNT];
-    u8 extendedMapActLookup[SAVEGAME_EXTENDED_MAP_COUNT];
-    SaveData options;
-    SaveGameData game;
-} SaveGameRecord;
-
-STATIC_ASSERT(offsetof(SaveGameRecord, mapObjGroupStatuses) == 0x3C);
-STATIC_ASSERT(offsetof(SaveGameRecord, extendedMapActLookup) == 0x21C);
-STATIC_ASSERT(offsetof(SaveGameRecord, options) == 0x244);
-STATIC_ASSERT(offsetof(SaveGameRecord, game) == 0x328);
-STATIC_ASSERT(sizeof(SaveGameRecord) == 0x1298);
-
-#define gSaveGameRecord (*(SaveGameRecord*)gTransientMapBits)
-
-static inline s8 saveGame_findTransientMapBit(int mapId, int shift, const SaveGameRecord* record)
+static inline s8 saveGame_findTransientMapBitIn(int mapId, int shift)
 {
     int i;
 
     for (i = 0; i < SAVEGAME_TRANSIENT_MAP_BIT_COUNT; i++)
     {
-        if (mapId == record->transientMapBits[i].mapId && shift == record->transientMapBits[i].shift)
+        if (mapId == gTransientMapBits[i].mapId && shift == gTransientMapBits[i].shift)
         {
             return i;
         }
@@ -189,16 +172,16 @@ static inline s8 saveGame_findTransientMapBit(int mapId, int shift, const SaveGa
     return -1;
 }
 
-static inline void saveGame_addTransientMapBit(int mapId, int shift, SaveGameRecord* record)
+static inline void saveGame_addTransientMapBit(int mapId, int shift)
 {
     int i;
     MapBitTransient* transient;
 
     for (i = 0; i < SAVEGAME_TRANSIENT_MAP_BIT_COUNT; i++)
     {
-        if (record->transientMapBits[i].mapId == -1)
+        if (gTransientMapBits[i].mapId == -1)
         {
-            (transient = &record->transientMapBits[i])->mapId = mapId;
+            (transient = &gTransientMapBits[i])->mapId = mapId;
             transient->shift = shift;
             transient->timer = SAVEGAME_TRANSIENT_MAP_BIT_TTL;
             return;
@@ -705,19 +688,17 @@ int saveSelect_getInfo(void* outPtr)
 
 void SaveGame_gplaySetObjGroupStatus(int mapId, int groupBit, int enabled)
 {
-    SaveGameRecord* s[1];
     u8 createTransient;
     u32 newStatus;
     int oldStatus;
     u32 bit;
     int i;
 
-    s[0] = &gSaveGameRecord;
     createTransient = 0;
 
     if (mapId >= SAVEGAME_EXTENDED_MAP_THRESHOLD)
     {
-        mapId = s[0]->extendedMapActLookup[mapId - SAVEGAME_EXTENDED_MAP_THRESHOLD];
+        mapId = gExtendedMapActLookup[mapId - SAVEGAME_EXTENDED_MAP_THRESHOLD];
     }
     if (!(mapId < SAVEGAME_MAP_COUNT && gSaveGameMapObjGroupBits[mapId] != 0))
     {
@@ -756,32 +737,30 @@ void SaveGame_gplaySetObjGroupStatus(int mapId, int groupBit, int enabled)
         {
             if ((oldStatus & (1 << groupBit)) == 0)
             {
-                u32* gp = s[0]->mapObjGroupStatuses;
                 for (i = 0; i < SAVEGAME_MAP_COUNT; i++)
                 {
                     if (gSaveGameMapObjGroupBits[i] == gSaveGameMapObjGroupBits[mapId])
                     {
-                        gp[i] |= 1 << groupBit;
+                        gMapObjGroupStatuses[i] |= 1 << groupBit;
                     }
                 }
             }
         }
         else
         {
-            u32* gp = s[0]->mapObjGroupStatuses;
             for (i = 0; i < SAVEGAME_MAP_COUNT; i++)
             {
                 if (gSaveGameMapObjGroupBits[i] == gSaveGameMapObjGroupBits[mapId])
                 {
-                    gp[i] &= ~(1 << groupBit);
+                    gMapObjGroupStatuses[i] &= ~(1 << groupBit);
                 }
             }
 
             if (!createTransient)
             {
-                if (saveGame_findTransientMapBit(mapId, groupBit, s[0]) == -1)
+                if (saveGame_findTransientMapBitIn(mapId, groupBit) == -1)
                 {
-                    saveGame_addTransientMapBit(mapId, groupBit, s[0]);
+                    saveGame_addTransientMapBit(mapId, groupBit);
                 }
             }
         }
@@ -806,7 +785,7 @@ void SaveGame_updateTransientMapBits(void)
 
 s8 SaveGame_findTransientMapBit(int mapId, int shift)
 {
-    return saveGame_findTransientMapBit(mapId, shift, &gSaveGameRecord);
+    return saveGame_findTransientMapBitIn(mapId, shift);
 }
 
 void mapClearBit(int idx, int bit)
@@ -1185,9 +1164,9 @@ void SaveGame_release(void)
 
 void SaveGame_initialise(void)
 {
-    SaveGameRecord* record = &gSaveGameRecord;
+    SaveData* options = (SaveData*)saveData;
 
-    memset(&record->game, 0, sizeof(record->game));
+    memset(gSaveGameData, 0, SAVEGAME_LIVE_BUFFER_SIZE);
     if (!(((SaveGameData*)gSaveGameWorkBuffer)->newFileFlag & 0x80))
     {
         memset(gSaveGameWorkBuffer, 0, SAVEGAME_ACTIVE_SIZE);
@@ -1195,34 +1174,34 @@ void SaveGame_initialise(void)
     pRestartPoint = 0;
     gSaveGameMapActCacheIdx[0] = -1;
     gSaveGameObjGroupCacheIdx[0] = -1;
-    memset(&record->options, 0, sizeof(record->options));
-    record->options.widescreenEnabled = 0;
-    record->options.subtitlesEnabled = 1;
-    record->options.rumbleEnabled = 1;
-    record->options.optionsValid = 1;
-    record->options.musicVolume = SAVEGAME_DEFAULT_VOLUME;
-    record->options.sfxVolume = SAVEGAME_DEFAULT_VOLUME;
-    record->options.speechVolume = SAVEGAME_DEFAULT_VOLUME;
-    record->transientMapBits[0].mapId = -1;
-    record->transientMapBits[1].mapId = -1;
-    record->transientMapBits[2].mapId = -1;
-    record->transientMapBits[3].mapId = -1;
-    record->transientMapBits[4].mapId = -1;
-    record->transientMapBits[5].mapId = -1;
-    record->transientMapBits[6].mapId = -1;
-    record->transientMapBits[7].mapId = -1;
-    record->transientMapBits[8].mapId = -1;
-    record->transientMapBits[9].mapId = -1;
-    record->transientMapBits[10].mapId = -1;
-    record->transientMapBits[11].mapId = -1;
-    record->transientMapBits[12].mapId = -1;
-    record->transientMapBits[13].mapId = -1;
-    record->transientMapBits[14].mapId = -1;
-    record->transientMapBits[15].mapId = -1;
-    record->transientMapBits[16].mapId = -1;
-    record->transientMapBits[17].mapId = -1;
-    record->transientMapBits[18].mapId = -1;
-    record->transientMapBits[19].mapId = -1;
+    memset(saveData, 0, SAVE_DATA_SIZE);
+    options->widescreenEnabled = 0;
+    options->subtitlesEnabled = 1;
+    options->rumbleEnabled = 1;
+    options->optionsValid = 1;
+    options->musicVolume = SAVEGAME_DEFAULT_VOLUME;
+    options->sfxVolume = SAVEGAME_DEFAULT_VOLUME;
+    options->speechVolume = SAVEGAME_DEFAULT_VOLUME;
+    gTransientMapBits[0].mapId = -1;
+    gTransientMapBits[1].mapId = -1;
+    gTransientMapBits[2].mapId = -1;
+    gTransientMapBits[3].mapId = -1;
+    gTransientMapBits[4].mapId = -1;
+    gTransientMapBits[5].mapId = -1;
+    gTransientMapBits[6].mapId = -1;
+    gTransientMapBits[7].mapId = -1;
+    gTransientMapBits[8].mapId = -1;
+    gTransientMapBits[9].mapId = -1;
+    gTransientMapBits[10].mapId = -1;
+    gTransientMapBits[11].mapId = -1;
+    gTransientMapBits[12].mapId = -1;
+    gTransientMapBits[13].mapId = -1;
+    gTransientMapBits[14].mapId = -1;
+    gTransientMapBits[15].mapId = -1;
+    gTransientMapBits[16].mapId = -1;
+    gTransientMapBits[17].mapId = -1;
+    gTransientMapBits[18].mapId = -1;
+    gTransientMapBits[19].mapId = -1;
 }
 
 u16 gSaveGameMapActBits[120] = {
