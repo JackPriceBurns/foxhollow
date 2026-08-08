@@ -28,7 +28,7 @@ typedef void (*CameraFunc1CFn)(int flags);
 typedef void (*CameraFunc1DFn)(int targetFlagMode);
 
 typedef struct CameraInterface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     void (*init)(void *focus, f32 x, f32 y, f32 z);
     CameraUpdateFn update;
     CameraGetFn getCamera;

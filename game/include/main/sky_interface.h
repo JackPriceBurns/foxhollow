@@ -81,7 +81,7 @@ typedef int (*Sky2Ret0Fn)(void);
 typedef void (*Sky2ApplyTextColorFn)(int slot);
 
 typedef struct Sky2Interface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     Sky2UpdateEnvfxActFn updateEnvfxAct;
     Sky2OnMapSetupFn onMapSetup;
     Sky2RunFn run;

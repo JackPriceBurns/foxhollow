@@ -10,7 +10,7 @@ typedef struct WCLevelContInterface WCLevelContInterface;
 
 struct WCLevelContInterface
 {
-    u8 pad00[0x20];
+    void (*pad00_slots[8])(void);
     void (*tileAToWorldPos)(GameObject* obj, int tileX, int tileY, f32* outX, f32* outZ,
                             WCLevelContInterface* iface);
     void (*worldPosToTileA)(GameObject* obj, f32 x, f32 z, s16* outTileX, s16* outTileY,

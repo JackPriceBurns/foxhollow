@@ -35,6 +35,8 @@ static inline void fhSwapU32Array(void* p, unsigned long words) {
 void fhSwapResidentTabs(void);
 void fhSwapTabBufferOnce(void* buf, unsigned int words);
 void fhSwapTabTableInPlace(void* table);
+void fhSwapObjDef(void* def);
+int fhTabIs16Bit(const char* name);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
 

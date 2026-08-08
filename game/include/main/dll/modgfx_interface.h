@@ -32,7 +32,7 @@ typedef s16 (*ModgfxGetLastSpawnHandleFn)(void);
 
 typedef struct ModgfxInterface
 {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     ModgfxOnMapSetupFn onMapSetup;
     ModgfxSpawnEffectFn spawnEffect;
     ModgfxUpdateActiveEffectsFn updateActiveEffects;
@@ -41,7 +41,7 @@ typedef struct ModgfxInterface
     ModgfxDetachSourceFn detachSource;
     ModgfxRenderEffectsFn renderEffects;
     ModgfxReleaseHandleFn releaseHandle;
-    u8 pad24[0x30 - 0x24];
+    void (*pad24_slots[3])(void);
     ModgfxMarkSourceFrameUpdatedFn markSourceFrameUpdated;
     ModgfxBeginSequenceFn beginSequence;
     ModgfxResetSequenceSpawnsFn resetSequenceSpawns;

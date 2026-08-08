@@ -12,7 +12,7 @@ typedef void (*ProjgfxRayHitUnsupportedFn)(void);
 
 typedef struct ProjgfxInterface
 {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     ProjgfxOnMapSetupFn onMapSetup;
     ProjgfxRetMinusOneFn func04RetMinusOne;
     ProjgfxNopFn func05Nop;

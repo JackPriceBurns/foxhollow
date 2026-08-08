@@ -4,14 +4,14 @@
 #include "global.h"
 
 typedef struct MapEventInterface {
-    u8 pad00[0x1C];
+    void (*pad00_slots[7])(void);
     void (*savePoint)(int position, s16 angle, int flags, int map);
     void (*gotoSavegame)(void);
     void (*restartPoint)(void *position, s16 angle, int map, int flag);
     void (*gotoRestartPoint)(void);
     void (*clearRestartPoint)(void);
     int (*getRestartGameNotCleared)(void);
-    u8 pad34[0x40 - 0x34];
+    void (*pad34_slots[3])(void);
     u8 (*getMapAct)(s32 mapId);
     void (*setMapAct)(int mapId, int act);
     void (*setMapActLut)(int value, int idx);
@@ -27,7 +27,7 @@ typedef struct MapEventInterface {
     void (*updateTimes)(void);
     u8 (*getCurChar)(void);
     void (*setCharacter)(u8 character);
-    u8 pad7C[0x88 - 0x7C];
+    void (*pad7C_slots[3])(void);
     u8 *(*getLast)(void);
     void *(*getCurCharacterState)(void);
     u8 *(*getCurCharPos)(void);

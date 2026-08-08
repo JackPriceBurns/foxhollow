@@ -70,6 +70,28 @@ void fhSwapTabBufferOnce(void* buf, unsigned int words) {
   }
 }
 
+int fhTabIs16Bit(const char* name) {
+  int len = name ? (int)strlen(name) : 0;
+  if (len >= 12 && strcmp(name + len - 12, "OBJSEQ2C.tab") == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+void fhSwapObjDef(void* def) {
+  u8* d = (u8*)def;
+  static const u8 u16Offs[] = {0x48, 0x4a, 0x4e, 0x50, 0x52, 0x68, 0x6a, 0x6c,
+                               0x6e, 0x78, 0x7c, 0x7e, 0x80, 0x82, 0x84, 0x86};
+  u32 i;
+  for (i = 0; i <= 0x44; i += 4) {
+    *(u32*)(d + i) = fhSwap32(*(u32*)(d + i));
+  }
+  for (i = 0; i < sizeof(u16Offs); i++) {
+    *(u16*)(d + u16Offs[i]) = fhSwap16(*(u16*)(d + u16Offs[i]));
+  }
+  *(u32*)(d + 0x88) = fhSwap32(*(u32*)(d + 0x88));
+}
+
 void fhSwapResidentTabs(void) {
   int i;
   for (i = 0; i < 0x58; i++) {

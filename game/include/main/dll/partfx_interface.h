@@ -69,11 +69,11 @@ STATIC_ASSERT(offsetof(PartFxSpawnParams, posY) == 0x10);
 STATIC_ASSERT(offsetof(PartFxSpawnParams, posZ) == 0x14);
 
 typedef struct EffectInterface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     EffectOnMapSetupFn onMapSetup;
     EffectSpawnObjectFn spawnObject;
     EffectUpdateFrameStateFn updateFrameState;
-    u8 pad10[0x18 - 0x10];
+    void (*pad10_slots[2])(void);
     EffectFreeObjectFn freeObject;
 } EffectInterface;
 

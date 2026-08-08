@@ -17,7 +17,7 @@ typedef void (*WaterfxOnMapSetupFn)(void);
 typedef void (*WaterfxSetRippleScaleFn)(int flag, f32 value);
 
 typedef struct WaterfxInterface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     WaterfxRunFrameFn runFrame;
     WaterfxImpactSurfaceFn spawnImpactSurface;
     WaterfxRenderFn render;

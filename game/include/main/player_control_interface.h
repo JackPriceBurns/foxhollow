@@ -4,7 +4,7 @@
 #include "global.h"
 
 typedef struct PlayerControlInterface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     void (*init)(void *unused, void *state, int moveA, int moveB);
     void (*update)(void *obj, void *state, f32 timeDelta, f32 pathDelta, void *stateHandlers,
                    void *substateHandlers);

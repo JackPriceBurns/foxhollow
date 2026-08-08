@@ -28,7 +28,7 @@ typedef struct LaserObjectMapData {
 } LaserObjectMapData;
 
 typedef struct LaserReleaseInterface {
-  u8 pad00[0x48];
+  void (*pad00_slots[18])(void);
   void (*releaseObject)(int parent, void *object, int flags);
 } LaserReleaseInterface;
 

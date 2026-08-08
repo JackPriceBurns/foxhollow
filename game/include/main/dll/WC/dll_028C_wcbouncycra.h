@@ -6,13 +6,13 @@
 
 typedef struct WCBlockGridInterface
 {
-    char pad0[0x20];
+    void (*pad0_slots[8])(void);
     void (*getCellWorldA)(int obj, s16 cellX, s16 cellZ, f32* worldX, f32* worldZ, struct WCBlockGridInterface* self);
-    char pad24[0x0C];
+    void (*pad24_slots[3])(void);
     void (*getCellXYA)(u8 tileIndex, s16* cellX, s16* cellZ, struct WCBlockGridInterface* self);
-    char pad34[0x08];
+    void (*pad34_slots[2])(void);
     void (*getCellWorldB)(int obj, s16 cellX, s16 cellZ, f32* worldX, f32* worldZ, struct WCBlockGridInterface* self);
-    char pad40[0x0C];
+    void (*pad40_slots[3])(void);
     void (*getCellXYB)(u8 tileIndex, s16* cellX, s16* cellZ, struct WCBlockGridInterface* self);
 } WCBlockGridInterface;
 

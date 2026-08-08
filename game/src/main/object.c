@@ -1154,6 +1154,20 @@ void* loadModLines(int idx, s16* outCount)
     {
         result = mmAlloc(size, 5, 0);
         fileLoadToBufferOffset(MLDF_FILEID_MODLINES_BIN, result, start, size);
+        {
+            u8* rec = (u8*)result;
+            int nrec = size / 20;
+            int ri;
+            for (ri = 0; ri < nrec; ri++, rec += 20)
+            {
+                int fi;
+                for (fi = 0; fi < 12; fi += 2)
+                {
+                    *(u16*)(rec + fi) = fhSwap16(*(u16*)(rec + fi));
+                }
+                *(u16*)(rec + 16) = fhSwap16(*(u16*)(rec + 16));
+            }
+        }
     }
     mm_free(hdr);
     *outCount = (u32)size / 20;
@@ -1197,42 +1211,61 @@ u8* loadObjectFile(int id)
         base = offsets[id];
         size = (&offsets[id])[1] - base;
     }
-    buf = (ObjDef*)mmAlloc(size, 0xe, 0);
+    buf = (ObjDef*)mmAlloc(sizeof(ObjDef) + size, 0xe, 0);
     if (buf != 0)
     {
-        fileLoadToBufferOffset(MLDF_FILEID_OBJECTS_BIN, (u8*)buf, base, size);
-        if (buf->eventMoveTable != NULL)
+        u8* blob = (u8*)(buf + 1);
+        u32 rawOff;
+        int mi;
+        fileLoadToBufferOffset(MLDF_FILEID_OBJECTS_BIN, blob, base, size);
+        memset(buf, 0, sizeof(ObjDef));
+        buf->shadowScaleBase = *(f32*)&(u32){fhSwap32(*(u32*)(blob + 0x00))};
+        buf->rootMotionScaleBase = *(f32*)&(u32){fhSwap32(*(u32*)(blob + 0x04))};
+        buf->modelFileIds = (s32*)(blob + fhSwap32(*(u32*)(blob + 0x08)));
+        buf->textureSlotDefs = (ObjTextureSlotDef*)(blob + fhSwap32(*(u32*)(blob + 0x0c)));
+        buf->jointData = (s8*)(blob + fhSwap32(*(u32*)(blob + 0x10)));
+        rawOff = fhSwap32(*(u32*)(blob + 0x18));
+        buf->extraSetupData = rawOff ? blob + rawOff : NULL;
+        rawOff = fhSwap32(*(u32*)(blob + 0x1c));
+        buf->sequenceMap = rawOff ? (s16*)(blob + rawOff) : NULL;
+        rawOff = fhSwap32(*(u32*)(blob + 0x20));
+        buf->eventMoveTable = rawOff ? (s16*)(blob + rawOff) : NULL;
+        rawOff = fhSwap32(*(u32*)(blob + 0x24));
+        buf->hitReactMoveTable = rawOff ? (ObjHitReactMoveEntry*)(blob + rawOff) : NULL;
+        rawOff = fhSwap32(*(u32*)(blob + 0x28));
+        buf->weaponDaTable = rawOff ? (s16*)(blob + rawOff) : NULL;
+        buf->attachPoints = (ObjAttachPoint*)(blob + fhSwap32(*(u32*)(blob + 0x2c)));
+        rawOff = fhSwap32(*(u32*)(blob + 0x40));
+        buf->hitVolumes = rawOff ? (ObjDefHitVolume*)(blob + rawOff) : NULL;
+        buf->flags = fhSwap32(*(u32*)(blob + 0x44));
+        buf->shadowType = (s16)fhSwap16(*(u16*)(blob + 0x48));
+        buf->shadowTextureId = (s16)fhSwap16(*(u16*)(blob + 0x4a));
+        buf->hitboxFlags = (s16)fhSwap16(*(u16*)(blob + 0x4e));
+        buf->dllId = (s16)fhSwap16(*(u16*)(blob + 0x50));
+        buf->category = (s16)fhSwap16(*(u16*)(blob + 0x52));
+        memcpy(&buf->pad54, blob + 0x54, 0x14);
+        buf->primaryCapsuleOffsetA = (s16)fhSwap16(*(u16*)(blob + 0x68));
+        buf->primaryCapsuleOffsetB = (s16)fhSwap16(*(u16*)(blob + 0x6a));
+        buf->secondaryCapsuleOffsetA = (s16)fhSwap16(*(u16*)(blob + 0x6c));
+        buf->secondaryCapsuleOffsetB = (s16)fhSwap16(*(u16*)(blob + 0x6e));
+        memcpy(&buf->sourceHitMask, blob + 0x70, 8);
+        buf->mapLoadObjectId = (s16)fhSwap16(*(u16*)(blob + 0x78));
+        buf->npcDialogueTextId = (s16)fhSwap16(*(u16*)(blob + 0x7a));
+        for (mi = 0; mi < 4; mi++)
         {
-            buf->eventMoveTable = (s16*)((u8*)buf + (uintptr_t)buf->eventMoveTable);
+            buf->helpTextIds[mi] = (s16)fhSwap16(*(u16*)(blob + 0x7c + mi * 2));
         }
-        if (buf->hitReactMoveTable != NULL)
+        buf->avoidRadiusX = fhSwap16(*(u16*)(blob + 0x84));
+        buf->avoidRadiusZ = fhSwap16(*(u16*)(blob + 0x86));
+        buf->shadowModelScaleBase = *(f32*)&(u32){fhSwap32(*(u32*)(blob + 0x88))};
+        memcpy(&buf->pad8C, blob + 0x8c, 3);
+        for (mi = 0; mi < buf->modelCount; mi++)
         {
-            buf->hitReactMoveTable =
-                (ObjHitReactMoveEntry*)((u8*)buf + (uintptr_t)buf->hitReactMoveTable);
+            buf->modelFileIds[mi] = (s32)fhSwap32((u32)buf->modelFileIds[mi]);
         }
-        if (buf->weaponDaTable != NULL)
-        {
-            buf->weaponDaTable = (s16*)((u8*)buf + (uintptr_t)buf->weaponDaTable);
-        }
-        buf->modelFileIds = (s32*)((u8*)buf + (uintptr_t)buf->modelFileIds);
-        buf->textureSlotDefs = (ObjTextureSlotDef*)((u8*)buf + (uintptr_t)buf->textureSlotDefs);
-        buf->jointData = (s8*)((u8*)buf + (uintptr_t)buf->jointData);
-        if (buf->extraSetupData != NULL)
-        {
-            buf->extraSetupData = (u8*)buf + (uintptr_t)buf->extraSetupData;
-        }
-        if (buf->hitVolumes != NULL)
-        {
-            buf->hitVolumes = (ObjDefHitVolume*)((u8*)buf + (uintptr_t)buf->hitVolumes);
-        }
-        if (buf->sequenceMap != NULL)
-        {
-            buf->sequenceMap = (s16*)((u8*)buf + (uintptr_t)buf->sequenceMap);
-        }
-        buf->attachPoints = (ObjAttachPoint*)((u8*)buf + (uintptr_t)buf->attachPoints);
         buf->modLines = NULL;
         buf->intersectionLines = NULL;
-        n = (s8)((u8*)buf)[0x5d];
+        n = buf->modLineIndex;
         if (n > -1)
         {
             buf->modLines = (struct MapHitLine*)loadModLines(n, &modLine);
@@ -1909,6 +1942,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     {
         if (seq > gObjSeqToObjIdMax)
         {
+            fprintf(stderr, "[obj] seq %d > max %d\n", seq, gObjSeqToObjIdMax);
             return NULL;
         }
         id = gObjSeqToObjIdTable[seq];
@@ -1919,7 +1953,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     tmpl.def = def;
     if (def == NULL || (intptr_t)def == -1)
     {
-        debugPrintf(sObjUnknownTypeUsingDummyObjectWarning, id, *data, tmpl.romDefNo);
+        fprintf(stderr, "[obj] def load failed id=%d seq=%d def=%p\n", id, seq, (void*)def);
         return NULL;
     }
     modelDef = (ObjModelInstance*)def;
@@ -2647,6 +2681,7 @@ void Obj_InitObjectSystem(void)
     lbl_803DCBC0 = mmAlloc(0x10, 0xe, 0);
     loadAssetFileById(&gObjSeqToObjIdTable, MLDF_FILEID_OBJINDEX_BIN);
     gObjSeqToObjIdMax = (getDataFileSize(MLDF_FILEID_OBJINDEX_BIN) >> 1) - 1;
+    fhSwapU16Array(gObjSeqToObjIdTable, gObjSeqToObjIdMax + 1);
     for (p = gObjSeqToObjIdTable + gObjSeqToObjIdMax; *p == 0;)
     {
         p--;

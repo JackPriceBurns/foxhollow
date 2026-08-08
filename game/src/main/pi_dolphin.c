@@ -4386,7 +4386,14 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
                 int fhLen = fhName ? (int)strlen(fhName) : 0;
                 if (fhLen > 4 && strcmp(fhName + fhLen - 4, ".tab") == 0)
                 {
-                    fhSwapU32Array(destBuf, hdr->decompressedSize / 4);
+                    if (fhTabIs16Bit(fhName))
+                    {
+                        fhSwapU16Array(destBuf, hdr->decompressedSize / 2);
+                    }
+                    else
+                    {
+                        fhSwapU32Array(destBuf, hdr->decompressedSize / 4);
+                    }
                 }
             }
         }
@@ -4402,7 +4409,14 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
                 int fhLen = fhName ? (int)strlen(fhName) : 0;
                 if (fhLen > 4 && strcmp(fhName + fhLen - 4, ".tab") == 0)
                 {
-                    fhSwapU32Array(destBuf, decompSize / 4);
+                    if (fhTabIs16Bit(fhName))
+                    {
+                        fhSwapU16Array(destBuf, decompSize / 2);
+                    }
+                    else
+                    {
+                        fhSwapU32Array(destBuf, decompSize / 4);
+                    }
                 }
             }
         }

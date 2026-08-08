@@ -4,22 +4,22 @@
 #include "global.h"
 
 typedef struct GameUIInterface {
-    u8 pad00[0x04];
+    void (*pad00_slots[1])(void);
     void (*frameStart)(void);
     void (*frameEnd)(void);
     void (*render)(void *context, int arg1, int arg2);
-    u8 pad10[0x1C - 0x10];
+    void (*pad10_slots[3])(void);
     int (*isAnyItemBeingUsed)(void);
     int (*isItemBeingUsed)(int itemId);
     int (*isOneOfItemsBeingUsed)(s32 *items, int count);
-    u8 pad28[0x38 - 0x28];
+    void (*pad28_slots[4])(void);
     void (*showNpcDialogue)(s32 id, s32 unusedA, s32 unusedB, s32 disableInput);
-    u8 pad3C[0x40 - 0x3C];
+    void (*pad3C_slots[1])(void);
     void (*setCMenuShouldClose)(u8 shouldClose);
     void (*setInputOverride)(s32 buttons, s16 stickX, s16 stickY);
-    u8 pad48[0x50 - 0x48];
+    void (*pad48_slots[2])(void);
     void (*setUnusedHudSetting)(u8 value);
-    u8 pad54[0x58 - 0x54];
+    void (*pad54_slots[1])(void);
     void (*initAirMeter)(s32 maxValue, s32 textureId);
     void (*runAirMeter)(s32 value);
     void (*airMeterShutdown)(void);
