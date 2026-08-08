@@ -34,6 +34,7 @@ static inline void fhSwapU32Array(void* p, unsigned long words) {
 
 void fhSwapResidentTabs(void);
 void fhSwapTabBufferOnce(void* buf, unsigned int words);
+void fhSwapTab16BufferOnce(void* buf, unsigned int halves);
 void fhSwapTabTableInPlace(void* table);
 void fhSwapObjDef(void* def);
 void fhSwapRomListSection(void* buf, unsigned int size);

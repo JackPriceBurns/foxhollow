@@ -1680,7 +1680,10 @@ int mergeTableFiles(void* table, int id, int idx, int count_)
     int count = 0;
     int* p1;
     int* p2;
-    int* src1 = MAPTBLP(id);
+    int* src1;
+
+    fhSwapResidentTabs();
+    src1 = MAPTBLP(id);
     if (src1 == NULL || MAPTBLP(idx) == NULL)
     {
         if (src1 == NULL)

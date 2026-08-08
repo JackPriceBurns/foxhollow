@@ -1242,6 +1242,14 @@ u8* loadObjectFile(int id)
                 et += 3;
             }
         }
+        if (buf->sequenceMap != NULL)
+        {
+            s16* sm = buf->sequenceMap;
+            for (mi = 0; mi < buf->sequenceCount; mi++)
+            {
+                sm[mi] = (s16)fhSwap16((u16)sm[mi]);
+            }
+        }
         buf->modLines = NULL;
         buf->intersectionLines = NULL;
         n = buf->modLineIndex;

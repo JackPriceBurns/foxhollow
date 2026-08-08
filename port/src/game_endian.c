@@ -75,6 +75,9 @@ int fhTabIs16Bit(const char* name) {
   if (len >= 12 && strcmp(name + len - 12, "OBJSEQ2C.tab") == 0) {
     return 1;
   }
+  if (len >= 10 && strcmp(name + len - 10, "OBJSEQ.tab") == 0) {
+    return 1;
+  }
   if (len >= 11 && strcmp(name + len - 11, "MODANIM.tab") == 0) {
     return 1;
   }
@@ -116,6 +119,25 @@ void fhSwapRomListSection(void* buf, unsigned int size) {
   }
 }
 
+void fhSwapTab16BufferOnce(void* buf, unsigned int halves) {
+  TabSwapRecord* rec;
+  if (!buf || !halves) {
+    return;
+  }
+  rec = findRecord(buf);
+  if (rec && rec->fingerprint == fingerprintOf(buf, halves / 2)) {
+    return;
+  }
+  fhSwapU16Array(buf, halves);
+  if (!rec && sSwappedTabCount < 96) {
+    rec = &sSwappedTabs[sSwappedTabCount++];
+    rec->buf = buf;
+  }
+  if (rec) {
+    rec->fingerprint = fingerprintOf(buf, halves / 2);
+  }
+}
+
 void fhSwapResidentTabs(void) {
   int i;
   for (i = 0; i < 0x58; i++) {
@@ -125,7 +147,11 @@ void fhSwapResidentTabs(void) {
     if (buf && len > 4 &&
         (strcmp(name + len - 4, ".tab") == 0 || strcmp(name + len - 4, ".TAB") == 0) &&
         strncmp((char*)buf, "DIR", 3) != 0 && strncmp((char*)buf, "ZLB", 3) != 0) {
-      fhSwapTabBufferOnce(buf, gResourceFileSizes[i] / 4);
+      if (fhTabIs16Bit(name)) {
+        fhSwapTab16BufferOnce(buf, gResourceFileSizes[i] / 2);
+      } else {
+        fhSwapTabBufferOnce(buf, gResourceFileSizes[i] / 4);
+      }
     }
   }
 }

@@ -156,7 +156,7 @@ extern int gSubtitleBlockCount;
 extern int gSubtitleLineIndex;
 extern int gSubtitleElapsedFrames;
 extern int gSubtitleLineCount;
-extern void* gSubtitleLineTable[0x100];
+extern SubtitleLineTable gSubtitleLines;
 extern int gGameTextSavedDir;
 extern s16 gGameTextTaskTextAllowList[12];
 extern int gGameTextBoxCornerInset;
@@ -177,8 +177,6 @@ extern const f32 gGameTextFadeLimit;
 extern char gGameTextFontData[];
 extern char sGameTextBlankFormat[5];
 extern char sGameTextSequencePathFormat[];
-extern f32 gSubtitleLineTimes[0x100];
-extern char* gSubtitleLineStrs[0x100];
 
 int GameText_CountPrintableChars(u8* str);
 int GameText_FindControlCodeArgs(u8* str, u32 target, int* out);
