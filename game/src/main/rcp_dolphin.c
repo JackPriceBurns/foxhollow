@@ -70,7 +70,7 @@ static inline void gxLoadObjectLights(GameObject* model, ModelLightStruct** ligh
 
 #define RCP_DISTORT_TEXTURE_ID 0x5dc
 
-extern u8 gRcpWarpDistortDisplayList[0x6640];
+extern u8 gRcpWarpDistortDisplayList[0x6640] __attribute__((aligned(32)));
 
 static void Rcp_SetupDistortionRenderState(void);
 

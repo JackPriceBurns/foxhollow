@@ -1595,8 +1595,7 @@ void newclouds_run(void)
     gNewCloudBlizzardActive = 0;
     while (i < 8)
     {
-        cloudSlot = (u8**)((u8*)clouds + slotOffset);
-        cloudSlot = (u8**)((u8*)cloudSlot + 16);
+        cloudSlot = (u8**)&gNewClouds[i];
         p = *cloudSlot;
         if (p != NULL &&
             (*(u8**)p == NULL || (((GameObject*)*(u8**)p)->objectFlags & OBJECT_OBJFLAG_FREED)))
