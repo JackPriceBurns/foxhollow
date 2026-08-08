@@ -2295,7 +2295,7 @@ void objRenderInvalidateStateCache(void)
 }
 typedef void (*ObjShadowCb)(GameObject* obj, int* am, f32* wm);
 
-f32 gObjBoneMtxBuffer[0xC00];
+f32 gObjBoneMtxBuffer[0xC00] ALIGN_DECL(32);
 
 
 static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p4)
@@ -3462,7 +3462,7 @@ u8 gObjGxPosMtxIdTable[12] = {0x00, 0x03, 0x06, 0x09, 0x0C, 0x0F, 0x12, 0x15, 0x
 u8 gObjGxTexMtxIdTable[12] = {0x1E, 0x21, 0x24, 0x27, 0x2A, 0x2D, 0x30, 0x33, 0x36, 0x39, 0x00, 0x00};
 
 
-f32 gObjJointMtxTemp[24] = {
+f32 gObjJointMtxTemp[24] ALIGN_DECL(32) = {
     1.0f,         0.0f,           0.0f,           0.0f,           0.0f,           1.0f,
     0.0f,         0.0f,           0.0f,           0.0f,           1.0f,           0.0f,
     0.014794691f, 1.6930165e+22f, 2.5424896e+29f, 4.6243438e+30f, 1.6713787e-19f, 3.5253297e+09f,

@@ -444,6 +444,6 @@ RcpDistortConfig gRcpDistortConfigs[6] ALIGN_DECL(8) = {
     {0.5f, 1.0f}, {0.5f, 0.5f}, {0.4f, 1.0f}, {0.3f, 0.8f}, {0.2f, 1.0f}, {0.4f, 0.5f},
 };
 RcpDistortSlot gRcpDistortSlots[6];
-u8 gRcpWarpDistortDisplayList[0x6640];
+u8 gRcpWarpDistortDisplayList[0x6640] ALIGN_DECL(32);
 
 

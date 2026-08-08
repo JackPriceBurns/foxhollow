@@ -520,7 +520,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
         {
             return;
         }
-        if (mapBlockBounds_ComputeAndTestPlanes(bounds[0], block, (FrustumPlane*)((u8*)texGlobals + 0x987c),
+        if (mapBlockBounds_ComputeAndTestPlanes(bounds[0], block, gViewFrustumPlanes,
                                                 FRUSTUM_PLANE_COUNT, &minX, &minY, &minZ, &maxX, &maxY, &maxZ) == 0)
         {
             return;
@@ -631,7 +631,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
                         else
                         {
                             u8 mirrorVisible = mapBlockBounds_ComputeAndTestPlanes(
-                                bounds[0], block, (FrustumPlane*)((u8*)texGlobals + 0x9818), FRUSTUM_PLANE_COUNT, &minX, &minY,
+                                bounds[0], block, gPlayerRelativeFrustumPlanes, FRUSTUM_PLANE_COUNT, &minX, &minY,
                                 &minZ, &maxX, &maxY, &maxZ);
                             if ((mirrorVisible != 0 && (u8)visArg != 0) || (mirrorVisible == 0 && (u8)visArg == 0))
                             {
@@ -1662,8 +1662,8 @@ int collectShadowTrackTriangles(GameObject* obj, uintptr_t triBuf, void* planesO
 {
     int j;
     f32 lm[12];
-    u8* descBytes = trackGetBlockDescriptors((u32*)&j);
-    u8* end = descBytes + j * 0x18;
+    TrackBlockDescriptor* desc = (TrackBlockDescriptor*)trackGetBlockDescriptors((u32*)&j);
+    TrackBlockDescriptor* end = desc + j;
     int total;
     int grp;
     int outOff;
@@ -1673,23 +1673,23 @@ int collectShadowTrackTriangles(GameObject* obj, uintptr_t triBuf, void* planesO
     j = grp = 0;
     total = 0;
     triangleFlag = kindSelector ? 4 : 8;
-    for (; descBytes < end; descBytes += 0x18)
+    for (; desc < end; desc++)
     {
-        u32 id = *(u32*)descBytes;
-        if (id == 0 || id == *(u32*)&obj->anim.parent)
+        void* id = desc->object;
+        if (id == NULL || id == obj->anim.parent)
         {
             f32 fx = obj->anim.localPosX;
             f32 fz = obj->anim.localPosZ;
             TrackShadowTriangle* outA;
 
-            if (id == 0)
+            if (id == NULL)
             {
                 fx -= offX;
                 fz -= offZ;
             }
-            j = (s16)((TrackBlockDescriptor*)descBytes)->firstTriangle;
+            j = (s16)desc->firstTriangle;
             outA = (TrackShadowTriangle*)((char*)planesOut + outOff);
-            while (j < (s16)((TrackBlockDescriptor*)descBytes)[1].firstTriangle && grp < 0x4b0 && total < 0xe10)
+            while (j < (s16)desc[1].firstTriangle && grp < 0x4b0 && total < 0xe10)
             {
                 if (triangleFlag & ((TrackTriangle*)triBuf + j)->flags)
                 {
@@ -1720,7 +1720,7 @@ int collectShadowTrackTriangles(GameObject* obj, uintptr_t triBuf, void* planesO
         }
         else
         {
-            f32* m = *(f32**)((char*)descBytes + 0xc);
+            f32* m = (f32*)desc->currentMatrix;
             f32* p6start;
             int totalStart;
             TrackShadowTriangle* outA;
@@ -1739,9 +1739,9 @@ int collectShadowTrackTriangles(GameObject* obj, uintptr_t triBuf, void* planesO
             lm[11] = m[14] - obj->anim.localPosZ;
             p6start = (f32*)vertsOut;
             totalStart = total;
-            j = (s16)((TrackBlockDescriptor*)descBytes)->firstTriangle;
+            j = (s16)desc->firstTriangle;
             outA = (TrackShadowTriangle*)((char*)planesOut + outOff);
-            while (j < (s16)((TrackBlockDescriptor*)descBytes)[1].firstTriangle && grp < 0x4b0 && total < 0xe10)
+            while (j < (s16)desc[1].firstTriangle && grp < 0x4b0 && total < 0xe10)
             {
                 if (triangleFlag & ((TrackTriangle*)triBuf + j)->flags)
                 {

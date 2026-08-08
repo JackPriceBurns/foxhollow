@@ -392,7 +392,7 @@ typedef struct ObjModelState {
   u8 pad38[0x3A - 0x38];
   u8 shadowTintA;
   u8 shadowTintB;
-  u8 pad3C[0x40 - 0x3C];
+  void *lastSelectedLight;
   u8 shadowAlpha;
   u8 pad41[0x44 - 0x41];
 } ObjModelState;

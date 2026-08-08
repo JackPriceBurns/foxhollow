@@ -366,7 +366,7 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
         int id = gRcpNextTexMap;
         if (p1 != 0)
         {
-            void* obj = (char*)p1 + 0x20;
+            GXTexObj* obj = textureGetGXTexObj((Texture*)p1);
             if (((Texture*)p1)->preloaded != 0)
             {
                 GXLoadTexObjPreLoaded((GXTexObj*)obj, (GXTexRegion*)((Texture*)p1)->tmemAddr, id);
@@ -1669,7 +1669,7 @@ void addSphereMapLitStages(void* p1, f32* wpad0, void* wpad1, int wpad2)
             int id = gRcpNextTexMap;
             if (p1 != 0)
             {
-                char* tex = (char*)p1 + 0x20;
+                GXTexObj* tex = textureGetGXTexObj((Texture*)p1);
                 if (((Texture*)p1)->preloaded != 0)
                 {
                     GXLoadTexObjPreLoaded((GXTexObj*)tex, (GXTexRegion*)((Texture*)p1)->tmemAddr, id);
@@ -1977,7 +1977,7 @@ int addEnvMapBumpStages(void* p1, int p2, u8 p3, u32 p4)
     texmap = gRcpNextTexMap;
     if (p1 != 0)
     {
-        char* tex = (char*)p1 + 0x20;
+        GXTexObj* tex = textureGetGXTexObj((Texture*)p1);
         if (((Texture*)p1)->preloaded != 0)
         {
             GXLoadTexObjPreLoaded((GXTexObj*)tex, (GXTexRegion*)((Texture*)p1)->tmemAddr, texmap);
@@ -2106,7 +2106,7 @@ void addLightTexReg2Stage(void* p1, u8 flag2, u8 flag3)
     texmap = gRcpNextTexMap;
     if (p1 != 0)
     {
-        char* tex = (char*)p1 + 0x20;
+        GXTexObj* tex = textureGetGXTexObj((Texture*)p1);
         if (((Texture*)p1)->preloaded != 0)
         {
         GXLoadTexObjPreLoaded((GXTexObj*)tex, (GXTexRegion*)((Texture*)p1)->tmemAddr, texmap);
@@ -2157,7 +2157,7 @@ void addSphereMapTexStage(void* p1, u8 intensity)
     texmap = gRcpNextTexMap;
     if (p1 != 0)
     {
-        char* tex = (char*)p1 + 0x20;
+        GXTexObj* tex = textureGetGXTexObj((Texture*)p1);
         if (((Texture*)p1)->preloaded != 0)
         {
         GXLoadTexObjPreLoaded((GXTexObj*)tex, (GXTexRegion*)((Texture*)p1)->tmemAddr, texmap);

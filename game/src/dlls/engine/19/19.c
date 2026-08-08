@@ -162,7 +162,7 @@ void waterfx_drawSplashBurst(WaterParticle* s)
     PSMTXScale(scale, s->size, s->size, s->size);
     i = 0;
     mtxIdx = 0;
-    colorOut = (u8*)s;
+    colorOut = s->vtxColors;
     for (; i < 8; i++)
     {
         f32 bandPhase;
@@ -195,7 +195,10 @@ void waterfx_drawSplashBurst(WaterParticle* s)
         PSMTXConcat(mtxC, mtxD, mtxD);
         PSMTXConcat((MtxPtr)Camera_GetViewMatrix(), mtxD, mtxD);
         GXLoadPosMtxImm(mtxD, mtxIdx);
-        *(u32*)(colorOut + 0x18) = (u8)(int)(WATERFX_ALPHA_MAX * alpha);
+        colorOut[0] = 0;
+        colorOut[1] = 0;
+        colorOut[2] = 0;
+        colorOut[3] = (u8)(int)(WATERFX_ALPHA_MAX * alpha);
         mtxIdx += 3;
         colorOut += 4;
     }
@@ -537,8 +540,8 @@ void waterfx_render(int obj, int renderParam)
         if (gWaterfxSplashCount != 0)
         {
             setupWaterReflectionTev(gWaterfxSplashTexture0, gWaterfxSplashTexture1);
-            GXSetArray(GX_VA_POS, gWaterfxSplashPosArray, 192, 0xc, false);
-            GXSetArray(GX_VA_TEX0, gWaterfxSplashTexCoordArray, 1024, 8, false);
+            GXSetArray(GX_VA_POS, gWaterfxSplashPosArray, 192, 0xc, true);
+            GXSetArray(GX_VA_TEX0, gWaterfxSplashTexCoordArray, 1024, 8, true);
             GXClearVtxDesc();
             GXSetVtxDesc(GX_VA_PNMTXIDX, GX_DIRECT);
             GXSetVtxDesc(GX_VA_TEX0MTXIDX, GX_DIRECT);

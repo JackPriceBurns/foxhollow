@@ -114,7 +114,7 @@ static int objShadowGetFadedAlpha(GameObject* obj, u8 param);
 extern f32 gShadowVolumeBoxCorners[0x19];
 f32 gPrevSunDir[3];
 
-extern u8 gShadowDrawScratch[0x5DC0];
+extern u8 gShadowDrawScratch[0x5DC0] ALIGN_DECL(32);
 
 extern f32 lbl_8038D77C[0x18];
 
@@ -998,4 +998,4 @@ void initTextures(void)
 
 f32 gShadowVolumeBoxCorners[0x19];
 f32 lbl_8038D77C[0x18];
-u8 gShadowDrawScratch[0x5DC0];
+u8 gShadowDrawScratch[0x5DC0] ALIGN_DECL(32);

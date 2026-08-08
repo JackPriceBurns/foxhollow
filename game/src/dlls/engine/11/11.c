@@ -13,6 +13,7 @@
 #include "main/dll/modgfx_types.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
+#include "game/objects/object_interface.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/dll/modgfx.h"
@@ -311,7 +312,7 @@ void modgfx_captureFrameBaseVertices(PartfxEffectState* state)
 
 void modgfx_stepVertexColor(void* state, void* p, int reinit)
 {
-    u8* buf = ((u8**)((char*)state + 0x78))[((PartfxEffectState*)state)->activeVertexBufferIndex];
+    u8* buf = (u8*)((PartfxEffectState*)state)->vertexBuffers[((PartfxEffectState*)state)->activeVertexBufferIndex];
     int j;
 
     if (reinit == 1)
@@ -1056,7 +1057,7 @@ typedef void (*ExpFn3)(void*, void*, int);
 typedef void (*ExpFn4)(void*, void*, int, int);
 typedef void (*ExpResFn6)(void*, int, void*, int, int, void*);
 
-#define PENDING_SPAWNS ((char*)*(int**)((char*)eff + 0x9c))
+#define PENDING_SPAWNS ((char*)((PartfxEffectState*)eff)->emitterCommands)
 
 void dll_0B_updateActiveEffects(void)
 {
@@ -1391,7 +1392,8 @@ void dll_0B_updateActiveEffects(void)
                             {
                                 (*gPartfxInterface)
                                     ->spawnObject((int*)((PartfxEffectState*)eff)->sourceObject,
-                                                  ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emOff))->param14, eff + 3, 0x10002, -1,
+                                                  ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emOff))->param14,
+                                                  &((PartfxEffectState*)eff)->sourceRotX, 0x10002, -1,
                                                   NULL);
                             }
                             else
@@ -1441,17 +1443,17 @@ void dll_0B_updateActiveEffects(void)
                     res = Resource_Acquire((u16)(((ModgfxPendingSpawn*)(PENDING_SPAWNS + emOff))->param14 + 0x58), 1);
                     if (((ModgfxPendingSpawn*)(PENDING_SPAWNS + emOff))->modelOrResource & 0x1000000)
                     {
-                        for (k = 0; k < (int)*(f32*)((emOff + (int)PENDING_SPAWNS) + 0x4); k++)
+                        for (k = 0; k < (int)*(f32*)(PENDING_SPAWNS + emOff + 0x4); k++)
                         {
                             if (randomGetRange(0, 5) == 0)
                             {
                                 if ((int)((PartfxEffectState*)eff)->flags & 1)
                                 {
-                                    (*(ExpResFn6*)(*(int*)res + 4))(NULL, 0, eff + 3, 1, -1, NULL);
+                                    ((ExpResFn6)(*(ObjectInterface**)res)->init)(NULL, 0, &((PartfxEffectState*)eff)->sourceRotX, 1, -1, NULL);
                                 }
                                 else
                                 {
-                                    (*(ExpResFn6*)(*(int*)res + 4))((int*)((PartfxEffectState*)eff)->sourceObject, 0,
+                                    ((ExpResFn6)(*(ObjectInterface**)res)->init)((int*)((PartfxEffectState*)eff)->sourceObject, 0,
                                                                     NULL, 1, -1, NULL);
                                 }
                             }
@@ -1459,15 +1461,15 @@ void dll_0B_updateActiveEffects(void)
                     }
                     else
                     {
-                        for (k = 0; k < (int)*(f32*)((emOff + (int)PENDING_SPAWNS) + 0x4); k++)
+                        for (k = 0; k < (int)*(f32*)(PENDING_SPAWNS + emOff + 0x4); k++)
                         {
                             if ((int)((PartfxEffectState*)eff)->flags & 1)
                             {
-                                (*(ExpResFn6*)(*(int*)res + 4))(NULL, 0, eff + 3, 1, -1, NULL);
+                                ((ExpResFn6)(*(ObjectInterface**)res)->init)(NULL, 0, &((PartfxEffectState*)eff)->sourceRotX, 1, -1, NULL);
                             }
                             else
                             {
-                                (*(ExpResFn6*)(*(int*)res + 4))((int*)((PartfxEffectState*)eff)->sourceObject, 0, NULL,
+                                ((ExpResFn6)(*(ObjectInterface**)res)->init)((int*)((PartfxEffectState*)eff)->sourceObject, 0, NULL,
                                                                 1, -1, NULL);
                             }
                         }
