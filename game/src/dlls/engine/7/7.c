@@ -1603,7 +1603,7 @@ void newclouds_run(void)
         {
             snowFreeSnowCloud(((NewCloud*)p)->cloudId);
             i++;
-            slotOffset += 4;
+            slotOffset += sizeof(void*);
             continue;
         }
         if (p != NULL && ((NewCloud*)p)->active != 0)
@@ -1760,7 +1760,7 @@ void newclouds_run(void)
             activeCount++;
         }
         i++;
-        slotOffset += 4;
+        slotOffset += sizeof(void*);
     }
     if (activeCount != 0)
     {

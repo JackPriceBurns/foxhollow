@@ -12898,7 +12898,7 @@ void playerRefreshCollisionState(GameObject* obj, int p2, int flags)
     CurvesCollisionState* q = (CurvesCollisionState*)(p2 + 4);
     if (f & 1)
     {
-        curves_updateLocalPointTransforms((int)obj, (CurvesCollisionState*)q);
+        curves_updateLocalPointTransforms(obj, (CurvesCollisionState*)q);
     }
     if (f & 2)
     {

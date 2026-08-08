@@ -595,8 +595,6 @@ int modelLoadAnimations(void* model, int id, void* animBase)
         }
         padBytes = sz;
         buf += sz;
-        fprintf(stderr, "[anim] hdr=%p ahb=%p tabBase=%d sz=%d\n", (void*)hdr,
-                (void*)((ModelFileHeader*)hdr)->animationHeaderBuffer, tabBase, sz);
         fileLoadToBufferOffset(MLDF_FILEID_MODANIM_BIN, ((ModelFileHeader*)hdr)->animationHeaderBuffer, tabBase, sz);
         fhSwapU16Array(((ModelFileHeader*)hdr)->animationHeaderBuffer, (u32)sz >> 1);
     }

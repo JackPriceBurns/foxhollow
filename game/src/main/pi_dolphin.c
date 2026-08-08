@@ -4490,8 +4490,8 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
         }
         if (strncmp((char*)srcBuf, sZlbBlockTag, 3) == 0)
         {
-            decompSize = ZLB_HDR(srcBuf)->decompressedSize;
-            zlbDecompress((u8*)(srcBuf + 0x10), ZLB_HDR(srcBuf)->compressedSize, (u8*)destBuf, &decompSize);
+            decompSize = fhSwap32(ZLB_HDR(srcBuf)->decompressedSize);
+            zlbDecompress((u8*)(srcBuf + 0x10), fhSwap32(ZLB_HDR(srcBuf)->compressedSize), (u8*)destBuf, &decompSize);
         }
         mm_free((void*)srcBuf);
     }
@@ -4652,8 +4652,8 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
                     uintptr_t e = (texId & 0xffffff) * 2 + frameTable[count];
                     int v;
                     e = base + e + 4;
-                    v = *(int*)(e + 4);
-                    *outB = *(int*)(e + 8);
+                    v = (int)fhSwap32(*(u32*)(e + 4));
+                    *outB = (int)fhSwap32(*(u32*)(e + 8));
                     *outA = v;
                 }
                 else if (queryMode == 2 && frameTable != 0)
@@ -4664,8 +4664,8 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
                 else
                 {
                     uintptr_t e = base + (texId & 0xffffff) * 2;
-                    int v = *(int*)(e + 0xc);
-                    *outA = *(int*)(e + 8);
+                    int v = (int)fhSwap32(*(u32*)(e + 0xc));
+                    *outA = (int)fhSwap32(*(u32*)(e + 8));
                     if (strncmp(sDirBlockTag, (char*)e, 3) == 0)
                     {
                         *outB = 0xffffffff;
@@ -4691,18 +4691,19 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
                     uintptr_t e = frameTable[count];
                     int v;
                     e = (uintptr_t)buf + e + 4;
-                    v = *(int*)(e + 4);
-                    *outB = *(int*)(e + 8);
+                    v = (int)fhSwap32(*(u32*)(e + 4));
+                    *outB = (int)fhSwap32(*(u32*)(e + 8));
                     *outA = v;
                 }
                 else if (queryMode == 2 && frameTable != 0)
                 {
                     memcpy(frameTable, buf, (count + 1) * 4);
+                    fhSwapU32Array(frameTable, count + 1);
                 }
                 else
                 {
-                    v = *(int*)(buf + 0xc);
-                    *outA = *(int*)(buf + 8);
+                    v = (int)fhSwap32(*(u32*)(buf + 0xc));
+                    *outA = (int)fhSwap32(*(u32*)(buf + 8));
                     if (strncmp(sDirBlockTag, buf, 3) == 0)
                     {
                         *outB = 0xffffffff;
@@ -4791,8 +4792,8 @@ void texPreGetMipmap(int texId, int unused, int* outA, int* outB, int count, int
         else
         {
             uintptr_t e = base + (texId & 0xffffff) * 2;
-            int v = *(int*)(e + 0xc);
-            *outA = *(int*)(e + 8);
+            int v = (int)fhSwap32(*(u32*)(e + 0xc));
+            *outA = (int)fhSwap32(*(u32*)(e + 8));
             if (strncmp(sDirBlockTag, (char*)e, 3) == 0)
             {
                 *outB = 0xffffffff;

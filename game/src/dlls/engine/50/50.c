@@ -160,7 +160,17 @@ static inline void initLoadingScreenTexturesBody(void)
         textureHeader->tmemAddr = 0;
         textureHeader->preloaded = 0;
         texObj = (GXTexObj*)textureHeader->gxTexObj;
-        GXInitTexObj(texObj, (u8*)textureHeader + sizeof(Texture), textureHeader->width, textureHeader->height,
+        textureWidth = textureHeader->width;
+        textureHeight = textureHeader->height;
+        if (textureWidth == 0)
+        {
+            textureWidth = 1;
+        }
+        if (textureHeight == 0)
+        {
+            textureHeight = 1;
+        }
+        GXInitTexObj(texObj, (u8*)textureHeader + sizeof(Texture), textureWidth, textureHeight,
                      textureHeader->format, textureHeader->wrapS, textureHeader->wrapT, 0);
         GXInitTexObjLOD(texObj, textureHeader->minFilter, textureHeader->magFilter, lbl_803E1CF0, lbl_803E1CF0,
                         lbl_803E1CF0, 0, 0, 0);
@@ -169,7 +179,7 @@ static inline void initLoadingScreenTexturesBody(void)
         textureWidth = GXGetTexObjWidth(texObj);
         textureHeight = GXGetTexObjHeight(texObj);
         textureHeader->dataSize = GXGetTexBufferSize(textureWidth, textureHeight, textureFormat, 0, 0);
-        textureSize = (*textureSlot)->dataSize + 0x60;
+        textureSize = (*textureSlot)->dataSize + sizeof(Texture);
         arenaHi += textureSize;
     }
     gTitleScreenInitLoadingFrameCounter = 0;

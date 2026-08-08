@@ -970,7 +970,7 @@ void gameTextBuildSystemFontAtlas(void)
                     dst += gGameTextFontTexRowPitch * row;
                     for (k = 0; k < 8; k++)
                     {
-                        *(u32*)(dst + 0x60 + k * 4) = *src++;
+                        *(u32*)(dst + sizeof(Texture) + k * 4) = *src++;
                     }
                 }
             }
@@ -978,7 +978,7 @@ void gameTextBuildSystemFontAtlas(void)
         x += wbytes << 3;
         glyph++;
     }
-    DCFlushRange((u8*)charset->textures[0] + 0x60, 0x20000);
+    DCFlushRange((u8*)charset->textures[0] + sizeof(Texture), 0x20000);
     mm_free(bufA);
     mm_free(bufB);
     mm_free(buf);
@@ -1086,24 +1086,24 @@ void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
             if (bpp == 4)
             {
                 u8* src8 = (u8*)p;
-                u8* dst8 = (u8*)textureSlot[0] + 0x60;
+                u8* dst8 = (u8*)textureSlot[0] + sizeof(Texture);
                 n = (int)(w * h) >> 1;
                 while (n--)
                 {
                     *dst8++ = *src8++;
                 }
-                DCFlushRange((u8*)textureSlot[0] + 0x60, textureSlot[0]->dataSize);
+                DCFlushRange((u8*)textureSlot[0] + sizeof(Texture), textureSlot[0]->dataSize);
             }
             else
             {
                 u16* src16 = p;
-                u16* dst16 = (u16*)((u8*)textureSlot[0] + 0x60);
+                u16* dst16 = (u16*)((u8*)textureSlot[0] + sizeof(Texture));
                 n = w * h;
                 while (n--)
                 {
                     *dst16++ = *src16++;
                 }
-                DCFlushRange((u8*)textureSlot[0] + 0x60, textureSlot[0]->dataSize);
+                DCFlushRange((u8*)textureSlot[0] + sizeof(Texture), textureSlot[0]->dataSize);
             }
         }
         {

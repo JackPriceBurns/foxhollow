@@ -812,7 +812,7 @@ void curves_preparePointCollisionFrame(int obj, CurvesCollisionState* collision)
     }
 }
 
-void curves_updateLocalPointTransforms(int obj, CurvesCollisionState* collision)
+void curves_updateLocalPointTransforms(GameObject* obj, CurvesCollisionState* collision)
 {
     u32 flags;
     u8* wb[1];

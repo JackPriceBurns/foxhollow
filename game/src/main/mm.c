@@ -1001,7 +1001,7 @@ void mmInit(void)
 
     p = OSAllocFromHeap(__OSCurrHeap, 0x8bff40);
     DCFlushRange(p, 0x8bff40);
-    mmInitRegion(p, 0x8bff40, 0x244);
+    mmInitRegion(p, 0x8bff40, 0x488);
 
     gMmOpCount++;
     gMmFreeDelay = 2;

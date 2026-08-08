@@ -85,6 +85,35 @@ char sDebugIntLineFormat[] = "%d\n";
 void* textureAlloc(u16 w, u16 h, int fmt, u8 mip, u8 maxLod, u8 wrapS, u8 wrapT, u8 minFilter, u8 magFilter);
 void textureInitGXTexObj(void* textureData);
 
+#define GC_TEXTURE_HEADER_SIZE 0x60
+
+static void textureUnpackGCHeader(Texture* tex, const u8* gc)
+{
+    memset(tex, 0, sizeof(Texture));
+    tex->width = fhSwap16(*(const u16*)(gc + 0x0a));
+    tex->height = fhSwap16(*(const u16*)(gc + 0x0c));
+    tex->refCount = fhSwap16(*(const u16*)(gc + 0x0e));
+    tex->animationFrameCount = fhSwap16(*(const u16*)(gc + 0x10));
+    tex->animationFrameStep = fhSwap16(*(const u16*)(gc + 0x14));
+    tex->format = gc[0x16];
+    tex->wrapS = gc[0x17];
+    tex->wrapT = gc[0x18];
+    tex->minFilter = gc[0x19];
+    tex->magFilter = gc[0x1a];
+    tex->unk1B = gc[0x1b];
+    tex->minLod = gc[0x1c];
+    tex->maxLod = gc[0x1d];
+    tex->unk1E[0] = gc[0x1e];
+    tex->unk1E[1] = gc[0x1f];
+    tex->dataSize = fhSwap32(*(const u32*)(gc + 0x44));
+    tex->preloaded = gc[0x48];
+    tex->cached = gc[0x49];
+    tex->unk4A = gc[0x4a];
+    tex->evictTimer = gc[0x4b];
+    tex->loadedSize = fhSwap32(*(const u32*)(gc + 0x4c));
+    tex->imageOffset = (s32)fhSwap32(*(const u32*)(gc + 0x50));
+}
+
 void* textureIdxToPtr(int idx)
 {
     int i;
@@ -247,7 +276,7 @@ void textureInitSecondaryGXTexObj(Texture* tex, GXTexObj* obj)
     {
         mipmap = 0;
     }
-    GXInitTexObj(obj, (u8*)tex + tex->imageOffset + 0x60, tex->width, tex->height,
+    GXInitTexObj(obj, (u8*)tex + tex->imageOffset + sizeof(Texture), tex->width, tex->height,
                  GX_TF_I4, tex->wrapS, tex->wrapT, mipmap);
     if (mipmap != 0)
     {
@@ -497,7 +526,6 @@ void textureFree(Texture* tex)
         return;
     if (tex == NULL)
     {
-        ((Texture*)tex)->evictTimer = 10;
         return;
     }
     if (((Texture*)tex)->refCount == 0)
@@ -521,15 +549,6 @@ void textureFree(Texture* tex)
                 iter = *(u8**)tex;
                 while (iter != NULL)
                 {
-                    if ((uintptr_t)iter < 0x80000000 || (uintptr_t)iter > 0x81800000)
-                        iter = NULL;
-                    if ((uintptr_t)iter < 0x80000000 || (uintptr_t)iter >= 0xa0000000)
-                    {
-                        iter = NULL;
-                        continue;
-                    }
-                    if (iter == NULL)
-                        continue;
                     next = *(u8**)iter;
                     if (((Texture*)iter)->preloaded != 0)
                         findSomething((void*)((Texture*)iter)->tmemAddr);
@@ -737,7 +756,7 @@ void* textureLoad(int texId, u8 flagIn)
         {
             frameSize = frameOut;
             mmSetTextureAllocationState(1);
-            buf = mmAlloc(size, gRcpTexAllocTag, 0);
+            buf = mmAlloc(size + (sizeof(Texture) - GC_TEXTURE_HEADER_SIZE), gRcpTexAllocTag, 0);
             mmSetTextureAllocationState(0);
             if (buf == NULL)
             {
@@ -785,8 +804,36 @@ void* textureLoad(int texId, u8 flagIn)
         }
         if (frameOut == -1)
         {
-            buf = loadAndDecompressDataFile(file, 0, dataByteOffset + gRcpTexHeaderBuffer[mipLevel], frameSize,
+            u8* src;
+            Texture header;
+            u32 pixelSize;
+            src = loadAndDecompressDataFile(file, 0, dataByteOffset + gRcpTexHeaderBuffer[mipLevel], frameSize,
                                             0, id16, 0);
+            textureUnpackGCHeader(&header, src);
+            pixelSize = GXGetTexBufferSize(header.width, header.height, header.format,
+                                           header.maxLod - header.minLod > 0, header.maxLod);
+            mmSetTextureAllocationState(1);
+            buf = mmAlloc(sizeof(Texture) + pixelSize, gRcpTexAllocTag, 0);
+            mmSetTextureAllocationState(0);
+            if (buf == NULL)
+            {
+                gRcpTexAllocFailed = 1;
+                if (getLoadedFileFlags(0) != 0 && interruptsDisabled == TRUE)
+                {
+                    OSRestoreInterrupts(interruptState);
+                }
+                else if (interruptsDisabled == TRUE)
+                {
+                    OSRestoreInterrupts(interruptState);
+                }
+                if (flagIn != 0)
+                {
+                    return (void*)1;
+                }
+                return gLoadedTextures[0].texture;
+            }
+            *buf = header;
+            memcpy((u8*)buf + sizeof(Texture), src + GC_TEXTURE_HEADER_SIZE, pixelSize);
             buf->cached = 1;
             if (flagIn != 0)
             {
@@ -796,12 +843,15 @@ void* textureLoad(int texId, u8 flagIn)
         }
         else
         {
-            loadAndDecompressDataFile(file, buf, dataByteOffset + gRcpTexHeaderBuffer[mipLevel], frameSize, 0,
-                                      id16, 0);
+            Texture header;
+            loadAndDecompressDataFile(file, (u8*)buf + (sizeof(Texture) - GC_TEXTURE_HEADER_SIZE),
+                                      dataByteOffset + gRcpTexHeaderBuffer[mipLevel], frameSize, 0, id16, 0);
+            textureUnpackGCHeader(&header, (u8*)buf + (sizeof(Texture) - GC_TEXTURE_HEADER_SIZE));
+            *buf = header;
         }
         if (frameOut != -1)
         {
-            DCStoreRange(buf, size);
+            DCStoreRange(buf, size + (sizeof(Texture) - GC_TEXTURE_HEADER_SIZE));
         }
         buf->nextAnimationFrame = NULL;
         if (prevTex != NULL)
@@ -890,11 +940,11 @@ Texture* textureGetAnimationFrame(Texture* texture, int n)
 void* textureAlloc(u16 w, u16 h, int fmt, u8 mip, u8 maxLod, u8 wrapS, u8 wrapT, u8 minFilter, u8 magFilter)
 {
     u8* obj;
-    u32 size = GXGetTexBufferSize(w, h, fmt, mip, maxLod) + 96;
+    u32 size = GXGetTexBufferSize(w, h, fmt, mip, maxLod) + (u32)sizeof(Texture);
     obj = (u8*)mmAlloc(size, 6, 0);
     if (obj == NULL)
         return NULL;
-    memset(obj, 0, 100);
+    memset(obj, 0, sizeof(Texture) + 4);
     ((Texture*)obj)->format = fmt;
     ((Texture*)obj)->width = w;
     ((Texture*)obj)->height = h;
