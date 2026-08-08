@@ -104,7 +104,7 @@ void subtitleStop(void) {
                 oldDelay = mmSetFreeDelay(0);
                 mm_free(*blockSlot[0]);
                 mmSetFreeDelay(oldDelay);
-                *blockSlot[0] = (void*)zero[0];
+                *blockSlot[0] = NULL;
             }
             blockSlot[0]++;
             blockIndex++;

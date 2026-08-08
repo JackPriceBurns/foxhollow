@@ -6,6 +6,9 @@
 #include "main/model_render_instrs_api.h"
 #include "main/track_dolphin_map_api.h"
 
+struct IntersectLine;
+struct TrackTriangle;
+
 typedef struct TrackGroundHit
 {
     f32 height;
@@ -71,7 +74,7 @@ void objShadowInvalidate(GameObject* obj);
 void shadowVolumesSetDirty(s32 dirty);
 void getSunFlareScissorRect(int* outX, int* outY, int* outWidth, int* outHeight);
 void trackGetGridOrigin(int** outOrigin);
-void trackGetTriangleBuffer(int* outCount, int* outTable);
+void trackGetTriangleBuffer(int* outCount, struct TrackTriangle** outTable);
 void trackInitCollisionBuffers(void);
 void trackIntersect(void);
 void mapBlockRender_setVtxDcrs(u8 doSetup, struct MapBlockData* block, struct Shader* shader,
@@ -98,7 +101,7 @@ void MapBlock_initHits(struct MapBlockData* block, int index);
 int mapBlockCountTrianglesByType(struct MapBlockData* block, int type);
 void buildShadowVolumeBox(f32* direction, f32* out, f32 lowerScale);
 int trackGetHeightAboveGround(GameObject* obj, f32 x, f32 y, f32 z, f32* outDepth, int queryMask);
-extern int gIntersectLinePool;
+extern struct IntersectLine* gIntersectLinePool;
 extern f32* gIntersectPoints;
 
 #endif /* MAIN_TRACK_DOLPHIN_API_H_ */

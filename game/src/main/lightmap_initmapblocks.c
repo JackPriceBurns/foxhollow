@@ -35,7 +35,7 @@
 
 
 
-extern u32 gLightmapDrawQueue[];
+extern u32 gVisibleObjectSortKeys[];
 
 
 
@@ -65,10 +65,8 @@ static inline void fillBoxRows(u8* map, int* box)
 
 void initMapBlocks(void)
 {
-    u8* mb = (u8*)gLightmapDrawQueue;
-    MapLayerBuffers* buffers = (MapLayerBuffers*)gLightmapDrawQueue;
-    u32 zero;
-    u32* q;
+    MapRomListPage* zero;
+    MapRomListPage** q;
     u16* p;
     void* tmp;
     int i;
@@ -78,21 +76,21 @@ void initMapBlocks(void)
     gMapBlockIds = mmAlloc(0x80, 5, 0);
     gMapBlockRefCounts = mmAlloc(0x40, 5, 0);
     gMapInfoBuffer = mmAlloc(0xd48, 5, 0);
-    buffers->blockIndices[0] = mmAlloc(0x500, 5, 0);
-    buffers->blockDescriptors[0] = mmAlloc(0x3c00, 5, 0);
-    buffers->cellStates[0] = mmAlloc(0x500, 5, 0);
+    gMapBlockLayerTables[0] = mmAlloc(0x500, 5, 0);
+    gMapBlockCellEntryTables[0] = mmAlloc(0x3c00, 5, 0);
+    gMapBlockCellStateTables[0] = mmAlloc(0x500, 5, 0);
 
-    for (i = 0; i < 16; i += 4)
+    for (i = 0; i < 4; i++)
     {
-        *(u32*)(mb + 0x41f8 + i) = *(u32*)(mb + 0x41f4 + i) + 0x100;
-        *(u32*)(mb + 0x41e4 + i) = *(u32*)(mb + 0x41e0 + i) + 0xc00;
-        *(u32*)(mb + 0x41d0 + i) = *(u32*)(mb + 0x41cc + i) + 0x100;
+        gMapBlockLayerTables[i + 1] = gMapBlockLayerTables[i] + 0x100;
+        gMapBlockCellEntryTables[i + 1] = gMapBlockCellEntryTables[i] + 0x100;
+        gMapBlockCellStateTables[i + 1] = gMapBlockCellStateTables[i] + 0x100;
     }
 
     loadAssetFileById(&gMapsTab, MLDF_FILEID_MAPS_TAB);
     loadAssetFileById(&gHitsTab, MLDF_FILEID_HITS_TAB);
 
-    q = (u32*)((u8*)(mb + 0x10000) - 0x7c58);
+    q = gLoadedRomListPages;
     zero = 0;
     for (i = 0; i < 3; i++)
     {
@@ -160,7 +158,10 @@ void initMapBlocks(void)
     gMapTextureScrolls = tmp;
     memset(tmp, 0, 0x3a0);
 
-    memset(mb + 0x8818, 0, 0xfa0);
-    *(u32*)(mb + 0x8818) = -1;
+    {
+        extern u32 gVisibleObjectSortKeys[];
+        memset(gVisibleObjectSortKeys, 0, 0xfa0);
+        gVisibleObjectSortKeys[0] = -1;
+    }
 }
 

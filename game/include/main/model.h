@@ -336,7 +336,7 @@ typedef struct ObjModel {
     void *renderCallback;
     void *postRenderCallback;
     s32 *vertexAnimData; /* 0x40: per-entry s32 array (file->vertexAnimCount), filled from vertexAnimEntries[i]+0x60 */
-    s32 *blendAnimData;  /* 0x44: per-entry s32 array (file->blendAnimCount), filled from normalBuf + blendAnimEntries[i]+0x60 */
+    u8 **blendAnimData;  /* 0x44: per-entry pointer array (file->blendAnimCount), filled from normalBuf + blendAnimEntries[i]+0x60 */
     u8 *hitSphereBuf0; /* 0x48: hit-sphere workspace buffer 0 (file->hitSphereCount * 0x10) */
     u8 *hitSphereBuf1; /* 0x4C: hit-sphere workspace buffer 1 (double-buffered) */
     u8 *hitSphereBufActive; /* 0x50: current hit-sphere buffer, initialized to hitSphereBuf0 */
@@ -398,8 +398,8 @@ typedef struct ObjModelChain {
     u8 enabled;
 } ObjModelChain;
 
-typedef void (*ObjModelChainUpdateCallback)(int animState, int* model, f32* vector, int callbackArg, int nodeIndex,
-                                            f32 phase);
+typedef void (*ObjModelChainUpdateCallback)(ModelFileHeader* file, ObjModel* model, f32* vector, int callbackArg,
+                                            int nodeIndex, f32 phase);
 
 STATIC_ASSERT(sizeof(ObjModelChainNode) == 0x54);
 STATIC_ASSERT(sizeof(ObjModelChainEntry) == 0x0C);
@@ -451,7 +451,8 @@ void* loadAnimation(ModelFileHeader* hdr, s16 id, int b, u8* bufout);
 
 int loadModelAndAnimTabs(void);
 void postRenderSetAlphaBlendState(void);
-void ObjModelChain_Update(int* model, int animState, ObjModelChain* chain, ObjModelChainUpdateCallback callback);
+void ObjModelChain_Update(ObjModel* model, ModelFileHeader* file, ObjModelChain* chain,
+                          ObjModelChainUpdateCallback callback);
 void ObjModelChain_ResetFirstUpdate(ObjModelChain* chain);
 
 #endif

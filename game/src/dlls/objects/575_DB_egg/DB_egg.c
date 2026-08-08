@@ -811,7 +811,7 @@ void dbegg_update(GameObject* obj)
             d[0] = (obj)->anim.localPosX - data->base.posX;
             d[1] = (obj)->anim.localPosY - data->base.posY;
             d[2] = (obj)->anim.localPosZ - data->base.posZ;
-            Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_baddie_eba_smallswipe1);
+            Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_baddie_eba_smallswipe1);
             fz = *(f32*)((int)d + 8);
             fz = fz >= 0.0f ? fz : -fz;
             fx = *(f32*)((int)d + 0);

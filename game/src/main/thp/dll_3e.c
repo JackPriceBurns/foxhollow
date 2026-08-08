@@ -86,8 +86,8 @@ static void InitAllMessageQueue(void);
 u8 gAttractMovieLoopCompleted;
 OSMessage lbl_803DD67C;
 u32 gAttractMovieAudioDmaBufferIndex;
-u32 gAttractMovieAudioPendingSourceAddr;
-u32 gAttractMovieAudioMixSourceAddr;
+uintptr_t gAttractMovieAudioPendingSourceAddr;
+uintptr_t gAttractMovieAudioMixSourceAddr;
 s32 gAttractMovieAudioMode;
 AIDCallback gAttractMovieAudioPrevDmaCallback;
 static VIRetraceCallback OldVIPostCallback;
@@ -174,11 +174,11 @@ static void PlayControl(u32 retraceCount) {
 
     if ((decodedTexture != NULL) && (decodedTexture != (AttractMovieTextureSet*)-1)) {
         gAttractMoviePlayer.curAudioTrack = decodedTexture->frameNumber;
-        if ((void*)gAttractMoviePlayer.curAudioNumber != NULL) {
-            OSSendMessage(&gAttractMovieSpentTextureSetQueue, (OSMessage)gAttractMoviePlayer.curAudioNumber,
+        if (gAttractMoviePlayer.curTextureSet != NULL) {
+            OSSendMessage(&gAttractMovieSpentTextureSetQueue, (OSMessage)gAttractMoviePlayer.curTextureSet,
                           OS_MESSAGE_NOBLOCK);
         }
-        gAttractMoviePlayer.curAudioNumber = (s32)decodedTexture;
+        gAttractMoviePlayer.curTextureSet = decodedTexture;
     }
 
     if ((gAttractMoviePlayer.playFlags & THP_PLAY_LOOP) == 0) {
@@ -258,7 +258,7 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
     char* base;
     AttractMovieControl* ctrl;
     s32 readyMsg;
-    s32 startOffset;
+    uintptr_t startOffset;
 
     base = gAttractMovieAudioDmaBuffer;
     ctrl = (AttractMovieControl*)base;
@@ -296,7 +296,7 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
             if (DVDRead((DVDFileInfo*)(base + 0x5a0), ctrl->loopFrame, ctrl->initReadSize, ctrl->dataOffset) < 0) {
                 return FALSE;
             }
-            startOffset = ((s32)ctrl->loopFrame + ctrl->frameOffset) - ctrl->dataOffset;
+            startOffset = ((uintptr_t)ctrl->loopFrame + ctrl->frameOffset) - ctrl->dataOffset;
             CreateVideoDecodeThread(0xf, startOffset);
             if (ctrl->audioExists != 0) {
                 CreateAudioDecodeThread(0xc, (void*)startOffset);

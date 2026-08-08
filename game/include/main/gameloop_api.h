@@ -27,7 +27,7 @@ void setTimeStop(int frames);
 void doNothing_onSaveSelectScreenExit(void);
 void requestKrazoaShrineMusic(void);
 int getButtonObjects(GameObject*** objectsOut);
-int cacheAllocAndCopy(u8* srcAddress, u32 size, u32* cacheCursor, u32* outEnd, u32 limit);
+int cacheAllocAndCopy(u8* srcAddress, u32 size, uintptr_t* cacheCursor, uintptr_t* outEnd, u32 limit);
 void nop_onUnloadMap(int a, int b);
 void doNothing_startOfFrame(void);
 void crash(int a, int b, int c, int d, int e, int f, int g, int h);

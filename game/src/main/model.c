@@ -48,13 +48,13 @@ void* animLoadFromTable(u8* hdr, int idx, int a, u8* b);
 #define LOADCOLOR_BLOCK(SLOT)                                                         \
     {                                                                                 \
         int idx;                                                                      \
-        u32 v;                                                                        \
+        uintptr_t v;                                                                  \
         int sz4;                                                                      \
         int unusedSize;                                                               \
         int sz;                                                                       \
         u8 *hp;                                                                       \
                                                                                       \
-        v = (u32)(SLOT);                                                              \
+        v = (uintptr_t)(SLOT);                                                        \
         idx = **(s16 **)(hdr + 0x6c);                                                 \
         if ((getLoadedFileFlags(0) & 0x100000) == 0 || *(u16 *)(hdr + 4) == 1 ||      \
             *(u16 *)(hdr + 4) == 3) {                                                 \
@@ -85,19 +85,12 @@ extern s16 gModelJointScratchBuffer[0xa0];
     }
 extern char sModelAnimationBufferOverflowWarning[];
 extern Vec gModelJitterAxis;
-typedef struct ObjHitBufs
-{
-    u8 pad00[0x48];
-    u8* bufs[2];
-    u8* cur;
-} ObjHitBufs;
-
 void setGQR7Packed(int a, int b, int c, int d);
 u8* modelBoneTransforms_next(u8* stream, int* dx, int* dy, int* dz);
 static inline void* modelGetBoneMtx(ObjModel* model, int idx);
-void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, int d1, int d2, int count);
-void ObjModel_TransformVerticesLinear(u8* m1, u8* m2, u8* src, int d1, int d2, int count);
-void ObjModel_TransformQuadVerticesLinear(u8* m1, u8* m2, u8* src, int d1, int d2, int count);
+void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count);
+void ObjModel_TransformVerticesLinear(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count);
+void ObjModel_TransformQuadVerticesLinear(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count);
 void modelApplyBoneTransform(u8* p, u8* out, u16 n, u8** pd, u8** pe, int f, u16 pos)
 {
     u8* a = *pd;
@@ -235,13 +228,13 @@ void modelAnimEvalSlotPair(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
                            int slotB, int blendSel, int mode, s16 eventVal)
 {
     ObjAnimState work;
-    int mtxBuf;
+    u8* mtxBuf;
     ModelFileHeader* file;
     u32 idxA;
     u8 idxB;
 
     file = model->file;
-    mtxBuf = (int)model->jointMatrices[model->bufferFlags & 1];
+    mtxBuf = model->jointMatrices[model->bufferFlags & 1];
     if ((u8)mode & 0x10)
     {
         channel->framePhase = t * channel->frameLength;
@@ -298,13 +291,13 @@ void modelAnimEvalSlotPair(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
             }
         }
     }
-    modelAnimBuildJointMatrices(&mtxBuf, dst, &work, file->jointData, file->jointCount,
+    modelAnimBuildJointMatrices((int*)&mtxBuf, dst, &work, file->jointData, file->jointCount,
                                 (u8*)gModelJointScratchBuffer, flags, (u8)mode);
 }
 void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 blend, int flags)
 {
     ObjAnimState work;
-    int mtxBuf;
+    u8* mtxBuf;
     int slotEvent;
     int outFlags;
     ModelFileHeader* file;
@@ -314,7 +307,7 @@ void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
     int srcSlot;
 
     file = model->file;
-    mtxBuf = (int)model->jointMatrices[model->bufferFlags & 1];
+    mtxBuf = model->jointMatrices[model->bufferFlags & 1];
     channel->framePhase = blend * channel->frameLength;
     outFlags = 0;
     if (file->flags & 8)
@@ -350,7 +343,7 @@ void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
         {
             outFlags |= 0x20;
         }
-        modelAnimBuildJointMatrices(&mtxBuf, dst, &work, file->jointData, file->jointCount,
+        modelAnimBuildJointMatrices((int*)&mtxBuf, dst, &work, file->jointData, file->jointCount,
                                     (u8*)gModelJointScratchBuffer, flags, outFlags | 0x40);
     }
     else
@@ -400,7 +393,7 @@ void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
                 }
                 work.eventCountdown = slotEvent;
                 modelAnimUpdateChannels(file, &work, 2);
-                modelAnimBuildJointMatrices(&mtxBuf, dst, &work, file->jointData, file->jointCount,
+                modelAnimBuildJointMatrices((int*)&mtxBuf, dst, &work, file->jointData, file->jointCount,
                                             (u8*)gModelJointScratchBuffer, flags, blendMask);
                 if (blendMask != 0)
                 {
@@ -440,7 +433,7 @@ void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
             {
                 outFlags |= 0x20;
             }
-            modelAnimBuildJointMatrices(&mtxBuf, dst, &work, file->jointData, file->jointCount,
+            modelAnimBuildJointMatrices((int*)&mtxBuf, dst, &work, file->jointData, file->jointCount,
                                         (u8*)gModelJointScratchBuffer, flags, outFlags);
         }
     }
@@ -484,7 +477,7 @@ void modelAnimResetState(void* m, void* data)
         }
         else
         {
-            mdl = *(u8**)(((ModelFileHeader*)hdr)->animationModelPtrs + channel->moveCacheSlot * 4);
+            mdl = ((u8**)((ModelFileHeader*)hdr)->animationModelPtrs)[channel->moveCacheSlot];
         }
         channel->moveFrameData = (ObjAnimFrameCommand*)(mdl + 6);
         channel->frameType = (s8)(*(u8*)(mdl + 1) & 0xf0);
@@ -563,25 +556,22 @@ int modelLoadAnimations(void* model, int id, void* animBase)
     }
     hdrOff[0] = 0;
     groupSlot = 0;
-    {
-        u8* slot = hdr + groupSlot++ * 2;
-        *(s16*)(slot + 0x70) = (s16)hdrOff[0];
-    }
+    ((ModelFileHeader*)hdr)->animGroupBaseIndices[groupSlot++] = (s16)hdrOff[0];
     i = 0;
     for (; i < (int)((ModelFileHeader*)hdr)->animationCount; i++)
     {
         if (*(s16*)(((ModelFileHeader*)hdr)->animationHeaderBuffer + hdrOff[0]) == -1)
         {
-            *(s16*)(hdr + groupSlot++ * 2 + 0x70) = (s16)(i + 1);
+            ((ModelFileHeader*)hdr)->animGroupBaseIndices[groupSlot++] = (s16)(i + 1);
         }
         hdrOff[0] += 2;
     }
     if ((((ModelFileHeader*)hdr)->flags & MODEL_FLAG_VERTEX_ANIM_AREA) == 0)
     {
-        *(int*)&((ModelFileHeader*)hdr)->animationHeaderBuffer = 0;
+        ((ModelFileHeader*)hdr)->animationHeaderBuffer = NULL;
         ((ModelFileHeader*)hdr)->animationModelPtrs = buf;
-        buf += ((ModelFileHeader*)hdr)->animationCount * 4;
-        padBytes += ((ModelFileHeader*)hdr)->animationCount * 4;
+        buf += ((ModelFileHeader*)hdr)->animationCount * (int)sizeof(u8*);
+        padBytes += ((ModelFileHeader*)hdr)->animationCount * (int)sizeof(u8*);
         while (padBytes & 7)
         {
             buf++;
@@ -619,15 +609,15 @@ int modelLoadAnimations(void* model, int id, void* animBase)
                     }
                     atlasPtr = atlasHdr;
                 }
-                *(u8**)(((ModelFileHeader*)hdr)->animationModelPtrs + animIdx * 4) = atlasPtr;
-                if (*(u8**)(((ModelFileHeader*)hdr)->animationModelPtrs + animIdx * 4) == 0)
+                ((u8**)((ModelFileHeader*)hdr)->animationModelPtrs)[animIdx] = atlasPtr;
+                if (((u8**)((ModelFileHeader*)hdr)->animationModelPtrs)[animIdx] == 0)
                 {
                     int relIdx;
 
                     relIdx = 0;
                     for (; relIdx < animIdx; relIdx++)
                     {
-                        atlasEntry = *(u8**)(((ModelFileHeader*)hdr)->animationModelPtrs + relIdx * 4);
+                        atlasEntry = ((u8**)((ModelFileHeader*)hdr)->animationModelPtrs)[relIdx];
                         if (atlasEntry != 0)
                         {
                             newRefCount = (*atlasEntry -= 1);
@@ -639,13 +629,13 @@ int modelLoadAnimations(void* model, int id, void* animBase)
                             }
                         }
                     }
-                    *(int*)&((ModelFileHeader*)hdr)->animationModelPtrs = 0;
+                    ((ModelFileHeader*)hdr)->animationModelPtrs = NULL;
                     return 1;
                 }
             }
             else
             {
-                *(int*)(((ModelFileHeader*)hdr)->animationModelPtrs + animIdx * 4) = 0;
+                ((u8**)((ModelFileHeader*)hdr)->animationModelPtrs)[animIdx] = NULL;
             }
             animIdx++;
         }
@@ -653,7 +643,7 @@ int modelLoadAnimations(void* model, int id, void* animBase)
     }
     else
     {
-        *(int*)&((ModelFileHeader*)hdr)->animationModelPtrs = 0;
+        ((ModelFileHeader*)hdr)->animationModelPtrs = NULL;
     }
     return 0;
 }
@@ -674,7 +664,7 @@ int modelGetAmapSize(int modelId, int amapFlag, int animCount)
     }
     else
     {
-        totalSize += animCount * 4;
+        totalSize += animCount * (int)sizeof(u8*);
         while (totalSize & 7)
         {
             totalSize++;
@@ -733,11 +723,11 @@ int modelLoad_calcSizes(void* model, int flags, int* sizes, int forceBlendChanne
         sizes[5] = ((ModelFileHeader*)hdr)->headerSize;
         while ((sizes[5] & 7) != 0)
         {
-            *(int*)((int)sizes + 0x14) = *(int*)((int)sizes + 0x14) + 1;
+            *(int*)((uintptr_t)sizes + 0x14) = *(int*)((uintptr_t)sizes + 0x14) + 1;
         }
         sizes[3] = sizes[5] << 2;
     }
-    sizes[4] = 0x68;
+    sizes[4] = (int)sizeof(ObjAnimState);
     if ((flags & 0x80) != 0)
     {
         sizes[4] = sizes[4] << 1;
@@ -746,12 +736,12 @@ int modelLoad_calcSizes(void* model, int flags, int* sizes, int forceBlendChanne
     if (((ModelFileHeader*)hdr)->morphTargetCount != 0 || forceBlendChannels != 0)
     {
         sizes[4] = sizes[4] + 0x30;
-        total = sizes[3] + sizes[4] + 100;
+        total = sizes[3] + sizes[4] + (int)sizeof(ObjModel);
         total = (sizes[6] + sizes[1] + 8) + total;
     }
     else
     {
-        total = sizes[4] + 100;
+        total = sizes[4] + (int)sizeof(ObjModel);
         total = (sizes[3] + sizes[6] + sizes[1] + 8) + total;
     }
     total = total + sizes[0];
@@ -759,7 +749,7 @@ int modelLoad_calcSizes(void* model, int flags, int* sizes, int forceBlendChanne
         unk18 != 0)
     {
         total = ((u32)((ModelFileHeader*)hdr)->jointCount << 1) + (((u32)((ModelFileHeader*)hdr)->jointCount * 7) << 2)
-            + 0x1c + total;
+            + (int)sizeof(ModelJointWork) + total;
     }
     if (((ModelFileHeader*)hdr)->vertexAnimEntries != 0)
     {
@@ -768,10 +758,10 @@ int modelLoad_calcSizes(void* model, int flags, int* sizes, int forceBlendChanne
     }
     if (((ModelFileHeader*)hdr)->blendAnimEntries != 0)
     {
-        total = (va = (u32)((ModelFileHeader*)hdr)->blendAnimCount * 4, va + total);
-        total = total + 4;
+        total = (va = (u32)((ModelFileHeader*)hdr)->blendAnimCount * (int)sizeof(u8*), va + total);
+        total = total + 8;
     }
-    total += (u32)((ModelFileHeader*)hdr)->renderOpCount * 0xc;
+    total += (u32)((ModelFileHeader*)hdr)->renderOpCount * (int)sizeof(ModelRenderOpTextureRefs);
     if ((flags & 0x8000) != 0)
     {
         total += 0x1a;
@@ -808,8 +798,8 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
     int o2;
     u8* out2;
     int szs[7];
-    int pos;
-    int end;
+    uintptr_t pos;
+    uintptr_t end;
     int normalStride;
     u8* out;
     int k;
@@ -822,32 +812,32 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
         return 0;
     }
     modelLoad_calcSizes(p, b, szs, 0);
-    out2 = (u8*)((int)out | (int)out);
-    pos = roundUpTo32((int)out + 0x64);
-    *(int*)&((ObjModel*)out)->jointMatrices[0] = pos;
+    out2 = out;
+    pos = ALIGN_NEXT((uintptr_t)out + sizeof(ObjModel), 32);
+    ((ObjModel*)out)->jointMatrices[0] = (u8*)pos;
     pos += szs[6] >> 1;
-    *(int*)&((ObjModel*)out)->jointMatrices[1] = pos;
+    ((ObjModel*)out)->jointMatrices[1] = (u8*)pos;
     pos += szs[6] >> 1;
-    *(int*)&((ObjModel*)out)->curMtxBuf = *(int*)&((ObjModel*)out)->jointMatrices[0];
+    ((ObjModel*)out)->curMtxBuf = ((ObjModel*)out)->jointMatrices[0];
     if (((ModelFileHeader*)p)->morphTargetCount != 0 || ((ModelFileHeader*)p)->vertexAnimEntries != NULL || (((
         ModelFileHeader*)p)->flags & MODEL_FLAG_DYNAMIC_VERTEX_BUFFERS))
     {
-        pos = roundUpTo32(pos);
-        *(int*)&((ObjModel*)out2)->vtxBuf[0] = pos;
-        pos = roundUpTo32(pos + ((ModelFileHeader*)p)->vertexCount * 6);
-        *(int*)&((ObjModel*)out2)->vtxBuf[1] = pos;
+        pos = ALIGN_NEXT(pos, 32);
+        ((ObjModel*)out2)->vtxBuf[0] = (u8*)pos;
+        pos = ALIGN_NEXT(pos + ((ModelFileHeader*)p)->vertexCount * 6, 32);
+        ((ObjModel*)out2)->vtxBuf[1] = (u8*)pos;
         end = pos + ((ModelFileHeader*)p)->vertexCount * 6;
         memcpy(((ObjModel*)out2)->vtxBuf[0], ((ModelFileHeader*)p)->vertices, ((ModelFileHeader*)p)->vertexCount * 6);
         DCFlushRange(((ObjModel*)out2)->vtxBuf[0], ((ModelFileHeader*)p)->vertexCount * 6);
         memcpy(((ObjModel*)out2)->vtxBuf[1], ((ModelFileHeader*)p)->vertices, ((ModelFileHeader*)p)->vertexCount * 6);
         DCFlushRange(((ObjModel*)out2)->vtxBuf[1], ((ModelFileHeader*)p)->vertexCount * 6);
-        pos = roundUpTo32(end);
+        pos = ALIGN_NEXT(end, 32);
     }
     else
     {
-        end = *(int*)&((ModelFileHeader*)p)->vertices;
-        *(int*)&((ObjModel*)out)->vtxBuf[1] = end;
-        *(int*)&((ObjModel*)out2)->vtxBuf[0] = end;
+        end = (uintptr_t)((ModelFileHeader*)p)->vertices;
+        ((ObjModel*)out)->vtxBuf[1] = (u8*)end;
+        ((ObjModel*)out2)->vtxBuf[0] = (u8*)end;
     }
     if (((ModelFileHeader*)p)->blendAnimEntries != NULL)
     {
@@ -859,54 +849,54 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
         {
             normalStride = 3;
         }
-        pos = roundUpTo32(pos);
-        *(int*)&((ObjModel*)out2)->normalBuf = pos;
+        pos = ALIGN_NEXT(pos, 32);
+        ((ObjModel*)out2)->normalBuf = (u8*)pos;
         end = pos + ((ModelFileHeader*)p)->normalCount * normalStride;
         memcpy(((ObjModel*)out2)->normalBuf, ((ModelFileHeader*)p)->normals, ((ModelFileHeader*)p)->normalCount * normalStride);
         DCFlushRange(((ObjModel*)out2)->normalBuf, normalStride * ((ModelFileHeader*)p)->normalCount);
-        pos = roundUpTo32(end);
+        pos = ALIGN_NEXT(end, 32);
     }
     else
     {
-        *(int*)&((ObjModel*)out2)->normalBuf = *(int*)&((ModelFileHeader*)p)->normals;
+        ((ObjModel*)out2)->normalBuf = ((ModelFileHeader*)p)->normals;
     }
-    pos = roundUpTo4(pos);
-    *(int*)&((ObjModel*)out2)->animStateA = pos;
-    pos += 0x68;
+    pos = ALIGN_NEXT(pos, 8);
+    ((ObjModel*)out2)->animStateA = (void*)pos;
+    pos += sizeof(ObjAnimState);
     if (b & 0x80)
     {
-        *(int*)&((ObjModel*)out2)->animStateB = pos;
-        pos += 0x68;
+        ((ObjModel*)out2)->animStateB = (void*)pos;
+        pos += sizeof(ObjAnimState);
     }
     if (((ModelFileHeader*)p)->flags & MODEL_FLAG_VERTEX_ANIM_AREA)
     {
-        pos = roundUpTo8(pos);
+        pos = ALIGN_NEXT(pos, 8);
         q = ((ObjModel*)out2)->animStateA;
-        *(int*)(q + 0x1c) = pos;
+        ((ObjAnimState*)q)->moveCache[0] = (u8*)pos;
         pos += szs[5];
-        *(int*)(q + 0x20) = pos;
+        ((ObjAnimState*)q)->moveCache[1] = (u8*)pos;
         pos += szs[5];
-        *(int*)(q + 0x24) = pos;
+        ((ObjAnimState*)q)->blendMoveCache[0] = (u8*)pos;
         pos += szs[5];
-        *(int*)(q + 0x28) = pos;
+        ((ObjAnimState*)q)->blendMoveCache[1] = (u8*)pos;
         pos += szs[5];
         q = ((ObjModel*)out2)->animStateB;
         if (q != 0)
         {
-            *(int*)(q + 0x1c) = pos;
+            ((ObjAnimState*)q)->moveCache[0] = (u8*)pos;
             pos += szs[5];
-            *(int*)(q + 0x20) = pos;
+            ((ObjAnimState*)q)->moveCache[1] = (u8*)pos;
             pos += szs[5];
-            *(int*)(q + 0x24) = pos;
+            ((ObjAnimState*)q)->blendMoveCache[0] = (u8*)pos;
             pos += szs[5];
-            *(int*)(q + 0x28) = pos;
+            ((ObjAnimState*)q)->blendMoveCache[1] = (u8*)pos;
             pos += szs[5];
         }
     }
     if (((ModelFileHeader*)p)->morphTargetCount != 0)
     {
-        pos = roundUpTo4(pos);
-        *(int*)&((ObjModel*)out2)->blendChannels = pos;
+        pos = ALIGN_NEXT(pos, 8);
+        ((ObjModel*)out2)->blendChannels = (ObjModelBlendChannel*)pos;
         pos += 0x30;
         q = (u8*)((ObjModel*)out2)->blendChannels;
         *(s8*)(q + 0xc) = -1;
@@ -930,66 +920,64 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
     }
     if (szs[1] > 0)
     {
-        pos = roundUpTo4(pos);
-        *(int*)&((ObjModel*)out2)->hitSphereBuf0 = pos;
+        pos = ALIGN_NEXT(pos, 4);
+        ((ObjModel*)out2)->hitSphereBuf0 = (u8*)pos;
         o2 = ((ModelFileHeader*)p)->hitSphereCount;
         pos += o2 * 0x10;
-        *(int*)&((ObjModel*)out2)->hitSphereBuf1 = pos;
+        ((ObjModel*)out2)->hitSphereBuf1 = (u8*)pos;
         pos += ((ModelFileHeader*)p)->hitSphereCount * 0x10;
-        *(int*)&((ObjModel*)out2)->hitSphereBufActive = *(int*)&((ObjModel*)out2)->hitSphereBuf0;
+        ((ObjModel*)out2)->hitSphereBufActive = ((ObjModel*)out2)->hitSphereBuf0;
     }
     if (((ModelFileHeader*)p)->jointData != NULL && ((ModelFileHeader*)p)->jointCount != 0 && ((
         ModelFileHeader*)p)->unk18 != NULL && ((ModelFileHeader*)p)->unk1C != NULL)
     {
-        pos = roundUpTo4(pos);
-        *(int*)&((ObjModel*)out2)->jointWorkspace = pos;
-        pos += 0x1c;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->unk00 = pos;
+        pos = ALIGN_NEXT(pos, 8);
+        ((ObjModel*)out2)->jointWorkspace = (ModelJointWork*)pos;
+        pos += sizeof(ModelJointWork);
+        ((ObjModel*)out2)->jointWorkspace->unk00 = (u8*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 0xc;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->radii = pos;
+        ((ObjModel*)out2)->jointWorkspace->radii = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->radiiSq = pos;
+        ((ObjModel*)out2)->jointWorkspace->radiiSq = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->boneLengths = pos;
+        ((ObjModel*)out2)->jointWorkspace->boneLengths = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->maxReach = pos;
+        ((ObjModel*)out2)->jointWorkspace->maxReach = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        *(int*)&((ObjModel*)out2)->jointWorkspace->unk18 = pos;
+        ((ObjModel*)out2)->jointWorkspace->unk18 = (u8*)pos;
         pos += ((ModelFileHeader*)p)->jointCount;
     }
     else
     {
-        *(int*)&((ObjModel*)out2)->jointWorkspace = 0;
+        ((ObjModel*)out2)->jointWorkspace = NULL;
     }
     if (((ModelFileHeader*)p)->vertexAnimEntries != NULL)
     {
-        pos = roundUpTo4(pos);
-        *(int*)&((ObjModel*)out2)->vertexAnimData = pos;
+        pos = ALIGN_NEXT(pos, 4);
+        ((ObjModel*)out2)->vertexAnimData = (s32*)pos;
         pos += ((ModelFileHeader*)p)->vertexAnimCount * 4;
     }
     if (((ModelFileHeader*)p)->blendAnimEntries != NULL)
     {
-        pos = roundUpTo4(pos);
-        *(int*)&((ObjModel*)out2)->blendAnimData = pos;
-        pos += ((ModelFileHeader*)p)->blendAnimCount * 4;
+        pos = ALIGN_NEXT(pos, 8);
+        ((ObjModel*)out2)->blendAnimData = (u8**)pos;
+        pos += ((ModelFileHeader*)p)->blendAnimCount * sizeof(u8*);
     }
-    pos = roundUpTo4(pos);
-    *(int*)&((ObjModel*)out2)->textureRefs = pos;
-    pos += ((ModelFileHeader*)p)->renderOpCount * 0xc;
+    pos = ALIGN_NEXT(pos, 8);
+    ((ObjModel*)out2)->textureRefs = (ModelRenderOpTextureRefs*)pos;
+    pos += ((ModelFileHeader*)p)->renderOpCount * sizeof(ModelRenderOpTextureRefs);
     k = 0;
-    o2 = 0;
     for (; k < (int)((ModelFileHeader*)p)->renderOpCount; k++)
     {
-        ((ModelRenderOpTextureRefs*)((u8*)((ObjModel*)out2)->textureRefs + o2))->swapSelector = 0;
-        o2 += 0xc;
+        ((ObjModel*)out2)->textureRefs[k].swapSelector = 0;
     }
     if (b & 0x8000)
     {
-        pos = alignUp2(pos);
-        *(int*)&((ObjModel*)out2)->groundShadowVerts = pos;
+        pos = ALIGN_NEXT(pos, 2);
+        ((ObjModel*)out2)->groundShadowVerts = (u8*)pos;
         *(u8*)(((ObjModel*)out2)->groundShadowVerts + 0x18) = 0;
     }
-    *(int*)&((ObjModel*)out2)->renderAttachment = 0;
+    ((ObjModel*)out2)->renderAttachment = NULL;
     ((ObjModel*)out2)->file = (ModelFileHeader*)p;
     ((ObjModel*)out2)->vtxBufDirty = 0;
     return out2;
@@ -1107,7 +1095,7 @@ static void modelChainUpdateNodes(ObjModel* model, ModelFileHeader* file, ObjMod
         work.z = entry->nodes[i - 1].localOffset.z;
         if (callback != NULL)
         {
-            callback((int)file, (int*)model, (f32*)&work, callbackArg, i, chain->phase);
+            callback(file, model, (f32*)&work, callbackArg, i, chain->phase);
         }
         PSVECAdd(&work, &entry->nodes[i].localOffset, &work);
         PSMTXMultVec(tmp, &work, &work);
@@ -1214,138 +1202,67 @@ static void modelChainApplyDampingAndJitter(ObjModel* model, ModelFileHeader* un
     }
 }
 
-static void modelChainInitNodesFromJoints(int* obj, ModelFileHeader* b, int* desc)
+static void modelChainInitNodesFromJoints(ObjModel* obj, ModelFileHeader* b, ObjModelChainEntry* entry)
 {
     int i;
 
     i = 0;
-    for (; i < desc[2]; i++)
+    for (; i < entry->nodeCount; i++)
     {
-        int jointIdx = *(int*)(*(int*)desc[1] + i * 4);
-        int entry = *desc + i * 0x54;
-        int idx;
-        u8* hdr;
-        u32 n;
-        int lim;
+        int jointIdx = entry->desc->jointIndices[i];
+        ObjModelChainNode* node = &entry->nodes[i];
+        ModelBone* bone = &((ModelBone*)b->jointData)[jointIdx];
+        MtxPtr jm;
 
-        *(f32*)(entry + 0x18) = *(f32*)((int)b->jointData + jointIdx * 0x1c + 4);
-        *(f32*)&((ObjModel*)entry)->vtxBuf[0] = *(f32*)((int)b->jointData + jointIdx * 0x1c + 8);
-        *(f32*)&((ObjModel*)entry)->vtxBuf[1] = *(f32*)((int)b->jointData + jointIdx * 0x1c + 0xc);
+        node->localOffset.x = bone->head[0];
+        node->localOffset.y = bone->head[1];
+        node->localOffset.z = bone->head[2];
 
-        idx = jointIdx;
-        hdr = *(u8**)obj;
-        n = ((ModelFileHeader*)hdr)->jointCount;
-        if (n != 0)
-        {
-            lim = n + ((ModelFileHeader*)hdr)->extraJointCount;
-        }
-        else
-        {
-            lim = 1;
-        }
-        if (jointIdx >= lim)
-        {
-            idx = 0;
-        }
-        *(f32*)&((ObjModel*)entry)->file = *(f32*)(*(int*)((int)obj + ((*(u16*)((u8*)obj + 0x18) & 1) << 2) + 0xc) + idx * 0x40 + 0xc);
+        jm = modelGetBoneMtx(obj, jointIdx);
+        node->pos.x = jm[0][3];
 
-        idx = jointIdx;
-        hdr = *(u8**)obj;
-        n = ((ModelFileHeader*)hdr)->jointCount;
-        if (n != 0)
-        {
-            lim = n + ((ModelFileHeader*)hdr)->extraJointCount;
-        }
-        else
-        {
-            lim = 1;
-        }
-        if (jointIdx >= lim)
-        {
-            idx = 0;
-        }
-        *(f32*)(entry + 4) = *(f32*)(*(int*)((int)obj + ((*(u16*)((u8*)obj + 0x18) & 1) << 2) + 0xc) + idx * 0x40 + 0x1c);
+        jm = modelGetBoneMtx(obj, jointIdx);
+        node->pos.y = jm[1][3];
 
-        idx = jointIdx;
-        hdr = *(u8**)obj;
-        n = ((ModelFileHeader*)hdr)->jointCount;
-        if (n != 0)
-        {
-            lim = n + ((ModelFileHeader*)hdr)->extraJointCount;
-        }
-        else
-        {
-            lim = 1;
-        }
-        if (jointIdx >= lim)
-        {
-            idx = 0;
-        }
-        *(f32*)(entry + 8) = *(f32*)(*(int*)((int)obj + ((*(u16*)((u8*)obj + 0x18) & 1) << 2) + 0xc) + idx * 0x40 + 0x2c);
-
+        jm = modelGetBoneMtx(obj, jointIdx);
+        node->pos.z = jm[2][3];
     }
     {
         int lastJointIdx;
-        u8* lastHdr;
-        u32 lastCnt;
-        int lastLim;
-        int lastEntry = *desc + i * 0x54;
+        ObjModelChainNode* lastNode = &entry->nodes[i];
         f32 zero = 0.0f;
 
-        *(f32*)(lastEntry + 0x18) = zero;
-        *(f32*)(lastEntry + 0x1c) = zero;
-        *(f32*)(lastEntry + 0x20) = 100.0f;
-        {
-            int* jointIdxArr = (int*)*(int*)desc[1];
-            lastJointIdx = jointIdxArr[desc[2] - 1];
-        }
-        lastHdr = *(u8**)obj;
-        lastCnt = *(u8*)(lastHdr + 0xf3);
-        if (lastCnt != 0)
-        {
-            lastLim = lastCnt + *(u8*)(lastHdr + 0xf4);
-        }
-        else
-        {
-            lastLim = 1;
-        }
-        if (lastJointIdx >= lastLim)
-        {
-            lastJointIdx = 0;
-        }
-        PSMTXMultVec((MtxPtr)(obj[(*(u16*)((u8*)obj + 0x18) & 1) + 3] + lastJointIdx * 0x40), (Vec*)(lastEntry + 0x18),
-                     (Vec*)lastEntry);
+        lastNode->localOffset.x = zero;
+        lastNode->localOffset.y = zero;
+        lastNode->localOffset.z = 100.0f;
+        lastJointIdx = entry->desc->jointIndices[entry->nodeCount - 1];
+        PSMTXMultVec(modelGetBoneMtx(obj, lastJointIdx), &lastNode->localOffset, &lastNode->pos);
     }
 }
 
-void ObjModelChain_Update(int* model, int animState, ObjModelChain* chain, ObjModelChainUpdateCallback callback)
+void ObjModelChain_Update(ObjModel* model, ModelFileHeader* file, ObjModelChain* chain,
+                          ObjModelChainUpdateCallback callback)
 {
-    int off;
     int i;
 
     if (chain->enabled != 0)
     {
         i = 0;
-        off = 0;
         for (; i < chain->count; i++)
         {
             if (chain->firstUpdateDone == 0)
             {
-                modelChainInitNodesFromJoints(model, (ModelFileHeader*)animState, (int*)((u8*)chain->entries + off));
+                modelChainInitNodesFromJoints(model, file, &chain->entries[i]);
             }
             if (getHudHiddenFrameCount() == 0)
             {
-                modelChainApplyDampingAndJitter((ObjModel*)model, (ModelFileHeader*)animState, chain,
-                                                (ObjModelChainEntry*)((u8*)chain->entries + off));
-                modelChainUpdateNodes((ObjModel*)model, (ModelFileHeader*)animState, chain,
-                                      (ObjModelChainEntry*)((u8*)chain->entries + off), callback, i);
+                modelChainApplyDampingAndJitter(model, file, chain, &chain->entries[i]);
+                modelChainUpdateNodes(model, file, chain, &chain->entries[i], callback, i);
             }
             else
             {
-                modelChainUpdateNodesPassive((ObjModel*)model, (ModelFileHeader*)animState, chain,
-                                             (ObjModelChainEntry*)((u8*)chain->entries + off));
+                modelChainUpdateNodesPassive(model, file, chain, &chain->entries[i]);
             }
-            off += 0xc;
         }
         chain->updatedThisFrame = 1;
         chain->firstUpdateDone = 1;
@@ -1392,26 +1309,22 @@ void ObjModelChain_Free(ObjModelChain* chain)
 
 ObjModelChain* ObjModelChain_Alloc(void* models, int count)
 {
-    int** p;
-    int off;
+    ObjModelChainDesc** p;
     ObjModelChain* state;
     int i;
 
-    state = mmAlloc(0x1c, 0x1a, 0);
+    state = mmAlloc(sizeof(ObjModelChain), 0x1a, 0);
     state->count = count;
     state->firstUpdateDone = 0;
     state->updatedThisFrame = 0;
-    state->entries = mmAlloc(count * 0xc, 0x1a, 0);
+    state->entries = mmAlloc(count * sizeof(ObjModelChainEntry), 0x1a, 0);
     i = 0;
     p = models;
-    off = 0;
     for (; i < count; i++)
     {
-        *(int**)((char*)state->entries + off + 4) = *p;
-        *(int*)((char*)state->entries + off + 8) = (*p)[1];
-        *(void**)((char*)state->entries + off) = mmAlloc((*(int*)((char*)state->entries + off + 8) + 1) * 0x54, 0x1a, 0);
-        p++;
-        off += 0xc;
+        state->entries[i].desc = p[i];
+        state->entries[i].nodeCount = p[i]->nodeCount;
+        state->entries[i].nodes = mmAlloc((state->entries[i].nodeCount + 1) * sizeof(ObjModelChainNode), 0x1a, 0);
     }
     state->stiffness = 0.12f;
     state->damping = 0.675f;
@@ -1529,18 +1442,18 @@ void modelApplyBoneTransforms(u8* srcVtx, u8* dstVtx, u16 vtxCount, u8* targetA,
 
 void model_multMtxs(u8* model, f32* out)
 {
-    u8* hdr = (u8*)((ObjModel*)model)->file;
+    ModelFileHeader* hdr = ((ObjModel*)model)->file;
     u32 i;
-    for (i = 0; i < hdr[0xf3]; i++)
+    for (i = 0; i < hdr->jointCount; i++)
     {
         int j = i;
-        u8* h = (u8*)((ObjModel*)model)->file;
-        u32 cnt = h[0xf3];
+        ModelFileHeader* h = ((ObjModel*)model)->file;
+        u32 cnt = h->jointCount;
         int lim;
         MtxPtr base;
         if (cnt != 0)
         {
-            lim = cnt + h[0xf4];
+            lim = cnt + h->extraJointCount;
         }
         else
         {
@@ -1550,7 +1463,7 @@ void model_multMtxs(u8* model, f32* out)
         {
             j = 0;
         }
-        base = *(MtxPtr*)(model + 0xc + (((ObjModel*)model)->bufferFlags & 1) * 4);
+        base = (MtxPtr)((ObjModel*)model)->jointMatrices[((ObjModel*)model)->bufferFlags & 1];
         PSMTXConcat((MtxPtr)out, base + j * 4, base + j * 4);
     }
 }
@@ -1942,7 +1855,7 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
     void* hitSample;
     u32 cnt;
     int lim;
-    ObjHitBufs* st;
+    u8* cur;
 
     hitSample = NULL;
     hitReact = (u8*)((GameObject*)obj)->anim.hitReactState;
@@ -1980,24 +1893,25 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
         *(void**)((u8*)((GameObject*)prevObj)->anim.hitReactState + 0x48) = hitSample;
     }
 
-    st = (ObjHitBufs*)hitState;
     ((ObjModel*)hitState)->bufferFlags ^= 4;
     bufSel = (((ObjModel*)hitState)->bufferFlags >> 2) & 1;
-    st->cur = st->bufs[bufSel];
+    ((ObjModel*)hitState)->hitSphereBufActive =
+        bufSel != 0 ? ((ObjModel*)hitState)->hitSphereBuf1 : ((ObjModel*)hitState)->hitSphereBuf0;
+    cur = ((ObjModel*)hitState)->hitSphereBufActive;
     mtx = boneMtx;
     i = 0;
     off[0] = 0;
     off[1] = off[0];
-    prevSphere = st->bufs[bufSel ^ 1];
-    for (; i < *(u8*)(hdrOwner + 0xf7); i++)
+    prevSphere = (bufSel ^ 1) != 0 ? ((ObjModel*)hitState)->hitSphereBuf1 : ((ObjModel*)hitState)->hitSphereBuf0;
+    for (; i < ((ModelFileHeader*)hdrOwner)->hitSphereCount; i++)
     {
         if (boneMtx == NULL)
         {
-            idx = *(s16*)(*(u8**)(hdrOwner + 0x58) + off[0]);
-            cnt = *(u8*)(*(u8**)hitState + 0xf3);
+            idx = *(s16*)(((ModelFileHeader*)hdrOwner)->hitVolumes + off[0]);
+            cnt = ((ObjModel*)hitState)->file->jointCount;
             if (cnt != 0)
             {
-                lim = cnt + *(u8*)(*(u8**)hitState + 0xf4);
+                lim = cnt + ((ObjModel*)hitState)->file->extraJointCount;
             }
             else
             {
@@ -2007,7 +1921,7 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
             {
                 idx = 0;
             }
-            mtx = (u8*)((int*)hitState)[(((ObjModel*)hitState)->bufferFlags & 1) + 3] + idx * 0x40;
+            mtx = ((ObjModel*)hitState)->jointMatrices[((ObjModel*)hitState)->bufferFlags & 1] + idx * 0x40;
         }
         if (i == 0 && obj != prevObj)
         {
@@ -2022,11 +1936,11 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
             Obj_GetWorldPosition((GameObject*)prevObj, (f32 *)(prevObj + 0x18), (f32 *)(prevObj + 0x1c),
                                  (f32 *)(prevObj + 0x20));
         }
-        vec.x = *(f32*)(*(u8**)(hdrOwner + 0x58) + off[0] + 8);
-        vec.y = *(f32*)(*(u8**)(hdrOwner + 0x58) + off[0] + 0xc);
-        vec.z = *(f32*)(*(u8**)(hdrOwner + 0x58) + off[0] + 0x10);
-        *(f32*)(st->cur + off[1]) = *(f32*)(*(u8**)(hdrOwner + 0x58) + off[0] + 4) * (motionScale = ((GameObject*)obj)->anim.rootMotionScale);
-        PSMTXMultVec((MtxPtr)mtx, &vec, (Vec*)((st->cur + 4) + off[1]));
+        vec.x = *(f32*)(((ModelFileHeader*)hdrOwner)->hitVolumes + off[0] + 8);
+        vec.y = *(f32*)(((ModelFileHeader*)hdrOwner)->hitVolumes + off[0] + 0xc);
+        vec.z = *(f32*)(((ModelFileHeader*)hdrOwner)->hitVolumes + off[0] + 0x10);
+        *(f32*)(cur + off[1]) = *(f32*)(((ModelFileHeader*)hdrOwner)->hitVolumes + off[0] + 4) * (motionScale = ((GameObject*)obj)->anim.rootMotionScale);
+        PSMTXMultVec((MtxPtr)mtx, &vec, (Vec*)((cur + 4) + off[1]));
         *(f32*)(prevSphere + 4) = (gMapSavedPlayerOffsetX + *(f32*)(prevSphere + 4)) - playerMapOffsetX;
         *(f32*)(prevSphere + 0xc) = (gMapSavedPlayerOffsetZ + *(f32*)(prevSphere + 0xc)) - playerMapOffsetZ;
         off[0] += 0x18;
@@ -2038,7 +1952,7 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
 void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s, f32* outPos, s16* outRot)
 {
     ObjAnimState* ch;
-    int saved;
+    ObjAnimFrameCommand* saved;
     s16 srot[3];
     int bv;
     u8* anim;
@@ -2061,7 +1975,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
     {
         ch = model->animStateA;
     }
-    saved = *(int*)&ch->moveFrameData;
+    saved = ch->moveFrameData;
     {
         /* the four frame-data pointers (move/prevMove/blend/prevBlend) are
            indexed as one array here; the selected one is swapped into the
@@ -2110,7 +2024,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
         ch->frameStreamCursors[0] = anim + *(s16*)(anim + 2) + bv * n;
     }
     modelRenderInterpolateRootTransform(ch, srot, outRot);
-    *(int*)&ch->moveFrameData = saved;
+    ch->moveFrameData = saved;
     {
         f32 k = 0.001953125f;
         outPos[0] = k * srot[0];
@@ -2343,7 +2257,7 @@ void ObjModel_LoadRenderOpTextures(u8* model, GameObject* object)
         return;
     }
     ((ObjModel*)model)->bufferFlags |= OBJMODEL_BUFFER_FLAG_TEXTURES_LOADED;
-    for (i = 0; i < ((u8*)((ObjModel*)model)->file)[0xf8]; i++)
+    for (i = 0; i < ((ObjModel*)model)->file->renderOpCount; i++)
     {
         shaderInit((u8*)&((ModelFileHeader*)hdr)->renderOps[i], &((ObjModel*)model)->textureRefs[i], object,
                    ((ModelFileHeader*)hdr)->shaderFlags);
@@ -2371,8 +2285,8 @@ static void ObjModel_BuildAnimBlendTable(u8* obj, u8* channel, u8* hdr)
 
     if (((ModelFileHeader*)hdr)->flags & MODEL_FLAG_VERTEX_ANIM_AREA)
     {
-        rowA = *(u8**)((u8*)(channel + 0x1c) + ((ObjAnimState*)channel)->moveCacheSlot * 4);
-        rowB = *(u8**)((u8*)(channel + 0x1c) + ((ObjAnimState*)channel)->prevMoveCacheSlot * 4);
+        rowA = ((ObjAnimState*)channel)->cachedMoves[((ObjAnimState*)channel)->moveCacheSlot];
+        rowB = ((ObjAnimState*)channel)->cachedMoves[((ObjAnimState*)channel)->prevMoveCacheSlot];
     }
     else
     {
@@ -2479,13 +2393,13 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
                 e->textureIndex = 0;
             }
         }
-        if (*(int*)(op + 0x34) != -1)
+        if (((Shader*)op)->auxTextureIndex != -1)
         {
-            *(int*)(op + 0x34) = ((ModelFileHeader*)m)->textureIds[*(int*)(op + 0x34)];
+            ((Shader*)op)->auxTextureIndex = ((ModelFileHeader*)m)->textureIds[((Shader*)op)->auxTextureIndex];
         }
         else
         {
-            *(int*)(op + 0x34) = 0;
+            ((Shader*)op)->auxTextureIndex = 0;
         }
         if (((Shader*)op)->indTextureId != -1)
         {
@@ -2495,20 +2409,20 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
         {
             ((Shader*)op)->indTextureId = 0;
         }
-        if (*(int*)(op + 0x1c) != -1)
+        if (((Shader*)op)->unk1C != -1)
         {
-            if (*(int*)(op + 0x1c) == -2)
+            if (((Shader*)op)->unk1C == -2)
             {
-                *(int*)(op + 0x1c) = 0;
+                ((Shader*)op)->unk1C = 0;
             }
             else
             {
-                *(int*)(op + 0x1c) = 1;
+                ((Shader*)op)->unk1C = 1;
             }
         }
         else
         {
-            *(int*)(op + 0x1c) = 0;
+            ((Shader*)op)->unk1C = 0;
         }
         if (((Shader*)op)->textureId != -1)
         {
@@ -2520,11 +2434,11 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
         }
         if (!(((ModelFileHeader*)m)->shaderFlags & 0xc))
         {
-            *(int*)(op + 0x8) = 0;
+            ((Shader*)op)->reg1Texture = NULL;
         }
         if (!(((ModelFileHeader*)m)->shaderFlags & 0xe00))
         {
-            *(int*)(op + 0x14) = 0;
+            ((Shader*)op)->reg2Texture = NULL;
         }
     }
 }
@@ -2543,7 +2457,7 @@ void ObjModel_RelocateAnimData(u8* m, u8* dst)
             vertexAnimBase)
         {
             ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->vertexAnimEntries)[i].weightStream =
-                ((ModelFileHeader*)m)->vertexAnimBase + (u32)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
+                ((ModelFileHeader*)m)->vertexAnimBase + (uintptr_t)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
                     vertexAnimEntries)[i].weightStream;
         }
     }
@@ -2551,13 +2465,13 @@ void ObjModel_RelocateAnimData(u8* m, u8* dst)
     for (i = 0; i < ((ModelFileHeader*)m)->blendAnimCount; i++)
     {
         ((ObjModel*)dst)->blendAnimData[i] =
-            *(int*)&((ObjModel*)dst)->normalBuf + ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].
+            ((ObjModel*)dst)->normalBuf + ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].
             srcDataOffset;
         if (((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].weightStream < ((ModelFileHeader*)m)->
             blendAnimBase)
         {
             ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].weightStream =
-                ((ModelFileHeader*)m)->blendAnimBase + (u32)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
+                ((ModelFileHeader*)m)->blendAnimBase + (uintptr_t)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
                     blendAnimEntries)[i].weightStream;
         }
     }
@@ -2671,7 +2585,7 @@ void* ObjModel_LoadModelData(int id)
     headerSize = roundUpTo8(headerSize);
     headerSize += 0xb0;
     amapSize = modelGetAmapSize(id, amapFlag, animCount);
-    model = (void*)roundUpTo16((int)mmAlloc(dataLen + amapSize + 0x1f4, 9, 0));
+    model = (void*)(((uintptr_t)mmAlloc(dataLen + amapSize + 0x1f4, 9, 0) + 0xF) & ~(uintptr_t)0xF);
     loadAndDecompressDataFile(MLDF_FILEID_MODELS_BIN_A, model, fileOffset, dataLen, 0, id, 0);
     ((ModelFileHeader*)model)->headerSize = headerSize;
     ((ModelFileHeader*)model)->modelId = id;
@@ -2798,8 +2712,8 @@ void* ObjModel_Load(int id, int loadFlag, int* outSize)
         off[0] = i[0];
         for (; i[0] < h[0][0xf2]; i[0]++)
         {
-            tex = textureLoad(-(*(int*)(*(int*)(h[0] + 0x20) + off[0]) | 0x8000), 1);
-            *(void**)(*(int*)(h[0] + 0x20) + off[0]) = tex;
+            tex = textureLoad(-(*(s32*)((u8*)((ModelFileHeader*)h[0])->textureIds + off[0]) | 0x8000), 1);
+            *(void**)((u8*)((ModelFileHeader*)h[0])->textureIds + off[0]) = tex;
             off[0] += 4;
         }
         ObjModel_ResolveRenderOpTextures(header);
@@ -2895,7 +2809,7 @@ void ObjModel_BlendNormalStream(u8* mtxs, u8* job, u8* animData, u8** outs, int 
         copyToCache(gModelCacheBuffersA[0], animData + *(int*)(chunk + 0x60), vtxWords);
         chunkWords[0] = vtxWords;
         weightWords = (u32)(((chunk = *(u8**)(job + 0xc))[0x6f] << 5) + 0x1f) >> 5;
-        copyToCache(*(u8**)((int)gModelCacheBuffersA + 4), *(u8**)(chunk + 0x64), weightWords);
+        copyToCache(gModelCacheBuffersA[1], *(u8**)(chunk + 0x64), weightWords);
         for (i = 0; i < (u32)(((ModelFileHeader*)job)->flags - 1); i++)
         {
             int nextVtxWords;
@@ -2916,8 +2830,8 @@ void ObjModel_BlendNormalStream(u8* mtxs, u8* job, u8* animData, u8** outs, int 
                 chunkDst = outs[i];
                 ObjModel_TransformQuadVerticesLinear(mtxs + chunk[0x6c] * 0x30, mtxs + chunk[0x6d] * 0x30,
                                                      gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                                     chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                                     chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                                     gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
+                                                     gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
                                                      *(u16*)(chunk + 0x70));
                 memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
             }
@@ -2926,8 +2840,8 @@ void ObjModel_BlendNormalStream(u8* mtxs, u8* job, u8* animData, u8** outs, int 
                 chunkDst = outs[i];
                 ObjModel_TransformVerticesLinear(mtxs + chunk[0x6c] * 0x30, mtxs + chunk[0x6d] * 0x30,
                                                  gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                                 chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                                 chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                                 gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
+                                                 gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
                                                  *(u16*)(chunk + 0x70));
                 memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
             }
@@ -2939,8 +2853,8 @@ void ObjModel_BlendNormalStream(u8* mtxs, u8* job, u8* animData, u8** outs, int 
             chunkDst = outs[i];
             ObjModel_TransformQuadVerticesLinear(mtxs + lastChunk[0x6c] * 0x30, mtxs + lastChunk[0x6d] * 0x30,
                                                  gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                                 lastChunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                                 lastChunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                                 gModelCacheBuffersA[(u8)((i & 1) * 2)] + lastChunk[0x72],
+                                                 gModelCacheBuffersA[(u8)((i & 1) * 2)] + lastChunk[0x72],
                                                  *(u16*)(lastChunk + 0x70));
             memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
         }
@@ -2949,8 +2863,8 @@ void ObjModel_BlendNormalStream(u8* mtxs, u8* job, u8* animData, u8** outs, int 
             chunkDst = outs[i];
             ObjModel_TransformVerticesLinear(mtxs + lastChunk[0x6c] * 0x30, mtxs + lastChunk[0x6d] * 0x30,
                                              gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                             lastChunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                             lastChunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                             gModelCacheBuffersA[(u8)((i & 1) * 2)] + lastChunk[0x72],
+                                             gModelCacheBuffersA[(u8)((i & 1) * 2)] + lastChunk[0x72],
                                              *(u16*)(lastChunk + 0x70));
             memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
         }
@@ -2978,7 +2892,7 @@ void ObjModel_BlendVertexStream(u8* mtxs, u8* job, u8* animData, int* dstOffsets
         copyToCache(gModelCacheBuffersA[0], animData + *(int*)(chunk + 0x60), vtxWords);
         chunkWords[0] = vtxWords;
         weightWords = (u32)(((chunk = *(u8**)(job + 0xc))[0x6f] << 5) + 0x1f) >> 5;
-        copyToCache(*(u8**)((int)gModelCacheBuffersA + 4), *(u8**)(chunk + 0x64), weightWords);
+        copyToCache(gModelCacheBuffersA[1], *(u8**)(chunk + 0x64), weightWords);
         for (i = 0; i < (u32)(((ModelFileHeader*)job)->flags - 1); i++)
         {
             chunk = *(u8**)(job + 0xc) + i * 0x74;
@@ -2995,8 +2909,8 @@ void ObjModel_BlendVertexStream(u8* mtxs, u8* job, u8* animData, int* dstOffsets
             chunkDst = dstBase + dstOffsets[i];
             ObjModel_TransformVerticesWithTranslation(mtxs + chunk[0x6c] * 0x30, mtxs + chunk[0x6d] * 0x30,
                                                       gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                                      chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                                      chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                                      gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
+                                                      gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
                                                       *(u16*)(chunk + 0x70));
             memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
         }
@@ -3005,15 +2919,15 @@ void ObjModel_BlendVertexStream(u8* mtxs, u8* job, u8* animData, int* dstOffsets
         chunkDst = dstBase + dstOffsets[i];
         ObjModel_TransformVerticesWithTranslation(mtxs + chunk[0x6c] * 0x30, mtxs + chunk[0x6d] * 0x30,
                                                   gModelCacheBuffersA[(u8)((i & 1) * 2) + 1],
-                                                  chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
-                                                  chunk[0x72] + (int)gModelCacheBuffersA[(u8)((i & 1) * 2)],
+                                                  gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
+                                                  gModelCacheBuffersA[(u8)((i & 1) * 2)] + chunk[0x72],
                                                   *(u16*)(chunk + 0x70));
         memcpyToCache(chunkDst, gModelCacheBuffersA[(u8)((i & 1) * 2)], chunkWords[i & 1]);
         cacheQueueWait(0);
     }
 }
 
-void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, int d1, int d2, int count)
+void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count)
 {
     f32* ma = (f32*)m1;
     f32* mb = (f32*)m2;
@@ -3047,7 +2961,7 @@ void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, int d1, 
     }
 }
 
-void ObjModel_TransformVerticesLinear(u8* m1, u8* m2, u8* src, int d1, int d2, int count)
+void ObjModel_TransformVerticesLinear(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count)
 {
     f32* ma = (f32*)m1;
     f32* mb = (f32*)m2;
@@ -3077,7 +2991,7 @@ void ObjModel_TransformVerticesLinear(u8* m1, u8* m2, u8* src, int d1, int d2, i
         out += 3;
     }
 }
-void ObjModel_TransformQuadVerticesLinear(u8* m1, u8* m2, u8* src, int d1, int d2, int count)
+void ObjModel_TransformQuadVerticesLinear(u8* m1, u8* m2, u8* src, u8* d1, u8* d2, int count)
 {
     f32* ma = (f32*)m1;
     f32* mb = (f32*)m2;
@@ -3161,7 +3075,7 @@ void ObjModel_UnpackResourcePayload(u8* src, int srcSize, u8* dst, int dstSize)
         {
             if (t < 0)
             {
-                srcBits = (u8*)modelRenderCopyPackedSamples(&srcState, &dstState, dst[7], vertBits, t);
+                srcBits = (u8*)(uintptr_t)modelRenderCopyPackedSamples(&srcState, &dstState, dst[7], vertBits, t);
             }
             else
             {

@@ -82,24 +82,24 @@ typedef struct PlayerBlinkState {
     u8 amount; /* 0x2d */
 } PlayerBlinkState;
 
-static inline int playerEyeAnim_FindJoint(ObjAnimComponent* objAnim, int tag) {
+static inline ObjJointPose18* playerEyeAnim_FindJoint(ObjAnimComponent* objAnim, int tag) {
     int jointCount;
     u8* jointData;
     int poseOffset;
     int jointDataOffset;
     ObjModelInstance* model;
-    int joint;
+    ObjJointPose18* joint;
 
-    joint = 0;
+    joint = NULL;
     model = objAnim->modelInstance;
     if (model != 0) {
         jointDataOffset = 0;
         poseOffset = 0;
         for (jointCount = model->jointCount; jointCount > 0; jointCount--) {
             jointData = (u8*)model->jointData;
-            if (((int)*(u8*)((int)jointData + objAnim->bankIndex + jointDataOffset + 1) != 0xff) &&
+            if (((int)*(u8*)(jointData + objAnim->bankIndex + jointDataOffset + 1) != 0xff) &&
                 ((int)jointData[jointDataOffset] == tag)) {
-                joint = (int)objAnim->jointPoseData + poseOffset;
+                joint = (ObjJointPose18*)(objAnim->jointPoseData + poseOffset);
             }
             jointDataOffset += model->modelCount + 1;
             poseOffset += 0x12;
@@ -108,7 +108,7 @@ static inline int playerEyeAnim_FindJoint(ObjAnimComponent* objAnim, int tag) {
     return joint;
 }
 
-void playerUpdateBlinkAnimation(int obj, int blinkState, u16 flags) {
+void playerUpdateBlinkAnimation(void* obj, void* blinkState, u16 flags) {
 
     PlayerBlinkState* bs = (PlayerBlinkState*)blinkState;
     f32 leftScale;
@@ -218,10 +218,10 @@ void playerUpdateBlinkAnimation(int obj, int blinkState, u16 flags) {
     wave = 0.25f * mathCosfHighPrecision(phase);
     wave = wave * bs->amount / 255.0f;
     rotation = (32768.0f * (leftScale * wave)) / 3.142f;
-    ((ObjJointPose18*)playerEyeAnim_FindJoint(objAnim, OBJLIB_BLINK_LEFT_JOINT_TAG))->v[1] = rotation;
+    playerEyeAnim_FindJoint(objAnim, OBJLIB_BLINK_LEFT_JOINT_TAG)->v[1] = rotation;
 
     rotation = (32768.0f * (rightScale * wave)) / 3.142f;
-    ((ObjJointPose18*)playerEyeAnim_FindJoint(objAnim, OBJLIB_BLINK_RIGHT_JOINT_TAG))->v[1] = -rotation;
+    playerEyeAnim_FindJoint(objAnim, OBJLIB_BLINK_RIGHT_JOINT_TAG)->v[1] = -rotation;
 }
 
 void objSetLookAtFlip(int mode, u8 enabled) {
@@ -315,9 +315,9 @@ void objKfAnimStop(ObjKfAnimState* state) {
     state->frame = -1;
 }
 
-void objSoundStart(u32 obj, void* state, u16 sfxId) {
-    if (Sfx_IsPlayingFromObjectChannel((GameObject*)obj, 0x10) == 0) {
-        Sfx_PlayFromObjectChannel((GameObject*)obj, 0x10, sfxId);
+void objSoundStart(GameObject* obj, void* state, u16 sfxId) {
+    if (Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
+        Sfx_PlayFromObjectChannel(obj, 0x10, sfxId);
         ((ObjSoundState*)state)->timer = -1.0f;
         ((ObjSoundState*)state)->pitch = -0x500;
         ((ObjSoundState*)state)->active = 1;
@@ -425,7 +425,7 @@ void objGetJointWorldPosition(GameObject* obj, int key, f32* outPosition) {
 
 s16* objFindJointPoseVector(GameObject* obj, int key) {
     int vecOffset;
-    int jointData;
+    u8* jointData;
     int entryIdx;
     ObjDef* modelDef;
     s16* result;
@@ -439,7 +439,7 @@ s16* objFindJointPoseVector(GameObject* obj, int key) {
         vecOffset = 0;
         count = OBJPRINT_JOINT_COUNT(modelDef);
         for (i = 0; i < count; i++) {
-            jointData = (int)modelDef->jointData;
+            jointData = (u8*)modelDef->jointData;
             if ((int)*(u8*)(jointData + OBJPRINT_ACTIVE_BANK_INDEX(obj) + entryIdx + 1) != 0xff &&
                 (s32) * (u8*)(jointData + entryIdx) == key) {
                 result = (s16*)((char*)(obj)->anim.jointPoseData + vecOffset);
@@ -574,7 +574,7 @@ static int characterTrackJointYaw(s16* curve, s16* state) {
     return 0;
 }
 
-static void characterHeadLookAlert(int obj, CharacterEyeAnimState* curve, s16* state, f32 val) {
+static void characterHeadLookAlert(GameObject* obj, CharacterEyeAnimState* curve, s16* state, f32 val) {
     int masked;
     int flag;
 
@@ -780,7 +780,7 @@ void characterUpdateHeadLook(GameObject* obj, CharacterEyeAnimState* state, f32 
         if (scale <= 0.1f) {
             characterHeadLookIdle(obj, state, found, scale);
         } else {
-            characterHeadLookAlert((int)obj, state, found, scale);
+            characterHeadLookAlert(obj, state, found, scale);
         }
         state->headTrackMode = (s16)(u16)(u8)state->headTrackMode;
         if (scale > 0.1f) {
@@ -843,14 +843,14 @@ s16 objJointTracksAimAtTarget(GameObject* obj, GameObject* target, f32* pos, u8*
             int iv[2];
             int n;
             int j;
-            iv[0] = (int)found[0];
-            iv[1] = (int)found[0];
+            iv[0] = 0;
+            iv[1] = 0;
             n = ((ObjDef*)m[0])->jointCount;
             for (j = 0; j < n; j++) {
-                int entries = (int)((ObjDef*)m[0])->jointData;
+                u8* entries = (u8*)((ObjDef*)m[0])->jointData;
                 if ((int)*(u8*)(entries + OBJPRINT_ACTIVE_BANK_INDEX(go) + iv[0] + 1) != 0xff &&
                     key == (int)*(u8*)(entries + iv[0])) {
-                    found[0] = (s16*)((int)go->anim.jointPoseData + iv[1]);
+                    found[0] = (s16*)(go->anim.jointPoseData + iv[1]);
                 }
                 iv[0] += ((ObjDef*)m[0])->modelCount + 1;
                 iv[1] += 0x12;
@@ -1053,11 +1053,11 @@ void characterAimHeadAtTarget(GameObject* obj, void* tgt, void* state, int limit
         int iv[2];
         int n;
         int j;
-        iv[0] = (int)found[0];
-        iv[1] = (int)found[0];
+        iv[0] = 0;
+        iv[1] = 0;
         n = ((ObjDef*)m[0])->jointCount;
         for (j = 0; j < n; j++) {
-            int entries = (int)((ObjDef*)m[0])->jointData;
+            u8* entries = (u8*)((ObjDef*)m[0])->jointData;
             if ((int)*(u8*)(entries + OBJPRINT_ACTIVE_BANK_INDEX(obj) + iv[0] + 1) != 0xff &&
                 (int)*(u8*)(entries + iv[0]) == 0) {
                 found[0] = (s16*)((char*)(obj)->anim.jointPoseData + iv[1]);
@@ -1270,7 +1270,7 @@ void objSetColorFilter(s16 red, s16 green, s16 blue) {
 
 #define OBJPRINT_ATTACH_POINTS(staff) ((char*)OBJPRINT_MODEL_INSTANCE(staff)->attachPoints)
 
-void staffUpdateSegmentTransforms(int staffArg, GameObject* objArg, int modelArg, int a, int b, int c) {
+void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjModel* modelArg, int a, int b, int c) {
     f32 va[3];
     Vec vb;
     int k;
@@ -1280,12 +1280,12 @@ void staffUpdateSegmentTransforms(int staffArg, GameObject* objArg, int modelArg
     int i;
     char* base;
     ObjModel* model;
-    int obj;
+    GameObject* obj;
     GameObject* staff;
 
-    staff = (GameObject*)staffArg;
-    obj = (int)objArg;
-    model = (ObjModel*)modelArg;
+    staff = staffArg;
+    obj = objArg;
+    model = modelArg;
 
     if (OBJPRINT_MODEL_INSTANCE(staff)->attachPointCount >= 2 && staff->anim.classId == 0x2d) {
         int off;
@@ -1317,7 +1317,7 @@ void staffUpdateSegmentTransforms(int staffArg, GameObject* objArg, int modelArg
                 ObjAttachPoint* row = (ObjAttachPoint*)(OBJPRINT_ATTACH_POINTS(staff) + off);
                 int idx2 = row->joints[OBJPRINT_ACTIVE_BANK_INDEX(staff)];
                 MtxPtr mtx2 =
-                    (MtxPtr)(idx2 * 0x40 + *(int*)((u8*)model + ((model->bufferFlags & 1) * 4) + 0xc));
+                    (MtxPtr)(model->jointMatrices[model->bufferFlags & 1] + idx2 * 0x40);
                 vb.x = row->pos[0];
                 vb.y = ((ObjAttachPoint*)(OBJPRINT_ATTACH_POINTS(staff) + off))->pos[1];
                 vb.z = ((ObjAttachPoint*)(OBJPRINT_ATTACH_POINTS(staff) + off))->pos[2];
@@ -1340,7 +1340,7 @@ void staffUpdateSegmentTransforms(int staffArg, GameObject* objArg, int modelArg
             va[0] = *(f32*)(r + 0x6c);
             va[1] = *(f32*)(r + 0x74);
             va[2] = *(f32*)(r + 0x7c);
-            (*(void (**)(int, int, Vec*))(*(int*)staff->anim.dll + 0x28))((int)staff, obj, &vb);
+            ((void (*)(GameObject*, GameObject*, Vec*))(*staff->anim.dll)[10])(staff, obj, &vb);
             va[0] = va[0] - vb.x;
             va[1] = va[1] - vb.y;
             va[2] = va[2] - vb.z;
@@ -1380,9 +1380,8 @@ void objSetModelMatrixOverride(f32* matrix) {
 
 void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
     void* sub;
-    int walk;
     int i;
-    void (*vfn)(int, int, int, int, int, int);
+    void (*vfn)(GameObject*, int, int, int, int, int);
 
     if ((obj->objectFlags & OBJECT_OBJFLAG_FREED) != 0 || obj->ownerObj != NULL) {
         return;
@@ -1400,9 +1399,9 @@ void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
     sub = (void*)obj->anim.dll;
     if (sub != NULL) {
         if ((obj->objectFlags & OBJECT_OBJFLAG_HIDDEN) == 0) {
-            vfn = *(void (**)(int, int, int, int, int, int))(*(int*)sub + 0x10);
+            vfn = (void (*)(GameObject*, int, int, int, int, int))((ObjectInterface*)*(ObjectInterfaceHandle)sub)->render;
             if (vfn != NULL) {
-                vfn((int)obj, a, b, c, d, flag);
+                vfn(obj, a, b, c, d, flag);
             }
         } else if ((s8)flag != 0 && OBJPRINT_ACTIVE_BANK(obj) != NULL) {
             objRenderModel(obj);
@@ -1414,7 +1413,7 @@ void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
         switch (obj->anim.romDefNo) {
         case 0:
         case 0x1f:
-            playerRender((int)obj, a, b, c, d, flag);
+            playerRender(obj, a, b, c, d, flag);
             break;
         default:
             if (OBJPRINT_ACTIVE_BANK(obj) != NULL) {
@@ -1427,12 +1426,11 @@ void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
         }
     }
     doNothing_afterRenderObject();
-    for (i = 0, walk = (int)obj; i < (s32)(u32)obj->childCount; i++) {
-        int staff = (int)((GameObject*)walk)->childObjs[0];
-        if (((GameObject*)staff)->anim.classId == 0x2d) {
-            staffUpdateSegmentTransforms(staff, obj, (int)OBJPRINT_ACTIVE_BANK(staff), a, b, c);
+    for (i = 0; i < (s32)(u32)obj->childCount; i++) {
+        GameObject* staff = obj->childObjs[i];
+        if (staff->anim.classId == 0x2d) {
+            staffUpdateSegmentTransforms(staff, obj, (ObjModel*)OBJPRINT_ACTIVE_BANK(staff), a, b, c);
         }
-        walk += 4;
     }
 }
 

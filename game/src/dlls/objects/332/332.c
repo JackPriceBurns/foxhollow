@@ -82,13 +82,13 @@ int babyCloudRunner_updateBurrowAnimation(GameObject* obj) {
     f32 speed;
     BabyCloudRunnerState* state = obj->extra;
     if (obj->anim.currentMove != BABYCLOUDRUNNER_MOVE_BURROW && obj->anim.currentMove != BABYCLOUDRUNNER_MOVE_SURFACE) {
-        ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_SURFACE, obj->anim.currentMoveProgress, 0);
+        ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_SURFACE, obj->anim.currentMoveProgress, 0);
     }
     if (obj->anim.currentMove == BABYCLOUDRUNNER_MOVE_BURROW && obj->anim.velocityY > 0.01f) {
-        ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_SURFACE, obj->anim.currentMoveProgress, 0);
+        ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_SURFACE, obj->anim.currentMoveProgress, 0);
     }
     if (obj->anim.currentMove == BABYCLOUDRUNNER_MOVE_SURFACE && obj->anim.velocityY < 0.0f) {
-        ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_BURROW, obj->anim.currentMoveProgress, 0);
+        ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_BURROW, obj->anim.currentMoveProgress, 0);
     }
     speed = obj->anim.velocityY * gBabyCloudRunnerVerticalSpeedScale + 0.07f;
     speed *= 0.5f;
@@ -108,7 +108,7 @@ int babyCloudRunner_updateBurrowAnimation(GameObject* obj) {
             state->stateFlags.burrowSfxLatched = 0;
         }
     }
-    ObjAnim_AdvanceCurrentMove((int)obj, speed, timeDelta, 0);
+    ObjAnim_AdvanceCurrentMove(obj, speed, timeDelta, 0);
     return 1;
 }
 
@@ -124,14 +124,14 @@ void babyCloudRunner_turnTowardTarget(GameObject* obj, GameObject* target, BabyC
         (s16)yawStep < BABYCLOUDRUNNER_TURN_ALIGNMENT_TOLERANCE) {
         if (state->turnLatch != 0) {
             state->turnLatch = 0;
-            ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_IDLE_A, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_IDLE_A, 0.0f, 0);
         } else {
-            ObjAnim_AdvanceCurrentMove((int)obj, BABYCLOUDRUNNER_IDLE_ANIM_SPEED, timeDelta, 0);
+            ObjAnim_AdvanceCurrentMove(obj, BABYCLOUDRUNNER_IDLE_ANIM_SPEED, timeDelta, 0);
         }
     } else {
         if (state->turnLatch == 0) {
             state->turnLatch = 1;
-            ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_TURN, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_TURN, 0.0f, 0);
         } else {
             int turnAnimStep;
             if ((int)(s16)yawStep > 0) {
@@ -139,7 +139,7 @@ void babyCloudRunner_turnTowardTarget(GameObject* obj, GameObject* target, BabyC
             } else {
                 turnAnimStep = -(s16)yawStep >> BABYCLOUDRUNNER_TURN_ANIM_SHIFT;
             }
-            ObjAnim_AdvanceCurrentMove((int)obj, (f32)(s16)turnAnimStep / BABYCLOUDRUNNER_TURN_ANIM_RATE_DIVISOR,
+            ObjAnim_AdvanceCurrentMove(obj, (f32)(s16)turnAnimStep / BABYCLOUDRUNNER_TURN_ANIM_RATE_DIVISOR,
                                        timeDelta, 0);
         }
     }
@@ -381,7 +381,7 @@ void babyCloudRunner_update(GameObject* obj) {
         } else {
             if (randomChanceOneIn(BABYCLOUDRUNNER_MUTTER_SFX_PERIOD) != 0) {
                 u16 sfxId = state->mutterSfxTable[randomGetRange(0, BABYCLOUDRUNNER_MUTTER_SFX_COUNT - 1)];
-                objSoundStart((int)obj, &state->soundState, sfxId);
+                objSoundStart(obj, &state->soundState, sfxId);
             }
             objSoundUpdateMouth(obj, &state->soundState);
             if (state->runnerState == BABYCLOUDRUNNER_STATE_FOLLOW_CURVE ||
@@ -411,10 +411,10 @@ void babyCloudRunner_update(GameObject* obj) {
                             gBabyCloudRunnerPlayerFarDist) {
                             enemy_setTrackedObj(nearbyObject, obj);
                             if (obj->anim.currentMove != BABYCLOUDRUNNER_MOVE_SURFACE) {
-                                ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_SURFACE,
+                                ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_SURFACE,
                                                        obj->anim.currentMoveProgress, 0);
                             }
-                            ObjAnim_AdvanceCurrentMove((int)obj, 0.01f, timeDelta, 0);
+                            ObjAnim_AdvanceCurrentMove(obj, 0.01f, timeDelta, 0);
                         } else {
                             enemy_setTrackedObj(nearbyObject, Obj_GetPlayerObject());
                         }
@@ -483,18 +483,18 @@ void babyCloudRunner_update(GameObject* obj) {
                         state->stateFlags.atRoost = 1;
                         mainSetBits(BABYCLOUDRUNNER_AIR_METER_GAME_BIT, 0);
                     }
-                    ObjAnim_AdvanceCurrentMove((int)obj, gBabyCloudRunnerHomeAnimSpeed, timeDelta, 0);
+                    ObjAnim_AdvanceCurrentMove(obj, gBabyCloudRunnerHomeAnimSpeed, timeDelta, 0);
                 } else {
                     if (inRange != 0) {
                         (*gObjectTriggerInterface)->runSequence(BABYCLOUDRUNNER_SEQUENCE_AT_ROOST, obj, -1);
                         state->unknown0B0 = 1;
                     }
                     babyCloudRunner_turnTowardTarget(obj, Obj_GetPlayerObject(), state, 1);
-                    if (ObjAnim_AdvanceCurrentMove((int)obj, state->animSpeed, timeDelta, 0) != 0) {
+                    if (ObjAnim_AdvanceCurrentMove(obj, state->animSpeed, timeDelta, 0) != 0) {
                         if (randomChanceOneIn(2) != 0) {
-                            ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_IDLE_B, 0.0f, 0);
+                            ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_IDLE_B, 0.0f, 0);
                         } else {
-                            ObjAnim_SetCurrentMove((int)obj, BABYCLOUDRUNNER_MOVE_IDLE_A, 0.0f, 0);
+                            ObjAnim_SetCurrentMove(obj, BABYCLOUDRUNNER_MOVE_IDLE_A, 0.0f, 0);
                         }
                     }
                 }

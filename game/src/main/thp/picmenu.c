@@ -123,7 +123,7 @@ BOOL movieLoad(const char* fileName, void* onMemory)
     gAttractMoviePlayer.internalState = 0;
     gAttractMoviePlayer.state = 0;
     gAttractMoviePlayer.playFlags = 0;
-    gAttractMoviePlayer.isOnMemory = (s32)onMemory;
+    gAttractMoviePlayer.isOnMemory = (intptr_t)onMemory;
     gAttractMoviePlayer.isOpen = 1;
     gAttractMoviePlayer.curVolume = 127.0f;
     gAttractMoviePlayer.targetVolume = 127.0f;
@@ -149,9 +149,9 @@ BOOL AttractMovieAudio_Init(int audioMode)
     AIDCallback oldCb;
     register AIDCallback dmaCallback;
 
-    memset((AttractMoviePlayer*)((char*)(int)gAttractMovieAudioDmaBuffer + 0x5A0), 0, sizeof(AttractMoviePlayer));
-    OSInitMessageQueue((OSMessageQueue*)((char*)(int)gAttractMovieAudioDmaBuffer + 0x50C),
-                       (void*)((char*)(int)gAttractMovieAudioDmaBuffer + ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES), 3);
+    memset(&gAttractMoviePlayer, 0, sizeof(AttractMoviePlayer));
+    OSInitMessageQueue(&gAttractMovieSpentTextureSetQueue,
+                       (void*)(gAttractMovieAudioDmaBuffer + ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES), 3);
 
     if (!THPInit())
     {
@@ -181,9 +181,9 @@ BOOL AttractMovieAudio_Init(int audioMode)
 
     if (gAttractMovieAudioMode == 0)
     {
-        memset((char*)(int)gAttractMovieAudioDmaBuffer, 0, ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES);
-        DCFlushRange((char*)(int)gAttractMovieAudioDmaBuffer, ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES);
-        AIInitDMA((u32)((char*)(int)gAttractMovieAudioDmaBuffer + gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE),
+        memset(gAttractMovieAudioDmaBuffer, 0, ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES);
+        DCFlushRange(gAttractMovieAudioDmaBuffer, ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES);
+        AIInitDMA((uintptr_t)(gAttractMovieAudioDmaBuffer + gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE),
                   ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE);
         AIStartDMA();
     }

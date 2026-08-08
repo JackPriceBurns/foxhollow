@@ -19,7 +19,7 @@ typedef struct RingBufferQueue {
 typedef struct ObjLinkedList {
     s16 count;
     s16 nextOffset;
-    int head;
+    uintptr_t head;
 } ObjLinkedList;
 
 typedef struct ModelList {
@@ -79,8 +79,8 @@ void Stack_Push(RingBufferQueue* stack, void* src);
 void Stack_Free(RingBufferQueue* stack);
 RingBufferQueue* Queue_Alloc(int capacity, int elemSize);
 
-void objList_remove(ObjLinkedList* list, int item);
-void objListAdd(ObjLinkedList* list, int prev, int item);
+void objList_remove(ObjLinkedList* list, uintptr_t item);
+void objListAdd(ObjLinkedList* list, uintptr_t prev, uintptr_t item);
 void objListInit(ObjLinkedList* list, s16 nextOffset);
 BOOL model_findIdxInModelList(ModelList* list, void* header, int* outIndex);
 BOOL ModelList_getHeader(ModelList* list, int index, void* outHeader);

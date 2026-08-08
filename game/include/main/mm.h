@@ -9,7 +9,7 @@ int roundUpTo8(int value);
 int roundUpTo16(int value);
 int roundUpTo32(int value);
 void mm_free(void *ptr);
-void *mmAlloc(int size, int type, int flag);
+void *mmAlloc(int size, int type, uintptr_t flag);
 void* getCache(void);
 void cacheQueueWait(int sync);
 void copyToCache(void* dst, void* src, u32 count);

@@ -138,7 +138,7 @@ extern int gObjContactCallbackCount;
 #define OBJPATH_ROOT_JOINT_INDEX   -1
 typedef struct ObjMsgEntry {
     u32 message;
-    u32 sender;
+    uintptr_t sender;
     u32 param;
 } ObjMsgEntry;
 
@@ -425,7 +425,7 @@ void objTypeInit(void) {
     return;
 }
 
-int ObjMsg_Peek(GameObject* obj, u32* outMessage, u32* outSender, u32* outParam) {
+int ObjMsg_Peek(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outParam) {
     ObjMsgQueue* queue;
 
     if (obj == 0x0) {
@@ -447,7 +447,7 @@ int ObjMsg_Peek(GameObject* obj, u32* outMessage, u32* outSender, u32* outParam)
     return 0;
 }
 
-int ObjMsg_Pop(GameObject* obj, u32* outMessage, u32* outSender, u32* outParam) {
+int ObjMsg_Pop(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outParam) {
     ObjMsgQueue* queue;
     ObjMsgQueueCursor* slot;
     u32 i;
@@ -468,7 +468,7 @@ int ObjMsg_Pop(GameObject* obj, u32* outMessage, u32* outSender, u32* outParam) 
             *outParam = queue->entries[0].param;
         }
         for (i = 0; i < queue->count; i = i + 1) {
-            slot = (ObjMsgQueueCursor*)((u8*)queue + ((i + i + i) << 2));
+            slot = (ObjMsgQueueCursor*)((u8*)queue + i * sizeof(ObjMsgEntry));
             slot->entry.message = slot->nextEntry.message;
             slot->entry.sender = slot->nextEntry.sender;
             slot->entry.param = slot->nextEntry.param;
@@ -505,9 +505,9 @@ void ObjMsg_SendToNearbyObjects(int targetId, float radius, u32 flags, void* sen
              (queue = obj->msgQueue, queue != (ObjMsgQueue*)0x0))) {
             count = queue->count;
             if (count < queue->capacity) {
-                slot = (ObjMsgQueueCursor*)((u8*)queue + ((count + count + count) << 2));
+                slot = (ObjMsgQueueCursor*)((u8*)queue + count * sizeof(ObjMsgEntry));
                 slot->entry.message = message;
-                slot->entry.sender = (u32)sender;
+                slot->entry.sender = (uintptr_t)sender;
                 slot->entry.param = param;
                 queue->count = queue->count + 1;
             } else {
@@ -540,9 +540,9 @@ void ObjMsg_SendToObjects(int targetId, u32 flags, void* sender, u32 message, u3
                   (queue = obj->msgQueue, queue != (ObjMsgQueue*)0x0)))) {
                 count = queue->count;
                 if (count < queue->capacity) {
-                    slot = (ObjMsgQueueCursor*)((u8*)queue + ((count + count + count) << 2));
+                    slot = (ObjMsgQueueCursor*)((u8*)queue + count * sizeof(ObjMsgEntry));
                     slot->entry.message = message;
-                    slot->entry.sender = (u32)sender;
+                    slot->entry.sender = (uintptr_t)sender;
                     slot->entry.param = param;
                     queue->count = queue->count + 1;
                 } else {
@@ -560,9 +560,9 @@ void ObjMsg_SendToObjects(int targetId, u32 flags, void* sender, u32 message, u3
                   (queue = obj->msgQueue, queue != (ObjMsgQueue*)0x0)))) {
                 count = queue->count;
                 if (count < queue->capacity) {
-                    slot = (ObjMsgQueueCursor*)((u8*)queue + ((count + count + count) << 2));
+                    slot = (ObjMsgQueueCursor*)((u8*)queue + count * sizeof(ObjMsgEntry));
                     slot->entry.message = message;
-                    slot->entry.sender = (u32)sender;
+                    slot->entry.sender = (uintptr_t)sender;
                     slot->entry.param = param;
                     queue->count = queue->count + 1;
                 } else {
@@ -589,9 +589,9 @@ u32 ObjMsg_SendToObject(GameObject* obj, u32 message, void* sender, u32 param) {
     if (queue != (ObjMsgQueue*)0x0) {
         count = queue->count;
         if (count < queue->capacity) {
-            slot = (ObjMsgQueueCursor*)((u8*)queue + ((count + count + count) << 2));
+            slot = (ObjMsgQueueCursor*)((u8*)queue + count * sizeof(ObjMsgEntry));
             slot->entry.message = message;
-            slot->entry.sender = (u32)senderObj;
+            slot->entry.sender = (uintptr_t)senderObj;
             slot->entry.param = param;
             queue->count = queue->count + 1;
             return queue->count;
@@ -607,7 +607,7 @@ void ObjMsg_AllocQueue(GameObject* obj, int capacity) {
     ObjMsgQueue* queue;
 
     if (((capacity != 0) && (obj != 0x0)) && (obj->msgQueue == (ObjMsgQueue*)0x0)) {
-        queueBytes = (capacity * 3 + 2) * 4;
+        queueBytes = offsetof(ObjMsgQueue, entries) + capacity * sizeof(ObjMsgEntry);
         queue = (ObjMsgQueue*)mmAlloc(queueBytes, 0xe, 0);
         queue->count = 0;
         queue->capacity = capacity;
@@ -631,8 +631,7 @@ bool ObjTrigger_UpdateIdBlockFlag(GameObject* obj) {
     int disguised;
     u8 flags;
 
-    disguised = (int)Obj_GetPlayerObject();
-    disguised = playerIsDisguised((GameObject*)disguised);
+    disguised = playerIsDisguised(Obj_GetPlayerObject());
     if (disguised != 0) {
         flags = obj->anim.resetHitboxFlags | OBJTRIGGER_ID_BLOCK_FLAG;
         obj->anim.resetHitboxFlags = flags;
@@ -702,21 +701,21 @@ int ObjHits_PollPriorityHitEffectWithCooldown(GameObject* obj, u32 hitFxMode, u3
 }
 
 void ObjLink_DetachChild(GameObject* obj, GameObject* child) {
-    int dst;
-    int slot;
+    void** dst;
+    void** slot;
     int i;
 
     i = 0;
-    for (slot = (int)obj; i < (int)obj->childCount; i++) {
-        if (*(GameObject**)(slot + OBJLINK_CHILD_LIST_OFFSET) == child) {
+    for (slot = obj->childObjs; i < (int)obj->childCount; i++) {
+        if (*slot == child) {
             break;
         }
-        slot += 4;
+        slot += 1;
     }
-    dst = (int)obj + i * 4;
+    dst = obj->childObjs + i;
     while (i < (int)obj->childCount - 1) {
-        *(int*)(dst + OBJLINK_CHILD_LIST_OFFSET) = *(int*)(dst + OBJLINK_CHILD_LIST_OFFSET + sizeof(int));
-        dst += 4;
+        *dst = *(dst + 1);
+        dst += 1;
         i++;
     }
     obj->childCount--;
@@ -888,7 +887,7 @@ GameObject* ObjList_FindNearestObjectByDefNo(GameObject* obj, int defNo, float* 
 
         while (objectIndex < objectCount) {
             otherObj = (GameObject*)*walker;
-            if (((defNo == otherObj->anim.romDefNo) && ((u32)obj != (u32)otherObj)) &&
+            if (((defNo == otherObj->anim.romDefNo) && (obj != otherObj)) &&
                 (distanceSq = vec3f_distanceSquared(&(obj)->anim.worldPosX, &otherObj->anim.worldPosX),
                  distanceSq < *maxDistanceSq)) {
                 *maxDistanceSq = distanceSq;
@@ -947,13 +946,12 @@ void ObjPath_GetPointWorldPositionArray(GameObject* obj, int pointIndex, int cou
 }
 
 void ObjPath_GetPointLocalPosition(GameObject* obj, int pointIndex, float* xOut, float* yOut, float* zOut) {
-    *xOut = ((ObjPathPoint*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET) +
-                             pointIndex * sizeof(ObjPathPoint)))
-                ->x;
-    *yOut = *(f32*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET) + 4 +
-                    pointIndex * sizeof(ObjPathPoint));
-    *zOut = *(f32*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET) + 8 +
-                    pointIndex * sizeof(ObjPathPoint));
+    ObjPathPoint* points;
+
+    points = (ObjPathPoint*)obj->anim.modelInstance->attachPoints;
+    *xOut = points[pointIndex].x;
+    *yOut = points[pointIndex].y;
+    *zOut = points[pointIndex].z;
     return;
 }
 
@@ -961,7 +959,7 @@ void ObjPath_GetPointLocalMtx(GameObject* obj, int pointIndex, float* mtxOut) {
     ObjPathPoint* pathPoint;
     ObjPathTransform transform;
 
-    pathPoint = (ObjPathPoint*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET));
+    pathPoint = (ObjPathPoint*)obj->anim.modelInstance->attachPoints;
     transform.x = pathPoint[pointIndex].x;
     pathPoint += pointIndex;
     transform.y = pathPoint->y;
@@ -974,27 +972,26 @@ void ObjPath_GetPointLocalMtx(GameObject* obj, int pointIndex, float* mtxOut) {
     return;
 }
 
-u32 ObjPath_GetPointModelMtx(GameObject* obj, int pointIndex) {
-    int* model;
+ObjModelJointMatrix* ObjPath_GetPointModelMtx(GameObject* obj, int pointIndex) {
+    ObjModel* model;
     ObjPathPoint* pathPoint;
     int jointIndex;
 
-    model = (int*)Obj_GetActiveModel(obj);
-    pathPoint = (ObjPathPoint*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET));
+    model = Obj_GetActiveModel(obj);
+    pathPoint = (ObjPathPoint*)obj->anim.modelInstance->attachPoints;
     pathPoint += pointIndex;
-    jointIndex = pathPoint->modelIndex[(int)*(char*)((int)obj + OBJ_ACTIVE_MODEL_INDEX_OFFSET)];
-    if ((jointIndex >= 0) && (jointIndex < (int)(u32) * (u8*)(*model + OBJ_MODEL_JOINT_COUNT_OFFSET))) {
-        return (u32)ObjModel_GetJointMatrix((u8*)model, jointIndex);
+    jointIndex = pathPoint->modelIndex[obj->anim.bankIndex];
+    if ((jointIndex >= 0) && (jointIndex < (int)(u32)model->file->jointCount)) {
+        return ObjModel_GetJointMatrix((u8*)model, jointIndex);
     } else {
-        return (u32)ObjModel_GetJointMatrix((u8*)model, 0);
+        return ObjModel_GetJointMatrix((u8*)model, 0);
     }
 }
 
 void ObjPath_GetPointWorldPosition(GameObject* obj, int pointIndex, float* outX, float* outY, float* outZ,
                                    int useInputPosition) {
-    int pointOffset;
     ObjPathPoint* pathPoint;
-    int* model;
+    ObjModel* model;
     float* jointMtx;
     int jointIndex;
     ObjPathTransform transform;
@@ -1004,18 +1001,17 @@ void ObjPath_GetPointWorldPosition(GameObject* obj, int pointIndex, float* outX,
     float rotMtx[16];
 
     if ((pointIndex < 0) ||
-        (pointIndex >= (int)(u32) * (u8*)((int)obj->anim.modelInstance + OBJPATH_POINT_COUNT_OFFSET))) {
+        (pointIndex >= (int)(u32)obj->anim.modelInstance->attachPointCount)) {
         *outX = obj->anim.localPosX;
         *outY = obj->anim.localPosY;
         *outZ = obj->anim.localPosZ;
     } else {
-        model = (int*)Obj_GetActiveModel(obj);
-        pathPoint = (ObjPathPoint*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET));
-        pointOffset = pointIndex * sizeof(ObjPathPoint);
-        pathPoint = (ObjPathPoint*)((int)pathPoint + pointOffset);
-        jointIndex = pathPoint->modelIndex[(int)*(char*)((int)obj + OBJ_ACTIVE_MODEL_INDEX_OFFSET)];
+        model = Obj_GetActiveModel(obj);
+        pathPoint = (ObjPathPoint*)obj->anim.modelInstance->attachPoints;
+        pathPoint = pathPoint + pointIndex;
+        jointIndex = pathPoint->modelIndex[obj->anim.bankIndex];
         if ((jointIndex < OBJPATH_ROOT_JOINT_INDEX) ||
-            (jointIndex >= (int)(u32) * (u8*)(*model + OBJ_MODEL_JOINT_COUNT_OFFSET))) {
+            (jointIndex >= (int)(u32)model->file->jointCount)) {
             *outX = obj->anim.localPosX;
             *outY = obj->anim.localPosY;
             *outZ = obj->anim.localPosZ;
@@ -1034,9 +1030,8 @@ void ObjPath_GetPointWorldPosition(GameObject* obj, int pointIndex, float* outX,
                 transform.rotY = 0;
                 transform.rotZ = 0;
             } else {
-                transform.x = *(f32*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET) + pointOffset);
-                pathPoint =
-                    (ObjPathPoint*)(*(int*)((int)obj->anim.modelInstance + OBJPATH_POINTS_OFFSET) + pointOffset);
+                pathPoint = (ObjPathPoint*)obj->anim.modelInstance->attachPoints + pointIndex;
+                transform.x = pathPoint->x;
                 transform.y = pathPoint->y;
                 transform.z = pathPoint->z;
                 transform.rotX = pathPoint->rotX;

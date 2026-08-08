@@ -194,7 +194,7 @@ void FuelCell_update(GameObject* obj) {
             if (gameBit == -1 || mainGetBit(gameBit) != 0) {
                 f32 dy;
                 if (!state->flags.active) {
-                    Sfx_AddLoopedObjectSound((u32)obj, SFXTRIG_pk_fuelcell_fizz);
+                    Sfx_AddLoopedObjectSound(obj, SFXTRIG_pk_fuelcell_fizz);
                     state->flags.active = 1;
                     objAddObjectType(obj, FUEL_CELL_OBJECT_GROUP);
                 } else if (state->flags.resetPosition) {
@@ -216,7 +216,7 @@ void FuelCell_update(GameObject* obj) {
             }
         } else if (state->flags.active) {
             state->flags.active = 0;
-            Sfx_RemoveLoopedObjectSound((u32)obj, SFXTRIG_pk_fuelcell_fizz);
+            Sfx_RemoveLoopedObjectSound(obj, SFXTRIG_pk_fuelcell_fizz);
             objFreeObjectType(obj, FUEL_CELL_OBJECT_GROUP);
         }
     }

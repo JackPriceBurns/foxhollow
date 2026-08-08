@@ -95,7 +95,7 @@ void barrelgener_update(GameObject* obj)
         if (state->releaseTimer <= 5.0f && state->releaseAnimPlaying == 0)
         {
             state->releaseAnimPlaying = 1;
-            ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
             Sfx_PlayFromObject(obj, SFXTRIG_barrelgen_slide);
             state->releaseBeepPlayed = 0;
         }
@@ -134,7 +134,7 @@ void barrelgener_update(GameObject* obj)
             }
         }
         state->releaseAnimPlaying =
-            !ObjAnim_AdvanceCurrentMove((int)obj, 0.01f, timeDelta, 0);
+            !ObjAnim_AdvanceCurrentMove(obj, 0.01f, timeDelta, 0);
     }
 }
 

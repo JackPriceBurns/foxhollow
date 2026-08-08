@@ -16,8 +16,8 @@
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/floorf.h"
 
-static void render_copyPackedU64Tail(u64* dst, u32 packed);
-static void render_copyPackedU64Head(u64* dst, u32 packed);
+static void render_copyPackedU64Tail(u64* dst, u64 packed);
+static void render_copyPackedU64Head(u64* dst, u64 packed);
 
 const int gModelRenderAdpcmStepTable[89] = {
     0x4, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE,
@@ -359,16 +359,16 @@ int modelRenderCopyPackedSamples(ModelRenderInstrsState* src, ModelRenderInstrsS
 
 typedef u64 RenderPackedAddress;
 
-#define RENDER_PACKED_ADDRESS(pointer) ((u32)(pointer))
+#define RENDER_PACKED_ADDRESS(pointer) ((uintptr_t)(pointer))
 
 static inline u16 render_readPackedU16(RenderPackedAddress address)
 {
-    return *(u16*)(u32)address;
+    return *(u16*)(uintptr_t)address;
 }
 
 static inline void render_writePackedU16(RenderPackedAddress address, u16 value)
 {
-    *(u16*)(u32)address = value;
+    *(u16*)(uintptr_t)address = value;
 }
 
 /* Refill the two parallel 64-bit bitstream windows from the next
@@ -409,7 +409,7 @@ void modelRenderInterpolateRootTransform(ObjAnimState* anim, s16* outPosition, s
     f32 framePhase;
     u64 tp;
     u64 bitpos;
-    int curB;
+    u64 curB;
     u64 posA;
     u64 outPos;
     u64 end;
@@ -419,7 +419,7 @@ void modelRenderInterpolateRootTransform(ObjAnimState* anim, s16* outPosition, s
     s64* q;
     s64 frac;
     u64 vA;
-    u32 addrB;
+    u64 addrB;
     u64 maskConst;
     int i;
 
@@ -542,10 +542,10 @@ void modelRenderInterpolateRootTransform(ObjAnimState* anim, s16* outPosition, s
     } while (RENDER_PACKED_ADDRESS(outPosition) != end);
 }
 
-static void render_copyPackedU64Tail(u64* dst, u32 packed) {
+static void render_copyPackedU64Tail(u64* dst, u64 packed) {
     /* Preserve the leading bytes of *dst; fill the tail from the aligned
        64-bit word shifted down. */
-    u64 src = *(u64*)(packed & ~7);
+    u64 src = *(u64*)(uintptr_t)(packed & ~7);
 
     switch (packed & 7) {
     case 7:
@@ -575,10 +575,10 @@ static void render_copyPackedU64Tail(u64* dst, u32 packed) {
     }
 }
 
-static void render_copyPackedU64Head(u64* dst, u32 packed) {
+static void render_copyPackedU64Head(u64* dst, u64 packed) {
     /* Fill the head from the aligned 64-bit word; preserve bytes after the
        unaligned source offset. */
-    u64 src = *(u64*)(packed & ~7);
+    u64 src = *(u64*)(uintptr_t)(packed & ~7);
 
     switch (packed & 7) {
     case 0:
@@ -627,7 +627,7 @@ int ObjSeq_defaultActionCallback(int unused0, int unused1, int unused2, int unus
 int getEnvfxActImmediately(void* a, void* b, u16 idx, int d)
 {
     u8 raw[0x80];
-    EnvfxActEntry* e = (EnvfxActEntry*)(((u32)raw + 0x1f) & ~0x1f);
+    EnvfxActEntry* e = (EnvfxActEntry*)(((uintptr_t)raw + 0x1f) & ~0x1f);
 
     getTabEntry(e, MLDF_FILEID_ENVFXACT_BIN, idx * 0x60, 0x60);
     if (e != NULL)
@@ -657,7 +657,7 @@ int getEnvfxActImmediately(void* a, void* b, u16 idx, int d)
 int getEnvfxAct(void* a, void* b, u16 idx, int d)
 {
     u8 raw[0x80];
-    EnvfxActEntry* e = (EnvfxActEntry*)(((u32)raw + 0x1f) & ~0x1f);
+    EnvfxActEntry* e = (EnvfxActEntry*)(((uintptr_t)raw + 0x1f) & ~0x1f);
 
     getTabEntry(e, MLDF_FILEID_ENVFXACT_BIN, idx * 0x60, 0x60);
     if (e != NULL)

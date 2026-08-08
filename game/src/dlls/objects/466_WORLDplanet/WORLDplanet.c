@@ -538,7 +538,7 @@ void worldplanet_update(GameObject* obj) {
                     planetObj->anim.rotX += WORLDPLANET_ORBIT_ROT_STEP;
                 }
                 if (state->orbitSoundFrameCount > WORLDPLANET_ORBIT_SOUND_DELAY_FRAMES) {
-                    Sfx_KeepAliveLoopedObjectSound((u32)planetObj, SFXTRIG_crf_babyambi2);
+                    Sfx_KeepAliveLoopedObjectSound(planetObj, SFXTRIG_crf_babyambi2);
                 }
                 planetObj->anim.localPosX = orbitRadius *
                                                 fsin16Approx((ang + tbl->orbitAngleOffsets[planetIdx]) & 0xffff) *

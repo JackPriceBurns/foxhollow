@@ -1015,7 +1015,7 @@ void SnowBike_UpdateRouteFollowing(GameObject* obj, SnowBikeState* st)
     }
 }
 
-void SnowBike_UpdateAirMeter(u32 obj, int stateRaw)
+void SnowBike_UpdateAirMeter(GameObject* obj, u8* stateRaw)
 {
     SnowBikeState* st = (SnowBikeState*)stateRaw;
     f32 rate;
@@ -2400,7 +2400,7 @@ void SnowBike_update(GameObject* obj)
                                   &obj->anim.velocityZ);
             objApplyVelocity(obj);
         }
-        SnowBike_UpdateAirMeter((int)obj, (int)state);
+        SnowBike_UpdateAirMeter(obj, state);
         SnowBike_UpdateEngineFx(obj, state, s->localVelZ,
                                    (int)(850.0f * -s->engineFxLevel), state + 0x461, 7);
         SnowBike_UpdateCollisionResponse(obj, (int)state);

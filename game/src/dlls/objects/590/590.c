@@ -187,7 +187,7 @@ void drakord_thornbush_update(GameObject* obj)
     }
     else
     {
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_drak_pain2);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_drak_pain2);
         if (inner->flags79.b80)
         {
             inner->flags79.b80 = 0;

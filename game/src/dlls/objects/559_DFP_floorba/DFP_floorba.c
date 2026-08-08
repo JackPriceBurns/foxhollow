@@ -162,7 +162,7 @@ void DFP_Floorbar_update(GameObject* obj)
     active = state->active;
     if (active != 0 && (obj)->anim.localPosY > placement->posY - 3.2f)
     {
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_en_treedrum16_1c8);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_en_treedrum16_1c8);
         (obj)->anim.localPosY = (obj)->anim.localPosY - timeDelta / 12.0f;
         if ((obj)->anim.localPosY <= placement->posY - 3.2f)
         {

@@ -774,7 +774,7 @@ void arwarwing_handlePathDamage(GameObject* obj, ArwingState* state)
         }
         else if ((s8)((ArwingState*)(obj)->extra)->health <= 3)
         {
-            Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_bomb_pickup);
+            Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_bomb_pickup);
         }
         Sfx_PlayFromObject(obj, SFXTRIG_wmap_select);
         state->flags339.scoreFlag = 1;
@@ -852,7 +852,7 @@ void arwarwing_handleObjectDamage(GameObject* obj, ArwingState* state)
     }
     else if ((s8)((ArwingState*)obj->extra)->health <= 3)
     {
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_bomb_pickup);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_bomb_pickup);
     }
 }
 
@@ -869,7 +869,7 @@ void arwarwing_updateRollAndEngine(GameObject* obj, ArwingState* state)
     {
         sum = 1.0 + log2fBitEstimate(state->velZ / state->maxSpeedZ);
         vol = (f32)(sum / 2.0);
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_ar_boost16);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_ar_boost16);
         Sfx_SetObjectChannelVolume(obj, 0x40, 0xfe, vol);
     }
 

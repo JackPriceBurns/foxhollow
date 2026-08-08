@@ -108,7 +108,7 @@ ReverbState gAudioReverbSettings;
 
 const SalHooks gAudioMemHooks = {_audioAlloc, audioFree};
 
-void AudioAramReadAllocAsync(void* source, u32 size, void** outBuf, AudioArqRequestCallback callback,
+void AudioAramReadAllocAsync(u32 source, u32 size, void** outBuf, AudioArqRequestCallback callback,
                              MusicTrackSlot* callbackArg1, MusicChannel* callbackArg2,
                              MusicTrigger* callbackArg3)
 {
@@ -134,7 +134,7 @@ void AudioAramReadAllocAsync(void* source, u32 size, void** outBuf, AudioArqRequ
     entry->callbackArg3 = callbackArg3;
     DCFlushRange(buf, size);
     gAudioArqRequestDone = 0;
-    ARQPostRequest(&entry->request, 0x64, 1, 1, (u32)source, (u32)buf, size,
+    ARQPostRequest(&entry->request, 0x64, 1, 1, source, (uintptr_t)buf, size,
                    AudioAramReadCompleteCallback);
 }
 static inline void Music_FreeChannel(MusicChannel* ch)
@@ -211,7 +211,7 @@ static inline MusicTrackSlot* Music_FindTrackSlot(int track)
 static inline MusicChannel* Music_FindActiveChannelForTrack(int track)
 {
     int i;
-    MusicChannel* ch = (MusicChannel*)(int)gMusicChannels;
+    MusicChannel* ch = gMusicChannels;
     for (i = 15; i >= 0; i--)
     {
         if (ch->trackId == track)
@@ -273,7 +273,7 @@ void AudioAramWriteSync(void* addr, u32 dest, u32 size)
     }
     DCFlushRange(addr, size);
     gAudioArqRequestDone = 0;
-    ARQPostRequest(&entry->request, 0x64, 0, 1, (u32)addr, dest, size,
+    ARQPostRequest(&entry->request, 0x64, 0, 1, (uintptr_t)addr, dest, size,
                    AudioAramWriteCompleteCallback);
     while (gAudioArqRequestDone == 0)
     {
@@ -681,7 +681,7 @@ int audioInit(void)
 {
     char* base = sSampleBufferSLoadedCallbackLoadError;
     SalHooks hooks;
-    int reverbWork;
+    void* reverbWork;
     int delay;
     int group;
 
@@ -721,9 +721,9 @@ int audioInit(void)
         gAudioReverbSettings.coloration = 0.5f;
         gAudioReverbSettings.mix = 0.9f;
         sndAuxCallbackUpdateSettingsReverbSTD(&gAudioReverbSettings);
-        reverbWork = 0;
+        reverbWork = NULL;
         sndSetAuxProcessingCallbacks(0, sndAuxCallbackReverbSTD, &gAudioReverbSettings, 0xff, 0, 0, 0, 0xff,
-                                     (void*)reverbWork);
+                                     reverbWork);
         {
             if (!sndIsInstalled())
             {
@@ -877,7 +877,7 @@ int Music_GetTrackCount(void)
 }
 void Music_StopChannelsByPriorityGroup(int priorityGroupMask, MusicChannelStopMode mode, int fadeTime)
 {
-    MusicChannel* ch = (MusicChannel*)(int)gMusicChannels;
+    MusicChannel* ch = gMusicChannels;
     int i = 15;
     do
     {
@@ -1357,7 +1357,7 @@ void Music_LoadChannelForTrigger(MusicTrigger* trigger)
     channel->order = counter;
     channel->trigger = trigger;
     channel->fadeTimer = 0.0f;
-    AudioAramReadAllocAsync((void*)slot->offset, slot->size, &channel->bankData,
+    AudioAramReadAllocAsync(slot->offset, slot->size, &channel->bankData,
                             Music_ChannelLoadedCallback, slot, channel, trigger);
 }
 

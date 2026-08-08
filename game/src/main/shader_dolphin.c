@@ -268,7 +268,7 @@ void selectTextureWithSecondary(Texture* texture, int mapId)
     {
         GXLoadTexObj(base, mapId);
     }
-    if ((void*)texture->imageOffset != NULL)
+    if (texture->imageOffset != 0)
     {
         textureInitSecondaryGXTexObj(texture, &sSecondaryTexObj);
         GXLoadTexObj(&sSecondaryTexObj, GX_TEXMAP1);
@@ -302,7 +302,7 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
     int ylo;
     int y;
     int x;
-    int v1;
+    uintptr_t v1;
     u8* dst;
     int v2;
     int v3;
@@ -317,8 +317,8 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
             ylo = (y & 3) * 2;
             for (; x < 0x20; x++)
             {
-                v1 = (int)(sWarpNoiseTexture + ylo);
-                v1 = (int)((u8*)v1 + yhi);
+                v1 = (uintptr_t)(sWarpNoiseTexture + ylo);
+                v1 = (uintptr_t)((u8*)v1 + yhi);
                 v1 = v1 + (x & 3) * 8;
                 dst = (u8*)v1 + (x >> 2) * 0x100;
                 v1 = randomGetRange(0x80, 0xff);
@@ -2483,7 +2483,7 @@ void addTexLayerStageSwizzled(Texture* tex, MtxPtr mtx, int mode, GXColor* kpara
     {
         chooseTevKonstSelectors(kparam, 1, 1, &sel, &v1);
         GXSetTevKColorSel(gRcpNextTevStage, sel);
-        if ((void*)tex->imageOffset != NULL)
+        if (tex->imageOffset != 0)
         {
             GXSetTevKAlphaSel(gRcpNextTevStage + 1, v1);
         }
@@ -2496,7 +2496,7 @@ void addTexLayerStageSwizzled(Texture* tex, MtxPtr mtx, int mode, GXColor* kpara
     {
         GXSetTevKColor(gRcpNextKColor, *kparam);
         GXSetTevKColorSel(gRcpNextTevStage, gRcpNextKColorSel);
-        if ((void*)tex->imageOffset != NULL)
+        if (tex->imageOffset != 0)
         {
             GXSetTevKAlphaSel(gRcpNextTevStage + 1, gRcpNextKAlphaSel);
         }
@@ -2543,13 +2543,13 @@ void addTexLayerStageSwizzled(Texture* tex, MtxPtr mtx, int mode, GXColor* kpara
         {
             GXLoadTexObj(to, map);
         }
-        if ((void*)tex->imageOffset != NULL)
+        if (tex->imageOffset != 0)
         {
             textureInitSecondaryGXTexObj(tex, &sSecondaryTexObj);
             GXLoadTexObj(&sSecondaryTexObj, GX_TEXMAP1);
         }
     }
-    if ((void*)tex->imageOffset != NULL)
+    if (tex->imageOffset != 0)
     {
         gRcpNumTevStages++;
         gRcpNextTevStage = gRcpNextTevStage + 1;

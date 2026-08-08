@@ -14,11 +14,12 @@ enum
     THP_COMPONENT_VIDEO = 0
 };
 
-char gPicMenuVideoDecodeThreadArea[0x18];
+OSMessage gPicMenuVideoDecodeThreadArea[6];
 
 extern OSMessageQueue gPicMenuDecodedTextureSetQueue;
 extern OSMessageQueue gPicMenuFreeTextureSetQueue;
 extern OSThread gPicMenuVideoDecodeThread;
+extern char gPicMenuVideoDecodeThreadStack[0x1000];
 
 s32 gAttractMovieIdleFrameCount;
 s32 gPicMenuVideoDecodePrepareReady;
@@ -41,7 +42,6 @@ void PushFreeTextureSet(OSMessage msg)
 
 static void AttractMovieVideo_Decode(void* param) {
     AttractMoviePlayer* player;
-    char* db;
     AttractMoviePlayer* player2;
     AttractMovieTextureSet* readMsg;
     u8* componentKind;
@@ -50,19 +50,18 @@ static void AttractMovieVideo_Decode(void* param) {
     char* dvdData;
     OSMessage tmpBuf;
 
-    db = gPicMenuVideoDecodeThreadArea;
     compSizes = (u32*)(((AttractMovieReadBuffer*)param)->ptr + 8);
     player = &gAttractMoviePlayer;
 
     dvdData = (char*)((AttractMovieReadBuffer*)param)->ptr + player->compInfo.mNumComponents * sizeof(u32) + 8;
-    OSReceiveMessage((OSMessageQueue*)(db + 0x38), &tmpBuf, OS_MESSAGE_BLOCK);
+    OSReceiveMessage(&gPicMenuFreeTextureSetQueue, &tmpBuf, OS_MESSAGE_BLOCK);
     readMsg = tmpBuf;
     i = 0;
     player2 = &gAttractMoviePlayer;
-    componentKind = (u8*)player2;
+    componentKind = player2->compInfo.mFrameComp;
 
     while (i < player->compInfo.mNumComponents) {
-        switch (componentKind[0x70]) {
+        switch (componentKind[0]) {
         case THP_COMPONENT_VIDEO: {
             s32 dec = THPVideoDecode(dvdData, readMsg->yTexture,
                                      readMsg->uTexture,
@@ -73,10 +72,10 @@ static void AttractMovieVideo_Decode(void* param) {
                     PrepareReady(0);
                     gPicMenuVideoDecodePrepareReady = 0;
                 }
-                OSSuspendThread((OSThread*)(db + 0x1058));
+                OSSuspendThread(&gPicMenuVideoDecodeThread);
             }
             readMsg->frameNumber = ((AttractMovieReadBuffer*)param)->frameNumber;
-            OSSendMessage((OSMessageQueue*)(db + 0x18), (OSMessage)readMsg, OS_MESSAGE_BLOCK);
+            OSSendMessage(&gPicMenuDecodedTextureSetQueue, (OSMessage)readMsg, OS_MESSAGE_BLOCK);
             {
                 u32 intr = OSDisableInterrupts();
                 player2->videoDecodeCount++;
@@ -101,8 +100,10 @@ static void AttractMovieVideo_Decode(void* param) {
 static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
     AttractMoviePlayer* player = &gAttractMoviePlayer;
     u32 frameSize = player->frameStride;
-    void* cur = param;
+    AttractMovieReadBuffer readBuffer;
     int i = 0;
+
+    readBuffer.ptr = param;
 
     while (1) {
         if (player->audioExists != 0) {
@@ -121,11 +122,11 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
                         if (!(player->playFlags & 1)) {
                             break; /* pos==cols-1, not looping: go to decode */
                         }
-                        frameSize = *(u32*)cur;
-                        cur = player->loopFrame;
+                        frameSize = *(u32*)readBuffer.ptr;
+                        readBuffer.ptr = player->loopFrame;
                     } else {
-                        u32 nextSize = *(u32*)cur;
-                        cur = (char*)cur + frameSize;
+                        u32 nextSize = *(u32*)readBuffer.ptr;
+                        readBuffer.ptr += frameSize;
                         frameSize = nextSize;
                     }
                 }
@@ -133,8 +134,8 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
             }
         }
 
-        *(s32*)(&cur + 1) = i;
-        AttractMovieVideo_Decode(&cur);
+        readBuffer.frameNumber = i;
+        AttractMovieVideo_Decode(&readBuffer);
 
         {
             u32 cols;
@@ -143,14 +144,14 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
             u32 pos = sum % (cols = player->header.mNumFrames);
             if (pos == cols - 1) {
                 if (player->playFlags & 1) {
-                    frameSize = *(u32*)cur;
-                    cur = player->loopFrame;
+                    frameSize = *(u32*)readBuffer.ptr;
+                    readBuffer.ptr = player->loopFrame;
                 } else {
                     OSSuspendThread(&gPicMenuVideoDecodeThread);
                 }
             } else {
-                u32 nextSize = *(u32*)cur;
-                cur = (char*)cur + frameSize;
+                u32 nextSize = *(u32*)readBuffer.ptr;
+                readBuffer.ptr += frameSize;
                 frameSize = nextSize;
             }
         }
@@ -209,30 +210,29 @@ void VideoDecodeThreadStart(void)
     }
 }
 
-BOOL CreateVideoDecodeThread(OSPriority priority, u32 onMemoryArg)
+BOOL CreateVideoDecodeThread(OSPriority priority, uintptr_t onMemoryArg)
 {
-    char* db = gPicMenuVideoDecodeThreadArea;
-    void* mbuf = db;
-
     if (onMemoryArg != 0)
     {
-        if (!OSCreateThread((OSThread*)(db + 0x1058), AttractMovieVideo_DecoderForOnMemory, (void*)onMemoryArg,
-                            (void*)(db + 0x1058), 0x1000, priority, 1))
+        if (!OSCreateThread(&gPicMenuVideoDecodeThread, AttractMovieVideo_DecoderForOnMemory, (void*)onMemoryArg,
+                            gPicMenuVideoDecodeThreadStack + sizeof(gPicMenuVideoDecodeThreadStack),
+                            sizeof(gPicMenuVideoDecodeThreadStack), priority, 1))
         {
             return 0;
         }
     }
     else
     {
-        if (!OSCreateThread((OSThread*)(db + 0x1058), AttractMovieVideo_Decoder, NULL, (void*)(db + 0x1058), 0x1000,
-                            priority, 1))
+        if (!OSCreateThread(&gPicMenuVideoDecodeThread, AttractMovieVideo_Decoder, NULL,
+                            gPicMenuVideoDecodeThreadStack + sizeof(gPicMenuVideoDecodeThreadStack),
+                            sizeof(gPicMenuVideoDecodeThreadStack), priority, 1))
         {
             return 0;
         }
     }
 
-    OSInitMessageQueue((OSMessageQueue*)(db + 0x38), (void*)(db + 0x0C), 3);
-    OSInitMessageQueue((OSMessageQueue*)(db + 0x18), mbuf, 3);
+    OSInitMessageQueue(&gPicMenuFreeTextureSetQueue, gPicMenuVideoDecodeThreadArea + 3, 3);
+    OSInitMessageQueue(&gPicMenuDecodedTextureSetQueue, gPicMenuVideoDecodeThreadArea, 3);
     gPicMenuVideoDecodeThreadCreated = 1;
     gPicMenuVideoDecodePrepareReady = 1;
     return 1;

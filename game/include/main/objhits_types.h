@@ -74,7 +74,7 @@ typedef struct ObjHitsPriorityState {
   f32 contactPosZ;
   u32 objectHitMask;
   u32 skeletonHitMask;
-  u32 lastHitObject;
+  uintptr_t lastHitObject;
   u8 pad54[0x58 - 0x54];
   s16 capsuleScale;
   s16 primaryRadius;
@@ -98,7 +98,7 @@ typedef struct ObjHitsPriorityState {
   s8 priorities[OBJHITS_PRIORITY_HIT_COUNT];
   u8 hitVolumes[OBJHITS_PRIORITY_HIT_COUNT];
   u8 pad7B;
-  int hitObjects[OBJHITS_PRIORITY_HIT_COUNT];
+  uintptr_t hitObjects[OBJHITS_PRIORITY_HIT_COUNT];
   f32 hitPosX[OBJHITS_PRIORITY_HIT_COUNT];
   f32 hitPosY[OBJHITS_PRIORITY_HIT_COUNT];
   f32 hitPosZ[OBJHITS_PRIORITY_HIT_COUNT];

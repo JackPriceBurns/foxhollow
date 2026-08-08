@@ -37,7 +37,7 @@
 
 static int pathSearchNodeMatchesTarget(PathSearch* search, PathSearchNode* node) {
     RomCurveDef* point;
-    int target;
+    intptr_t target;
     target = search->pathId;
     point = (RomCurveDef*)node->point;
     switch (point->type) {
@@ -60,7 +60,7 @@ static int pathSearchNodeMatchesTarget(PathSearch* search, PathSearchNode* node)
         return 0;
     }
     default:
-        return target == (int)point;
+        return target == (intptr_t)point;
     }
 }
 
@@ -102,17 +102,17 @@ static inline void pathSearchHeapInsert(PathSearch* search, u16 index, u32 dista
     heap = (u32*)search->heap;
     hh = (u16*)heap;
     hh[++search->heapSize * 4 + 2] = index;
-    *(u32*)((int)heap + search->heapSize * 8) = -1 - distance;
+    *(u32*)((uintptr_t)heap + search->heapSize * 8) = -1 - distance;
     i = search->heapSize;
-    key = *(u32*)((int)heap + i * 8);
+    key = *(u32*)((uintptr_t)heap + i * 8);
     idx16 = hh[i * 4 + 2];
     *heap = -1;
     while (parent = i >> 1, *(u32*)(hh + parent * 4) < key) {
-        *(u16*)((int)heap + i * 8 + 4) = *(u16*)((int)heap + (int)((long)parent * 8) + 4);
-        *(u32*)((int)heap + i * 8) = *(u32*)((int)heap + (int)((long)parent * 8));
+        *(u16*)((uintptr_t)heap + i * 8 + 4) = *(u16*)((uintptr_t)heap + (int)((long)parent * 8) + 4);
+        *(u32*)((uintptr_t)heap + i * 8) = *(u32*)((uintptr_t)heap + (int)((long)parent * 8));
         i = parent;
     }
-    *(u32*)((int)heap + i * 8) = key;
+    *(u32*)((uintptr_t)heap + i * 8) = key;
     hh[i * 4 + 2] = idx16;
 }
 
@@ -139,7 +139,7 @@ static inline int pathSearchFindPointNode(PathSearch* search, RomCurveDef* point
             *visitedOut = scanNode->visited;
             return index;
         }
-        offset += 0x10;
+        offset += sizeof(PathSearchNode);
         index++;
     }
     return -1;
@@ -202,11 +202,11 @@ void pathSearchAddNeighbor(PathSearch* search, PathSearchNode* previousNode, int
                 u16 nodeIndex = ((u16*)entry)[2];
                 *heap = -1;
                 while (parent = heapIndex >> 1, *(u32*)(heapHalves + parent * 4) < priority) {
-                    *(u16*)((int)heap + heapIndex * 8 + 4) = *(u16*)((int)heap + (int)((long)parent * 8) + 4);
-                    *(u32*)((int)heap + heapIndex * 8) = *(u32*)((int)heap + (int)((long)parent * 8));
+                    *(u16*)((uintptr_t)heap + heapIndex * 8 + 4) = *(u16*)((uintptr_t)heap + (int)((long)parent * 8) + 4);
+                    *(u32*)((uintptr_t)heap + heapIndex * 8) = *(u32*)((uintptr_t)heap + (int)((long)parent * 8));
                     heapIndex = parent;
                 }
-                *(u32*)((int)heap + heapIndex * 8) = priority;
+                *(u32*)((uintptr_t)heap + heapIndex * 8) = priority;
                 heapHalves[heapIndex * 4 + 2] = nodeIndex;
             }
         }
@@ -321,7 +321,7 @@ int pathSearchBuildPath(PathSearch* search) {
     i = 0;
     while (entry != NULL) {
         *(RomCurveDef**)((char*)search->path + i) = entry->point;
-        i += 4;
+        i += sizeof(RomCurveDef*);
         count++;
         if (count >= 100) {
             entry = NULL;
@@ -338,7 +338,7 @@ int pathSearchBuildPath(PathSearch* search) {
 
 int pathSearchStep(PathSearch* search, u32 n_) {
     int n;
-    PathSearch* q = (PathSearch*)(int)search;
+    PathSearch* q = search;
     int idx;
     int done;
     int result;
@@ -376,7 +376,7 @@ int pathSearchStep(PathSearch* search, u32 n_) {
     return result;
 }
 
-int pathSearchBegin(PathSearch* queue, RomCurveDef* startPoint, f32* targetPosition, int pathId, u32 routeFlags) {
+int pathSearchBegin(PathSearch* queue, RomCurveDef* startPoint, f32* targetPosition, intptr_t pathId, u32 routeFlags) {
     PathSearchNode* node;
     int nodeCount;
 
@@ -408,7 +408,7 @@ void freeAndNull(void** p) {
 }
 
 void pathSearchInit(PathSearch* search) {
-    search->nodes = (PathSearchNode*)mmAlloc(0x1960, 0x10, 0);
+    search->nodes = (PathSearchNode*)mmAlloc(0xfe * sizeof(PathSearchNode) + 0xfe * sizeof(PathHeapEntry) + 100 * sizeof(RomCurveDef*), 0x10, 0);
     search->heap = (PathHeapEntry*)&search->nodes[0xfe];
     search->path = (RomCurveDef**)&search->heap[0xfe];
 }

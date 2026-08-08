@@ -16,7 +16,7 @@ int depthReadRequestPoll(int x, int y, void* requestKey)
 {
     bool ok;
     int i;
-    int key = (int)requestKey;
+    uintptr_t key = (uintptr_t)requestKey;
     u16 n;
 
     ok = false;

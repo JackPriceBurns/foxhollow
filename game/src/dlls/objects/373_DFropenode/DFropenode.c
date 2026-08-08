@@ -716,7 +716,7 @@ void DFropenode_render(GameObject* obj, int gdl, int mtxs) {
             return;
         }
 
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_waterblock_wave);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_waterblock_wave);
         gxSetAlphaBlendZTest();
         alpha = (u8)(objAnim->alpha + randomGetRange(0, objAnim->alpha));
         setTextColor(&gdl, renderState.blue, renderState.green, renderState.red, alpha);

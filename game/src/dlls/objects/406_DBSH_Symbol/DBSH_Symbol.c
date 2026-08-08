@@ -69,13 +69,13 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
     int i;
     int buttons;
     DBSHSymbolState* state;
-    int player;
+    GameObject* player;
 
     (void)unused;
     state = obj->extra;
-    player = (int)Obj_GetPlayerObject();
+    player = Obj_GetPlayerObject();
     Sfx_SetObjectSfxVolume(obj, SFXTRIG_blockscrape_lp, 10, DBSH_SYMBOL_SFX_VOLUME_SCALE);
-    Sfx_KeepAliveLoopedObjectSound((u32)obj, SFXTRIG_blockscrape_lp);
+    Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_blockscrape_lp);
     animUpdate->movementState = 0;
     for (i = 0; i < animUpdate->eventCount; i++) {
         if (animUpdate->eventIds[i] == DBSH_SYMBOL_ANIM_EVENT_START) {
@@ -144,13 +144,13 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
         if (ObjAnim_AdvanceCurrentMove(
                 player, ((f32)state->spinProgress - state->previousSpinProgress) / DBSH_SYMBOL_ANIMATION_STEP_SCALE,
                 timeDelta, NULL) != 0) {
-            if (((GameObject*)player)->anim.currentMoveProgress < 0.0f) {
-                ((GameObject*)player)->anim.currentMoveProgress =
-                    1.0f + ((GameObject*)player)->anim.currentMoveProgress;
+            if (player->anim.currentMoveProgress < 0.0f) {
+                player->anim.currentMoveProgress =
+                    1.0f + player->anim.currentMoveProgress;
             }
         }
         if (state->partnerSymbol != NULL) {
-            if (ObjAnim_AdvanceCurrentMove((int)state->partnerSymbol,
+            if (ObjAnim_AdvanceCurrentMove(state->partnerSymbol,
                                            -((f32)state->spinProgress - state->previousSpinProgress) /
                                                DBSH_SYMBOL_ANIMATION_STEP_SCALE,
                                            timeDelta, NULL) != 0) {
@@ -171,7 +171,7 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
             state->playerSfxTimer =
                 (f32)randomGetRange(DBSH_SYMBOL_SFX_TIMER_LONG_MIN, DBSH_SYMBOL_SFX_TIMER_LONG_MAX);
         }
-        Sfx_PlayFromObject((GameObject*)(u32)player, SFXTRIG_literun116_var);
+        Sfx_PlayFromObject(player, SFXTRIG_literun116_var);
     }
     state->objectSfxTimer = state->objectSfxTimer - timeDelta;
     if (state->objectSfxTimer < 0.0f) {

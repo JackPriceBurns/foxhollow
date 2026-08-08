@@ -38,7 +38,9 @@ if (FOXHOLLOW_GAME_SOURCES)
 endif ()
 
 add_executable(foxhollow src/main.c)
+find_package(ZLIB REQUIRED)
 target_link_libraries(foxhollow PRIVATE
+        ZLIB::ZLIB
         port_shims
         aurora::core aurora::gx aurora::main aurora::vi
         aurora::os aurora::pad aurora::dvd aurora::card
@@ -64,6 +66,7 @@ target_link_libraries(port_shims PRIVATE aurora::core)
 if (TARGET game)
     add_executable(linkcheck EXCLUDE_FROM_ALL src/main.c)
     target_link_libraries(linkcheck PRIVATE
+            ZLIB::ZLIB
             port_shims
             aurora::core aurora::gx aurora::main aurora::vi
             aurora::os aurora::pad aurora::dvd aurora::card

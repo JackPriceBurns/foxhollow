@@ -134,7 +134,8 @@ void memcpyToCache(void* dst, void* src, u32 count)
     }
     else
     {
-        LCStoreBlocks(dst, src, count);
+        size_t len = count != 0 ? ((size_t)count << 5) : 0x1000;
+        memcpy(dst, src, len);
     }
 }
 
@@ -163,7 +164,8 @@ void copyToCache(void* dst, void* src, u32 count)
     }
     else
     {
-        LCLoadBlocks(dst, src, count);
+        size_t len = count != 0 ? ((size_t)count << 5) : 0x1000;
+        memcpy(dst, src, len);
     }
 }
 
@@ -173,7 +175,10 @@ void* getCache(void)
     {
         return gAttractMovieScratchBuffer;
     }
-    return (void*)0xe0000000;
+    {
+        static u8 sPortLockedCache[0x4000] __attribute__((aligned(32)));
+        return sPortLockedCache;
+    }
 }
 
 extern MmStore* gMmStoreArray[MM_STORE_COUNT];
@@ -228,7 +233,7 @@ int mmCreateMemoryStore(int size)
         OSReport(msg + 0x218, size, 0x4000);
         return 0;
     }
-    store = (MmStore*)mmAlloc(0x10, 0, (int)sMmStoreAllocationTag);
+    store = (MmStore*)mmAlloc(sizeof(MmStore), 0, (uintptr_t)sMmStoreAllocationTag);
     if (store == NULL)
     {
         OSReport(msg + 0x26c);
@@ -238,7 +243,7 @@ int mmCreateMemoryStore(int size)
     store->handle = gMmNextStoreHandle++;
     store->ptrStore = NULL;
     store->ptrCurrent = NULL;
-    store->ptrStore = mmAlloc(store->size, 0, (int)(msg + 0x2a8));
+    store->ptrStore = mmAlloc(store->size, 0, (uintptr_t)(msg + 0x2a8));
     if (store->ptrStore == NULL)
     {
         OSReport(msg + 0x2bc);
@@ -379,7 +384,7 @@ int roundUpTo32(int x)
     return x;
 }
 
-static int heapSpawnSlot(int region, int idx, int size, int type, int newType, int itemTag, int tag) {
+static int heapSpawnSlot(int region, int idx, int size, int type, int newType, int itemTag, uintptr_t tag) {
     int ni;
     HeapItem* base;
     int oldSize;
@@ -419,7 +424,7 @@ static int heapSpawnSlot(int region, int idx, int size, int type, int newType, i
     return idx;
 }
 
-static int changeHeapSlot(int region, int idx, int newSize, int type, int newType, int itemTag, int tag) {
+static int changeHeapSlot(int region, int idx, int newSize, int type, int newType, int itemTag, uintptr_t tag) {
     int oldSize;
     int ni;
     HeapItem* base;
@@ -688,7 +693,7 @@ int mmSetFreeDelay(int v)
     return old;
 }
 
-static uintptr_t mmAllocFromRegion(int region, int size, int type, int tag)
+static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag)
 {
     char* msg = sMmShowInfoFBMemoryStoreMessageBlock;
     int bestIdx;
@@ -860,7 +865,7 @@ void mmSetTextureAllocationState(int state)
 }
 void* mmInitRegion(u8* buf, int size, int numSlots);
 
-void* mmAlloc(int size, int type, int flag)
+void* mmAlloc(int size, int type, uintptr_t flag)
 {
     void* result;
     u8 ok;
@@ -933,7 +938,7 @@ void* mmAlloc(int size, int type, int flag)
 void* mmInitRegion(u8* buf, int size, int numSlots)
 {
     int regIdx = gMmRegionCount++;
-    int slotsBytes = numSlots * 0x1c;
+    int slotsBytes = numSlots * sizeof(HeapItem);
     int after = size - slotsBytes;
     int i;
     HeapItem* slot;
@@ -975,7 +980,7 @@ void mmInit(void)
     u8* lo;
     gMmRegionCount = 0;
     lo = OSGetArenaLo();
-    t = (u8*)OSGetArenaHi() - lo - 0x6c0000;
+    t = (u8*)OSGetArenaHi() - lo - 0xd80000;
     size = t - 0x720;
     gMmRegion0Size = size;
     p = OSAllocFromHeap(__OSCurrHeap, size);
@@ -986,17 +991,17 @@ void mmInit(void)
     gSaveGameWorkBuffer = p;
     gAskProgressiveScanFlag = (u8*)p + 0x6ec;
 
-    p = OSAllocFromHeap(__OSCurrHeap, 0x1c0000);
-    DCFlushRange(p, 0x1c0000);
-    mmInitRegion(p, 0x1c0000, 0x352);
+    p = OSAllocFromHeap(__OSCurrHeap, 0x380000);
+    DCFlushRange(p, 0x380000);
+    mmInitRegion(p, 0x380000, 0x352);
 
-    p = OSAllocFromHeap(__OSCurrHeap, 0x9ffa0);
-    DCFlushRange(p, 0x9ffa0);
-    mmInitRegion(p, 0x9ffa0, 0x352);
+    p = OSAllocFromHeap(__OSCurrHeap, 0x13ff40);
+    DCFlushRange(p, 0x13ff40);
+    mmInitRegion(p, 0x13ff40, 0x352);
 
-    p = OSAllocFromHeap(__OSCurrHeap, 0x45ffa0);
-    DCFlushRange(p, 0x45ffa0);
-    mmInitRegion(p, 0x45ffa0, 0x244);
+    p = OSAllocFromHeap(__OSCurrHeap, 0x8bff40);
+    DCFlushRange(p, 0x8bff40);
+    mmInitRegion(p, 0x8bff40, 0x244);
 
     gMmOpCount++;
     gMmFreeDelay = 2;

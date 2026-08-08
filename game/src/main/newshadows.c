@@ -265,15 +265,15 @@ void updateHeavyFogTexture(int intensity)
 }
 
 Camera* gNewShadowCurrentViewSlot;
-u32 gNewShadowReflectionSmallTexture;
+uintptr_t gNewShadowReflectionSmallTexture;
 Texture* gNewShadowCausticTexture;
-u32 gNewShadowReflectionTexture2;
-u32 gNewShadowDiskTexture;
-u32 gNewShadowSmallDiskTexture;
-u32 gNewShadowBumpTexture;
-u32 gNewShadowWhirlpoolTexture;
+uintptr_t gNewShadowReflectionTexture2;
+uintptr_t gNewShadowDiskTexture;
+uintptr_t gNewShadowSmallDiskTexture;
+uintptr_t gNewShadowBumpTexture;
+uintptr_t gNewShadowWhirlpoolTexture;
 Texture* gNewShadowHeatHazeTexture;
-u32 gNewShadowSnowFlashTexture;
+uintptr_t gNewShadowSnowFlashTexture;
 Texture* gNewShadowRadialTexture;
 Texture* gNewShadowDistortionTexture;
 Texture* gNewShadowHeavyFogTexture;
@@ -283,10 +283,10 @@ f32 gNewShadowReflectionScrollX;
 f32 gNewShadowReflectionScrollY;
 f32 gNewShadowDistortionWaveOffset;
 u16 gNewShadowDistortionWavePhase;
-u32 gNewShadowRampTexture;
-u32 gNewShadowInverseRampTexture;
-u32 gNewShadowReflectionGradientTexture;
-u32 gNewShadowFalloffTexture;
+uintptr_t gNewShadowRampTexture;
+uintptr_t gNewShadowInverseRampTexture;
+uintptr_t gNewShadowReflectionGradientTexture;
+uintptr_t gNewShadowFalloffTexture;
 u8 gNewShadowFrameIndex;
 int gNewShadowLightAngleY;
 int gNewShadowLightAngleX;
@@ -301,7 +301,7 @@ f32 gStandardAspectRatio = 1.3333334f;
 /* Linear search by pointer identity through the shadow entry table.
  * Clears the active flag when the entry matches the needle. */
 
-extern u32 gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
+extern uintptr_t gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
 extern Texture* gNewShadowNoiseTexFrames[0x10];
 extern f32 gNewShadowPlacements[0x112];
 u8 gSurfaceSfxTable[0xD8] = {
@@ -687,7 +687,7 @@ void renderShadows(int unused0, int unused1, int unused2)
             memcpy(&obj->anim.worldPos, &modelState->overrideWorldPosX, sizeof(Vec3f));
         }
         castSlot = (NewShadowCastSlot*)(((u8)slotIdx * sizeof(NewShadowCastSlot) + offsetof(NewShadowData, castSlots)) +
-                                         (int)shadowData);
+                                         (uintptr_t)shadowData);
         castSlot->alpha = alpha;
         if ((u8)texIdx < NEW_SHADOW_MAX_CAST_TEXTURES && (kind = casterPtr->flags) != 0)
         {
@@ -982,7 +982,7 @@ void getNewShadowNoiseTextureFrames(Texture*** tableOut, int* frameCountOut)
     *frameCountOut = 0x10;
 }
 
-void getNewShadowSnowFlashTexture(u32* p)
+void getNewShadowSnowFlashTexture(uintptr_t* p)
 {
     *p = gNewShadowSnowFlashTexture;
 }
@@ -1018,26 +1018,26 @@ void* textureAlloc512(void)
     DCFlushRange((char*)tex + 0x60, tex->dataSize);
     return tex;
 }
-void getNewShadowRampTexture(u32* out)
+void getNewShadowRampTexture(uintptr_t* out)
 {
     *out = gNewShadowRampTexture;
 }
 
-u32 getNewShadowSmallDiskTexture(void)
+uintptr_t getNewShadowSmallDiskTexture(void)
 {
     return gNewShadowSmallDiskTexture;
 }
-void getNewShadowDiskTexture(u32* out)
+void getNewShadowDiskTexture(uintptr_t* out)
 {
     *out = gNewShadowDiskTexture;
 }
-void getReflectionTexture2(u32* p)
+void getReflectionTexture2(uintptr_t* p)
 {
     *p = gNewShadowReflectionTexture2;
 }
-void getNewShadowCausticTexture(u32* p)
+void getNewShadowCausticTexture(uintptr_t* p)
 {
-    *p = (u32)gNewShadowCausticTexture;
+    *p = (uintptr_t)gNewShadowCausticTexture;
 }
 
 
@@ -1090,13 +1090,13 @@ void selectReflectionTexture(int id)
         GXLoadTexObj(textureGetGXTexObj(p), idCopy);
     }
 }
-u32 getReflectionTexture1(void)
+uintptr_t getReflectionTexture1(void)
 {
-    return (u32)gNewShadowReflectionTexture;
+    return (uintptr_t)gNewShadowReflectionTexture;
 }
 
 NewShadowEntry gNewShadowEntries[0x294 / sizeof(NewShadowEntry)];
-u32 getNewShadowReflectionGradientTexture(void)
+uintptr_t getNewShadowReflectionGradientTexture(void)
 {
     return gNewShadowReflectionGradientTexture;
 }
@@ -1105,7 +1105,7 @@ u32 getNewShadowInverseRampTexture(void)
 {
     return gNewShadowInverseRampTexture;
 }
-u32 getNewShadowFalloffTexture(void)
+uintptr_t getNewShadowFalloffTexture(void)
 {
     return gNewShadowFalloffTexture;
 }
@@ -1494,12 +1494,12 @@ void newShadowsInitProceduralTextures(void)
 
 
 f32 gNewShadowPlacements[0x112];
-u32 gNewShadowCastTextures[NEW_SHADOW_MAX_CAST_TEXTURES];
+uintptr_t gNewShadowCastTextures[NEW_SHADOW_MAX_CAST_TEXTURES];
 NewShadowCastSlot gNewShadowCastSlots[NEW_SHADOW_MAX_CASTERS];
 NewShadowCaster gNewShadowCasterTable[NEW_SHADOW_MAX_QUEUED_CASTERS];
 Texture* gNewShadowNoiseTexFrames[0x10];
 Texture* gNewShadowTextureTable[8][4];
-u32 gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
+uintptr_t gNewShadowFrameTextures[NEW_SHADOW_FRAME_COUNT];
 
 
 static inline void fillDiskTexture(void)
@@ -1779,18 +1779,18 @@ void allocLotsOfTextures(void)
     DCFlushRange(renderTargets[0] + 1, renderTargets[0]->dataSize);
 
     gNewShadowReflectionTexture = textureAlloc(0x140, 0xf0, 4, 0, 0, 0, 0, 1, 1);
-    gNewShadowReflectionSmallTexture = (int)textureAlloc(0x50, 0x3c, 4, 0, 0, 0, 0, 1, 1);
-    gNewShadowReflectionTexture2 = (int)textureAlloc(0x140, 0xf0, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionSmallTexture = (uintptr_t)textureAlloc(0x50, 0x3c, 4, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionTexture2 = (uintptr_t)textureAlloc(0x140, 0xf0, 1, 0, 0, 0, 0, 1, 1);
 
-    gNewShadowDiskTexture = (int)textureAlloc(0x20, 0x20, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowDiskTexture = (uintptr_t)textureAlloc(0x20, 0x20, 1, 0, 0, 0, 0, 1, 1);
     fillDiskTexture();
     DCFlushRange((Texture*)gNewShadowDiskTexture + 1, ((Texture*)gNewShadowDiskTexture)->dataSize);
 
-    gNewShadowSmallDiskTexture = (int)textureAlloc(0x10, 0x10, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowSmallDiskTexture = (uintptr_t)textureAlloc(0x10, 0x10, 1, 0, 0, 0, 0, 1, 1);
     fillSmallDiskTexture();
     DCFlushRange((Texture*)gNewShadowSmallDiskTexture + 1, ((Texture*)gNewShadowSmallDiskTexture)->dataSize);
 
-    gNewShadowBumpTexture = (int)textureAlloc(0x40, 0x40, 5, 0, 0, 0, 0, 1, 1);
+    gNewShadowBumpTexture = (uintptr_t)textureAlloc(0x40, 0x40, 5, 0, 0, 0, 0, 1, 1);
     {
         f32 mx = 0.0f;
         for (i = 0; i < 0x40; i++)
@@ -1840,7 +1840,7 @@ void allocLotsOfTextures(void)
                 fj2 = (f32)(j + 1) - 32.0f;
                 for (; i < 0x40; i++)
                 {
-                    int dst = gNewShadowBumpTexture + lowoff;
+                    uintptr_t dst = gNewShadowBumpTexture + lowoff;
                     f32 cc, d1, d2, cc2, d3, n1, n2, n3, a, b, rowCoord;
                     f32 c;
                     int bi, ci, ai;
@@ -1887,19 +1887,19 @@ void allocLotsOfTextures(void)
     }
     DCFlushRange((Texture*)gNewShadowBumpTexture + 1, ((Texture*)gNewShadowBumpTexture)->dataSize);
 
-    gNewShadowWhirlpoolTexture = (u32)textureLoadAsset(0x5b0);
+    gNewShadowWhirlpoolTexture = (uintptr_t)textureLoadAsset(0x5b0);
     gNewShadowHeatHazeTexture = textureLoadAsset(0x600);
-    gNewShadowSnowFlashTexture = (u32)textureLoadAsset(0xc18);
+    gNewShadowSnowFlashTexture = (uintptr_t)textureLoadAsset(0xc18);
 
-    gNewShadowRampTexture = (int)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 0, 0);
+    gNewShadowRampTexture = (uintptr_t)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 0, 0);
     fillRampTexture();
     DCFlushRange((Texture*)gNewShadowRampTexture + 1, ((Texture*)gNewShadowRampTexture)->dataSize);
 
-    gNewShadowInverseRampTexture = (int)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowInverseRampTexture = (uintptr_t)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 1, 1);
     fillInverseRampTexture();
     DCFlushRange((Texture*)gNewShadowInverseRampTexture + 1, ((Texture*)gNewShadowInverseRampTexture)->dataSize);
 
-    gNewShadowFalloffTexture = (int)textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowFalloffTexture = (uintptr_t)textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
     fillFalloffTexture();
     DCFlushRange((Texture*)gNewShadowFalloffTexture + 1, ((Texture*)gNewShadowFalloffTexture)->dataSize);
 
@@ -1944,12 +1944,12 @@ void allocLotsOfTextures(void)
     fillRingTexture();
     DCFlushRange((u8*)gNewShadowRingTexture + 0x60, gNewShadowRingTexture->dataSize);
 
-    gNewShadowReflectionGradientTexture = (int)textureAlloc(4, 4, 3, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionGradientTexture = (uintptr_t)textureAlloc(4, 4, 3, 0, 0, 0, 0, 1, 1);
     for (i = 0; i < 4; i++)
     {
         f32 x = i / 3.0f;
         int hi;
-        int t;
+        uintptr_t t;
         u16 v;
         x -= lbl_803DED38;
         t = gNewShadowReflectionGradientTexture + (i & 3) * 2;

@@ -253,12 +253,12 @@ void modelCalcVtxGroupMtxs(ModelFileHeader* def, ObjModel* model)
 
 void modelInitMtxs(ModelFileHeader* def, ObjModel* model)
 {
-    int cache;
-    int mtx;
+    u8* cache;
+    u8* mtx;
     int count;
     u8 rem;
 
-    cache = (int)getCache();
+    cache = (u8*)getCache();
     if (def->extraJointCount != 0)
     {
         modelCalcVtxGroupMtxs(def, model);
@@ -266,7 +266,7 @@ void modelInitMtxs(ModelFileHeader* def, ObjModel* model)
     count = (s32)(u32)def->jointCount + (s32)(u32)def->extraJointCount;
     if (count >= 2 && count <= 0x64)
     {
-        mtx = (int)ObjModel_GetJointMatrix((u8*)model, 0);
+        mtx = (u8*)ObjModel_GetJointMatrix((u8*)model, 0);
         DCFlushRange((void*)mtx, count << 6);
         rem = (u8)(count << 1);
         cache += 0x2700;
@@ -313,7 +313,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     GXColor kc = sObjFuzzWhiteColor;
     Texture** noiseTextures;
     int noiseFrameCount;
-    int t164;
+    Texture* t164;
     f32 sx;
     f32 sy;
     GXColor kc2;
@@ -326,7 +326,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
 
     mtxA = sObjFuzzShellIndMtxA;
     mtxB = sObjFuzzShellIndMtxB;
-    rop = ObjModel_GetRenderOp((ModelFileHeader*)*model, ropIdx);
+    rop = ObjModel_GetRenderOp(((ObjModel*)model)->file, ropIdx);
     if ((rop->flags & 0x200) == 0)
     {
         if ((gObjFuzzLayerIndex & 3) != 0)
@@ -372,8 +372,9 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
     GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
     GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    t164 = NULL;
     getNewShadowCausticTexture((u32*)&t164);
-    selectTexture((Texture*)((void*)t164), 4);
+    selectTexture(t164, 4);
     newshadows_getReflectionScrollOffsets(&sx, &sy);
     PSMTXTrans(mtxR, 0.5f * sx, 0.5f * sy, 0.0f);
     mtxR[0][0] = 1.0f;
@@ -500,7 +501,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     int coord;
     Texture** noiseTextures;
     int noiseFrameCount;
-    int texRef4;
+    Texture* texRef4;
     f32 sx;
     f32 sy;
     int projFlagOut1;
@@ -651,8 +652,9 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         stage = 2;
         coord = 1;
     }
+    texRef4 = NULL;
     getNewShadowCausticTexture((u32*)&texRef4);
-    selectTexture((Texture*)((void*)texRef4), 4);
+    selectTexture(texRef4, 4);
     newshadows_getReflectionScrollOffsets(&sx, &sy);
     PSMTXTrans(mtxR, 0.5f * sx, 0.5f * sy, 0.0f);
     mtxR[0][0] = 1.0f;
@@ -756,8 +758,8 @@ f32 gObjFuzzPhase;
 u8 lbl_803DCC36;
 u8 lbl_803DCC35;
 u8 lbl_803DCC34;
-u32 gObjCachedModel;
-u32 gObjCachedTexture;
+uintptr_t gObjCachedModel;
+uintptr_t gObjCachedTexture;
 u8 gObjRenderSetupDone;
 u8 gObjRenderingShadowPass;
 u8 gObjOverrideColorPending;
@@ -789,7 +791,7 @@ int lbl_803DB49C = -1;
 void objFuzzSetupGxState(void* objArg)
 {
     ModelLightStruct* renderHandle;
-    int obj = (int)objArg;
+    void* obj = objArg;
     GXColor savedEnvColor = sObjFuzzSavedEnvColor;
     Texture** shadowTable;
     int shadowStride;
@@ -847,7 +849,7 @@ void objRenderAttachment(GameObject* obj, int* p2)
     f32 sm[12];
     MatrixTransform blk;
     int* mdl = p2;
-    u8* data = (u8*)mdl[22];
+    u8* data = (u8*)((ObjModel*)mdl)->renderAttachment;
     s16 b;
     s16 c;
     u16* idx;
@@ -1105,7 +1107,7 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
 extern u8 gObjGxPosMtxIdTable[12];
 
 
-static void modelLoadMtxsToGx(int obj, int* model, MtxBitStream* bs, f32* mtx)
+static void modelLoadMtxsToGx(ModelFileHeader* hdr, int* model, MtxBitStream* bs, f32* mtx)
 {
     char* cache = (char*)getCache();
     if (gModelMtxCacheState == 1)
@@ -1114,11 +1116,11 @@ static void modelLoadMtxsToGx(int obj, int* model, MtxBitStream* bs, f32* mtx)
         char* sourceMtx;
         char* posMtx;
         int i;
-        obj = ((ModelFileHeader*)obj)->jointCount + ((ModelFileHeader*)obj)->extraJointCount;
+        int count = hdr->jointCount + hdr->extraJointCount;
         sourceMtx = cacheBase + 0x2700;
         posMtx = cacheBase;
         cacheQueueWait(0);
-        for (i = 0; i < obj; i++)
+        for (i = 0; i < count; i++)
         {
             PSMTXConcat((MtxPtr)mtx, (MtxPtr)(f32*)sourceMtx, (MtxPtr)(f32*)posMtx);
             sourceMtx += 0x40;
@@ -1151,10 +1153,10 @@ static void modelLoadMtxsToGx(int obj, int* model, MtxBitStream* bs, f32* mtx)
             {
                 u32 w;
                 int pos = bs->pos;
-                u32 pAddr = (pos >> 3) + ((u32)bs->data + 1);
-                w = *(u8*)(pAddr - 1);
-                w |= *(u8*)pAddr << 8;
-                w |= *(u8*)(pAddr + 1) << 16;
+                u8* pAddr = bs->data + (pos >> 3) + 1;
+                w = *(pAddr - 1);
+                w |= *pAddr << 8;
+                w |= *(pAddr + 1) << 16;
                 bs->pos = pos + 8;
                 idx = (w >> (pos & 7)) & 0xff;
             }
@@ -1231,10 +1233,10 @@ static void renderOpMatrix(u8* hdr, int* model, MtxBitStream* bs, f32* m1, f32* 
             {
                 u32 w;
                 int pos = bs->pos;
-                u32 pAddr = (pos >> 3) + ((u32)bs->data + 1);
-                w = *(u8*)(pAddr - 1);
-                w |= *(u8*)pAddr << 8;
-                w |= *(u8*)(pAddr + 1) << 16;
+                u8* pAddr = bs->data + (pos >> 3) + 1;
+                w = *(pAddr - 1);
+                w |= *pAddr << 8;
+                w |= *(pAddr + 1) << 16;
                 bs->pos = pos + 8;
                 idx = (w >> (pos & 7)) & 0xff;
             }
@@ -1346,7 +1348,7 @@ static void ModelHeader_setupPosTexFmt(u8* hdr, int* model, MtxBitStream* bs, in
     }
 }
 
-static void modelRenderFn_setVtxDescr(u8* modelHeader, u8* shader, u32* textureRefs,
+static void modelRenderFn_setVtxDescr(u8* modelHeader, u8* shader, ModelRenderOpTextureRefs* textureRefs,
                                       MtxBitStream* bitStream, u8 passMask,
                                       u8* usesNormalMatrix, u8* usesTextureMatrix)
 {
@@ -1361,7 +1363,7 @@ static void modelRenderFn_setVtxDescr(u8* modelHeader, u8* shader, u32* textureR
         GXSetVtxDesc(GX_VA_PNMTXIDX, GX_DIRECT);
         nextMatrixAttr = 1;
         previousMatrixAttr = 8;
-        if (textureRefs[0] != 0 || textureRefs[1] != 0)
+        if (textureRefs->texture0 != NULL || textureRefs->texture1 != NULL)
         {
             if (((Shader*)shader)->auxTextureIndex != 0)
             {
@@ -1517,7 +1519,7 @@ static inline void texSlotGetScroll(GameObject* obj, u32 jid, f32* txp, f32* typ
     }
     *typ = *txp = 0.0f;
 }
-static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, int p5, int p6)
+static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTextureRefs* p3, int mask, int p5, int p6)
 {
     u16 alpha;
     u8* colp;
@@ -1530,7 +1532,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
     f32 m[12];
 
     ok = 1;
-    if (p3[0] != 0 || p3[1] != 0)
+    if (p3->texture0 != NULL || p3->texture1 != NULL)
     {
         int i;
         u8 cnt;
@@ -1559,7 +1561,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
                 if ((((Shader*)shader)->flags & SHADER_FLAG_DECAL_LAYER) && layerIdx == 1)
                 {
                     u8 hasBaseTexture;
-                    if (p3[0] != 0)
+                    if (p3->texture0 != NULL)
                     {
                         hasBaseTexture = 1;
                     }
@@ -1609,7 +1611,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
                     }
                     if (layerIdx == 0)
                     {
-                        if ((p3[0] != 0 || p3[1] != 0 || p6 != 0) && ok)
+                        if ((p3->texture0 != NULL || p3->texture1 != NULL || p6 != 0) && ok)
                         {
                             fl = 8;
                         }
@@ -1627,9 +1629,9 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
                     color[0] = 0xff;
                     color[1] = 0xff;
                     color[2] = 0xff;
-                    if (p3[0] != 0 || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
+                    if (p3->texture0 != NULL || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
                     {
-                        addTexLayerStageSwizzled(tex, mtxp, (u8)fl, (GXColor*)color, *((u8*)p3 + 8), 1);
+                        addTexLayerStageSwizzled(tex, mtxp, (u8)fl, (GXColor*)color, p3->swapSelector, 1);
                     }
                     else if (p5 != 0)
                     {
@@ -1640,7 +1642,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
                         }
                         else
                         {
-                            addTexLayerStageSwizzled(tex, mtxp, (u8)fl, &gObjCurChanColor, *((u8*)p3 + 8), 1);
+                            addTexLayerStageSwizzled(tex, mtxp, (u8)fl, &gObjCurChanColor, p3->swapSelector, 1);
                         }
                     }
                     else
@@ -1665,7 +1667,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
                     color[1] = shader[5];
                     color[2] = shader[6];
                     color[3] = alpha;
-                    if (p3[0] != 0 || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
+                    if (p3->texture0 != NULL || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
                     {
                         addKColorModulateStage((GXColor*)color);
                     }
@@ -1699,7 +1701,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, u32* p3, int mask, i
 static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStream* bs)
 {
     Shader* op;
-    u32* refs;
+    ModelRenderOpTextureRefs* refs;
     u32 idx;
     u8 shad;
     ModelLightStruct** lp;
@@ -1735,30 +1737,30 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
     {
         return idx;
     }
-    op = ObjModel_GetRenderOp((ModelFileHeader*)*am, idx);
-    refs = (u32*)ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
+    op = ObjModel_GetRenderOp(((ObjModel*)am)->file, idx);
+    refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
     Rcp_ResetTextureStageState();
     envtex = 0;
-    if ((refs[0] != 0 || refs[1] != 0) && op->auxTextureIndex != 0)
+    if ((refs->texture0 != NULL || refs->texture1 != NULL) && op->auxTextureIndex != 0)
     {
         void* t = textureIdxToPtr(op->auxTextureIndex);
         int nl = gObjSelectedLightCount + 1;
-        if (refs[0] != 0)
+        if (refs->texture0 != NULL)
         {
             nl += 1;
         }
-        if (refs[1] != 0)
+        if (refs->texture1 != NULL)
         {
             nl += 1;
         }
         envtex = addEnvMapBumpStages(t, nl, op->envMapParams, op->layers[0].textureIndex);
         envtex &= 0xff;
     }
-    if (refs[0] != 0)
+    if (refs->texture0 != NULL)
     {
-        addSphereMapTexStage((void*)refs[0], obj->sphereMapIntensity);
+        addSphereMapTexStage(refs->texture0, obj->sphereMapIntensity);
     }
-    if (refs[1] != 0)
+    if (refs->texture1 != NULL)
     {
         if (op->unk1C != 0)
         {
@@ -1774,7 +1776,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         GXSetTevColor(GX_TEVREG2, *(GXColor*)color);
         {
             u8 hasBaseTexture;
-            if (refs[0] != 0)
+            if (refs->texture0 != NULL)
             {
                 hasBaseTexture = 1;
             }
@@ -1782,12 +1784,12 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
             {
                 hasBaseTexture = 0;
             }
-            addLightTexReg2Stage((void*)refs[1], hasBaseTexture, op->reg2TexSlot);
+            addLightTexReg2Stage(refs->texture1, hasBaseTexture, op->reg2TexSlot);
         }
         if (color[3] != 0)
         {
             u8 hasBaseTexture;
-            if (refs[0] != 0)
+            if (refs->texture0 != NULL)
             {
                 hasBaseTexture = 1;
             }
@@ -1856,7 +1858,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
     }
     {
         u32 t18;
-        if ((t18 = op->textureId) != 0 && op->unk1C == 0 && refs[1] != 0)
+        if ((t18 = op->textureId) != 0 && op->unk1C == 0 && refs->texture1 != NULL)
         {
             textureIdxToPtr(t18);
             addTexModulateReg2Stage();
@@ -1868,7 +1870,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
                                    nlay) == 0)
         {
             u8 hasBaseTexture;
-            if (refs[0] != 0)
+            if (refs->texture0 != NULL)
             {
                 hasBaseTexture = 1;
             }
@@ -2147,7 +2149,7 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
         if (((ModelFileHeader*)m)->animationCount != 0 && !(((ModelFileHeader*)m)->flags & 2) &&
             ((ModelFileHeader*)m)->jointCount != 0)
         {
-            if (gObjCachedModel != (u32)m)
+            if (gObjCachedModel != (uintptr_t)m)
             {
                 ObjModel_UpdateAnimMatrices((ObjModel*)am, (ModelFileHeader*)m, obj, gObjJointMtxTemp);
                 modelInitMtxs((ModelFileHeader*)m, (ObjModel*)am);
@@ -2227,9 +2229,9 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
     else
     {
         void* tex = textureIdxToPtr(((ModelFileHeader*)m)->renderOps->layers[0].textureIndex);
-        if (gObjCachedTexture != (u32)tex)
+        if (gObjCachedTexture != (uintptr_t)tex)
         {
-            gObjCachedTexture = (u32)tex;
+            gObjCachedTexture = (uintptr_t)tex;
             selectTexture((Texture*)tex, 0);
         }
         if (gObjGxKColorCache[0] != color[0] || gObjGxKColorCache[1] != color[1] || gObjGxKColorCache[2] != color[2] ||
@@ -2239,19 +2241,19 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
             *(u32*)gObjGxKColorCache = *(u32*)color;
         }
     }
-    if (gObjCachedModel != (u32)m)
+    if (gObjCachedModel != (uintptr_t)m)
     {
         GXSetArray(GX_VA_POS, ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1],
                    ((ModelFileHeader*)m)->vertexCount * 6, 6, false);
         GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords,
                    ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
-        gObjCachedModel = (u32)m;
+        gObjCachedModel = (uintptr_t)m;
     }
     shaderSetGxFlags(obj, m, (u8*)((ModelFileHeader*)m)->renderOps);
     bs.pos += 4;
     ModelHeader_setupPosTexFmt(m, (void*)((ModelFileHeader*)m)->renderOps, &bs, p4);
     bs.pos += 4;
-    modelLoadMtxsToGx((int)m, am, &bs, cm);
+    modelLoadMtxsToGx((ModelFileHeader*)m, am, &bs, cm);
     {
         ModelDisplayListEntry* dl;
         int idx;
@@ -2329,7 +2331,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         if (((ModelFileHeader*)m)->animationCount != 0 && !(((ModelFileHeader*)m)->flags & 2) &&
             ((ModelFileHeader*)m)->jointCount != 0)
         {
-            if ((u32)((ModelFileHeader*)m)->vertexAnimEntries != 0)
+            if (((ModelFileHeader*)m)->vertexAnimEntries != NULL)
             {
                 PSMTXIdentity((MtxPtr)im);
                 ObjModel_UpdateAnimMatrices((ObjModel*)am, (ModelFileHeader*)m, obj, im);
@@ -2362,7 +2364,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
             u8* vtx;
             if (((ObjModel*)am)->vtxBufDirty != 0)
             {
-                vtx = (u8*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1];
+                vtx = ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1];
             }
             else
             {
@@ -2370,10 +2372,10 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
             }
             ObjModel_BlendVertexStream(
                 (u8*)gObjBoneMtxBuffer, m + 0x88, vtx,
-                (int*)(int)((ModelFileHeader*)am)->jointBlendData,
-                (u8*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
+                ((ObjModel*)am)->vertexAnimData,
+                ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
             ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, m + 0xac,
-                                       (u8*)(int)((ModelFileHeader*)m)->normals,
+                                       ((ModelFileHeader*)m)->normals,
                                        (u8**)((ObjModel*)am)->blendAnimData,
                                        ((ModelFileHeader*)m)->flags24 & 8);
         }
@@ -2399,7 +2401,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
     modelRenderInstrsState_init((ModelRenderInstrsState*)&bs, ((ModelFileHeader*)m)->instrs,
                                 ((ModelFileHeader*)m)->instrsBitLenWords << 3,
                                 ((ModelFileHeader*)m)->instrsBitLenWords << 3);
-    if ((u32)((ModelFileHeader*)m)->vertexAnimEntries != 0)
+    if (((ModelFileHeader*)m)->vertexAnimEntries != NULL)
     {
         PSMTXConcat((MtxPtr)vm, (MtxPtr)wm, (MtxPtr)cm);
         GXLoadPosMtxImm((const f32 (*)[4])cm, gObjGxPosMtxIdTable[9]);
@@ -2471,10 +2473,10 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         {
             u32 w;
             int pos = bs.pos;
-            u32 pAddr = (pos >> 3) + ((u32)bs.data + 1);
-            w = *(u8*)(pAddr - 1);
-            w |= *(u8*)pAddr << 8;
-            w |= *(u8*)(pAddr + 1) << 16;
+            u8* pAddr = bs.data + (pos >> 3) + 1;
+            w = *(pAddr - 1);
+            w |= *pAddr << 8;
+            w |= *(pAddr + 1) << 16;
             bs.pos = pos + 4;
             op4 = (w >> (pos & 7)) & 0xf;
         }
@@ -2489,10 +2491,10 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
             {
                 u32 w;
                 int pos = bs.pos;
-                u32 pAddr = (pos >> 3) + ((u32)bs.data + 1);
-                w = *(u8*)(pAddr - 1);
-                w |= *(u8*)pAddr << 8;
-                w |= *(u8*)(pAddr + 1) << 16;
+                u8* pAddr = bs.data + (pos >> 3) + 1;
+                w = *(pAddr - 1);
+                w |= *pAddr << 8;
+                w |= *(pAddr + 1) << 16;
                 bs.pos = pos + 1;
                 GXSetVtxDesc(GX_VA_POS, (((int)(w >> (pos & 7)) & 1) ? GX_INDEX16 : GX_INDEX8));
             }
@@ -2535,7 +2537,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         }
         break;
         case 4:
-            modelLoadMtxsToGx((int)m, am, &bs, vm);
+            modelLoadMtxsToGx((ModelFileHeader*)m, am, &bs, vm);
             break;
         case 5:
             done = 1;
@@ -2566,7 +2568,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
     int shadowPass;
     u8 did;
     int* op;
-    u32* refs;
+    ModelRenderOpTextureRefs* refs;
     int done;
     f32 fade;
     f32 sc2;
@@ -2647,7 +2649,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
         if (((ModelFileHeader*)m)->animationCount != 0 && !(((ModelFileHeader*)m)->flags & 2) &&
             ((ModelFileHeader*)m)->jointCount != 0)
         {
-            if ((u32)((ModelFileHeader*)m)->vertexAnimEntries != 0)
+            if (((ModelFileHeader*)m)->vertexAnimEntries != NULL)
             {
                 PSMTXIdentity((MtxPtr)im);
                 ObjModel_UpdateAnimMatrices((ObjModel*)am, (ModelFileHeader*)m, obj, im);
@@ -2689,7 +2691,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                 u8* vtx;
                 if (((ObjModel*)am)->vtxBufDirty != 0)
                 {
-                    vtx = (u8*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1];
+                    vtx = ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1];
                 }
                 else
                 {
@@ -2697,10 +2699,10 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                 }
                 ObjModel_BlendVertexStream(
                     (u8*)gObjBoneMtxBuffer, m + 0x88, vtx,
-                    (int*)(int)((ModelFileHeader*)am)->jointBlendData,
-                    (u8*)((int*)((char*)am + 0x1c))[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
+                    ((ObjModel*)am)->vertexAnimData,
+                    ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
                 ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, m + 0xac,
-                                           (u8*)(int)((ModelFileHeader*)m)->normals,
+                                           ((ModelFileHeader*)m)->normals,
                                            (u8**)((ObjModel*)am)->blendAnimData,
                                            ((ModelFileHeader*)m)->flags24 & 8);
             }
@@ -2767,7 +2769,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
         f32 inv = 1.0f / obj->anim.rootMotionScale;
         PSMTXScale((MtxPtr)sm, inv, inv, inv);
     }
-    if ((u32)((ModelFileHeader*)m)->vertexAnimEntries != 0)
+    if (((ModelFileHeader*)m)->vertexAnimEntries != NULL)
     {
         if (fuzzPass || fuzzShadowPass || (passMaskCopy & 8))
         {
@@ -2896,10 +2898,10 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
         {
             u32 w;
             int pos = bs.pos;
-            u32 pAddr = (pos >> 3) + ((u32)bs.data + 1);
-            w = *(u8*)(pAddr - 1);
-            w |= *(u8*)pAddr << 8;
-            w |= *(u8*)(pAddr + 1) << 16;
+            u8* pAddr = bs.data + (pos >> 3) + 1;
+            w = *(pAddr - 1);
+            w |= *pAddr << 8;
+            w |= *(pAddr + 1) << 16;
             bs.pos = pos + 4;
             op4 = (w >> (pos & 7)) & 0xf;
         }
@@ -2920,15 +2922,15 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             {
                 u32 w;
                 int pos = bs.pos;
-                u32 pAddr = (pos >> 3) + ((u32)bs.data + 1);
-                w = *(u8*)(pAddr - 1);
-                w |= *(u8*)pAddr << 8;
-                w |= *(u8*)(pAddr + 1) << 16;
+                u8* pAddr = bs.data + (pos >> 3) + 1;
+                w = *(pAddr - 1);
+                w |= *pAddr << 8;
+                w |= *(pAddr + 1) << 16;
                 bs.pos = pos + 6;
                 idx = (w >> (pos & 7)) & 0x3f;
                 op = (int*)ObjModel_GetRenderOp((ModelFileHeader*)m, idx);
             }
-            refs = (u32*)ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
+            refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
             break;
         }
         case 2:
@@ -2937,10 +2939,10 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                 ModelDisplayListEntry* dl;
                 u32 w;
                 int pos = bs.pos;
-                u32 pAddr = (pos >> 3) + ((u32)bs.data + 1);
-                w = *(u8*)(pAddr - 1);
-                w |= *(u8*)pAddr << 8;
-                w |= *(u8*)(pAddr + 1) << 16;
+                u8* pAddr = bs.data + (pos >> 3) + 1;
+                w = *(pAddr - 1);
+                w |= *pAddr << 8;
+                w |= *(pAddr + 1) << 16;
                 bs.pos = pos + 8;
                 dl = modelFileGetDisplayList(m, (w >> (pos & 7)) & 0xff);
                 GXCallDisplayList(dl->dlist, dl->dlistSize);
@@ -3079,7 +3081,7 @@ void objRenderFuzzShells(GameObject* obj)
     ObjModel_SetRenderCallback((u8*)model, objFuzzShellRenderCb);
     for (gObjFuzzLayerIndex = 0; gObjFuzzLayerIndex < 16; gObjFuzzLayerIndex += gObjFuzzStep)
     {
-        modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)*model, 8);
+        modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)((ObjModel*)model)->file, 8);
         curObjMtx = savedMtx;
     }
     curObjMtx = 0;
@@ -3101,7 +3103,7 @@ void objRenderFuzzShadowShells(GameObject* obj)
     gObjFuzzPhaseLatched = gObjFuzzPhase;
     for (gObjFuzzLayerIndex = 0; gObjFuzzLayerIndex < 16; gObjFuzzLayerIndex += gObjFuzzStep)
     {
-        modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)*model, 2);
+        modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)((ObjModel*)model)->file, 2);
         curObjMtx = savedMtx;
     }
     curObjMtx = 0;
@@ -3191,7 +3193,7 @@ void objRenderFuzz(GameObject* obj)
         ObjModel_SetRenderCallback((u8*)model, objFuzzRenderCb);
         for (gObjFuzzLayerIndex = 0; gObjFuzzLayerIndex < n; gObjFuzzLayerIndex++)
         {
-            modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)*model, 4);
+            modelDoRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)((ObjModel*)model)->file, 4);
             curObjMtx = savedMtx;
         }
         curObjMtx = 0;
@@ -3219,17 +3221,14 @@ void objRenderShadow(GameObject* obj)
     }
     if (obj->anim.classId == 1)
     {
-        u8* iter;
         int i = 0;
-        iter = (u8*)obj;
         for (; i < obj->childCount; i++)
         {
-            GameObject* child = ((GameObject*)iter)->childObjs[0];
+            GameObject* child = obj->childObjs[i];
             if (child != NULL)
             {
                 objRenderChild(child, obj, 1);
             }
-            iter += 4;
         }
     }
 }
@@ -3375,7 +3374,7 @@ void objRenderModel(GameObject* obj)
         return;
     }
     {
-        ModelFileHeader* m0 = (ModelFileHeader*)*model;
+        ModelFileHeader* m0 = ((ObjModel*)model)->file;
         if (m0->flags & 0x8000)
         {
             modelDoAltRenderInstrs(obj, obj->ownerObj ? obj->ownerObj : obj, (u8*)m0, 0);
@@ -3386,17 +3385,14 @@ void objRenderModel(GameObject* obj)
         }
     }
     {
-        u8* iter;
         int i = 0;
-        iter = (u8*)obj;
         for (; i < obj->childCount; i++)
         {
-            GameObject* child = ((GameObject*)iter)->childObjs[0];
+            GameObject* child = obj->childObjs[i];
             if (child != NULL)
             {
                 objRenderChild(child, obj, 0);
             }
-            iter += 4;
         }
     }
     if (OBJPRINT_MODEL_DEF(obj)->shadowType != 4)

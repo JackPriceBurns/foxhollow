@@ -89,7 +89,7 @@ void* textureIdxToPtr(int idx)
 {
     int i;
     if ((u32)idx & 0x80000000)
-        return (void*)idx;
+        return (void*)(uintptr_t)idx;
     i = idx - 1;
     if (i < 0 || i >= gLoadedTextureCount)
         return NULL;
@@ -110,7 +110,7 @@ void texRestructRefs(int mode)
     u32 size;
     int d;
 
-    strs = (char*)(int)sRcpTexRestructStrings;
+    strs = sRcpTexRestructStrings;
     done = 0;
     pass = 0;
     mmSetTextureAllocationState(2);
@@ -521,9 +521,9 @@ void textureFree(Texture* tex)
                 iter = *(u8**)tex;
                 while (iter != NULL)
                 {
-                    if ((u32)iter < 0x80000000 || (u32)iter > 0x81800000)
+                    if ((uintptr_t)iter < 0x80000000 || (uintptr_t)iter > 0x81800000)
                         iter = NULL;
-                    if ((u32)iter < 0x80000000 || (u32)iter >= 0xa0000000)
+                    if ((uintptr_t)iter < 0x80000000 || (uintptr_t)iter >= 0xa0000000)
                     {
                         iter = NULL;
                         continue;
@@ -538,7 +538,7 @@ void textureFree(Texture* tex)
                     iter = next;
                 }
                 if (((Texture*)tex)->preloaded != 0)
-                    findSomething((void*)(int)((Texture*)tex)->tmemAddr);
+                    findSomething((void*)((Texture*)tex)->tmemAddr);
                 if (((Texture*)tex)->cached == 0)
                     mm_free(tex);
                 gLoadedTextures[i].key = -1;
@@ -554,7 +554,6 @@ static inline void loadTextureBank(int bank, int fileId)
     int n = 0;
 
     p = getCurrentDataFile(fileId);
-    fhSwapTabBufferOnce(p, gResourceFileSizes[fileId] / 4);
     gRcpTexBankTable[bank] = p;
     if (gRcpTexBankTable == NULL)
     {
@@ -620,7 +619,7 @@ void* textureLoad(int texId, u8 flagIn)
             buf->refCount += 1;
             if (flagIn != 0 && gLoadedTextures[n].flag != 0)
             {
-                return (void*)(n + 1);
+                return (void*)(uintptr_t)(n + 1);
             }
             return buf;
         }
@@ -870,7 +869,7 @@ void* textureLoad(int texId, u8 flagIn)
     }
     if (flagIn != 0)
     {
-        return (void*)(slot + 1);
+        return (void*)(uintptr_t)(slot + 1);
     }
     return firstTex;
 }
@@ -940,6 +939,7 @@ void loadTextureFiles(void)
     }
     gRcpTexBankCount[2] = count - 1;
     loadAssetFileById(&gRcpTexIdRemap, MLDF_FILEID_TEXTABLE_BIN);
+    fhSwapU16Array(gRcpTexIdRemap, gResourceFileSizes[MLDF_FILEID_TEXTABLE_BIN] / 2);
     bankTable = gRcpTexBankTable;
     bankCount = gRcpTexBankCount;
     for (count = 0; count < 2; count++)

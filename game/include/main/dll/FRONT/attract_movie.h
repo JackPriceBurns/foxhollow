@@ -59,7 +59,7 @@ typedef struct AttractMoviePlayer {
     u8 audioExists;
     s32 dvdError;
     s32 videoError;
-    s32 isOnMemory;
+    intptr_t isOnMemory;
     union {
         u8 *movieData;
         void *loopFrame;

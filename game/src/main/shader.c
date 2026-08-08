@@ -117,9 +117,9 @@ u8* gMapBlockRefCounts;
 s8* gMapLayerCellStates;
 u16* gTrkBlkTab;
 void* gHitsTab;
-int gMapsTab;
+uintptr_t gMapsTab;
 u8* gMapInfoBuffer;
-int gMapCellRenderInstrsTable;
+uintptr_t gMapCellRenderInstrsTable;
 s16 gMapCellRenderInstrBits;
 MapTextureOverride* gMapTextureOverrides;
 MapTextureScroll* gMapTextureScrolls;
@@ -185,7 +185,7 @@ typedef struct ShaderRomListSlot
     s8 flag;
     s8 pad;
 } ShaderRomListSlot;
-extern int gShaderMapRomBuffers[];
+extern uintptr_t gShaderMapRomBuffers[];
 #define INIT_MAP_SLOT(slot)                                                                                 \
     e = (MapBounds*)((char*)gShaderMapRomBuffers[1] + (slot) * 10 + ofs[0]);                                \
     *(s8*)((char*)gShaderMapRomBuffers[3] + idx + (slot)) = -128;                                          \
@@ -808,7 +808,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
 void mapLoadUnloadObjects(int flag)
 {
     int grpBit;
-    u32 objStart;
+    uintptr_t objStart;
     GameObject* obj;
     int unload;
     int bit;
@@ -820,27 +820,25 @@ void mapLoadUnloadObjects(int flag)
     int objCount;
     s16 list[8];
     s16* idPtr;
-    char* base;
     ObjPlacement* fp;
-    int* tp;
-    u32 cur;
-    u32 end;
+    MapCellEntry** tp;
+    uintptr_t cur;
+    uintptr_t end;
     s16 count;
     int vis;
     int idx;
 
-    base = gLightmapDrawQueue;
     count = 0;
     i = 0;
-    tp = (int*)(base + 0x41E0);
+    tp = gMapBlockCellEntryTables;
     for (; i < 5; i++)
     {
         slot = 0;
-        idPtr = (s16*)(*tp + 0x594);
+        idPtr = (s16*)((char*)*tp + 0x594);
         for (; slot < 3; slot++)
         {
             s16 id = *idPtr;
-            if (id >= 0 && id < 80 && *(void**)(base + (0x83A8 + id * 4)) != 0)
+            if (id >= 0 && id < 80 && gLoadedRomListPages[id] != 0)
             {
                 s16* w;
                 s16 dup;
@@ -865,10 +863,10 @@ void mapLoadUnloadObjects(int flag)
         tp++;
     }
     {
-        int* objs = (int*)ObjList_GetObjects(&i, &objCount);
+        GameObject** objs = ObjList_GetObjects(&i, &objCount);
         while (i < objCount)
         {
-            obj = (GameObject*)objs[i];
+            obj = objs[i];
             fp = obj->anim.placement;
             i++;
             unload = 0;
@@ -884,7 +882,7 @@ void mapLoadUnloadObjects(int flag)
                             unload = 1;
                         }
                         else if (obj->anim.mapEventSlot < 80 &&
-                                 *(void**)(base + (0x83A8 + obj->anim.mapEventSlot * 4)) == 0)
+                                 gLoadedRomListPages[obj->anim.mapEventSlot] == 0)
                         {
                             unload = 1;
                         }
@@ -904,7 +902,7 @@ void mapLoadUnloadObjects(int flag)
             }
             if (unload)
             {
-                MapRomListPage* page = *(MapRomListPage**)(base + (0x83A8 + obj->anim.mapEventSlot * 4));
+                MapRomListPage* page = gLoadedRomListPages[obj->anim.mapEventSlot];
                 if (page != 0)
                 {
                     s16 tbit = obj->romListBit;
@@ -940,7 +938,7 @@ void mapLoadUnloadObjects(int flag)
     {
         for (i = 0; i < 80; i++)
         {
-            if (((void**)(base + 0x83A8))[i] != NULL)
+            if (gLoadedRomListPages[i] != NULL)
             {
                 bits = (*gMapEventInterface)->getObjGroups(i);
                 if (bits != 0)
@@ -950,7 +948,7 @@ void mapLoadUnloadObjects(int flag)
                     {
                         if ((bits & 1) && SaveGame_findTransientMapBit(i, grpBit) == -1)
                         {
-                            mapInstantiateObjects((MapRomListPage*)((char**)(base + 0x83A8))[i], i, grpBit, NULL);
+                            mapInstantiateObjects(gLoadedRomListPages[i], i, grpBit, NULL);
                             mapClearBit(i, grpBit);
                         }
                         bits >>= 1;
@@ -963,14 +961,14 @@ void mapLoadUnloadObjects(int flag)
         {
             if (gShaderCurMapEventId == list[i])
             {
-                MapRomListPage* page = *(MapRomListPage**)(base + (0x83A8 + list[i] * 4));
+                MapRomListPage* page = gLoadedRomListPages[list[i]];
                 if (page != 0)
                 {
                     mask = 1;
                     bit = 0;
-                    cur = (u32)page->objects;
+                    cur = (uintptr_t)page->objects;
                     bp = page->loadedObjectBits;
-                    end = cur + *(int*)(base + (0x4290 + list[i] * 0x8C));
+                    end = cur + gMapRomListIndexes[list[i]].groupsStart;
                     while (cur < end)
                     {
                         objStart = cur;
@@ -983,7 +981,7 @@ void mapLoadUnloadObjects(int flag)
                                 int ix2;
                                 MapRomListPage* pg;
 
-                                pg = *(MapRomListPage**)(base + (0x83A8 + lid * 4));
+                                pg = gLoadedRomListPages[lid];
                                 ix2 = bit >> 3;
                                 msk = 1 << (bit & 7);
                                 *(s8*)&pg->loadedObjectBits[ix2] = pg->loadedObjectBits[ix2] & ~msk;
@@ -1018,18 +1016,18 @@ void mapLoadUnloadObjects(int flag)
             }
         }
         {
-            int* objs2 = (int*)objGetAllOfType(6, &objCount);
+            GameObject** objs2 = objGetAllOfType(6, &objCount);
             for (i = 0; i < objCount; i++)
             {
-                GameObject* obj2 = (GameObject*)objs2[i];
+                GameObject* obj2 = objs2[i];
                 u32 mid2 = obj2->anim.hostedMapSlot;
-                MapRomListPage* page2 = ((MapRomListPage**)(base + 0x83A8))[mid2];
+                MapRomListPage* page2 = gLoadedRomListPages[mid2];
                 if (page2 != 0)
                 {
                     int lp = obj2->anim.transformMatrixIndex + 1;
                     bit = 0;
-                    cur = (u32)page2->objects;
-                    end = cur + *(int*)(base + (0x4290 + mid2 * 0x8C));
+                    cur = (uintptr_t)page2->objects;
+                    end = cur + gMapRomListIndexes[mid2].groupsStart;
                     bits = (*gMapEventInterface)->getObjGroups(mid2);
                     if (bits != 0)
                     {
@@ -1053,7 +1051,7 @@ void mapLoadUnloadObjects(int flag)
                         }
                         else
                         {
-                            char* pg2 = ((char**)(base + 0x83A8))[mid2];
+                            MapRomListPage* pg2 = gLoadedRomListPages[mid2];
                             idx = bit >> 3;
                             if (idx >= 0xc4)
                             {
@@ -1061,7 +1059,7 @@ void mapLoadUnloadObjects(int flag)
                             }
                             else
                             {
-                                switch (((vis = 1) << (bit & 7)) & *(s8*)(*(int*)(pg2 + 0x10) + idx))
+                                switch (((vis = 1) << (bit & 7)) & *(s8*)&pg2->loadedObjectBits[idx])
                                 {
                                 case 0:
                                     vis = 0;
@@ -1075,13 +1073,13 @@ void mapLoadUnloadObjects(int flag)
                             {
                                 int msk3;
                                 int ix3;
-                                char* pg3;
+                                MapRomListPage* pg3;
 
-                                pg3 = ((char**)(base + 0x83A8))[mid2];
+                                pg3 = gLoadedRomListPages[mid2];
                                 ix3 = bit >> 3;
                                 msk3 = 1 << (bit & 7);
-                                *(s8*)(*(int*)(pg3 + 0x10) + ix3) = *(u8*)(*(int*)(pg3 + 0x10) + ix3) & ~msk3;
-                                *(s8*)(*(int*)(pg3 + 0x10) + ix3) = *(u8*)(*(int*)(pg3 + 0x10) + ix3) | msk3;
+                                pg3->loadedObjectBits[ix3] = pg3->loadedObjectBits[ix3] & ~msk3;
+                                pg3->loadedObjectBits[ix3] = pg3->loadedObjectBits[ix3] | msk3;
                             }
                             objSetupObject((ObjPlacement*)cur, 1, mid2, bit, obj2);
                         }
@@ -1289,14 +1287,14 @@ static inline int mapFindRomListSlotAndAdvance(ShaderRomListSlot** slots, int id
     return -1;
 }
 
-static inline int mapFindRomListSlotByIdAt(char* base, int id)
+static inline int mapFindRomListSlotByIdAt(int id)
 {
     ShaderRomListSlot* q2;
     int i2;
     int cn;
     int k;
     i2 = 0;
-    q2 = (ShaderRomListSlot*)(base + 0x418C);
+    q2 = gShaderRomListSlots;
     cn = gShaderRomListSlotCount;
     for (k = 0; k < cn; k++)
     {
@@ -1616,7 +1614,7 @@ void mapSetup(int layerOffset, f32 x, int* outMapId, int* outMapDataFileId, f32 
     s8* layerOffsets;
 
     layerIndex = 0;
-    layerOffsets = (s8*)(int)gMapLayerOffsets;
+    layerOffsets = gMapLayerOffsets;
     if (layerOffsets[0] != layerOffset)
     {
         layerIndex = 1;
@@ -1699,7 +1697,6 @@ const PlayerFrustumPlaneScales sPlayerFrustumPlaneScales = {
 extern f32 gShaderDefaultTimeOfDay;
 void beginLoadingMap(void)
 {
-    char* base;
     int i;
     int j;
     s8* a;
@@ -1713,7 +1710,6 @@ void beginLoadingMap(void)
     int enabled;
     char buf[0x110];
 
-    base = gLightmapDrawQueue;
     if (gArrivedWarpIndex == -1)
     {
         gArrivedWarpIndex = -2;
@@ -1723,8 +1719,8 @@ void beginLoadingMap(void)
     trackInitCollisionBuffers();
     for (i = 0; i < 5; i++)
     {
-        a = ((s8**)(base + 0x41F4))[i];
-        b = ((s8**)(base + 0x41E0))[i];
+        a = gMapBlockLayerTables[i];
+        b = (s8*)gMapBlockCellEntryTables[i];
         for (j = 0; j < 256; j++)
         {
             a[j] = -1;
@@ -1742,10 +1738,10 @@ void beginLoadingMap(void)
     characterPosition = (SaveGameCharacterPosition*)(*gMapEventInterface)->getCurCharPos();
     gMapBlockOriginX = fastFloorf(characterPosition->x / gMapBlockWorldSize);
     gMapBlockOriginZ = fastFloorf(characterPosition->z / gMapBlockWorldSize);
-    *(f32*)(base + 0x8588) = characterPosition->x;
-    *(f32*)(base + 0x858C) = characterPosition->y;
-    *(f32*)(base + 0x8590) = characterPosition->z;
-    *(int*)(base + 0x8594) = 1;
+    gCameraPosByTransformSpace[0].x = characterPosition->x;
+    gCameraPosByTransformSpace[0].y = characterPosition->y;
+    gCameraPosByTransformSpace[0].z = characterPosition->z;
+    gCameraPosByTransformSpace[0].valid = 1;
     gMapBlockOriginWorldX = gMapBlockOriginX * 640;
     gMapBlockOriginWorldZ = gMapBlockOriginZ * 640;
     playerMapOffsetX = gMapBlockOriginWorldX;
@@ -1907,7 +1903,7 @@ void beginLoadingMap(void)
 
 void mapGetBlockGridRects(int gridX, int gridZ, int* rectA, int* rectB, int* rectC, int* rectD, int layer, int useVisGrid, int slot)
 {
-    int base;
+    uintptr_t base;
     MapBounds* e2;
     int aa, bb;
     MapRomListPage* page;
@@ -2078,7 +2074,6 @@ void doPendingMapLoads(void)
     MapLoadRec* cellCursor;
     int gx, gz;
     s8** cBase;
-    char* base;
     MapLoadRec* savedBlocks;
     int doLoad;
     u8 waited;
@@ -2101,7 +2096,6 @@ void doPendingMapLoads(void)
     MapLoadRec recs[300];
     int rectA[4], rectB[4], rectC[4], rectD[4];
 
-    base = gLightmapDrawQueue;
     waited = 0;
     if (!(renderFlags & 0x1000))
     {
@@ -2162,11 +2156,11 @@ void doPendingMapLoads(void)
                     s8** stateTables;
                     int k8;
                     s8 c;
-                    eBase = (MapCellEntry**)(base + 0x41E0);
+                    eBase = gMapBlockCellEntryTables;
                     cellTables = eBase;
-                    aBase = (char**)(base + 0x41F4);
+                    aBase = (char**)gMapBlockLayerTables;
                     gridTables = aBase;
-                    cBase = (s8**)(base + 0x41CC);
+                    cBase = gMapBlockCellStateTables;
                     stateTables = cBase;
                     savedBlocks = recs;
                     recsCursor = savedBlocks;
@@ -2252,7 +2246,7 @@ void doPendingMapLoads(void)
                     int cn = gShaderRomListSlotCount;
                     for (; i < cn; i++)
                     {
-                        ((ShaderRomListSlot*)(base + 0x418C))[i].flag = 0;
+                        gShaderRomListSlots[i].flag = 0;
                     }
                 }
                 gShaderCurMapEventId = mapCoordsToId(gMapBlockOriginX + 7, gMapBlockOriginZ + 7, 0);
@@ -2294,7 +2288,7 @@ void doPendingMapLoads(void)
                     if (gShaderCurMapEventId != -1)
                     {
                         setForceLoadImmediately();
-                        slot = mapFindRomListSlotByIdAt(base, gShaderCurMapEventId);
+                        slot = mapFindRomListSlotByIdAt(gShaderCurMapEventId);
                         if (slot == -1)
                             slot = mapProcessRomList(gShaderCurMapEventId);
                         {
@@ -2311,7 +2305,7 @@ void doPendingMapLoads(void)
                                 curMapType = e->mapType;
                             }
                         }
-                        ((ShaderRomListSlot*)(base + 0x418C))[slot].flag = 1;
+                        gShaderRomListSlots[slot].flag = 1;
                         gMapCurRomListSlot = slot;
                         mapCheckCurBlocks(mapGetDirIdx(gShaderCurMapEventId));
                         mapLoadDataFile(mapGetDirIdx(gShaderCurMapEventId), MLDF_FILEID_BLOCKS_TAB_A);
@@ -2417,7 +2411,7 @@ void doPendingMapLoads(void)
 
                     first = 1;
                     slotIndex = gShaderRomListSlotCount - 1;
-                    romListSlot = (ShaderRomListSlot*)(base + 0x418C) + slotIndex;
+                    romListSlot = gShaderRomListSlots + slotIndex;
                     for (; slotIndex >= 0; slotIndex--)
                     {
                         if (romListSlot->flag == 0)
@@ -2425,9 +2419,9 @@ void doPendingMapLoads(void)
                             if (romListSlot->romlist != NULL)
                             {
                                 s16 sl = romListSlot->slot;
-                                mapBuildRomListIndex(romListSlot->romlist, &((MapRomListIndex*)(base + 0x4208))[sl], sl, 1);
+                                mapBuildRomListIndex(romListSlot->romlist, &gMapRomListIndexes[sl], sl, 1);
                                 mm_free(romListSlot->romlist);
-                                *(int*)(sl * 4 + 0x83A8 + base) = 0;
+                                gLoadedRomListPages[sl] = 0;
                             }
                             romListSlot->romlist = NULL;
                             romListSlot->slot = -1;
@@ -2517,9 +2511,10 @@ static void mapInitSetRects(MapBounds* rect, u8* bitmap, int originX, int origin
     MapsBinHeader* self = (MapsBinHeader*)gMapInfoBuffer;
     int tabOff = idx * 7 << 2;
     int offset0 = *(int*)(gMapsTab + tabOff);
+    u32* cells;
 
     getTabEntry(self, MLDF_FILEID_MAPS_BIN, offset0, *(int*)((gMapsTab + 8) + tabOff) - offset0);
-    self->cells = (u32*)((int)self + *(int*)((gMapsTab + 4) + tabOff) - *(int*)(gMapsTab + tabOff));
+    cells = (u32*)((char*)self + *(int*)((gMapsTab + 4) + tabOff) - *(int*)(gMapsTab + tabOff));
     rect->minX = originX - self->originX;
     rect->minZ = originZ - self->originZ;
     rect->maxX = rect->minX + self->sizeX - 1;
@@ -2531,7 +2526,7 @@ static void mapInitSetRects(MapBounds* rect, u8* bitmap, int originX, int origin
         for (originX = 0; (s16)originX < self->sizeX; originX++)
         {
             int pixelIdx = (s16)originX + (s16)originZ * self->sizeX;
-            if ((int)(self->cells[pixelIdx] >> 23 & 0xff) != 0xff)
+            if ((int)(cells[pixelIdx] >> 23 & 0xff) != 0xff)
             {
                 bitmap[pixelIdx >> 3] |= 1 << (pixelIdx & 7);
             }
@@ -2552,10 +2547,10 @@ void initMaps(void)
     total = getDataFileSize(MLDF_FILEID_GLOBALMA_BIN);
     loadAssetFileById(&data, MLDF_FILEID_GLOBALMA_BIN);
     gShaderMapRomBuffers[0] = -1;
-    gShaderMapRomBuffers[1] = (int)mmAlloc(1280, 5, 0);
-    gShaderMapRomBuffers[2] = (int)mmAlloc(512, 5, 0);
-    gShaderMapRomBuffers[3] = (int)mmAlloc(128, 5, 0);
-    gShaderMapRomBuffers[4] = (int)mmAlloc(8192, 5, 0);
+    gShaderMapRomBuffers[1] = (uintptr_t)mmAlloc(1280, 5, 0);
+    gShaderMapRomBuffers[2] = (uintptr_t)mmAlloc(512, 5, 0);
+    gShaderMapRomBuffers[3] = (uintptr_t)mmAlloc(128, 5, 0);
+    gShaderMapRomBuffers[4] = (uintptr_t)mmAlloc(8192, 5, 0);
     memset((void*)gShaderMapRomBuffers[4], 0, 8192);
     idx = 0;
     ofs[0] = 0;
@@ -2637,7 +2632,6 @@ void mapFillCellEntry(int gridX, int gridZ, MapCellEntry* out, int layer)
         MapRomListPage* grid;
         int adjacentMapId2;
         ShaderRomListSlot* slots;
-        char* activeFlags;
         int slot;
         int adjacentMapId1;
         s16* adjacentMapIds;
@@ -2647,7 +2641,7 @@ void mapFillCellEntry(int gridX, int gridZ, MapCellEntry* out, int layer)
         slot = mapFindRomListSlotByIdAndGetBase(&slots, id);
         if (slot == -1)
             slot = mapProcessRomList(id);
-        *(s8*)((activeFlags = (char*)gShaderRomListSlots + 6) + slot * 8) = 1;
+        gShaderRomListSlots[slot].flag = 1;
         grid = (MapRomListPage*)gShaderRomListSlots[slot].romlist;
         adjacentMapIds = (s16*)gShaderMapRomBuffers[2];
         adjacentMapId1 = (s8)adjacentMapIds[id << 1];
@@ -2661,14 +2655,14 @@ void mapFillCellEntry(int gridX, int gridZ, MapCellEntry* out, int layer)
             slot = mapFindRomListSlot(slots, adjacentMapId1);
             if (slot == -1)
                 slot = mapProcessRomList(adjacentMapId1);
-            *(s8*)(activeFlags + slot * 8) = 1;
+            gShaderRomListSlots[slot].flag = 1;
         }
         if (adjacentMapId2 != -1)
         {
             slot = mapFindRomListSlotAndAdvance(&slots, adjacentMapId2);
             if (slot == -1)
                 slot = mapProcessRomList(adjacentMapId2);
-            *(s8*)(activeFlags + slot * 8) = 1;
+            gShaderRomListSlots[slot].flag = 1;
         }
         mapBounds = (MapBounds*)gShaderMapRomBuffers[1] + id;
         gridZ = gridZ - mapBounds->minZ;
@@ -2702,13 +2696,13 @@ void mapFillCellEntry(int gridX, int gridZ, MapCellEntry* out, int layer)
     }
 }
 
-int mapGetRomListAndOffsets(int p1, int b);
+MapRomListPage* mapGetRomListAndOffsets(int p1, int b);
 
 void mapLoadForObject(int mapId, GameObject* obj)
 {
     int saved = gShaderCurMapEventId;
     int slot;
-    int romList = mapGetRomListAndOffsets(mapId, 1);
+    MapRomListPage* romList = mapGetRomListAndOffsets(mapId, 1);
     int i;
     slot = 0x50;
 
@@ -2716,14 +2710,14 @@ void mapLoadForObject(int mapId, GameObject* obj)
     {
         if (gLoadedRomListPages[slot] == NULL)
         {
-            gLoadedRomListPages[slot] = (MapRomListPage*)romList;
+            gLoadedRomListPages[slot] = romList;
             break;
         }
         slot++;
     }
     obj->anim.hostedMapSlot = slot;
     (*gMapEventInterface)->setMapActLut(mapId, slot);
-    mapBuildRomListIndex((MapRomListPage*)romList, &gMapRomListIndexes[slot], slot, 0);
+    mapBuildRomListIndex(romList, &gMapRomListIndexes[slot], slot, 0);
     (*gMapEventInterface)->updateObjGroups(slot);
     gShaderCurMapEventId = saved;
 }
@@ -2805,7 +2799,7 @@ static void mapBuildRomListIndex(MapRomListPage* p, MapRomListIndex* tbl, int id
                         (*gCheckpointInterface)->addRouteEntry((CheckpointRouteEntry*)cur);
                     if (found == 0)
                     {
-                        tbl->curvesOffset = (int)cur - (int)p->objects;
+                        tbl->curvesOffset = (int)(cur - (char*)p->objects);
                         found = 1;
                     }
                 }
@@ -2813,7 +2807,7 @@ static void mapBuildRomListIndex(MapRomListPage* p, MapRomListIndex* tbl, int id
                 {
                     if ((mask & (1 << ((ObjPlacement*)cur)->loadRange)) == 0)
                     {
-                        tbl->groupOffset[((ObjPlacement*)cur)->loadRange] = (int)cur - (int)p->objects;
+                        tbl->groupOffset[((ObjPlacement*)cur)->loadRange] = (int)(cur - (char*)p->objects);
                         mask |= 1 << ((ObjPlacement*)cur)->loadRange;
                     }
                 }
@@ -2985,7 +2979,6 @@ void mapGetLoadedMapFlags(u8* outFlags)
 
 int mapProcessRomList(int slot)
 {
-    char* base;
     int j;
     char* obj;
     int i;
@@ -2997,10 +2990,9 @@ int mapProcessRomList(int slot)
     ShaderRomListSlot* entry;
     s16* rects;
     int step;
-    int rl;
+    MapRomListPage* rl;
     f32 dx, dz;
 
-    base = gLightmapDrawQueue;
     flag = 0;
     while (isRomListLoading())
     {
@@ -3020,7 +3012,7 @@ int mapProcessRomList(int slot)
             flag = 1;
     }
     i = 0;
-    p = (ShaderRomListSlot*)(base + 0x418C);
+    p = gShaderRomListSlots;
     count = gShaderRomListSlotCount;
     while (i < count && p->romlist != 0)
     {
@@ -3030,14 +3022,14 @@ int mapProcessRomList(int slot)
     if (i == count)
         gShaderRomListSlotCount++;
     rl = mapGetRomListAndOffsets(slot, 0);
-    slots = (ShaderRomListSlot*)(base + 0x418C);
+    slots = gShaderRomListSlots;
     entry = &slots[i];
-    entry->romlist = (void*)rl;
-    *(int*)(slot * 4 + 0x83A8 + base) = rl;
-    ((s16*)(base + 0x4190))[i * 4] = slot;
+    entry->romlist = rl;
+    gLoadedRomListPages[slot] = rl;
+    entry->slot = slot;
     gCurRomListPage = entry->romlist;
-    rects = (s16*)(*(int*)(base + 0x417C) + slot * 10);
-    ((MapRomListPage*)gCurRomListPage)->mapLayer = *(u8*)(*(int*)(base + 0x4184) + slot);
+    rects = (s16*)(gShaderMapRomBuffers[1] + slot * 10);
+    ((MapRomListPage*)gCurRomListPage)->mapLayer = *(u8*)(gShaderMapRomBuffers[3] + slot);
     ((MapRomListPage*)gCurRomListPage)->worldX = gMapBlockWorldSize * (f32)(rects[0] + ((MapRomListPage*)gCurRomListPage)->originX);
     ((MapRomListPage*)gCurRomListPage)->worldZ = gMapBlockWorldSize * (f32)(rects[2] + ((MapRomListPage*)gCurRomListPage)->originZ);
     cur = gCurRomListPage;
@@ -3062,27 +3054,30 @@ int mapProcessRomList(int slot)
     return i;
 }
 
-int mapGetRomListAndOffsets(int p1, int flag)
+MapRomListPage* mapGetRomListAndOffsets(int p1, int flag)
 {
     int words = p1 * 7;
     int offset0 = *(int*)(gMapsTab + (words << 2));
     int tailLen = *(int*)((gMapsTab + 0x1c) + ((u32)words << 2)) - offset0;
     int v0, v1, v2;
     int i;
+    char* raw;
 
     mapsBinGetRomlistSize(offset0, &v0, &v1, &v2, words);
-    gCurRomListPage = mmAlloc(tailLen + (v0 + 7 >> 3) + 0x401 + v2, 5, 0);
-    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, gCurRomListPage, offset0, tailLen);
+    gCurRomListPage = mmAlloc(sizeof(MapRomListPage) + tailLen + (v0 + 7 >> 3) + 0x401 + v2, 5, 0);
+    raw = (char*)gCurRomListPage + sizeof(MapRomListPage);
+    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, raw, offset0, tailLen);
+    memcpy(gCurRomListPage, raw, 0xC);
 
-    ((MapRomListPage*)gCurRomListPage)->cells = (u32*)((int)gCurRomListPage + *(int*)((gMapsTab + 4) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->cellRects = (u32*)((int)gCurRomListPage + *(int*)((gMapsTab + 8) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->visCellRects = (u32*)((int)gCurRomListPage + *(int*)((gMapsTab + 0xc) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->layerRects = (u32*)((int)gCurRomListPage + *(int*)((gMapsTab + 0x10) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->visLayerRects = (u32*)((int)gCurRomListPage + *(int*)((gMapsTab + 0x14) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->objects = (ObjPlacement*)((int)gCurRomListPage + *(int*)((gMapsTab + 0x18) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->cells = (u32*)(raw + *(int*)((gMapsTab + 4) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->cellRects = (u32*)(raw + *(int*)((gMapsTab + 8) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->visCellRects = (u32*)(raw + *(int*)((gMapsTab + 0xc) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->layerRects = (u32*)(raw + *(int*)((gMapsTab + 0x10) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->visLayerRects = (u32*)(raw + *(int*)((gMapsTab + 0x14) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->objects = (ObjPlacement*)(raw + *(int*)((gMapsTab + 0x18) + (words << 2)) - offset0);
 
     piRomLoadSection(*(int*)((gMapsTab + 0x18) + (words << 2)), p1, ((MapRomListPage*)gCurRomListPage)->objects);
-    ((MapRomListPage*)gCurRomListPage)->loadedObjectBits = (u8*)((*(int*)((gMapsTab + 0x1c) + (words << 2)) + v2) + (int)gCurRomListPage - offset0);
+    ((MapRomListPage*)gCurRomListPage)->loadedObjectBits = (u8*)((*(int*)((gMapsTab + 0x1c) + (words << 2)) + v2) + raw - offset0);
 
     for (i = 0; i < (v0 + 7 >> 3) + 1; i++)
     {
@@ -3100,7 +3095,7 @@ int mapGetRomListAndOffsets(int p1, int flag)
         mapBuildRomListIndex(gCurRomListPage, &gMapRomListIndexes[p1], p1, 0);
         (*gMapEventInterface)->updateObjGroups(p1);
     }
-    return (int)gCurRomListPage;
+    return gCurRomListPage;
 }
 
 
@@ -3473,10 +3468,10 @@ WarpVec gCameraPosByTransformSpace[0x29];
 MapRomListPage* gLoadedRomListPages[ROM_LIST_PAGE_COUNT];
 MapRomListIndex gMapRomListIndexes[120];
 s8* gMapBlockLayerTables[MAP_BLOCK_LAYER_COUNT];
-int gMapBlockCellEntryTables[5];
-int gMapBlockCellStateTables[5];
+MapCellEntry* gMapBlockCellEntryTables[5];
+s8* gMapBlockCellStateTables[5];
 ShaderRomListSlot gShaderRomListSlots[8];
-int gShaderMapRomBuffers[0x5];
+uintptr_t gShaderMapRomBuffers[0x5];
 f32 distortionFilterVector[0x1c];
 ModelLightStruct* gGlowLightList[100];
 u8 gCloudLayerTexMatrix[0x30];

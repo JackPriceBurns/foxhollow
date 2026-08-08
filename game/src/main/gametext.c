@@ -173,7 +173,7 @@ void gameTextShowStr(char* text, int box, int cursorX, int cursorY) {
         e->opcode = 7;
         buf = gGameTextCommandStringCursor;
         gGameTextCommandStringCursor = gameStrcpy(buf, text) + 1;
-        e->arg0 = (int)buf;
+        e->arg0 = (intptr_t)buf;
         e->arg1 = box;
         e->arg2 = cursorX;
         e->arg3 = cursorY;
@@ -191,7 +191,7 @@ void gameTextRenderStrs(char* str, int boxIdx) {
     if (gGameTextRenderingById != 1) {
         slot->alignment = slot->alignH;
         if (gGameTextMeasureOnly == 0) {
-            gameTextDrawBox(NULL, (int)str, slot);
+            gameTextDrawBox(NULL, (intptr_t)str, slot);
         }
     }
     lines = gameTextWrapLines(str, (f32)(u32)slot->width, slot->scale, &count, &lineH);
@@ -247,7 +247,7 @@ void gameTextAppendStr(char* str, int box) {
         e->opcode = 6;
         buf = gGameTextCommandStringCursor;
         gGameTextCommandStringCursor = gameStrcpy(buf, str) + 1;
-        e->arg0 = (int)buf;
+        e->arg0 = (intptr_t)buf;
         e->arg1 = box;
     }
 }
@@ -261,7 +261,7 @@ void gameTextShowTimeStr(char* str) {
     e->opcode = 5;
     buf = gGameTextCommandStringCursor;
     gGameTextCommandStringCursor = gameStrcpy(buf, str) + 1;
-    e->arg0 = (int)buf;
+    e->arg0 = (intptr_t)buf;
 }
 
 u8 gUtf8CharClassTable[256] = {

@@ -313,7 +313,7 @@ void XyzAnimator_update(GameObject* obj) {
             return;
         }
         if (state->loopSfxId != 0) {
-            Sfx_KeepAliveLoopedObjectSound((u32)obj, state->loopSfxId);
+            Sfx_KeepAliveLoopedObjectSound(obj, state->loopSfxId);
         }
     } else {
         if (state->passCount > 2) {

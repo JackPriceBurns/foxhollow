@@ -26,7 +26,7 @@ typedef struct PathSearch {
     PathHeapEntry* heap;
     RomCurveDef** path;
     f32* targetPosition;
-    s32 pathId;
+    intptr_t pathId;
     u32 reserved14;
     RomCurveDef* startPoint;
     s32 currentNode;
@@ -51,6 +51,6 @@ RomCurveDef* pathSearchGetNextPoint(PathSearch* search);
 int pathSearchBuildPath(PathSearch* search);
 void pathSearchExpandNode(PathSearch* search, PathSearchNode* node, int idx);
 int pathSearchStep(PathSearch* search, u32 timeout);
-int pathSearchBegin(PathSearch* search, RomCurveDef* startPoint, f32* targetPosition, int pathId, u32 routeFlags);
+int pathSearchBegin(PathSearch* search, RomCurveDef* startPoint, f32* targetPosition, intptr_t pathId, u32 routeFlags);
 
 #endif /* MAIN_PI_DOLPHIN_PATH_API_H_ */

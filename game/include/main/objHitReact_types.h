@@ -97,11 +97,11 @@ STATIC_ASSERT(offsetof(ObjHitReactEntry, hitEffectMode) == 0x08);
 STATIC_ASSERT(offsetof(ObjHitReactEntry, reactionStepScale) == 0x0C);
 
 void ObjHitReact_ResetActiveObjects(int objectCount);
-int ObjHitbox_AllocRotatedBounds(ObjHitbox *hitbox,u32 arena);
+uintptr_t ObjHitbox_AllocRotatedBounds(ObjHitbox *hitbox,uintptr_t arena);
 void ObjHitReact_LoadMoveEntries(ObjAnimComponent *objAnim,ObjAnimBank *bank,int objType,
                                  ObjHitReactState *hitState,int moveId,int async);
-u32 ObjHitReact_InitState(int objType,ObjAnimBank *bank,ObjHitReactState *hitState,
-                          u32 entryArena,ObjAnimComponent *objAnim);
+uintptr_t ObjHitReact_InitState(int objType,ObjAnimBank *bank,ObjHitReactState *hitState,
+                          uintptr_t entryArena,ObjAnimComponent *objAnim);
 void ObjHitReact_UpdateResetObjects(void);
 ObjAnimComponent **ObjHitReact_GetResetObjects(int *outObjectCount);
 

@@ -59,7 +59,7 @@ u16 gAttractMovieVolumeScale[128] = {
     18723, 19115, 19511, 19911, 20316, 20724, 21136, 21553, 21974, 22398, 22827, 23260, 23696, 24137, 24582, 25031,
     25484, 25941, 26402, 26868, 27337, 27810, 28288, 28769, 29255, 29744, 30238, 30736, 31238, 31744, 32254, 32768,
 };
-char gAttractMovieAudioDmaBuffer[0x50C];
+char gAttractMovieAudioDmaBuffer[ATTRACT_MOVIE_AUDIO_DMA_BUFFER_BYTES + 3 * sizeof(OSMessage)];
 
 void THPPlayerDrawCurrentFrame(void* yBuf, void* uBuf, void* vBuf, u32 width, u32 height)
 {
@@ -362,7 +362,7 @@ void AttractMovieAudio_DmaCallback(void)
     if (gAttractMovieAudioMode == 0)
     {
         gAttractMovieAudioDmaBufferIndex ^= 1;
-        AIInitDMA((u32)(gAttractMovieAudioDmaBuffer + (gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE)),
+        AIInitDMA((uintptr_t)(gAttractMovieAudioDmaBuffer + (gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE)),
                   ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE);
         interrupts = OSEnableInterrupts();
         AttractMovieAudio_Mix((s16*)(gAttractMovieAudioDmaBuffer + (gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE)), NULL,
@@ -389,7 +389,7 @@ void AttractMovieAudio_DmaCallback(void)
         }
 
         gAttractMovieAudioDmaBufferIndex ^= 1;
-        AIInitDMA((u32)(gAttractMovieAudioDmaBuffer + (gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE)),
+        AIInitDMA((uintptr_t)(gAttractMovieAudioDmaBuffer + (gAttractMovieAudioDmaBufferIndex * ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE)),
                   ATTRACT_MOVIE_AUDIO_DMA_BUFFER_SIZE);
         interrupts = OSEnableInterrupts();
         if (gAttractMovieAudioMixSourceAddr != 0)
@@ -452,14 +452,14 @@ void AttractMovie_AddVideoTevStages(void)
     }
 }
 
-BOOL AttractMovie_DrawTextureCallback(int unused, u32* modelPtr, u32 renderOpIdx)
+BOOL AttractMovie_DrawTextureCallback(int unused, struct ObjModel* modelPtr, u32 renderOpIdx)
 {
     AttractMovieTextureSet* textureSet;
     Shader* renderOp;
 
     if (modelPtr != NULL)
     {
-        renderOp = ObjModel_GetRenderOp((ModelFileHeader*)*modelPtr, renderOpIdx);
+        renderOp = ObjModel_GetRenderOp(modelPtr->file, renderOpIdx);
     }
     else
     {
@@ -524,5 +524,5 @@ int ProperTimingForGettingNextFrame(void)
 /* .bss glue 0x803A5CCC-0x803A5F08 */
 AttractMoviePlayer gAttractMoviePlayer;
 char gPicMenuDvdReadBuffer[0x40];
-u8 gAttractMoviePrepareReadyQueue[0x34];
+OSMessageQueue gAttractMoviePrepareReadyQueue;
 OSMessageQueue gAttractMovieSpentTextureSetQueue;

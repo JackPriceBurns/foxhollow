@@ -585,7 +585,7 @@ char** gameTextWrapLines(char* str, f32 width, f32 height, int* outCount, f32* o
     charLen = cursor + lineCount + lineOff;
     if (outLineH != NULL)
     {
-        buffer = mmAllocateFromFBMemoryStore((int)gGameTextStringStore, charLen);
+        buffer = mmAllocateFromFBMemoryStore((int)(intptr_t)gGameTextStringStore, charLen);
     }
     else
     {

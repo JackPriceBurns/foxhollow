@@ -190,7 +190,7 @@ void FlammableVine_update(GameObject* obj) {
         }
         objfx_spawnPulseBurst(obj, FLAMMABLEVINE_PARTICLE_SCALE * (state->burnIntensity * obj->anim.rootMotionScale), 3, 0,
                     pulseStyle, NULL);
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_forcecryslp11);
+        Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_forcecryslp11);
     }
 }
 

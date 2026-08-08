@@ -284,10 +284,10 @@ void SB_CloudRunner_UpdateRideTilt(GameObject* obj, SBCloudRunnerRideState* stat
 
     if (obj->anim.currentMove != SB_CLOUDRUNNER_RIDE_MOVE_ID)
     {
-        ObjAnim_SetCurrentMove((int)obj, SB_CLOUDRUNNER_RIDE_MOVE_ID, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, SB_CLOUDRUNNER_RIDE_MOVE_ID, 0.0f, 0);
     }
 
-    if (ObjAnim_AdvanceCurrentMove((int)obj, 0.015f, timeDelta, NULL) != 0)
+    if (ObjAnim_AdvanceCurrentMove(obj, 0.015f, timeDelta, NULL) != 0)
     {
         state->rideState = 0;
     }
@@ -458,7 +458,7 @@ void SB_CloudRunner_UpdateSteer(GameObject* obj, SBCloudRunnerState* state)
     {
         if (obj->anim.currentMove != CLOUDRUNNER_MOVE_FLAP)
         {
-            ObjAnim_SetCurrentMove((int)obj, CLOUDRUNNER_MOVE_FLAP, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CLOUDRUNNER_MOVE_FLAP, 0.0f, 0);
         }
     }
     else
@@ -466,10 +466,10 @@ void SB_CloudRunner_UpdateSteer(GameObject* obj, SBCloudRunnerState* state)
         spd = 0.015f;
         if (obj->anim.currentMove != CLOUDRUNNER_MOVE_GLIDE)
         {
-            ObjAnim_SetCurrentMove((int)obj, CLOUDRUNNER_MOVE_GLIDE, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CLOUDRUNNER_MOVE_GLIDE, 0.0f, 0);
         }
     }
-    ObjAnim_AdvanceCurrentMove((int)obj, spd, timeDelta, (ObjAnimEventList*)&events);
+    ObjAnim_AdvanceCurrentMove(obj, spd, timeDelta, (ObjAnimEventList*)&events);
 
     obj->anim.localPosX = state->spawnPosX;
     obj->anim.localPosY = state->spawnPosY;

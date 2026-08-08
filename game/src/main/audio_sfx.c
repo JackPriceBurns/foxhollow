@@ -41,7 +41,7 @@ static f32 Sfx_GetListenerRelativeDistance(Vec* soundPos, Vec* outDelta);
 
 static inline SfxObjectChannel* Sfx_FindFreeObjectChannel(void)
 {
-    SfxObjectChannel* ch = (SfxObjectChannel*)(int)gSfxObjectChannels;
+    SfxObjectChannel* ch = gSfxObjectChannels;
     s32 i;
     for (i = SFX_OBJECT_CHANNEL_COUNT - 1; i >= 0; i--)
     {
@@ -74,7 +74,7 @@ int Sfx_IsPlayingFromObjectChannel(GameObject* obj, int channel)
 {
     SfxObjectChannel* objectChannel;
 
-    if (((u8)channel == 0) || ((u32)obj == 0))
+    if (((u8)channel == 0) || (obj == NULL))
     {
         objectChannel = NULL;
     }
@@ -355,8 +355,7 @@ void Sfx_UpdateObjectSounds(void)
     {
         if (objectChannel->handle != (u32)-1)
         {
-            ch = (SfxObjectChannel*)sndFXCheck(objectChannel->handle);
-            if ((u32)ch == (u32)-1)
+            if (sndFXCheck(objectChannel->handle) == -1)
             {
                 objectChannel->handle = (u32)-1;
             }

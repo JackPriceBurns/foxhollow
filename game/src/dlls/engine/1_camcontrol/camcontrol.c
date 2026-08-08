@@ -977,7 +977,7 @@ void camcontrol_updateTargetFeedback(void) {
                     gCamcontrolCamera->targetReticleFocus = NULL;
                 }
             } else {
-                ObjAnim_AdvanceCurrentMove((int)reticle, -0.04f, timeDelta, NULL);
+                ObjAnim_AdvanceCurrentMove(reticle, -0.04f, timeDelta, NULL);
             }
         } else if (((u32)gCamcontrolCamera->targetReticleFocus != (u32)target) &&
                    (reticle->currentMoveProgress >= 1.0f)) {
@@ -997,7 +997,7 @@ void camcontrol_updateTargetFeedback(void) {
                 }
             }
         } else {
-            ObjAnim_AdvanceCurrentMove((int)reticle, 0.04f, timeDelta, NULL);
+            ObjAnim_AdvanceCurrentMove(reticle, 0.04f, timeDelta, NULL);
         }
         result = Obj_IsObjectAlive(gCamcontrolCamera->targetReticleFocus);
         if (result == 0) {

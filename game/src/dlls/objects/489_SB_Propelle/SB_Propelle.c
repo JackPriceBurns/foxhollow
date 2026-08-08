@@ -77,7 +77,7 @@ void SB_Propeller_update(GameObject* obj) {
     galleonStage = SB_GALLEON_VTBL(obj->anim.parentAddress)->getStage(obj->anim.parentAddress);
     galleonPhase = SB_GALLEON_VTBL(obj->anim.parentAddress)->getPhase(obj->anim.parentAddress);
     if (state->health != 0 && galleonPhase < 6 && obj->anim.romDefNo != SB_PROPELLER_SEQ_ID) {
-        Sfx_KeepAliveLoopedObjectSound((int)obj, SB_PROPELLER_SFX_LOOP);
+        Sfx_KeepAliveLoopedObjectSound(obj, SB_PROPELLER_SFX_LOOP);
     }
     cameraState = SB_Galleon_getCameraState((GameObject*)obj->anim.parent);
     if (cameraState < 2 && state->health <= 0) {

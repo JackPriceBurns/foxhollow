@@ -8,7 +8,7 @@ typedef struct DepthReadRequest
     u16 x;
     u16 y;
     u32 value;
-    int key;
+    uintptr_t key;
 } DepthReadRequest;
 
 extern u16 gDepthReadPendingCount;

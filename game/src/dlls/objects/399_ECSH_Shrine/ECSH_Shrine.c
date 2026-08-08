@@ -247,7 +247,7 @@ void ecshShrine_updateHoverMotion(GameObject* obj) {
     trigB = trigB + trigA;
     obj->anim.rotY = ECSH_SHRINE_ORBIT_ROTATION_SCALE * trigB;
 
-    ObjAnim_AdvanceCurrentMove((int)obj, ECSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
+    ObjAnim_AdvanceCurrentMove(obj, ECSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
 
     if (player != NULL) {
         angleDelta =

@@ -721,13 +721,13 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
     if (obj->anim.currentMove != (currentMove = tables[0]->stateMoveIds[stateIndex])) {
         stepScale = tables[0]->stateMoveStepScales[stateIndex];
         if (stepScale > 0.0f) {
-            ObjAnim_SetCurrentMove((int)obj, currentMove, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, currentMove, 0.0f, 0);
         } else {
-            ObjAnim_SetCurrentMove((int)obj, currentMove, 1.0f, 0);
+            ObjAnim_SetCurrentMove(obj, currentMove, 1.0f, 0);
         }
         state->animStepScale = tables[0]->stateMoveStepScales[state->stateIndex];
     }
-    if (ObjAnim_AdvanceCurrentMove((int)obj, state->animStepScale, timeDelta, &state->animEvents) != 0) {
+    if (ObjAnim_AdvanceCurrentMove(obj, state->animStepScale, timeDelta, &state->animEvents) != 0) {
         state->runtimeFlags = state->runtimeFlags | NW_MAMMOTH_RUNTIME_ANIM_ENDED;
     } else {
         state->runtimeFlags = state->runtimeFlags & ~NW_MAMMOTH_RUNTIME_ANIM_ENDED;

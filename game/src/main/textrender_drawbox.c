@@ -214,7 +214,7 @@ void subtitleLoadBoxTextures(int mode) {
     }
 }
 
-void gameTextDrawBox(struct GameTextDef* strPtr, int boxId, GameTextBox* box) {
+void gameTextDrawBox(struct GameTextDef* strPtr, intptr_t boxId, GameTextBox* box) {
     GXColor fillColor7;
     GXColor fillColor1;
     int cornerMaxY;

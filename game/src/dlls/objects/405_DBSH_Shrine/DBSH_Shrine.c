@@ -120,7 +120,7 @@ void dbshShrine_updateHoverMotion(GameObject* obj) {
     trigB += trigA;
     obj->anim.rotY = (s16)(DBSH_SHRINE_ORBIT_ROTATION_SCALE * trigB);
 
-    ObjAnim_AdvanceCurrentMove((int)obj, DBSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
+    ObjAnim_AdvanceCurrentMove(obj, DBSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
 
     if (player == NULL) {
         return;

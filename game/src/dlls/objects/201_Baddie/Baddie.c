@@ -227,7 +227,7 @@ void Tricky_resumeAfterCommand(GameObject* obj, EnemyState* state)
         moveId = state->moveId0;
         state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale0);
         state->rootMotionFlags = 1;
-        ObjAnim_SetCurrentMove((int)obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
+        ObjAnim_SetCurrentMove(obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
         if (obj->anim.hitReactState != NULL)
         {
             hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
@@ -241,7 +241,7 @@ void Tricky_resumeAfterCommand(GameObject* obj, EnemyState* state)
     {
         state->animPlaySpeed = 0.0055555557f;
         state->rootMotionFlags = 0;
-        ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
         if (obj->anim.hitReactState != NULL)
         {
             hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
@@ -294,7 +294,7 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         moveId = state->moveId1;
         state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale1);
         state->rootMotionFlags = 1;
-        ObjAnim_SetCurrentMove((int)obj, moveId, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, moveId, 0.0f, 0);
         if ((void*)(obj)->anim.hitReactState != NULL)
         {
             hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
@@ -1252,7 +1252,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 spittingEbaUpdateEngaged((GameObject*)(obj), (int)state);
                 break;
             case ENEMY_WB_OBJ:
-                wbUpdateEngaged((u32)obj, (int)state);
+                wbUpdateEngaged((GameObject*)obj, (int)state);
                 break;
             case ENEMY_MUTATEDEBA_OBJ:
                 mutatedEbaUpdateEngaged((u32)obj, (int)state);
@@ -1329,7 +1329,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 spittingEbaUpdateEngaged((GameObject*)(obj), (int)state);
                 break;
             case ENEMY_WB_OBJ:
-                wbUpdateEngaged((u32)obj, (int)state);
+                wbUpdateEngaged((GameObject*)obj, (int)state);
                 break;
             case ENEMY_MUTATEDEBA_OBJ:
                 mutatedEbaUpdateEngaged((u32)obj, (int)state);
@@ -1372,7 +1372,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
             state->animPlaySpeed =
                 1.0f / (60.0f * state->moveSpeedScale2);
             state->rootMotionFlags = 1;
-            ObjAnim_SetCurrentMove((int)obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
+            ObjAnim_SetCurrentMove(obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
             if (*(void**)(obj + 0x2a) != 0)
             {
                 ((ObjHitsPriorityState*)((GameObject*)obj)->anim.hitReactState)->suppressOutgoingHits = 0;
@@ -1382,7 +1382,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
         {
             state->animPlaySpeed = 0.0055555557f;
             state->rootMotionFlags = 0;
-            ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
             if (*(void**)(obj + 0x2a) != 0)
             {
                 ((ObjHitsPriorityState*)((GameObject*)obj)->anim.hitReactState)->suppressOutgoingHits = 0;
@@ -1440,7 +1440,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
             spittingEbaUpdateIdle((GameObject*)(obj), (int)state);
             break;
         case ENEMY_WB_OBJ:
-            wbUpdateIdle((u32)obj, (int)state);
+            wbUpdateIdle((GameObject*)obj, (int)state);
             break;
         case ENEMY_MUTATEDEBA_OBJ:
             mutatedEbaUpdateIdle((u32)obj, (int)state);
@@ -1482,7 +1482,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
         state->controlFlags = state->controlFlags & 0x7fffffff;
     }
     res.eventCount = 0;
-    if (ObjAnim_AdvanceCurrentMove((int)obj, state->animPlaySpeed,
+    if (ObjAnim_AdvanceCurrentMove(obj, state->animPlaySpeed,
                                                                     timeDelta, (ObjAnimEventList*)&res) != 0)
     {
         state->controlFlags |= 0x40000000LL;
@@ -2450,7 +2450,7 @@ void baddieSetMove(GameObject* obj, int state, u8 moveId, f32 rateScale, u8 move
 
     ((EnemyState*)state)->animPlaySpeed = 1.0f / (60.0f * rateScale);
     ((EnemyState*)state)->rootMotionFlags = stateByte;
-    ObjAnim_SetCurrentMove((int)obj, moveId, 0.0f, moveControlFlags);
+    ObjAnim_SetCurrentMove(obj, moveId, 0.0f, moveControlFlags);
     hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
     if (hitState != NULL)
     {
@@ -2458,17 +2458,17 @@ void baddieSetMove(GameObject* obj, int state, u8 moveId, f32 rateScale, u8 move
     }
 }
 
-void baddieAfterUpdateBonesCb(GameObject* obj, int* bones)
+void baddieAfterUpdateBonesCb(GameObject* obj, ObjModel* model)
 {
     BaddieAfterUpdateBonesCbState* state = obj->extra;
-    int v = *bones;
+    ModelFileHeader* v = model->file;
     switch (obj->anim.romDefNo)
     {
     case ENEMY_HAGABONMK2_OBJ:
-        ObjModelChain_Update(bones, v, (ObjModelChain*)state->tailBoneChain, crawler_rotateVectorYaw);
+        ObjModelChain_Update(model, v, (ObjModelChain*)state->tailBoneChain, crawler_rotateVectorYaw);
         break;
     default:
-        ObjModelChain_Update(bones, v, (ObjModelChain*)state->tailBoneChain, NULL);
+        ObjModelChain_Update(model, v, (ObjModelChain*)state->tailBoneChain, NULL);
         break;
     }
 }
@@ -2571,12 +2571,12 @@ void enemy_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
             }
             if ((state->flags2E8 & 0x40) != 0)
             {
-                Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_forcecryslp11);
+                Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_forcecryslp11);
                 objDoParticleFx(obj, 1.0f, 5, state->particleScale, 0);
             }
             if ((state->flags2E8 & 0x80) != 0)
             {
-                Sfx_KeepAliveLoopedObjectSound((int)obj, SFXTRIG_forcecryslp11);
+                Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_forcecryslp11);
                 objDoParticleFx(obj, 1.5f, 6, state->particleScale, 0);
             }
             if ((state->flags2E8 & 0x100) != 0)

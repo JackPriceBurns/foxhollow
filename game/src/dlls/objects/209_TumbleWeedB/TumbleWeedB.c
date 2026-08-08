@@ -919,7 +919,7 @@ void tumbleweed_updateEffects(GameObject* obj) {
         } else {
             objfx_spawnPulseBurst(obj, obj->anim.rootMotionScale, 1, TUMBLEWEED_HIT_PULSE_ALT_STYLE, 0, NULL);
         }
-        Sfx_KeepAliveLoopedObjectSound((u32)obj, TUMBLEWEED_SFX_HIT_LOOP);
+        Sfx_KeepAliveLoopedObjectSound(obj, TUMBLEWEED_SFX_HIT_LOOP);
     }
 }
 

@@ -100,7 +100,7 @@ STATIC_ASSERT(sizeof(MusicTrigger) == 0x10);
 typedef struct SfxLoopedObjectSoundTable {
     u8 flags[0x80];
     u16 ids[0x80];
-    u32 objects[0x80];
+    GameObject* objects[0x80];
 } SfxLoopedObjectSoundTable;
 
 typedef struct SfxObjectChannel {
@@ -174,7 +174,7 @@ typedef struct SfxTriggerCacheEntry {
 
 extern u8 gSfxLoopedObjectSoundFlags[0x80];
 extern u16 gSfxLoopedObjectSoundIds[0x80];
-extern u32 gSfxLoopedObjectSoundObjects[0x80];
+extern GameObject* gSfxLoopedObjectSoundObjects[0x80];
 extern u16 gSfxLoopedObjectSoundCount;
 extern SfxObjectChannel gSfxObjectChannels[];
 extern u8 gSfxGlobalReverbLevel;
@@ -296,7 +296,7 @@ int Sfx_ReadTriggerParams(SfxTriggerFull* trigger, u16* outSfxId, u8* outVol, f3
 SfxTrigger* Sfx_FindTrigger(u16 id);
 SfxObjectChannel* Sfx_AllocObjectChannel(u16 fxId, u8 volume, double pitch, u8 pan,
                                          int globalCtrlDisabled);
-void AudioAramReadAllocAsync(void* source, u32 size, void** outBuf, AudioArqRequestCallback callback,
+void AudioAramReadAllocAsync(u32 source, u32 size, void** outBuf, AudioArqRequestCallback callback,
                              MusicTrackSlot* callbackArg1, MusicChannel* callbackArg2,
                              MusicTrigger* callbackArg3);
 void audioLoadTriggerData(void);

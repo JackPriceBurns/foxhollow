@@ -111,7 +111,7 @@ void ObjHitbox_SetCapsuleBounds(ObjAnimComponent* obj, s16 radius, s16 verticalM
 void ObjHitbox_SetSphereRadius(ObjAnimComponent* obj, int radius);
 void ObjHitbox_SetCapsuleBounds(ObjAnimComponent* obj, int radius, int verticalMin, int verticalMax);
 #endif
-int ObjHits_AllocObjectState(GameObject* obj, u32 arena);
+uintptr_t ObjHits_AllocObjectState(GameObject* obj, uintptr_t arena);
 void ObjHits_ResetWorkBuffers(void);
 void ObjHits_InitWorkBuffers(void);
 
@@ -270,16 +270,16 @@ STATIC_ASSERT(offsetof(ObjHitsSkeletonHit, inverseDistance) == OBJHITS_SKELETON_
 STATIC_ASSERT(offsetof(ObjHitsSkeletonHit, pointIndexA) == OBJHITS_SKELETON_HIT_POINT_INDEX_A_OFFSET);
 STATIC_ASSERT(offsetof(ObjHitsSkeletonHit, pointIndexB) == OBJHITS_SKELETON_HIT_POINT_INDEX_B_OFFSET);
 
-int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, int* model,
+int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, ObjHitsModelBank* model,
                                   ObjHitsSkeletonHit* hits, ObjHitsSkeletonHit** outBest, f32 yMax, f32 yMin,
                                   f32* outAccum);
-int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, int* model,
+int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, ObjHitsModelBank* model,
                                   ObjHitsSkeletonHit* hits, ObjHitsSkeletonHit** outBest, f32* outAccum);
 int ObjHits_CalcSkeletonResponseXZ(f32* pos, f32 radius, GameObject* obj, ObjHitsSkeletonHit* hits,
-                                   ObjHitsSkeletonJointData* jointPoints, int jointModel, ObjHitsSkeletonHit* bestHit,
+                                   ObjHitsSkeletonJointData* jointPoints, ObjHitsModelFileHeader* jointModel, ObjHitsSkeletonHit* bestHit,
                                    f32 t, f32 axial, f32* out);
 int ObjHits_CalcSkeletonResponse3D(f32* pos, f32 radius, GameObject* obj, ObjHitsSkeletonHit* hits,
-                                   ObjHitsSkeletonJointData* jointPoints, int jointModel, ObjHitsSkeletonHit* bestHit,
+                                   ObjHitsSkeletonJointData* jointPoints, ObjHitsModelFileHeader* jointModel, ObjHitsSkeletonHit* bestHit,
                                    f32 t, f32 axial, f32* out);
 float* ObjHits_ProjectPointToTaperedCapsuleXZ(float* point, float pointRadius, float axial, float* base, float* tip,
                                               float baseRadius, float tipRadius, float length, float* out);

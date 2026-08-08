@@ -15,15 +15,16 @@ extern EnvironmentUpdateInterface** gEnvironmentUpdateInterface;
 
 typedef struct
 {
-    u32 a;
-    u32 b;
+    uintptr_t a;
+    uintptr_t b;
     u32 key;
     u32 d;
 } LightSortEntry;
 
 typedef struct
 {
-    u32 a, b, c, d;
+    uintptr_t a, b;
+    u32 c, d;
 } LightmapQEnt;
 
 typedef struct MapLayerBuffers
@@ -33,11 +34,5 @@ typedef struct MapLayerBuffers
     u8* blockDescriptors[5];
     u8* blockIndices[5];
 } MapLayerBuffers;
-
-typedef struct
-{
-    u8 pad[0x4114];
-    u32 deferred[20];
-} LightmapDrawQueue;
 
 #endif /* MAIN_LIGHTMAP_INTERNAL_H_ */

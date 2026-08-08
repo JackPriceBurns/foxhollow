@@ -470,7 +470,7 @@ void Sfx_UpdateLoopedObjectSounds(void)
 {
     SfxLoopedObjectSoundTable* table = (SfxLoopedObjectSoundTable*)gSfxLoopedObjectSoundFlags;
     u8* fp;
-    u32* op;
+    GameObject** op;
     u16* ip;
     u16 index;
     s16 i;
@@ -481,7 +481,7 @@ void Sfx_UpdateLoopedObjectSounds(void)
 
     i = (s16)(gSfxLoopedObjectSoundCount - 1);
     fp = table->flags + i;
-    op = (u32*)table->objects + i;
+    op = table->objects + i;
     ip = (u16*)table->ids + i;
     for (; i >= 0; i--)
     {
@@ -490,13 +490,13 @@ void Sfx_UpdateLoopedObjectSounds(void)
         {
             removeSound = 1;
         }
-        obj = (GameObject*)*op;
+        obj = *op;
         if (((obj != 0) && ((obj->objectFlags & SFX_LOOPED_OBJECT_STOP_FLAG) != 0)) || removeSound)
         {
-            Sfx_StopFromObject((GameObject*)obj, *ip);
+            Sfx_StopFromObject(obj, *ip);
             gSfxLoopedObjectSoundCount--;
-            sz = (u16)((gSfxLoopedObjectSoundCount - (index = i)) << 2);
-            memmove((u32*)table->objects + index, (u32*)table->objects + (index2 = index + 1), sz);
+            sz = (u16)((gSfxLoopedObjectSoundCount - (index = i)) * sizeof(GameObject*));
+            memmove(table->objects + index, table->objects + (index2 = index + 1), sz);
             memmove((u16*)table->ids + index, (u16*)table->ids + index2,
                     (u16)((gSfxLoopedObjectSoundCount - index) << 1));
             memmove(table->flags + index, table->flags + index2, (u16)(gSfxLoopedObjectSoundCount - index));
@@ -513,12 +513,12 @@ void Sfx_UpdateLoopedObjectSounds(void)
     {
         s16 i2;
         u16* ip2;
-        u32* op2;
+        GameObject** op2;
         for (i2 = 0, ip2 = table->ids, op2 = table->objects; i2 < gSfxLoopedObjectSoundCount; i2++)
         {
-            if (Sfx_IsPlayingFromObject((GameObject*)*op2, *ip2) == 0)
+            if (Sfx_IsPlayingFromObject(*op2, *ip2) == 0)
             {
-                Sfx_PlayFromObject((GameObject*)*op2, *ip2);
+                Sfx_PlayFromObject(*op2, *ip2);
             }
             ip2++;
             op2++;
@@ -528,15 +528,15 @@ void Sfx_UpdateLoopedObjectSounds(void)
 
 
 
-void Sfx_KeepAliveLoopedObjectSoundLimited(u32 obj, u16 sfxId, u16 limit)
+void Sfx_KeepAliveLoopedObjectSoundLimited(GameObject* obj, u16 sfxId, u16 limit)
 {
     SfxLoopedObjectSoundTable* table = (SfxLoopedObjectSoundTable*)gSfxLoopedObjectSoundFlags;
     u8* flags = table->flags;
     s32 count;
     u16 sameSfxCount;
     u16* ip;
-    u32* op;
-    u32* objects;
+    GameObject** op;
+    GameObject** objects;
     u16* ids;
     s16 j;
     int found;
@@ -586,7 +586,7 @@ void Sfx_KeepAliveLoopedObjectSoundLimited(u32 obj, u16 sfxId, u16 limit)
             table->ids[count] = sfxId;
             flags[count] = 0;
             gSfxLoopedObjectSoundCount++;
-            Sfx_PlayFromObject((GameObject*)obj, sfxId);
+            Sfx_PlayFromObject(obj, sfxId);
         }
     }
 
@@ -596,31 +596,30 @@ void Sfx_KeepAliveLoopedObjectSoundLimited(u32 obj, u16 sfxId, u16 limit)
     }
 }
 
-void Sfx_KeepAliveLoopedObjectSound(int obj, u16 sfxId)
+void Sfx_KeepAliveLoopedObjectSound(GameObject* obj, u16 sfxId)
 {
     Sfx_KeepAliveLoopedObjectSoundLimited(obj, sfxId, 0);
 }
 
-void Sfx_RemoveLoopedObjectSoundForObject(u32 obj)
+void Sfx_RemoveLoopedObjectSoundForObject(GameObject* obj)
 {
     SfxLoopedObjectSoundTable* table = (SfxLoopedObjectSoundTable*)gSfxLoopedObjectSoundFlags;
     int index;
     int index2;
     s16 i;
-    u32* op;
+    GameObject** op;
     u16 sz;
 
     i = (s16)(gSfxLoopedObjectSoundCount - 1);
-    op = (u32*)table + i;
-    op += 0x60;
+    op = table->objects + i;
     for (; i >= 0; i--)
     {
         if (*op == obj)
         {
-            Sfx_StopFromObject((GameObject*)obj, table->ids[i]);
+            Sfx_StopFromObject(obj, table->ids[i]);
             gSfxLoopedObjectSoundCount--;
-            sz = (u16)((gSfxLoopedObjectSoundCount - (index = (u16)i)) << 2);
-            memmove((u32*)table->objects + index, (u32*)table->objects + (index2 = index + 1), sz);
+            sz = (u16)((gSfxLoopedObjectSoundCount - (index = (u16)i)) * sizeof(GameObject*));
+            memmove(table->objects + index, table->objects + (index2 = index + 1), sz);
             memmove((u16*)table->ids + index, (u16*)table->ids + index2,
                     (u16)((gSfxLoopedObjectSoundCount - index) << 1));
             memmove(table->flags + index, table->flags + index2, (u16)(gSfxLoopedObjectSoundCount - index));
@@ -630,10 +629,10 @@ void Sfx_RemoveLoopedObjectSoundForObject(u32 obj)
     }
 }
 
-void Sfx_RemoveLoopedObjectSound(u32 obj, u16 sfxId)
+void Sfx_RemoveLoopedObjectSound(GameObject* obj, u16 sfxId)
 {
     SfxLoopedObjectSoundTable* table = (SfxLoopedObjectSoundTable*)gSfxLoopedObjectSoundFlags;
-    u32* op;
+    GameObject** op;
     u16* ip;
     s16 i;
     int index;
@@ -641,19 +640,19 @@ void Sfx_RemoveLoopedObjectSound(u32 obj, u16 sfxId)
     u16 sz;
 
     i = (s16)(gSfxLoopedObjectSoundCount - 1);
-    op = (u32*)table->objects + i;
+    op = table->objects + i;
     ip = (u16*)table->ids + i;
     for (; i >= 0; i--)
     {
         if (*op == obj && sfxId == *ip)
         {
             gSfxLoopedObjectSoundCount--;
-            sz = (u16)((gSfxLoopedObjectSoundCount - (index = (u16)i)) << 2);
-            memmove((u32*)table->objects + index, (u32*)table->objects + (index2 = index + 1), sz);
+            sz = (u16)((gSfxLoopedObjectSoundCount - (index = (u16)i)) * sizeof(GameObject*));
+            memmove(table->objects + index, table->objects + (index2 = index + 1), sz);
             memmove((u16*)table->ids + index, (u16*)table->ids + index2,
                     (u16)((gSfxLoopedObjectSoundCount - index) << 1));
             memmove(table->flags + index, table->flags + index2, (u16)(gSfxLoopedObjectSoundCount - index));
-            Sfx_StopFromObject((GameObject*)obj, sfxId);
+            Sfx_StopFromObject(obj, sfxId);
             return;
         }
         op--;
@@ -662,11 +661,11 @@ void Sfx_RemoveLoopedObjectSound(u32 obj, u16 sfxId)
 }
 
 
-void Sfx_AddLoopedObjectSound(u32 obj, u16 sfxId)
+void Sfx_AddLoopedObjectSound(GameObject* obj, u16 sfxId)
 {
     SfxLoopedObjectSoundTable* table;
     s16 i;
-    u32* objectIt;
+    GameObject** objectIt;
     u16* idIt;
     s32 count;
     int found;
@@ -693,13 +692,13 @@ void Sfx_AddLoopedObjectSound(u32 obj, u16 sfxId)
         table->ids[count] = sfxId;
         table->flags[count] = 0;
         gSfxLoopedObjectSoundCount++;
-        Sfx_PlayFromObject((GameObject*)obj, sfxId);
+        Sfx_PlayFromObject(obj, sfxId);
     }
 }
 
 int gAudioStreamFadeTable[] = {0, 2, 4};
 char sDvdCancelStreamWarning[0x3C] = "WARNING:DVDCancelStreamAsync returned FALSE\012\000\000\000\000/streams/";
 
-u32 gSfxLoopedObjectSoundObjects[0x80];
+GameObject* gSfxLoopedObjectSoundObjects[0x80];
 u16 gSfxLoopedObjectSoundIds[0x80];
 u8 gSfxLoopedObjectSoundFlags[0x80];

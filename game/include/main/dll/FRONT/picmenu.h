@@ -18,6 +18,6 @@ OSMessage PopDecodedTextureSet(s32 flags);
 void PushFreeTextureSet(OSMessage msg);
 void VideoDecodeThreadCancel(void);
 void VideoDecodeThreadStart(void);
-BOOL CreateVideoDecodeThread(OSPriority priority, u32 onMemoryArg);
+BOOL CreateVideoDecodeThread(OSPriority priority, uintptr_t onMemoryArg);
 
 #endif /* MAIN_DLL_FRONT_PICMENU_H_ */

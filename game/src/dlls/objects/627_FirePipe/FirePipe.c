@@ -379,7 +379,7 @@ void firepipe_updateState(GameObject* obj)
         {
             Sfx_PlayFromObjectLimited(obj, SFXTRIG_en_cvdrip1c_32c, 3);
         }
-        Sfx_KeepAliveLoopedObjectSoundLimited((u32)obj, SFXTRIG_en_trpopn_c_32d, 2);
+        Sfx_KeepAliveLoopedObjectSoundLimited(obj, SFXTRIG_en_trpopn_c_32d, 2);
     }
     flags->wasEmitting = flags->emitting;
 

@@ -80,7 +80,7 @@ static inline ObjHitsModelBank* ObjHits_GetActiveModel(GameObject* obj) {
     return (ObjHitsModelBank*)objAnim->banks[objAnim->bankIndex];
 }
 
-int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, int* model,
+int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, ObjHitsModelBank* model,
                                   ObjHitsSkeletonHit* hits, ObjHitsSkeletonHit** outBest, f32 yMax, f32 yMin,
                                   f32* outAccum) {
     float doubledPointX;
@@ -116,7 +116,7 @@ int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointDa
     if (jointData == NULL) {
         return 0;
     }
-    modelFile = *(ObjHitsModelFileHeader**)model;
+    modelFile = model->modelFile;
     radii = jointData->jointRadii;
     diameter = radius + radius;
     hit = hits;
@@ -219,7 +219,7 @@ int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointDa
     hit->pointIndexA = OBJHITS_SKELETON_HIT_SENTINEL;
     return hit != hits;
 }
-int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, int* model,
+int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, ObjHitsModelBank* model,
                                   ObjHitsSkeletonHit* hits, ObjHitsSkeletonHit** outBest, f32* outAccum) {
     float doubledPointX;
     float doubledPointZ;
@@ -253,7 +253,7 @@ int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointDa
     if (jointData == NULL) {
         return 0;
     }
-    modelFile = *(ObjHitsModelFileHeader**)model;
+    modelFile = model->modelFile;
     radii = jointData->jointRadii;
     diameter = radius + radius;
     hit = hits;
@@ -349,7 +349,7 @@ int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointDa
 }
 
 int ObjHits_CalcSkeletonResponseXZ(f32* pos, f32 radius, GameObject* obj, ObjHitsSkeletonHit* hits,
-                                   ObjHitsSkeletonJointData* jointPoints, int jointModel, ObjHitsSkeletonHit* bestHit,
+                                   ObjHitsSkeletonJointData* jointPoints, ObjHitsModelFileHeader* jointModel, ObjHitsSkeletonHit* bestHit,
                                    f32 t, f32 axial, f32* out) {
     float moveLen;
     float zf;
@@ -471,7 +471,7 @@ int ObjHits_CalcSkeletonResponseXZ(f32* pos, f32 radius, GameObject* obj, ObjHit
 }
 
 int ObjHits_CalcSkeletonResponse3D(f32* pos, f32 radius, GameObject* obj, ObjHitsSkeletonHit* hits,
-                                   ObjHitsSkeletonJointData* jointPoints, int jointModel, ObjHitsSkeletonHit* bestHit,
+                                   ObjHitsSkeletonJointData* jointPoints, ObjHitsModelFileHeader* jointModel, ObjHitsSkeletonHit* bestHit,
                                    f32 t, f32 axial, f32* out) {
     float moveLen;
     float zf;
@@ -876,7 +876,7 @@ void ObjHits_TickPriorityHitCooldowns(void) {
 
 void ObjHitbox_UpdateRotatedBounds(ObjHitbox* hitbox, int advanceMatrix) {
     ObjHitboxTransformState* transformState;
-    int matrixBase;
+    float* matrixBase;
     int matrixFloatOffset;
     MatrixTransform xform;
 
@@ -886,7 +886,7 @@ void ObjHitbox_UpdateRotatedBounds(ObjHitbox* hitbox, int advanceMatrix) {
             transformState->activeMatrixIndex = (transformState->activeMatrixIndex + 1) & 1;
         }
         matrixFloatOffset = transformState->activeMatrixIndex * OBJHITBOX_STATE_MATRIX_FLOAT_COUNT;
-        matrixBase = (int)((float*)transformState->matrices + matrixFloatOffset);
+        matrixBase = (float*)transformState->matrices + matrixFloatOffset;
         xform.rotX = -hitbox->rotationX;
         if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
             xform.rotY = 0;
@@ -902,7 +902,7 @@ void ObjHitbox_UpdateRotatedBounds(ObjHitbox* hitbox, int advanceMatrix) {
         xform.x = -hitbox->radiusX;
         xform.y = -hitbox->radiusY;
         xform.z = -hitbox->radiusZ;
-        mtxRotateByVec3s((float*)matrixBase, &xform);
+        mtxRotateByVec3s(matrixBase, &xform);
         xform.rotX = hitbox->rotationX;
         if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
             xform.rotY = 0;
@@ -1360,12 +1360,12 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
     u8 result;
     stateB = (ObjHitsPriorityState*)objB->anim.hitReactState;
     stateA = (ObjHitsPriorityState*)objA->anim.hitReactState;
-    if ((u32)attA != 0) {
+    if (attA != NULL) {
         attStateA = ObjAnim_GetPriorityHitState(&attA->anim);
     } else {
         attStateA = NULL;
     }
-    if ((u32)attB != 0) {
+    if (attB != NULL) {
         attStateB = ObjAnim_GetPriorityHitState(&attB->anim);
     } else {
         attStateB = NULL;
@@ -1386,7 +1386,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
                 memcpy(gObjHitsPrimaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
                        hitboxBuf->modelFile->hitVolumeCount << 4);
             }
-            if ((u32)attA != 0) {
+            if (attA != NULL) {
                 hitboxBuf = ObjHits_GetActiveModel(attA);
                 bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
                 if ((stateA->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
@@ -1407,7 +1407,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
         if (mask != 0) {
             result = ObjHits_CheckHitVolumes(objA, objB, objA, 1, 0, mask, stateA->skeletonHitMask >> 4);
         }
-        if ((((u32)attA != 0) && (result == 0)) && (mask = stateA->objectHitMask & 0xf, mask != 0)) {
+        if (((attA != NULL) && (result == 0)) && (mask = stateA->objectHitMask & 0xf, mask != 0)) {
             result = ObjHits_CheckHitVolumes(attA, objB, objA, 1, 0, mask, stateA->skeletonHitMask & 0xf);
         }
         if ((result == 0) && (objA->anim.classId == 1)) {
@@ -1430,7 +1430,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
                 memcpy(gObjHitsPrimaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
                        hitboxBuf->modelFile->hitVolumeCount << 4);
             }
-            if ((u32)attB != 0) {
+            if (attB != NULL) {
                 hitboxBuf = ObjHits_GetActiveModel(attB);
                 bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
                 if ((stateB->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
@@ -1451,7 +1451,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
         if (mask != 0) {
             result = ObjHits_CheckHitVolumes(objB, objA, objB, 1, 0, mask, stateB->skeletonHitMask >> 4);
         }
-        if ((((u32)attB != 0) && (result == 0)) && (mask = stateB->objectHitMask & 0xf, mask != 0)) {
+        if (((attB != NULL) && (result == 0)) && (mask = stateB->objectHitMask & 0xf, mask != 0)) {
             result = ObjHits_CheckHitVolumes(attB, objA, objB, 1, 0, mask, stateB->skeletonHitMask & 0xf);
         }
         if ((result == 0) && (objB->anim.classId == 1)) {
@@ -1774,7 +1774,7 @@ void ObjHits_DetectObjectPair(GameObject* objA, GameObject* objB) {
 
 void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, void* scratchB, void* scratchC, void* scratchD,
                                void* scratchE, int depth) {
-    int* hitboxBuf;
+    ObjHitsModelBank* hitboxBuf;
     f32 outAxial;
     ObjHitsPriorityState* objAState;
     u8 shapeFlags;
@@ -1796,7 +1796,7 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
         objBState->activeHitboxMode != 0 || objAState->activeHitboxMode != 0) {
         return;
     }
-    hitboxBuf = (int*)ObjHits_GetActiveModel(objA);
+    hitboxBuf = ObjHits_GetActiveModel(objA);
     shapeFlags = objBState->shapeFlags;
     if ((shapeFlags & OBJHITBOX_SHAPE_SKELETON_3D) != 0) {
         point.x = objB->anim.worldPosX - playerMapOffsetX;
@@ -1804,7 +1804,7 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
         point.z = objB->anim.worldPosZ - playerMapOffsetZ;
         point3D = point;
         hitCount =
-            ObjHits_CollectSkeletonHits3D(&point3D.x, objBState->primaryRadius, (ObjHitsSkeletonJointData*)hitboxBuf[5],
+            ObjHits_CollectSkeletonHits3D(&point3D.x, objBState->primaryRadius, hitboxBuf->skeletonJointData,
                                           hitboxBuf, (ObjHitsSkeletonHit*)hits, &bestHit, &outAxial);
         if (hitCount != 0) {
             ratio = (objB->anim.hitboxScale * objB->anim.rootMotionScale) /
@@ -1813,12 +1813,12 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
             {
                 f32* pos = &point.x;
                 f32 rad = objBState->primaryRadius;
-                u32 ob = (u32)objB;
+                GameObject* ob = objB;
                 ObjHitsSkeletonHit* hh = (ObjHitsSkeletonHit*)hits;
-                ObjHitsSkeletonJointData* jd = (ObjHitsSkeletonJointData*)hitboxBuf[5];
-                int mf = *hitboxBuf;
+                ObjHitsSkeletonJointData* jd = hitboxBuf->skeletonJointData;
+                ObjHitsModelFileHeader* mf = hitboxBuf->modelFile;
                 ObjHitsSkeletonHit* bh = bestHit;
-                ObjHits_CalcSkeletonResponse3D(pos, rad, (GameObject*)ob, hh, jd, mf, bh,
+                ObjHits_CalcSkeletonResponse3D(pos, rad, ob, hh, jd, mf, bh,
                                                (ratio < gObjHitsScalarZero[0])
                                                    ? gObjHitsScalarZero[0]
                                                    : ((ratio > gObjHitsScalarOne[0]) ? gObjHitsScalarOne[0] : ratio),
@@ -1837,7 +1837,7 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
         point.z = objB->anim.worldPosZ - playerMapOffsetZ;
         pointXZ = point;
         hitCount = ObjHits_CollectSkeletonHitsXZ(
-            &pointXZ.x, objBState->primaryRadius, (ObjHitsSkeletonJointData*)hitboxBuf[5], hitboxBuf,
+            &pointXZ.x, objBState->primaryRadius, hitboxBuf->skeletonJointData, hitboxBuf,
             (ObjHitsSkeletonHit*)hits, &bestHit, point.y + objBState->primaryCapsuleOffsetB,
             point.y + objBState->primaryCapsuleOffsetA, &outAxial);
         if (hitCount != 0) {
@@ -1847,12 +1847,12 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
             {
                 f32* pos = &point.x;
                 f32 rad = objBState->primaryRadius;
-                u32 ob = (u32)objB;
+                GameObject* ob = objB;
                 ObjHitsSkeletonHit* hh = (ObjHitsSkeletonHit*)hits;
-                ObjHitsSkeletonJointData* jd = (ObjHitsSkeletonJointData*)hitboxBuf[5];
-                int mf = *hitboxBuf;
+                ObjHitsSkeletonJointData* jd = hitboxBuf->skeletonJointData;
+                ObjHitsModelFileHeader* mf = hitboxBuf->modelFile;
                 ObjHitsSkeletonHit* bh = bestHit;
-                ObjHits_CalcSkeletonResponseXZ(pos, rad, (GameObject*)ob, hh, jd, mf, bh,
+                ObjHits_CalcSkeletonResponseXZ(pos, rad, ob, hh, jd, mf, bh,
                                                (ratio < gObjHitsScalarZero[0])
                                                    ? gObjHitsScalarZero[0]
                                                    : ((ratio > gObjHitsScalarOne[0]) ? gObjHitsScalarOne[0] : ratio),
@@ -1880,7 +1880,7 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
     int i;
     ObjHitsModelFileHeader* modelFile;
     float* curSpheres;
-    int prevSpheres;
+    float* prevSpheres;
     ObjHitsPriorityState* stateB;
     int pointCount;
     TrackQueryBounds bounds;
@@ -1905,7 +1905,7 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
             modelFile = modelBank->modelFile;
             bits = modelBank->hitBufferFlags >> 2 & 1;
             curSpheres = modelBank->hitVolumeSphereBuffers[bits];
-            prevSpheres = (int)modelBank->hitVolumeSphereBuffers[bits ^ 1];
+            prevSpheres = modelBank->hitVolumeSphereBuffers[bits ^ 1];
             pointCount = 0;
             for (i = 0; i < (int)(u32)modelFile->hitVolumeCount; i = i + 1) {
                 if ((i == modelFile->hitVolumes[i].sphereIndex) &&
@@ -1922,7 +1922,7 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
                                 endPoints[pointCount * 3] = playerMapOffsetX + curEntry[1];
                                 endPoints[pointCount * 3 + 1] = curEntry[2];
                                 endPoints[pointCount * 3 + 2] = playerMapOffsetZ + curEntry[3];
-                                prevEntry = (float*)(prevSpheres + sphereOff);
+                                prevEntry = (float*)((u8*)prevSpheres + sphereOff);
                                 startPoints[pointCount * 3] = playerMapOffsetX + prevEntry[1];
                                 startPoints[pointCount * 3 + 1] = prevEntry[2];
                                 startPoints[pointCount * 3 + 2] = playerMapOffsetZ + prevEntry[3];
@@ -1937,10 +1937,10 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
                             endPoints[pointCount * 3] = playerMapOffsetX + curSpheres[i * 4 + 1];
                             endPoints[pointCount * 3 + 1] = curSpheres[i * 4 + 2];
                             endPoints[pointCount * 3 + 2] = playerMapOffsetZ + curSpheres[i * 4 + 3];
-                            startPoints[pointCount * 3] = playerMapOffsetX + ((float*)prevSpheres)[i * 4 + 1];
-                            startPoints[pointCount * 3 + 1] = ((float*)prevSpheres)[i * 4 + 2];
+                            startPoints[pointCount * 3] = playerMapOffsetX + prevSpheres[i * 4 + 1];
+                            startPoints[pointCount * 3 + 1] = prevSpheres[i * 4 + 2];
                             startPoints[pointCount * 3 + 2] =
-                                playerMapOffsetZ + ((float*)prevSpheres)[i * 4 + 3];
+                                playerMapOffsetZ + prevSpheres[i * 4 + 3];
                             hb.radii[pointCount] = curSpheres[i * 4];
                             hb.ids[pointCount] = -1;
                             hb.sevens[pointCount] = 7;
@@ -2194,11 +2194,10 @@ void ObjHits_Update(int objectCount) {
                 oneOverTimeDelta * (obj->anim.localPosZ - obj->anim.previousLocalPosZ);
         }
     }
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[hitVolumeIndex = 0] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
+    for (hitVolumeIndex = 0; hitVolumeIndex < 5; hitVolumeIndex++)
+    {
+        gObjHitsActiveHitVolumeObjects[hitVolumeIndex] = 0;
+    }
 }
 
 char sObjHitsTooManyHitSpheresWarning[] = "HIT VOLUMES: an object has too many hit spheres\n";
@@ -2225,7 +2224,7 @@ u32 ObjHitReact_Update(GameObject* obj, ObjHitReactEntry* reactionEntryTable, u3
     effectColorArgs = gObjHitReactEffectColorArgs;
     if ((reactionState & OBJHITREACT_REACTION_STATE_MASK) != OBJHITREACT_REACTION_STATE_INACTIVE) {
         OSReport(sObjHitReactHitstateFrameString, objAnim->currentMoveProgress);
-        moveEnded = ObjAnim_AdvanceCurrentMove((int)obj, (double)*reactionStepScale, (double)timeDelta, NULL);
+        moveEnded = ObjAnim_AdvanceCurrentMove(obj, (double)*reactionStepScale, (double)timeDelta, NULL);
         if (moveEnded != 0) {
             OSReport(sObjHitReactResetString);
             reactionState = OBJHITREACT_REACTION_STATE_INACTIVE;
@@ -2252,12 +2251,12 @@ u32 ObjHitReact_Update(GameObject* obj, ObjHitReactEntry* reactionEntryTable, u3
             if ((reactionEntry->primaryHitSfxId > OBJHITREACT_NO_SFX_ID) &&
                 (sfxActive = Sfx_IsPlayingFromObject(obj, (u16)reactionEntry->primaryHitSfxId),
                  !sfxActive)) {
-                Sfx_PlayFromObject((GameObject*)(u32)obj, reactionEntry->primaryHitSfxId);
+                Sfx_PlayFromObject(obj, reactionEntry->primaryHitSfxId);
             }
             if ((reactionEntry->secondaryHitSfxId > OBJHITREACT_NO_SFX_ID) &&
                 (sfxActive = Sfx_IsPlayingFromObject(obj, (u16)reactionEntry->secondaryHitSfxId),
                  !sfxActive)) {
-                Sfx_PlayFromObject((GameObject*)(u32)obj, reactionEntry->secondaryHitSfxId);
+                Sfx_PlayFromObject(obj, reactionEntry->secondaryHitSfxId);
             }
             if (reactionEntry->hitEffectMode == OBJHITREACT_HIT_FX_MODE_EFFECT) {
                 effectResource = Resource_Acquire(OBJHITREACT_HIT_EFFECT_ID, OBJHITREACT_HIT_EFFECT_RESOURCE_COUNT);
@@ -2273,7 +2272,7 @@ u32 ObjHitReact_Update(GameObject* obj, ObjHitReactEntry* reactionEntryTable, u3
         }
         if (((reactionState & OBJHITREACT_REACTION_STATE_MASK) == OBJHITREACT_REACTION_STATE_INACTIVE) &&
             (reactionEntry->reactionMoveId > OBJHITREACT_NO_REACTION_ANIM)) {
-            ObjAnim_SetCurrentMove((int)obj, reactionEntry->reactionMoveId, gObjHitsScalarZero[0], 0);
+            ObjAnim_SetCurrentMove(obj, reactionEntry->reactionMoveId, gObjHitsScalarZero[0], 0);
             *reactionStepScale = reactionEntry->reactionStepScale;
             reactionState = OBJHITREACT_REACTION_STATE_ACTIVE;
         }
@@ -2314,10 +2313,10 @@ void ObjHitReact_ResetActiveObjects(int objectCount) {
     }
 }
 
-int ObjHitbox_AllocRotatedBounds(ObjHitbox* hitbox, u32 arena) {
+uintptr_t ObjHitbox_AllocRotatedBounds(ObjHitbox* hitbox, uintptr_t arena) {
     ObjHitboxTransformState* transformState;
 
-    transformState = (ObjHitboxTransformState*)roundUpTo4(arena);
+    transformState = (ObjHitboxTransformState*)((arena + 3) & ~(uintptr_t)3);
     hitbox->transformState = transformState;
     if (hitbox->transformState != NULL) {
         hitbox->transformState->activeMatrixIndex = 0;
@@ -2326,7 +2325,7 @@ int ObjHitbox_AllocRotatedBounds(ObjHitbox* hitbox, u32 arena) {
         ObjHitbox_UpdateRotatedBounds(hitbox, 1);
         ObjHitbox_UpdateRotatedBounds(hitbox, 1);
     }
-    return (u32)transformState + sizeof(ObjHitboxTransformState);
+    return (uintptr_t)transformState + sizeof(ObjHitboxTransformState);
 }
 
 void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, int objType, ObjHitReactState* hitState,
@@ -2364,7 +2363,7 @@ void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, i
     return;
 }
 
-u32 ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState* hitState, u32 entryArena,
+uintptr_t ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState* hitState, uintptr_t entryArena,
                           ObjAnimComponent* objAnim) {
     ObjHitReactEntry* entries;
 
@@ -2372,9 +2371,9 @@ u32 ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState* hitS
         return entryArena;
     }
     hitState->entryBufferByteCapacity = OBJHITREACT_ENTRY_ARENA_BYTES;
-    entries = (ObjHitReactEntry*)roundUpTo8(entryArena);
+    entries = (ObjHitReactEntry*)((entryArena + 7) & ~(uintptr_t)7);
     hitState->entries = entries;
-    entryArena = (u32)entries + hitState->entryBufferByteCapacity;
+    entryArena = (uintptr_t)entries + hitState->entryBufferByteCapacity;
     hitState->activeHitboxMode = OBJHITREACT_ACTIVE_HITBOX_MODE;
     if ((hitState->shapeFlags & OBJHITS_SHAPE_RESET_MODE_MASK) != 0) {
         hitState->resetHitboxMode = OBJHITREACT_RESET_HITBOX_MODE;
@@ -2672,11 +2671,11 @@ void ObjHits_SyncObjectPosition(GameObject* obj) {
     return;
 }
 
-int ObjHits_AllocObjectState(GameObject* obj, u32 arena) {
-    u32 stateArena;
+uintptr_t ObjHits_AllocObjectState(GameObject* obj, uintptr_t arena) {
+    uintptr_t stateArena;
     ObjHitsPriorityState* hitState;
 
-    stateArena = roundUpTo4(arena);
+    stateArena = (arena + 3) & ~(uintptr_t)3;
     obj->anim.hitReactState = (ObjHitReactState*)stateArena;
     hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     ObjHits_RefreshObjectState(obj);
@@ -2684,7 +2683,7 @@ int ObjHits_AllocObjectState(GameObject* obj, u32 arena) {
     if ((hitState->shapeFlags & OBJHITS_SHAPE_RESET_MODE_MASK) != 0) {
         hitState->resetHitboxMode = OBJHITS_RESET_HITBOX_MODE;
     }
-    return stateArena + 0xb8;
+    return stateArena + sizeof(ObjHitsPriorityState);
 }
 
 void ObjHits_RefreshObjectState(GameObject* object) {
@@ -2793,7 +2792,7 @@ int ObjHits_RecordObjectHit(GameObject* obj, GameObject* hitObj, s8 priority, in
         return 0;
     }
     if ((targetObj != NULL) && (targetObj->hitReactState != NULL)) {
-        ((ObjHitsPriorityState*)targetObj->hitReactState)->lastHitObject = (u32)obj;
+        ((ObjHitsPriorityState*)targetObj->hitReactState)->lastHitObject = (uintptr_t)obj;
     }
     hitSlot = 0;
     hitVolumeId = hitVolume;
@@ -2815,7 +2814,7 @@ int ObjHits_RecordObjectHit(GameObject* obj, GameObject* hitObj, s8 priority, in
         hitState->sphereIndices[hitState->priorityHitCount] = sphereIndex;
         hitState->priorities[hitState->priorityHitCount] = priority;
         hitState->hitVolumes[hitState->priorityHitCount] = hitVolumeId;
-        hitState->hitObjects[hitState->priorityHitCount] = (int)hitObj;
+        hitState->hitObjects[hitState->priorityHitCount] = (uintptr_t)hitObj;
         hitState->hitPosX[hitState->priorityHitCount] = sourceObj->localPosX;
         hitState->hitPosY[hitState->priorityHitCount] = sourceObj->localPosY;
         hitState->hitPosZ[hitState->priorityHitCount] = sourceObj->localPosZ;
@@ -2842,7 +2841,7 @@ int ObjHits_RecordPositionHit(GameObject* obj, GameObject* hitObj, s8 priority, 
         return 0;
     }
     if ((targetObj != NULL) && (targetObj->hitReactState != NULL)) {
-        ((ObjHitsPriorityState*)targetObj->hitReactState)->lastHitObject = (u32)obj;
+        ((ObjHitsPriorityState*)targetObj->hitReactState)->lastHitObject = (uintptr_t)obj;
     }
     hitSlot = 0;
     hitVolumeId = hitVolume;
@@ -2864,7 +2863,7 @@ int ObjHits_RecordPositionHit(GameObject* obj, GameObject* hitObj, s8 priority, 
         hitState->sphereIndices[hitState->priorityHitCount] = sphereIndex;
         hitState->priorities[hitState->priorityHitCount] = priority;
         hitState->hitVolumes[hitState->priorityHitCount] = hitVolumeId;
-        hitState->hitObjects[hitState->priorityHitCount] = (int)hitObj;
+        hitState->hitObjects[hitState->priorityHitCount] = (uintptr_t)hitObj;
         hitState->hitPosX[hitState->priorityHitCount] = hitPosX;
         hitState->hitPosY[hitState->priorityHitCount] = hitPosY;
         hitState->hitPosZ[hitState->priorityHitCount] = hitPosZ;
@@ -2876,30 +2875,24 @@ int ObjHits_RecordPositionHit(GameObject* obj, GameObject* hitObj, s8 priority, 
 void ObjHits_AddContactObject(GameObject* obj, GameObject* contactObj) {
     int contactObjectIndex;
     int contactObjectCount;
-    int contactOffset;
     int i;
-    int storeState;
-    int transformState;
+    ObjHitboxTransformState* transformState;
 
-    transformState = *(int*)((int)obj + OBJHITBOX_TRANSFORM_STATE_OFFSET);
-    if ((u32)transformState == 0) {
+    transformState = obj->anim.hitboxTransformState;
+    if (transformState == NULL) {
         return;
     }
-    contactObjectCount = (int)*(char*)(transformState + OBJHITBOX_STATE_CONTACT_OBJECT_COUNT_OFFSET);
+    contactObjectCount = transformState->contactObjectCount;
     if (contactObjectCount >= OBJHITBOX_CONTACT_OBJECT_COUNT) {
         return;
     }
-    contactOffset = 0;
     for (i = 0; i < contactObjectCount; i++) {
-        u32 entryObj = *(u32*)(transformState + contactOffset + OBJHITBOX_STATE_CONTACT_OBJECTS_OFFSET);
-        if (entryObj == (u32)contactObj) {
+        if (transformState->contactObjects[i] == contactObj) {
             return;
         }
-        contactOffset = contactOffset + 4;
     }
-    storeState = *(int*)((u8*)obj + OBJHITBOX_TRANSFORM_STATE_OFFSET);
-    contactObjectIndex = (*(char*)(transformState + OBJHITBOX_STATE_CONTACT_OBJECT_COUNT_OFFSET))++;
-    *(int*)(storeState + OBJHITBOX_STATE_CONTACT_OBJECTS_OFFSET + contactObjectIndex * 4) = (int)contactObj;
+    contactObjectIndex = transformState->contactObjectCount++;
+    transformState->contactObjects[contactObjectIndex] = contactObj;
 }
 
 int ObjHits_GetPriorityHitWithPosition(GameObject* obj, GameObject** outHitObject, int* outSphereIndex,
@@ -3038,11 +3031,10 @@ void ObjHits_InitWorkBuffers(void) {
     gObjHitsSecondaryHitboxBufferScratch0 = mmAlloc(0x400, 0xe, 0);
     gObjHitsSecondaryHitboxBufferScratch1 = mmAlloc(0x400, 0xe, 0);
     gObjHitsPriorityHitTickDelta = gObjHitsScalarTwo[0];
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[hitVolumeIndex = 0] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
-    ((int*)(int)gObjHitsActiveHitVolumeObjects)[++hitVolumeIndex] = 0;
+    for (hitVolumeIndex = 0; hitVolumeIndex < 5; hitVolumeIndex++)
+    {
+        gObjHitsActiveHitVolumeObjects[hitVolumeIndex] = 0;
+    }
     return;
 }
 

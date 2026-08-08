@@ -323,7 +323,7 @@ int cfguardian_flyAlongPath(GameObject* obj, RomCurveWalker* walker, f32 speed, 
         obj->anim.rotX = obj->anim.rotX + (yawDelta >> 3);
     }
     if (obj->anim.currentMove != CFGUARDIAN_MOVE_FLY) {
-        ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
     }
     return pathComplete;
 }
@@ -367,7 +367,7 @@ int cfguardian_steerToward(GameObject* obj, MoveLibTarget* target, f32 speed, f3
     obj->anim.rotX = (f32)obj->anim.rotX + ((0.5f + yawDelta) * (speed * timeDelta)) / dist;
     objMove(obj, obj->anim.velocityX, obj->anim.velocityY, obj->anim.velocityZ);
     if (obj->anim.currentMove != CFGUARDIAN_MOVE_FLY) {
-        ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
     }
     ObjAnim_SampleRootCurvePhase(&obj->anim, speed, outPhase);
     return 0;
@@ -444,7 +444,7 @@ int cfguardian_updateMain(GameObject* obj) {
         }
         if (mainGetBit(GAMEBIT_CFGUARDIAN_CAGE_OPEN) != 0) {
             state->questState = CFGUARDIAN_STATE_RELEASE_SEQUENCE;
-            ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
             obj->userData1 = 0;
             mainSetBits(GAMEBIT_CFGUARDIAN_PRISON_GUARD_STAND_DOWN, 1);
             state->stateFlags |= CFGUARDIAN_STATE_MOVE_LATCHED;
@@ -497,7 +497,7 @@ int cfguardian_updateMain(GameObject* obj) {
                     obj->anim.localPosY -= groundDistance;
                     state->chatterState = CFGUARDIAN_CHATTER_READY;
                     obj->userData1 = 0;
-                    ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+                    ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
                     {
                         RomCurveDef* homePoint =
                             (RomCurveDef*)cfguardian_findRomCurvePointNearObject(obj, 0, 0, 2);
@@ -511,7 +511,7 @@ int cfguardian_updateMain(GameObject* obj) {
                         if (homeDistY < 80.0f) {
                             objAddObjectType(obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
                             state->questState = CFGUARDIAN_STATE_FLY_TO_TALK;
-                            ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+                            ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
                         }
                     }
                 } else {
@@ -527,7 +527,7 @@ int cfguardian_updateMain(GameObject* obj) {
                 obj->anim.rotX = rotation;
                 state->moveSpeed = 0.04f;
                 if (mainGetBit(GAMEBIT_CFGUARDIAN_LANDED) != 0) {
-                    ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+                    ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
                     ObjAnim_SetCurrentEventStepFrames((ObjAnimComponent*)obj, 0x32);
                     obj->anim.velocityY = 0.0f;
                     objFreeObjectType(obj, CFGUARDIAN_AIRBORNE_OBJECT_GROUP);
@@ -623,7 +623,7 @@ int cfguardian_updateMain(GameObject* obj) {
         }
         if ((state->stateFlags & CFGUARDIAN_STATE_HOMING) != 0 &&
             cfguardian_steerToward(obj, &state->home, 0.5f, &state->moveSpeed) != 0) {
-            ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
             state->stateFlags &= ~(CFGUARDIAN_STATE_MOVE_LATCHED | CFGUARDIAN_STATE_HOMING);
         }
         if (mainGetBit(GAMEBIT_CF_SavedQueen) != 0) {
@@ -658,12 +658,12 @@ int cfguardian_updateMain(GameObject* obj) {
         }
         if ((state->stateFlags & CFGUARDIAN_STATE_HOMING) != 0 &&
             cfguardian_steerToward(obj, &state->home, 0.5f, &state->moveSpeed) != 0) {
-            ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
             state->stateFlags &= ~(CFGUARDIAN_STATE_MOVE_LATCHED | CFGUARDIAN_STATE_HOMING);
         }
         if (mainGetBit(GAMEBIT_CFGUARDIAN_TALK_2_COMPLETE) != 0) {
             state->questState = CFGUARDIAN_STATE_FLY_OUT;
-            ObjAnim_SetCurrentMove((int)obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, CFGUARDIAN_MOVE_FLY, 0.0f, 0);
             obj->userData1 = 0;
         }
         break;
@@ -758,11 +758,11 @@ int cfguardian_updateMain(GameObject* obj) {
         int idleMove = gCfGuardianIdleMoveTable[state->questState];
         if (idleMove != -1 && (state->stateFlags & CFGUARDIAN_STATE_MOVE_LATCHED) == 0 &&
             obj->anim.currentMove != idleMove) {
-            ObjAnim_SetCurrentMove((int)obj, idleMove, 0.0f, 0);
+            ObjAnim_SetCurrentMove(obj, idleMove, 0.0f, 0);
             ObjAnim_SetCurrentEventStepFrames((ObjAnimComponent*)obj, 0x50);
         }
     }
-    if (ObjAnim_AdvanceCurrentMove((int)obj, state->moveSpeed, framesThisStep,
+    if (ObjAnim_AdvanceCurrentMove(obj, state->moveSpeed, framesThisStep,
                                    (ObjAnimEventList*)scratch.eventBuffer) != 0 &&
         (state->stateFlags & CFGUARDIAN_STATE_MOVE_LATCHED) != 0 && obj->anim.currentMove != CFGUARDIAN_MOVE_FLY &&
         obj->anim.currentMove != CFGUARDIAN_MOVE_LANDING) {

@@ -234,13 +234,6 @@ static void fhFixPackHeader(volatile u32* w)
     }
     if (((char*)w)[0] == 'Z' && ((char*)w)[1] == 'L' && ((char*)w)[2] == 'B')
     {
-        for (i = 2; i < 4; i++)
-        {
-            if (w[i] >= 0x01000000)
-            {
-                w[i] = fhSwap32(w[i]);
-            }
-        }
         return;
     }
     if (w[0] == 0xe0e0e0e0 || w[0] == 0xfacefeed)
@@ -1679,7 +1672,6 @@ int mapUnload(int mapId, int flags)
 
 int mergeTableFiles(void* table, int id, int idx, int count_)
 {
-    fhSwapResidentTabs();
     u32* tbl = table;
     int i = 0;
     int e1 = 0;
@@ -4345,8 +4337,8 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
             fileBuf = qptr + offsetFlags;
             if (strncmp((char*)fileBuf, sZlbBlockTag, 3) == 0)
             {
-                decompSize = ZLB_HDR(fileBuf)->decompressedSize;
-                zlbDecompress((u8*)(MLDF_QPTR + offsetFlags + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf,
+                decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
+                zlbDecompress((u8*)(MLDF_QPTR + offsetFlags + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf,
                               &decompSize);
                 DCStoreRange(destBuf, decompSize);
             }
@@ -4364,8 +4356,8 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
             fileBuf = qptr + offsetFlags;
             if (strncmp((char*)fileBuf, sZlbBlockTag, 3) == 0)
             {
-                decompSize = ZLB_HDR(fileBuf)->decompressedSize;
-                zlbDecompress((u8*)(MLDF_QPTR + offsetFlags + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf,
+                decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
+                zlbDecompress((u8*)(MLDF_QPTR + offsetFlags + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf,
                               &decompSize);
                 DCStoreRange(destBuf, decompSize);
             }
@@ -4389,14 +4381,30 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
                               (u8*)destBuf, &hdr->decompressedSize);
                 DCStoreRange(destBuf, hdr->decompressedSize);
             }
+            {
+                char* fhName = MLDF_FILE_NAME(fileId);
+                int fhLen = fhName ? (int)strlen(fhName) : 0;
+                if (fhLen > 4 && strcmp(fhName + fhLen - 4, ".tab") == 0)
+                {
+                    fhSwapU32Array(destBuf, hdr->decompressedSize / 4);
+                }
+            }
         }
         else if (fileId == 0x23 || fileId == 0x4d)
         {
             fileBuf = qptr + (offsetFlags & 0xffffff);
             fhFixPackHeader((volatile u32*)fileBuf);
-            decompSize = ZLB_HDR(fileBuf)->decompressedSize;
-            zlbDecompress((u8*)(fileBuf + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf, &decompSize);
+            decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
+            zlbDecompress((u8*)(fileBuf + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf, &decompSize);
             DCStoreRange(destBuf, decompSize);
+            {
+                char* fhName = MLDF_FILE_NAME(fileId);
+                int fhLen = fhName ? (int)strlen(fhName) : 0;
+                if (fhLen > 4 && strcmp(fhName + fhLen - 4, ".tab") == 0)
+                {
+                    fhSwapU32Array(destBuf, decompSize / 4);
+                }
+            }
         }
         else if (fileId == 0x20 || fileId == 0x4b)
         {
@@ -4408,8 +4416,8 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
             }
             if (strncmp((char*)fileBuf, sZlbBlockTag, 3) == 0)
             {
-                decompSize = ZLB_HDR(fileBuf)->decompressedSize;
-                zlbDecompress((u8*)(MLDF_QPTR + entryIndex + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf,
+                decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
+                zlbDecompress((u8*)(MLDF_QPTR + entryIndex + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf,
                               &decompSize);
                 DCStoreRange(destBuf, decompSize);
             }
@@ -4424,8 +4432,8 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
             }
             if (strncmp((char*)fileBuf, sZlbBlockTag, 3) == 0)
             {
-                decompSize = ZLB_HDR(fileBuf)->decompressedSize;
-                zlbDecompress((u8*)(MLDF_QPTR + entryIndex + 0x10), ZLB_HDR(fileBuf)->compressedSize, (u8*)destBuf,
+                decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
+                zlbDecompress((u8*)(MLDF_QPTR + entryIndex + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf,
                               &decompSize);
                 DCStoreRange(destBuf, decompSize);
             }
@@ -4594,7 +4602,6 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
 
 void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
-    fhSwapResidentTabs();
     int idx = -1;
     if (gResourceFileBuffers[0x20] != 0 || gResourceFileBuffers[0x4b] != 0)
     {
@@ -4637,6 +4644,7 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
                 else if (queryMode == 2 && frameTable != 0)
                 {
                     memcpy(frameTable, (void*)(base + (texId & 0xffffff) * 2), (count + 1) * 4);
+            fhSwapU32Array(frameTable, count + 1);
                 }
                 else
                 {
@@ -4698,7 +4706,6 @@ void tex1GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
 
 void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
-    fhSwapResidentTabs();
     int idx = -1;
     if (gResourceFileBuffers[0x23] != 0 || gResourceFileBuffers[0x4d] != 0)
     {
@@ -4729,19 +4736,20 @@ void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
         {
             uintptr_t base = gResourceFileBuffers[idx];
             uintptr_t e = base + (texId & 0xffffff) * 2 + frameTable[count] + 4;
-            int v = *(int*)(e + 8);
-            *outA = *(int*)(e + 4);
+            int v = (int)fhSwap32(*(u32*)(e + 8));
+            *outA = (int)fhSwap32(*(u32*)(e + 4));
             *outB = v;
         }
         else if (queryMode == 2 && frameTable != 0)
         {
             memcpy(frameTable, (void*)(gResourceFileBuffers[idx] + (texId & 0xffffff) * 2), (count + 1) * 4);
+            fhSwapU32Array(frameTable, count + 1);
         }
         else
         {
             uintptr_t e = gResourceFileBuffers[idx] + (texId & 0xffffff) * 2 + 4;
-            int v = *(int*)(e + 8);
-            *outA = *(int*)(e + 4);
+            int v = (int)fhSwap32(*(u32*)(e + 8));
+            *outA = (int)fhSwap32(*(u32*)(e + 4));
             *outB = v;
         }
     }
@@ -4750,20 +4758,20 @@ void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
 
 void texPreGetMipmap(int texId, int unused, int* outA, int* outB, int count, int* frameTable, int queryMode)
 {
-    fhSwapResidentTabs();
     uintptr_t base = gResourceFileBuffers[0x4f];
     if (base != 0)
     {
         if (queryMode == 1 && frameTable != 0)
         {
             uintptr_t e = base + (texId & 0xffffff) * 2 + frameTable[count] + 4;
-            int v = *(int*)(e + 8);
-            *outA = *(int*)(e + 4);
+            int v = (int)fhSwap32(*(u32*)(e + 8));
+            *outA = (int)fhSwap32(*(u32*)(e + 4));
             *outB = v;
         }
         else if (queryMode == 2 && frameTable != 0)
         {
             memcpy(frameTable, (void*)(base + (texId & 0xffffff) * 2), (count + 1) * 4);
+            fhSwapU32Array(frameTable, count + 1);
         }
         else
         {

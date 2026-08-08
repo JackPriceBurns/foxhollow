@@ -22,8 +22,8 @@ extern int gAttractMovieOffsetY;
 BOOL Movie_SetVolumeFade(int volume, int fadeFrames);
 
 extern s32 gAttractMovieAudioMode;
-extern u32 gAttractMovieAudioMixSourceAddr;
-extern u32 gAttractMovieAudioPendingSourceAddr;
+extern uintptr_t gAttractMovieAudioMixSourceAddr;
+extern uintptr_t gAttractMovieAudioPendingSourceAddr;
 extern u32 gAttractMovieAudioDmaBufferIndex;
 extern char gAttractMovieAudioDmaBuffer[];
 extern AIDCallback gAttractMovieAudioPrevDmaCallback;

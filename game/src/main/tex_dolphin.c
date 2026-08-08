@@ -187,7 +187,7 @@ void mapBlockRender_drawLightmapIndirectPasses(struct MapBlockData* blockData, S
     Texture** noiseTextures;
     MapBlockBoundsRec* bounds[1];
     u8 passCount;
-    int byteBase;
+    u8* byteBase;
     u32 bits;
     int bitPos;
     u32 flags;
@@ -196,11 +196,11 @@ void mapBlockRender_drawLightmapIndirectPasses(struct MapBlockData* blockData, S
     bitPos = state->bit;
     {
         int off = bitPos >> 3;
-        byteBase = (int)state->instrs;
-        bits = *(u8*)(byteBase + off);
+        byteBase = state->instrs;
+        bits = byteBase[off];
         byteBase += off;
-        bits = bits | (u32)(*(u8*)(byteBase + 1) << 8);
-        bits = bits | (u32)(*(u8*)(byteBase + 2) << 16);
+        bits = bits | (u32)(byteBase[1] << 8);
+        bits = bits | (u32)(byteBase[2] << 16);
     }
     state->bit = bitPos + 8;
     /* extract this cursor's 8-bit field (LSB-first: shift out the bits already
@@ -246,7 +246,7 @@ Shader* mapBlockRender_setLightmapShader(struct MapBlockData* blockData, ModelRe
 {
     Shader* shader;
     u32 shaderIdx;
-    int byteBase;
+    u8* byteBase;
     GXColor fogColor;
     u32 bits;
     u32 bitPos;
@@ -256,11 +256,11 @@ Shader* mapBlockRender_setLightmapShader(struct MapBlockData* blockData, ModelRe
     bitPos = state->bit;
     {
         int off = (int)bitPos >> 3;
-        byteBase = (int)state->instrs;
-        bits = *(u8*)(byteBase + off);
+        byteBase = state->instrs;
+        bits = byteBase[off];
         byteBase += off;
-        bits |= (u32) * (u8*)(byteBase + 1) << 8;
-        bits |= (u32) * (u8*)(byteBase + 2) << 16;
+        bits |= (u32)byteBase[1] << 8;
+        bits |= (u32)byteBase[2] << 16;
         state->bit = bitPos + 6;
         shaderIdx = (bits >> (bitPos & 7)) & 0x3f;
         shader = &blockData->shaders[shaderIdx];
@@ -498,7 +498,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
     u32 flags;
     u32 bits;
     int bitPos;
-    int byteBase;
+    u8* byteBase;
 
     {
         TexShadowRow* texGlobals;
@@ -508,11 +508,11 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
         bitPos = state->bit;
         {
             int off = bitPos >> 3;
-            byteBase = (int)state->instrs;
-            bits = *(u8*)(byteBase + off);
+            byteBase = state->instrs;
+            bits = byteBase[off];
             byteBase += off;
-            bits = bits | (u32)(*(u8*)(byteBase + 1) << 8);
-            bits = bits | (u32)(*(u8*)(byteBase + 2) << 16);
+            bits = bits | (u32)(byteBase[1] << 8);
+            bits = bits | (u32)(byteBase[2] << 16);
         }
         state->bit = bitPos + 8;
         bounds[0] = &block->displayLists[(bits >> (bitPos & 7)) & 0xff];
@@ -678,7 +678,7 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
 {
     int layerIdx;
     ShaderLayer* layer;
-    int texture;
+    Texture* texture;
     f32 (*texMtx)[4];
     int overrideIdx;
     int remain;
@@ -690,7 +690,7 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
 
     kColor = lbl_803DEBB0;
     if ((shader->layerCount == 2) &&
-        (texture = (int)Shader_getLayer(shader, 1),
+        (texture = (Texture*)Shader_getLayer(shader, 1),
          (((ShaderLayer*)texture)->typeBits & 0x7f) == 9u))
     {
         layer = Shader_getLayer(shader, 0);
@@ -698,19 +698,19 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
             u8 overrideType;
             if ((overrideType = layer->materialId) != '\0')
             {
-                int layerTextureId = layer->textureIndex;
+                Texture* layerTextureId = layer->texture;
                 MapTextureOverride* overrides;
                 overrideIdx = 0;
-                overrides = (MapTextureOverride*)(int)gMapTextureOverrides;
+                overrides = gMapTextureOverrides;
                 overrideEntry = overrides;
                 for (remain = 0x50; remain != 0 || (texture = layerTextureId, 0); remain--)
                 {
                     if (((overrideEntry->refCount > 0) &&
-                         ((u32)overrideEntry->textureId == layerTextureId)) &&
+                         (overrideEntry->texture == layerTextureId)) &&
                         ((int)overrideType == overrideEntry->type))
                     {
-                        texture = (int)textureGetAnimationFrame((Texture*)layerTextureId,
-                                                                overrides[overrideIdx].frame);
+                        texture = textureGetAnimationFrame(layerTextureId,
+                                                           overrides[overrideIdx].frame);
                         break;
                     }
                     overrideEntry = overrideEntry + 1;
@@ -719,14 +719,14 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
             }
             else
             {
-                texture = layer->textureIndex;
+                texture = layer->texture;
             }
         }
         if (layer->scrollMtx != 0xff)
         {
-            tx = *(float*)((int)gMapTextureScrolls + ((u32)layer->scrollMtx << 4)) / 1048576.0f;
+            tx = gMapTextureScrolls[layer->scrollMtx].offsetX / 1048576.0f;
             PSMTXTrans(texMatrix, tx,
-                       *(float*)((int)gMapTextureScrolls + 4 + ((u32)layer->scrollMtx << 4)) /
+                       gMapTextureScrolls[layer->scrollMtx].offsetY /
                            1048576.0f,
                        0.0f);
             texMtx = texMatrix;
@@ -735,7 +735,7 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
         {
             texMtx = NULL;
         }
-        addTexLayerStageKColor((Texture*)texture, texMtx, 0, (GXColor*)&kColor);
+        addTexLayerStageKColor(texture, texMtx, 0, (GXColor*)&kColor);
         if ((SHADER_FLAGS(shader) & 0x100) != 0)
         {
             addSmallReflectionTevStage();
@@ -745,19 +745,19 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
             u8 overrideType;
             if ((overrideType = layer->materialId) != '\0')
             {
-                int layerTextureId = layer->textureIndex;
+                Texture* layerTextureId = layer->texture;
                 MapTextureOverride* overrides;
                 overrideIdx = 0;
-                overrides = (MapTextureOverride*)(int)gMapTextureOverrides;
+                overrides = gMapTextureOverrides;
                 overrideEntry = overrides;
                 for (remain = 0x50; remain != 0 || (texture = layerTextureId, 0); remain--)
                 {
                     if (((overrideEntry->refCount > 0) &&
-                         ((u32)overrideEntry->textureId == layerTextureId)) &&
+                         (overrideEntry->texture == layerTextureId)) &&
                         ((int)overrideType == overrideEntry->type))
                     {
-                        texture = (int)textureGetAnimationFrame((Texture*)layerTextureId,
-                                                                overrides[overrideIdx].frame);
+                        texture = textureGetAnimationFrame(layerTextureId,
+                                                           overrides[overrideIdx].frame);
                         break;
                     }
                     overrideEntry = overrideEntry + 1;
@@ -766,14 +766,14 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
             }
             else
             {
-                texture = layer->textureIndex;
+                texture = layer->texture;
             }
         }
         if (layer->scrollMtx != 0xff)
         {
-            tx = *(float*)((int)gMapTextureScrolls + ((u32)layer->scrollMtx << 4)) / 1048576.0f;
+            tx = gMapTextureScrolls[layer->scrollMtx].offsetX / 1048576.0f;
             PSMTXTrans(texMatrix, tx,
-                       *(float*)((int)gMapTextureScrolls + 4 + ((u32)layer->scrollMtx << 4)) /
+                       gMapTextureScrolls[layer->scrollMtx].offsetY /
                            1048576.0f,
                        0.0f);
             texMtx = texMatrix;
@@ -782,17 +782,17 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
         {
             texMtx = NULL;
         }
-        addTexLayerStage((Texture*)texture, texMtx, 9);
+        addTexLayerStage(texture, texMtx, 9);
         addVertexColorKAlphaStage((GXColor*)&kColor);
     }
     else
     {
         for (layerIdx = 0; layerIdx < (int)(u32)shader->layerCount; layerIdx = layerIdx + 1)
         {
-            int layerTextureId;
+            Texture* layerTextureId;
             layer = Shader_getLayer(shader, layerIdx);
-            layerTextureId = layer->textureIndex;
-            if ((u32)layerTextureId != 0)
+            layerTextureId = layer->texture;
+            if (layerTextureId != NULL)
             {
                 u8 overrideType;
                 {
@@ -800,16 +800,16 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
                     {
                         MapTextureOverride* overrides;
                         overrideIdx = 0;
-                        overrides = (MapTextureOverride*)(int)gMapTextureOverrides;
+                        overrides = gMapTextureOverrides;
                         overrideEntry = overrides;
                         for (remain = 0x50; remain != 0 || (texture = layerTextureId, 0); remain--)
                         {
                             if (((overrideEntry->refCount > 0) &&
-                                 ((u32)overrideEntry->textureId == layerTextureId)) &&
+                                 (overrideEntry->texture == layerTextureId)) &&
                                 ((int)overrideType == overrideEntry->type))
                             {
-                                texture = (int)textureGetAnimationFrame(
-                                    (Texture*)layerTextureId, overrides[overrideIdx].frame);
+                                texture = textureGetAnimationFrame(
+                                    layerTextureId, overrides[overrideIdx].frame);
                                 break;
                             }
                             overrideEntry = overrideEntry + 1;
@@ -840,7 +840,7 @@ static void mapBlockRender_setupShaderTextures(Shader* shader, int mode)
                     }
                     else
                     {
-                        addTexLayerStage((Texture*)texture, texMtx, layerByte);
+                        addTexLayerStage(texture, texMtx, layerByte);
                     }
                 }
             }
@@ -1000,7 +1000,6 @@ void* trackGetBlockDescriptors(u32* outVal);
 void mapBlockRender_setVtxDcrs(u8 doSetup, MapBlockData* block, Shader* shader,
                                ModelRenderInstrsState* state)
 {
-    int* stateWords;
     u32 val;
     int pos;
     int off;
@@ -1018,42 +1017,41 @@ void mapBlockRender_setVtxDcrs(u8 doSetup, MapBlockData* block, Shader* shader,
     int bit3;
     int i;
 
-    stateWords = (int*)state;
     if (doSetup != 0)
     {
         GXClearVtxDesc();
     }
-    pos = stateWords[4];
+    pos = state->bit;
     off = pos >> 3;
-    val = *(u8*)(stateWords[0] + off);
-    p = (u8*)stateWords[0] + off;
+    val = state->instrs[off];
+    p = state->instrs + off;
     val |= p[1] << 8;
     val |= p[2] << 16;
-    stateWords[4] = pos + 1;
+    state->bit = pos + 1;
     bit = (val >> (pos & 7)) & 1;
     if (doSetup != 0)
     {
         GXSetVtxDesc(GX_VA_POS, bit ? GX_INDEX16 : GX_INDEX8);
     }
-    pos2 = stateWords[4];
+    pos2 = state->bit;
     off2 = pos2 >> 3;
-    val2 = *(u8*)(stateWords[0] + off2);
-    q = (u8*)stateWords[0] + off2;
+    val2 = state->instrs[off2];
+    q = state->instrs + off2;
     val2 |= q[1] << 8;
     val2 |= q[2] << 16;
-    stateWords[4] = pos2 + 1;
+    state->bit = pos2 + 1;
     bit2 = (val2 >> (pos2 & 7)) & 1;
     if (doSetup != 0)
     {
         GXSetVtxDesc(GX_VA_CLR0, bit2 ? GX_INDEX16 : GX_INDEX8);
     }
-    pos3 = stateWords[4];
+    pos3 = state->bit;
     off3 = pos3 >> 3;
-    val3 = *(u8*)(stateWords[0] + off3);
-    r = (u8*)stateWords[0] + off3;
+    val3 = state->instrs[off3];
+    r = state->instrs + off3;
     val3 |= r[1] << 8;
     val3 |= r[2] << 16;
-    stateWords[4] = pos3 + 1;
+    state->bit = pos3 + 1;
     bit3 = (val3 >> (pos3 & 7)) & 1;
     if (doSetup != 0)
     {
@@ -1248,7 +1246,7 @@ void renderGlows(void)
             for (i = 0; i < 5; i++)
             {
                 int d = depthReadRequestPoll(sx + gSunOcclusionSampleOffsets[i].x,
-                                             sy + gSunOcclusionSampleOffsets[i].y, (void*)i);
+                                             sy + gSunOcclusionSampleOffsets[i].y, (void*)(uintptr_t)i);
                 if (sz <= d && pauseMenuGetState() == 0)
                     occ++;
             }
@@ -1264,7 +1262,7 @@ void renderGlows(void)
                 PSMTXConcat(viewMtx, sunMtx, sunMtx);
                 GXLoadPosMtxImm((const f32 (*)[4])sunMtx, GX_PNMTX0);
                 GXSetCurrentMtx(GX_PNMTX0);
-                selectTexture((Texture*)((int)skyGetSkyTexture()), 0);
+                selectTexture(skyGetSkyTexture(), 0);
                 skyGetSunColor(0, &amb[0], &amb[1], &amb[2]);
                 sunDot = (f32)(u32)sunAlpha * sunDot;
                 _gxSetTevColor2(amb[0], amb[1], amb[2], (int)(0.5f * sunDot));
@@ -1307,7 +1305,7 @@ void renderGlows(void)
             e = gGlowLightList[i];
             if (e->glowAlpha != 0)
             {
-                selectTexture((Texture*)((int)e->glowTexture), 0);
+                selectTexture((Texture*)e->glowTexture, 0);
                 _gxSetTevColor2((int)((f32)(u32)e->glowColor[0] * e->activeIntensity),
                                 (int)((f32)(u32)e->glowColor[1] * e->activeIntensity),
                                 (int)((f32)(u32)e->glowColor[2] * e->activeIntensity),
@@ -1430,7 +1428,7 @@ int mapBlockCountTrianglesByType(MapBlockData* block, int type)
     count = block->polyGroupCount;
     for (i = 0; i < count; i++)
     {
-        entry = (MapTriGroup*)((int)block->polygonGroups + offset);
+        entry = (MapTriGroup*)((u8*)block->polygonGroups + offset);
         if (type == (int)((entry->flags & 0xff000000) >> 24))
         {
             total += entry[1].firstTri - entry->firstTri;
@@ -1501,7 +1499,7 @@ void MapBlock_initShaders(MapBlockData* block)
 
 static inline void* mapBlockRelocatePointer(MapBlockData* block, void* offset)
 {
-    return (u8*)block + (u32)offset;
+    return (u8*)block + (uintptr_t)offset;
 }
 
 void MapBlock_init(MapBlockData* block)
@@ -1634,10 +1632,10 @@ void* mapBlockGetUnused00Value(MapBlockData* block)
     return NULL;
 }
 
-void mapGetBlocks(void** outLayerTables, u32* outBlocks)
+void mapGetBlocks(void** outLayerTables, uintptr_t* outBlocks)
 {
     *outLayerTables = gMapBlockLayerTables;
-    *outBlocks = (u32)gMapBlocks;
+    *outBlocks = (uintptr_t)gMapBlocks;
 }
 
 void mapClearBlockEdgeFlags(void)
@@ -1659,7 +1657,7 @@ void mapClearBlockEdgeFlags(void)
     }
 }
 
-int collectShadowTrackTriangles(GameObject* obj, int triBuf, void* planesOut, int vertsOut, int unusedTriangleCount,
+int collectShadowTrackTriangles(GameObject* obj, uintptr_t triBuf, void* planesOut, uintptr_t vertsOut, int unusedTriangleCount,
                                 f32 offX, f32 offZ, int unusedRenderMode, int kindSelector)
 {
     int j;

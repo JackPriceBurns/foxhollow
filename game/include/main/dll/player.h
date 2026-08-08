@@ -8,19 +8,20 @@ struct PlayerState;
 
 int playerUpdateAirborneMotion(GameObject* obj, int inner, int state);
 void playerUpdate(GameObject* obj);
-void playerProcessMessages(int obj, int inner, int state);
-void playerProcessHitResponse(int obj, int inner, int state);
-void playerDoHitDetection(int obj);
-int playerCheckCommonTransitions(int obj, int state, int inner, f32 fv);
+void playerProcessMessages(GameObject* obj, int inner, int state);
+void playerProcessHitResponse(GameObject* obj, int inner, int state);
+struct GameObject;
+void playerDoHitDetection(struct GameObject* obj);
+int playerCheckCommonTransitions(GameObject* obj, int state, int inner, f32 fv);
 
-int playerCheckIfClimbingOntoWall(int obj, int state, int state2, void* out, f32 fv, u32 mask);
-int playerStateMoving(int obj, int state, f32 fv);
-int playerStateOnLadder(int obj, int state);
+int playerCheckIfClimbingOntoWall(GameObject* obj, int state, int state2, void* out, f32 fv, u32 mask);
+int playerStateMoving(GameObject* obj, int state, f32 fv);
+int playerStateOnLadder(GameObject* obj, int state);
 int playerStateClimbWall(GameObject* obj, int state);
-int playerStateAimStaff(int obj, int state, f32 fv);
+int playerStateAimStaff(GameObject* obj, int state, f32 fv);
 int playerStateAttack(GameObject* obj, int state, f32 fv);
-int playerState1D(int obj, struct PlayerState* state, f32 fv);
-int playerStateIdle(int obj, int state, f32 fv);
+int playerState1D(GameObject* obj, struct PlayerState* state, f32 fv);
+int playerStateIdle(GameObject* obj, int state, f32 fv);
 int playerState08(GameObject* obj, int state, f32 fv);
 
 #endif

@@ -220,7 +220,7 @@ int shopitem_SeqFn(GameObject* obj, int unused, ObjSeqState* seq)
 
     if ((int)objAnim->banks[objAnim->bankIndex] != 0)
     {
-        ObjAnim_AdvanceCurrentMove((int)obj, 0.005f, timeDelta, NULL);
+        ObjAnim_AdvanceCurrentMove(obj, 0.005f, timeDelta, NULL);
     }
 
     switch ((obj)->anim.romDefNo)
@@ -418,7 +418,7 @@ void shopitem_update(GameObject* obj)
         }
         if ((obj)->anim.romDefNo != SHOPITEM_SEQ_STATIC && (obj)->anim.romDefNo != SHOPITEM_SEQ_BSPLINE)
         {
-            ObjAnim_AdvanceCurrentMove((int)obj, 0.005f, timeDelta, NULL);
+            ObjAnim_AdvanceCurrentMove(obj, 0.005f, timeDelta, NULL);
         }
         if (((obj)->anim.resetHitboxFlags & INTERACT_FLAG_DISABLED) == 0)
         {

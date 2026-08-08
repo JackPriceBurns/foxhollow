@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-u32 getNewShadowFalloffTexture(void);
+uintptr_t getNewShadowFalloffTexture(void);
 u32 getNewShadowInverseRampTexture(void);
 void allocLotsOfTextures(void);
 

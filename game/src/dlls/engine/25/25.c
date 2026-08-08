@@ -672,7 +672,7 @@ void dll_19_startHitReaction(GameObject* obj, void* state, void* hitbox, s16 gam
     }
     if (animMove != 0)
     {
-        ObjAnim_SetCurrentMove((int)obj, animMove, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, animMove, 0.0f, 0);
     }
     (*gPathControlInterface)->attachObject((void*)obj, (u8*)state + 4);
     if (field25f != -1)

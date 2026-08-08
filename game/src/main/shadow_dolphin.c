@@ -89,7 +89,7 @@ s8 lbl_803DCEEB;
 s8 lbl_803DCEEA;
 u8 lbl_803DCEE9;
 u8 lbl_803DCEE8;
-int gShadowTrackGridOrigin;
+uintptr_t gShadowTrackGridOrigin;
 int gShadowTrackTriangleBuffer;
 f32 gShadowOffsetZ;
 f32 gShadowOffsetX;
@@ -319,7 +319,7 @@ void objDrawGroundShadow(GameObject* obj, ObjModel* model)
             GXSetCullMode(GX_CULL_NONE);
             GXSetCurrentMtx(GX_PNMTX9);
             GXSetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
-            selectTexture((Texture*)((int)(&obj->anim)->modelState->shadowTexture), 0);
+            selectTexture((Texture*)(&obj->anim)->modelState->shadowTexture, 0);
             GXBegin(GX_QUADS, GX_VTXFMT6, 4);
             GXPosition3s16(shadowVerts[0], shadowVerts[1], shadowVerts[2]);
             GXTexCoord2s16(0, 0);
@@ -506,7 +506,7 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
     s16 savedRotX;
     s16 savedRotZ;
     s16 savedRotY;
-    u32 diskTexture;
+    uintptr_t diskTexture;
     MtxPtr viewMtx;
     u32 i;
 
@@ -553,7 +553,7 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
             projectionScale = obj->anim.hitboxScale * obj->anim.rootMotionScale;
         if (modelState->shadowRenderResource != OBJECT_SHADOW_MESH_UNCACHED ||
             (diskTexture = getNewShadowSmallDiskTexture(),
-             (u32)modelState->shadowCastSlot->texture == diskTexture))
+             (uintptr_t)modelState->shadowCastSlot->texture == diskTexture))
         {
             GXColor color = *(GXColor*)shadowColor;
             objectShadow_setupProjectedTexture(modelState->shadowCastSlot, &color, worldMtx);
@@ -712,11 +712,11 @@ int objShadowRender(GameObject* obj, int renderMode, int unused, int frameCount)
         trackGetTriangleBuffer(&idxOut, &triangleTable);
 
         triangleBuffer = triangleTable;
-        idxOut = collectShadowTrackTriangles(obj, triangleBuffer, gShadowDrawScratch, (int)gShadowVolumeBuffer, idxOut, (f32)(int)vtx[0],
+        idxOut = collectShadowTrackTriangles(obj, triangleBuffer, gShadowDrawScratch, (uintptr_t)gShadowVolumeBuffer, idxOut, (f32)(int)vtx[0],
                              (f32)(int)vtx[2], renderMode, modelState->flags & 0x40000);
         gShadowTrackTriangleBuffer = triangleBuffer;
         gShadowTrackTriangleCount = idxOut;
-        gShadowTrackGridOrigin = (int)vtx;
+        gShadowTrackGridOrigin = (uintptr_t)vtx;
         trackDolphin_buildShadowVolumePlanes((int*)obj, buf48, bufA8);
         cullVisibleShadowTriangles(obj, buf48, bufA8, idxOut, gShadowVolumeBuffer, cache,
                     (TrackShadowTriangle*)gShadowDrawScratch, 0x555);
@@ -819,12 +819,12 @@ void shadowVolumesSetDirty(s32 dirty)
 
 int shadowInit(GameObject* obj, u32 arena, int flags)
 {
-    int rounded;
+    u32 rounded;
     ObjModelState* modelState;
     s16 texId;
 
     rounded = roundUpTo4(arena);
-    obj->anim.modelState = (ObjModelState*)rounded;
+    obj->anim.modelState = (ObjModelState*)(uintptr_t)rounded;
     modelState = obj->anim.modelState;
     texId = obj->anim.modelInstance->shadowTextureId;
     if (texId != -1 && obj->anim.modelInstance->shadowType != OBJ_SHADOW_TYPE_MODEL_GEOMETRIC)

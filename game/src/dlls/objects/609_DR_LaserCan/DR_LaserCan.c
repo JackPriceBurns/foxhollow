@@ -512,7 +512,7 @@ void DR_LaserCannon_update(GameObject* obj)
                                                                 0x24))((int)spawned, outv, inv,
                                                                        setup->beamSpeed / 10.0f);
                             state->beamObject = (int)spawned;
-                            ObjAnim_SetCurrentMove((int)obj, 1, 0.0f, 0);
+                            ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
                             state->animStepScale = 0.018f;
                             Sfx_PlayFromObject(obj, SFXTRIG_wp_cahit2_c);
                             Sfx_PlayFromObject(obj, SFXTRIG_wp_blasershot11);
@@ -571,10 +571,10 @@ void DR_LaserCannon_update(GameObject* obj)
             TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, 1, 2);
         }
     }
-    hit = ObjAnim_AdvanceCurrentMove((int)obj, state->animStepScale, timeDelta, 0);
+    hit = ObjAnim_AdvanceCurrentMove(obj, state->animStepScale, timeDelta, 0);
     if ((obj)->anim.currentMove == 1 && hit != 0)
     {
-        ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
         state->animStepScale = 0.005f;
     }
     state->bobPhase = (250.0f * timeDelta + (f32)(u32)state->bobPhase);

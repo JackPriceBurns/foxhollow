@@ -39,7 +39,7 @@ int* gVoxMapsMapList;
 u8* gVoxMapsScratchBuffer;
 u8* gVoxMapsScratchBufferPtr;
 u8 gVoxMapsSlotInUse[8];
-u32 gVoxMapsTransformObj;
+GameObject* gVoxMapsTransformObj;
 int gVoxMapsMaxMapIndex;
 Texture* gVoxMapsLargeTextures[2];
 Texture* gVoxMapsSmallTextures[2];
@@ -181,9 +181,9 @@ void voxmaps_visitRouteNeighbor(struct RouteState* state, VoxBoxArg* srcBox, int
         {
             ySlot = ySlot - map->minY;
         }
-        if (((map->bitmap[(ySlot << 5) | bitmapCol] >> shift) & 1) != 0u)
+        if (((((u8*)map + map->bitmap)[(ySlot << 5) | bitmapCol] >> shift) & 1) != 0u)
         {
-            u8* node = voxmaps_getRouteNode(map->rowCounts, map->nodeBase, map->bitmap, voxX, ySlot, voxZ);
+            u8* node = voxmaps_getRouteNode((u8*)map + map->rowCounts, (int*)((u8*)map + map->nodeBase), (u8*)map + map->bitmap, voxX, ySlot, voxZ);
             p[0] = (node[z6lo] >> shiftLo) & 3;
             p[1] = (node[z6lo] >> shiftHi) & 3;
             p[2] = (node[z6hi] >> shiftLo) & 3;
@@ -505,9 +505,9 @@ int voxmaps_traceTraversableRoute(s16* dest, s16* start, s16* lastReachableOut)
                 {
                     slot = y - minY;
                 }
-                if (((map->bitmap[(slot << 5) | bitmapCol] >> voxXand7) & 1u) != 0u)
+                if (((((u8*)map + map->bitmap)[(slot << 5) | bitmapCol] >> voxXand7) & 1u) != 0u)
                 {
-                    node = voxmaps_getRouteNode(map->rowCounts, map->nodeBase, map->bitmap, voxX, slot, voxZ);
+                    node = voxmaps_getRouteNode((u8*)map + map->rowCounts, (int*)((u8*)map + map->nodeBase), (u8*)map + map->bitmap, voxX, slot, voxZ);
                     p[0] = (node[z6lo] >> shiftLo) & 3;
                     p[1] = (node[z6lo] >> shiftHi) & 3;
                     p[2] = (node[z6hi] >> shiftLo) & 3;
@@ -1022,7 +1022,7 @@ int voxmaps_traceLine(VoxPos* start, VoxPos* end, VoxPos* coordOut, u8* occOut, 
                     found.y = y;
                 }
                 {
-                    u8* bitmap = map->bitmap;
+                    u8* bitmap = (u8*)map + map->bitmap;
                     unsigned int bit = (bitmap[(ySlot << 5) | ((tileZ << 1) + (tileX >> 3))] >> (tileX & 7)) & 1;
                     if (bit != 0)
                     {
@@ -1030,7 +1030,7 @@ int voxmaps_traceLine(VoxPos* start, VoxPos* end, VoxPos* coordOut, u8* occOut, 
                         if (routeNodeDirty != 0)
                         {
                             routeNode =
-                                voxmaps_getRouteNode(map->rowCounts, map->nodeBase, bitmap, tileX, ySlot, tileZ);
+                                voxmaps_getRouteNode((u8*)map + map->rowCounts, (int*)((u8*)map + map->nodeBase), bitmap, tileX, ySlot, tileZ);
                             routeNodeDirty = 0;
                         }
                         occ = (routeNode[localZ64 & 3] >> ((localX64 & 3) << 1)) & 3;
@@ -1352,12 +1352,6 @@ VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8)
         OSReport(msg + 0x174);
         return NULL;
     }
-    hdr->rowCounts += (int)hdr;
-    hdr->bitmap += (int)hdr;
-    hdr->nodeBase = (int*)((int)hdr->nodeBase + (int)hdr);
-    hdr->f20 += (int)hdr;
-    hdr->f28 += (int)hdr;
-    hdr->f18 += (int)hdr;
     return hdr;
 }
 

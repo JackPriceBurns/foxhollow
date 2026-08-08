@@ -953,7 +953,7 @@ void staff_update(GameObject* obj) {
     int n;
     ObjModel* model = Obj_GetActiveModel(obj);
     model->bufferFlags &= ~0x8;
-    ObjAnim_AdvanceCurrentMove((int)obj, state->moveSpeed, timeDelta, NULL);
+    ObjAnim_AdvanceCurrentMove(obj, state->moveSpeed, timeDelta, NULL);
 
     swp = (StaffSwipeSlot*)state;
     for (n = 3; n != 0; n--) {

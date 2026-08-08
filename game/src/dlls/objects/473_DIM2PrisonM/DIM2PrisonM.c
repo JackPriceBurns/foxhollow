@@ -65,7 +65,7 @@ int dim2prisonmammoth_stateHandler03(GameObject* obj, Dim2PrisonMammothState* st
         int k = randomGetRange(0, 1);
 
         state->baddie.moveSpeed = gPrisonMammothMoveSpeedTable[k];
-        ObjAnim_SetCurrentMove((int)obj, gPrisonMammothMoveIdTable[k], 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, gPrisonMammothMoveIdTable[k], 0.0f, 0);
     }
     if (state->baddie.moveDone != 0) {
         return -1;
@@ -87,7 +87,7 @@ int dim2prisonmammoth_stateHandler02(GameObject* obj, Dim2PrisonMammothState* st
     state->baddie.flags0 |= 0x200000;
     state->baddie.moveSpeed = 0.005f;
     if (obj->anim.currentMove != 0) {
-        ObjAnim_SetCurrentMove((int)obj, 0, fz, 0);
+        ObjAnim_SetCurrentMove(obj, 0, fz, 0);
     }
     objectState->stateTimer = randomGetRange(0x4B0, 0x960);
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
@@ -113,7 +113,7 @@ int dim2prisonmammoth_stateHandler01(GameObject* obj, Dim2PrisonMammothState* st
     if (state->baddie.moveJustStartedA != 0) {
         state->baddie.moveSpeed = 0.005f;
         if (obj->anim.currentMove != 5) {
-            ObjAnim_SetCurrentMove((int)obj, 5, fz, 0);
+            ObjAnim_SetCurrentMove(obj, 5, fz, 0);
         }
         objectState->stateTimer = randomGetRange(0x4B0, 0x960);
     }
@@ -264,10 +264,10 @@ void dim2prisonmammoth_initialise(void) {
     gDim2PrisonMammothDefaultStateHandler[0] = dim2prisonmammoth_defaultStateHandler;
 }
 
-void dim2prisonmammoth_updateModelChain(GameObject* obj, int* model) {
+void dim2prisonmammoth_updateModelChain(GameObject* obj, ObjModel* model) {
     EarthWarriorModelChainStateView* state = obj->extra;
 
-    ObjModelChain_Update(model, *model, state->tailModelChain, NULL);
+    ObjModelChain_Update(model, model->file, state->tailModelChain, NULL);
 }
 
 ObjHitReactEntry gPrisonMammothHitReactEntry[] = {

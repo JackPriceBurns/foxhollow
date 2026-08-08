@@ -995,11 +995,11 @@ void SHthorntail_update(GameObject* obj) {
         }
         if ((int)(obj)->anim.currentMove !=
             SHTHORNTAIL_STATE_MOVE_IDS(stateTables)[runtime->behaviorState]) {
-            ObjAnim_SetCurrentMove((int)obj, SHTHORNTAIL_STATE_MOVE_IDS(stateTables)[runtime->behaviorState],
+            ObjAnim_SetCurrentMove(obj, SHTHORNTAIL_STATE_MOVE_IDS(stateTables)[runtime->behaviorState],
                                    SHTHORNTAIL_TIMER_DONE_THRESHOLD, 0);
             runtime->storedFacingAngle = obj->anim.rotX;
         }
-        val = ObjAnim_AdvanceCurrentMove((int)obj, SHTHORNTAIL_STATE_MOVE_STEP_SCALES(stateTables)[runtime->behaviorState],
+        val = ObjAnim_AdvanceCurrentMove(obj, SHTHORNTAIL_STATE_MOVE_STEP_SCALES(stateTables)[runtime->behaviorState],
                                          timeDelta, &animEvents);
         if (val != 0) {
             runtime->behaviorFlags = runtime->behaviorFlags | SHTHORNTAIL_FLAG_MOVE_COMPLETE;

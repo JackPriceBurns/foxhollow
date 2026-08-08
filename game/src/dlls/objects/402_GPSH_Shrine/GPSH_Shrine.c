@@ -132,7 +132,7 @@ void gpshShrine_updateHoverMotion(GameObject* obj) {
     trigB += trigA;
     obj->anim.rotY = GPSH_SHRINE_ORBIT_ROTATION_SCALE * trigB;
 
-    ObjAnim_AdvanceCurrentMove((int)obj, GPSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
+    ObjAnim_AdvanceCurrentMove(obj, GPSH_SHRINE_ANIMATION_STEP, timeDelta, &animEvents);
 
     if (player != NULL) {
         angleDelta =

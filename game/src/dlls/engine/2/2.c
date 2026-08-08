@@ -356,14 +356,14 @@ int ObjSeq_TurnToFacePlayer(GameObject* obj, ObjSeqState* state, s16 turnDegrees
                 {
                     if (animLeft != -1)
                     {
-                        ObjAnim_SetCurrentMove((int)obj, animLeft, 0.0f, 0);
+                        ObjAnim_SetCurrentMove(obj, animLeft, 0.0f, 0);
                     }
                 }
                 else
                 {
                     if (animRight != -1)
                     {
-                        ObjAnim_SetCurrentMove((int)obj, animRight, 0.0f, 0);
+                        ObjAnim_SetCurrentMove(obj, animRight, 0.0f, 0);
                     }
                 }
             }
@@ -402,7 +402,7 @@ int ObjSeq_TurnToFacePlayer(GameObject* obj, ObjSeqState* state, s16 turnDegrees
                 f32 fa = (f32)(t50 >= 0 ? t50 : -t50);
                 fa = fa * 3.142f / 325767.0f;
                 ObjAnim_SampleRootCurvePhase(&obj->anim, fa, &out);
-                ObjAnim_AdvanceCurrentMove((int)obj, out, (f32)framesThisStep, NULL);
+                ObjAnim_AdvanceCurrentMove(obj, out, (f32)framesThisStep, NULL);
             }
         }
         if (state->posOffsetScale > 1.0f)
@@ -3826,7 +3826,7 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
             }
         }
         ((ObjSeqState*)seq)->fade = 1.0f;
-        ObjAnim_SetCurrentMove((int)activeObj, ((ObjSeqState*)seq)->moveId,
+        ObjAnim_SetCurrentMove(activeObj, ((ObjSeqState*)seq)->moveId,
                                (f32)((ObjSeqState*)seq)->moveBlendParam / 256.0f, 0);
         break;
     case SEQACT_MOVEMODE:
@@ -4081,14 +4081,14 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
         sfxTimerEntry = &((ObjSeqState*)seq)->sfxTimer[slot];
         if (*sfxTimerEntry > 0)
         {
-            Sfx_RemoveLoopedObjectSound((u32)obj, (u16)((ObjSeqState*)seq)->sfxId[slot]);
+            Sfx_RemoveLoopedObjectSound(obj, (u16)((ObjSeqState*)seq)->sfxId[slot]);
         }
         ((u8*)cmd)[1] = ((u8*)cmd)[5];
         ((u8*)cmd)[4] = 0x63;
         *sfxTimerEntry = ((ObjSeqCommand*)cmd)[1].param;
         sfxState = (ObjSeqState*)seq;
         sfxState->sfxId[slot] = (s16)(cmd->param & 0xfff);
-        Sfx_AddLoopedObjectSound((u32)obj, (u16)sfxState->sfxId[slot]);
+        Sfx_AddLoopedObjectSound(obj, (u16)sfxState->sfxId[slot]);
         break;
     }
     return 0;
@@ -4443,7 +4443,7 @@ void ObjSeq_RebuildCurveStateToFrame(GameObject* obj, GameObject* seqObj, u8* se
 
             if (action != NULL)
             {
-                ObjAnim_AdvanceCurrentMove((int)seqObj, speed, 1.0f,
+                ObjAnim_AdvanceCurrentMove(seqObj, speed, 1.0f,
                                                                             &state->animEvents);
                 if (mode != 0)
                 {
@@ -5234,7 +5234,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
             if (*(s16*)(p + 0x30) <= 0)
             {
                 *(s16*)(p + 0x30) = 0;
-                Sfx_RemoveLoopedObjectSound((u32)obj, *(s16*)(p + 0x38));
+                Sfx_RemoveLoopedObjectSound(obj, *(s16*)(p + 0x38));
             }
         }
     }
@@ -5414,7 +5414,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
                 if (action != NULL)
                 {
                     ObjAnim_AdvanceCurrentMove(
-                        (int)activeObj, moveProgress, 1.0f, &state->animEvents);
+                        activeObj, moveProgress, 1.0f, &state->animEvents);
                     if (state->fade > 0.0f)
                     {
                         if (state->trackRunLength[10] != 0)

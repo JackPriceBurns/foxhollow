@@ -173,6 +173,8 @@ void* RomList_GetLoadedPages(void)
 }
 
 u32 gVisibleObjectSortKeys[0x400];
+static GameObject* sLightmapDeferredObjects[0x14];
+extern f32 distortionFilterVector[];
 
 
 
@@ -487,14 +489,11 @@ static void renderObjects(s8* opacity) {
     int* p;
     int slot;
     GameObject** objects;
-    LightmapDrawQueue* qbase;
     LightmapQEnt* q;
-    LightmapDrawQueue* dq;
 
-    qbase = (LightmapDrawQueue*)gLightmapDrawQueue;
     q = gLightmapDrawQueue;
     objects = ObjList_GetObjects((int*)0, 0);
-    for (i = 1, kp = (u32*)((u8*)qbase + 0x8818) + 1; i < gVisibleObjectSortKeyCount; kp++, i++) {
+    for (i = 1, kp = gVisibleObjectSortKeys + 1; i < gVisibleObjectSortKeyCount; kp++, i++) {
         idx = *kp & 0x3ff;
         obj = objects[idx];
         flags = obj->anim.modelInstance->flags;
@@ -503,8 +502,7 @@ static void renderObjects(s8* opacity) {
             if (opacity[idx] != 0 && gLightmapDeferredObjectCount < 0x14) {
                 slot = gLightmapDeferredObjectCount;
                 gLightmapDeferredObjectCount = slot + 1;
-                dq = (LightmapDrawQueue*)&((u32*)qbase)[slot];
-                dq->deferred[0] = (u32)obj;
+                sLightmapDeferredObjects[slot] = obj;
             }
         } else {
             if ((flags & 0x800000) == 0) {
@@ -564,7 +562,7 @@ void renderSceneGeometry(u8 renderType, s8* order)
     int box3[4];
     u8* cellMaskPtr;
     s8** layerTablePtr;
-    int* layerFlagPtr;
+    s8** layerFlagPtr;
     int idx;
     int k;
     int row, col;
@@ -583,7 +581,7 @@ void renderSceneGeometry(u8 renderType, s8* order)
     do
     {
         table = *layerTablePtr;
-        gMapLayerCellStates = (s8*)*layerFlagPtr;
+        gMapLayerCellStates = *layerFlagPtr;
         mapGetBlockGridRects(gMapBlockOriginX + 7, gMapBlockOriginZ + 7, box0, box1, box2, box3, layer, 1,
                        gMapCurRomListSlot);
         cellMaskPtr = cellMask;
@@ -642,9 +640,8 @@ void renderSceneGeometry(u8 renderType, s8* order)
 
 void sceneDraw(void)
 {
-    char* q;
+    f32* cloudMtx;
     int i;
-    u8* cursor;
     GameObject** deferred;
     GameObject* player;
     u8 flag;
@@ -654,26 +651,26 @@ void sceneDraw(void)
     f32 skyB;
     s8 buf[616];
 
-    q = (char*)gLightmapDrawQueue;
+    cloudMtx = (f32*)gCloudLayerTexMatrix;
     gCloudLayerTexture = cloudGetLayerTexture(&skyA, &skyB);
     if (gCloudLayerTexture != 0)
     {
-        *(f32*)(q + 0x3f48) = 0.0005f;
-        *(f32*)(q + 0x3f4c) = 0.0f;
-        *(f32*)(q + 0x3f50) = 0.0f;
-        *(f32*)(q + 0x3f54) = 0.0005f * playerMapOffsetX + skyA;
-        *(f32*)(q + 0x3f58) = 0.0f;
-        *(f32*)(q + 0x3f5c) = 0.0f;
-        *(f32*)(q + 0x3f60) = 0.0005f;
-        *(f32*)(q + 0x3f64) = 0.0005f * playerMapOffsetZ + skyB;
-        *(f32*)(q + 0x3f68) = 0.0f;
-        *(f32*)(q + 0x3f6c) = 0.0f;
-        *(f32*)(q + 0x3f70) = 0.0f;
-        *(f32*)(q + 0x3f74) = 1.0f;
-        PSMTXConcat((MtxPtr)(q + 0x3f48), (MtxPtr)Camera_GetInverseViewMatrix(),
-                    (MtxPtr)(q + 0x3f48));
+        cloudMtx[0] = 0.0005f;
+        cloudMtx[1] = 0.0f;
+        cloudMtx[2] = 0.0f;
+        cloudMtx[3] = 0.0005f * playerMapOffsetX + skyA;
+        cloudMtx[4] = 0.0f;
+        cloudMtx[5] = 0.0f;
+        cloudMtx[6] = 0.0005f;
+        cloudMtx[7] = 0.0005f * playerMapOffsetZ + skyB;
+        cloudMtx[8] = 0.0f;
+        cloudMtx[9] = 0.0f;
+        cloudMtx[10] = 0.0f;
+        cloudMtx[11] = 1.0f;
+        PSMTXConcat((MtxPtr)cloudMtx, (MtxPtr)Camera_GetInverseViewMatrix(),
+                    (MtxPtr)cloudMtx);
     }
-    mapDebugRender((int*)(q + 0x4164));
+    mapDebugRender((int*)(distortionFilterVector + 0x17));
     shadowBeginFrame();
     shadowVolumeBeginFrame();
     gVisibleObjectSortKeyCount = 1;
@@ -747,7 +744,7 @@ void sceneDraw(void)
         doHeatEffect(heatEffectIntensity & 0xff);
     }
     i = 0;
-    deferred = (GameObject**)(q + 0x4114);
+    deferred = sLightmapDeferredObjects;
     for (; i < gLightmapDeferredObjectCount; i++)
     {
         (*gModgfxInterface)->renderEffects(NULL, 0, 0, 1, *deferred);
@@ -762,16 +759,16 @@ void sceneDraw(void)
         sceneDrawTransparentPolys();
         gLightmapDrawQueueCount = 0;
     }
-    *(u32*)(((int)q + 8) + gLightmapDrawQueueCount * 16) = 0x78000000;
-    *(u32*)(((int)q + 12) + gLightmapDrawQueueCount * 16) = 8;
+    gLightmapDrawQueue[gLightmapDrawQueueCount].c = 0x78000000;
+    gLightmapDrawQueue[gLightmapDrawQueueCount].d = 8;
     gLightmapDrawQueueCount = gLightmapDrawQueueCount + 1;
     if (gLightmapDrawQueueCount == 1000)
     {
         sceneDrawTransparentPolys();
         gLightmapDrawQueueCount = 0;
     }
-    *(u32*)(((int)q + 8) + gLightmapDrawQueueCount * 16) = 0x50000000;
-    *(u32*)(((int)q + 12) + gLightmapDrawQueueCount * 16) = 9;
+    gLightmapDrawQueue[gLightmapDrawQueueCount].c = 0x50000000;
+    gLightmapDrawQueue[gLightmapDrawQueueCount].d = 9;
     gLightmapDrawQueueCount = gLightmapDrawQueueCount + 1;
     sceneDrawTransparentPolys();
     (*gModgfxInterface)->markSourceFrameUpdated(buf);
@@ -780,15 +777,13 @@ void sceneDraw(void)
     if (player != NULL)
     {
         i = 0;
-        cursor = (u8*)player;
         for (; i < player->childCount; i++)
         {
-            GameObject* child = ((GameObject*)cursor)->childObjs[0];
+            GameObject* child = player->childObjs[i];
             if (child->anim.classId == 45)
             {
                 ((void (*)(GameObject*))(*child->anim.dll)[11])(child);
             }
-            cursor += 4;
         }
     }
     staffDrawQuakeSpellRing();
@@ -796,7 +791,7 @@ void sceneDraw(void)
     if (bEnableDistortionFilter != 0)
     {
         updateReflectionTextures();
-        doDistortionFilter((f32*)(q + 0x4108), distortionFilterAngle2,
+        doDistortionFilter(distortionFilterVector, distortionFilterAngle2,
                            distortionFilterColor, distortionFilterAngle1);
     }
     renderGlows();

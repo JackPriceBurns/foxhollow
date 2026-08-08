@@ -381,7 +381,7 @@ void gcRobotPatrol_init(GameObject* obj, int state)
     ((EnemyState*)state)->moveSpeedScale2 = fz;
     ((EnemyState*)state)->gcRobot.cooldownTimer = 0.0f;
     obj->anim.hitboxScale = 100.0f;
-    Sfx_AddLoopedObjectSound((u32)obj, SFXTRIG_tr_bcrek1_c);
+    Sfx_AddLoopedObjectSound(obj, SFXTRIG_tr_bcrek1_c);
 }
 
 const f32 gGcRobotPatrolZero = 0.0f;

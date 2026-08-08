@@ -646,17 +646,17 @@ void modelRenderInstrsState_init(ModelRenderInstrsState* state, void* instrs, in
     state->bit = 0;
 }
 
-void objList_remove(ObjLinkedList* list, int item)
+void objList_remove(ObjLinkedList* list, uintptr_t item)
 {
-    int head;
-    int prev;
-    int current;
-    int next;
+    uintptr_t head;
+    uintptr_t prev;
+    uintptr_t current;
+    uintptr_t next;
 
     head = list->head;
     if (head == item)
     {
-        list->head = *(int*)(head + list->nextOffset);
+        list->head = *(uintptr_t*)(head + list->nextOffset);
         list->count--;
         return;
     }
@@ -666,7 +666,7 @@ void objList_remove(ObjLinkedList* list, int item)
     while (current != 0 && current != item)
     {
         prev = current;
-        current = *(int*)(current + list->nextOffset);
+        current = *(uintptr_t*)(current + list->nextOffset);
     }
 
     if (current == 0)
@@ -674,21 +674,21 @@ void objList_remove(ObjLinkedList* list, int item)
         return;
     }
 
-    next = *(int*)(current + list->nextOffset);
+    next = *(uintptr_t*)(current + list->nextOffset);
     if (current == head)
     {
         list->head = next;
     }
     else
     {
-        *(int*)(prev + list->nextOffset) = next;
+        *(uintptr_t*)(prev + list->nextOffset) = next;
     }
     list->count--;
 }
 
-void objListAdd(ObjLinkedList* list, int prev, int item)
+void objListAdd(ObjLinkedList* list, uintptr_t prev, uintptr_t item)
 {
-    int next;
+    uintptr_t next;
 
     if (list->head == 0)
     {
@@ -703,10 +703,10 @@ void objListAdd(ObjLinkedList* list, int prev, int item)
         }
         else
         {
-            next = *(int*)(prev + list->nextOffset);
-            *(int*)(prev + list->nextOffset) = item;
+            next = *(uintptr_t*)(prev + list->nextOffset);
+            *(uintptr_t*)(prev + list->nextOffset) = item;
         }
-        *(int*)(item + list->nextOffset) = next;
+        *(uintptr_t*)(item + list->nextOffset) = next;
     }
     list->count++;
 }

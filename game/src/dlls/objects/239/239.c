@@ -1265,7 +1265,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
         f32 z0 = PUSHABLE_ZERO;
         state->renderTimer = z0;
         state->gameBit = setup->gameBit;
-        ObjAnim_SetCurrentMove((int)obj, 0, z0, 0);
+        ObjAnim_SetCurrentMove(obj, 0, z0, 0);
     }
     ObjMsg_AllocQueue(obj, PUSHABLE_MSG_QUEUE_SIZE);
     ObjHits_EnableObject(obj);

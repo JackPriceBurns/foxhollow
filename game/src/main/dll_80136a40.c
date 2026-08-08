@@ -157,14 +157,14 @@ static inline void errDisplayFillBackdrop(void)
         row = 0;
         for (n = 0; n < 60; n++)
         {
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0x500) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0xA00) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0xF00) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0x1400) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0x1900) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0x1E00) = 0x1080;
-            *(u16*)(xcb + (int)debugDrawFrameBuffer + row + 0x2300) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0x500) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0xA00) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0xF00) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0x1400) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0x1900) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0x1E00) = 0x1080;
+            *(u16*)(xcb + (uintptr_t)debugDrawFrameBuffer + row + 0x2300) = 0x1080;
             row += 0x2800;
         }
         xcb += 2;

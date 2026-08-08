@@ -550,19 +550,19 @@ void mtx44_multSafe(f32* a, f32* b, f32* out)
         {
             tp[t] = zero;
             tp[t] += ((f32*)a)[row] * ((f32*)b)[j];
-            tp[t] += *(f32*)((int)a + o1) * *(f32*)((int)b + (j + 4) * 4);
-            tp[t] += *(f32*)((int)a + o2) * *(f32*)((int)b + (j + 8) * 4);
-            tp[t] += *(f32*)((int)a + o3) * *(f32*)((int)b + (j + 12) * 4);
+            tp[t] += *(f32*)((uintptr_t)a + o1) * *(f32*)((uintptr_t)b + (j + 4) * 4);
+            tp[t] += *(f32*)((uintptr_t)a + o2) * *(f32*)((uintptr_t)b + (j + 8) * 4);
+            tp[t] += *(f32*)((uintptr_t)a + o3) * *(f32*)((uintptr_t)b + (j + 12) * 4);
             t++;
         }
         row += 4;
     }
     for (i = 0; i < 16; i += 4)
     {
-        *(f32*)((int)out + (i << 2)) = *(f32*)((int)tmp + (i << 2));
-        *(f32*)((int)out + ((i + 1) << 2)) = *(f32*)((int)tmp + ((i + 1) << 2));
-        *(f32*)((int)out + ((i + 2) << 2)) = *(f32*)((int)tmp + ((i + 2) << 2));
-        *(f32*)((int)out + ((i + 3) << 2)) = *(f32*)((int)tmp + ((i + 3) << 2));
+        *(f32*)((uintptr_t)out + (i << 2)) = *(f32*)((uintptr_t)tmp + (i << 2));
+        *(f32*)((uintptr_t)out + ((i + 1) << 2)) = *(f32*)((uintptr_t)tmp + ((i + 1) << 2));
+        *(f32*)((uintptr_t)out + ((i + 2) << 2)) = *(f32*)((uintptr_t)tmp + ((i + 2) << 2));
+        *(f32*)((uintptr_t)out + ((i + 3) << 2)) = *(f32*)((uintptr_t)tmp + ((i + 3) << 2));
     }
 }
 

@@ -8,8 +8,8 @@ struct GameTextBox;
 
 typedef struct GameTextSlot {
     int opcode;
-    int arg0;
-    int arg1;
+    intptr_t arg0;
+    intptr_t arg1;
     int arg2;
     int arg3;
 } GameTextSlot;
@@ -51,7 +51,7 @@ void gameTextInitBoxTextures(void);
 void gameTextBuildSystemFontAtlas(void);
 void subtitleFreeBoxTextures(int mode);
 void subtitleLoadBoxTextures(int mode);
-void gameTextDrawBox(struct GameTextDef* def, int box, struct GameTextBox* slot);
+void gameTextDrawBox(struct GameTextDef* def, intptr_t box, struct GameTextBox* slot);
 void textRenderStr(char* str, struct GameTextBox* slot, f32 x, f32 y, f32 lineH, int mode);
 
 void gameTextSetWindowStrPos(int idx, int x, int y);

@@ -99,7 +99,7 @@ void Object_ObjAnimSetSecondaryBlendMove(ObjAnimComponent* objAnim, u32 moveId, 
     return;
 }
 
-int Object_ObjAnimAdvanceMove(int objAnimHandle, f32 moveStepScale, f32 deltaTime, ObjAnimEventList* events)
+int Object_ObjAnimAdvanceMove(void* objAnimHandle, f32 moveStepScale, f32 deltaTime, ObjAnimEventList* events)
 {
     ObjAnimComponent* objAnim;
     ObjAnimBank* bank;
@@ -297,7 +297,7 @@ int Object_ObjAnimSetMoveProgress(ObjAnimComponent* objAnim, f32 moveProgress)
 }
 
 int
-Object_ObjAnimSetMove(int objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
+Object_ObjAnimSetMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
 {
     ObjAnimComponent* objAnim;
     ObjAnimBank* bank;
@@ -647,7 +647,7 @@ int ObjAnim_SampleRootCurvePhase(ObjAnimComponent* objAnim, f32 distance, float*
     return 0;
 }
 
-int ObjAnim_AdvanceCurrentMove(int objAnimHandle, f32 moveStepScale, f32 deltaTime, ObjAnimEventList* events)
+int ObjAnim_AdvanceCurrentMove(void* objAnimHandle, f32 moveStepScale, f32 deltaTime, ObjAnimEventList* events)
 {
     int segmentCount;
     ObjAnimComponent* objAnim;
@@ -918,7 +918,7 @@ int ObjAnim_AdvanceCurrentMove(int objAnimHandle, f32 moveStepScale, f32 deltaTi
                 {
                     blendAxis++;
                 }
-                at = (s16*)((previousSampleIndex << 1) + (int)axis);
+                at = (s16*)((previousSampleIndex << 1) + (uintptr_t)axis);
                 previousAxisValue = moveWeight * at[0];
                 if (blendAxis != NULL)
                 {
@@ -931,7 +931,7 @@ int ObjAnim_AdvanceCurrentMove(int objAnimHandle, f32 moveStepScale, f32 deltaTi
                 }
                 previousInterp = previousAxisValue + previousFraction * (previousAxisNextValue - previousAxisValue);
 
-                at = (s16*)((currentSampleIndex << 1) + (int)axis);
+                at = (s16*)((currentSampleIndex << 1) + (uintptr_t)axis);
                 currentAxisValue = moveWeight * at[0];
                 if (blendAxis != NULL)
                 {
@@ -1024,7 +1024,7 @@ int ObjAnim_SetMoveProgress(ObjAnimComponent* objAnim, f32 moveProgress)
     return 0;
 }
 
-int ObjAnim_SetCurrentMove(int objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
+int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
 {
     ObjAnimComponent* objAnim;
     ObjAnimBank* bank;

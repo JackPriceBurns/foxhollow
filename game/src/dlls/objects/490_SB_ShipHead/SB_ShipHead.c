@@ -184,7 +184,7 @@ void SB_ShipHead_update(GameObject* obj) {
         }
     }
     if ((galleonPhase == 5) && (gSbShipHeadPrevGalleonPhase != 5)) {
-        ObjAnim_SetCurrentMove((int)obj, 1, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
         gSbShipHeadHasFiredFireball = 0;
     }
     if ((((object->anim.currentMove == 1) && (object->anim.currentMoveProgress >= 0.5f)) &&
@@ -230,9 +230,9 @@ void SB_ShipHead_update(GameObject* obj) {
         placementBytes->color[3] = 0xff;
         objSetupObject(placementBytes, 5, -1, -1, 0);
     }
-    result = ObjAnim_AdvanceCurrentMove((int)obj, gSbShipHeadAnimAdvanceRate, timeDelta, NULL);
+    result = ObjAnim_AdvanceCurrentMove(obj, gSbShipHeadAnimAdvanceRate, timeDelta, NULL);
     if ((object->anim.currentMove == 1) && (result != 0)) {
-        ObjAnim_SetCurrentMove((int)obj, 0, 0.0f, 0);
+        ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
     }
     gSbShipHeadPrevGalleonPhase = galleonPhase;
 }
