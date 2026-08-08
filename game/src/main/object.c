@@ -1448,10 +1448,10 @@ void Obj_RunInitCallback(GameObject* obj, void* cb, int unused)
         ObjectInterfaceHandle p = obj->anim.dll;
         if (p != NULL)
         {
-            void (*fn)(GameObject*) = (void (*)(GameObject*))((ObjectInterface*)*p)->init;
+            void (*fn)(GameObject*, void*) = (void (*)(GameObject*, void*))((ObjectInterface*)*p)->init;
             if ((intptr_t)fn != -1 && fn != NULL)
             {
-                fn(obj);
+                fn(obj, cb);
             }
         }
         break;
@@ -1725,7 +1725,7 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags)
     }
     if ((flags & 2) && modelDef->shadowType != OBJ_SHADOW_TYPE_NONE)
     {
-        size = roundUpTo4(size) + 0x44;
+        size = roundUpTo4(size) + sizeof(ObjModelState) + 4;
     }
     if (modelDef->hitboxStateCount != 0)
     {

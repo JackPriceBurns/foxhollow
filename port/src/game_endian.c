@@ -75,6 +75,9 @@ int fhTabIs16Bit(const char* name) {
   if (len >= 12 && strcmp(name + len - 12, "OBJSEQ2C.tab") == 0) {
     return 1;
   }
+  if (len >= 11 && strcmp(name + len - 11, "MODANIM.tab") == 0) {
+    return 1;
+  }
   return 0;
 }
 

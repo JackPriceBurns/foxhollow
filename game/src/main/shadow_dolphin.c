@@ -819,12 +819,12 @@ void shadowVolumesSetDirty(s32 dirty)
 
 uintptr_t shadowInit(GameObject* obj, uintptr_t arena, int flags)
 {
-    u32 rounded;
+    uintptr_t rounded;
     ObjModelState* modelState;
     s16 texId;
 
-    rounded = roundUpTo4(arena);
-    obj->anim.modelState = (ObjModelState*)(uintptr_t)rounded;
+    rounded = (arena + 3) & ~(uintptr_t)3;
+    obj->anim.modelState = (ObjModelState*)rounded;
     modelState = obj->anim.modelState;
     texId = obj->anim.modelInstance->shadowTextureId;
     if (texId != -1 && obj->anim.modelInstance->shadowType != OBJ_SHADOW_TYPE_MODEL_GEOMETRIC)
@@ -864,7 +864,7 @@ uintptr_t shadowInit(GameObject* obj, uintptr_t arena, int flags)
     modelState->shadowTintA = 0x96;
     modelState->shadowTintB = 0x64;
     gShadowVolumesDirty = 1;
-    return rounded + 0x44;
+    return rounded + sizeof(ObjModelState);
 }
 
 void playerShadowClearPositionOverride(GameObject* obj)

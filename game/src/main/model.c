@@ -45,6 +45,54 @@ u16 gModelCopyChunkWordLimit = 0x2A0;
 #define MODEL_BONEXFORM_HAS_Y 0x4000
 #define MODEL_BONEXFORM_HAS_Z 0x8000
 void* animLoadFromTable(u8* hdr, int idx, int a, u8* b);
+int mergeTableFiles(void* table, int id, int idx, int count_);
+extern uintptr_t gResourceFileBuffers[];
+
+static void modelNormalizePackHeader(int offsetFlags)
+{
+    uintptr_t bufBase;
+    volatile u32* w;
+    int i;
+    int slot;
+
+    slot = 0x2b;
+    if (((offsetFlags & 0x20000000) != 0 || gResourceFileBuffers[0x2b] == 0) &&
+        gResourceFileBuffers[0x46] != 0)
+    {
+        slot = 0x46;
+    }
+    bufBase = gResourceFileBuffers[slot];
+    if (bufBase == 0)
+    {
+        return;
+    }
+    w = (volatile u32*)(bufBase + (offsetFlags & 0x0fffffff));
+    if (w[0] == 0xedfecefa)
+    {
+        w[0] = 0xfacefeed;
+    }
+    if (w[0] == 0xe0e0e0e0 || w[0] == 0xfacefeed)
+    {
+        for (i = 1; i < 4; i++)
+        {
+            if (w[i] >= 0x01000000)
+            {
+                w[i] = fhSwap32(w[i]);
+            }
+        }
+    }
+}
+
+static void modelSyncResourceTables(void)
+{
+    fhSwapResidentTabs();
+    mergeTableFiles(getCurrentDataFile(MLDF_FILEID_MODELS_TAB_A), MLDF_FILEID_MODELS_TAB_A,
+                    MLDF_FILEID_MODELS_TAB_B, 0x800);
+    mergeTableFiles(getCurrentDataFile(MLDF_FILEID_ANIM_TAB_A), MLDF_FILEID_ANIM_TAB_A,
+                    MLDF_FILEID_ANIM_TAB_B, 0xbb8);
+    mergeTableFiles(getCurrentDataFile(MLDF_FILEID_TEX0_TAB_A), MLDF_FILEID_TEX0_TAB_A, 0x4e, 0x1000);
+    mergeTableFiles(getCurrentDataFile(MLDF_FILEID_TEX1_TAB_A), MLDF_FILEID_TEX1_TAB_A, 0x4c, 0x1000);
+}
 #define LOADCOLOR_BLOCK(SLOT)                                                         \
     {                                                                                 \
         int idx;                                                                      \
@@ -55,7 +103,7 @@ void* animLoadFromTable(u8* hdr, int idx, int a, u8* b);
         u8 *hp;                                                                       \
                                                                                       \
         v = (uintptr_t)(SLOT);                                                        \
-        idx = **(s16 **)(hdr + 0x6c);                                                 \
+        idx = *(s16 *)((ModelFileHeader *)hdr)->animationHeaderBuffer;                \
         if ((getLoadedFileFlags(0) & 0x100000) == 0 || *(u16 *)(hdr + 4) == 1 ||      \
             *(u16 *)(hdr + 4) == 3) {                                                 \
             if (v == 0) {                                                             \
@@ -523,8 +571,8 @@ int modelLoadAnimations(void* model, int id, void* animBase)
 
     padBytes = 0;
     tbl = gModelAnimOffsetTable;
-    fileLoadToBufferOffset(MLDF_FILEID_MODANIM_TAB, tbl, id << 1, 0x10);
-    tabBase = *(s16*)tbl;
+    fileLoadToBufferOffset(MLDF_FILEID_MODANIM_TAB, tbl, (id & ~1) << 1, 0x10);
+    tabBase = (s16)((u16*)tbl)[id & 1];
     if (((ModelFileHeader*)hdr)->animationCount == 0)
     {
         return 0;
@@ -547,11 +595,15 @@ int modelLoadAnimations(void* model, int id, void* animBase)
         }
         padBytes = sz;
         buf += sz;
+        fprintf(stderr, "[anim] hdr=%p ahb=%p tabBase=%d sz=%d\n", (void*)hdr,
+                (void*)((ModelFileHeader*)hdr)->animationHeaderBuffer, tabBase, sz);
         fileLoadToBufferOffset(MLDF_FILEID_MODANIM_BIN, ((ModelFileHeader*)hdr)->animationHeaderBuffer, tabBase, sz);
+        fhSwapU16Array(((ModelFileHeader*)hdr)->animationHeaderBuffer, (u32)sz >> 1);
     }
     else
     {
         fileLoadToBufferOffset(MLDF_FILEID_MODANIM_BIN, gModelResourceBuffer, tabBase, sz);
+        fhSwapU16Array(gModelResourceBuffer, (u32)sz >> 1);
         ((ModelFileHeader*)hdr)->animationHeaderBuffer = (u8*)gModelResourceBuffer;
     }
     hdrOff[0] = 0;
@@ -2081,6 +2133,7 @@ void* loadAnimation(ModelFileHeader* hdr, s16 id, int b, u8* bufout)
     {
         return 0;
     }
+    modelSyncResourceTables();
     if (bufout == 0)
     {
         if (ModelList_getHeader(gModelAnimCacheList, (i = id), &ptr) == 0)
@@ -2139,7 +2192,7 @@ void ObjModel_CopyJointTranslation(u8* modelBytes, int jointIndex, f32* out)
 
 Texture* ObjModel_GetTexture(ModelFileHeader* model, int textureIndex)
 {
-    return textureIdxToPtr(model->textureIds[textureIndex]);
+    return (Texture*)((uintptr_t*)model->textureIds)[textureIndex];
 }
 
 s16* ObjModel_GetBaseVertexCoords(ModelFileHeader* modelFile, int vertexIndex)
@@ -2378,6 +2431,7 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
 {
     int j, k;
     u8* op;
+    uintptr_t* ids = (uintptr_t*)((ModelFileHeader*)m)->textureIds;
     for (j = 0; j < ((ModelFileHeader*)m)->renderOpCount; j++)
     {
         op = (u8*)&((ModelFileHeader*)m)->renderOps[j];
@@ -2386,28 +2440,28 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
             ShaderLayer* e = &((Shader*)op)->layers[k];
             if (e->textureIndex != -1)
             {
-                e->textureIndex = ((ModelFileHeader*)m)->textureIds[e->textureIndex];
+                e->texture = (Texture*)ids[e->textureIndex];
             }
             else
             {
-                e->textureIndex = 0;
+                e->texture = NULL;
             }
         }
-        if (((Shader*)op)->auxTextureIndex != -1)
+        if (((Shader*)op)->auxTextureIndex != (u32)-1)
         {
-            ((Shader*)op)->auxTextureIndex = ((ModelFileHeader*)m)->textureIds[((Shader*)op)->auxTextureIndex];
+            ((Shader*)op)->auxTexture = (Texture*)ids[((Shader*)op)->auxTextureIndex];
         }
         else
         {
-            ((Shader*)op)->auxTextureIndex = 0;
+            ((Shader*)op)->auxTexture = NULL;
         }
         if (((Shader*)op)->indTextureId != -1)
         {
-            ((Shader*)op)->indTextureId = ((ModelFileHeader*)m)->textureIds[((Shader*)op)->indTextureId];
+            ((Shader*)op)->indTexture = (Texture*)ids[((Shader*)op)->indTextureId];
         }
         else
         {
-            ((Shader*)op)->indTextureId = 0;
+            ((Shader*)op)->indTexture = NULL;
         }
         if (((Shader*)op)->unk1C != -1)
         {
@@ -2426,7 +2480,7 @@ void ObjModel_ResolveRenderOpTextures(u8* m)
         }
         if (((Shader*)op)->textureId != -1)
         {
-            ((Shader*)op)->textureId = ((ModelFileHeader*)m)->textureIds[((Shader*)op)->textureId];
+            ((Shader*)op)->textureId = 1;
         }
         else
         {
@@ -2448,31 +2502,27 @@ void* ObjModel_LoadModelData(int id);
 void ObjModel_RelocateAnimData(u8* m, u8* dst)
 {
     int i;
-    ((ModelFileHeader*)m)->vertexAnimEntriesRaw = ((ModelFileHeader*)m)->vertexAnimEntries;
-    for (i = 0; i < ((ModelFileHeader*)m)->vertexAnimCount; i++)
+    u8* entry;
+    ModelFileHeader* h = (ModelFileHeader*)m;
+
+    h->vertexAnimEntriesRaw = h->vertexAnimEntries;
+    for (i = 0; i < h->vertexAnimCount; i++)
     {
-        ((ObjModel*)dst)->vertexAnimData[i] = ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->vertexAnimEntries)[i].
-            srcDataOffset;
-        if (((ModelVtxAnimChunk*)((ModelFileHeader*)m)->vertexAnimEntries)[i].weightStream < ((ModelFileHeader*)m)->
-            vertexAnimBase)
+        entry = h->vertexAnimEntries + i * 0x74;
+        ((ObjModel*)dst)->vertexAnimData[i] = *(s32*)(entry + 0x60);
+        if (*(u8**)(entry + 0x64) < h->vertexAnimBase)
         {
-            ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->vertexAnimEntries)[i].weightStream =
-                ((ModelFileHeader*)m)->vertexAnimBase + (uintptr_t)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
-                    vertexAnimEntries)[i].weightStream;
+            *(u8**)(entry + 0x64) = h->vertexAnimBase + *(u32*)(entry + 0x64);
         }
     }
-    ((ModelFileHeader*)m)->blendAnimEntriesRaw = ((ModelFileHeader*)m)->blendAnimEntries;
-    for (i = 0; i < ((ModelFileHeader*)m)->blendAnimCount; i++)
+    h->blendAnimEntriesRaw = h->blendAnimEntries;
+    for (i = 0; i < h->blendAnimCount; i++)
     {
-        ((ObjModel*)dst)->blendAnimData[i] =
-            ((ObjModel*)dst)->normalBuf + ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].
-            srcDataOffset;
-        if (((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].weightStream < ((ModelFileHeader*)m)->
-            blendAnimBase)
+        entry = h->blendAnimEntries + i * 0x74;
+        ((ObjModel*)dst)->blendAnimData[i] = ((ObjModel*)dst)->normalBuf + *(s32*)(entry + 0x60);
+        if (*(u8**)(entry + 0x64) < h->blendAnimBase)
         {
-            ((ModelVtxAnimChunk*)((ModelFileHeader*)m)->blendAnimEntries)[i].weightStream =
-                ((ModelFileHeader*)m)->blendAnimBase + (uintptr_t)((ModelVtxAnimChunk*)((ModelFileHeader*)m)->
-                    blendAnimEntries)[i].weightStream;
+            *(u8**)(entry + 0x64) = h->blendAnimBase + *(u32*)(entry + 0x64);
         }
     }
 }
@@ -2572,11 +2622,277 @@ void ObjModel_RelocateModelData(u8* m)
     }
 }
 
+static u32 modelFileOffsetAt(u8* gc, int off, u32 pad)
+{
+    u32 v = fhSwap32(*(u32*)(gc + off));
+    if (v == 0)
+    {
+        return 0;
+    }
+    return v + pad;
+}
+
+static f32 modelFileF32At(u8* gc, int off)
+{
+    u32 v = fhSwap32(*(u32*)(gc + off));
+    f32 f;
+    memcpy(&f, &v, 4);
+    return f;
+}
+
+static void modelUnpackShaders(Shader* ops, u8* gc, u32 off, u32 count)
+{
+    u32 i;
+    int k;
+    for (i = 0; i < count; i++)
+    {
+        u8* r = gc + off + i * 0x44;
+        Shader* s = &ops[i];
+        memcpy(s->pad00, r, sizeof(s->pad00));
+        s->reg1Texture = (void*)(uintptr_t)fhSwap32(*(u32*)(r + 0x08));
+        s->alpha = r[0x0c];
+        memcpy(s->pad0D, r + 0x0d, sizeof(s->pad0D));
+        s->reg2Texture = (void*)(uintptr_t)fhSwap32(*(u32*)(r + 0x14));
+        s->textureId = (s32)fhSwap32(*(u32*)(r + 0x18));
+        s->unk1C = fhSwap32(*(u32*)(r + 0x1c));
+        s->reg2TexSlot = r[0x20];
+        s->pad21 = r[0x21];
+        s->reg2Alpha = r[0x22];
+        s->pad23 = r[0x23];
+        for (k = 0; k < 2; k++)
+        {
+            u8* lr = r + 0x24 + k * 8;
+            s->layers[k].texture = NULL;
+            s->layers[k].textureIndex = (s32)fhSwap32(*(u32*)lr);
+            s->layers[k].typeBits = lr[4];
+            s->layers[k].materialId = lr[5];
+            s->layers[k].scrollMtx = lr[6];
+            s->layers[k].unk7 = lr[7];
+        }
+        s->auxTexture = NULL;
+        s->auxTextureIndex = fhSwap32(*(u32*)(r + 0x34));
+        s->indTexture = NULL;
+        s->indTextureId = (s32)fhSwap32(*(u32*)(r + 0x38));
+        s->flags = fhSwap32(*(u32*)(r + 0x3c));
+        s->vtxAttrFlags = r[0x40];
+        s->layerCount = r[0x41];
+        s->envMapParams = r[0x42];
+        s->alphaOverride = r[0x43];
+    }
+}
+
+static void modelUnpackAnimChunks(u8* gc, u32 off, u32 count)
+{
+    u32 i;
+    for (i = 0; i < count; i++)
+    {
+        u8* e = gc + off + i * 0x74;
+        *(u32*)(e + 0x60) = fhSwap32(*(u32*)(e + 0x60));
+        *(u32*)(e + 0x64) = fhSwap32(*(u32*)(e + 0x64));
+        *(u32*)(e + 0x68) = 0;
+        *(u16*)(e + 0x70) = fhSwap16(*(u16*)(e + 0x70));
+    }
+}
+
+static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 morphTabOff, u32 shaderTabOff)
+{
+    ModelFileHeader* hdr = (ModelFileHeader*)base;
+    u32 off;
+    u32 n;
+    u32 i;
+    u8* p;
+
+    memset(base, 0, pad);
+    hdr->refCount = gc[0x00];
+    hdr->unk01 = gc[0x01];
+    hdr->flags = fhSwap16(*(u16*)(gc + 0x02));
+    hdr->modelId = fhSwap16(*(u16*)(gc + 0x04));
+    memcpy(hdr->unk06, gc + 0x06, sizeof(hdr->unk06));
+    hdr->dataSize = (s32)(fhSwap32(*(u32*)(gc + 0x0c)) + pad);
+    memcpy(hdr->unk10, gc + 0x10, sizeof(hdr->unk10));
+    hdr->unk18 = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x18, pad);
+    hdr->unk1C = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x1c, pad);
+    hdr->flags24 = gc[0x24];
+    memcpy(hdr->unk25, gc + 0x25, sizeof(hdr->unk25));
+    hdr->vertices = (u8*)(uintptr_t)(fhSwap32(*(u32*)(gc + 0x28)) + pad);
+    hdr->normals = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x2c, pad);
+    hdr->colors = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x30, pad);
+    hdr->texCoords = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x34, pad);
+    hdr->cullDistance = fhSwap16(*(u16*)(gc + 0xe0));
+    hdr->shaderFlags = fhSwap16(*(u16*)(gc + 0xe2));
+    hdr->vertexCount = fhSwap16(*(u16*)(gc + 0xe4));
+    hdr->normalCount = fhSwap16(*(u16*)(gc + 0xe6));
+    hdr->colorCount = fhSwap16(*(u16*)(gc + 0xe8));
+    hdr->texCoordCount = fhSwap16(*(u16*)(gc + 0xea));
+    hdr->animationCount = fhSwap16(*(u16*)(gc + 0xec));
+    memcpy(hdr->unkEE, gc + 0xee, sizeof(hdr->unkEE));
+    hdr->collisionBlockCount = fhSwap16(*(u16*)(gc + 0xf0));
+    hdr->textureCount = gc[0xf2];
+    hdr->jointCount = gc[0xf3];
+    hdr->extraJointCount = gc[0xf4];
+    hdr->displayListCount = gc[0xf5];
+    hdr->shadowDisplayListCount = gc[0xf6];
+    hdr->hitSphereCount = gc[0xf7];
+    hdr->renderOpCount = gc[0xf8];
+    hdr->morphTargetCount = gc[0xf9];
+    hdr->texMtxCount = gc[0xfa];
+
+    off = fhSwap32(*(u32*)(gc + 0x20));
+    if (off != 0)
+    {
+        uintptr_t* ids = (uintptr_t*)(base + texTabOff);
+        for (i = 0; i < hdr->textureCount; i++)
+        {
+            ids[i] = fhSwap32(*(u32*)(gc + off + i * 4));
+        }
+        hdr->textureIds = (s32*)(uintptr_t)texTabOff;
+    }
+
+    off = fhSwap32(*(u32*)(gc + 0x38));
+    if (off != 0)
+    {
+        modelUnpackShaders((Shader*)(base + shaderTabOff), gc, off, hdr->renderOpCount);
+        hdr->renderOps = (Shader*)(uintptr_t)shaderTabOff;
+    }
+
+    off = fhSwap32(*(u32*)(gc + 0x3c));
+    if (off != 0)
+    {
+        hdr->jointData = (u8*)(uintptr_t)(off + pad);
+        p = gc + off;
+        for (i = 0; i < hdr->jointCount; i++)
+        {
+            fhSwapU32Array(p + i * 0x1c + 4, 6);
+        }
+    }
+
+    off = fhSwap32(*(u32*)(gc + 0x40));
+    if (off != 0)
+    {
+        hdr->jointBlendData = (u8*)(uintptr_t)(off + pad);
+        fhSwapU32Array(gc + off, (u32)hdr->jointCount * 4);
+    }
+
+    hdr->vertexAnimPivot[0] = modelFileF32At(gc, 0x44);
+    hdr->vertexAnimPivot[1] = modelFileF32At(gc, 0x48);
+    hdr->vertexAnimPivot[2] = modelFileF32At(gc, 0x4c);
+    hdr->vertexAnimScaleDivisor = modelFileF32At(gc, 0x50);
+    hdr->extraJointDefs = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x54, pad);
+
+    off = fhSwap32(*(u32*)(gc + 0x58));
+    if (off != 0)
+    {
+        hdr->hitVolumes = (u8*)(uintptr_t)(off + pad);
+        for (i = 0; i < hdr->hitSphereCount; i++)
+        {
+            p = gc + off + i * 0x18;
+            fhSwapU16Array(p, 2);
+            fhSwapU32Array(p + 4, 4);
+            *(u16*)(p + 0x14) = fhSwap16(*(u16*)(p + 0x14));
+        }
+    }
+
+    off = fhSwap32(*(u32*)(gc + 0x60));
+    hdr->collisionTriangles = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x5c, pad);
+    if (off != 0)
+    {
+        u32 triCount;
+        u32 triOff;
+        u32 fileSize = fhSwap32(*(u32*)(gc + 0x0c));
+        hdr->collisionBlocks = (u8*)(uintptr_t)(off + pad);
+        for (i = 0; i < hdr->collisionBlockCount; i++)
+        {
+            p = gc + off + i * 0x14;
+            fhSwapU16Array(p, 8);
+            *(u32*)(p + 0x10) = fhSwap32(*(u32*)(p + 0x10));
+        }
+        p = gc + off + (u32)hdr->collisionBlockCount * 0x14;
+        *(u16*)p = fhSwap16(*(u16*)p);
+        triCount = *(u16*)p;
+        triOff = fhSwap32(*(u32*)(gc + 0x5c));
+        if (triOff != 0 && triOff < fileSize)
+        {
+            if (triOff + triCount * 8 > fileSize)
+            {
+                triCount = (fileSize - triOff) / 8;
+            }
+            fhSwapU16Array(gc + triOff, triCount * 4);
+        }
+    }
+
+    for (i = 0; i < 8; i++)
+    {
+        hdr->animGroupBaseIndices[i] = (s16)fhSwap16(*(u16*)(gc + 0x70 + i * 2));
+    }
+    hdr->animationDataFileOffset = (s32)fhSwap32(*(u32*)(gc + 0x80));
+    hdr->headerSize = (s16)fhSwap16(*(u16*)(gc + 0x84));
+    memcpy(hdr->unk86, gc + 0x86, sizeof(hdr->unk86));
+    hdr->vertexAnimCount = fhSwap16(*(u16*)(gc + 0x8a));
+    memcpy(hdr->unk8C, gc + 0x8c, sizeof(hdr->unk8C));
+    hdr->vertexAnimEntriesRaw = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x94, pad);
+    memcpy(hdr->unk98, gc + 0x98, sizeof(hdr->unk98));
+    off = fhSwap32(*(u32*)(gc + 0xa4));
+    if (off != 0)
+    {
+        hdr->vertexAnimEntries = (u8*)(uintptr_t)(off + pad);
+        modelUnpackAnimChunks(gc, off, hdr->vertexAnimCount);
+    }
+    hdr->vertexAnimBase = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xa8, pad);
+    memcpy(hdr->unkAC, gc + 0xac, sizeof(hdr->unkAC));
+    hdr->blendAnimCount = fhSwap16(*(u16*)(gc + 0xae));
+    memcpy(hdr->unkB0, gc + 0xb0, sizeof(hdr->unkB0));
+    hdr->blendAnimEntriesRaw = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xb8, pad);
+    memcpy(hdr->unkBC, gc + 0xbc, sizeof(hdr->unkBC));
+    off = fhSwap32(*(u32*)(gc + 0xc8));
+    if (off != 0)
+    {
+        hdr->blendAnimEntries = (u8*)(uintptr_t)(off + pad);
+        modelUnpackAnimChunks(gc, off, hdr->blendAnimCount);
+    }
+    hdr->blendAnimBase = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xcc, pad);
+
+    off = fhSwap32(*(u32*)(gc + 0xd0));
+    if (off != 0)
+    {
+        hdr->displayLists = (u8*)(uintptr_t)(off + pad);
+        n = (u32)hdr->displayListCount + hdr->shadowDisplayListCount;
+        for (i = 0; i < n; i++)
+        {
+            u32 dOff;
+            u16 dSize;
+            p = gc + off + i * 0x1c;
+            dOff = fhSwap32(*(u32*)p);
+            dSize = fhSwap16(*(u16*)(p + 4));
+            *(u32*)p = dOff + pad;
+            *(u16*)(p + 8) = dSize;
+        }
+    }
+    hdr->instrs = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xd4, pad);
+    hdr->instrsBitLenWords = fhSwap16(*(u16*)(gc + 0xd8));
+    memcpy(hdr->unkDA, gc + 0xda, sizeof(hdr->unkDA));
+
+    off = fhSwap32(*(u32*)(gc + 0xdc));
+    if (off != 0)
+    {
+        uintptr_t* mp = (uintptr_t*)(base + morphTabOff);
+        for (i = 0; i < hdr->morphTargetCount; i++)
+        {
+            mp[i] = fhSwap32(*(u32*)(gc + off + i * 4)) + pad;
+        }
+        hdr->morphTargetPtrs = (u8**)(uintptr_t)morphTabOff;
+    }
+}
+
 void* ObjModel_LoadModelData(int id)
 {
     int fileOffset, dataLen, animCount, headerSize, amapFlag;
     int amapSize;
-    void* model;
+    u8* tmp;
+    u8* model;
+    u32 texTabOff;
+    u32 morphTabOff;
+    u32 shaderTabOff;
+    u32 pad;
     if (getTableFileEntry(MLDF_FILEID_MODELS_TAB_A, id, &fileOffset) == 0)
     {
         return NULL;
@@ -2585,8 +2901,17 @@ void* ObjModel_LoadModelData(int id)
     headerSize = roundUpTo8(headerSize);
     headerSize += 0xb0;
     amapSize = modelGetAmapSize(id, amapFlag, animCount);
-    model = (void*)(((uintptr_t)mmAlloc(dataLen + amapSize + 0x1f4, 9, 0) + 0xF) & ~(uintptr_t)0xF);
-    loadAndDecompressDataFile(MLDF_FILEID_MODELS_BIN_A, model, fileOffset, dataLen, 0, id, 0);
+    tmp = mmAlloc(dataLen, 9, 0);
+    modelNormalizePackHeader(fileOffset);
+    loadAndDecompressDataFile(MLDF_FILEID_MODELS_BIN_A, tmp, fileOffset, dataLen, 0, id, 0);
+    texTabOff = ALIGN_NEXT((u32)sizeof(ModelFileHeader), 16);
+    morphTabOff = texTabOff + tmp[0xf2] * (u32)sizeof(uintptr_t);
+    shaderTabOff = ALIGN_NEXT(morphTabOff + tmp[0xf9] * (u32)sizeof(uintptr_t), 16);
+    pad = ALIGN_NEXT(shaderTabOff + tmp[0xf8] * (u32)sizeof(Shader), 16);
+    model = (u8*)(((uintptr_t)mmAlloc(pad + dataLen + amapSize + 0x1f4, 9, 0) + 0xF) & ~(uintptr_t)0xF);
+    memcpy(model + pad, tmp, dataLen);
+    mm_free(tmp);
+    modelUnpackFileData(model, model + pad, pad, texTabOff, morphTabOff, shaderTabOff);
     ((ModelFileHeader*)model)->headerSize = headerSize;
     ((ModelFileHeader*)model)->modelId = id;
     ((ModelFileHeader*)model)->animationCount = animCount;
@@ -2630,7 +2955,7 @@ void ObjModel_Release(u8* model)
     {
         ((ObjModel*)model)->bufferFlags &= ~OBJMODEL_BUFFER_FLAG_TEXTURES_LOADED;
         z[0] = 0;
-        for (z[1] = z[0]; z[0] < ((u8*)((ObjModel*)model)->file)[0xf8]; z[1] += 0xc, z[0]++)
+        for (z[1] = z[0]; z[0] < ((ObjModel*)model)->file->renderOpCount; z[1] += 0xc, z[0]++)
         {
             ShaderDef_free((int*)&((ObjModel*)model)->textureRefs[z[0]]);
         }
@@ -2646,7 +2971,7 @@ void ObjModel_Release(u8* model)
         z[0] = 0;
         for (z[1] = z[0]; z[0] < ((ModelFileHeader*)header)->textureCount; z[1] += 4, z[0]++)
         {
-            textureFree((Texture*)(textureIdxToPtr(*(s32*)((u8*)((ModelFileHeader*)header)->textureIds + z[1]))));
+            textureFree((Texture*)((uintptr_t*)((ModelFileHeader*)header)->textureIds)[z[0]]);
         }
         if (((ModelFileHeader*)header)->animationModelPtrs != NULL && ((ModelFileHeader*)header)->animationCount != 0)
         {
@@ -2654,7 +2979,7 @@ void ObjModel_Release(u8* model)
             for (z[1] = z[0]; z[0] < ((ModelFileHeader*)header)->animationCount; z[1] += 4, z[0]++)
             {
                 int idx;
-                void* tex = *(void**)(((ModelFileHeader*)header)->animationModelPtrs + z[1]);
+                void* tex = ((void**)((ModelFileHeader*)header)->animationModelPtrs)[z[0]];
                 if (tex != NULL && (s8)-- * (u8*)tex <= 0)
                 {
                     model_findIdxInModelList(gModelAnimCacheList, &tex, &idx);
@@ -2669,7 +2994,9 @@ void ObjModel_Release(u8* model)
 
 void* ObjModel_LoadAnimData(u8* p, int b, u8* c)
 {
-    void* m = modelLoad_layoutBuffers(p, b, p[0] == 1, c);
+    void* m;
+    modelSyncResourceTables();
+    m = modelLoad_layoutBuffers(p, b, p[0] == 1, c);
     modelAnimResetState(m, ((ObjModel*)m)->animStateA);
     if (((ObjModel*)m)->animStateB != NULL)
     {
@@ -2688,12 +3015,12 @@ void* ObjModel_Load(int id, int loadFlag, int* outSize)
     u8* header;
     int i[1];
     u8* h[1];
-    int off[1];
     void* tex;
     int idc;
     realId[0] = 0;
     i[0] = 0;
     idc = id;
+    modelSyncResourceTables();
     if (idc < 0)
     {
         realId[0] = -idc;
@@ -2701,20 +3028,21 @@ void* ObjModel_Load(int id, int loadFlag, int* outSize)
     else
     {
         fileLoadToBufferOffset(MLDF_FILEID_MODELIND_BIN, gModelResourceBuffer, idc * 2, 8);
-        realId[0] = gModelResourceBuffer[0];
+        realId[0] = (s16)fhSwap16((u16)gModelResourceBuffer[0]);
     }
     if (ModelList_getHeader(gModelList, realId[0], &header) == 0)
     {
+        uintptr_t* ids;
         header = ObjModel_LoadModelData(realId[0]);
         ObjModel_RelocateModelData(header);
         h[0] = header;
         i[0] = 0;
-        off[0] = i[0];
-        for (; i[0] < h[0][0xf2]; i[0]++)
+        ids = (uintptr_t*)((ModelFileHeader*)h[0])->textureIds;
+        for (; i[0] < (int)((ModelFileHeader*)h[0])->textureCount; i[0]++)
         {
-            tex = textureLoad(-(*(s32*)((u8*)((ModelFileHeader*)h[0])->textureIds + off[0]) | 0x8000), 1);
-            *(void**)((u8*)((ModelFileHeader*)h[0])->textureIds + off[0]) = tex;
-            off[0] += 4;
+            intptr_t texId = (intptr_t)ids[i[0]];
+            tex = textureLoad((int)-(texId | 0x8000), 1);
+            ids[i[0]] = (uintptr_t)tex;
         }
         ObjModel_ResolveRenderOpTextures(header);
         modelLoadAnimations(header, realId[0], header + ((ModelFileHeader*)header)->dataSize);
@@ -2734,8 +3062,8 @@ void ObjModel_InitResourceCaches(void)
 {
     void* m;
     int* p;
-    gModelList = allocModelStruct(0x8c, 4);
-    gModelAnimCacheList = allocModelStruct(0xc4, 4);
+    gModelList = allocModelStruct(0x8c, (int)sizeof(u8*));
+    gModelAnimCacheList = allocModelStruct(0xc4, (int)sizeof(u8*));
     m = mmAlloc(0x830, 0xa, 0);
     gModelResourceBuffer = m;
     gModelAnimOffsetTable = (int*)((u8*)m + 0x800);

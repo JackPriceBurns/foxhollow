@@ -223,7 +223,7 @@ struct ZlbHeader
 static void fhFixPackHeader(volatile u32* w)
 {
     int i;
-    if (w[0] == 0xedfeecfa)
+    if (w[0] == 0xedfecefa)
     {
         w[0] = 0xfacefeed;
         for (i = 1; i < 4; i++)
@@ -1307,6 +1307,7 @@ int getLoadedFileFlags(int slot)
 
 u32 loadTableFiles(void)
 {
+    fhSwapResidentTabs();
     int s = OSDisableInterrupts();
     int flags = loadedFileFlags();
     int loadedFlags = gAssetLoadInFlightFlags;

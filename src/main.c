@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
   const AuroraConfig config = {
       .appName = "Foxhollow",
       .logCallback = &log_callback,
-      .mem1Size = 64 * 1024 * 1024,
+      .mem1Size = 128 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
   aurora_initialize(argc, argv, &config);
