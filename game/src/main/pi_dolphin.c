@@ -4842,10 +4842,10 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
             idx = 0x46;
         }
         entry = (char*)gResourceFileBuffers[idx] + (offsetFlags & 0x0fffffff);
-        *p18 = *(int*)(entry + 0x18);
-        *p1c = *(int*)(entry + 0x1c);
-        *p20 = *(int*)(entry + 0x20);
-        *p4 = *(int*)(entry + 0x4);
+        *p18 = (int)fhSwap32(*(u32*)(entry + 0x18));
+        *p1c = (int)fhSwap32(*(u32*)(entry + 0x1c));
+        *p20 = (int)fhSwap32(*(u32*)(entry + 0x20));
+        *p4 = (int)fhSwap32(*(u32*)(entry + 0x4));
     }
 }
 

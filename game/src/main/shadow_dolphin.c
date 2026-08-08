@@ -817,7 +817,7 @@ void shadowVolumesSetDirty(s32 dirty)
     gShadowVolumesDirty = dirty;
 }
 
-int shadowInit(GameObject* obj, u32 arena, int flags)
+uintptr_t shadowInit(GameObject* obj, uintptr_t arena, int flags)
 {
     u32 rounded;
     ObjModelState* modelState;

@@ -85,58 +85,6 @@ typedef struct ObjListObjectDef
     u32 objectId;
 } ObjListObjectDef;
 
-typedef struct LoadedObj
-{
-    u8 pad00[0x06];
-    s16 flags;
-    f32 rootMotionScale;
-    f32 localPosX;
-    f32 localPosY;
-    f32 localPosZ;
-    u8 pad18[0x18];
-    void* parent;
-    u8 pad34[0x2];
-    u8 alpha;
-    u8 pad37[0x5];
-    f32 loadDistance;
-    f32 cullDistance2;
-    s16 classId;
-    s16 romDefNo;
-    s16 defId;
-    u8 pad4a[0x2];
-    s16* placementData;
-    u8* def;
-    ObjHitReactState* hitReactState;
-    u8 pad58[0x4];
-    ObjWeaponDaTable* weaponDaTable;
-    ObjAnimEventTable* eventTable;
-    u8 pad64[0x4];
-    int** dll;
-    u8* f6c;
-    ObjTextureRuntimeSlot* textureSlots;
-    ObjHitVolumeRuntimeTransform* hitVolumeTransforms;
-    ObjHitVolumeRuntimeBounds* hitVolumeBounds;
-    u8** models;
-    u8 pad80[0x22];
-    s16 activeMove;
-    u8 pada4[0x4];
-    f32 hitboxScale;
-    s8 mapEventSlot;
-    u8 padad[0x3];
-    u16 objectFlags;
-    s16 romListBit;
-    s16 seqIndex;
-    u8 padb6[0x2];
-    uintptr_t fb8;
-    u8 padbc[0x20];
-    int fdc;
-    u8 pade0[0x11];
-    u8 sphereMapIntensity;
-    u8 lightColorSlot;
-    u8 padf3[0x15];
-    int f108;
-} LoadedObj;
-
 typedef struct CharSpawn
 {
     s16 id;
@@ -1747,7 +1695,7 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags)
     int (*cb)(void*, int);
 
     modelDef = (ObjModelInstance*)def;
-    size = modelDef->modelCount * sizeof(u8*) + sizeof(LoadedObj);
+    size = modelDef->modelCount * sizeof(u8*) + sizeof(GameObject);
     switch (((GameObject*)tmpl)->anim.romDefNo)
     {
     case 0:
@@ -1904,8 +1852,8 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     int id;
     int offsets[20];
     void* models[20];
-    LoadedObj tmpl;
-    LoadedObj* tp;
+    GameObject tmpl;
+    GameObject* tp;
     s16 seq;
     u8* modelPtr;
     u8* def;
@@ -1918,7 +1866,8 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     int count;
     int total;
     ObjModelInstance* modelDef;
-    LoadedObj* obj;
+    GameObject* obj;
+    u8** modelTable;
     int base;
     int allocSize;
     uintptr_t cursor;
@@ -1950,19 +1899,19 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     memset(&tmpl, 0, sizeof(tmpl));
     tp = &tmpl;
     def = loadObjectFile(id);
-    tmpl.def = def;
+    tmpl.anim.modelInstance = (ObjModelInstance*)def;
     if (def == NULL || (intptr_t)def == -1)
     {
         fprintf(stderr, "[obj] def load failed id=%d seq=%d def=%p\n", id, seq, (void*)def);
         return NULL;
     }
     modelDef = (ObjModelInstance*)def;
-    tmpl.classId = modelDef->category;
-    tmpl.rootMotionScale = modelDef->rootMotionScaleBase;
-    tmpl.flags = 2;
+    tmpl.anim.classId = modelDef->category;
+    tmpl.anim.rootMotionScale = modelDef->rootMotionScaleBase;
+    tmpl.anim.flags = 2;
     if (modelDef->flags & 0x80)
     {
-        tmpl.flags = tmpl.flags | 0x80;
+        tmpl.anim.flags = tmpl.anim.flags | 0x80;
     }
     if (modelDef->flags & 0x40000)
     {
@@ -1970,47 +1919,48 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     }
     if (flags & 4)
     {
-        tmpl.flags = tmpl.flags | 0x2000;
+        tmpl.anim.flags = tmpl.anim.flags | 0x2000;
     }
-    tmpl.localPosX = ((ObjPlacement*)data)->posX;
-    tmpl.localPosY = ((ObjPlacement*)data)->posY;
-    tmpl.localPosZ = ((ObjPlacement*)data)->posZ;
-    tmpl.defId = id;
-    tmpl.placementData = data;
-    tmpl.romDefNo = seq;
+    tmpl.anim.localPosX = ((ObjPlacement*)data)->posX;
+    tmpl.anim.localPosY = ((ObjPlacement*)data)->posY;
+    tmpl.anim.localPosZ = ((ObjPlacement*)data)->posZ;
+    tmpl.anim.defId = id;
+    tmpl.anim.placementData = data;
+    tmpl.anim.romDefNo = seq;
     tmpl.romListBit = arg3;
-    tmpl.mapEventSlot = arg2;
-    tmpl.activeMove = -1;
+    tmpl.anim.mapEventSlot = arg2;
+    tmpl.anim.activeMove = -1;
     tmpl.seqIndex = -1;
-    tmpl.alpha = 0xff;
-    tmpl.fdc = 0;
+    tmpl.anim.alpha = 0xff;
+    tmpl.msgQueue = NULL;
     tmpl.sphereMapIntensity = 0xff;
-    tmpl.loadDistance = (f32)(int)(((ObjPlacement*)data)->loadRange << 3);
-    tmpl.cullDistance2 = (f32)(int)(((ObjPlacement*)data)->unk07 << 3);
+    tmpl.anim.loadDistance = (f32)(int)(((ObjPlacement*)data)->loadRange << 3);
+    tmpl.anim.cullDistance2 = (f32)(int)(((ObjPlacement*)data)->unk07 << 3);
     n = (((ObjPlacement*)data)->mapActFlagsHi & 0x18) >> 3;
     tmpl.lightColorSlot = n;
     if (n == 0)
     {
-        tmpl.lightColorSlot = ((ObjModelInstance*)tmpl.def)->defaultModelVariant;
+        tmpl.lightColorSlot = tmpl.anim.modelInstance->defaultModelVariant;
     }
     else
     {
         n -= 1;
         tmpl.lightColorSlot = n;
     }
-    tmpl.dll = NULL;
+    tmpl.anim.dll = NULL;
     if ((int)modelDef->dllId != -1)
     {
-        tmpl.dll = Resource_Acquire(modelDef->dllId & 0xffff, 6);
+        tmpl.anim.dll = Resource_Acquire(modelDef->dllId & 0xffff, 6);
     }
-    switch (tmpl.romDefNo)
+    switch (tmpl.anim.romDefNo)
     {
     case OBJECT_SEQID_SABRE:
     case OBJECT_SEQID_KRYSTAL:
         fnFlags = 0x1cb;
         break;
     default:
-        if (tmpl.dll != NULL && (intptr_t)(fp = (int (*)(void*))((ObjectInterface*)*tmpl.dll)->getObjectTypeId) != -1 &&
+        if (tmpl.anim.dll != NULL &&
+            (intptr_t)(fp = (int (*)(void*))((ObjectInterface*)*tmpl.anim.dll)->getObjectTypeId) != -1 &&
             fp != NULL)
         {
             fnFlags = fp(tp);
@@ -2071,38 +2021,39 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     allocSize = base + total;
     obj = mmAlloc(allocSize, 0xe, 0);
     memcpy(obj, &tmpl, sizeof(tmpl));
-    memset((u8*)obj + sizeof(LoadedObj), 0, allocSize - sizeof(LoadedObj));
-    obj->models = (u8**)(obj + 1);
-    ((ObjModelInstance*)obj->def)->flags |= 0x800000LL;
+    memset((u8*)obj + sizeof(GameObject), 0, allocSize - sizeof(GameObject));
+    modelTable = (u8**)(obj + 1);
+    obj->anim.modelBanks = (ObjModel**)modelTable;
+    obj->anim.modelInstance->flags |= 0x800000;
     i = 0;
-    obj->f108 = 0;
+    obj->afterBonesCallback = NULL;
     if (loadFlags & OBJLOAD_FLAG_INDEXED_MODEL)
     {
         idx = (loadFlags >> 0xb) & 0xf;
         if (idx < count)
         {
-            obj->models[idx] = (u8*)obj + base + offsets[idx];
-            ObjModel_LoadAnimData(models[idx], loadFlags, obj->models[idx]);
-            if (!(((ObjModel*)obj->models[idx])->file->flags & 0x8000))
+            modelTable[idx] = (u8*)obj + base + offsets[idx];
+            ObjModel_LoadAnimData(models[idx], loadFlags, modelTable[idx]);
+            if (!(((ObjModel*)modelTable[idx])->file->flags & 0x8000))
             {
-                ((ObjModelInstance*)obj->def)->flags &= ~0x800000LL;
+                obj->anim.modelInstance->flags &= ~0x800000;
             }
-            ObjModel_LoadRenderOpTextures(obj->models[idx], (GameObject*)obj);
-            modelInitBones(obj->rootMotionScale, obj->models[idx]);
-            if (((ObjModelInstance*)obj->def)->flags & OBJDEF_FLAG_DEFERRED_RENDER)
+            ObjModel_LoadRenderOpTextures(modelTable[idx], obj);
+            modelInitBones(obj->anim.rootMotionScale, modelTable[idx]);
+            if (obj->anim.modelInstance->flags & OBJDEF_FLAG_DEFERRED_RENDER)
             {
-                ObjModel_SetRenderCallback(obj->models[idx], objCausticReflectionRenderCb);
+                ObjModel_SetRenderCallback(modelTable[idx], objCausticReflectionRenderCb);
             }
             else
             {
-                renderFlags = ((ObjModelInstance*)obj->def)->renderFlags;
+                renderFlags = obj->anim.modelInstance->renderFlags;
                 if (renderFlags & 1)
                 {
-                    ObjModel_SetRenderCallback(obj->models[idx], objModelNormalDiskRenderCb);
+                    ObjModel_SetRenderCallback(modelTable[idx], objModelNormalDiskRenderCb);
                 }
                 else if (renderFlags & 0x80)
                 {
-                    ObjModel_SetRenderCallback(obj->models[idx], objModelProjectedIndirectRenderCb);
+                    ObjModel_SetRenderCallback(modelTable[idx], objModelProjectedIndirectRenderCb);
                 }
             }
         }
@@ -2111,42 +2062,43 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     {
         for (; i < count; i++)
         {
-            obj->models[i] = (u8*)obj + base + offsets[i];
-            ObjModel_LoadAnimData(models[i], loadFlags, obj->models[i]);
-            modelFlags = ((ObjModel*)obj->models[i])->file->flags;
+            modelTable[i] = (u8*)obj + base + offsets[i];
+            ObjModel_LoadAnimData(models[i], loadFlags, modelTable[i]);
+            modelFlags = ((ObjModel*)modelTable[i])->file->flags;
             if (!(modelFlags & 0x8000) && !(modelFlags & 0x4000))
             {
-                ((ObjModelInstance*)obj->def)->flags &= ~0x800000LL;
+                obj->anim.modelInstance->flags &= ~0x800000;
             }
-            ObjModel_LoadRenderOpTextures(obj->models[i], (GameObject*)obj);
-            modelInitBones(obj->rootMotionScale, obj->models[i]);
-            if (((ObjModelInstance*)obj->def)->flags & OBJDEF_FLAG_DEFERRED_RENDER)
+            ObjModel_LoadRenderOpTextures(modelTable[i], obj);
+            modelInitBones(obj->anim.rootMotionScale, modelTable[i]);
+            if (obj->anim.modelInstance->flags & OBJDEF_FLAG_DEFERRED_RENDER)
             {
-                ObjModel_SetRenderCallback(obj->models[i], objCausticReflectionRenderCb);
+                ObjModel_SetRenderCallback(modelTable[i], objCausticReflectionRenderCb);
             }
             else
             {
-                renderFlags = ((ObjModelInstance*)obj->def)->renderFlags;
+                renderFlags = obj->anim.modelInstance->renderFlags;
                 if (renderFlags & 1)
                 {
-                    ObjModel_SetRenderCallback(obj->models[i], objModelNormalDiskRenderCb);
+                    ObjModel_SetRenderCallback(modelTable[i], objModelNormalDiskRenderCb);
                 }
                 else if (renderFlags & 0x80)
                 {
-                    ObjModel_SetRenderCallback(obj->models[i], objModelProjectedIndirectRenderCb);
+                    ObjModel_SetRenderCallback(modelTable[i], objModelProjectedIndirectRenderCb);
                 }
             }
         }
     }
-    cursor = ((uintptr_t)obj->models + modelDef->modelCount * sizeof(u8*) + 3) & ~(uintptr_t)3;
-    switch (obj->romDefNo)
+    cursor = ((uintptr_t)modelTable + modelDef->modelCount * sizeof(u8*) + 3) & ~(uintptr_t)3;
+    switch (obj->anim.romDefNo)
     {
     case OBJECT_SEQID_SABRE:
     case OBJECT_SEQID_KRYSTAL:
         dllStateSize = 0x8e0;
         break;
     default:
-        if (obj->dll != NULL && (fp2 = (int (*)(void*, uintptr_t))((ObjectInterface*)*obj->dll)->getExtraSize) != NULL)
+        if (obj->anim.dll != NULL &&
+            (fp2 = (int (*)(void*, uintptr_t))((ObjectInterface*)*obj->anim.dll)->getExtraSize) != NULL)
         {
             dllStateSize = fp2(obj, cursor);
         }
@@ -2158,45 +2110,45 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     }
     if (dllStateSize != 0)
     {
-        obj->fb8 = cursor;
+        obj->extra = (void*)cursor;
         cursor += dllStateSize;
     }
     else
     {
-        obj->fb8 = 0;
+        obj->extra = NULL;
     }
-    if ((loadFlags & OBJLOAD_FLAG_ANIM_EVENTS) || (((ObjModelInstance*)obj->def)->flags & 0x400000))
+    if ((loadFlags & OBJLOAD_FLAG_ANIM_EVENTS) || (obj->anim.modelInstance->flags & 0x400000))
     {
-        seq2[0] = obj->romDefNo;
+        seq2[0] = obj->anim.romDefNo;
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        obj->eventTable = (ObjAnimEventTable*)alignedCursor;
+        obj->anim.eventTable = (ObjAnimEventTable*)alignedCursor;
         cursor = (alignedCursor + sizeof(ObjAnimEventTable) + 7) & ~(uintptr_t)7;
-        obj->eventTable->entries = (s16*)cursor;
-        ObjAnim_LoadMoveEvents((u8*)obj, seq2[0], obj->eventTable, 0, 1);
+        obj->anim.eventTable->entries = (s16*)cursor;
+        ObjAnim_LoadMoveEvents((u8*)obj, seq2[0], obj->anim.eventTable, 0, 1);
         cursor += 0x50;
     }
-    if (!(loadFlags & OBJLOAD_FLAG_WEAPON_DA) || *(void**)obj->models == NULL)
+    if (!(loadFlags & OBJLOAD_FLAG_WEAPON_DA) || modelTable[0] == NULL)
     {
         alignedCursor = cursor;
     }
     else
     {
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        obj->weaponDaTable = (ObjWeaponDaTable*)alignedCursor;
+        obj->anim.weaponDaTable = (ObjWeaponDaTable*)alignedCursor;
         alignedCursor = (alignedCursor + sizeof(ObjWeaponDaTable) + 7) & ~(uintptr_t)7;
-        obj->weaponDaTable->entries = (s16*)alignedCursor;
+        obj->anim.weaponDaTable->entries = (s16*)alignedCursor;
         alignedCursor += 0x800;
     }
     cursor = alignedCursor;
     if ((loadFlags & OBJLOAD_FLAG_HAS_SHADOW) && modelDef->shadowType != OBJ_SHADOW_TYPE_NONE)
     {
-        cursor = shadowInit((GameObject*)obj, cursor, 0);
+        cursor = shadowInit(obj, cursor, 0);
     }
     max = 10.0f;
     i = 0;
-    for (; i < ((ObjModelInstance*)obj->def)->modelCount; i++)
+    for (; i < obj->anim.modelInstance->modelCount; i++)
     {
-        modelPtr = obj->models[i];
+        modelPtr = modelTable[i];
         if (modelPtr != NULL)
         {
             if ((f32)modelFileHeaderGetCullDistance(*(ModelFileHeader**)modelPtr) > max)
@@ -2205,15 +2157,15 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
             }
         }
     }
-    cullScale = ((ObjModelInstance*)obj->def)->cullDistScale;
+    cullScale = obj->anim.modelInstance->cullDistScale;
     if (cullScale != 0)
     {
         max = max * ((10.0f * cullScale) / 255.0f);
     }
-    obj->hitboxScale = max;
+    obj->anim.hitboxScale = max;
     if (modelDef->hitboxStateCount != 0)
     {
-        cursor = ObjHits_AllocObjectState((GameObject*)obj, cursor);
+        cursor = ObjHits_AllocObjectState(obj, cursor);
         if ((s8)modelDef->primaryHitboxShapeFlags & 8)
         {
             cursor = ObjHitbox_AllocRotatedBounds((ObjHitbox*)obj, cursor);
@@ -2222,41 +2174,41 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     if (modelDef->jointCount != 0)
     {
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        obj->f6c = (u8*)alignedCursor;
+        obj->anim.jointPoseData = (u8*)alignedCursor;
         cursor = alignedCursor + modelDef->jointCount * 0x12;
     }
     if (modelDef->textureSlotCount != 0)
     {
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        obj->textureSlots = (ObjTextureRuntimeSlot*)alignedCursor;
+        obj->anim.textureSlots = (ObjTextureRuntimeSlot*)alignedCursor;
         cursor = alignedCursor + modelDef->textureSlotCount * sizeof(ObjTextureRuntimeSlot);
     }
     if (modelDef->hitVolumeCount != 0)
     {
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        obj->hitVolumeTransforms = (ObjHitVolumeRuntimeTransform*)alignedCursor;
+        obj->anim.hitVolumeTransforms = (ObjHitVolumeRuntimeTransform*)alignedCursor;
         cursor = alignedCursor + modelDef->hitVolumeCount * 0x18;
     }
     if (modelDef->hitboxStateCount != 0 && modelDef->hitReactStateCount != 0)
     {
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
-        cursor = ObjHitReact_InitState(obj->romDefNo, (ObjAnimBank*)*(u8**)obj->models, obj->hitReactState, alignedCursor,
-                                       (ObjAnimComponent*)obj);
+        cursor = ObjHitReact_InitState(obj->anim.romDefNo, (ObjAnimBank*)modelTable[0], obj->anim.hitReactState,
+                                       alignedCursor, &obj->anim);
     }
     if (modelDef->hitVolumeCount != 0)
     {
-        obj->hitVolumeBounds = (ObjHitVolumeRuntimeBounds*)((cursor + 3) & ~(uintptr_t)3);
+        obj->anim.hitVolumeBounds = (ObjHitVolumeRuntimeBounds*)((cursor + 3) & ~(uintptr_t)3);
         j = 0;
         for (; j < modelDef->hitVolumeCount; j++)
         {
-            obj->hitVolumeBounds[j].flags = modelDef->hitVolumes[j].flags;
-            obj->hitVolumeBounds[j].bounds[0] = modelDef->hitVolumes[j].bounds[0];
-            obj->hitVolumeBounds[j].bounds[3] = modelDef->hitVolumes[j].bounds[3];
-            obj->hitVolumeBounds[j].bounds[1] = modelDef->hitVolumes[j].bounds[1];
-            obj->hitVolumeBounds[j].bounds[2] = modelDef->hitVolumes[j].bounds[2];
+            obj->anim.hitVolumeBounds[j].flags = modelDef->hitVolumes[j].flags;
+            obj->anim.hitVolumeBounds[j].bounds[0] = modelDef->hitVolumes[j].bounds[0];
+            obj->anim.hitVolumeBounds[j].bounds[3] = modelDef->hitVolumes[j].bounds[3];
+            obj->anim.hitVolumeBounds[j].bounds[1] = modelDef->hitVolumes[j].bounds[1];
+            obj->anim.hitVolumeBounds[j].bounds[2] = modelDef->hitVolumes[j].bounds[2];
         }
     }
-    obj->parent = parent;
+    obj->anim.parent = parent;
     return obj;
 }
 
