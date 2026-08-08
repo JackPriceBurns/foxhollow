@@ -2,9 +2,12 @@
 #define MAIN_DLL_PLAYER_DATA_H_
 
 #include "main/dll/dll_005A_staffcollision.h"
+#include "main/dll/dll_000F_unk.h"
 #include "main/dll/partfx_interface.h"
 #include "game/objects/object.h"
 #include "main/lightmap_api.h"
+#include "main/shader_api.h"
+#include "main/model.h"
 
 typedef struct PlayerModelChainEntry
 {
@@ -31,19 +34,19 @@ extern PlayerLightfootMoveSpeeds gPlayerMoveSpeedTable;
 extern s16 gPlayerCurrentMoveId;
 extern s16 gPlayerPrevMoveId;
 extern u16 gPlayerHeldButtonMask;
-extern int gPlayerEggObject;
-extern int gPlayerModelChain;
+extern GameObject* gPlayerEggObject;
+extern ObjModelChain* gPlayerModelChain;
 extern int gPlayerSfxTimerA;
 extern int gPlayerSfxTimerB;
 extern int gPlayerSfxTimerC;
 extern int gPlayerSfxTimerD;
 extern int gPlayerStepSfxTimer;
 extern s16 gPlayerSelectedItem;
-extern int gPlayerStateHandlers[];
-extern void* gPlayerDefaultStateHandler;
+extern PlayerStateFn gPlayerStateHandlers[];
+extern PlayerSubstateFn gPlayerDefaultStateHandler;
 extern void* gPlayerChildObject;
 extern PlayerModelChainEntry* gPlayerModelChainConfig;
-extern int gPlayerHeldObject;
+extern Shader* gPlayerHeldObject;
 extern PartFxSpawnParams gPlayerPartFxParams;
 extern LightmapVertex gPlayerHudVtxBuf[8];
 extern s16 gPlayerStopMoves[4];

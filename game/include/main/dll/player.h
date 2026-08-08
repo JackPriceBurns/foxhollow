@@ -6,22 +6,22 @@
 
 struct PlayerState;
 
-int playerUpdateAirborneMotion(GameObject* obj, int inner, int state);
+int playerUpdateAirborneMotion(GameObject* obj, struct PlayerState* inner, struct PlayerState* state);
 void playerUpdate(GameObject* obj);
-void playerProcessMessages(GameObject* obj, int inner, int state);
-void playerProcessHitResponse(GameObject* obj, int inner, int state);
+void playerProcessMessages(GameObject* obj, struct PlayerState* inner, struct PlayerState* state);
+void playerProcessHitResponse(GameObject* obj, struct PlayerState* inner, struct PlayerState* state);
 struct GameObject;
 void playerDoHitDetection(struct GameObject* obj);
-int playerCheckCommonTransitions(GameObject* obj, int state, int inner, f32 fv);
+int playerCheckCommonTransitions(GameObject* obj, struct PlayerState* state, struct PlayerState* inner, f32 fv);
 
-int playerCheckIfClimbingOntoWall(GameObject* obj, int state, int state2, void* out, f32 fv, u32 mask);
-int playerStateMoving(GameObject* obj, int state, f32 fv);
-int playerStateOnLadder(GameObject* obj, int state);
-int playerStateClimbWall(GameObject* obj, int state);
-int playerStateAimStaff(GameObject* obj, int state, f32 fv);
-int playerStateAttack(GameObject* obj, int state, f32 fv);
+int playerCheckIfClimbingOntoWall(GameObject* obj, struct PlayerState* state, struct PlayerState* state2, void* out, f32 fv, u32 mask);
+int playerStateMoving(GameObject* obj, struct PlayerState* state, f32 fv);
+int playerStateOnLadder(GameObject* obj, struct PlayerState* state);
+int playerStateClimbWall(GameObject* obj, struct PlayerState* state);
+int playerStateAimStaff(GameObject* obj, struct PlayerState* state, f32 fv);
+int playerStateAttack(GameObject* obj, struct PlayerState* state, f32 fv);
 int playerState1D(GameObject* obj, struct PlayerState* state, f32 fv);
-int playerStateIdle(GameObject* obj, int state, f32 fv);
-int playerState08(GameObject* obj, int state, f32 fv);
+int playerStateIdle(GameObject* obj, struct PlayerState* state, f32 fv);
+int playerState08(GameObject* obj, struct PlayerState* state, f32 fv);
 
 #endif

@@ -1211,6 +1211,36 @@ u8* loadObjectFile(int id)
         {
             buf->modelFileIds[mi] = (s32)fhSwap32((u32)buf->modelFileIds[mi]);
         }
+        if (buf->weaponDaTable != NULL)
+        {
+            s16* wt = buf->weaponDaTable;
+            for (;;)
+            {
+                wt[0] = (s16)fhSwap16((u16)wt[0]);
+                if (wt[0] == -1)
+                {
+                    break;
+                }
+                wt[1] = (s16)fhSwap16((u16)wt[1]);
+                wt[2] = (s16)fhSwap16((u16)wt[2]);
+                wt += 3;
+            }
+        }
+        if (buf->eventMoveTable != NULL)
+        {
+            s16* et = buf->eventMoveTable;
+            for (;;)
+            {
+                et[0] = (s16)fhSwap16((u16)et[0]);
+                if (et[0] == -1)
+                {
+                    break;
+                }
+                et[1] = (s16)fhSwap16((u16)et[1]);
+                et[2] = (s16)fhSwap16((u16)et[2]);
+                et += 3;
+            }
+        }
         buf->modLines = NULL;
         buf->intersectionLines = NULL;
         n = buf->modLineIndex;

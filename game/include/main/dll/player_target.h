@@ -2,11 +2,11 @@
 #define MAIN_DLL_PLAYER_TARGET_H_
 
 #include "game/objects/object.h"
-int playerGetTargetObject(GameObject* playerObj);
+GameObject* playerGetTargetObject(GameObject* playerObj);
 
-static inline int Player_GetTargetObject(int playerObj)
+static inline uintptr_t Player_GetTargetObject(int playerObj)
 {
-    return playerGetTargetObject((GameObject*)(playerObj));
+    return (uintptr_t)playerGetTargetObject((GameObject*)(playerObj));
 }
 
 #endif

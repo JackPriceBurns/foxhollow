@@ -73,11 +73,11 @@ typedef struct PlayerState {
             Vec3f cameraSlideVector;
         };
     };
-    int playerStatus; /* PlayerStatus*; kept integer while raw decomp arithmetic remains */
+    PlayerStatus* playerStatus;
     u32 flags360; /* player state flag word; bits 2/0x2000/0x800000/0x2000000... */
     u8 pad364[0x3C4 - 0x364];
     f32 footPoints[2][3];
-    int moveSlots; /* MoveSlot/HitDesc array base; indexed by moveSlotIndex, stride 0xB0 */
+    char* moveSlots; /* MoveSlot/HitDesc array base; indexed by moveSlotIndex, stride 0xB0 */
     int pendingParentObj;
     u8 pad3E4[0x3E8 - 0x3E4];
     u8 maxMagicUsed;
@@ -98,14 +98,14 @@ typedef struct PlayerState {
     ByteFlags flags3F6;
     u8 fallSeverity; /* fall/landing severity tier (0-3) set from the fall height-difference (hdiff vs lbl_803E8104/8108/810C thresholds); selects the landing move/sfx (move 0xa/0x90) and at >=2 fires camera shake + a ground-impact ObjHits; reset to 0 on state change */
     union {
-        int moveAnimTable; /* raw address view retained for incomplete call sites */
+        char* moveAnimTable; /* raw address view retained for incomplete call sites */
         s16* moveAnimIds;  /* anim/move-id table fed to ObjAnim_SetCurrentMove */
     };
     union {
-        int prevMoveAnimTable; /* raw address view retained for incomplete call sites */
+        char* prevMoveAnimTable; /* raw address view retained for incomplete call sites */
         s16* prevMoveAnimIds;  /* moveAnimIds as of the previous playerSetMovingAnims call; compared against moveAnimIds to detect a locomotion-table switch */
     };
-    int moveParams; /* ptr to a 0x60 locomotion-parameter block (gPlayerDefaultMoveParams); deref'd as f32 speed thresholds/limits at +4/+c/+10/+14/+18/+1c */
+    char* moveParams; /* ptr to a 0x60 locomotion-parameter block (gPlayerDefaultMoveParams); deref'd as f32 speed thresholds/limits at +4/+c/+10/+14/+18/+1c */
     f32 maxSpeed;
     f32 currentSpeed; /* player current movement speed; clamped to [0, maxSpeed], scaled by friction */
     u8 fallFrames; /* frames spent in the falling/airborne path (gravity applied to velocityY each tick); ++ per frame clamped to 10, reset to 0 on landing/state-entry; >5 (with flag 0x3f1:b01) fires the landing rumble + footstep sfx */
@@ -128,14 +128,14 @@ typedef struct PlayerState {
     f32 stickTargetX; /* analog-stick-driven target X; clamped to deadzone range, pairs with stickDirection */
     f32 stickTargetY; /* analog-stick-driven target Y */
     u8 pad44C[0x450 - 0x44C];
-    int paramCurve0; /* Catmull-Rom curve-data ptr (resource base+0x450); Curve_EvalCatmullRom(...) at speed u, feeds unk438 */
-    int paramCurve1; /* curve-data ptr (base+0x4f4); feeds unk428 */
-    int paramCurve2; /* curve-data ptr (base+0x598); feeds unk42C */
-    int paramCurve3; /* curve-data ptr (base+0x650); feeds unk430 */
-    int paramCurve4; /* curve-data ptr (base+0x6f4); feeds unk434 */
-    int leanCurve;   /* Catmull-Rom curve-data ptr indexed by targetYawRateSigned (lean), feeds leanCurveScale */
+    char* paramCurve0; /* Catmull-Rom curve-data ptr (resource base+0x450); Curve_EvalCatmullRom(...) at speed u, feeds unk438 */
+    char* paramCurve1; /* curve-data ptr (base+0x4f4); feeds unk428 */
+    char* paramCurve2; /* curve-data ptr (base+0x598); feeds unk42C */
+    char* paramCurve3; /* curve-data ptr (base+0x650); feeds unk430 */
+    char* paramCurve4; /* curve-data ptr (base+0x6f4); feeds unk434 */
+    char* leanCurve; /* Catmull-Rom curve-data ptr indexed by targetYawRateSigned (lean), feeds leanCurveScale */
     u8 pad468[0x46C - 0x468];
-    int spawnedObject; /* object handle from objSetupObject (player-spawned, e.g. staff/projectile setup) */
+    GameObject* spawnedObject; /* object from objSetupObject (player-spawned, e.g. staff/projectile setup) */
     f32 inputMagnitude;
     int inputHeading;
     s16 targetYaw; /* desired heading; copied into yaw when applied */
@@ -161,7 +161,7 @@ typedef struct PlayerState {
     u8 pad4B6[0x4B8 - 0x4B6];
     void *cameraTargetObject; /* (*gCameraInterface)->getTarget() result; mirrored into gPlayerInteractTarget */
     u8 pad4BC[0x4C0 - 0x4BC];
-    int lastHitObject;
+    GameObject* lastHitObject;
     GameObject* groundObject; /* object the player stands on/rides; transform parent for relative pos, set from collision hit */
     f32 smoothVelX; /* smoothed planar velocity X; eased toward maxSpeed*sin(heading) */
     f32 smoothVelZ; /* smoothed planar velocity Z; magnitude = sqrt(x^2+z^2) -> animSpeedC */
@@ -276,12 +276,12 @@ typedef struct PlayerState {
     f32 contactPointY;
     f32 contactPointZ;
     u8 pad670[0x67C - 0x670];
-    int contactObject; /* collision hit object the player is anchored to; local-space contact point stored at 0x664/0x668/0x66C, 0 when in free space */
+    GameObject* contactObject; /* collision hit object the player is anchored to; local-space contact point stored at 0x664/0x668/0x66C, 0 when in free space */
     u8 pad680[0x681 - 0x680];
     s8 stickEdgeLatch; /* 0x681: latched flag set to 1 when the stick/collision edge-probe vtable returns result 5 (the case with no latchedStickDir code), reset to 0 when a valid collision surface is captured (with hitObj) and on state resets; read to allow the stick-driven move to proceed even when the 0x100 button is not held */
     u8 surfaceDir; /* dominant surface-normal axis+sign (0=+X,1=-X,2=+Z,3=-Z); picks the wall slide/climb anim variant */
     u8 pad683[0x684 - 0x683];
-    u32 interactObject; /* object the player is interacting with; ObjMsg_SendToObject recipient, cleared after */
+    GameObject* interactObject; /* object the player is interacting with; ObjMsg_SendToObject recipient, cleared after */
     s16 unk688;
     u8 pad68A[0x6A4 - 0x68A];
     f32 unk6A4;
@@ -304,7 +304,7 @@ typedef struct PlayerState {
     u16 buttonsJustPressed;
     u16 buttonsJustPressedIfNotBusy;
     u8 pad6E6[0x6E8 - 0x6E6];
-    int moveSequence; /* pointer to the active s16 move/anim descriptor (entries at +2/+8/+a) */
+    char* moveSequence; /* the active s16 move/anim descriptor (entries at +2/+8/+a) */
     u8 moveSequenceFlags; /* behavior bits 0x1/0x4/0x8 selecting blend/progress handling */
     u8 pad6ED[0x6F0 - 0x6ED];
     f32 orientationAxes[9]; /* 0x6F0: the actor's world orientation axes, refreshed
@@ -387,7 +387,7 @@ typedef struct PlayerState {
     f32 animSpeedStart; /* 0x88c: initial baddie.animSpeedA magnitude at move start (set as animSpeedA = -animSpeedStart) */
     f32 pushVelX; /* planar push/displacement velocity X: eased toward a target push via interpolate, decayed by powfBitEstimate, snapped to 0 near zero; added to the transformed world position */
     f32 pushVelZ;
-    int stateHandler; /* staged state/anim handler fn-ptr (stored as int); copied into baddie.stateExitFn on anim change */
+    BaddieStateExitFn stateHandler; /* staged state/anim handler; copied into baddie.stateExitFn on anim change */
     s16 unk89C;
     u8 pad89E[0x8A0 - 0x89E];
     u16 periodicHitTimer; /* accumulates dt; on crossing 0x78 wraps (-=0x78) and fires a periodic ObjHits position-hit */
@@ -437,7 +437,7 @@ typedef struct PlayerState {
     u8 pad8D5[0x8D8 - 0x8D5];
     u16 pendingFxFlags; /* one-shot particle-effect request bits (1/2/8 spray-splash, 4 landing burst); set on events, cleared after the FX is spawned */
     u8 pad8DA[0x8DC - 0x8DA];
-    int triggerGameBitPtr; /* 0x8dc: pointer (from ObjMsg 0x7000a param) to the sequence-trigger's s16 descriptor; *ptr = gamebit index (mainGetBit/mainSetBits), *(ptr+2) copied into unk688 */
+    char* triggerGameBitPtr; /* 0x8dc: pointer (from ObjMsg 0x7000a param) to the sequence-trigger's s16 descriptor; *ptr = gamebit index (mainGetBit/mainSetBits), *(ptr+2) copied into unk688 */
 } PlayerState;
 
 STATIC_ASSERT(offsetof(PlayerState, cameraSlideVector) == 0x1A4);
