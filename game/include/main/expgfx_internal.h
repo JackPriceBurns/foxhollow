@@ -358,7 +358,7 @@ typedef struct ExpgfxRuntimeDataLayout {
   u8 poolPlaneOffsetSetIds[EXPGFX_POOL_COUNT];
   s8 poolActiveCounts[EXPGFX_POOL_COUNT];
   u32 poolActiveMasks[EXPGFX_POOL_COUNT];
-  u32 slotPoolBases[EXPGFX_POOL_COUNT];
+  uintptr_t slotPoolBases[EXPGFX_POOL_COUNT];
 } ExpgfxRuntimeDataLayout;
 
 STATIC_ASSERT(offsetof(ExpgfxRuntimeDataLayout, resourceTable) == EXPGFX_RESOURCE_TABLE_OFFSET);

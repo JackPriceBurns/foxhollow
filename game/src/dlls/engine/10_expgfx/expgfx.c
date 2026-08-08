@@ -2022,7 +2022,7 @@ static inline void expgfxRemoveAllBody(void)
     s16* poolSlotTypeIds;
     s8* poolActiveCountPtrs;
     u32* poolActiveMasks;
-    u32* slotPoolBases;
+    uintptr_t* slotPoolBases;
     ExpgfxRuntimeDataLayout* runtime;
 
     runtime = EXPGFX_RUNTIME_DATA;
@@ -2513,7 +2513,7 @@ void expgfx_updateActivePools(u8 sourceMode, int sourceId, int resetSourceFrameS
             if (nextActivePool > -1)
             {
                 nextCacheBuf = (u8*)cache + cacheParity * 0x1000;
-                copyToCache(nextCacheBuf, (void*)*(u32*)((u8*)runtime->slotPoolBases + nextActivePool * 4),
+                copyToCache(nextCacheBuf, (void*)runtime->slotPoolBases[nextActivePool],
                             EXPGFX_POOL_CACHE_LINE_COUNT);
                 curCacheBuf = (ExpgfxSlot*)(nextCacheBuf);
                 cacheQueued = 1;
@@ -3378,7 +3378,7 @@ void expgfx_updateActivePools(u8 sourceMode, int sourceId, int resetSourceFrameS
                     }
                 }
             }
-            memcpyToCache((void*)*(u32*)((u8*)runtime->slotPoolBases + curPool * 4), curPoolBuf, EXPGFX_POOL_CACHE_LINE_COUNT);
+            memcpyToCache((void*)runtime->slotPoolBases[curPool], curPoolBuf, EXPGFX_POOL_CACHE_LINE_COUNT);
             cacheQueued = 1;
             poolOrResource = nextActivePool;
         }
@@ -3386,7 +3386,7 @@ void expgfx_updateActivePools(u8 sourceMode, int sourceId, int resetSourceFrameS
     }
 }
 
-u8 gExpgfxRuntimeData[0x980];
+u8 gExpgfxRuntimeData[sizeof(ExpgfxRuntimeDataLayout)] __attribute__((aligned(8)));
 
 char sExpgfxMismatchInAddRemove[] = "expgfx.c: mismatch in add/remove in exptab\n";
 
@@ -3510,7 +3510,7 @@ void expgfx_renderSourcePools(int sourceId, int sourceMode)
     u8* poolSourceModes;
     u8* poolPlaneOffsetSetIds;
     ExpgfxBounds* poolBounds;
-    u32* slotPoolBases;
+    uintptr_t* slotPoolBases;
     int poolIndex;
 
     runtime = EXPGFX_RUNTIME_DATA;
@@ -3946,7 +3946,7 @@ static inline void renderParticlesBody(void)
     float queuePosition[3];
     f32* currentMatrix;
     int poolIndex;
-    u32* slotPoolBases;
+    uintptr_t* slotPoolBases;
     ExpgfxRuntimeDataLayout* runtime;
     register s16* poolSlotTypeIds;
     u32* poolSourceIds;
@@ -4026,7 +4026,7 @@ void expgfx_free(u32 sourceId)
     s8* poolActiveCounts[1];
     int slotIndex;
     ExpgfxTableEntry* tableEntry;
-    u32* slotPoolBases[1];
+    uintptr_t* slotPoolBases[1];
     ExpgfxRuntimeDataLayout* runtime;
     u32* poolSourceIds[1];
     int poolIndex;
@@ -4108,7 +4108,7 @@ void expgfx_resetAllPools(void)
     ExpgfxResourceEntry* resourceEntry;
     ExpgfxTableEntry* tableEntry;
     ExpgfxStaticDataLayout* staticData;
-    u32* slotPoolBases[1];
+    uintptr_t* slotPoolBases[1];
     ExpgfxRuntimeDataLayout* runtime[1];
     int slotIndex;
     ExpgfxSlot* slot;
@@ -4629,7 +4629,7 @@ void expgfx_initialise(void)
     u32* poolActiveMasks;
     s8* poolActiveCounts;
     s16* poolSlotTypeIds[1];
-    u32* slotPoolBases[1];
+    uintptr_t* slotPoolBases[1];
     int poolIndex[1];
     int groupCount;
 
@@ -4673,7 +4673,7 @@ void expgfx_initialise(void)
     slotPoolBases[0] = runtime->slotPoolBases;
     do
     {
-        *slotPoolBases[0] = (u32)mmAlloc(EXPGFX_POOL_BYTES, EXPGFX_POOL_ALLOC_HEAP, 0);
+        *slotPoolBases[0] = (uintptr_t)mmAlloc(EXPGFX_POOL_BYTES, EXPGFX_POOL_ALLOC_HEAP, 0);
         memset((void*)*slotPoolBases[0], 0, EXPGFX_POOL_BYTES);
         DCFlushRange((void*)*slotPoolBases[0], EXPGFX_POOL_BYTES);
         slotPoolBases[0]++;

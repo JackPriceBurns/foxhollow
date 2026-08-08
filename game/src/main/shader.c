@@ -2514,7 +2514,12 @@ static void mapInitSetRects(MapBounds* rect, u8* bitmap, int originX, int origin
     u32* cells;
 
     getTabEntry(self, MLDF_FILEID_MAPS_BIN, offset0, *(int*)((gMapsTab + 8) + tabOff) - offset0);
+    self->sizeX = (s16)fhSwap16((u16)self->sizeX);
+    self->sizeZ = (s16)fhSwap16((u16)self->sizeZ);
+    self->originX = (s16)fhSwap16((u16)self->originX);
+    self->originZ = (s16)fhSwap16((u16)self->originZ);
     cells = (u32*)((char*)self + *(int*)((gMapsTab + 4) + tabOff) - *(int*)(gMapsTab + tabOff));
+    fhSwapU32Array(cells, (u32)((u16)self->sizeX * (u16)self->sizeZ));
     rect->minX = originX - self->originX;
     rect->minZ = originZ - self->originZ;
     rect->maxX = rect->minX + self->sizeX - 1;
@@ -2546,6 +2551,7 @@ void initMaps(void)
     data = 0;
     total = getDataFileSize(MLDF_FILEID_GLOBALMA_BIN);
     loadAssetFileById(&data, MLDF_FILEID_GLOBALMA_BIN);
+    fhSwapU16Array(data, total / 2);
     gShaderMapRomBuffers[0] = -1;
     gShaderMapRomBuffers[1] = (uintptr_t)mmAlloc(1280, 5, 0);
     gShaderMapRomBuffers[2] = (uintptr_t)mmAlloc(512, 5, 0);
