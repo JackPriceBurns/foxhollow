@@ -152,32 +152,32 @@ void modelApplyBoneTransform(u8* p, u8* out, u16 n, u8** pd, u8** pe, int f, u16
 
     while (i < n)
     {
-        aIdx = (*(s16*)a & 0x1fff) - pos;
-        bIdx = (*(s16*)b & 0x1fff) - pos;
+        aIdx = ((s16)fhSwap16(*(u16*)a) & 0x1fff) - pos;
+        bIdx = ((s16)fhSwap16(*(u16*)b) & 0x1fff) - pos;
         if (i >= aIdx)
         {
             if (i == bIdx)
             {
                 b = modelBoneTransforms_next(b, &bx, &by, &bz);
                 a = modelBoneTransforms_next(a, &ax, &ay, &az);
-                *(u16*)out = ((u32)(ax * wHi + bx * f) >> 16) + *(s16*)p;
-                *(u16*)(out + 2) = ((u32)(ay * wHi + by * f) >> 16) + *(s16*)(p + 2);
-                *(u16*)(out + 4) = ((u32)(az * wHi + bz * f) >> 16) + *(s16*)(p + 4);
+                *(u16*)out = fhSwap16(((u32)(ax * wHi + bx * f) >> 16) + (s16)fhSwap16(*(u16*)p));
+                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi + by * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
+                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi + bz * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
             }
             else
             {
                 a = modelBoneTransforms_next(a, &ax, &ay, &az);
-                *(u16*)out = ((u32)(ax * wHi) >> 16) + *(s16*)p;
-                *(u16*)(out + 2) = ((u32)(ay * wHi) >> 16) + *(s16*)(p + 2);
-                *(u16*)(out + 4) = ((u32)(az * wHi) >> 16) + *(s16*)(p + 4);
+                *(u16*)out = fhSwap16(((u32)(ax * wHi) >> 16) + (s16)fhSwap16(*(u16*)p));
+                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
+                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
             }
         }
         else if (i >= bIdx)
         {
             b = modelBoneTransforms_next(b, &bx, &by, &bz);
-            *(u16*)out = ((u32)(bx * f) >> 16) + *(s16*)p;
-            *(u16*)(out + 2) = ((u32)(by * f) >> 16) + *(s16*)(p + 2);
-            *(u16*)(out + 4) = ((u32)(bz * f) >> 16) + *(s16*)(p + 4);
+            *(u16*)out = fhSwap16(((u32)(bx * f) >> 16) + (s16)fhSwap16(*(u16*)p));
+            *(u16*)(out + 2) = fhSwap16(((u32)(by * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
+            *(u16*)(out + 4) = fhSwap16(((u32)(bz * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
         }
         else
         {
@@ -194,25 +194,25 @@ void modelApplyBoneTransform(u8* p, u8* out, u16 n, u8** pd, u8** pe, int f, u16
 
 u8* modelBoneTransforms_next(u8* stream, int* dx, int* dy, int* dz)
 {
-    u16 flags = *(u16*)stream;
+    u16 flags = fhSwap16(*(u16*)stream);
 
     stream += 2;
     *dx = 0;
     if (flags & MODEL_BONEXFORM_HAS_X)
     {
-        *dx = *(s16*)stream;
+        *dx = (s16)fhSwap16(*(u16*)stream);
         stream += 2;
     }
     *dy = 0;
     if (flags & MODEL_BONEXFORM_HAS_Y)
     {
-        *dy = *(s16*)stream;
+        *dy = (s16)fhSwap16(*(u16*)stream);
         stream += 2;
     }
     *dz = 0;
     if (flags & MODEL_BONEXFORM_HAS_Z)
     {
-        *dz = *(s16*)stream;
+        *dz = (s16)fhSwap16(*(u16*)stream);
         stream += 2;
     }
     return stream;
@@ -267,7 +267,7 @@ void modelAnimUpdateChannels(ModelFileHeader* file, ObjAnimState* work, int chan
         {
             work->frameStreamStrides[i] = (s16)(-frameStride * frameIdx);
         }
-        streamOff = *(s16*)(frameStream + 2);
+        streamOff = (s16)fhSwap16(*(u16*)(frameStream + 2));
         work->frameStreamCursors[i] = frameStream + streamOff + frameStride * frameIdx;
     }
 }
@@ -2007,7 +2007,9 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
     int bv;
     u8* anim;
 
-    if (model->file->animationCount == 0)
+    if (model->file->animationCount == 0 || model->file->jointCount == 0 ||
+        ((model->file->flags & MODEL_FLAG_VERTEX_ANIM_AREA) == 0 &&
+         model->file->animationModelPtrs == NULL))
     {
         f32 z = 0.0f;
         outPos[0] = z;
@@ -2016,6 +2018,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
         outRot[0] = 0;
         outRot[1] = 0;
         outRot[2] = 0;
+        return;
     }
     if (b != 0)
     {
@@ -2071,7 +2074,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
         {
             ch->frameStreamStrides[0] = (s16)(-bv * n);
         }
-        ch->frameStreamCursors[0] = anim + *(s16*)(anim + 2) + bv * n;
+        ch->frameStreamCursors[0] = anim + (s16)fhSwap16(*(u16*)(anim + 2)) + bv * n;
     }
     modelRenderInterpolateRootTransform(ch, srot, outRot);
     ch->moveFrameData = saved;
