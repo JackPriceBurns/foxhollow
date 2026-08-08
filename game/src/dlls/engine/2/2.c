@@ -1050,7 +1050,7 @@ int ObjSeq_start(int seqIdx, GameObject* obj, int flags)
     for (i = 0x19; i < 0x55; i++)
     {
         p = base + i * 2;
-        p = (u8*)((int)p + 0x3a98);
+        p = p + 0x3a98;
         if (*(s16*)p == 0)
         {
             slot = i;

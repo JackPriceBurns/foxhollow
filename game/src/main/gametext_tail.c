@@ -12,6 +12,7 @@
 #include "main/mm.h"
 #include "main/rcp_dolphin_api.h"
 #include "main/textrender_api.h"
+#include "main/textrender_internal.h"
 #include "main/audio/sfx_trigger_ids.h"
 
 /* In-string formatting control codes (Unicode PUA). */
@@ -276,16 +277,14 @@ void gameTextTickReveal(int textId, TextDisplayState* state)
     s32 charCount;
     char* lineStr;
     int special;
-    u8* defAddress;
 
     if (gameTextFonts->status == 1)
     {
         return;
     }
     def = gameTextGet(textId);
-    defAddress = (u8*)def;
     special = 0;
-    if (defAddress >= sGameTextFallbackDefs && defAddress < sGameTextFallbackDefs + 0x60)
+    if (def >= gGameTextRuntime.fallbackDefs && def < gGameTextRuntime.fallbackDefs + 8)
     {
         special = 1;
     }
@@ -439,7 +438,7 @@ static inline char* gameTextBreakLine(char* dst, char** buffer, int lineIdx)
             q[1] = q[0];
             q[0] = 0;
             dst = q + 1;
-            *(char**)((char*)buffer + ((lineIdx + 1) << 2)) = dst++;
+            buffer[lineIdx + 1] = dst++;
             return dst;
         } while (--k > 0);
     }
@@ -453,6 +452,7 @@ char** gameTextWrapLines(char* str, f32 width, f32 height, int* outCount, f32* o
     int langIdx;
     FontMetrics* sizeEntry;
     int lineOff;
+    int lineTableSize;
     int* bp;
     int lineCount;
     int breakPos;
@@ -582,7 +582,8 @@ char** gameTextWrapLines(char* str, f32 width, f32 height, int* outCount, f32* o
     {
         return 0;
     }
-    charLen = cursor + lineCount + lineOff;
+    lineTableSize = lineCount * (int)sizeof(char*);
+    charLen = cursor + lineCount + lineTableSize;
     if (outLineH != NULL)
     {
         buffer = mmAllocateFromFBMemoryStore((int)(intptr_t)gGameTextStringStore, charLen);
@@ -603,7 +604,7 @@ char** gameTextWrapLines(char* str, f32 width, f32 height, int* outCount, f32* o
     }
 
     {
-        char* p = (char*)buffer + lineOff;
+        char* p = (char*)buffer + lineTableSize;
         buffer[0] = p;
         dst = p;
     }

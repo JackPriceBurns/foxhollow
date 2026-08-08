@@ -832,15 +832,7 @@ void textRenderStr(char* str, GameTextBox* win, f32 x, f32 y, f32 lineH, int mod
 }
 
 /* Placeholder strings the gametext parser hands back for bad lookups. */
-struct
-{
-    char uninitialised[16];
-    char loading[12];
-    char fileEmpty[16];
-    char noFile[12];
-    char notInFile[20];
-    char noPhrase[32];
-} sGameTextParserMessages = {
+GameTextParserMessages sGameTextParserMessages = {
     "<uninitialised>", "<loading>", "<file empty!>", "<no file!>", "<%d's not in %s>", "<%d, doesn't have phrase %d>",
 };
 
@@ -942,8 +934,7 @@ void gameTextMeasureString(u8* str, f32 scale, f32* outW, f32* outZero, f32* out
         }
         else
         {
-            tbl = (u8*)sLanguageNameTable;
-            glyphLang = tbl[curLanguage * 8 + 4];
+            glyphLang = sLanguageNameTable[curLanguage].fontId;
         }
     }
     tbl = (u8*)gGameTextFontMetrics + glyphLang * 16;
@@ -1076,9 +1067,7 @@ SubtitleCmd* subtitleParseControlCmds(char* str, int* count)
     }
 }
 
-GameTextLoadSlot curGameTexts[GAMETEXT_LOAD_SLOT_COUNT];
-
-TextFont gGameTextCharsets[0xA0 / sizeof(TextFont)];
+GameTextRuntime gGameTextRuntime;
 
 int GameText_FindControlCodeArgs(u8* str, u32 target, int* out)
 {
@@ -1130,8 +1119,5 @@ int getControlCharLen(u32 c)
     return 0;
 }
 
-GameTextSlot gGameTextCommandSlots[0xA00 / sizeof(GameTextSlot)];
+GameTextSlot* const gGameTextCommandSlots = gGameTextRuntime.commands;
 u32 sSubtitleCtrlCmdScratch[0x240];
-u8 sGameTextFallbackDefs[0x280];
-u8 sGameTextFallbackBufSlots[0x20];
-u8 gGameTextBase[0x20];

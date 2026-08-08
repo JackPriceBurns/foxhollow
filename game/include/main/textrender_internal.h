@@ -46,6 +46,8 @@ typedef struct
     TextFont fonts[4];
     GameTextLoadSlot loadSlots[8];
 } GameTextRuntime;
+
+extern GameTextRuntime gGameTextRuntime;
 STATIC_ASSERT(offsetof(GameTextRuntime, fallbackDefs) == 0x40);
 STATIC_ASSERT(offsetof(GameTextRuntime, fallbackBufPtrs) == 0xa0);
 STATIC_ASSERT(offsetof(GameTextRuntime, fallbackBufs) == 0xc0);
@@ -60,6 +62,18 @@ typedef struct
     u32 code;
     u16 r, g, b, a;
 } SubtitleCmd;
+
+typedef struct GameTextParserMessages
+{
+    char uninitialised[16];
+    char loading[12];
+    char fileEmpty[16];
+    char noFile[12];
+    char notInFile[20];
+    char noPhrase[32];
+} GameTextParserMessages;
+
+extern GameTextParserMessages sGameTextParserMessages;
 
 
 /*
@@ -91,7 +105,7 @@ typedef struct
 #define GAMETEXT_FONT_LATIN    4
 #define GAMETEXT_FONT_FACE     5
 
-/* Loaded font slot: gGameTextCharsets[] index, one per load purpose/directory. */
+/* Loaded font slot: gGameTextRuntime.fonts[] index, one per load purpose/directory. */
 #define GAMETEXT_SLOT_DIALOGUE 0 /* various directories */
 #define GAMETEXT_SLOT_CUTSCENE 1 /* Sequences */
 #define GAMETEXT_SLOT_ERROR    2 /* Boot */
@@ -156,7 +170,6 @@ extern Texture* gGameTextBoxFrameTextures[];
 extern int curGameTextDir;
 extern int gGameTextShadowOffsetX;
 extern int gGameTextShadowOffsetY;
-extern u8 gGameTextBase[];
 extern GameTextDef* gGameTextLastEntry;
 extern char* gCurTextBuffer;
 extern int gGameTextBufferIndex;
@@ -164,7 +177,6 @@ extern const f32 gGameTextFadeLimit;
 extern char gGameTextFontData[];
 extern char sGameTextBlankFormat[5];
 extern char sGameTextSequencePathFormat[];
-extern GameTextLoadSlot curGameTexts[GAMETEXT_LOAD_SLOT_COUNT];
 extern f32 gSubtitleLineTimes[0x100];
 extern char* gSubtitleLineStrs[0x100];
 
@@ -172,12 +184,10 @@ int GameText_CountPrintableChars(u8* str);
 int GameText_FindControlCodeArgs(u8* str, u32 target, int* out);
 void loadGameTextSequence(int sequenceSlotDir, int sequenceId);
 
-extern u8 sGameTextFallbackBufSlots[];
 extern f32 gSubtitleCurTime;
 extern u16 gGameTextSjisGlyphTable[];
 extern char sGameTextMapPathFormat[];
 extern int gGameTextFontTexRowPitch;
-extern TextFont gGameTextCharsets[];
 extern GXColor gGameTextClearColor;
 
 #endif /* MAIN_TEXTRENDER_INTERNAL_H_ */

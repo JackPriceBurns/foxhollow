@@ -113,7 +113,7 @@ void gameTextLoadDir(int dirId)
 
     if (dirId == 3)
     {
-        gameTextFonts = &gGameTextCharsets[GAMETEXT_SLOT_ERROR];
+        gameTextFonts = &gGameTextRuntime.fonts[GAMETEXT_SLOT_ERROR];
         gameTextCharset = GAMETEXT_SLOT_ERROR;
         color = gGameTextClearColor;
         hudDrawRect(0, 0, 0xa00, 0x780, color);
@@ -130,7 +130,7 @@ void gameTextLoadDir(int dirId)
     else if (dirId == 0x1c)
     {
         curGameTextDir = dirId;
-        gameTextFonts = &gGameTextCharsets[GAMETEXT_SLOT_HUD];
+        gameTextFonts = &gGameTextRuntime.fonts[GAMETEXT_SLOT_HUD];
         gameTextCharset = GAMETEXT_SLOT_HUD;
         if (gameTextDrawFunc == NULL)
         {
@@ -144,7 +144,7 @@ void gameTextLoadDir(int dirId)
     }
     else
     {
-        gameTextFonts = &gGameTextCharsets[GAMETEXT_SLOT_DIALOGUE];
+        gameTextFonts = &gGameTextRuntime.fonts[GAMETEXT_SLOT_DIALOGUE];
         gameTextCharset = GAMETEXT_SLOT_DIALOGUE;
         if (gameTextDrawFunc == NULL)
         {
@@ -171,7 +171,7 @@ void gameTextSetCharset(int charset, int flags)
 {
     if (gameTextDrawFunc != NULL || (flags & 1))
     {
-        gameTextFonts = &gGameTextCharsets[charset];
+        gameTextFonts = &gGameTextRuntime.fonts[charset];
         gameTextCharset = charset;
         if (charset == 2)
         {
@@ -210,7 +210,7 @@ f32 gameTextGetTimer(void)
 
 int gameTextGetState(int i)
 {
-    return gGameTextCharsets[i].status;
+    return gGameTextRuntime.fonts[i].status;
 }
 
 char sGameTextMapPathFormat[] = "gametext/%s/%s.bin";
@@ -231,7 +231,7 @@ void gameTextRun(void)
     double fadeLimit;
     double zero;
 
-    runtime = (GameTextRuntime*)gGameTextBase;
+    runtime = &gGameTextRuntime;
     cmd = runtime->commands;
 
     loadSlot = runtime->loadSlots;
@@ -555,7 +555,7 @@ void gameTextInitRendererState(void)
     int i;
     int j;
 
-    gameTextBase = gGameTextBase;
+    gameTextBase = (u8*)&gGameTextRuntime;
     runtime = (GameTextRuntime*)gameTextBase;
 
     i = GAMETEXT_BOX_COUNT;
@@ -644,13 +644,9 @@ void loadGameTextSequence(int sequenceSlotDir, int sequenceId)
     GameTextLoadSlot* slot;
     int oldHeap;
     GameTextRuntime* gameTextBase;
-    int languageTableOffset;
-    u8* languageTable;
     int i;
 
-    gameTextBase = (GameTextRuntime*)gGameTextBase;
-    languageTableOffset = curLanguage << 3;
-    languageTable = (u8*)sLanguageNameTable;
+    gameTextBase = &gGameTextRuntime;
     oldHeap = testAndSet_onlyUseHeap3(0);
     if (getGameState() != 0 && getGameState() != 1)
     {
@@ -707,7 +703,7 @@ void loadGameTextSequence(int sequenceSlotDir, int sequenceId)
     slot->active = 1;
     slot->sourceId = GAMETEXT_SEQUENCE_SOURCE_ID;
     sprintf(gameTextBase->path, sGameTextSequencePathFormat, sequenceId,
-            ((LanguageName*)(languageTable + languageTableOffset))->name);
+            sLanguageNameTable[curLanguage].name);
     setFileInfo(&slot->fileInfo);
     slot->loadHandle = loadFileByPathAsync(gameTextBase->path,
                                            &slot->loadedSize, 1, gameTextLoadCompleteCallback);
@@ -728,7 +724,7 @@ void gameTextLoadForCurMap(int sourceId)
     GameTextRuntime* runtime;
     int i;
 
-    gameTextBase = gGameTextBase;
+    gameTextBase = (u8*)&gGameTextRuntime;
     runtime = (GameTextRuntime*)gameTextBase;
     oldHeap = testAndSet_onlyUseHeap3(0);
     if (getGameState() != 0 && getGameState() != 1)
@@ -830,7 +826,7 @@ void gameTextBuildSystemFontAtlas(void)
 
     fontData = (u8*)gGameTextFontData;
     base30 = gGameTextFontMetrics;
-    charset = &gGameTextCharsets[GAMETEXT_SLOT_ERROR];
+    charset = &gGameTextRuntime.fonts[GAMETEXT_SLOT_ERROR];
     savedHeap = testAndSet_onlyUseHeap3(0);
     buf = mmAlloc(0x120, 0x1a, 0);
     switch (OSGetFontEncode())
@@ -986,6 +982,91 @@ void gameTextBuildSystemFontAtlas(void)
     charset->status = 2;
 }
 
+static void gameTextSwapLoadedFile(void* buffer)
+{
+    int* data;
+    GameTextTableHeader* hdr;
+    GameTextDiscDef* discEntries;
+    GameTextStringTable* stringTable;
+    u8* glyphBytes;
+    u8* txt;
+    int* texHdr;
+    u16* p;
+    int glyphCount;
+    int entryCount;
+    int numStrings;
+    int i;
+
+    if (buffer == NULL)
+    {
+        return;
+    }
+    data = (int*)buffer;
+    data[0] = (int)fhSwap32((u32)data[0]);
+    glyphCount = data[0];
+    if (glyphCount <= 0)
+    {
+        return;
+    }
+
+    glyphBytes = (u8*)(data + 1);
+    for (i = 0; i < glyphCount; i++)
+    {
+        u8* g = glyphBytes + i * 16;
+        *(u32*)g = fhSwap32(*(u32*)g);
+        *(u16*)(g + 4) = fhSwap16(*(u16*)(g + 4));
+        *(u16*)(g + 6) = fhSwap16(*(u16*)(g + 6));
+    }
+
+    hdr = (GameTextTableHeader*)((u8*)data + glyphCount * 16);
+    hdr->entryCount = fhSwap16(hdr->entryCount);
+    hdr->textureOffset = fhSwap16(hdr->textureOffset);
+    entryCount = hdr->entryCount;
+
+    discEntries = (GameTextDiscDef*)(hdr + 1);
+    for (i = 0; i < entryCount; i++)
+    {
+        discEntries[i].identifier = fhSwap16(discEntries[i].identifier);
+        discEntries[i].count = fhSwap16(discEntries[i].count);
+        discEntries[i].strings = (s32)fhSwap32((u32)discEntries[i].strings);
+    }
+
+    stringTable = (GameTextStringTable*)(discEntries + entryCount);
+    stringTable->count = (int)fhSwap32((u32)stringTable->count);
+    numStrings = stringTable->count;
+    for (i = 0; i < numStrings; i++)
+    {
+        stringTable->offsets[i] = (int)fhSwap32((u32)stringTable->offsets[i]);
+    }
+
+    txt = (u8*)(stringTable->offsets + numStrings);
+    texHdr = (int*)(txt + hdr->textureOffset);
+    texHdr[0] = (int)fhSwap32((u32)texHdr[0]);
+
+    p = (u16*)((u8*)texHdr + texHdr[0]);
+    p += 2;
+    while (1)
+    {
+        u32 bpp;
+        u32 w;
+        u32 h;
+
+        p[0] = fhSwap16(p[0]);
+        p[1] = fhSwap16(p[1]);
+        p[2] = fhSwap16(p[2]);
+        p[3] = fhSwap16(p[3]);
+        bpp = p[1];
+        w = p[2];
+        h = p[3];
+        p += 4;
+        if (w == 0 && h == 0)
+        {
+            break;
+        }
+        p += (int)(w * h * bpp) >> 4;
+    }
+}
+
 /* Install a completed language/charset load, upload its textures, and compact
    the relocatable text tables. */
 void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
@@ -1018,17 +1099,18 @@ void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
     TextFont* cs;
 
     DCStoreRange(loadSlot->loadHandle, loadSlot->loadedSize);
+    gameTextSwapLoadedFile(loadSlot->loadHandle);
     if (loadSlot->sourceId == 1)
     {
-        cs = &gGameTextCharsets[1];
+        cs = &gGameTextRuntime.fonts[1];
     }
     else if (loadSlot->sourceId == 3)
     {
-        cs = &gGameTextCharsets[3];
+        cs = &gGameTextRuntime.fonts[3];
     }
     else
     {
-        cs = &gGameTextCharsets[0];
+        cs = &gGameTextRuntime.fonts[0];
         curGameTextDir = loadSlot->dirId;
         curLanguage = loadSlot->languageId;
     }
@@ -1156,7 +1238,7 @@ void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
 
 static void gameTextLoadCancelCallback(s32 result, DVDCommandBlock* block) {
     int i;
-    GameTextLoadSlot* slot = curGameTexts;
+    GameTextLoadSlot* slot = gGameTextRuntime.loadSlots;
     (void)result;
     for (i = 8; i != 0; i--) {
         if (block == &slot->fileInfo.cb) {
@@ -1169,7 +1251,7 @@ static void gameTextLoadCancelCallback(s32 result, DVDCommandBlock* block) {
 
 static void gameTextLoadCompleteCallback(s32 status, DVDFileInfo* fileInfo) {
     int i;
-    GameTextLoadSlot* slot = curGameTexts;
+    GameTextLoadSlot* slot = gGameTextRuntime.loadSlots;
     if (status != -1 && status != -3) {
         for (i = 8; i != 0; i--) {
             if (fileInfo == &slot->fileInfo) {
@@ -1179,7 +1261,7 @@ static void gameTextLoadCompleteCallback(s32 status, DVDFileInfo* fileInfo) {
             slot++;
         }
     } else {
-        slot = curGameTexts;
+        slot = gGameTextRuntime.loadSlots;
         for (i = 8; i != 0; i--) {
             if (fileInfo == &slot->fileInfo) {
                 slot->state = 5;

@@ -26,7 +26,6 @@ extern f32 gGameTextScale;
 extern u8 gGameTextShadowColorB;
 extern u8 gGameTextShadowColorG;
 extern u8 gGameTextShadowColorR;
-extern u8 sGameTextFallbackDefs[];
 extern f32 gGameTextRevealProgress;
 extern int gGameTextDrawnCharIndex;
 extern int gGameTextRevealActive;
