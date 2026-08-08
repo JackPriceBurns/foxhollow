@@ -128,6 +128,15 @@ change and what to re-audit later.
   (window close exits), begins the next frame, and fires the game's retrace callbacks.
 - **MEM1 is 64MB** (GC had 24MB): 64-bit pointers and structs inflate the game's memory layout;
   the retail carve-up (mmInit regions + heap headers) overflows 24MB.
+- **`GXSetCurrentMtx(GX_IDENTITY)` / PNMTXIDX 0x3C is out of Aurora's contract.** Retail exploits
+  hardware: `GXInit` writes identity to XF matrix row 60 via `GXLoadTexMtxImm(identity, GX_IDENTITY)`,
+  and SFA's 2D/HUD paths then select row 60 as a *position* matrix. Aurora only models the ten SDK
+  PN matrices (`MaxPnMtx == 10`), so the shader's `pnmtxidx / 3` = 20 indexes out of range and the
+  quads got a garbage matrix. `track/intersect_render.c` and `main/tex_dolphin.c` now use
+  `GX_PNMTX_IDENTITY` (= `GX_PNMTX9`, `port/include/foxhollow_compat.h`) with
+  `fhLoadIdentityPosMtx()` (`port/src/gx_shim.c`) loading identity into it immediately before each
+  affected `GXBegin`/`GXSetCurrentMtx`. Slot 9 is safe because every consumer
+  (`gObjGxPosMtxIdTable[9]`) reloads it before drawing.
 - **GXWGFifo is unusable on PC** — Aurora's PC contract is typed vertex submission. All 697
   direct pokes across 15 TUs were converted to GXPosition3f32-family calls (attribute mapped
   from each site's vertex descriptor); raw BP/XF command writes (GPU metrics, hang recovery in
@@ -141,6 +150,15 @@ change and what to re-audit later.
 - **mm.c `MmGlobalLayout` overlay removed**: retail aliased separate globals at fixed byte
   offsets from `gMmStoreArray` (0x3F00 → region table); the port references the real symbols.
   The layout STATIC_ASSERTs compile to no-ops on PC, which is why it failed silently.
+- **camera.c `CameraMatrixStorage` overlay removed** (same class, and the cause of the black
+  screen): `(CameraMatrixStorage*)gObjInverseYawTransformMatrices` aliased the whole camera .bss
+  run — `cameras`, `worldMatrix`, `viewMatrix`, `inverseViewMatrix`, the two rotation matrices and
+  `projectionMatrix` — at fixed offsets from a 0x780-byte array, and wrote 0x1700 bytes into it.
+  On PC the real globals were never written, so `gCameraViewMatrix` stayed zero, every
+  `GXLoadPosMtxImm(Camera_GetViewMatrix(), …)` loaded a zero position matrix, and all geometry
+  collapsed to the origin. `Obj_BuildTransformMatricesForYaw`, `Camera_UpdateViewMatrices` and
+  `Camera_InitState` now use the real symbols (`scratchTransform` is
+  `gObjYawTransformMatrices[0x1F]`).
 - **DSP handshake is synchronous**: DSPAddTask fires the task's `init_cb` immediately; musyx's
   clear-flag-then-wait ordering in `salInitDsp` was swapped (hardware fired the callback via
   interrupt after the clear; the swap is behavior-identical on GC).

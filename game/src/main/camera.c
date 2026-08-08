@@ -194,7 +194,6 @@ void Obj_GetWorldPosition(GameObject* obj, f32* outX, f32* outY, f32* outZ) {
 }
 
 static void Obj_BuildTransformMatricesForYaw(GameObject* obj, s32 yawIndex) {
-    CameraMatrixStorage* storage;
     GameObject* ancestors[4];
     MatrixTransform inverseTransform;
     f32* inverseYawMatrix;
@@ -205,11 +204,10 @@ static void Obj_BuildTransformMatricesForYaw(GameObject* obj, s32 yawIndex) {
     s8 isAncestor;
     f32* yawMatrices;
 
-    storage = (CameraMatrixStorage*)gObjInverseYawTransformMatrices;
     matrixOffset = yawIndex * 16;
-    yawMatrices = (f32*)storage->yawTransforms;
+    yawMatrices = (f32*)gObjYawTransformMatrices;
     yawMatrix = yawMatrices + matrixOffset;
-    inverseYawMatrix = (f32*)storage->inverseYawTransforms + matrixOffset;
+    inverseYawMatrix = (f32*)gObjInverseYawTransformMatrices + matrixOffset;
     isAncestor = 0;
     ancestorCount = 0;
     while (obj != NULL) {
@@ -223,8 +221,8 @@ static void Obj_BuildTransformMatricesForYaw(GameObject* obj, s32 yawIndex) {
         if (isAncestor == 0) {
             setMatrixFromObjectPos(yawMatrix, (MatrixTransform*)&obj->anim);
         } else {
-            setMatrixFromObjectPos(storage->scratchTransform, (MatrixTransform*)&obj->anim);
-            mtx44_multSafe(yawMatrix, storage->scratchTransform, yawMatrix);
+            setMatrixFromObjectPos(gObjYawTransformMatrices[0x1F], (MatrixTransform*)&obj->anim);
+            mtx44_multSafe(yawMatrix, gObjYawTransformMatrices[0x1F], yawMatrix);
         }
 
         obj->anim.rootMotionScale = savedScale;
@@ -751,15 +749,13 @@ f32* Camera_GetInverseViewMatrix(void) {
 }
 
 void Camera_UpdateViewMatrices(void) {
-    CameraMatrixStorage* storage;
     Camera* cameras;
     Camera* camera;
     MatrixTransform transform;
     f32 rotationMatrix[16];
     f32 shakeOffset = 0.0f;
 
-    storage = (CameraMatrixStorage*)gObjInverseYawTransformMatrices;
-    cameras = storage->cameras;
+    cameras = gCameras;
     camera = &cameras[gCameraCurrentViewIndex];
     transform.x = -(camera->x - playerMapOffsetX);
     transform.y = -camera->y;
@@ -778,7 +774,7 @@ void Camera_UpdateViewMatrices(void) {
     }
 
     mtxRotateByVec3s(rotationMatrix, &transform);
-    mtx44Transpose(rotationMatrix, storage->viewMatrix);
+    mtx44Transpose(rotationMatrix, gCameraViewMatrix);
 
     transform.x = camera->x - playerMapOffsetX;
     transform.y = camera->y;
@@ -796,13 +792,13 @@ void Camera_UpdateViewMatrices(void) {
         transform.z -= shakeOffset;
     }
 
-    setMatrixFromObjectPos(storage->worldMatrix, &transform);
-    mtx44Transpose(storage->worldMatrix, storage->inverseViewMatrix);
-    PSMTXCopy((MtxPtr)storage->viewMatrix, (MtxPtr)storage->viewRotationMatrix);
-    storage->viewRotationMatrix[11] = storage->viewRotationMatrix[7] = storage->viewRotationMatrix[3] = 0.0f;
-    PSMTXCopy((MtxPtr)storage->inverseViewMatrix, (MtxPtr)storage->inverseViewRotationMatrix);
-    storage->inverseViewRotationMatrix[11] = storage->inverseViewRotationMatrix[7] =
-        storage->inverseViewRotationMatrix[3] = 0.0f;
+    setMatrixFromObjectPos(gCameraWorldMatrix, &transform);
+    mtx44Transpose(gCameraWorldMatrix, gCameraInverseViewMatrix);
+    PSMTXCopy((MtxPtr)gCameraViewMatrix, (MtxPtr)gCameraViewRotationMatrix);
+    gCameraViewRotationMatrix[11] = gCameraViewRotationMatrix[7] = gCameraViewRotationMatrix[3] = 0.0f;
+    PSMTXCopy((MtxPtr)gCameraInverseViewMatrix, (MtxPtr)gCameraInverseViewRotationMatrix);
+    gCameraInverseViewRotationMatrix[11] = gCameraInverseViewRotationMatrix[7] =
+        gCameraInverseViewRotationMatrix[3] = 0.0f;
 }
 
 void Camera_ApplyFullViewport(void) {
@@ -946,13 +942,11 @@ const f32 gCameraDefaultFarPlane[1] = {10000.0f};
 const f32 gCameraDefaultPosition[1] = {200.0f};
 
 void Camera_InitState(void) {
-    CameraMatrixStorage* storage = (CameraMatrixStorage*)gObjInverseYawTransformMatrices;
     u32 i;
     Camera* camera;
 
     for (i = 0; i < CAMERA_COUNT; i++) {
-        camera = (Camera*)((u8*)storage + (u8)i * sizeof(Camera));
-        camera = (Camera*)((u8*)camera + offsetof(CameraMatrixStorage, cameras));
+        camera = &gCameras[(u8)i];
         camera->roll = 0;
         camera->pitch = 0;
         camera->yaw = 0x7FF8;
@@ -979,10 +973,10 @@ void Camera_InitState(void) {
     gCameraProjectionMode = 0;
 
     if (gCameraProjectionMode == 1) {
-        C_MTXOrtho(storage->projectionMatrix, gCameraOrthoTop, gCameraOrthoBottom, gCameraOrthoLeft, gCameraOrthoRight,
+        C_MTXOrtho(gCameraProjectionMatrix, gCameraOrthoTop, gCameraOrthoBottom, gCameraOrthoLeft, gCameraOrthoRight,
                    gCameraNearPlane, gCameraFarPlane);
     } else {
-        C_MTXPerspective(storage->projectionMatrix, gCameraFovY, gCameraAspectRatio, gCameraNearPlane, gCameraFarPlane);
+        C_MTXPerspective(gCameraProjectionMatrix, gCameraFovY, gCameraAspectRatio, gCameraNearPlane, gCameraFarPlane);
         C_MTXLightPerspective((MtxPtr)gCameraLightPerspectiveScaledMatrix, gCameraFovY, gCameraAspectRatio, 0.4f, 0.4f,
                               0.5f, 0.5f);
         C_MTXLightPerspective((MtxPtr)gCameraLightPerspectiveMatrix, gCameraFovY, gCameraAspectRatio, 0.5f, 0.5f, 0.5f,
@@ -990,11 +984,11 @@ void Camera_InitState(void) {
         C_MTXLightPerspective((MtxPtr)gCameraLightPerspectiveFlipYMatrix, gCameraFovY, gCameraAspectRatio, 0.5f,
                               (-0.5f), 0.5f, 0.5f);
     }
-    GXSetProjection(storage->projectionMatrix, gCameraProjectionMode);
+    GXSetProjection(gCameraProjectionMatrix, gCameraProjectionMode);
 
-    mtx44Perspective(storage->worldMatrix + 32, &gCameraPerspectiveNorm, gCameraFovY, gCameraAspectRatio,
+    mtx44Perspective(gCameraWorldMatrix + 32, &gCameraPerspectiveNorm, gCameraFovY, gCameraAspectRatio,
                      gCameraNearPlane, gCameraFarPlane, 1.0f);
-    copyMatrix44(storage->worldMatrix + 32, storage->yawTransforms[33]);
+    copyMatrix44(gCameraWorldMatrix + 32, gObjYawTransformMatrices[33]);
 }
 
 CameraProjectionMatrix gCameraProjectionMatrix;

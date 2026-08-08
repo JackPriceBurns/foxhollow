@@ -42,4 +42,7 @@ int fhTabIs16Bit(const char* name);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
 
+#define GX_PNMTX_IDENTITY 27
+void fhLoadIdentityPosMtx(void);
+
 #endif

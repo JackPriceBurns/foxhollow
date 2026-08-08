@@ -269,6 +269,7 @@ void n_attractmode_prepareMovie(void)
         if (ok == 0)
         {
             AttractMovieAudio_Shutdown();
+            gAttractMoviePreparePending = 0;
         }
         else
         {

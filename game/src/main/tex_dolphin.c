@@ -1297,7 +1297,8 @@ void renderGlows(void)
             else
                 e->glowAlphaStep = -0x10;
         }
-        GXSetCurrentMtx(GX_IDENTITY);
+        fhLoadIdentityPosMtx();
+        GXSetCurrentMtx(GX_PNMTX_IDENTITY);
         gxTevColor1TexAlphaStage();
         gxSetAdditiveBlendNoZTest();
         for (i = 0; i < gGlowLightCount; i++)

@@ -556,7 +556,8 @@ void screenImageDraw(u8 alpha)
     }
     GXSetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
     GXPosition3s16(0, 0, -8);
@@ -657,7 +658,8 @@ void doSpiritVisionFilter(void)
     }
     GXSetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
     GXPosition3s16(0, 0, -8);
@@ -766,7 +768,8 @@ void doColorFilter(u8* mod)
     }
     GXSetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
     GXPosition3s16(0, 0, -8);
@@ -999,7 +1002,8 @@ void doDistortionFilter(f32* pos, f32 radius, u8* mod, f32 angle)
     }
     GXSetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
     GXPosition3s16(0, 0, -8);
@@ -1923,21 +1927,22 @@ void hudDrawRect(int x1, int y1, int x2, int y2, GXColor color)
     GXSetNumIndStages(0);
     GXSetNumTexGens(0);
     GXSetNumTevStages(1);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1 << 2, y1 << 2, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2 << 2, y1 << 2, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2 << 2, y2 << 2, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1 << 2, y2 << 2, -8);
     GXTexCoord2f32(zero, zero);
 
@@ -1990,21 +1995,22 @@ void drawViewFinderLine(f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, f32 x4, 
     GXSetNumIndStages(0);
     GXSetNumTexGens(0);
     GXSetNumTevStages(1);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx1, fy1, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx2, fy2, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx3, fy3, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx4, fy4, -8);
     GXTexCoord2f32(zero, zero);
 
@@ -2055,17 +2061,18 @@ void hudDrawTriangle(f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, GXColor col
     GXSetNumIndStages(0);
     GXSetNumTexGens(0);
     GXSetNumTevStages(1);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_TRIANGLES, GX_VTXFMT1, 3);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx1, fy1, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx2, fy2, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(fx3, fy3, -8);
     GXTexCoord2f32(zero, zero);
 
@@ -2081,21 +2088,22 @@ void drawOrthoTexturedQuad(int x1, int y1, int x2, int y2, f32 u1, f32 v1, f32 u
     GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
     GXSetCullMode(GX_CULL_NONE);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1, y1, z);
     GXTexCoord2f32(u1, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2, y1, z);
     GXTexCoord2f32(u2, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2, y2, z);
     GXTexCoord2f32(u2, v2);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1, y2, z);
     GXTexCoord2f32(u1, v2);
 
@@ -2111,21 +2119,22 @@ void textRenderChar(int x1, int y1, int x2, int y2, f32 u1, f32 v1, f32 u2, f32 
     GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
     GXSetCullMode(GX_CULL_NONE);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1, y1, -8);
     GXTexCoord2f32(u1, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2, y1, -8);
     GXTexCoord2f32(u2, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x2, y2, -8);
     GXTexCoord2f32(u2, v2);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(x1, y2, -8);
     GXTexCoord2f32(u1, v2);
 
@@ -2204,21 +2213,22 @@ void drawPartialTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale, int
     u1 = (f32)(u32)(width + u_offset) / (f32)((Texture*)obj)->width;
     v1 = (f32)(u32)(height + v_offset) / (f32)((Texture*)obj)->height;
 
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, sy, -8);
     GXTexCoord2f32(u0, v0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
     GXTexCoord2f32(u1, v0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8)), -8);
     GXTexCoord2f32(u1, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, (s16)(sy + (f32)(u32)(((u32)(height << 2) * drawScale) >> 8)), -8);
     GXTexCoord2f32(u0, v1);
 
@@ -2268,7 +2278,8 @@ void drawRect(f32 sx, f32 sy, int x, int y)
         gGxZCompLocValid = 1;
     }
     GXSetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_NOOP);
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     sx = 4.0f * sx;
     sy = 4.0f * sy;
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
@@ -2383,21 +2394,22 @@ void drawScaledTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale, int 
             v1 = vr;
         }
     }
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, sy, -8);
     GXTexCoord2f32(u0, v0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
     GXTexCoord2f32(u1, v0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)h), -8);
     GXTexCoord2f32(u1, v1);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, (s16)(sy + (f32)(u32)h), -8);
     GXTexCoord2f32(u0, v1);
 
@@ -2482,21 +2494,22 @@ void hudDrawColored(Texture* obj, int x, int y, u32* color, int scale, int flag)
         s32 w, h;
         w = ((((Texture*)obj)->width << 2) * (u16)scale) / 256;
         h = ((((Texture*)obj)->height << 2) * (u16)scale) / 256;
+        fhLoadIdentityPosMtx();
         GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-        GXPosition1x8(0x3C);
+        GXPosition1x8(GX_PNMTX_IDENTITY);
         GXPosition3s16((s16)(x << 2), (s16)(y << 2), -8);
         GXTexCoord2f32(zero, zero);
 
-        GXPosition1x8(0x3C);
+        GXPosition1x8(GX_PNMTX_IDENTITY);
         GXPosition3s16((s16)((x << 2) + w), (s16)(y << 2), -8);
         GXTexCoord2f32(one, zero);
 
-        GXPosition1x8(0x3C);
+        GXPosition1x8(GX_PNMTX_IDENTITY);
         GXPosition3s16((s16)((x << 2) + w), (s16)((y << 2) + h), -8);
         GXTexCoord2f32(one, one);
 
-        GXPosition1x8(0x3C);
+        GXPosition1x8(GX_PNMTX_IDENTITY);
         GXPosition3s16((s16)(x << 2), (s16)((y << 2) + h), -8);
         GXTexCoord2f32(zero, one);
     }
@@ -2578,21 +2591,22 @@ void drawTexture(void* obj, f32 sx, f32 sy, int alpha_mod, int scale)
     h = ((((Texture*)obj)->height << 2) * (u16)scale) / 256;
     sx = 4.0f * sx;
     sy = 4.0f * sy;
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT1, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, sy, -8);
     GXTexCoord2f32(zero, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), sy, -8);
     GXTexCoord2f32(one, zero);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16((s16)(sx + (f32)(u32)w), (s16)(sy + (f32)(u32)h), -8);
     GXTexCoord2f32(one, one);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(sx, (s16)(sy + (f32)(u32)h), -8);
     GXTexCoord2f32(zero, one);
 
@@ -3414,7 +3428,8 @@ void drawViewFinderAperture(f32 sx, f32 sy, u8 a, u8 flag)
     GXSetChanCtrl(GX_COLOR1A1, GX_FALSE, GX_SRC_REG, GX_SRC_REG, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
     GXSetNumChans(0);
     GXClearVtxDesc();
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
     GXSetCullMode(GX_CULL_NONE);
     GXSetBlendMode(GX_BM_BLEND, GX_BL_INVSRCALPHA, GX_BL_SRCALPHA, GX_LO_NOOP);
@@ -3571,7 +3586,8 @@ void drawSnowFlashOverlay(f32 s1, u8 flashAlpha, void* vec, f32 s2, u8 alpha0, u
     GXSetNumChans(0);
 
     GXClearVtxDesc();
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
     GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
     GXSetCullMode(GX_CULL_NONE);
@@ -3699,7 +3715,8 @@ void doHeatEffect(u8 alpha)
     GXSetNumIndStages(1);
     GXSetNumChans(1);
     GXClearVtxDesc();
-    GXSetCurrentMtx(GX_IDENTITY);
+    fhLoadIdentityPosMtx();
+    GXSetCurrentMtx(GX_PNMTX_IDENTITY);
     GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
     GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
     GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
@@ -3793,21 +3810,22 @@ void renderMotionBlur(f32 alpha)
     GXSetTevSwapMode(GX_TEVSTAGE0, GX_TEV_SWAP0, GX_TEV_SWAP0);
     GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0, 0, -8);
     GXTexCoord2s16(0, 0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0x280, 0, -8);
     GXTexCoord2s16(0x80, 0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0x280, 0x1E0, -8);
     GXTexCoord2s16(0x80, 0x80);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0, 0x1E0, -8);
     GXTexCoord2s16(0, 0x80);
 
@@ -4046,24 +4064,25 @@ void doBlurFilter(f32 wx, f32 wy, f32 wz, u8 param4, u8 param5)
     }
     GXSetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
     GXSetProjection(hudMatrix, GX_ORTHOGRAPHIC);
+    fhLoadIdentityPosMtx();
     GXBegin(GX_QUADS, GX_VTXFMT0, 4);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0, 0, -8);
     GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
     GXTexCoord2s16(0, 0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0x280, 0, -8);
     GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
     GXTexCoord2s16(0x80, 0);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0x280, 0x1E0, -8);
     GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
     GXTexCoord2s16(0x80, 0x80);
 
-    GXPosition1x8(0x3C);
+    GXPosition1x8(GX_PNMTX_IDENTITY);
     GXPosition3s16(0, 0x1E0, -8);
     GXColor4u8(0xFF, 0xFF, 0xFF, 0xFF);
     GXTexCoord2s16(0, 0x80);

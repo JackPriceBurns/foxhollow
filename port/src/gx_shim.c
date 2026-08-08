@@ -40,6 +40,15 @@ void GXReadXfRasMetric(u32* xf_wait_in, u32* xf_wait_out, u32* ras_busy, u32* cl
   if (ras_busy) { *ras_busy = 0; }
   if (clocks) { *clocks = 0; }
 }
+void fhLoadIdentityPosMtx(void) {
+  static const f32 identity[3][4] = {
+      {1.0f, 0.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f, 0.0f},
+  };
+  GXLoadPosMtxImm(identity, GX_PNMTX9);
+}
+
 void GXResetWriteGatherPipe(void) {}
 void __GXAbortWaitPECopyDone(void) {}
 

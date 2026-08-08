@@ -63,6 +63,7 @@ target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
 target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char -fcommon)
 target_link_libraries(port_shims PRIVATE aurora::core)
 
+
 if (TARGET game)
     add_executable(linkcheck EXCLUDE_FROM_ALL src/main.c)
     target_link_libraries(linkcheck PRIVATE
