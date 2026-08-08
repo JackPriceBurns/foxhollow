@@ -472,6 +472,16 @@ void modelAnimEvalChannels(u8* dst, ObjModel* model, ObjAnimState* channel, f32 
             }
             work.eventCountdown = channel->eventCountdown;
             modelAnimUpdateChannels(file, &work, slotCount);
+            if (slotCount < 2)
+            {
+                work.cacheSlots[1] = work.cacheSlots[0];
+                work.frameTypes[1] = work.frameTypes[0];
+                work.frameLengths[1] = work.frameLengths[0];
+                work.framePhases[1] = work.framePhases[0];
+                work.frameData[1] = work.frameData[0];
+                work.frameStreamCursors[1] = work.frameStreamCursors[0];
+                work.frameStreamStrides[1] = work.frameStreamStrides[0];
+            }
             ctrlFlags = channel->moveControlFlags;
             if (ctrlFlags & 1)
             {

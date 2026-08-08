@@ -4610,6 +4610,7 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
         if (hdr->magic == 0xfacefeed)
         {
             zlbDecompress((u8*)(gMapRomListBuffers[mapIndex] + 0x10), hdr->compressedSize, (u8*)destBuf, &hdr->decompressedSize);
+            fhSwapRomListSection(destBuf, hdr->decompressedSize);
             DCStoreRange(destBuf, hdr->decompressedSize);
         }
     }
@@ -4844,10 +4845,11 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
             idx = 0x46;
         }
         entry = (char*)gResourceFileBuffers[idx] + (offsetFlags & 0x0fffffff);
+        fhFixPackHeader((volatile u32*)entry);
         *p18 = (int)fhSwap32(*(u32*)(entry + 0x18));
         *p1c = (int)fhSwap32(*(u32*)(entry + 0x1c));
         *p20 = (int)fhSwap32(*(u32*)(entry + 0x20));
-        *p4 = (int)fhSwap32(*(u32*)(entry + 0x4));
+        *p4 = *(int*)(entry + 0x4);
     }
 }
 
@@ -4860,10 +4862,10 @@ void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
     if ((void*)gResourceFileBuffers[0x1e] == NULL)
         return;
     e = (char*)gResourceFileBuffers[0x1d] + idx;
-    *out1 = *(s16*)(e + 0x1c);
-    *out2 = *(s16*)(e + 0x1e);
-    *out3 = *(int*)((char*)gResourceFileBuffers[0x1d] +
-                    *(int*)((char*)gResourceFileBuffers[0x1e] + p5 * 4 + 0x18) + 4);
+    *out1 = (s16)fhSwap16(*(u16*)(e + 0x1c));
+    *out2 = (s16)fhSwap16(*(u16*)(e + 0x1e));
+    *out3 = (int)fhSwap32(*(u32*)((char*)gResourceFileBuffers[0x1d] +
+                                  *(int*)((char*)gResourceFileBuffers[0x1e] + p5 * 4 + 0x18) + 4));
 }
 
 void checkLoadBlock(int a, int* pc, int* p8)

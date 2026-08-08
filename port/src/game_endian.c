@@ -95,6 +95,27 @@ void fhSwapObjDef(void* def) {
   *(u32*)(d + 0x88) = fhSwap32(*(u32*)(d + 0x88));
 }
 
+void fhSwapRomListSection(void* buf, unsigned int size) {
+  u8* p = (u8*)buf;
+  unsigned int pos = 0;
+  if (!buf) {
+    return;
+  }
+  while (pos + 0x18 <= size) {
+    unsigned int step = (unsigned int)p[2] * 4;
+    *(u16*)p = fhSwap16(*(u16*)p);
+    *(u32*)(p + 0x08) = fhSwap32(*(u32*)(p + 0x08));
+    *(u32*)(p + 0x0c) = fhSwap32(*(u32*)(p + 0x0c));
+    *(u32*)(p + 0x10) = fhSwap32(*(u32*)(p + 0x10));
+    *(u32*)(p + 0x14) = fhSwap32(*(u32*)(p + 0x14));
+    if (step < 0x18) {
+      return;
+    }
+    pos += step;
+    p += step;
+  }
+}
+
 void fhSwapResidentTabs(void) {
   int i;
   for (i = 0; i < 0x58; i++) {

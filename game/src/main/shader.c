@@ -3074,6 +3074,7 @@ MapRomListPage* mapGetRomListAndOffsets(int p1, int flag)
     raw = (char*)gCurRomListPage + sizeof(MapRomListPage);
     fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, raw, offset0, tailLen);
     memcpy(gCurRomListPage, raw, 0xC);
+    fhSwapU16Array(gCurRomListPage, 6);
 
     ((MapRomListPage*)gCurRomListPage)->cells = (u32*)(raw + *(int*)((gMapsTab + 4) + (words << 2)) - offset0);
     ((MapRomListPage*)gCurRomListPage)->cellRects = (u32*)(raw + *(int*)((gMapsTab + 8) + (words << 2)) - offset0);

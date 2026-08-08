@@ -36,6 +36,7 @@ void fhSwapResidentTabs(void);
 void fhSwapTabBufferOnce(void* buf, unsigned int words);
 void fhSwapTabTableInPlace(void* table);
 void fhSwapObjDef(void* def);
+void fhSwapRomListSection(void* buf, unsigned int size);
 int fhTabIs16Bit(const char* name);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
