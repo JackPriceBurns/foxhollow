@@ -23,6 +23,22 @@
 #include "main/dll/dll_02B2_dustmotesou.h"
 #include "main/gamebits.h"
 #include "main/objfx.h"
+#include "string.h"
+
+/* Placement data is raw big-endian map data; only the multi-byte fields need
+ * swapping (the u8 rot/effect/spread bytes are already correct). */
+static f32 dustmotesou_getScale(const DustMoteSouMapData* mapData)
+{
+    u32 bits = fhSwap32(*(const u32*)&mapData->scale);
+    f32 out;
+    memcpy(&out, &bits, sizeof(out));
+    return out;
+}
+
+static s16 dustmotesou_getGameBit(const DustMoteSouMapData* mapData)
+{
+    return (s16)fhSwap16((u16)mapData->gameBit);
+}
 
 int dustmotesou_getExtraSize(void)
 {
@@ -54,8 +70,10 @@ void dustmotesou_hitDetect(void)
 void dustmotesou_update(GameObject* source)
 {
     DustMoteSouMapData* mapData = (DustMoteSouMapData*)source->anim.placementData;
+    f32 scale = dustmotesou_getScale(mapData);
+    s16 gameBit = dustmotesou_getGameBit(mapData);
 
-    if (mapData->gameBit != -1 && mainGetBit(mapData->gameBit) == 0)
+    if (gameBit != -1 && mainGetBit(gameBit) == 0)
     {
         return;
     }
@@ -65,7 +83,7 @@ void dustmotesou_update(GameObject* source)
         {
             return;
         }
-        objfx_spawnMaskedHitEffect(source, mapData->scale, mapData->effectId, mapData->effectParamA,
+        objfx_spawnMaskedHitEffect(source, scale, mapData->effectId, mapData->effectParamA,
                                    mapData->effectParamB, 0);
         return;
     }
@@ -75,7 +93,7 @@ void dustmotesou_update(GameObject* source)
         {
             return;
         }
-        objfx_spawnHitEffectBurst(source, mapData->scale, mapData->effectId, mapData->effectParamA,
+        objfx_spawnHitEffectBurst(source, scale, mapData->effectId, mapData->effectParamA,
                             mapData->effectParamB, NULL);
         return;
     }
@@ -85,20 +103,20 @@ void dustmotesou_update(GameObject* source)
     }
     if (mapData->burstMode == DUSTMOTESOU_BURST_BOX)
     {
-        objfx_spawnBoxBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+        objfx_spawnBoxBurst(source, mapData->effectId, scale, mapData->effectParamA,
                             mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
                             (f32)(u32)mapData->spreadY, (f32)(u32)mapData->spreadZ, NULL, 0);
     }
     else if (mapData->burstMode == DUSTMOTESOU_BURST_ARCED)
     {
-        objfx_spawnArcedBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+        objfx_spawnArcedBurst(source, mapData->effectId, scale, mapData->effectParamA,
                              mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
                              (f32)(u32)mapData->spreadY,
                               (f32)(u32)mapData->spreadZ, 0, 0);
     }
     else
     {
-        objfx_spawnDirectionalBurst(source, mapData->effectId, mapData->scale, mapData->effectParamA,
+        objfx_spawnDirectionalBurst(source, mapData->effectId, scale, mapData->effectParamA,
                                     mapData->effectParamB, mapData->effectFlags,
                                     (f32)(u32)mapData->spreadX, NULL, 0);
     }
