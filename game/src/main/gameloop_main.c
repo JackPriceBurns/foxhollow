@@ -17,6 +17,9 @@
 #include "main/gamebits.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/savegame_load_api.h"
+// Local prologue quick-load toggle: uncomment these with the block in init().
+#include "main/dll/savegame.h"
+#include "main/dll/dll_0015_save_settings.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/boneparticleeffect_interface.h"
 #include "main/dll/modgfx_interface.h"
@@ -61,6 +64,7 @@
 #include "main/voxmaps.h"
 #include "main/dll/FRONT/dll_0032_titlescreeninit.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
+#include "main/dll/tricky.h"
 #include "track/intersect_api.h"
 #include "dolphin/ai.h"
 #include "main/lightmap.h"
@@ -79,6 +83,7 @@
 #include "main/pi_flush_api.h"
 #include "main/gameloop_gamebit_api.h"
 #include "main/hud_visibility_api.h"
+#include "main/sky.h"
 
 #define GAMEBIT_FLAG_WIDTH_MASK 0x1f /* bit-run length: (mask)+1 bits stored for this entry */
 #define GAMEBIT_FLAG_SYNC       0x20 /* request a save-sync when this bit is written */
@@ -950,6 +955,32 @@ void init(void)
     doNothing_beforeTitleScreen();
     doQueuedLoads();
     setDrawCloudsAndLights(0);
+    // Local prologue quick-load toggle: comment out the two title-screen calls
+    // above, then uncomment this block. It must stay after setDrawCloudsAndLights(0),
+    // which is a pre-map default in the retail flow and would otherwise clear the
+    // sky/cloud/light flags the loaded map just set.
+    // if (loadGameOptions() == 0 && gSaveGameEnabled != 0)
+    // {
+    // cardCreateSaveFile(1);
+    // }
+    // loadSaveSettings();
+    // if (gSaveGameEnabled >= 0xfe)
+    // {
+    // gSaveGameEnabled = 1;
+    // }
+    // if (gSaveGameEnabled != 0)
+    // {
+    // trySaveGame(0);
+    // }
+    // else
+    // {
+    // gplayNewGame(NULL, -1);
+    // }
+    // (*gMapEventInterface)->gotoSavegame();
+    // doQueuedLoads();
+    // loadSunAndMoon();
+    // gameUiLoadResources();
+    // camcontrol_initialiseTargetReticle();
     if (*gAskProgressiveScanFlag != 0)
     {
         OSSetSaveRegion(gAskProgressiveScanFlag, (u8*)gAskProgressiveScanFlag + 1);

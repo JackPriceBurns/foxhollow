@@ -1183,7 +1183,8 @@ u8* loadObjectFile(int id)
         buf->hitReactMoveTable = rawOff ? (ObjHitReactMoveEntry*)(blob + rawOff) : NULL;
         rawOff = fhSwap32(*(u32*)(blob + 0x28));
         buf->weaponDaTable = rawOff ? (s16*)(blob + rawOff) : NULL;
-        buf->attachPoints = (ObjAttachPoint*)(blob + fhSwap32(*(u32*)(blob + 0x2c)));
+        rawOff = fhSwap32(*(u32*)(blob + 0x2c));
+        buf->attachPoints = rawOff ? (ObjAttachPoint*)(blob + rawOff) : NULL;
         rawOff = fhSwap32(*(u32*)(blob + 0x40));
         buf->hitVolumes = rawOff ? (ObjDefHitVolume*)(blob + rawOff) : NULL;
         buf->flags = fhSwap32(*(u32*)(blob + 0x44));
@@ -1211,6 +1212,16 @@ u8* loadObjectFile(int id)
         for (mi = 0; mi < buf->modelCount; mi++)
         {
             buf->modelFileIds[mi] = (s32)fhSwap32((u32)buf->modelFileIds[mi]);
+        }
+        for (mi = 0; buf->attachPoints != NULL && mi < buf->attachPointCount; mi++)
+        {
+            ObjAttachPoint* ap = &buf->attachPoints[mi];
+            int c;
+            for (c = 0; c < 3; c++)
+            {
+                *(u32*)&ap->pos[c] = fhSwap32(*(u32*)&ap->pos[c]);
+                ap->rot[c] = (s16)fhSwap16((u16)ap->rot[c]);
+            }
         }
         if (buf->weaponDaTable != NULL)
         {

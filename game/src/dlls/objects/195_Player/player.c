@@ -9233,7 +9233,7 @@ int playerState08(GameObject* obj, PlayerState* state, f32 fv) {
             {
                 GameObject* o = *list;
                 gPlayerInteractTarget = o;
-                if ((*(u8*)((char*)o + 0xaf) & 4) != 0 && (*(u8*)((char*)o + 0xaf) & 0x10) == 0)
+                if ((o->anim.resetHitboxFlags & 4) != 0 && (o->anim.resetHitboxFlags & 0x10) == 0)
                 {
                     switch ((u8)staffactivated_getMode(gPlayerInteractTarget))
                     {
@@ -9285,9 +9285,9 @@ int playerState08(GameObject* obj, PlayerState* state, f32 fv) {
             found = (char*)objGetNearestTypeTo(0xf, obj, &dist);
             if (found != NULL)
             {
-                def = *(s16**)(found + 0x4c);
+                def = (s16*)((GameObject*)found)->anim.placementData;
             }
-            if (def != NULL && *def == 0x860 && (*(u8*)(found + 0xaf) & 4) != 0)
+            if (def != NULL && *def == 0x860 && (((GameObject*)found)->anim.resetHitboxFlags & 4) != 0)
             {
                 mainSetBits(GAMEBIT_ITEM_DinoHorn_3F1, 1);
                 mainSetBits(GAMEBIT_ITEM_DinoHorn_3D8, 1);

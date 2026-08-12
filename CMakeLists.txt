@@ -57,6 +57,13 @@ if (TARGET game)
     set_target_properties(foxhollow PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
 endif ()
 
+if (APPLE)
+    add_custom_command(TARGET foxhollow POST_BUILD
+            COMMAND codesign -s - --entitlements
+            ${CMAKE_CURRENT_SOURCE_DIR}/debug.entitlements -f $<TARGET_FILE:foxhollow>
+            COMMENT "Re-signing with get-task-allow so lldb can attach")
+endif ()
+
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)

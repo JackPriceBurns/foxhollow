@@ -1735,17 +1735,9 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         idx = (w >> (pos & 7)) & 0x3f;
     }
     cb = (ObjModelRenderCb)ObjModel_GetRenderCallback((ObjModel*)am);
-    if (cb != NULL)
+    if (cb != NULL && cb((int*)obj, am, idx) != 0)
     {
-        u8 callbackResult = cb((int*)obj, am, idx);
-        if (callbackResult != 0)
-        {
-            if (callbackResult == OBJMODEL_RENDER_CALLBACK_SKIP_DRAW)
-            {
-                return idx | 0x80000000U;
-            }
-            return idx;
-        }
+        return idx;
     }
     op = ObjModel_GetRenderOp(((ObjModel*)am)->file, idx);
     refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
@@ -2579,7 +2571,6 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
     int* op;
     ModelRenderOpTextureRefs* refs;
     int done;
-    u8 skipCurrentRenderOp;
     f32 fade;
     f32 sc2;
     f32 sc;
@@ -2902,7 +2893,6 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
     GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
     GXSetArray(GX_VA_TEX1, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
     done = 0;
-    skipCurrentRenderOp = 0;
     while (!done)
     {
         u32 op4;
@@ -2927,8 +2917,6 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             if ((passMask == 0 || passMask == 4 || passMask == 8) && lbl_803DCC20 == 0)
             {
                 idx = objSetupRenderOpGxState(obj, m, am, &bs);
-                skipCurrentRenderOp = (idx & 0x80000000U) != 0;
-                idx &= 0x3f;
                 op = (int*)ObjModel_GetRenderOp((ModelFileHeader*)m, idx);
             }
             else
@@ -2941,14 +2929,13 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                 w |= *(pAddr + 1) << 16;
                 bs.pos = pos + 6;
                 idx = (w >> (pos & 7)) & 0x3f;
-                skipCurrentRenderOp = 0;
                 op = (int*)ObjModel_GetRenderOp((ModelFileHeader*)m, idx);
             }
             refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
             break;
         }
         case 2:
-            if (!skipCurrentRenderOp && ((passMask != 4 && passMask != 8) || gObjFuzzPassActive != 0))
+            if ((passMask != 4 && passMask != 8) || gObjFuzzPassActive != 0)
             {
                 ModelDisplayListEntry* dl;
                 u32 w;

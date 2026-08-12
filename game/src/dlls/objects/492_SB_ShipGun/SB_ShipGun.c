@@ -77,21 +77,12 @@
 #define SB_SHIPGUN_SMOKE_PARTICLE_MODE 2
 
 static void SB_ShipGun_getSmokeSpawnArgs(GameObject* obj, PartFxSpawnParams* spawnArgs) {
-    Vec3f localOrigin = {0.0f, 0.0f, 0.0f};
-    Vec3f worldOrigin;
-
     spawnArgs->scale = 2.0f;
     spawnArgs->arg3 = SB_SHIPGUN_SMOKE_SPAWN_ARG3;
-
-    /* The gun is parented to the moving galleon. Its cached worldPos still
-     * describes the previous update while ObjPath uses the current parent
-     * transform, so evaluate both ends of the offset now. Effect 0x7AA
-     * multiplies only the Y offset by scale. */
-    Obj_TransformLocalPointByWorldMatrix((u8*)obj, &localOrigin.x, &worldOrigin.x, 0);
     ObjPath_GetPointWorldPosition(obj, 0, &spawnArgs->posX, &spawnArgs->posY, &spawnArgs->posZ, 0);
-    spawnArgs->posX -= worldOrigin.x;
-    spawnArgs->posY = (spawnArgs->posY - worldOrigin.y) / spawnArgs->scale;
-    spawnArgs->posZ -= worldOrigin.z;
+    spawnArgs->posX = spawnArgs->posX - obj->anim.worldPosX;
+    spawnArgs->posY = spawnArgs->posY - obj->anim.worldPosY;
+    spawnArgs->posZ = spawnArgs->posZ - obj->anim.worldPosZ;
 }
 
 int SB_ShipGun_getExtraSize(void) {
@@ -298,8 +289,7 @@ void SB_ShipGun_update(GameObject* obj) {
         case SB_SHIPGUN_PHASE_DEATH_TRIGGER:
             ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;
             if (state->health == 0) {
-                ObjPath_GetPointWorldPosition(obj, 0, &posX, &posY, &posZ, 0);
-                spawnDimExplosion((u8*)obj, posX, posY, posZ, 100.0f, 1, 1, 1, 0, 1, 1, 0);
+                spawnExplosion(obj, 100.0f, 1, 1, 1, 0, 1, 1, 0);
                 state->phase = SB_SHIPGUN_PHASE_EXPLODED;
             } else {
                 state->phase = SB_SHIPGUN_PHASE_SMOLDERING;
