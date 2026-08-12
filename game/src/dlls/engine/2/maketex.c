@@ -16,7 +16,11 @@
 
 volatile s32 gSaveCardState = 0xD;
 char* sMemoryCardFileName = sMemoryCardFileNameString;
+#ifdef TARGET_PC
+int gSaveCardBackdropColor = 0xFF404040;
+#else
 int gSaveCardBackdropColor = 0x404040FF;
+#endif
 int lbl_803DB70C[1] = {0};
 
 typedef struct
@@ -58,6 +62,28 @@ static inline u64 saveGame_checksum(u64* p, int count)
     return x[0] ^ (acc[0] + 13);
 }
 
+static inline u64 saveGame_getCachedChecksum(void)
+{
+    return ((u64)gSaveCardChecksumHi << 32) | gSaveCardChecksumLo;
+}
+
+static inline void saveGame_setCachedChecksum(u64 checksum)
+{
+    gSaveCardChecksumHi = (u32)(checksum >> 32);
+    gSaveCardChecksumLo = (u32)checksum;
+}
+
+static inline u64 saveGame_getCachedSerial(void)
+{
+    return ((u64)gSaveCardSerialHi << 32) | gSaveCardSerialLo;
+}
+
+static inline void saveGame_setCachedSerial(u64 serial)
+{
+    gSaveCardSerialHi = (u32)(serial >> 32);
+    gSaveCardSerialLo = (u32)serial;
+}
+
 int saveGameReadSlotCb(u8 idx, int unused, void* dst)
 {
     memcpy(dst, (void*)(gSaveCardIoBuffer + idx * 1772 + 2640), 1772);
@@ -86,8 +112,7 @@ int saveGame_doWrite(int slot)
         a[0] = a[0] + p[i[0]];
     }
     chk = x[0] ^ (a[0] + 13);
-    ((u32*)p)[0x7ff] = (u32)chk;
-    ((u32*)p)[0x7fe] = (u32)(chk >> 32);
+    p[0x3ff] = chk;
     DCFlushRange((void*)gSaveCardIoBuffer, 0x2000);
     result = CARDWrite(&gSaveCardFileInfo.fileInfo, (void*)gSaveCardIoBuffer, 0x2000, offset = (u8)slot << 13);
     if (result == -5)
@@ -118,7 +143,7 @@ int saveGame_doWrite(int slot)
             }
             else
             {
-                *(u64*)&gSaveCardChecksumHi = chk2;
+                saveGame_setCachedChecksum(chk2);
             }
         }
     }
@@ -180,9 +205,9 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
     {
         if (gSaveCardIdentityCheckEnabled != 0)
         {
-            if (*(u64*)&gSaveCardChecksumHi != 0)
+            if (saveGame_getCachedChecksum() != 0)
             {
-                if (chk != *(u64*)&gSaveCardChecksumHi)
+                if (chk != saveGame_getCachedChecksum())
                 {
                     result = -0x55;
                     gSaveCardState = 0xb;
@@ -190,14 +215,12 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
             }
             else
             {
-                gSaveCardChecksumLo = (u32)chk;
-                gSaveCardChecksumHi = (u32)(chk >> 32);
+                saveGame_setCachedChecksum(chk);
             }
         }
         else
         {
-            gSaveCardChecksumLo = (u32)chk;
-            gSaveCardChecksumHi = (u32)(chk >> 32);
+            saveGame_setCachedChecksum(chk);
         }
     }
     if (result == 0)
@@ -383,9 +406,8 @@ void loadMemCardImages(void)
         a[0] = a[0] + p[i[0]];
     }
     chk = x[0] ^ (a[0] + 13);
-    ((u32*)p)[0xa91] = (u32)chk;
-    ((u32*)p)[0xa90] = (u32)(chk >> 32);
     q = (u64*)gSaveCardImageBuffer;
+    q[0x548] = chk;
     p = q + 0x400;
     x2[0] = 0;
     a2[0] = 1;
@@ -395,8 +417,7 @@ void loadMemCardImages(void)
         a2[0] = a2[0] + p[i[0]];
     }
     chk = x2[0] ^ (a2[0] + 13);
-    ((u32*)q)[0xfff] = (u32)chk;
-    ((u32*)q)[0xffe] = (u32)(chk >> 32);
+    q[0x7ff] = chk;
     DCFlushRange(gSaveCardImageBuffer, 0x4000);
 }
 
@@ -452,9 +473,9 @@ int saveGame(int writeImages)
         {
             if (gSaveCardIdentityCheckEnabled != 0)
             {
-                if (*(u64*)&gSaveCardSerialHi != 0)
+                if (saveGame_getCachedSerial() != 0)
                 {
-                    if (serial != *(u64*)&gSaveCardSerialHi)
+                    if (serial != saveGame_getCachedSerial())
                     {
                         result = -0x55;
                         gSaveCardState = 0xb;
@@ -462,12 +483,12 @@ int saveGame(int writeImages)
                 }
                 else
                 {
-                    *(u64*)&gSaveCardSerialHi = serial;
+                    saveGame_setCachedSerial(serial);
                 }
             }
             else
             {
-                *(u64*)&gSaveCardSerialHi = serial;
+                saveGame_setCachedSerial(serial);
             }
         }
         else
@@ -563,7 +584,7 @@ int saveGame(int writeImages)
                 result = CARDSetStatus(0, gSaveCardFileInfo.fileInfo.fileNo, &stat);
                 if (result == CARD_RESULT_READY)
                 {
-                    *(u64*)&gSaveCardChecksumHi = *(u64*)(gSaveCardImageBuffer + 0x3ff8);
+                    saveGame_setCachedChecksum(*(u64*)(gSaveCardImageBuffer + 0x3ff8));
                 }
             }
         }

@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-typedef struct ObjAnimDef ObjAnimDef;
+typedef struct ModelFileHeader ObjAnimDef;
 typedef struct ObjAnimState ObjAnimState;
 typedef struct ObjAnimComponent ObjAnimComponent;
 typedef struct ObjAnimEventTable ObjAnimEventTable;

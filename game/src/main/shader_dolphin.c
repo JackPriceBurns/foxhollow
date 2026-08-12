@@ -252,7 +252,7 @@ u8 isHeavyFogEnabled(void)
 
 void* Shader_getLayer(void* base, int idx)
 {
-    return (u8*)base + idx * 8 + 0x24;
+    return &((Shader*)base)->layers[idx];
 }
 void selectTextureWithSecondary(Texture* texture, int mapId)
 {
@@ -403,9 +403,41 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
 }
 void addYUVVideoTevStages(void* tex0, void* tex1, void* tex2, s16 w, s16 h)
 {
-    u8 buf5c[0x20];
-    u8 buf3c[0x20];
-    u8 buf1c[0x20];
+#ifdef TARGET_PC
+    GXTexObj rgbTexObj;
+    void* rgbTexture;
+    extern void* fhTHPVideoGetRGB(const void* yTexture);
+
+    (void)tex1;
+    (void)tex2;
+    rgbTexture = fhTHPVideoGetRGB(tex0);
+    if (rgbTexture == NULL || gRcpNumTevStages > 0xf || gRcpNumTexGens > 7 || gRcpNextTexMap > 7)
+    {
+        return;
+    }
+    GXSetTexCoordGen2(gRcpNextTexCoord, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
+    GXSetTevOrder(gRcpNextTevStage, gRcpNextTexCoord, gRcpNextTexMap, GX_COLOR_NULL);
+    GXSetTevDirect(gRcpNextTevStage);
+    GXSetTevColorIn(gRcpNextTevStage, GX_CC_CPREV, GX_CC_TEXC, GX_CC_KONST, GX_CC_ZERO);
+    GXSetTevColorOp(gRcpNextTevStage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaIn(gRcpNextTevStage, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+    GXSetTevAlphaOp(gRcpNextTevStage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevSwapMode(gRcpNextTevStage, GX_TEV_SWAP0, GX_TEV_SWAP0);
+    GXSetTevKColorSel(gRcpNextTevStage, GX_TEV_KCSEL_1_4);
+    GXInitTexObj(&rgbTexObj, rgbTexture, w, h, GX_TF_RGBA8_PC, GX_CLAMP, GX_CLAMP, GX_FALSE);
+    GXInitTexObjLOD(&rgbTexObj, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+    GXLoadTexObj(&rgbTexObj, gRcpNextTexMap);
+    gRcpTevPrevColorValid = 1;
+    gRcpNextTevStage++;
+    gRcpNextTexCoord++;
+    gRcpNextTexMap++;
+    gRcpNumTevStages++;
+    gRcpNumTexGens++;
+    return;
+#else
+    GXTexObj buf5c;
+    GXTexObj buf3c;
+    GXTexObj buf1c;
     GXColorS10 cs10;
     int h2;
     int w2;
@@ -463,15 +495,15 @@ void addYUVVideoTevStages(void* tex0, void* tex1, void* tex2, s16 w, s16 h)
         GXSetTevKColor(gRcpNextKColor, kYuvKColor0);
         GXSetTevKColor(gRcpNextKColor + 1, kYuvKColor1);
         GXSetTevKColor(gRcpNextKColor + 2, kYuvKColor2);
-        GXInitTexObj((GXTexObj*)buf5c, tex0, w, h, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD((GXTexObj*)buf5c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj((GXTexObj*)buf5c, gRcpNextTexMap);
-        GXInitTexObj((GXTexObj*)buf3c, tex1, w2 = w >> 1, h2 = h >> 1, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD((GXTexObj*)buf3c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj((GXTexObj*)buf3c, gRcpNextTexMap + 1);
-        GXInitTexObj((GXTexObj*)buf1c, tex2, w2, h2, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD((GXTexObj*)buf1c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj((GXTexObj*)buf1c, gRcpNextTexMap + 2);
+        GXInitTexObj(&buf5c, tex0, w, h, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
+        GXInitTexObjLOD(&buf5c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
+        GXLoadTexObj(&buf5c, gRcpNextTexMap);
+        GXInitTexObj(&buf3c, tex1, w2 = w >> 1, h2 = h >> 1, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
+        GXInitTexObjLOD(&buf3c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
+        GXLoadTexObj(&buf3c, gRcpNextTexMap + 1);
+        GXInitTexObj(&buf1c, tex2, w2, h2, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
+        GXInitTexObjLOD(&buf1c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
+        GXLoadTexObj(&buf1c, gRcpNextTexMap + 2);
         gRcpNextTevStage = gRcpNextTevStage + 5;
         gRcpNextTexCoord = gRcpNextTexCoord + 2;
         gRcpNextTexMap = gRcpNextTexMap + 3;
@@ -481,6 +513,7 @@ void addYUVVideoTevStages(void* tex0, void* tex1, void* tex2, s16 w, s16 h)
         gRcpNumTevStages += 5;
         gRcpNumTexGens += 2;
     }
+#endif
 }
 void setupCausticBaseTevStages(void* viewMtx)
 {
@@ -1924,7 +1957,7 @@ void addEnvMapTexCoord(int scale)
     gRcpNumTexGens++;
 }
 
-int addEnvMapBumpStages(void* p1, int p2, u8 p3, u32 p4)
+int addEnvMapBumpStages(void* p1, int p2, u8 p3, void* p4)
 {
     struct piIndMtx indmtx;
     f32 mtx[3][4];
@@ -1946,7 +1979,7 @@ int addEnvMapBumpStages(void* p1, int p2, u8 p3, u32 p4)
         Texture* texptr;
         u32 div;
         int p2v = (p3 & 0xf) * 4 + 1;
-        texptr = (Texture*)(textureIdxToPtr(p4));
+        texptr = (Texture*)p4;
         div = (u32) texptr->width / (u32)(((Texture*)p1)->width * p2v);
         if (div != 0)
         {

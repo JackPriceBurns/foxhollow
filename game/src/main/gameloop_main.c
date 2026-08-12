@@ -786,6 +786,8 @@ static void gameLoop(void) {
 
 void init(void)
 {
+    int i;
+
     int audioDone;
     u8 filesDone;
     u8 once;
@@ -937,7 +939,11 @@ void init(void)
     initSkyStars();
     testAndSet_onlyUseHeap3(0);
     loadAssetFileById(&gGameBitTable, MLDF_FILEID_BITTABLE_BIN);
-    gGameBitCount = (s16)(getDataFileSize(MLDF_FILEID_BITTABLE_BIN) >> 1);
+    gGameBitCount = (s16)(getDataFileSize(MLDF_FILEID_BITTABLE_BIN) / sizeof(*gGameBitTable));
+    for (i = 0; i < gGameBitCount; i++)
+    {
+        gGameBitTable[i].firstBit = fhSwap16(gGameBitTable[i].firstBit);
+    }
     gGameBitSaveData = (*gMapEventInterface)->getLast();
     lbl_803DCA3F = 1;
     loadUiDll(2);

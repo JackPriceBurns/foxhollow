@@ -90,7 +90,7 @@ s8 lbl_803DCEEA;
 u8 lbl_803DCEE9;
 u8 lbl_803DCEE8;
 uintptr_t gShadowTrackGridOrigin;
-int gShadowTrackTriangleBuffer;
+uintptr_t gShadowTrackTriangleBuffer;
 f32 gShadowOffsetZ;
 f32 gShadowOffsetX;
 
@@ -665,8 +665,8 @@ int objShadowRender(GameObject* obj, int renderMode, int unused, int frameCount)
     int idxOut = 0;
     int drawScratch;
     u32* vtx;
-    int triangleTable = 0;
-    int triangleBuffer;
+    struct TrackTriangle* triangleTable = NULL;
+    uintptr_t triangleBuffer;
     ObjectShadowMesh* shadowMesh;
     f32 vec[3];
     f32 base[3];
@@ -711,7 +711,7 @@ int objShadowRender(GameObject* obj, int renderMode, int unused, int frameCount)
         trackGetGridOrigin((int**)&vtx);
         trackGetTriangleBuffer(&idxOut, &triangleTable);
 
-        triangleBuffer = triangleTable;
+        triangleBuffer = (uintptr_t)triangleTable;
         idxOut = collectShadowTrackTriangles(obj, triangleBuffer, gShadowDrawScratch, (uintptr_t)gShadowVolumeBuffer, idxOut, (f32)(int)vtx[0],
                              (f32)(int)vtx[2], renderMode, modelState->flags & 0x40000);
         gShadowTrackTriangleBuffer = triangleBuffer;

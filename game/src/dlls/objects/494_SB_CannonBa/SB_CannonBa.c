@@ -63,7 +63,7 @@ int SB_CannonBall_getObjectTypeId(void) {
 
 void SB_CannonBall_free(GameObject* obj) {
     SBCannonBallState* state = obj->extra;
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     if (state->modelLight != NULL) {
         ModelLightStruct_free(state->modelLight);
         state->modelLight = NULL;

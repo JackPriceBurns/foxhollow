@@ -46,6 +46,7 @@ u8 gCamcontrolTraceBboxBlocked;
 
 int camcontrol_traceMove(f32* fromPos, f32* toPos, f32* outPos, u8* traceWork, char traceMode, u8 runTrace, u8 runBbox,
                          f32 radius) {
+    CamcontrolTraceWork* work;
     u8 blocked;
     int clear;
     f32 endTmp[3];
@@ -54,13 +55,14 @@ int camcontrol_traceMove(f32* fromPos, f32* toPos, f32* outPos, u8* traceWork, c
     if (outPos == NULL) {
         outPos = endTmp;
     }
+    work = (CamcontrolTraceWork*)traceWork;
     *outPos = *toPos;
     outPos[1] = toPos[1];
     outPos[2] = toPos[2];
-    ((CamcontrolTraceWork*)traceWork)->radius = radius;
-    ((CamcontrolTraceWork*)traceWork)->bboxHit = -1;
-    ((CamcontrolTraceWork*)traceWork)->mode = traceMode;
-    ((CamcontrolTraceWork*)traceWork)->hitCount = 0;
+    work->radius = radius;
+    work->bboxHit = -1;
+    work->mode = traceMode;
+    work->hitCount = 0;
     blocked = 0;
     if (runBbox != 0) {
         blocked = trackGetLineIntersect(fromPos, outPos, radius, 1, NULL, NULL, 0x10, 0xffffffff, 0xff, 0);
@@ -69,13 +71,12 @@ int camcontrol_traceMove(f32* fromPos, f32* toPos, f32* outPos, u8* traceWork, c
     }
     gCamcontrolTraceBboxBlocked = blocked;
     if (runTrace != 0) {
-        hitDetect_calcSweptSphereBounds(&sweptBounds, fromPos, outPos,
-                                        (f32*)(traceWork + offsetof(CamcontrolTraceWork, radius)), 1);
+        hitDetect_calcSweptSphereBounds(&sweptBounds, fromPos, outPos, &work->radius, 1);
         trackIntersectBroadphase(NULL, &sweptBounds, 0x240, 1);
     }
     trackGetIntersect(NULL, fromPos, outPos, 1, traceWork, 0);
     clear = 0;
-    if ((gCamcontrolTraceBboxBlocked == 0) && (((CamcontrolTraceWork*)traceWork)->hitCount == 0)) {
+    if ((gCamcontrolTraceBboxBlocked == 0) && (work->hitCount == 0)) {
         clear = 1;
     }
     return clear;
@@ -85,7 +86,7 @@ void camcontrol_onTargetTraceBlocked(int unused) {
 
 u8 camcontrol_traceFromTarget(float* fromPos, GameObject* target, float* outPos, void* unused) {
     float targetPos[3];
-    u8 traceRec[111];
+    CamcontrolTraceWork traceRec;
 
     if (target->anim.classId == 1) {
         cameraGetPrevPos2(target, &targetPos[0], &targetPos[1], &targetPos[2]);
@@ -94,12 +95,12 @@ u8 camcontrol_traceFromTarget(float* fromPos, GameObject* target, float* outPos,
         targetPos[1] = target->anim.worldPosY + gCameraModeNormalState->targetHeight;
         targetPos[2] = target->anim.worldPosZ;
     }
-    camcontrol_traceMove(targetPos, fromPos, outPos, traceRec, 3, '\x01', '\x01', (double)4.0f);
-    return ((CamcontrolTraceWork*)traceRec)->blocked;
+    camcontrol_traceMove(targetPos, fromPos, outPos, (u8*)&traceRec, 3, '\x01', '\x01', (double)4.0f);
+    return traceRec.blocked;
 }
 
 u8 camcontrol_getTargetPosition(CameraObject* camera, ObjAnimComponent* targetAnim, f32* outPos, s16* outRotY) {
-    u8 box[112];
+    CamcontrolTraceWork traceWork;
     float prev[3];
     float pos[3];
     f32 d2;
@@ -129,7 +130,7 @@ u8 camcontrol_getTargetPosition(CameraObject* camera, ObjAnimComponent* targetAn
         prev[1] = targetAnim->worldPosY + gCameraModeNormalState->targetHeight;
         prev[2] = targetAnim->worldPosZ;
     }
-    camcontrol_traceMove(prev, pos, outPos, box, 3, '\x01', '\x01', 4.0f);
+    camcontrol_traceMove(prev, pos, outPos, (u8*)&traceWork, 3, '\x01', '\x01', 4.0f);
     (*gCameraInterface)->getRelativePosition(camera, &a, &b, &c, &d2, gCameraModeNormalState->targetHeight, 0);
     b = camera->anim.worldPosY - (targetAnim->worldPosY + gCameraModeNormalState->targetHeight);
     ang = getAngle(b, d2);
@@ -144,7 +145,7 @@ u8 camcontrol_getTargetPosition(CameraObject* camera, ObjAnimComponent* targetAn
     if (outRotY != NULL) {
         *outRotY = camera->anim.rotY + angleDelta;
     }
-    return ((CamcontrolTraceWork*)box)->blocked;
+    return traceWork.blocked;
 }
 
 void CameraModeNormal_updateTargetAction(CameraObject* camera, GameObject* target) {
@@ -190,7 +191,7 @@ void CameraModeNormal_updateTargetAction(CameraObject* camera, GameObject* targe
 int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, f32* outB, int angle) {
     GameObject* tgt0;
     float probe[75];
-    u8 box[136];
+    CamcontrolTraceWork traceWork;
     float pathA[21];
     float pathB[21];
     float prev[3];
@@ -225,7 +226,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
     (*gCameraInterface)
         ->getRelativePosition(cam, &spinB, &spinC, &spinD, &spinA, gCameraModeNormalState->targetHeight, 0);
     tgt0 = cam->anim.targetObj;
-    *(int*)&probe[35] = (int)tgt0;
+    memcpy(&probe[35], &tgt0, sizeof(tgt0));
     probe[1] = cam->anim.worldPosY;
     pathA[0] = cam->anim.worldPosX;
     pathA[1] = cam->anim.worldPosY;
@@ -254,7 +255,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
         if (found1 == -1) {
             dx = spinD;
             dz = spinB;
-            tgt = (GameObject*)((int)cam->anim.targetObj);
+            tgt = (GameObject*)cam->anim.targetObj;
             rad = (3.1415927f * (f32)(s16)ang) / 32768.0f;
             cosv = mathSinf(rad);
             sinv = mathCosf(rad);
@@ -267,14 +268,14 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
             pA[3] = probe[0];
             pA[4] = probe[1];
             pA[5] = probe[2];
-            if (camcontrol_traceMove(prev, pp, NULL, box, 7, '\0', '\0', 3.9f) != 0) {
+            if (camcontrol_traceMove(prev, pp, NULL, (u8*)&traceWork, 7, '\0', '\0', 3.9f) != 0) {
                 found1 = i;
             }
         }
         if (found2 == -1) {
             dx = spinD;
             dz = spinB;
-            tgt = (GameObject*)((int)cam->anim.targetObj);
+            tgt = (GameObject*)cam->anim.targetObj;
             rad = (3.1415927f * (f32)(s16)(-s * 0xb6)) / 32768.0f;
             cosv = mathSinf(rad);
             sinv = mathCosf(rad);
@@ -287,7 +288,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
             pB[3] = probe[0];
             pB[4] = probe[1];
             pB[5] = probe[2];
-            if (camcontrol_traceMove(prev, pp, NULL, box, 7, '\0', '\0', 3.9f) != 0) {
+            if (camcontrol_traceMove(prev, pp, NULL, (u8*)&traceWork, 7, '\0', '\0', 3.9f) != 0) {
                 found2 = i;
             }
         }
@@ -301,7 +302,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
         found1 = 6;
     } else {
         for (i = 0; i <= found1; i++) {
-            if (camcontrol_traceMove(pA0, pathA + (i + 1) * 3, NULL, box, 7, '\0', '\0', 3.9f) == 0) {
+            if (camcontrol_traceMove(pA0, pathA + (i + 1) * 3, NULL, (u8*)&traceWork, 7, '\0', '\0', 3.9f) == 0) {
                 found1 = 6;
                 break;
             }
@@ -312,7 +313,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
         found2 = 6;
     } else {
         for (i = 0; i <= found2; i++) {
-            if (camcontrol_traceMove(pB0, pathB + (i + 1) * 3, NULL, box, 7, '\0', '\0', 3.9f) == 0) {
+            if (camcontrol_traceMove(pB0, pathB + (i + 1) * 3, NULL, (u8*)&traceWork, 7, '\0', '\0', 3.9f) == 0) {
                 found2 = 6;
                 break;
             }
@@ -372,7 +373,7 @@ int CameraModeNormal_chooseWallAvoidanceDirection(CameraObject* cam, f32* outA, 
 void CameraModeNormal_updateWallAvoidance(CameraObject* camera, GameObject* target) {
     float path[39];
     float endPts[13][3];
-    u8 box[112];
+    CamcontrolTraceWork traceWork;
     float radii[13];
     TrackQueryBounds bounds;
     float prev[3];
@@ -443,7 +444,7 @@ void CameraModeNormal_updateWallAvoidance(CameraObject* camera, GameObject* targ
     }
     hitDetect_calcSweptSphereBounds(&bounds, (float*)path, (float*)endPts, radii, 0xd);
     trackIntersectBroadphase(NULL, &bounds, 0x248, 1);
-    trace = camcontrol_traceMove(prev, &camera->anim.worldPosX, NULL, box, 7, '\0', '\0', 3.9f);
+    trace = camcontrol_traceMove(prev, &camera->anim.worldPosX, NULL, (u8*)&traceWork, 7, '\0', '\0', 3.9f);
     blocked = 0;
     if (trace == 0) {
         blocked = 1;
@@ -543,26 +544,23 @@ void CameraModeNormal_updateVerticalBounds(CameraObject* camera, int flags, int 
     int i;
     int j;
     GameObject* camObj;
-    int cameraAddr;
     TrackQueryBounds bounds;
     f32 pos[3];
     TrackGroundHit** hits;
 
-    cameraAddr = (int)camera;
-    camObj = (GameObject*)((int)camera->anim.targetObj);
+    camObj = (GameObject*)camera->anim.targetObj;
     if ((flags & 1) != 0) {
         float range = 4.0f;
-        *(f32*)(cameraAddr + (int)offsetof(CameraObject, anim.hitVolumeTransforms)) = range;
-        *(s8*)(cameraAddr + (int)offsetof(CameraObject, anim.previousLocalPosY)) = -1;
-        *(s8*)(cameraAddr + (int)offsetof(CameraObject, anim.previousLocalPosZ)) = collisionFlag;
+        camera->collisionSweepRadius = range;
+        camera->collisionSweepState = -1;
+        camera->collisionSweepFlags = collisionFlag;
         res = trackGetLineIntersect(&camera->probePosX, &camera->anim.worldPosX, range, 1, NULL, NULL, 0x10, 0xffffffff,
                                  0xff, 0);
         camera->cameraCollisionActive = res;
         pos[0] = camera->anim.worldPosX;
         pos[1] = camera->anim.worldPosY;
         pos[2] = camera->anim.worldPosZ;
-        hitDetect_calcSweptSphereBounds(&bounds, &camera->probePosX, pos,
-                                        (f32*)(cameraAddr + (int)offsetof(CameraObject, anim.hitVolumeTransforms)), 1);
+        hitDetect_calcSweptSphereBounds(&bounds, &camera->probePosX, pos, &camera->collisionSweepRadius, 1);
         trackIntersectBroadphase(camObj, &bounds, 0x240, 1);
         trackGetIntersect(camObj, &camera->probePosX, pos, 1, &camera->anim.hostedMapSlot, 0);
         camera->anim.worldPosX = pos[0];
@@ -1002,8 +1000,8 @@ void CameraModeNormal_update(CameraObject* camera) {
     float dz;
     float dy;
     float dx;
-    u8 wallTraceScratch[116];
-    u8 probeTraceScratch[112];
+    CamcontrolTraceWork wallTraceWork;
+    CamcontrolTraceWork probeTraceWork;
 
     target[0] = (GameObject*)camera->anim.targetObj;
     if (target[0] == NULL) {
@@ -1094,8 +1092,8 @@ void CameraModeNormal_update(CameraObject* camera) {
                 aimY2 = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
                 aimZ2 = target[0]->anim.worldPosZ;
             }
-            camcontrol_traceMove(&aimX2, &camera->anim.worldPosX, &camera->anim.worldPosX, wallTraceScratch, 3, 1, 1,
-                                 4.0f);
+            camcontrol_traceMove(&aimX2, &camera->anim.worldPosX, &camera->anim.worldPosX,
+                                 (u8*)&wallTraceWork, 3, 1, 1, 4.0f);
             camera->probePosX = camera->anim.worldPosX;
             camera->probePosY = camera->anim.worldPosY;
             camera->probePosZ = camera->anim.worldPosZ;
@@ -1116,8 +1114,8 @@ void CameraModeNormal_update(CameraObject* camera) {
                 aimY = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
                 aimZ = target[0]->anim.worldPosZ;
             }
-            camcontrol_traceMove(&aimX, &camera->anim.worldPosX, &camera->anim.worldPosX, probeTraceScratch, 3, 1, 1,
-                                 4.0f);
+            camcontrol_traceMove(&aimX, &camera->anim.worldPosX, &camera->anim.worldPosX,
+                                 (u8*)&probeTraceWork, 3, 1, 1, 4.0f);
             camera->probePosX = camera->anim.worldPosX;
             camera->probePosY = camera->anim.worldPosY;
             camera->probePosZ = camera->anim.worldPosZ;
@@ -1170,10 +1168,10 @@ void CameraModeNormal_init(CameraObject* cam, int mode, CameraModeNormalInitSett
     case 0:
         memset(gCameraModeNormalState, 0, sizeof(CameraModeNormalState));
         if (settings != NULL) {
-            fVal = (f32)(u32)p->minDistanceWide;
+            fVal = (f32)(u32)fhSwap16(p->minDistanceWide);
             gCameraModeNormalState->minDistance = fVal;
             gCameraModeNormalState->targetMinDistance = fVal;
-            fVal = (f32)(u32)p->maxDistanceWide;
+            fVal = (f32)(u32)fhSwap16(p->maxDistanceWide);
             gCameraModeNormalState->maxDistance = fVal;
             gCameraModeNormalState->targetMaxDistance = fVal;
             fVal = (f32)(u32)p->heightOffsetWide;

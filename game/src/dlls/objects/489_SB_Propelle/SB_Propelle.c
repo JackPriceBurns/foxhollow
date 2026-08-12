@@ -37,9 +37,9 @@
 #define SB_PROPELLER_PARTFX_SMOKE  0x9f  /* smokeTimer-gated smoke burst at the hub */
 #define SB_PROPELLER_PARTFX_DEBRIS 0x7aa /* bankIndex==1 debris trail from path point 0 */
 
-u32 gSbPropellerObject;
+GameObject* gSbPropellerObject;
 
-u32 sbGetPropeller(void) {
+GameObject* sbGetPropeller(void) {
     return gSbPropellerObject;
 }
 
@@ -59,7 +59,7 @@ void SB_Propeller_hitDetect(GameObject* obj) {
     if (obj->anim.romDefNo != SB_PROPELLER_SEQ_ID) {
         return;
     }
-    obj->anim.rotZ = ((GameObject*)gSbPropellerObject)->anim.rotZ;
+    obj->anim.rotZ = gSbPropellerObject->anim.rotZ;
 }
 
 void SB_Propeller_update(GameObject* obj) {
@@ -72,10 +72,15 @@ void SB_Propeller_update(GameObject* obj) {
     GameObject* hitObjectAddress;
     SBPropellerState* state;
     PartFxSpawnParams spawnParams;
+    GameObject* galleon;
 
     state = obj->extra;
-    galleonStage = SB_GALLEON_VTBL(obj->anim.parentAddress)->getStage(obj->anim.parentAddress);
-    galleonPhase = SB_GALLEON_VTBL(obj->anim.parentAddress)->getPhase(obj->anim.parentAddress);
+    galleon = obj->anim.parent;
+    if (galleon == NULL) {
+        return;
+    }
+    galleonStage = SB_GALLEON_VTBL(galleon)->getStage(galleon);
+    galleonPhase = SB_GALLEON_VTBL(galleon)->getPhase(galleon);
     if (state->health != 0 && galleonPhase < 6 && obj->anim.romDefNo != SB_PROPELLER_SEQ_ID) {
         Sfx_KeepAliveLoopedObjectSound(obj, SB_PROPELLER_SFX_LOOP);
     }
@@ -131,7 +136,7 @@ void SB_Propeller_update(GameObject* obj) {
             state->health -= 1;
             if (state->health <= 0) {
                 state->health = 0;
-                SB_GALLEON_VTBL(obj->anim.parentAddress)->onPartDestroyed(obj->anim.parentAddress);
+                SB_GALLEON_VTBL(galleon)->onPartDestroyed(galleon);
                 ObjHits_DisableObject(obj);
                 obj->anim.flags = obj->anim.flags | OBJANIM_FLAG_HIDDEN;
                 spawnExplosion(obj, 100.0f, 1, 1, 1, 0, 1, 1, 0);
@@ -160,9 +165,9 @@ void SB_Propeller_init(GameObject* obj, SBPropellerPlacementView* placement) {
     state->spinBlend = 1.0f;
     state->spinRate = 1200;
     state->health = 4;
-    obj->anim.bankIndex = (s8)placement->modelBankIndex;
+    obj->anim.bankIndex = (s8)fhSwap16((u16)placement->modelBankIndex);
     if (obj->anim.romDefNo != SB_PROPELLER_SEQ_ID) {
-        gSbPropellerObject = (u32)obj;
+        gSbPropellerObject = obj;
     }
 }
 

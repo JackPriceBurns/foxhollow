@@ -78,6 +78,11 @@ STATIC_ASSERT(offsetof(Shader, alphaOverride) == 0x43);
 #define SHADER_FLAG_DECAL_LAYER        0x100000
 #define SHADER_FLAG_FORCE_BLEND        0x40000000
 
+/* A model render callback normally returns zero for the standard material
+ * setup or one after supplying its own GX state. This third result suppresses
+ * the display list associated with the current render op. */
+#define OBJMODEL_RENDER_CALLBACK_SKIP_DRAW 2
+
 typedef struct ModelRenderOpTextureRefs
 {
     void* texture0;
@@ -101,14 +106,16 @@ typedef struct ModelFileHeader {
     u8 refCount;
     u8 unk01;
     u16 flags; /* 0x8 = single-pass anim-eval path, 0x10 = dynamic vertex buffers, 0x40 = vertex anim area */
-    u16 modelId; /* 0x04: MODELS.TAB index; ids 1/3 (player models) bypass the
-                    loaded-file-flag 0x100000 anim-cache suppression */
+    union {
+        u16 modelId;
+        u16 modNo;
+    };
     u8 unk06[6];
     s32 dataSize; /* anim data appended at header + dataSize */
     u8 unk10[8];
     u8 *unk18;
     u8 *unk1C;
-    s32 *textureIds; /* file texture ids, patched to texture ptrs on load */
+    uintptr_t *textureIds; /* file texture ids, patched to full Texture pointers on load */
     u8 flags24; /* bit 8 = 9-byte (else 3-byte) entries at normals */
     u8 unk25[3];
     u8 *vertices; /* 6 bytes each, vertexCount */
@@ -121,13 +128,25 @@ typedef struct ModelFileHeader {
     f32 vertexAnimPivot[3];
     f32 vertexAnimScaleDivisor;
     u8 *extraJointDefs; /* 0x54: extraJointCount 3-byte records {jointA, jointB, weight*4}; modelCalcVtxGroupMtxs blends the two joint matrices into the extra joint at jointCount+i; offset->ptr relocated on load */
-    u8 *hitVolumes; /* 0x58: 0x18-byte ModelHitSphereDef records, hitSphereCount entries */
+    union {
+        u8 *hitVolumes;
+        void *hitReactTable;
+    };
     u8 *collisionTriangles; /* 0x5c: 8-byte triangle vertex-index records (hit-detect mesh) */
     u8 *collisionBlocks;    /* 0x60: 0x14-byte spatial blocks (AABB + triangle range), collisionBlockCount entries */
-    u8 *animationModelPtrs;
+    union {
+        u8 *animationModelPtrs;
+        u8 **moveData;
+    };
     u8 *animationDataSection;
-    u8 *animationHeaderBuffer; /* per-joint s16 table */
-    s16 animGroupBaseIndices[8]; /* 0x70: wiki Idx0..Idx7; group-base indices from modelLoadAnimations scanning for -1 markers */
+    union {
+        u8 *animationHeaderBuffer;
+        s16 *cachedAnimIds;
+    };
+    union {
+        s16 animGroupBaseIndices[8];
+        s16 moveGroupBaseIndices[8];
+    };
     s32 animationDataFileOffset;
     s16 headerSize; /* roundUpTo8(loaded header size) + 0xb0; read back into size table */
     u8 unk86[4];
@@ -155,7 +174,10 @@ typedef struct ModelFileHeader {
     u16 normalCount;
     u16 colorCount;
     u16 texCoordCount;
-    u16 animationCount; /* nonzero = per-joint matrix buffers */
+    union {
+        u16 animationCount;
+        u16 moveCount;
+    };
     u8 unkEE[2];
     u16 collisionBlockCount; /* 0xF0: number of 0x14-byte collisionBlocks entries */
     u8 textureCount;
@@ -163,7 +185,10 @@ typedef struct ModelFileHeader {
     u8 extraJointCount;
     u8 displayListCount; /* 0xF5: count of the primary (non-shadow) 0x1c-stride display-list group; base index for the shadow group */
     u8 shadowDisplayListCount; /* count of the 2nd display-list group (shadow), indexed at base displayListCount */
-    u8 hitSphereCount; /* 0xF7: count of 0x10-byte hit-sphere records (double-buffered: pos += hitSphereCount*0x10 twice) */
+    union {
+        u8 hitSphereCount;
+        u8 hitVolumeCount;
+    };
     u8 renderOpCount;
     u8 morphTargetCount;
     u8 texMtxCount; /* 0xFA: texture-matrix descriptor count (GX_VA_TEXnMTXIDX loop bound) */
@@ -213,7 +238,9 @@ typedef struct ModelHitSphereDef {
     u8 pad02[2];
     f32 radius;    /* scaled by anim.rootMotionScale at update */
     f32 center[3]; /* joint-space center */
-    u8 pad14[4];
+    u16 linkedSpheres;
+    s8 sphereIndex;
+    s8 maskBit;
 } ModelHitSphereDef; /* 0x18 */
 
 STATIC_ASSERT(sizeof(ModelHitSphereDef) == 0x18);
@@ -310,22 +337,43 @@ STATIC_ASSERT(sizeof(ObjModelBlendChannel) == 0x10);
  */
 typedef struct ModelJointWork {
     u8 *unk00;
-    f32 *radii;
+    union {
+        f32 *radii;
+        f32 *jointRadii;
+    };
     f32 *radiiSq;
-    f32 *boneLengths;
-    f32 *maxReach;
+    union {
+        f32 *boneLengths;
+        f32 *jointLengths;
+    };
+    union {
+        f32 *maxReach;
+        f32 *jointCullDistances;
+    };
     u8 *unk14;
-    u8 *unk18;
+    union {
+        u8 *unk18;
+        u8 *touchedJoints;
+    };
 } ModelJointWork;
 
 STATIC_ASSERT(sizeof(ModelJointWork) == 0x1C);
 
 typedef struct ObjModel {
-    ModelFileHeader *file;
+    union {
+        ModelFileHeader *file;
+        ModelFileHeader *modelFile;
+    };
     u8 unk04[8];
     u8 *jointMatrices[2];
-    ModelJointWork *jointWorkspace;
-    u16 bufferFlags; /* 1 = mtx buffer select, 2 = vtx buffer select, 0x40 = textures loaded */
+    union {
+        ModelJointWork *jointWorkspace;
+        ModelJointWork *skeletonJointData;
+    };
+    union {
+        u16 bufferFlags;
+        u16 hitBufferFlags;
+    };
     u8 unk1A[2];
     u8 *vtxBuf[2];
     u8 *normalBuf;
@@ -337,9 +385,17 @@ typedef struct ObjModel {
     void *postRenderCallback;
     s32 *vertexAnimData; /* 0x40: per-entry s32 array (file->vertexAnimCount), filled from vertexAnimEntries[i]+0x60 */
     u8 **blendAnimData;  /* 0x44: per-entry pointer array (file->blendAnimCount), filled from normalBuf + blendAnimEntries[i]+0x60 */
-    u8 *hitSphereBuf0; /* 0x48: hit-sphere workspace buffer 0 (file->hitSphereCount * 0x10) */
-    u8 *hitSphereBuf1; /* 0x4C: hit-sphere workspace buffer 1 (double-buffered) */
-    u8 *hitSphereBufActive; /* 0x50: current hit-sphere buffer, initialized to hitSphereBuf0 */
+    union {
+        struct {
+            u8 *hitSphereBuf0;
+            u8 *hitSphereBuf1;
+            u8 *hitSphereBufActive;
+        };
+        struct {
+            u8 *hitVolumeSphereBuffers[2];
+            u8 *activeHitVolumeSpheres;
+        };
+    };
     u8 *groundShadowVerts; /* 0x54: ground-shadow quad buffer (s16 verts; status byte at +0x18: 0 = rebuild via buildGroundShadowQuad, 0xff = skip draw); allocated only with load flag 0x8000 */
     void *renderAttachment;
     u8 *curMtxBuf;

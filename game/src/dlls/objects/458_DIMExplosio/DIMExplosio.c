@@ -40,8 +40,6 @@
 #include "main/objprint_render_api.h"
 #include "sys/objects/lifecycle.h"
 
-typedef void (*ExplosionSpawnFlameSpeedFirstFn)(int obj, f32 speed, int generation, f32 x, f32 y, f32 z);
-
 typedef struct DimExplosionPartfxSource {
     s16 rotX;
     s16 rotY;
@@ -248,18 +246,18 @@ void explosion_render(GameObject* obj, int renderArg2, int renderArg3, int rende
     DimExplosionState* state;
     ObjModel* model;
     int i;
-    int cursor;
+    uintptr_t cursor;
     colA = sExplosionQuadColorA[0];
     colB = lbl_803E8468;
     state = obj->extra;
     model = Obj_GetActiveModel(obj);
-    cursor = (int)state;
+    cursor = (uintptr_t)state;
     if (visible != 0) {
         GXClearVtxDesc();
         GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
         GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
         GXSetCurrentMtx(GX_PNMTX0);
-        for (i = 0, cursor = (int)state; i < state->flameCount; i++) {
+        for (i = 0, cursor = (uintptr_t)state; i < state->flameCount; i++) {
             if (((DimExplosionFlame*)cursor)->active != 0) {
                 void** tex;
                 int k;
@@ -293,7 +291,7 @@ void explosion_render(GameObject* obj, int renderArg2, int renderArg3, int rende
                 explosion_computeColor((f32)((DimExplosionFlame*)cursor)->age,
                                        (f32)((DimExplosionFlame*)cursor)->lifetime,
                                        state->modelKind, (u8*)&colA);
-                tex = (void**)((int*)gExplosionTextures)[state->modelKind];
+                tex = (void**)gExplosionTextures[state->modelKind];
                 for (k = 0; k < ((DimExplosionFlame*)cursor)->textureVariant; k++) {
                     tex = (void**)*tex;
                 }
@@ -342,9 +340,9 @@ void explosion_update(GameObject* obj) {
     Vec vpos;
     Mtx m;
     u8 rgb[3];
-    int state = (int)obj->extra;
+    uintptr_t state = (uintptr_t)obj->extra;
     int i;
-    int cursor;
+    uintptr_t cursor;
     gExplosionUpdateTick += 1;
     cursor = state;
     ((DimExplosionState*)state)->frameCounter += framesThisStep;
@@ -545,7 +543,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
     Vec vsp;
     Mtx mB;
     Mtx mA;
-    int cursor;
+    uintptr_t cursor;
     DimExplosionState* state = obj->extra;
     f32 scale;
     int i;
@@ -559,8 +557,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
             scale = 100.0f;
         }
     }
-    ((ExplosionSpawnFlameSpeedFirstFn)explosion_spawnFlame)((int)obj, 0.4f * scale, 0, obj->anim.localPosX,
-                                                            obj->anim.localPosY, obj->anim.localPosZ);
+    explosion_spawnFlame(obj, 0, 0.4f * scale, obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->modelKind =
         placementAddress->configFlags & DIM_EXPLOSION_MODEL_KIND_MASK;
@@ -582,7 +579,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
     }
     if (placementAddress->configFlags & DIM_EXPLOSION_CONFIG_SPAWNS_DEBRIS) {
         debrisCount = (int)((f32)(6.0f * scale) / 100.0f);
-        for (i = 0, cursor = (int)state; i < debrisCount; i++) {
+        for (i = 0, cursor = (uintptr_t)state; i < debrisCount; i++) {
             if (state->nearGround != 0) {
                 f32 mag = 2.0f * ((f32)randomGetRange(0x14, 0x28) * 0.01f) + 2.0f;
                 vsp.x = mag;

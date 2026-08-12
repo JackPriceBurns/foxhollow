@@ -1876,9 +1876,17 @@ void objLoadAnimdata(ObjSeqState* seq, ObjSeqAnimPlacement* placement)
         ObjCurveKey* keyWalk = (ObjCurveKey*)seq->animEntries;
         int n;
 
-        for (n = 0; n < seq->cmdCount; n++)
+        for (n = 0; n < seq->cmdCount;)
         {
             cmdWalk[n].param = (s16)fhSwap16((u16)cmdWalk[n].param);
+            if (cmdWalk[n].opcode == SEQACT_CONDITION && cmdWalk[n].param > 0)
+            {
+                n += cmdWalk[n].param + 1;
+            }
+            else
+            {
+                n++;
+            }
         }
         for (n = 0; n < seq->animCount; n++)
         {
@@ -2723,6 +2731,11 @@ void ObjSeq_setCamVars(int camA, int camB, int camC, int camD)
     gObjSeqCamModeArgD = camD;
 }
 
+static u32 objSeqReadPacked(const u8* data)
+{
+    return ((u32)data[0] << 24) | ((u32)data[1] << 16) | ((u32)data[2] << 8) | data[3];
+}
+
 int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, s16 xrot, s16 countArg, s8 flag1, s8 flag2)
 {
     u8* cmds;
@@ -2747,7 +2760,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
     count = countArg;
     for (; i < count; i++)
     {
-        packed = *(u32*)cmds;
+        packed = objSeqReadPacked(cmds);
         opcode = packed & 0x3f;
         operand = (packed >> 6) & 0x3ff;
         top16 = packed >> 16;
@@ -3408,7 +3421,7 @@ int objSeqFindLabel(u8* seq, int label)
         {
             if (command->param > 0)
             {
-                packed = *(u32*)((u8*)command + 4);
+                packed = objSeqReadPacked((u8*)command + 4);
                 if ((int)(packed & 0x3f) == 9 && (int)(packed >> 16) == label)
                 {
                     return currentLabel;
@@ -3442,7 +3455,7 @@ int objSeqFindConditional(u8* seq, GameObject* seqState)
         {
             if (command->param > 0)
             {
-                packed = *(u32*)((u8*)command + 4);
+                packed = objSeqReadPacked((u8*)command + 4);
                 if ((int)(packed & 0x3f) == 4 &&
                     ObjSeq_EvaluateCondition((packed >> 6) & 0x3ff, seq, seqState->anim.placementData) != 0)
                 {
@@ -5767,4 +5780,3 @@ void ObjSeq_copyDefaultColor(GXColor* out)
     out->b = src->b;
     out->a = src->a;
 }
-

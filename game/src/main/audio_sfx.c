@@ -34,7 +34,7 @@ u8 gSfxGlobalReverbLevel;
 int gSfxTriggersCount;
 void* gSfxTriggersData;
 
-SfxObjectChannel gSfxObjectChannels[0xC40 / sizeof(SfxObjectChannel)];
+SfxObjectChannel gSfxObjectChannels[SFX_OBJECT_CHANNEL_COUNT];
 
 static void Sfx_RotateVectorByAngles(s16 angX, s16 angY, s16 angZ, Vec* vector);
 static f32 Sfx_GetListenerRelativeDistance(Vec* soundPos, Vec* outDelta);

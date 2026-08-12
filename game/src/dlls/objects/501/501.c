@@ -50,13 +50,12 @@ int dll501_getObjectTypeId(void) {
 
 void dll501_free(GameObject* obj) {
     Dll1F5State* state = obj->extra;
-    int light;
 
     (*gObjectTriggerInterface)->freeState((u8*)state);
     gTitleMenuControlInterfaceCopy->vtable->func05(obj, 0xffff, 0, 0, 0);
-    light = obj->userData2;
-    if (light != 0) {
-        ModelLightStruct_free((ModelLightStruct*)light);
+    if (state->light != NULL) {
+        ModelLightStruct_free(state->light);
+        state->light = NULL;
     }
 }
 
@@ -126,7 +125,6 @@ void dll501_update(GameObject* obj) {
 
 void dll501_init(GameObject* obj, Dll1F5PlacementView* placement) {
     Dll1F5State* state;
-    int light;
     int chainIndex;
 
     state = obj->extra;
@@ -134,6 +132,7 @@ void dll501_init(GameObject* obj, Dll1F5PlacementView* placement) {
     state->sequence.flags = -1;
     state->sequence.posOffsetDecay = 1.0f / (1.0f + (f32)placement->dampingDivisor);
     state->sequence.curveId = -1;
+    state->light = NULL;
 
     chainIndex = obj->userData1;
     if (chainIndex == 0 && placement->segmentIndex != 1) {
@@ -148,13 +147,12 @@ void dll501_init(GameObject* obj, Dll1F5PlacementView* placement) {
     }
 
     if (obj->anim.romDefNo == DLL1F5_FIRE_SEQ_ID) {
-        light = (int)objCreateLight(obj, 1);
-        if ((u32)light != 0) {
-            modelLightStruct_setLightKind((ModelLightStruct*)light, MODEL_LIGHT_KIND_POINT);
-            modelLightStruct_setDiffuseColor((ModelLightStruct*)light, 200, 60, 0, 0);
-            modelLightStruct_setDistanceAttenuation((ModelLightStruct*)light, 30.0f, 80.0f);
+        state->light = objCreateLight(obj, 1);
+        if (state->light != NULL) {
+            modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
+            modelLightStruct_setDiffuseColor(state->light, 200, 60, 0, 0);
+            modelLightStruct_setDistanceAttenuation(state->light, 30.0f, 80.0f);
         }
-        obj->userData2 = light;
     }
 
     dll501_resetTrackedState();

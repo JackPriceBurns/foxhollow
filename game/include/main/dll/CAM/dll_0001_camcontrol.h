@@ -3,9 +3,9 @@
 
 #include "game/objects/object.h"
 #include "global.h"
+#include "main/camera_object.h"
 #include "main/dll/DR/dr_types.h"
 #include "main/camera_interface.h"
-#include "main/objanim_internal.h"
 #include "main/resource.h"
 
 typedef struct CamcontrolTriggeredAction CamcontrolTriggeredAction;
@@ -25,97 +25,8 @@ STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, interface) == 0x18);
 STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, queueSavedAction) == 0x88);
 STATIC_ASSERT(sizeof(CamcontrolResourceDescriptor) == 0x8C);
 
-typedef struct CamcontrolCameraState {
-    s16 yaw;
-    s16 pitch;
-    s16 roll;
-    u8 pad06[0x0C - 0x06];
-    f32 localX;
-    f32 localY;
-    f32 localZ;
-    f32 worldX;
-    f32 worldY;
-    f32 worldZ;
-    u8 pad24[0x30 - 0x24];
-    GameObject* localFrameObj;
-    u8 pad34[0xA4 - 0x34];
-    ObjAnimComponent* focusObj;
-    f32 prevLocalX;
-    f32 prevLocalY;
-    f32 prevLocalZ;
-    f32 fovY;
-    f32 prevWorldX;
-    f32 prevWorldY;
-    f32 prevWorldZ;
-    f32 focusMoveAverage;
-    f32 focusMoveHistory[5];
-    f32 overrideWorldX;
-    f32 overrideWorldY;
-    f32 overrideWorldZ;
-    u8 padE8[0xF4 - 0xE8];
-    f32 blendProgress;
-    f32 blendStep;
-    u8 padFC[0x100 - 0xFC];
-    s16 blendDeltaYaw;
-    s16 blendDeltaPitch;
-    s16 blendDeltaRoll;
-    s16 blendStartYaw;
-    s16 blendStartPitch;
-    s16 blendStartRoll;
-    f32 blendStartX;
-    f32 blendStartY;
-    f32 blendStartZ;
-    f32 blendStartFovY;
-    GameObject* overrideTarget;
-    GameObject* targetReticleOverride;
-    GameObject* currentTarget;
-    GameObject* targetReticleFocus;
-    u8 pad12C[0x134 - 0x12C];
-    f32 targetDistance;
-    u8 targetKind;
-    u8 blendCurveMode;
-    u8 pad13A;
-    s8 letterboxTargetOffset;
-    s8 letterboxStep;
-    u8 overrideWorldPosPending;
-    u8 pad13E;
-    u8 queuedBlendFlags;
-    u8 frameFlags;
-    u8 targetFlags;
-    u8 pad142;
-    BitFlags8 smoothingFlags;
-} CamcontrolCameraState;
-
-STATIC_ASSERT(sizeof(CamcontrolCameraState) == 0x144);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, yaw) == 0x00);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, localX) == 0x0C);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, worldX) == 0x18);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, localFrameObj) == 0x30);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, focusObj) == 0xA4);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, prevLocalX) == 0xA8);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, fovY) == 0xB4);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, prevWorldX) == 0xB8);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, focusMoveAverage) == 0xC4);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, focusMoveHistory) == 0xC8);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, overrideWorldX) == 0xDC);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendProgress) == 0xF4);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendDeltaYaw) == 0x100);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendStartYaw) == 0x106);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendStartX) == 0x10C);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendStartFovY) == 0x118);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, overrideTarget) == 0x11C);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, targetReticleOverride) == 0x120);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, currentTarget) == 0x124);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, targetReticleFocus) == 0x128);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, targetDistance) == 0x134);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, targetKind) == 0x138);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, blendCurveMode) == 0x139);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, letterboxTargetOffset) == 0x13B);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, overrideWorldPosPending) == 0x13D);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, queuedBlendFlags) == 0x13F);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, frameFlags) == 0x140);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, targetFlags) == 0x141);
-STATIC_ASSERT(offsetof(CamcontrolCameraState, smoothingFlags) == 0x143);
+/* Camera modes and camcontrol operate on the same allocation. */
+typedef CameraObject CamcontrolCameraState;
 
 enum CamcontrolBlendFlags {
     CAMCONTROL_BLEND_YAW = 0x01,

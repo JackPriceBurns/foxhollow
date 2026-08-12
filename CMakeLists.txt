@@ -39,6 +39,7 @@ endif ()
 
 add_executable(foxhollow src/main.c)
 find_package(ZLIB REQUIRED)
+find_package(JPEG REQUIRED)
 target_link_libraries(foxhollow PRIVATE
         ZLIB::ZLIB
         port_shims
@@ -61,7 +62,7 @@ add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)
 target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
 target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char -fcommon)
-target_link_libraries(port_shims PRIVATE aurora::core)
+target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG)
 
 
 if (TARGET game)

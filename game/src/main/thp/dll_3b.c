@@ -74,7 +74,7 @@ static void AttractMovieAudio_Decode(void* readBufferArg) {
             OSSendMessage(&gAttractMovieDecodedAudioQueue, audioBuf[0], OS_MESSAGE_BLOCK);
             break;
         }
-        audioFrame += *audioFrameSizes;
+        audioFrame += fhSwap32(*audioFrameSizes);
         audioFrameSizes++;
     }
 }
@@ -98,13 +98,13 @@ static void* AudioDecoderForOnMemory(void* param) {
         frameInGroup = (frame + player->initReadFrame) % framesPerGroup;
         if (frameInGroup == (framesPerGroup - 1)) {
             if ((player->playFlags & 1) != 0) {
-                stride = *(int*)readBuffer.ptr;
+                stride = fhSwap32(*(u32*)readBuffer.ptr);
                 readBuffer.ptr = player->loopFrame;
             } else {
                 OSSuspendThread(&gAttractMovieAudioDecodeThread.thread);
             }
         } else {
-            int newStride = *(int*)readBuffer.ptr;
+            int newStride = fhSwap32(*(u32*)readBuffer.ptr);
             readBuffer.ptr += stride;
             stride = newStride;
         }

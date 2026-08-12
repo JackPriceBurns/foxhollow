@@ -164,4 +164,3 @@ void initMapBlocks(void)
         gVisibleObjectSortKeys[0] = -1;
     }
 }
-

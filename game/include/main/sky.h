@@ -75,9 +75,15 @@ STATIC_ASSERT(sizeof(SkySlotAnim) == 0x318);
 
 typedef struct SkyTimeBlend
 {
+#ifdef TARGET_PC
+    u32 texA;
+    u32 texB;
+    u32 texList[3];
+#else
     void* texA;       /* 0x00 */
     void* texB;       /* 0x04 */
     void* texList[3]; /* 0x08 */
+#endif
     int texAId;       /* 0x14 */
     int texBId;       /* 0x18 */
     u8 pad1C[0x1F0];  /* 0x1c */

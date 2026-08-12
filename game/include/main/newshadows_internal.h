@@ -23,7 +23,9 @@ typedef struct
 
 typedef struct
 {
-    u16 packedXY;
+    /* GameCube IA8 texels are stored as bytes, alpha first. */
+    u8 alpha;
+    u8 intensity;
 } NewShadowVectorTexel;
 
 typedef struct

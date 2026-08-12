@@ -61,6 +61,20 @@ void modelLightStruct_setDiffuseColor(ModelLightStruct* light, int red, int gree
 #define SB_CLOUD_BALL_LIGHT_ALPHA       0
 #define SB_CLOUD_BALL_LIGHT_FIELD_BC    1
 
+/* Render op 1 is an opaque radial helper mesh, not part of the visible cyan
+ * shot. Rendering it as ordinary geometry produces the coloured facets. */
+#define SB_CLOUD_BALL_HELPER_RENDER_OP 1
+
+static u8 SB_CloudBall_modelRenderCallback(int* obj, int* model, int renderOpIndex) {
+    (void)obj;
+    (void)model;
+
+    if (renderOpIndex == SB_CLOUD_BALL_HELPER_RENDER_OP) {
+        return OBJMODEL_RENDER_CALLBACK_SKIP_DRAW;
+    }
+    return 0;
+}
+
 int SB_CloudBall_getExtraSize(void) {
     return sizeof(SBCloudBallState);
 }
@@ -72,7 +86,7 @@ int SB_CloudBall_getObjectTypeId(void) {
 void SB_CloudBall_free(GameObject* obj) {
     SBCloudBallState* state = obj->extra;
 
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     if (state->light != NULL) {
         ModelLightStruct_free(state->light);
         state->light = NULL;
@@ -184,6 +198,11 @@ void SB_CloudBall_update(GameObject* obj) {
 
 void SB_CloudBall_init(GameObject* obj) {
     SBCloudBallState* state = obj->extra;
+    ObjModel* model = Obj_GetActiveModel(obj);
+
+    if (model != NULL) {
+        ObjModel_SetRenderCallback((u8*)model, SB_CloudBall_modelRenderCallback);
+    }
 
     ObjAnim_GetPriorityHitState(&obj->anim)->flags =
         (s16)(ObjAnim_GetPriorityHitState(&obj->anim)->flags & ~OBJHITS_PRIORITY_STATE_ENABLED);

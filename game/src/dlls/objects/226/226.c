@@ -59,7 +59,7 @@
 #include "track/intersect_render_setup_api.h"
 #include "main/dll/partfx_interface.h"
 
-extern void* gStaffSwipeTextures[2];
+extern Texture* gStaffSwipeTextures[2];
 extern StaffCollisionInterface** gStaffSwipeResource;
 
 #define STAFF_CONTACT_HIT_VOLUME_COUNT 36
@@ -105,7 +105,7 @@ typedef struct StaffSwipeSlot {
 
 typedef struct StaffState {
     StaffSwipeSlot slots[3];
-    void* activeSlot; /* 0x48: active swipe slot pointer */
+    StaffSwipeSlot* activeSlot; /* 0x48: active swipe slot pointer */
     u8 pad4C[4];
     f32 moveSpeed; /* 0x50: current-move advance speed */
     f32 geometryPointAX[2];
@@ -140,7 +140,7 @@ typedef struct StaffQuakeSpellState {
     f32 radius;      /* 0x10: GXDrawTorus radius */
     f32 heightScale; /* 0x14: y-axis scale multiplier */
     f32 fade;        /* 0x18: fade/alpha driver (quakeSpellTextureFn arg, anim.alpha) */
-    int* object;     /* 0x1C: spawned quake-spell object */
+    GameObject* object; /* 0x1C: spawned quake-spell object */
     u8 active;       /* 0x20: spell active flag */
     u8 pad21[7];
 } StaffQuakeSpellState;
@@ -308,21 +308,21 @@ void staffUpdateAttackEffects(GameObject* obj, GameObject* player) {
             if (chargeLevel > 0.0f) {
                 fxA.count = 21 - (int)(15.0f * (chargeLevel / 60.0f));
                 fxA.id = 0xc95;
-                playerGetFxOffsets((GameObject*)((int)obj->ownerObj), &effectOffsets);
+                playerGetFxOffsets((GameObject*)obj->ownerObj, &effectOffsets);
                 fxB.posX = effectOffsets[3];
                 fxB.posY = effectOffsets[4];
                 fxB.posZ = effectOffsets[5];
-                (*gPartfxInterface)->spawnObject((void*)(int)obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
-                (*gPartfxInterface)->spawnObject((void*)(int)obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
-                (*gPartfxInterface)->spawnObject((void*)(int)obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
-                (*gPartfxInterface)->spawnObject((void*)(int)obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
+                (*gPartfxInterface)->spawnObject(obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
+                (*gPartfxInterface)->spawnObject(obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
+                (*gPartfxInterface)->spawnObject(obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
+                (*gPartfxInterface)->spawnObject(obj->ownerObj, 0x7b9, &fxB, 0x200001, -1, &fxA);
                 fxA.count = 9;
                 fxA.id = 0xc95;
                 fxA.scale = 0.8f * (chargeLevel / 60.0f) + 0.1f;
                 fxB.posX = effectOffsets[3];
                 fxB.posY = effectOffsets[4];
                 fxB.posZ = effectOffsets[5];
-                (*gPartfxInterface)->spawnObject((void*)(int)obj->ownerObj, 0x7ba, &fxB, 0x200001, -1, &fxA);
+                (*gPartfxInterface)->spawnObject(obj->ownerObj, 0x7ba, &fxB, 0x200001, -1, &fxA);
             }
             break;
         case 134: {
@@ -418,7 +418,7 @@ void staffStartQuakeSpell(f32* pos) {
         setup->posY = gStaffQuakeSpellState.posY;
         setup->posZ = gStaffQuakeSpellState.posZ;
         gStaffQuakeSpellState.object =
-            (int*)objSetupObject((ObjPlacement*)setup, 5, player->anim.mapEventSlot, -1, player->anim.parent);
+            objSetupObject((ObjPlacement*)setup, 5, player->anim.mapEventSlot, -1, player->anim.parent);
         if (mainGetBit(GAMEBIT_STAFF_ABILITY_SUPER_QUAKE) != 0) {
             ((ObjAnimComponent*)gStaffQuakeSpellState.object)->bankIndex = 1;
         }
@@ -518,10 +518,9 @@ void staffDrawSwipe(GameObject* obj, StaffState* swipe) {
         swp++;
     }
 }
-void staff_setupSwipe(int unused1, StaffState* swipe, int unused3, int objArg) {
+void staff_setupSwipe(GameObject* unused1, StaffState* swipe, int unused3, GameObject* obj) {
     ObjWeaponDaTable* weaponDaTable;
     StaffSwipeSlot* slot;
-    GameObject* obj;
     ObjAnimState* model2;
     s16* tbl;
     int count;
@@ -539,7 +538,6 @@ void staff_setupSwipe(int unused1, StaffState* swipe, int unused3, int objArg) {
     f32 sinv, cosv, vidx, flb, tmax, step, fla, angle, frac, acc, prog, m4;
     int ang;
 
-    obj = (GameObject*)objArg;
     if (swipe->activeSlot == NULL || swipe->hudSuppressed != 0) {
         return;
     }
@@ -874,9 +872,9 @@ void staff_hitDetectGeometry(GameObject* obj) {
     }
 }
 
-void staff_updateSwipe(GameObject* obj, int p4, int p5) {
-    StaffState* inner = (StaffState*)(int)obj->extra;
-    staff_setupSwipe((int)obj, inner, p5, p4);
+void staff_updateSwipe(GameObject* obj, GameObject* p4, int p5) {
+    StaffState* inner = obj->extra;
+    staff_setupSwipe(obj, inner, p5, p4);
     if (getHudHiddenFrameCount() != 0) {
         inner->hudSuppressed = 1;
     } else {
@@ -887,7 +885,7 @@ void staff_updateSwipe(GameObject* obj, int p4, int p5) {
 void staff_func0B(void) {
 }
 
-void* gStaffSwipeTextures[2];
+Texture* gStaffSwipeTextures[2];
 s16* gStaffSwipeTextureIds;
 StaffCollisionInterface** gStaffSwipeResource;
 
@@ -901,7 +899,7 @@ void staffUpdateWhileTimeStopped(GameObject* obj) {
 }
 
 int staff_getExtraSize(void) {
-    return 0xc0;
+    return sizeof(StaffState);
 }
 
 static inline void staff_initialiseBody(s16* p, int i) {
@@ -963,7 +961,7 @@ void staff_update(GameObject* obj) {
             j = swp->startIndex;
             vp = (SwipeVertex*)(swp->vertexData + j * 20);
             for (; j < swp->endIndex; j += 2) {
-                if ((u8*)swp == state->activeSlot) {
+                if (swp == state->activeSlot) {
                     f32 t = 255.0f * ((2.0f * state->progress - vp[0].life) / 8.0f);
                     f32 clamped = (t < 0.0f) ? 0.0f : ((t > 255.0f) ? 255.0f : t);
                     vp[0].alpha = 255.0f - clamped;
@@ -994,7 +992,7 @@ void staff_update(GameObject* obj) {
                 }
                 vp += 2;
             }
-            if ((u8*)swp != *(u8**)((u8*)state + 0x48) && swp->vertexCount == 0) {
+            if (swp != state->activeSlot && swp->vertexCount == 0) {
                 swp->flags &= ~2;
             }
         }
@@ -1002,7 +1000,7 @@ void staff_update(GameObject* obj) {
     }
 
     staffUpdateAttackEffects(obj, (GameObject*)obj->ownerObj);
-    objGetAnimState80A((GameObject*)((int)obj->ownerObj));
+    objGetAnimState80A((GameObject*)obj->ownerObj);
     state->swipeTextureIndex = 0;
     staffUpdateQuakeSpell();
 }
@@ -1031,11 +1029,11 @@ void staff_init(GameObject* obj) {
 }
 
 void staff_release(void) {
-    void** p;
+    Texture** p;
     int i;
     if (gStaffSwipeTextures[0] != NULL) {
         for (i = 0, p = gStaffSwipeTextures; i < 2; i++) {
-            textureFree((Texture*)((u8*)((int)*p)));
+            textureFree(*p);
             *p = NULL;
             p++;
         }

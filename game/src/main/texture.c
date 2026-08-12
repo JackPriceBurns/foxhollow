@@ -806,14 +806,13 @@ void* textureLoad(int texId, u8 flagIn)
         {
             u8* src;
             Texture header;
-            u32 pixelSize;
+            u32 payloadSize;
             src = loadAndDecompressDataFile(file, 0, dataByteOffset + gRcpTexHeaderBuffer[mipLevel], frameSize,
                                             0, id16, 0);
             textureUnpackGCHeader(&header, src);
-            pixelSize = GXGetTexBufferSize(header.width, header.height, header.format,
-                                           header.maxLod - header.minLod > 0, header.maxLod);
+            payloadSize = frameSize - GC_TEXTURE_HEADER_SIZE;
             mmSetTextureAllocationState(1);
-            buf = mmAlloc(sizeof(Texture) + pixelSize, gRcpTexAllocTag, 0);
+            buf = mmAlloc(sizeof(Texture) + payloadSize, gRcpTexAllocTag, 0);
             mmSetTextureAllocationState(0);
             if (buf == NULL)
             {
@@ -833,7 +832,7 @@ void* textureLoad(int texId, u8 flagIn)
                 return gLoadedTextures[0].texture;
             }
             *buf = header;
-            memcpy((u8*)buf + sizeof(Texture), src + GC_TEXTURE_HEADER_SIZE, pixelSize);
+            memcpy((u8*)buf + sizeof(Texture), src + GC_TEXTURE_HEADER_SIZE, payloadSize);
             buf->cached = 1;
             if (flagIn != 0)
             {

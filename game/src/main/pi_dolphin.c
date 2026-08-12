@@ -4859,16 +4859,44 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
 
 void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
 {
-    char* e;
-    if ((void*)gResourceFileBuffers[0x1d] == NULL)
-        return;
-    if ((void*)gResourceFileBuffers[0x1e] == NULL)
-        return;
-    e = (char*)gResourceFileBuffers[0x1d] + idx;
-    *out1 = (s16)fhSwap16(*(u16*)(e + 0x1c));
-    *out2 = (s16)fhSwap16(*(u16*)(e + 0x1e));
-    *out3 = (int)fhSwap32(*(u32*)((char*)gResourceFileBuffers[0x1d] +
-                                  *(int*)((char*)gResourceFileBuffers[0x1e] + p5 * 4 + 0x18) + 4));
+    u8 sizeFields[4];
+    s32 sectionOffsets[7];
+    struct PackHeader romListHeader;
+
+    *out1 = 0;
+    *out2 = 0;
+    *out3 = 0;
+
+    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, sizeFields, idx + 0x1c, sizeof(sizeFields));
+    mapsLoadTabOffsets(p5, sectionOffsets, 7);
+    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, &romListHeader, sectionOffsets[6], sizeof(romListHeader));
+    fhFixPackHeader((volatile u32*)&romListHeader);
+
+    *out1 = (s16)fhSwap16(*(u16*)&sizeFields[0]);
+    *out2 = (s16)fhSwap16(*(u16*)&sizeFields[2]);
+    *out3 = romListHeader.decompressedSize;
+}
+
+void mapsLoadTabOffsets(int firstWord, s32* offsets, int count)
+{
+    u32 mapsBinSize = gResourceFileSizes[MLDF_FILEID_MAPS_BIN];
+    int valid = count > 0;
+    int i;
+
+    fileLoadToBufferOffset(MLDF_FILEID_MAPS_TAB, offsets, firstWord * 4, count * sizeof(*offsets));
+
+    for (i = 0; valid && i < count; i++)
+    {
+        if (offsets[i] < 0 || (mapsBinSize != 0 && (u32)offsets[i] > mapsBinSize) ||
+            (i != 0 && offsets[i] < offsets[i - 1]))
+        {
+            valid = 0;
+        }
+    }
+    if (!valid)
+    {
+        fhSwapU32Array(offsets, count);
+    }
 }
 
 void checkLoadBlock(int a, int* pc, int* p8)
@@ -4910,8 +4938,8 @@ void checkLoadBlock(int a, int* pc, int* p8)
         else
         {
             {
-                int vc = ZLB_HDR(blk)->compressedSize;
-                *p8 = ZLB_HDR(blk)->decompressedSize;
+                int vc = (int)fhSwap32((u32)ZLB_HDR(blk)->compressedSize);
+                *p8 = (int)fhSwap32(ZLB_HDR(blk)->decompressedSize);
                 *pc = vc;
             }
         }

@@ -67,7 +67,7 @@ static u32 fhAnimReadBits(FhAnimBitReader* r, int count)
     return value;
 }
 
-static s32 fhAnimSample(FhAnimBitReader* a, FhAnimBitReader* b, int width, s32 frac, int wrap14)
+static s32 fhAnimSample(FhAnimBitReader* a, FhAnimBitReader* b, int width, s32 frac, int wrapBits)
 {
     s32 va;
     s32 vb;
@@ -80,9 +80,11 @@ static s32 fhAnimSample(FhAnimBitReader* a, FhAnimBitReader* b, int width, s32 f
     va = (s32)fhAnimReadBits(a, width);
     vb = (s32)fhAnimReadBits(b, width);
     delta = vb - va;
-    if (wrap14)
+    if (wrapBits != 0)
     {
-        delta = (s32)((u32)delta << 18) >> 18;
+        int shift = 32 - wrapBits;
+
+        delta = (s32)((u32)delta << shift) >> shift;
     }
     return va + (s32)(((s64)delta * frac) >> 14);
 }
@@ -149,11 +151,8 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
             }
             d = fhSwap16(*(const u16*)descriptors);
             descriptors += 2;
-            sample = fhAnimSample(&a, &b, d & 0xf, frac, 1);
-            if ((d & 0xf) != 0)
-            {
-                sample = (s32)(d & 0xfff0) + (sample << 2);
-            }
+            sample = fhAnimSample(&a, &b, d & 0xf, frac, 14);
+            sample = (s32)(d & 0xfff0) + (sample << 2);
             out[i].rot[axis] = (s16)sample;
 
             if ((d & 0x10) == 0 || descriptors + 2 > descriptorEnd)
@@ -166,7 +165,11 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
                 sample = fhAnimSample(&a, &b, d & 0xf, frac, 0);
                 if ((d & 0xf) != 0)
                 {
-                    sample = (s32)(d & 0xfff0) + sample;
+                    sample = (s32)(d & 0xffc0) + (sample << 1);
+                }
+                else
+                {
+                    sample = (s32)(d & 0xffc0);
                 }
                 out[i].scale[axis] = (s16)sample;
                 descriptors += 2;
@@ -176,11 +179,8 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
                 }
                 d = fhSwap16(*(const u16*)descriptors);
             }
-            sample = fhAnimSample(&a, &b, d & 0xf, frac, 0);
-            if ((d & 0xf) != 0)
-            {
-                sample = (s32)(d & 0xfff0) + sample;
-            }
+            sample = fhAnimSample(&a, &b, d & 0xf, frac, 16);
+            sample = (s32)(d & 0xfff0) + sample;
             out[i].trans[axis] = (s16)sample;
             descriptors += 2;
         }
@@ -499,4 +499,5 @@ void modelAnimBuildJointMatrices(int* out, u8* dst, void* animState, u8* jointDa
         PSMTXConcat(parent, child, result);
         memcpy(child, result, sizeof(Mtx));
     }
+
 }

@@ -18,22 +18,6 @@ u8 gPadMenuStickRepeatDelay = 5;
 #define PAD_ANALOG_TRIGGER_R 0x20
 #define PAD_ANALOG_TRIGGER_L 0x40
 
-typedef struct PadStateBlock
-{
-    u32 previousButtons[4];       /* 0x00 */
-    u32 currentButtons[4];        /* 0x10 */
-    u32 releasedButtons[4];       /* 0x20 */
-    u32 pressedButtons[4];        /* 0x30 */
-    PADStatus statusBuffers[2][4]; /* 0x40, two 0x30-byte PADRead buffers */
-} PadStateBlock;
-
-STATIC_ASSERT(offsetof(PadStateBlock, currentButtons) == 0x10);
-STATIC_ASSERT(offsetof(PadStateBlock, releasedButtons) == 0x20);
-STATIC_ASSERT(offsetof(PadStateBlock, pressedButtons) == 0x30);
-STATIC_ASSERT(offsetof(PadStateBlock, statusBuffers[0]) == 0x40);
-STATIC_ASSERT(offsetof(PadStateBlock, statusBuffers[1]) == 0x70);
-STATIC_ASSERT(sizeof(PadStateBlock) == 0xA0);
-
 extern PADStatus gPadStatuses[2][4];
 
 u8 gPadStatusBufferIndex;
@@ -293,7 +277,6 @@ void doNothing_endOfFrame(void)
 }
 void padUpdate(void)
 {
-    u32* padStateBlock[1];
     PADStatus* currentStatus;
     s8* prevStickY;
     s8* prevStickX;
@@ -313,14 +296,14 @@ void padUpdate(void)
     PADStatus* readPad;
     s32 i;
     PADStatus* statuses;
+    PADStatus* secondStatus;
     int sx;
     int sy;
     u8 useprev;
 
-    padStateBlock[0] = gPadButtonsPrevious;
-    prevPad = (PADStatus*)((u8*)(padStateBlock[0] + 0x10) + gPadStatusBufferIndex * 0x30);
+    prevPad = gPadStatuses[gPadStatusBufferIndex];
     gPadStatusBufferIndex ^= 1;
-    readPad = (PADStatus*)((u8*)(padStateBlock[0] + 0x10) + gPadStatusBufferIndex * 0x30);
+    readPad = gPadStatuses[gPadStatusBufferIndex];
     if (PADRead(readPad) == PAD_ERR_TRANSFER)
     {
         return;
@@ -352,15 +335,16 @@ void padUpdate(void)
     repeatX = gPadMenuStickXHoldTimer;
     analogY = gPadMenuStickYSign;
     analogX = gPadMenuStickXSign;
-    previousButtons = padStateBlock[0];
-    currentButtons = padStateBlock[0] + 4;
-    releasedButtons = padStateBlock[0] + 8;
-    pressedButtons = padStateBlock[0] + 12;
+    previousButtons = gPadButtonsPrevious;
+    currentButtons = gPadButtonsHeld;
+    releasedButtons = gPadButtonsReleased;
+    pressedButtons = gPadButtonsJustPressed;
     prevTriggers = gPadPrevTriggers;
     triggers = gPadTriggers;
     triggersReleased = gPadTriggersReleased;
     triggersPressed = gPadTriggersPressed;
-    statuses = (PADStatus*)((u8*)padStateBlock[0] + 0x40);
+    statuses = gPadStatuses[0];
+    secondStatus = gPadStatuses[1];
 
     for (; i < 4; i++)
     {
@@ -381,7 +365,7 @@ void padUpdate(void)
             *triggersReleased = 0;
             *triggersPressed = 0;
             memset(statuses, 0, sizeof(PADStatus));
-            memset((u8*)(padStateBlock[0] + 0x10) + (i + 4) * 0xc, 0, sizeof(PADStatus));
+            memset(secondStatus, 0, sizeof(PADStatus));
             gPadResetMask |= PAD_CHAN0_BIT >> i;
             currentStatus->err = PAD_ERR_NO_CONTROLLER;
         }
@@ -507,6 +491,7 @@ void padUpdate(void)
         triggersReleased++;
         triggersPressed++;
         statuses++;
+        secondStatus++;
         prevPad++;
     }
 
@@ -529,9 +514,72 @@ void setRumbleEnabled(u8 enabled)
     rumbleEnabled = enabled;
 }
 
+#ifdef TARGET_PC
+enum
+{
+    HOST_KEY_A = 4,
+    HOST_KEY_D = 7,
+    HOST_KEY_E = 8,
+    HOST_KEY_I = 12,
+    HOST_KEY_J = 13,
+    HOST_KEY_K = 14,
+    HOST_KEY_L = 15,
+    HOST_KEY_Q = 20,
+    HOST_KEY_R = 21,
+    HOST_KEY_S = 22,
+    HOST_KEY_W = 26,
+    HOST_KEY_RETURN = 40,
+    HOST_KEY_SPACE = 44,
+    HOST_KEY_RIGHT = 79,
+    HOST_KEY_LEFT = 80,
+    HOST_KEY_DOWN = 81,
+    HOST_KEY_UP = 82,
+    HOST_KEY_LEFT_CONTROL = 224,
+    HOST_KEY_LEFT_SHIFT = 225,
+    HOST_KEY_LEFT_ALT = 226,
+};
+
+static void initKeyboardControls(void)
+{
+    u32 bindingCount;
+    PADKeyButtonBinding buttonBindings[PAD_BUTTON_COUNT] = {
+        {HOST_KEY_SPACE, PAD_BUTTON_A},
+        {HOST_KEY_LEFT_SHIFT, PAD_BUTTON_B},
+        {HOST_KEY_E, PAD_BUTTON_X},
+        {HOST_KEY_R, PAD_BUTTON_Y},
+        {HOST_KEY_RETURN, PAD_BUTTON_START},
+        {HOST_KEY_Q, PAD_TRIGGER_Z},
+        {HOST_KEY_LEFT_CONTROL, PAD_TRIGGER_L},
+        {HOST_KEY_LEFT_ALT, PAD_TRIGGER_R},
+        {HOST_KEY_UP, PAD_BUTTON_UP},
+        {HOST_KEY_DOWN, PAD_BUTTON_DOWN},
+        {HOST_KEY_LEFT, PAD_BUTTON_LEFT},
+        {HOST_KEY_RIGHT, PAD_BUTTON_RIGHT},
+    };
+    PADKeyAxisBinding axisBindings[PAD_AXIS_COUNT] = {
+        {HOST_KEY_D, PAD_AXIS_LEFT_X_POS, 0},
+        {HOST_KEY_A, PAD_AXIS_LEFT_X_NEG, 0},
+        {HOST_KEY_W, PAD_AXIS_LEFT_Y_POS, 0},
+        {HOST_KEY_S, PAD_AXIS_LEFT_Y_NEG, 0},
+        {HOST_KEY_L, PAD_AXIS_RIGHT_X_POS, 0},
+        {HOST_KEY_J, PAD_AXIS_RIGHT_X_NEG, 0},
+        {HOST_KEY_I, PAD_AXIS_RIGHT_Y_POS, 0},
+        {HOST_KEY_K, PAD_AXIS_RIGHT_Y_NEG, 0},
+        {HOST_KEY_LEFT_CONTROL, PAD_AXIS_TRIGGER_L, 0},
+        {HOST_KEY_LEFT_ALT, PAD_AXIS_TRIGGER_R, 0},
+    };
+
+    if (PADGetKeyButtonBindings(PAD_CHAN0, &bindingCount) == NULL)
+    {
+        PADSetKeyButtonBindings(PAD_CHAN0, buttonBindings);
+        PADSetKeyAxisBindings(PAD_CHAN0, axisBindings);
+        PADSetKeyboardActive(PAD_CHAN0, TRUE);
+    }
+}
+#endif
+
 int initControllers(void)
 {
-    PadStateBlock* base[1];
     s8* prevStickY;
     s8* prevStickX;
     s8* repeatY;
@@ -547,12 +595,14 @@ int initControllers(void)
     u16* triggersReleased;
     u16* triggersPressed;
     PADStatus* statuses;
-    u8* secondStatus;
+    PADStatus* secondStatus;
     s32 i;
 
-    base[0] = (PadStateBlock*)gPadButtonsPrevious;
     gPadResetMask = 0xF0000000;
     PADInit();
+#ifdef TARGET_PC
+    initKeyboardControls();
+#endif
     PADRecalibrate(gPadResetMask);
     if (PADReset(gPadResetMask) != 0)
     {
@@ -566,15 +616,16 @@ int initControllers(void)
     repeatX = gPadMenuStickXHoldTimer;
     analogY = gPadMenuStickYSign;
     analogX = gPadMenuStickXSign;
-    previousButtons = base[0]->previousButtons;
-    currentButtons = base[0]->currentButtons;
-    buttonsReleased = base[0]->releasedButtons;
-    buttonsPressed = base[0]->pressedButtons;
+    previousButtons = gPadButtonsPrevious;
+    currentButtons = gPadButtonsHeld;
+    buttonsReleased = gPadButtonsReleased;
+    buttonsPressed = gPadButtonsJustPressed;
     prevTriggers = gPadPrevTriggers;
     triggers = gPadTriggers;
     triggersReleased = gPadTriggersReleased;
     triggersPressed = gPadTriggersPressed;
-    statuses = base[0]->statusBuffers[0];
+    statuses = gPadStatuses[0];
+    secondStatus = gPadStatuses[1];
 
     for (; i < 4; i++)
     {
@@ -593,9 +644,7 @@ int initControllers(void)
         *triggersReleased = 0;
         *triggersPressed = 0;
         memset(statuses, 0, sizeof(PADStatus));
-        secondStatus = (u8*)base[0];
-        secondStatus += (i + 4) * sizeof(PADStatus);
-        memset(secondStatus + 0x40, 0, sizeof(PADStatus));
+        memset(secondStatus, 0, sizeof(PADStatus));
 
         prevStickY++;
         prevStickX++;
@@ -612,6 +661,7 @@ int initControllers(void)
         triggersReleased++;
         triggersPressed++;
         statuses++;
+        secondStatus++;
     }
 
     gPadStatusBufferIndex = 0;

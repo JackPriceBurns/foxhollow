@@ -1274,8 +1274,8 @@ void createNewShadowDistortionTexture(void)
             dirX *= s;
             normY = lbl_803DEDC0 * normY + 128.0f;
             dirX = lbl_803DEDC0 * dirX + 128.0f;
-            ((NewShadowVectorTexel*)(texel + sizeof(Texture)))->packedXY =
-                (u16)((int)dirX | (((int)normY & 0xffff) << 8));
+            ((NewShadowVectorTexel*)(texel + sizeof(Texture)))->alpha = (u8)normY;
+            ((NewShadowVectorTexel*)(texel + sizeof(Texture)))->intensity = (u8)dirX;
         }
     }
     DCFlushRange(gNewShadowDistortionTexture + 1, gNewShadowDistortionTexture->dataSize);
@@ -1436,7 +1436,7 @@ void newShadowsInitProceduralTextures(void)
                 rowPixelOffset = (row & 3) * 2;
                 for (; column < 0x40; column++)
                 {
-                    int highByte, lowByte;
+                    NewShadowVectorTexel* noiseTexel;
                     uintptr_t texelAddress = (uintptr_t)gNewShadowNoiseTexFrames[frame] + h + rowPixelOffset;
                     f32 shift, intensity;
                     f32 rowCoord, columnCoord;
@@ -1446,14 +1446,14 @@ void newShadowsInitProceduralTextures(void)
                     columnCoord = column * lbl_803DEDE0;
                     evalNoisePlacements(rowCoord, columnCoord, frame,
                                 gNewShadowPlacements, noisePlacementCount, &shift, &intensity);
-                    highByte = 255.0f * intensity;
-                    highByte = (highByte & 0xffff) << 8;
-                    lowByte = 255.0f * shift;
-                    ((NewShadowVectorTexel*)(texelAddress + sizeof(Texture)))->packedXY = highByte | lowByte;
+                    noiseTexel = (NewShadowVectorTexel*)(texelAddress + sizeof(Texture));
+                    noiseTexel->alpha = (u8)(255.0f * intensity);
+                    noiseTexel->intensity = (u8)(255.0f * shift);
                 }
             }
             DCFlushRange(gNewShadowNoiseTexFrames[frame] + 1, gNewShadowNoiseTexFrames[frame]->dataSize);
         }
+
     }
 
     gNewShadowCausticTexture = textureAlloc(0x40, 0x40, 3, 0, 0, 1, 1, 1, 1);
@@ -1469,7 +1469,7 @@ void newShadowsInitProceduralTextures(void)
         for (; column < 0x40; column++)
         {
             f32 columnPhase, wave, carrier, productValue, waveValue;
-            int highByte, lowByte;
+            NewShadowVectorTexel* causticTexel;
             u8* texel = (u8*)gNewShadowCausticTexture + rowPixelOffset;
             texel += h;
             texel += (column & 3) * 8;
@@ -1480,10 +1480,9 @@ void newShadowsInitProceduralTextures(void)
             productValue = wave * carrier;
             productValue = 127.0f * productValue + 127.0f;
             waveValue = 127.0f * wave + 127.0f;
-            lowByte = waveValue;
-            highByte = productValue;
-            ((NewShadowVectorTexel*)(texel + sizeof(Texture)))->packedXY =
-                lowByte | ((highByte & 0xffff) << 8);
+            causticTexel = (NewShadowVectorTexel*)(texel + sizeof(Texture));
+            causticTexel->alpha = (u8)productValue;
+            causticTexel->intensity = (u8)waveValue;
         }
     }
     DCFlushRange(gNewShadowCausticTexture + 1, gNewShadowCausticTexture->dataSize);

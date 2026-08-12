@@ -85,6 +85,13 @@ STATIC_ASSERT(offsetof(SkyLight, overrideMoonColorR) == 0x64);
 STATIC_ASSERT(offsetof(SkyLight, blendFactor) == 0x98);
 
 typedef struct SkyState {
+#ifdef TARGET_PC
+    u32 unk00;
+    u32 handle;
+    u32 texture0;
+    u32 unk0C;
+    u32 texture1;
+#else
     u8 unk00;
     u8 unk01;
     u8 unk02[2];
@@ -92,6 +99,7 @@ typedef struct SkyState {
     u8 *texture0;
     u8 unk0C[4];
     u8 *texture1;
+#endif
     s32 textureId0;
     s32 textureId1;
     f32 sunYaw; /* 0x1C: yaw applied (as quaternion rz) to the sun direction each frame */

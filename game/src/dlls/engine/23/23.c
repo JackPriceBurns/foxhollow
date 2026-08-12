@@ -25,6 +25,7 @@
 #include "track/intersect_card_api.h"
 #include "main/pad.h"
 #include "main/dll/savegame_load_api.h"
+#include "main/dll/FRONT/frontend_control.h"
 
 u32 pRestartPoint;
 u8* gSaveGameWorkBuffer;
@@ -124,20 +125,6 @@ typedef struct SaveScoreFile
 #define SAVEGAME_CHARACTER_POSITION(save)                                                                              \
     (&((SaveGameCharacterPosition*)((save) +                                                                           \
                                     SAVEGAME_CHARACTER_POSITION_OFFSET))[(save)[SAVEGAME_CURRENT_CHARACTER_OFFSET]])
-
-typedef struct SaveSelectInfo
-{
-    u8 name[4];
-    u8 percentComplete;
-    u8 rankA;
-    u8 rankB;
-    u8 pad7;
-    u32 playTime;
-    void* taskTexts[5];
-    u8 valid;
-    u8 chaptersUnlocked;
-    u8 pad22[2];
-} SaveSelectInfo;
 
 typedef struct MapBitTransient
 {
@@ -580,7 +567,7 @@ s8 slot;
 
 int saveSelect_getInfo(void* outPtr)
 {
-    SaveSelectInfo* info;
+    FrontendSaveSlot* info;
     u8 save[SAVEGAME_ACTIVE_SIZE];
     int slot;
     int i;
@@ -590,16 +577,17 @@ int saveSelect_getInfo(void* outPtr)
     slot = 0;
     do
     {
-        info = (SaveSelectInfo*)outPtr + slot;
+        info = (FrontendSaveSlot*)outPtr + slot;
         if (loadSaveGame((u8)slot, save) != 0)
         {
             newFileFlag = ((SaveGameData*)save)->newFileFlag;
-            info->valid = newFileFlag;
+            info->isOccupied = newFileFlag;
             if (newFileFlag != 0)
             {
                 memcpy(info, ((SaveGameData*)save)->playerName, sizeof(info->name));
 
-                info->percentComplete = (u8)((((SaveGameData*)save)->completionScore * 100) / SAVEGAME_COMPLETION_SCORE_MAX);
+                info->completionPercent =
+                    (u8)((((SaveGameData*)save)->completionScore * 100) / SAVEGAME_COMPLETION_SCORE_MAX);
                 if (((SaveGameData*)save)->completionScore > 0xb3)
                 {
                     info->rankA = 6;
@@ -656,7 +644,7 @@ int saveSelect_getInfo(void* outPtr)
                     info->rankB = 0;
                 }
 
-                info->playTime = (u32)(((SaveGameData*)save)->playTime / 6e+01f);
+                info->playTimeSeconds = (u32)(((SaveGameData*)save)->playTime / 6e+01f);
                 info->taskTexts[0] = NULL;
                 info->taskTexts[1] = NULL;
                 info->taskTexts[2] = NULL;
@@ -668,11 +656,11 @@ int saveSelect_getInfo(void* outPtr)
                     info->taskTexts[i] = gameTextGetPhrase(taskIds[i] + 0xf4, 0);
                 }
                 info->chaptersUnlocked = 0;
-                info->valid = ((SaveGameData*)save)->newFileFlag;
+                info->isOccupied = ((SaveGameData*)save)->newFileFlag;
             }
             else
             {
-                memset(info, 0, sizeof(SaveSelectInfo));
+                memset(info, 0, sizeof(FrontendSaveSlot));
             }
         }
         else

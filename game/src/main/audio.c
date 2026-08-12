@@ -103,7 +103,7 @@ int gAudioArqRequestIndex;
 #define AUDIO_LOAD_S_SAMPLE_BUF   0x400 /* sfx group: sample buffer */
 #define AUDIO_LOAD_MIDI_WAD       0x800 /* MIDI WAD */
 
-AudioArqRequestEntry gAudioArqRequests[0x300 / sizeof(AudioArqRequestEntry)];
+AudioArqRequestEntry gAudioArqRequests[AUDIO_ARQ_REQUEST_COUNT];
 ReverbState gAudioReverbSettings;
 
 const SalHooks gAudioMemHooks = {_audioAlloc, audioFree};
@@ -118,7 +118,7 @@ void AudioAramReadAllocAsync(u32 source, u32 size, void** outBuf, AudioArqReques
     idx = gAudioArqRequestIndex;
     gAudioArqRequestIndex = idx + 1;
     entry = &gAudioArqRequests[idx];
-    if (idx + 1 >= 0x10)
+    if (idx + 1 >= AUDIO_ARQ_REQUEST_COUNT)
     {
         gAudioArqRequestIndex = 0;
     }
@@ -182,7 +182,7 @@ static inline MusicChannel* Music_FindFreeChannel(void)
 {
     MusicChannel* channel = gMusicChannels;
     int i;
-    for (i = 15; i >= 0; i--)
+    for (i = MUSIC_CHANNEL_COUNT - 1; i >= 0; i--)
     {
         if (channel->status == 0)
         {
@@ -212,7 +212,7 @@ static inline MusicChannel* Music_FindActiveChannelForTrack(int track)
 {
     int i;
     MusicChannel* ch = gMusicChannels;
-    for (i = 15; i >= 0; i--)
+    for (i = MUSIC_CHANNEL_COUNT - 1; i >= 0; i--)
     {
         if (ch->trackId == track)
         {
@@ -245,7 +245,7 @@ void AudioAramReadCompleteCallback(uintptr_t request)
     int i;
     AudioArqRequestEntry* p = (AudioArqRequestEntry*)request;
     AudioArqRequestEntry* e = gAudioArqRequests;
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < AUDIO_ARQ_REQUEST_COUNT; i++)
     {
         if (p == e)
         {
@@ -263,7 +263,7 @@ void AudioAramWriteSync(void* addr, u32 dest, u32 size)
     idx = gAudioArqRequestIndex;
     gAudioArqRequestIndex = idx + 1;
     entry = &gAudioArqRequests[idx];
-    if (idx + 1 >= 0x10)
+    if (idx + 1 >= AUDIO_ARQ_REQUEST_COUNT)
     {
         gAudioArqRequestIndex = 0;
     }
@@ -878,7 +878,7 @@ int Music_GetTrackCount(void)
 void Music_StopChannelsByPriorityGroup(int priorityGroupMask, MusicChannelStopMode mode, int fadeTime)
 {
     MusicChannel* ch = gMusicChannels;
-    int i = 15;
+    int i = MUSIC_CHANNEL_COUNT - 1;
     do
     {
         if (ch->status != 0 && ((ch->priorityGroup + 1) & priorityGroupMask) != 0)
@@ -1007,7 +1007,7 @@ void Music_Update(void)
     gMusicActivePriority = 0x7fff;
 
     ch = gMusicChannels;
-    i = 0xf;
+    i = MUSIC_CHANNEL_COUNT - 1;
     do {
         int status = ch->status;
         if (status != 0 && status != 4)
@@ -1058,7 +1058,7 @@ void Music_Update(void)
     } while (i-- != 0);
 
     ch = gMusicChannels;
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < MUSIC_CHANNEL_COUNT; i++)
     {
         switch (ch->status)
         {
@@ -1126,7 +1126,7 @@ void Music_Update(void)
     }
 
     ch = gMusicChannels;
-    i = 0xf;
+    i = MUSIC_CHANNEL_COUNT - 1;
     do
     {
         switch (ch->status)
@@ -1242,7 +1242,7 @@ u8 musicInitMidiWad(void)
     {
         gMidiWadLoadStarted = 1;
         ch = gMusicChannels;
-        for (i = 16; i != 0; i--)
+        for (i = MUSIC_CHANNEL_COUNT; i != 0; i--)
         {
             ch->trackId = -1;
             ch->seqHandle = -1;
@@ -1621,5 +1621,5 @@ MusicTrackSlot sMusicTrackTable[] = {
 char sMidiWadLoadedCallbackLoadError[] = "MIDIWADLoadedCallback load error\n";
 char sMidiWadPath[] = "audio/midi.wad";
 
-MusicChannel gMusicChannels[0x240 / sizeof(MusicChannel)];
+MusicChannel gMusicChannels[MUSIC_CHANNEL_COUNT];
 u32 gAudioAramBlock[0x2C / sizeof(u32)];

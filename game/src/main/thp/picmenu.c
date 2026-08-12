@@ -27,6 +27,24 @@ enum
     THP_COMPONENT_AUDIO = 1
 };
 
+static u32 movieReadU32(const void* ptr)
+{
+    u32 value;
+    memcpy(&value, ptr, sizeof(value));
+    return fhSwap32(value);
+}
+
+static f32 movieReadF32(const void* ptr)
+{
+    union
+    {
+        u32 bits;
+        f32 value;
+    } result;
+    result.bits = movieReadU32(ptr);
+    return result.value;
+}
+
 BOOL movieLoad(const char* fileName, void* onMemory)
 {
     u32 readOff;
@@ -61,6 +79,18 @@ BOOL movieLoad(const char* fileName, void* onMemory)
     memcpy(&gAttractMoviePlayer.header, gPicMenuDvdReadBuffer,
            sizeof(gAttractMoviePlayer.header));
 
+    gAttractMoviePlayer.header.mVersion = movieReadU32(gPicMenuDvdReadBuffer + 0x04);
+    gAttractMoviePlayer.header.mBufferSize = movieReadU32(gPicMenuDvdReadBuffer + 0x08);
+    gAttractMoviePlayer.header.mAudioMaxSamples = movieReadU32(gPicMenuDvdReadBuffer + 0x0c);
+    gAttractMoviePlayer.header.mFrameRate = movieReadF32(gPicMenuDvdReadBuffer + 0x10);
+    gAttractMoviePlayer.header.mNumFrames = movieReadU32(gPicMenuDvdReadBuffer + 0x14);
+    gAttractMoviePlayer.header.mFirstFrameSize = movieReadU32(gPicMenuDvdReadBuffer + 0x18);
+    gAttractMoviePlayer.header.mMovieDataSize = movieReadU32(gPicMenuDvdReadBuffer + 0x1c);
+    gAttractMoviePlayer.header.mCompInfoDataOffsets = movieReadU32(gPicMenuDvdReadBuffer + 0x20);
+    gAttractMoviePlayer.header.mOffsetDataOffsets = movieReadU32(gPicMenuDvdReadBuffer + 0x24);
+    gAttractMoviePlayer.header.mMovieDataOffsets = movieReadU32(gPicMenuDvdReadBuffer + 0x28);
+    gAttractMoviePlayer.header.mFinalFrameDataOffsets = movieReadU32(gPicMenuDvdReadBuffer + 0x2c);
+
     if (strcmp(gAttractMoviePlayer.header.mMagic, sPicMenuThpMagic) != 0)
     {
         DVDClose(&gAttractMoviePlayer.fileInfo);
@@ -84,6 +114,7 @@ BOOL movieLoad(const char* fileName, void* onMemory)
         }
 
         memcpy(&gAttractMoviePlayer.compInfo, gPicMenuDvdReadBuffer, sizeof(THPFrameCompInfo));
+        gAttractMoviePlayer.compInfo.mNumComponents = movieReadU32(gPicMenuDvdReadBuffer);
         readOff = compOff + sizeof(THPFrameCompInfo);
         gAttractMoviePlayer.audioExists = 0;
     }
@@ -101,6 +132,8 @@ BOOL movieLoad(const char* fileName, void* onMemory)
             }
             memcpy(&gAttractMoviePlayer.videoInfo, gPicMenuDvdReadBuffer,
                    sizeof(AttractMovieVideoInfo));
+            gAttractMoviePlayer.videoInfo.xSize = movieReadU32(gPicMenuDvdReadBuffer);
+            gAttractMoviePlayer.videoInfo.ySize = movieReadU32(gPicMenuDvdReadBuffer + 4);
             readOff += sizeof(AttractMovieVideoInfo);
             break;
         case THP_COMPONENT_AUDIO:
@@ -112,6 +145,9 @@ BOOL movieLoad(const char* fileName, void* onMemory)
             }
             memcpy(&gAttractMoviePlayer.audioInfo, gPicMenuDvdReadBuffer,
                    sizeof(AttractMovieAudioInfo));
+            gAttractMoviePlayer.audioInfo.channelCount = movieReadU32(gPicMenuDvdReadBuffer);
+            gAttractMoviePlayer.audioInfo.frequency = movieReadU32(gPicMenuDvdReadBuffer + 4);
+            gAttractMoviePlayer.audioInfo.sampleCount = movieReadU32(gPicMenuDvdReadBuffer + 8);
             gAttractMoviePlayer.audioExists = 1;
             readOff += sizeof(AttractMovieAudioInfo);
             break;

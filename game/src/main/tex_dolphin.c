@@ -68,6 +68,7 @@
 #include "main/objseq_api.h"
 #include "main/dll/FRONT/n_options.h"
 #include "main/lightmap_render_queue_api.h"
+#include "main/lightmap_internal.h"
 #include "main/objprint_dolphin_internal.h"
 
 u8 gCloudLayerOverlayColor[4] = {0x20, 0x20, 0x20, 0};
@@ -86,21 +87,7 @@ WarpDestination gRcpPendingWarpDest;
 extern GXColor gTexShaderFogColor;
 extern GXColor gTexLightmapFogColor;
 
-/*
- * TexShadowRow - 0x10-stride rows of the pending-shadow queue at the head of
- * gLightmapDrawQueue (indexed by gLightmapDrawQueueCount, bumped after each lightmapQueueShadowRow push).
- * mapBlockRender_callList writes type (4/5 = object shadow, 6 = indirect
- * lightmap) into the queued shadow row.
- */
-typedef struct TexShadowRow
-{
-    int unk0;
-    int unk4;
-    int unk8;
-    int type;
-} TexShadowRow;
-
-extern TexShadowRow gLightmapDrawQueue[];
+extern LightSortEntry gLightmapDrawQueue[];
 
 static u8 mapBlockBounds_HasCornerPastDepthThreshold(MapBlockBoundsRec* bounds, float* xform)
 {
@@ -501,7 +488,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
     u8* byteBase;
 
     {
-        TexShadowRow* texGlobals;
+        LightSortEntry* texGlobals;
         MapBlockBoundsRec* bounds[1];
 
         texGlobals = gLightmapDrawQueue;
@@ -534,7 +521,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
 
                 lightmapQueueShadowRow(bounds[0], block, bounds[0]->selector);
                 shadowType = 5;
-                texGlobals[gLightmapDrawQueueCount].type = shadowType;
+                texGlobals[gLightmapDrawQueueCount].d = shadowType;
                 gLightmapDrawQueueCount = gLightmapDrawQueueCount + 1;
             }
             else if (((flags & 0x40000000) != 0) || ((flags & 0x2000) != 0))
@@ -543,7 +530,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
 
                 lightmapQueueShadowRow(bounds[0], block, bounds[0]->selector);
                 shadowType = 4;
-                texGlobals[gLightmapDrawQueueCount].type = shadowType;
+                texGlobals[gLightmapDrawQueueCount].d = shadowType;
                 gLightmapDrawQueueCount = gLightmapDrawQueueCount + 1;
             }
         }
@@ -667,7 +654,7 @@ void mapBlockRender_callList(u8 passSelect, u32 visArg, MapBlockData* block, Sha
 
                 lightmapQueueShadowRow(bounds[0], block, 0x17);
                 shadowType = 6;
-                texGlobals[gLightmapDrawQueueCount].type = shadowType;
+                texGlobals[gLightmapDrawQueueCount].d = shadowType;
                 gLightmapDrawQueueCount = gLightmapDrawQueueCount + 1;
             }
         }
@@ -1085,10 +1072,10 @@ void setupToRenderMapBlock(MapBlockData* block, void* posMtx)
     GXLoadNrmMtxImm(tmp, GX_PNMTX0);
     PSMTXConcat((MtxPtr)gCameraLightPerspectiveMatrix, (MtxPtr)posMtx, out);
     GXLoadTexMtxImm(out, GX_TEXMTX2, GX_MTX3x4);
-    GXSetArray(GX_VA_POS, block->vertices, block->vertexCount * 6, 6, false);
-    GXSetArray(GX_VA_CLR0, block->vertexColors, block->colorCount * 2, 2, false);
-    GXSetArray(GX_VA_TEX0, block->vertexTexCoords, block->texCoordCount * 4, 4, false);
-    GXSetArray(GX_VA_TEX1, block->vertexTexCoords, block->texCoordCount * 4, 4, false);
+    GXSetArray(GX_VA_POS, block->vertices, block->vertexCount * 6, 6, true);
+    GXSetArray(GX_VA_CLR0, block->vertexColors, block->colorCount * 2, 2, true);
+    GXSetArray(GX_VA_TEX0, block->vertexTexCoords, block->texCoordCount * 4, 4, true);
+    GXSetArray(GX_VA_TEX1, block->vertexTexCoords, block->texCoordCount * 4, 4, true);
 }
 
 void renderMapBlock(MapBlockData* block, u8 type)
@@ -1551,6 +1538,13 @@ void MapBlock_initHits(MapBlockData* block, int index)
     while (i < block->hitCount)
     {
         entry = &block->hits[i];
+        entry->x[0] = (s16)fhSwap16((u16)entry->x[0]);
+        entry->x[1] = (s16)fhSwap16((u16)entry->x[1]);
+        entry->y[0] = (s16)fhSwap16((u16)entry->y[0]);
+        entry->y[1] = (s16)fhSwap16((u16)entry->y[1]);
+        entry->z[0] = (s16)fhSwap16((u16)entry->z[0]);
+        entry->z[1] = (s16)fhSwap16((u16)entry->z[1]);
+        entry->param = (s16)fhSwap16((u16)entry->param);
         if (entry->x[0] < 0 || (value = entry->x[1]) < 0 || entry->x[0] > 0x280 || value > 0x280)
         {
             entry->kind = 0x40;
@@ -1567,11 +1561,189 @@ void MapBlock_initHits(MapBlockData* block, int index)
     block->flags4 &= ~0x40;
 }
 
+static u32 mapBlockReadU32(u8* raw, u32 offset)
+{
+    return fhSwap32(*(u32*)(raw + offset));
+}
+
+static u16 mapBlockReadU16(u8* raw, u32 offset)
+{
+    return fhSwap16(*(u16*)(raw + offset));
+}
+
+static f32 mapBlockReadF32(u8* raw, u32 offset)
+{
+    u32 value = mapBlockReadU32(raw, offset);
+    f32 result;
+    memcpy(&result, &value, sizeof(result));
+    return result;
+}
+
+static uintptr_t mapBlockDataOffset(u8* raw, u32 offset, u32 rawOffset)
+{
+    u32 value = mapBlockReadU32(raw, offset);
+    return value == 0 ? 0 : value + rawOffset;
+}
+
+static void mapBlockUnpackShaders(Shader* shaders, u8* raw, u32 offset, u32 count)
+{
+    u32 i;
+    int j;
+    for (i = 0; i < count; i++)
+    {
+        u8* src = raw + offset + i * 0x44;
+        Shader* shader = &shaders[i];
+        memcpy(shader->pad00, src, sizeof(shader->pad00));
+        shader->reg1Texture = (void*)(uintptr_t)mapBlockReadU32(src, 0x08);
+        shader->alpha = src[0x0c];
+        memcpy(shader->pad0D, src + 0x0d, sizeof(shader->pad0D));
+        shader->reg2Texture = (void*)(uintptr_t)mapBlockReadU32(src, 0x14);
+        shader->textureId = (s32)mapBlockReadU32(src, 0x18);
+        shader->unk1C = mapBlockReadU32(src, 0x1c);
+        shader->reg2TexSlot = src[0x20];
+        shader->pad21 = src[0x21];
+        shader->reg2Alpha = src[0x22];
+        shader->pad23 = src[0x23];
+        for (j = 0; j < 2; j++)
+        {
+            u8* layer = src + 0x24 + j * 8;
+            shader->layers[j].texture = NULL;
+            shader->layers[j].textureIndex = (s32)mapBlockReadU32(layer, 0);
+            shader->layers[j].typeBits = layer[4];
+            shader->layers[j].materialId = layer[5];
+            shader->layers[j].scrollMtx = layer[6];
+            shader->layers[j].unk7 = layer[7];
+        }
+        shader->auxTexture = NULL;
+        shader->auxTextureIndex = mapBlockReadU32(src, 0x34);
+        shader->indTexture = NULL;
+        shader->indTextureId = (s32)mapBlockReadU32(src, 0x38);
+        shader->flags = mapBlockReadU32(src, 0x3c);
+        shader->vtxAttrFlags = src[0x40];
+        shader->layerCount = src[0x41];
+        shader->envMapParams = src[0x42];
+        shader->alphaOverride = src[0x43];
+    }
+}
+
+static void mapBlockUnpackDisplayLists(MapBlockBoundsRec* lists, u8* raw, u32 offset, u32 count, u32 rawOffset)
+{
+    u32 i;
+    for (i = 0; i < count; i++)
+    {
+        u8* src = raw + offset + i * 0x1c;
+        MapBlockBoundsRec* list = &lists[i];
+        list->dlist = (void*)(uintptr_t)(mapBlockReadU32(src, 0) + rawOffset);
+        list->dlistSize = mapBlockReadU16(src, 4);
+        list->minX = (s16)mapBlockReadU16(src, 6);
+        list->minY = (s16)mapBlockReadU16(src, 8);
+        list->minZ = (s16)mapBlockReadU16(src, 0x0a);
+        list->maxX = (s16)mapBlockReadU16(src, 0x0c);
+        list->maxY = (s16)mapBlockReadU16(src, 0x0e);
+        list->maxZ = (s16)mapBlockReadU16(src, 0x10);
+        list->flags = src[0x12];
+        list->pad13 = src[0x13];
+        list->renderBitOffset = mapBlockReadU16(src, 0x14);
+        memcpy(list->pad16, src + 0x16, sizeof(list->pad16));
+        list->selector = src[0x18];
+        memcpy(list->pad19, src + 0x19, sizeof(list->pad19));
+    }
+}
+
+static void mapBlockUnpackPolygons(MapBlockData* block)
+{
+    MapTriIndex* polygons = (MapTriIndex*)((u8*)block + (uintptr_t)block->gcPolygons);
+    MapTriGroup* groups = (MapTriGroup*)((u8*)block + (uintptr_t)block->polygonGroups);
+    u32 i;
+    int j;
+    for (i = 0; i < block->nPolygons; i++)
+    {
+        for (j = 0; j < 3; j++)
+            polygons[i].vert[j] = fhSwap16(polygons[i].vert[j]);
+        polygons[i].cellMask = fhSwap16(polygons[i].cellMask);
+    }
+    for (i = 0; i <= block->polyGroupCount; i++)
+    {
+        groups[i].firstTri = fhSwap16(groups[i].firstTri);
+        groups[i].minX = (s16)fhSwap16((u16)groups[i].minX);
+        groups[i].maxX = (s16)fhSwap16((u16)groups[i].maxX);
+        groups[i].minY = (s16)fhSwap16((u16)groups[i].minY);
+        groups[i].maxY = (s16)fhSwap16((u16)groups[i].maxY);
+        groups[i].minZ = (s16)fhSwap16((u16)groups[i].minZ);
+        groups[i].maxZ = (s16)fhSwap16((u16)groups[i].maxZ);
+        groups[i].flags = fhSwap32(groups[i].flags);
+    }
+}
+
+static void mapBlockUnpackFile(MapBlockData* block, u8* raw, u32 rawOffset, u32 allocationSize,
+                               u32 textureOffset, u32 displayListOffset, u32 shaderOffset)
+{
+    u32 i;
+    u32 textureDataOffset = mapBlockReadU32(raw, 0x54);
+    u32 displayListDataOffset = mapBlockReadU32(raw, 0x68);
+    u32 shaderDataOffset = mapBlockReadU32(raw, 0x64);
+    MapTextureRef* textures = (MapTextureRef*)((u8*)block + textureOffset);
+    MapBlockBoundsRec* displayLists = (MapBlockBoundsRec*)((u8*)block + displayListOffset);
+    Shader* shaders = (Shader*)((u8*)block + shaderOffset);
+
+    memset(block, 0, rawOffset);
+    block->flags4 = mapBlockReadU16(raw, 4);
+    block->unk6 = mapBlockReadU16(raw, 6);
+    block->size = allocationSize;
+    for (i = 0; i < 12; i++)
+        ((f32*)block->transform)[i] = mapBlockReadF32(raw, 0x0c + i * 4);
+    memcpy(block->pad3C, raw + 0x3c, sizeof(block->pad3C));
+    block->gcPolygons = (void*)mapBlockDataOffset(raw, 0x4c, rawOffset);
+    block->polygonGroups = (void*)mapBlockDataOffset(raw, 0x50, rawOffset);
+    block->textures = textureDataOffset == 0 ? NULL : (MapTextureRef*)(uintptr_t)textureOffset;
+    block->vertices = (u8*)mapBlockDataOffset(raw, 0x58, rawOffset);
+    block->vertexColors = (void*)mapBlockDataOffset(raw, 0x5c, rawOffset);
+    block->vertexTexCoords = (void*)mapBlockDataOffset(raw, 0x60, rawOffset);
+    block->shaders = shaderDataOffset == 0 ? NULL : (Shader*)(uintptr_t)shaderOffset;
+    block->displayLists = (MapBlockBoundsRec*)(uintptr_t)displayListOffset;
+    block->renderInstrsMain = (void*)mapBlockDataOffset(raw, 0x78, rawOffset);
+    block->renderInstrsTransp = (void*)mapBlockDataOffset(raw, 0x7c, rawOffset);
+    block->renderInstrsWater = (void*)mapBlockDataOffset(raw, 0x80, rawOffset);
+    block->nRenderInstrsMain = mapBlockReadU16(raw, 0x84);
+    block->nRenderInstrsTransp = mapBlockReadU16(raw, 0x86);
+    block->nRenderInstrsWater = mapBlockReadU16(raw, 0x88);
+    block->minY = (s16)mapBlockReadU16(raw, 0x8a);
+    block->maxY = (s16)mapBlockReadU16(raw, 0x8c);
+    block->collisionYOffset = (s16)mapBlockReadU16(raw, 0x8e);
+    block->vertexCount = mapBlockReadU16(raw, 0x90);
+    block->unk92 = mapBlockReadU16(raw, 0x92);
+    block->colorCount = mapBlockReadU16(raw, 0x94);
+    block->texCoordCount = mapBlockReadU16(raw, 0x96);
+    block->nPolygons = mapBlockReadU16(raw, 0x98);
+    block->polyGroupCount = mapBlockReadU16(raw, 0x9a);
+    block->hitCount = mapBlockReadU16(raw, 0x9c);
+    block->unk9E = mapBlockReadU16(raw, 0x9e);
+    block->textureCount = raw[0xa0];
+    block->displayListCount = raw[0xa1];
+    block->shaderCount = raw[0xa2];
+    block->padA3 = raw[0xa3];
+
+    for (i = 0; i < block->textureCount; i++)
+        textures[i].fileId = (s32)mapBlockReadU32(raw, textureDataOffset + i * 4);
+    mapBlockUnpackDisplayLists(displayLists, raw, displayListDataOffset, block->displayListCount, rawOffset);
+    mapBlockUnpackShaders(shaders, raw, shaderDataOffset, block->shaderCount);
+    mapBlockUnpackPolygons(block);
+    fhSwapU16Array((u8*)block + (uintptr_t)block->vertices, (u32)block->vertexCount * 3);
+    fhSwapU16Array((u8*)block + (uintptr_t)block->vertexColors, block->colorCount);
+    fhSwapU16Array((u8*)block + (uintptr_t)block->vertexTexCoords, (u32)block->texCoordCount * 2);
+}
+
 MapBlockData* MapBlock_loadFromFile(int blockId)
 {
     int compressedLen;
     int decompressedSize;
-    void* buf;
+    u8* raw;
+    MapBlockData* block;
+    u32 textureOffset;
+    u32 displayListOffset;
+    u32 shaderOffset;
+    u32 rawOffset;
+    u32 allocationSize;
     int blockOff = 0;
     int* table;
     int tableEntry;
@@ -1607,13 +1779,33 @@ MapBlockData* MapBlock_loadFromFile(int blockId)
     {
         return 0;
     }
-    buf = mmAlloc(decompressedSize, 5, 0);
-    if (buf == 0)
+    raw = mmAlloc(decompressedSize, 5, 0);
+    if (raw == 0)
     {
         return 0;
     }
-    loadAndDecompressDataFile(MLDF_FILEID_BLOCKS_BIN_A, buf, blockOff, compressedLen, 0, 0, 0);
-    return buf;
+    loadAndDecompressDataFile(MLDF_FILEID_BLOCKS_BIN_A, raw, blockOff, compressedLen, 0, 0, 0);
+    if (decompressedSize < 0xa4)
+    {
+        mm_free(raw);
+        return 0;
+    }
+    textureOffset = (sizeof(MapBlockData) + 15) & ~15;
+    displayListOffset = (textureOffset + raw[0xa0] * sizeof(MapTextureRef) + 15) & ~15;
+    shaderOffset = (displayListOffset + raw[0xa1] * sizeof(MapBlockBoundsRec) + 15) & ~15;
+    rawOffset = (shaderOffset + raw[0xa2] * sizeof(Shader) + 15) & ~15;
+    allocationSize = rawOffset + decompressedSize;
+    block = mmAlloc(allocationSize, 5, 0);
+    if (block == NULL)
+    {
+        mm_free(raw);
+        return 0;
+    }
+    memcpy((u8*)block + rawOffset, raw, decompressedSize);
+    mapBlockUnpackFile(block, (u8*)block + rawOffset, rawOffset, allocationSize,
+                       textureOffset, displayListOffset, shaderOffset);
+    mm_free(raw);
+    return block;
 }
 
 void mapBlockGpuRecoveryHook(void)

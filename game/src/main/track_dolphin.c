@@ -72,6 +72,8 @@ s16 gTrackTriangleCount;
 u8 gActiveTrackBlockCount;
 TrackGroundHit* gTrackGroundHitWriteCursor;
 TrackGroundHit** gTrackGroundHitPtrs;
+TrackGroundHit gTrackGroundHits[0x23];
+TrackGroundHit* gTrackGroundHitPointerStorage[0x23];
 s8 gTrackGroundHitCount;
 s16 gIntersectLineCount;
 s16 gIntersectPointCount;
@@ -1813,12 +1815,10 @@ void trackCollectGroundHits(TrackTriangle* triStart, TrackTriangle* triEnd, Trac
 }
 
 int trackGetHeight(GameObject* obj, f32 x, f32 y, f32 z, TrackGroundHit*** hitsOut, int mode, int queryMask) {
-    u8* base = (u8*)gIntersectSegmentTypeTable;
-    TrackBlockDescriptor* desc = (TrackBlockDescriptor*)(base + 0x424);
+    TrackBlockDescriptor* desc = gTrackBlockDescriptors;
     TrackBlockDescriptor* end;
-    u8* ptr;
     TrackGroundHit* hit;
-    int i, j;
+    int j;
     int sorted;
     int conv[6];
     f32 tx, ty, tz;
@@ -1839,10 +1839,10 @@ int trackGetHeight(GameObject* obj, f32 x, f32 y, f32 z, TrackGroundHit*** hitsO
         }
     }
 
-    gTrackGroundHitWriteCursor = (TrackGroundHit*)(base + 0xdc);
-    gTrackGroundHitPtrs = (TrackGroundHit**)(base + 0x50);
+    gTrackGroundHitWriteCursor = gTrackGroundHits;
+    gTrackGroundHitPtrs = gTrackGroundHitPointerStorage;
     gTrackGroundHitCount = 0;
-    end = (TrackBlockDescriptor*)(base + 0x424) + gActiveTrackBlockCount;
+    end = gTrackBlockDescriptors + gActiveTrackBlockCount;
     for (; desc < end; desc++) {
         if (gTrackGroundHitCount >= 0x23) {
             break;
@@ -1857,10 +1857,8 @@ int trackGetHeight(GameObject* obj, f32 x, f32 y, f32 z, TrackGroundHit*** hitsO
         }
     }
 
-    for (j = 0, ptr = base + 0xdc, i = 0; j < gTrackGroundHitCount; j++) {
-        *(u8**)((u8*)gTrackGroundHitPtrs + i) = ptr;
-        ptr += 0x18;
-        i += 4;
+    for (j = 0; j < gTrackGroundHitCount; j++) {
+        gTrackGroundHitPtrs[j] = &gTrackGroundHits[j];
     }
 
     sorted = 0;
@@ -1876,7 +1874,7 @@ int trackGetHeight(GameObject* obj, f32 x, f32 y, f32 z, TrackGroundHit*** hitsO
         }
     }
 
-    *hitsOut = (TrackGroundHit**)(base + 0x50);
+    *hitsOut = gTrackGroundHitPtrs;
     return gTrackGroundHitCount;
 }
 
@@ -2877,24 +2875,24 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
     f32 verts[3];
     f32 v0[3];
     f32 en[3];
-    u32 offA;
+    uintptr_t offA;
     int* firstp;
     int last;
     int mask16;
     int f40, f80, f200, f120, f20, f8, f100, f4;
     int gx0, gz0, gx1, gz1;
-    u32 offB;
+    uintptr_t offB;
     MapBlockData **cellp, **cw;
     int gx, gz;
     int count, layer;
     int *descp, *dw;
-    u32 offC;
+    uintptr_t offC;
     int relx0, relz0, relx1, relz1;
     int i;
     int vEnd;
     u8* triEnd;
     u8 typeb;
-    u32 bb;
+    uintptr_t bb;
     u32 dmaflip;
     f32* vertp;
     MapBlockData** p1;
@@ -2981,7 +2979,7 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
     for (; i < count; i++)
     {
         MapBlockData* blk;
-        int vb;
+        uintptr_t vb;
         u8* tri;
         s16 mask;
         s16 bit;

@@ -334,10 +334,8 @@ void getVisibleObjects(s8* opacity)
     u32 key;
     int depthInt;
     s8* cur;
-    u8* sub;
     GameObject* att;
     int j;
-    u8* interactState;
     ObjModel* model;
     u32 tf;
     u32 mode;
@@ -359,15 +357,13 @@ void getVisibleObjects(s8* opacity)
 
         o->objectFlags &= ~OBJECT_OBJFLAG_RENDERED;
         j = 0;
-        sub = (u8*)o;
         for (; j < o->childCount; j++)
         {
-            att = ((GameObject*)sub)->childObjs[0];
+            att = o->childObjs[j];
             if (att != NULL)
             {
                 att->objectFlags &= ~OBJECT_OBJFLAG_RENDERED;
             }
-            sub += 4;
         }
         if (i >= part)
         {
@@ -464,10 +460,10 @@ void getVisibleObjects(s8* opacity)
             }
             else
             {
-                interactState = (void*)o->anim.hitReactState;
-                if (interactState != NULL && (interactState[0x62] & 0x30) != 0)
+                ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)o->anim.hitReactState;
+                if (hitState != NULL && (hitState->shapeFlags & 0x30) != 0)
                 {
-                    interactState[0xaf] = 2;
+                    hitState->resetHitboxMode = 2;
                 }
             }
         }
@@ -935,4 +931,3 @@ void mapBlockRenderTransparent(MapBlockBoundsRec* bounds, MapBlockData* block, f
 void lightmapDrawQueuedObject(GameObject* obj);
 
 void sceneDrawTransparentPolys(void);
-

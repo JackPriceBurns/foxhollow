@@ -48,12 +48,14 @@ int AttractMovie_AssignBuffers(void* movieOrReadBuffer, void* yTextureBuffer, vo
         for (i = 0; i < 3; i++)
         {
             player->textureSet[i].yTexture = yTextureBuffer;
-            DCInvalidateRange(curr, yTextureSize);
+            DCInvalidateRange(yTextureBuffer, yTextureSize);
             player->textureSet[i].uTexture = uTextureBuffer;
-            DCInvalidateRange(curr, uvTextureSize);
+            DCInvalidateRange(uTextureBuffer, uvTextureSize);
             player->textureSet[i].vTexture = vTextureBuffer;
-            DCInvalidateRange(curr, uvTextureSize);
-            curr += uvTextureSize;
+            DCInvalidateRange(vTextureBuffer, uvTextureSize);
+            yTextureBuffer = (u8*)yTextureBuffer + yTextureSize;
+            uTextureBuffer = (u8*)uTextureBuffer + uvTextureSize;
+            vTextureBuffer = (u8*)vTextureBuffer + uvTextureSize;
         }
 
         player = &gAttractMoviePlayer;

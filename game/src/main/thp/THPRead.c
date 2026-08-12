@@ -81,7 +81,7 @@ static void* THPRead_Reader(void* unused) {
         OSSendMessage((OSMessageQueue*)(base + 0x13A8), (OSMessage)req, OS_MESSAGE_BLOCK);
 
         readOff += readSize;
-        readSize = *(u32*)req->ptr;
+        readSize = fhSwap32(*(u32*)req->ptr);
 
         {
             u32 cols = gAttractMoviePlayer.header.mNumFrames;

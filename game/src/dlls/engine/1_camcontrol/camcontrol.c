@@ -111,10 +111,8 @@ enum CamcontrolHandlerConstants {
 
 typedef struct CamcontrolStateStorage {
     CamcontrolCameraState state;
-    u8 pad144[4];
 } CamcontrolStateStorage;
 
-STATIC_ASSERT(sizeof(CamcontrolStateStorage) == 0x148);
 STATIC_ASSERT(offsetof(CamcontrolStateStorage, state) == 0x00);
 
 enum CamcontrolReticleBank {
@@ -332,7 +330,7 @@ int camcontrol_aButtonIconTextureCallback(GameObject* obj, void** objPtr, u32 re
     if (gCamcontrolCamera->targetKind == CAMCONTROL_TARGET_KIND_SUPPRESSED) {
         color.a = 0;
     }
-    addTexLayerStageKAlpha(textureIdxToPtr(renderOp->layers[0].textureIndex), NULL, 0, &color);
+    addTexLayerStageKAlpha(renderOp->layers[0].texture, NULL, 0, &color);
     Rcp_ApplyTextureStageCounts();
     if (color.a < 0xff) {
         GXSetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
@@ -374,13 +372,13 @@ int camcontrol_lockIconTextureCallback(GameObject* obj, int* modelPtr, int rende
         color.b = 0;
         alphaVal = ((obj->anim.alpha + 1) * CAMCONTROL_RETICLE_DIM_ALPHA_SCALE) >> 8;
         color.a = alphaVal;
-        addTexLayerStageKAlpha(textureIdxToPtr(renderOp->layers[0].textureIndex), NULL, 0, &color);
+        addTexLayerStageKAlpha(renderOp->layers[0].texture, NULL, 0, &color);
     } else {
         color.r = 0xff;
         color.g = 0xff;
         color.b = 0xff;
         color.a = obj->anim.alpha;
-        addTexLayerStageKAlpha(textureIdxToPtr(renderOp->layers[0].textureIndex), NULL, 0, &color);
+        addTexLayerStageKAlpha(renderOp->layers[0].texture, NULL, 0, &color);
     }
     Rcp_ApplyTextureStageCounts();
     if (obj->anim.alpha < 0xff || renderOp->layers[0].materialId <= tier) {

@@ -164,7 +164,7 @@ int objMatrixToRotation(f32* m, s16* outA, s16* outB, s16* outC)
 }
 
 
-void modelBuildPosNrmMtxs(u8* def, int* model, f32* mtxA, f32* mtxB)
+void modelBuildPosNrmMtxs(ModelFileHeader* def, int* model, f32* mtxA, f32* mtxB)
 {
     void* cache;
     int count;
@@ -175,7 +175,7 @@ void modelBuildPosNrmMtxs(u8* def, int* model, f32* mtxA, f32* mtxB)
     f32 fill;
 
     cache = getCache();
-    count = (s32)(u32)def[0xf3] + (s32)(u32)def[0xf4];
+    count = (s32)(u32)def->jointCount + (s32)(u32)def->extraJointCount;
     dstA = (MtxPtr)((u8*)cache + 0x2700);
     mid = (MtxPtr)cache;
     dstB = (MtxPtr)((u8*)cache + 0x12c0);
@@ -343,7 +343,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     fz = (f32)gObjFuzzLayerIndex / (f32)(s32)noiseFrameCount;
     fz = fz * fz;
     fz = fz / 2.0f;
-    selectTexture((Texture*)(textureIdxToPtr(*(u32*)Shader_getLayer(rop, 0))), 0);
+    selectTexture(((ShaderLayer*)Shader_getLayer(rop, 0))->texture, 0);
     GXSetTexCoordGen2(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     GXSetTevDirect(GX_TEVSTAGE0);
     GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD2, GX_TEXMAP0, GX_COLOR_NULL);
@@ -393,7 +393,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
     GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    selectTexture((Texture*)(textureIdxToPtr(rop->indTextureId)), 2);
+    selectTexture(rop->indTexture, 2);
     GXSetTexCoordGen2(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     GXSetIndTexOrder(GX_INDTEXSTAGE1, GX_TEXCOORD3, GX_TEXMAP2);
     GXSetIndTexCoordScale(GX_INDTEXSTAGE1, GX_ITS_1, GX_ITS_1);
@@ -529,7 +529,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         fz = (f32)gObjFuzzLayerIndex / (f32)(s32)noiseFrameCount;
         fz = fz / 2.0f;
     }
-    selectTexture((Texture*)(textureIdxToPtr(*(u32*)Shader_getLayer(rop, 0))), 0);
+    selectTexture(((ShaderLayer*)Shader_getLayer(rop, 0))->texture, 0);
     GXSetTexCoordGen2(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     if (lbl_803DCC36 == 0)
     {
@@ -675,7 +675,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     GXSetTevAlphaOp(stage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVPREV);
     if (rop->indTexture != NULL)
     {
-        selectTexture((Texture*)(textureIdxToPtr(rop->indTextureId)), 2);
+        selectTexture(rop->indTexture, 2);
         GXSetTexCoordGen2(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
         GXSetIndTexOrder(GX_INDTEXSTAGE1, GX_TEXCOORD3, GX_TEXMAP2);
         GXSetIndTexCoordScale(GX_INDTEXSTAGE1, GX_ITS_1, GX_ITS_1);
@@ -767,7 +767,7 @@ MtxPtr curObjMtx;
 u8 lbl_803DCC20;
 
 u32 lbl_803DB468 = 0xFFFFFFFF;
-u32 gObjGxDefaultChanColor = 0xFF;
+u32 gObjGxDefaultChanColor = 0xFF000000;
 u32 lbl_803DB470 = 0;
 u32 gObjGxVtxDescCache = 0xFFFFFFFF;
 u8 gObjGxBlendModeCache = 0xFF;
@@ -1006,7 +1006,7 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
                 GXSetChanAmbColor(ch, c);
             }
             {
-                u32 nl = ((u8*)obj->anim.modelInstance)[0x8c];
+                u32 nl = obj->anim.modelInstance->maxLights;
                 if (nl != 0)
                 {
                     modelLightStruct_selectObjectLights(obj, larr, nl, &count, mode);
@@ -1174,7 +1174,7 @@ static void modelLoadMtxsToGx(ModelFileHeader* hdr, int* model, MtxBitStream* bs
     }
 }
 
-static void renderOpMatrix(u8* hdr, int* model, MtxBitStream* bs, f32* m1, f32* mtx, u8 nrm, u8 tex, u8 skip)
+static void renderOpMatrix(ModelFileHeader* hdr, int* model, MtxBitStream* bs, f32* m1, f32* mtx, u8 nrm, u8 tex, u8 skip)
 {
     u8* posMtxIds[1];
     char* cache;
@@ -1191,14 +1191,14 @@ static void renderOpMatrix(u8* hdr, int* model, MtxBitStream* bs, f32* m1, f32* 
             char* cacheBase = (char*)getCache();
             char* posMtx;
             int i;
-            int total = hdr[0xf3] + hdr[0xf4];
-            hdr = (u8*)(cacheBase + 0x2700);
+            int total = hdr->jointCount + hdr->extraJointCount;
+            u8* sourceMtx = cacheBase + 0x2700;
             posMtx = cacheBase;
             cacheQueueWait(0);
             for (i = 0; i < total; i++)
             {
-                PSMTXConcat((MtxPtr)mtx, (MtxPtr)(f32*)hdr, (MtxPtr)(f32*)posMtx);
-                hdr += 0x40;
+                PSMTXConcat((MtxPtr)mtx, (MtxPtr)(f32*)sourceMtx, (MtxPtr)(f32*)posMtx);
+                sourceMtx += 0x40;
                 posMtx += 0x30;
             }
             gModelMtxCacheState = 2;
@@ -1303,7 +1303,7 @@ extern u8 gObjGxPosMtxIdTable[12];
 static void ModelHeader_setupPosTexFmt(u8* hdr, int* model, MtxBitStream* bs, int p4)
 {
     u32 flags = 0;
-    if (hdr[0xf3] > 1)
+    if (((ModelFileHeader*)hdr)->jointCount > 1)
     {
         flags |= 1;
     }
@@ -1365,7 +1365,7 @@ static void modelRenderFn_setVtxDescr(u8* modelHeader, u8* shader, ModelRenderOp
         previousMatrixAttr = 8;
         if (textureRefs->texture0 != NULL || textureRefs->texture1 != NULL)
         {
-            if (((Shader*)shader)->auxTextureIndex != 0)
+            if (((Shader*)shader)->auxTexture != NULL)
             {
                 GXSetVtxDesc(GX_VA_TEX0MTXIDX, GX_DIRECT);
                 nextMatrixAttr = GX_VA_TEX1MTXIDX;
@@ -1519,28 +1519,30 @@ static inline void texSlotGetScroll(GameObject* obj, u32 jid, f32* txp, f32* typ
     }
     *typ = *txp = 0.0f;
 }
-static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTextureRefs* p3, int mask, int p5, int p6)
+static u8 addShaderLayerStages(GameObject* obj, Shader* shader, ModelRenderOpTextureRefs* p3, int mask, int p5, int p6)
 {
     u16 alpha;
     u8* colp;
     void* tex;
-    u8* prev;
-    u8* layer;
+    ShaderLayer* prev;
+    ShaderLayer* layer;
     u8 ok;
     int layerIdx;
     u8 color[4];
+    u8* shaderBytes;
     f32 m[12];
 
     ok = 1;
+    shaderBytes = (u8*)shader;
     if (p3->texture0 != NULL || p3->texture1 != NULL)
     {
         int i;
         u8 cnt;
         cnt = 0;
-        for (i = 0; i < ((Shader*)shader)->layerCount; i++)
+        for (i = 0; i < shader->layerCount; i++)
         {
-            u8* l = Shader_getLayer(shader, i);
-            if (l[4] & 0x80)
+            ShaderLayer* l = Shader_getLayer(shader, i);
+            if (l->typeBits & 0x80)
             {
                 cnt++;
             }
@@ -1553,12 +1555,12 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
     layerIdx = 0;
     colp = &gObjCurChanColor.r;
     {
-        for (; layerIdx < ((Shader*)shader)->layerCount; layerIdx++)
+        for (; layerIdx < shader->layerCount; layerIdx++)
         {
             layer = Shader_getLayer(shader, layerIdx);
-            if ((layer[4] & 0x80) == mask)
+            if ((layer->typeBits & 0x80) == mask)
             {
-                if ((((Shader*)shader)->flags & SHADER_FLAG_DECAL_LAYER) && layerIdx == 1)
+                if ((shader->flags & SHADER_FLAG_DECAL_LAYER) && layerIdx == 1)
                 {
                     u8 hasBaseTexture;
                     if (p3->texture0 != NULL)
@@ -1572,14 +1574,14 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                     addLitColorStage(hasBaseTexture);
                     return 1;
                 }
-                alpha = ((obj->anim.renderAlpha + 1) * ((Shader*)shader)->alpha) >> 8;
-                if (*(u32*)layer != 0)
+                alpha = ((obj->anim.renderAlpha + 1) * shader->alpha) >> 8;
+                if (layer->texture != NULL)
                 {
                     f32 (*mtxp)[4];
                     u8 fl;
-                    tex = textureIdxToPtr(*(u32*)layer);
+                    tex = layer->texture;
                     {
-                        u32 jid = layer[5];
+                        u32 jid = layer->materialId;
                         if (jid != 0)
                         {
                             ObjTextureRuntimeSlot* slots = obj->anim.textureSlots;
@@ -1599,7 +1601,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                             {
                                 f32 tx;
                                 f32 ty;
-                                texSlotGetScroll(obj, layer[5], &tx, &ty);
+                                texSlotGetScroll(obj, layer->materialId, &tx, &ty);
                                 PSMTXTrans((MtxPtr)m, tx, ty, 0.0f);
                                 mtxp = (f32 (*)[4])m;
                             }
@@ -1623,20 +1625,20 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                     }
                     else
                     {
-                        fl = prev[4] & 0x7f;
+                        fl = prev->typeBits & 0x7f;
                         color[3] = 0xff;
                     }
                     color[0] = 0xff;
                     color[1] = 0xff;
                     color[2] = 0xff;
-                    if (p3->texture0 != NULL || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
+                    if (p3->texture0 != NULL || (shaderBytes[0] == 0xff && shaderBytes[1] == 0xff && shaderBytes[2] == 0xff))
                     {
                         addTexLayerStageSwizzled(tex, mtxp, (u8)fl, (GXColor*)color, p3->swapSelector, 1);
                     }
                     else if (p5 != 0)
                     {
                         colp[3] = color[3];
-                        if (((Shader*)shader)->vtxAttrFlags & 0x10)
+                        if (shader->vtxAttrFlags & 0x10)
                         {
                             addTexLayerStageKColor(tex, mtxp, (u8)fl, &gObjCurChanColor);
                         }
@@ -1647,7 +1649,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                     }
                     else
                     {
-                        if (((Shader*)shader)->vtxAttrFlags & 0x10)
+                        if (shader->vtxAttrFlags & 0x10)
                         {
                             addTexLayerStage(tex, mtxp, (u8)fl);
                             if (color[3] < 0xff)
@@ -1663,11 +1665,11 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                 }
                 else
                 {
-                    color[0] = shader[4];
-                    color[1] = shader[5];
-                    color[2] = shader[6];
+                    color[0] = shaderBytes[4];
+                    color[1] = shaderBytes[5];
+                    color[2] = shaderBytes[6];
                     color[3] = alpha;
-                    if (p3->texture0 != NULL || (shader[0] == 0xff && shader[1] == 0xff && shader[2] == 0xff))
+                    if (p3->texture0 != NULL || (shaderBytes[0] == 0xff && shaderBytes[1] == 0xff && shaderBytes[2] == 0xff))
                     {
                         addKColorModulateStage((GXColor*)color);
                     }
@@ -1678,7 +1680,7 @@ static u8 addShaderLayerStages(GameObject* obj, u8* shader, ModelRenderOpTexture
                     }
                     else
                     {
-                        if (((Shader*)shader)->vtxAttrFlags & 0x10)
+                        if (shader->vtxAttrFlags & 0x10)
                         {
                             addVertexColorStage();
                             if (color[3] < 0xff)
@@ -1733,17 +1735,25 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         idx = (w >> (pos & 7)) & 0x3f;
     }
     cb = (ObjModelRenderCb)ObjModel_GetRenderCallback((ObjModel*)am);
-    if (cb != NULL && cb((int*)obj, am, idx) != 0)
+    if (cb != NULL)
     {
-        return idx;
+        u8 callbackResult = cb((int*)obj, am, idx);
+        if (callbackResult != 0)
+        {
+            if (callbackResult == OBJMODEL_RENDER_CALLBACK_SKIP_DRAW)
+            {
+                return idx | 0x80000000U;
+            }
+            return idx;
+        }
     }
     op = ObjModel_GetRenderOp(((ObjModel*)am)->file, idx);
     refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
     Rcp_ResetTextureStageState();
     envtex = 0;
-    if ((refs->texture0 != NULL || refs->texture1 != NULL) && op->auxTextureIndex != 0)
+    if ((refs->texture0 != NULL || refs->texture1 != NULL) && op->auxTexture != NULL)
     {
-        void* t = textureIdxToPtr(op->auxTextureIndex);
+        void* t = op->auxTexture;
         int nl = gObjSelectedLightCount + 1;
         if (refs->texture0 != NULL)
         {
@@ -1753,7 +1763,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         {
             nl += 1;
         }
-        envtex = addEnvMapBumpStages(t, nl, op->envMapParams, op->layers[0].textureIndex);
+        envtex = addEnvMapBumpStages(t, nl, op->envMapParams, op->layers[0].texture);
         envtex &= 0xff;
     }
     if (refs->texture0 != NULL)
@@ -1860,13 +1870,12 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         u32 t18;
         if ((t18 = op->textureId) != 0 && op->unk1C == 0 && refs->texture1 != NULL)
         {
-            textureIdxToPtr(t18);
             addTexModulateReg2Stage();
         }
     }
     {
         u8 hl;
-        if (addShaderLayerStages(obj, (u8*)op, refs, 0x80, hl = ((((ModelFileHeader*)p2)->shaderFlags & 2) && !(((ModelFileHeader*)p2)->flags24 & 2)),
+        if (addShaderLayerStages(obj, op, refs, 0x80, hl = ((((ModelFileHeader*)p2)->shaderFlags & 2) && !(((ModelFileHeader*)p2)->flags24 & 2)),
                                    nlay) == 0)
         {
             u8 hasBaseTexture;
@@ -1882,16 +1891,16 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         }
         if (op->flags & SHADER_FLAG_DECAL_LAYER)
         {
-            u8* l1 = Shader_getLayer((u8*)op, 1);
+            ShaderLayer* l1 = Shader_getLayer(op, 1);
             {
                 f32 tx;
                 f32 ty;
-                texSlotGetScroll(obj, l1[5], &tx, &ty);
+                texSlotGetScroll(obj, l1->materialId, &tx, &ty);
                 PSMTXTrans((MtxPtr)m2, tx, ty, 0.0f);
             }
-            addWarpedNoiseTevStages(textureIdxToPtr(*(u32*)l1), m2);
+            addWarpedNoiseTevStages(l1->texture, m2);
         }
-        addShaderLayerStages(obj, (u8*)op, refs, 0, hl, nlay);
+        addShaderLayerStages(obj, op, refs, 0, hl, nlay);
     }
     if (isHeavyFogEnabled() && !(((ModelFileHeader*)p2)->flags & 0x100))
     {
@@ -2166,13 +2175,13 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
             gModelMtxCacheState = 3;
         }
         {
-            u8* att = (u8*)obj->anim.hitReactState;
-            if (att != NULL)
+            ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
+            if (hitState != NULL)
             {
-                att[0xaf]--;
-                if ((s8)((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode < 0)
+                hitState->resetHitboxMode--;
+                if ((s8)hitState->resetHitboxMode < 0)
                 {
-                    ((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode = 0;
+                    hitState->resetHitboxMode = 0;
                 }
             }
         }
@@ -2210,7 +2219,7 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
         {
             _gxSetFogParams();
             Rcp_ResetTextureStageState();
-            addTexLayerStageSwizzled(textureIdxToPtr(((ModelFileHeader*)m)->renderOps->layers[0].textureIndex), NULL,
+            addTexLayerStageSwizzled(((ModelFileHeader*)m)->renderOps->layers[0].texture, NULL,
                           0, (GXColor*)color, 0, 0);
             if (isHeavyFogEnabled() != 0)
             {
@@ -2228,7 +2237,7 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
     }
     else
     {
-        void* tex = textureIdxToPtr(((ModelFileHeader*)m)->renderOps->layers[0].textureIndex);
+        void* tex = ((ModelFileHeader*)m)->renderOps->layers[0].texture;
         if (gObjCachedTexture != (uintptr_t)tex)
         {
             gObjCachedTexture = (uintptr_t)tex;
@@ -2371,10 +2380,10 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
                 vtx = (u8*)((ModelFileHeader*)m)->vertices;
             }
             ObjModel_BlendVertexStream(
-                (u8*)gObjBoneMtxBuffer, m + 0x88, vtx,
+                (u8*)gObjBoneMtxBuffer, (ModelFileHeader*)m, vtx,
                 ((ObjModel*)am)->vertexAnimData,
                 ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
-            ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, m + 0xac,
+            ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, (ModelFileHeader*)m,
                                        ((ModelFileHeader*)m)->normals,
                                        (u8**)((ObjModel*)am)->blendAnimData,
                                        ((ModelFileHeader*)m)->flags24 & 8);
@@ -2385,13 +2394,13 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         }
         else
         {
-            u8* att = (u8*)obj->anim.hitReactState;
-            if (att != NULL)
+            ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
+            if (hitState != NULL)
             {
-                att[0xaf]--;
-                if ((s8)((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode < 0)
+                hitState->resetHitboxMode--;
+                if ((s8)hitState->resetHitboxMode < 0)
                 {
-                    ((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode = 0;
+                    hitState->resetHitboxMode = 0;
                 }
             }
         }
@@ -2570,6 +2579,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
     int* op;
     ModelRenderOpTextureRefs* refs;
     int done;
+    u8 skipCurrentRenderOp;
     f32 fade;
     f32 sc2;
     f32 sc;
@@ -2698,10 +2708,10 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                     vtx = (u8*)((ModelFileHeader*)m)->vertices;
                 }
                 ObjModel_BlendVertexStream(
-                    (u8*)gObjBoneMtxBuffer, m + 0x88, vtx,
+                    (u8*)gObjBoneMtxBuffer, (ModelFileHeader*)m, vtx,
                     ((ObjModel*)am)->vertexAnimData,
                     ((ObjModel*)am)->vtxBuf[(((ObjModel*)am)->bufferFlags >> 1) & 1]);
-                ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, m + 0xac,
+                ObjModel_BlendNormalStream((u8*)gObjBoneMtxBuffer, (ModelFileHeader*)m,
                                            ((ModelFileHeader*)m)->normals,
                                            (u8**)((ObjModel*)am)->blendAnimData,
                                            ((ModelFileHeader*)m)->flags24 & 8);
@@ -2713,13 +2723,13 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
         }
         else
         {
-            u8* att = (u8*)obj->anim.hitReactState;
-            if (att != NULL)
+            ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
+            if (hitState != NULL)
             {
-                att[0xaf]--;
-                if ((s8)((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode < 0)
+                hitState->resetHitboxMode--;
+                if ((s8)hitState->resetHitboxMode < 0)
                 {
-                    ((ObjHitsPriorityState*)obj->anim.hitReactState)->resetHitboxMode = 0;
+                    hitState->resetHitboxMode = 0;
                 }
             }
         }
@@ -2892,6 +2902,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
     GXSetArray(GX_VA_TEX0, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
     GXSetArray(GX_VA_TEX1, ((ModelFileHeader*)m)->texCoords, ((ModelFileHeader*)m)->texCoordCount * 4, 4, false);
     done = 0;
+    skipCurrentRenderOp = 0;
     while (!done)
     {
         u32 op4;
@@ -2916,6 +2927,8 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             if ((passMask == 0 || passMask == 4 || passMask == 8) && lbl_803DCC20 == 0)
             {
                 idx = objSetupRenderOpGxState(obj, m, am, &bs);
+                skipCurrentRenderOp = (idx & 0x80000000U) != 0;
+                idx &= 0x3f;
                 op = (int*)ObjModel_GetRenderOp((ModelFileHeader*)m, idx);
             }
             else
@@ -2928,13 +2941,14 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                 w |= *(pAddr + 1) << 16;
                 bs.pos = pos + 6;
                 idx = (w >> (pos & 7)) & 0x3f;
+                skipCurrentRenderOp = 0;
                 op = (int*)ObjModel_GetRenderOp((ModelFileHeader*)m, idx);
             }
             refs = ObjModel_GetRenderOpTextureRefs((ObjModel*)am, idx);
             break;
         }
         case 2:
-            if ((passMask != 4 && passMask != 8) || gObjFuzzPassActive != 0)
+            if (!skipCurrentRenderOp && ((passMask != 4 && passMask != 8) || gObjFuzzPassActive != 0))
             {
                 ModelDisplayListEntry* dl;
                 u32 w;
@@ -2953,7 +2967,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             }
             break;
         case 4:
-            renderOpMatrix(m, am, &bs, sm, vm, o9, o8, shadowPass);
+            renderOpMatrix((ModelFileHeader*)m, am, &bs, sm, vm, o9, o8, shadowPass);
             break;
         case 5:
             done = 1;
@@ -3114,12 +3128,6 @@ void objRenderFuzzShadowShells(GameObject* obj)
     }
 }
 
-/* seqIds that always get the strong, high-segment-count fuzz (retail
-   OBJECTS.bin names) */
-#define OBJPRINT_SEQID_FRONT_FOX   0x77d /* "FrontFox" (DLL 0x2C0) */
-#define OBJPRINT_SEQID_DIE_FOX     0x882 /* "DieFox" (DLL 0x10E) */
-#define OBJPRINT_SEQID_DIE_KRYSTAL 0x887 /* "DieKrystal" (DLL 0x10E) */
-
 void objRenderFuzz(GameObject* obj)
 {
     int n;
@@ -3130,16 +3138,10 @@ void objRenderFuzz(GameObject* obj)
     u8 strong;
     f32 dx, dy, dz, dist;
     Camera* cam = Camera_GetCurrent();
-    if ((obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) ||
-        obj->anim.mapEventSlot == 0x3f ||
-        obj->anim.romDefNo == OBJPRINT_SEQID_DIE_FOX ||
-        obj->anim.romDefNo == OBJPRINT_SEQID_DIE_KRYSTAL)
+    if ((obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) || obj->anim.mapEventSlot == 0x3f)
     {
         strong = 1;
-        if (obj->anim.classId == 1 ||
-            obj->anim.romDefNo == OBJPRINT_SEQID_FRONT_FOX ||
-            obj->anim.romDefNo == OBJPRINT_SEQID_DIE_FOX ||
-            obj->anim.romDefNo == OBJPRINT_SEQID_DIE_KRYSTAL)
+        if (obj->anim.classId == 1)
         {
             maxN = 0xf;
         }

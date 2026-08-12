@@ -187,6 +187,13 @@ void SeqObject_init(GameObject* obj, SeqObjectPlacement* placement) {
 
     objAnim = &obj->anim;
     state = obj->extra;
+    if (state->placementEndianConverted == 0) {
+        placement->openGameBit = (s16)fhSwap16((u16)placement->openGameBit);
+        placement->triggerGameBit = (s16)fhSwap16((u16)placement->triggerGameBit);
+        placement->preemptSequenceId = (s16)fhSwap16((u16)placement->preemptSequenceId);
+        placement->sequenceParam = fhSwap16(placement->sequenceParam);
+        state->placementEndianConverted = 1;
+    }
     objAnim->rotX = (s16)(placement->initialYaw << SEQ_OBJECT_ROTATION_SHIFT);
     obj->animEventCallback = SeqObject_animEventCallback;
     *(u8*)&objAnim->bankIndex = placement->modelBankIndex;

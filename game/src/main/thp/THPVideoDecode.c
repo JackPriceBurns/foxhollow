@@ -85,7 +85,7 @@ static void AttractMovieVideo_Decode(void* param) {
             break;
         }
         }
-        dvdData += *compSizes;
+        dvdData += fhSwap32(*compSizes);
         compSizes++;
         componentKind++;
         i++;
@@ -122,10 +122,10 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
                         if (!(player->playFlags & 1)) {
                             break; /* pos==cols-1, not looping: go to decode */
                         }
-                        frameSize = *(u32*)readBuffer.ptr;
+                        frameSize = fhSwap32(*(u32*)readBuffer.ptr);
                         readBuffer.ptr = player->loopFrame;
                     } else {
-                        u32 nextSize = *(u32*)readBuffer.ptr;
+                    u32 nextSize = fhSwap32(*(u32*)readBuffer.ptr);
                         readBuffer.ptr += frameSize;
                         frameSize = nextSize;
                     }
@@ -144,13 +144,13 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
             u32 pos = sum % (cols = player->header.mNumFrames);
             if (pos == cols - 1) {
                 if (player->playFlags & 1) {
-                    frameSize = *(u32*)readBuffer.ptr;
+                    frameSize = fhSwap32(*(u32*)readBuffer.ptr);
                     readBuffer.ptr = player->loopFrame;
                 } else {
                     OSSuspendThread(&gPicMenuVideoDecodeThread);
                 }
             } else {
-                u32 nextSize = *(u32*)readBuffer.ptr;
+                u32 nextSize = fhSwap32(*(u32*)readBuffer.ptr);
                 readBuffer.ptr += frameSize;
                 frameSize = nextSize;
             }

@@ -15,6 +15,7 @@
 #include "main/textrender_api.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_0035_saveselectscreen.h"
+#include "main/dll/FRONT/title_menu.h"
 #include "main/gametext_color_api.h"
 #include "main/gametext_internal.h"
 #include "main/vecmath.h"
@@ -93,9 +94,9 @@ extern LinkMenuItem gLinkMenuItems[40];
 
 void linkInitTextures(LinkMenuItem* item);
 void Link_resetTimers(void);
-void Link_copy(u8* srcArg);
+void Link_copy(void* srcArg);
 u8 Link_getPulse(void);
-void Link_updateItems(u8* srcArg);
+void Link_updateItems(void* srcArg);
 void Link_setItemState(int idx, int v);
 s32 Link_getItemState(int idx);
 void Link_setOpacity(u8 v);
@@ -103,7 +104,7 @@ void Link_setSelected(int v);
 s32 Link_getSelected(void);
 void Link_render(void);
 void Link_free(void);
-void Link_setup(LinkMenuItem* items, int count, int selected, const char* defaultMessage, int unused1, int unused2,
+void Link_setup(TitleMenuTextEntry* items, int count, int selected, const char* defaultMessage, int unused1, int unused2,
                 int baseRed, int baseGreen, int baseBlue, int selectedRed, int selectedGreen, int selectedBlue);
 void Link_release(void);
 void Link_initialise(void);
@@ -302,17 +303,17 @@ void Link_resetTimers(void)
         gLinkMenuItems[i].timer = 4;
     }
 }
-void Link_copy(u8* srcArg)
+void Link_copy(void* srcArg)
 {
     LinkMenuItem* dst;
-    LinkMenuItem* src;
+    TitleMenuTextEntry* src;
     int i;
 
     i = 0;
     for (; i < gLinkItemCount; i++)
     {
         dst = &gLinkMenuItems[i];
-        src = &((LinkMenuItem*)srcArg)[i];
+        src = &((TitleMenuTextEntry*)srcArg)[i];
         dst->flags = src->flags;
         dst->upLink = src->upLink;
         dst->rightX = src->rightX;
@@ -338,12 +339,12 @@ u8 Link_getPulse(void)
 {
     return gLinkPulse;
 }
-void Link_updateItems(u8* srcArg)
+void Link_updateItems(void* srcArg)
 {
-    LinkMenuItem* src;
+    TitleMenuTextEntry* src;
     int i;
 
-    src = (LinkMenuItem*)srcArg;
+    src = (TitleMenuTextEntry*)srcArg;
     for (i = 0; i < gLinkItemCount; i++)
     {
         gLinkMenuItems[i].textId = src[i].textId;
@@ -506,7 +507,7 @@ void Link_render(void)
                 }
                 else if (textId != 0xffff)
                 {
-                    gameTextShowStr((char*)saveFileSelect_saveSlots + textId * 0x24, drawItem->boxId, 0, 0);
+                    gameTextShowStr(saveFileSelect_saveSlots[textId].name, drawItem->boxId, 0, 0);
                 }
 
                 if (drawItem->texture != NULL)
@@ -704,7 +705,7 @@ void Link_free(void)
     }
     gLinkItemCount = 0;
 }
-void Link_setup(LinkMenuItem* items, int count, int selected, const char* defaultMessage, int unused1, int unused2,
+void Link_setup(TitleMenuTextEntry* items, int count, int selected, const char* defaultMessage, int unused1, int unused2,
                 int baseRed, int baseGreen, int baseBlue, int selectedRed, int selectedGreen, int selectedBlue)
 {
     int i;
@@ -722,11 +723,26 @@ void Link_setup(LinkMenuItem* items, int count, int selected, const char* defaul
         gLinkPulseDir = 0;
         gLinkInputEnabled = 0;
 
-        memcpy(gLinkMenuItems, items, count * sizeof(LinkMenuItem));
-
         for (i = 0; i < count; i++)
         {
             item = &gLinkMenuItems[i];
+            memset(item, 0, sizeof(*item));
+            item->textId = items[i].textId;
+            item->boxId = items[i].boxId;
+            item->rightX = items[i].rightX;
+            item->textTop = items[i].textTop;
+            item->slotWidth = items[i].slotWidth;
+            item->x = items[i].x;
+            item->y = items[i].y;
+            item->width = items[i].width;
+            item->flags = items[i].flags;
+            item->upLink = items[i].upLink;
+            item->downLink = items[i].downLink;
+            item->leftLink = items[i].leftLink;
+            item->rightLink = items[i].rightLink;
+            item->state = items[i].state;
+            memcpy(item->slots, items[i].slots, sizeof(item->slots));
+            item->timer = items[i].timer;
             if ((item->upLink < -1) || (item->upLink >= count))
             {
                 OSReport(errBase + 0xa4, item->upLink);
@@ -890,4 +906,3 @@ char sLinkSlotOverflowErr[] = {
     0x3D, 0x25, 0x64, 0x0A, 0x00, 0x00, 0x00, 0x52, 0x49, 0x47, 0x48, 0x54, 0x4C, 0x49, 0x4E, 0x4B, 0x20,
     0x6F, 0x76, 0x65, 0x72, 0x66, 0x6C, 0x6F, 0x77, 0x3D, 0x25, 0x64, 0x0A, 0x00, 0x00,
 };
-

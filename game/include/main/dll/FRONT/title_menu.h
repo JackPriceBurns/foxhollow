@@ -17,12 +17,7 @@ typedef struct TitleMenuTextEntry {
   s16 y;
   u8 pad0E[2];
 
-  union
-  {
-    s32 textureAssetId;
-    void* texture;
-  };
-
+  s32 textureAssetId;
   u16 width;
   u16 flags;
   u8 unk18[2];

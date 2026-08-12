@@ -6,6 +6,8 @@
 #include "game/objects/object_setup.h"
 #include "main/objseq.h"
 
+typedef struct ModelLightStruct ModelLightStruct;
+
 /*
  * Only the placement prefix consumed by this DLL is modeled. The active-target
  * retail placement width is not available, so this does not claim a complete
@@ -25,7 +27,7 @@ typedef struct Dll1F5PlacementView {
  */
 typedef struct Dll1F5State {
     ObjSeqState sequence;
-    u8 unknown138[0x08];
+    ModelLightStruct* light;
 } Dll1F5State;
 
 STATIC_ASSERT(offsetof(Dll1F5PlacementView, base) == 0x00);
@@ -35,7 +37,7 @@ STATIC_ASSERT(offsetof(Dll1F5PlacementView, unknown1C) == 0x1C);
 STATIC_ASSERT(offsetof(Dll1F5PlacementView, dampingDivisor) == 0x24);
 
 STATIC_ASSERT(offsetof(Dll1F5State, sequence) == 0x00);
-STATIC_ASSERT(offsetof(Dll1F5State, unknown138) == 0x138);
+STATIC_ASSERT(offsetof(Dll1F5State, light) == 0x138);
 STATIC_ASSERT(sizeof(Dll1F5State) == 0x140);
 
 int dll501_getExtraSize(void);

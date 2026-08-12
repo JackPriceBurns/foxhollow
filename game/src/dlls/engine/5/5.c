@@ -79,6 +79,13 @@ u8* gSkyState;
 u16 gSkyMoonAlpha;
 u16 gSkySunAlpha;
 
+#ifdef TARGET_PC
+static Texture* gSkyTextureSlots[5];
+#define SKY_TEXTURE_SLOT(index) gSkyTextureSlots[index]
+#else
+#define SKY_TEXTURE_SLOT(index) ((Texture**)gSkyState)[index]
+#endif
+
 
 /* gSkyEnvFxFlags: per-group env-FX trigger enables + update state */
 #define SKY_ENVFX_GROUP_C        0x01 /* gSkyEnvFxGroupCTable group (GameBit 0x3ab) */
@@ -1571,7 +1578,7 @@ void skyRenderTimeOfDayBackdrop(void)
     int gradB;
     u32 texHeight;
     u32 screenRes;
-    int texHandle;
+    Texture* texHandle;
     f32 u;
     f32 frac;
     f32 t;
@@ -1647,28 +1654,28 @@ void skyRenderTimeOfDayBackdrop(void)
             texB = sky[(phase + 1) % 8 + 0x87];
             if (((SkyTimeBlend*)sky)->texAId != texA)
             {
-                textureFree((Texture*)((void*)sky[0]));
-                *(void**)gSkyState = textureLoadAsset(texA);
+                textureFree(SKY_TEXTURE_SLOT(0));
+                SKY_TEXTURE_SLOT(0) = textureLoadAsset(texA);
                 ((SkyTimeBlend*)gSkyState)->texAId = texA;
             }
             sky = *(int**)&gSkyState;
             if (((SkyTimeBlend*)sky)->texBId != texB)
             {
-                textureFree((Texture*)((void*)sky[1]));
-                ((SkyTimeBlend*)gSkyState)->texB = textureLoadAsset(texB);
+                textureFree(SKY_TEXTURE_SLOT(1));
+                SKY_TEXTURE_SLOT(1) = textureLoadAsset(texB);
                 ((SkyTimeBlend*)gSkyState)->texBId = texB;
             }
             ((SkyTimeBlend*)gSkyState)->prevPhase = (s8)((SkyTimeBlend*)gSkyState)->phase;
         }
-        blendTextures(((SkyTimeBlend*)gSkyState)->texB, ((SkyTimeBlend*)gSkyState)->texA, tc,
-                      (void*)(*(int**)&gSkyState)[((SkyTimeBlend*)gSkyState)->texSel + 2]);
+        blendTextures(SKY_TEXTURE_SLOT(1), SKY_TEXTURE_SLOT(0), tc,
+                      SKY_TEXTURE_SLOT(((SkyTimeBlend*)gSkyState)->texSel + 2));
         ((SkyState*)gSkyState)->fadeFlags.fadePending = 1;
         sky = *(int**)&gSkyState;
         blend = ((SkyTimeBlend*)sky)->blend;
         if (blend)
         {
-            texHandle = sky[((SkyTimeBlend*)sky)->texSel + 2];
-            blendTextures((void*)sky[4], (void*)texHandle, blend, (void*)texHandle);
+            texHandle = SKY_TEXTURE_SLOT(((SkyTimeBlend*)sky)->texSel + 2);
+            blendTextures(SKY_TEXTURE_SLOT(4), texHandle, blend, texHandle);
         }
         sky = *(int**)&gSkyState;
         idxA = (s16)(sky[((SkyTimeBlend*)sky)->phase + 0x87] - 0xc38) * 6;
@@ -1697,7 +1704,7 @@ void skyRenderTimeOfDayBackdrop(void)
         gradA = channel[idxA];
         gradB = channel[idxB];
         gSkyCurrentAmbientColor.b = (u8)(int)(tc * (f32)(gradB - gradA) + (f32)(u32)gradA);
-        texC = (Texture*)sky[((SkyTimeBlend*)sky)->texSel + 2];
+        texC = SKY_TEXTURE_SLOT(((SkyTimeBlend*)sky)->texSel + 2);
         cam = Camera_GetCurrent();
         frac = Camera_GetFovY();
         frac = frac / 2.0f;
@@ -2010,19 +2017,22 @@ void skyResetState(void)
     {
         if (gSkyState != NULL)
         {
-            if (*(u8**)gSkyState != NULL)
+            if (SKY_TEXTURE_SLOT(0) != NULL)
             {
-                textureFree((Texture*)(*(u8**)gSkyState));
+                textureFree(SKY_TEXTURE_SLOT(0));
             }
-            if (((SkyState*)gSkyState)->handle != NULL)
+            if (SKY_TEXTURE_SLOT(1) != NULL)
             {
-                textureFree((Texture*)(((SkyState*)gSkyState)->handle));
+                textureFree(SKY_TEXTURE_SLOT(1));
             }
-            mm_free(((SkyState*)gSkyState)->texture0);
-            mm_free(((SkyState*)gSkyState)->texture1);
+            mm_free(SKY_TEXTURE_SLOT(2));
+            mm_free(SKY_TEXTURE_SLOT(4));
             mm_free(gSkyState);
         }
         gSkyState = NULL;
+#ifdef TARGET_PC
+        memset(gSkyTextureSlots, 0, sizeof(gSkyTextureSlots));
+#endif
     }
     gSkyState = mmAlloc(sizeof(SkyState), 0x17, 0);
     memset(gSkyState, 0, sizeof(SkyState));
@@ -2042,13 +2052,13 @@ void skyResetState(void)
     ((SkyState*)gSkyState)->skyTextureIds[5] = 0xc38;
     ((SkyState*)gSkyState)->skyTextureIds[6] = 0xc38;
     ((SkyState*)gSkyState)->skyTextureIds[7] = 0xc38;
-    *(u8**)gSkyState = textureLoadAsset(((SkyState*)gSkyState)->skyTextureIds[0]);
-    ((SkyState*)gSkyState)->handle = textureLoadAsset(((SkyState*)gSkyState)->skyTextureIds[1]);
+    SKY_TEXTURE_SLOT(0) = textureLoadAsset(((SkyState*)gSkyState)->skyTextureIds[0]);
+    SKY_TEXTURE_SLOT(1) = textureLoadAsset(((SkyState*)gSkyState)->skyTextureIds[1]);
     ((SkyState*)gSkyState)->textureId0 = 0xc38;
     ((SkyState*)gSkyState)->textureId1 = 0xc38;
-    tex0 = (Texture*)*(u8**)gSkyState;
-    ((SkyState*)gSkyState)->texture0 = textureAlloc(tex0->width, tex0->height, 6, 0, 0, 1, 0, 1, 1);
-    ((SkyState*)gSkyState)->texture1 = textureAlloc(tex0->width, tex0->height, 6, 0, 0, 1, 0, 1, 1);
+    tex0 = SKY_TEXTURE_SLOT(0);
+    SKY_TEXTURE_SLOT(2) = textureAlloc(tex0->width, tex0->height, 6, 0, 0, 1, 0, 1, 1);
+    SKY_TEXTURE_SLOT(4) = textureAlloc(tex0->width, tex0->height, 6, 0, 0, 1, 0, 1, 1);
     for (i = 0; i < 3; i++)
     {
         for (j = 0; j < 3; j++)
@@ -2106,7 +2116,7 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
     SkyState* slot;
     u32 cloudMode;
     int vis;
-    int tmp;
+    Texture* tmp;
 
     envp = (s16*)saveGameGetEnvState();
     if (cfg != NULL && ((int)((Sky2Config*)cfg)->flags & 2) != 0)
@@ -2222,9 +2232,9 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
             ((SkyState*)gSkyState)->skyTextureIds[5] = ((Sky2Config*)cfg)->skyTexId5 + 0xc38;
             ((SkyState*)gSkyState)->skyTextureIds[6] = ((Sky2Config*)cfg)->skyTexId6 + 0xc38;
             ((SkyState*)gSkyState)->skyTextureIds[7] = ((Sky2Config*)cfg)->skyTexId7 + 0xc38;
-            tmp = (int)((SkyState*)gSkyState)->texture1;
-            ((SkyState*)gSkyState)->texture1 = (void*)*(int*)((u8*)&((SkyState*)gSkyState)->texture0 + ((SkyState*)gSkyState)->swapTexIndex * 4);
-            *(int*)((u8*)&((SkyState*)gSkyState)->texture0 + ((SkyState*)gSkyState)->swapTexIndex * 4) = tmp;
+            tmp = SKY_TEXTURE_SLOT(4);
+            SKY_TEXTURE_SLOT(4) = SKY_TEXTURE_SLOT(((SkyState*)gSkyState)->swapTexIndex + 2);
+            SKY_TEXTURE_SLOT(((SkyState*)gSkyState)->swapTexIndex + 2) = tmp;
             ((SkyState*)gSkyState)->unk250 = -1;
             if (((SkyState*)gSkyState)->fadeFlags.fadePending != 0)
             {

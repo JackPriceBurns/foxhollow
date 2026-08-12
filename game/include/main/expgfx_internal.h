@@ -133,6 +133,7 @@
 #define EXPGFX_SLOT_STATE_FRAME_PARITY 0x01
 #define EXPGFX_SLOT_STATE_QUAD_READY 0x02
 #define EXPGFX_SLOT_STATE_INIT_PHASE_MASK 0x0C
+#define EXPGFX_SLOT_STATE_INIT_PHASE_SHIFT 2
 #define EXPGFX_TRACKED_POOL_MASK_WORD_STRIDE 2
 #define EXPGFX_SOURCE_FRAME_STATE_NONE 0
 #define EXPGFX_SOURCE_FRAME_STATE_A 1
@@ -180,19 +181,18 @@ STATIC_ASSERT(sizeof(ExpgfxFloatWord) == 4);
  */
 typedef struct ExpgfxTableEntry {
   /* The add/remove paths key entries by source identity plus an optional attached-source key. */
-  u32 sourceId;
-  u32 attachedTableKey;
-  u32 resource;
+  uintptr_t sourceId;
+  uintptr_t attachedTableKey;
+  void* resource;
   u16 refCount;
   s16 resourceId;
 } ExpgfxTableEntry;
 
-STATIC_ASSERT(sizeof(ExpgfxTableEntry) == EXPGFX_TABLE_ENTRY_SIZE);
 STATIC_ASSERT(offsetof(ExpgfxTableEntry, sourceId) == 0x00);
-STATIC_ASSERT(offsetof(ExpgfxTableEntry, attachedTableKey) == 0x04);
-STATIC_ASSERT(offsetof(ExpgfxTableEntry, resource) == 0x08);
-STATIC_ASSERT(offsetof(ExpgfxTableEntry, refCount) == 0x0C);
-STATIC_ASSERT(offsetof(ExpgfxTableEntry, resourceId) == 0x0E);
+STATIC_ASSERT(offsetof(ExpgfxTableEntry, attachedTableKey) == sizeof(uintptr_t));
+STATIC_ASSERT(offsetof(ExpgfxTableEntry, resource) == sizeof(uintptr_t) * 2);
+STATIC_ASSERT(offsetof(ExpgfxTableEntry, refCount) == sizeof(uintptr_t) * 3);
+STATIC_ASSERT(offsetof(ExpgfxTableEntry, resourceId) == sizeof(uintptr_t) * 3 + sizeof(u16));
 
 #define EXPGFX_EXPTAB_BYTES (EXPGFX_EXPTAB_ENTRY_COUNT * sizeof(ExpgfxTableEntry))
 
@@ -306,16 +306,6 @@ STATIC_ASSERT(offsetof(ExpgfxResourceEntry, resourceId) == 0x08);
 STATIC_ASSERT(offsetof(ExpgfxResourceEntry, reserved) == 0x0C);
 STATIC_ASSERT(sizeof(ExpgfxResourceEntry) == 0x10);
 
-typedef struct ExpgfxResourceHandle {
-  u8 pad00[0x0E];
-  u16 refCount;
-  u8 pad10[0x14 - 0x10];
-  u16 linkGroup;
-} ExpgfxResourceHandle;
-
-STATIC_ASSERT(offsetof(ExpgfxResourceHandle, refCount) == 0x0E);
-STATIC_ASSERT(offsetof(ExpgfxResourceHandle, linkGroup) == 0x14);
-
 /*
  * Recovered shape of the static expgfx data blob. The warning strings and
  * quad templates sit in the same source corridor as the exptab diagnostics,
@@ -353,7 +343,7 @@ typedef struct ExpgfxRuntimeDataLayout {
   ExpgfxBounds poolBounds[EXPGFX_POOL_COUNT];
   ExpgfxTableEntry expTab[EXPGFX_EXPTAB_ENTRY_COUNT];
   u8 poolSourceModes[EXPGFX_POOL_COUNT];
-  u32 poolSourceIds[EXPGFX_POOL_COUNT];
+  uintptr_t poolSourceIds[EXPGFX_POOL_COUNT];
   s64 trackedSourceFrameMasks[2];
   u8 poolPlaneOffsetSetIds[EXPGFX_POOL_COUNT];
   s8 poolActiveCounts[EXPGFX_POOL_COUNT];
@@ -373,14 +363,8 @@ STATIC_ASSERT(offsetof(ExpgfxRuntimeDataLayout, poolActiveMasks) == EXPGFX_POOL_
 STATIC_ASSERT(offsetof(ExpgfxRuntimeDataLayout, slotPoolBases) == EXPGFX_SLOT_POOL_BASES_OFFSET);
 STATIC_ASSERT(sizeof(ExpgfxRuntimeDataLayout) == 0x1340);
 
-typedef union ExpgfxSlotStateBits {
+typedef struct ExpgfxSlotStateBits {
   u8 value;
-  struct {
-    u8 padHi : 4;
-    u8 initPhase : 2;
-    u8 quadReady : 1;
-    u8 frameParity : 1;
-  } bits;
 } ExpgfxSlotStateBits;
 
 /*
@@ -486,7 +470,7 @@ extern s16 gExpgfxSequenceCounter;
 extern u8 gExpgfxFrameParityBit;
 extern u8 gExpgfxUpdatingActivePools;
 extern u8 gExpgfxRenderResetPending;
-extern int gExpgfxLastAddedSlot;
+extern uintptr_t gExpgfxLastAddedSlot;
 extern char sExpgfxAddToTableUsageOverflow[];
 extern char sExpgfxExpTabIsFull[];
 extern char sExpgfxInvalidTabIndex[];

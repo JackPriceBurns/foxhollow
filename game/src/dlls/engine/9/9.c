@@ -71,11 +71,11 @@ void cloudSetOverridePosition(f32 a, f32 b, f32 c)
 void* cloudGetLayerTexture(f32* out1, f32* out2)
 {
     ObjTextureRuntimeSlot* tex;
-    int* layer;
+    ShaderLayer* layer;
 
     if (gCloudActionRuntime.mainCloudObj != NULL)
     {
-        layer = (int*)Shader_getLayer(ObjModel_GetRenderOp(Obj_GetActiveModel(gCloudActionRuntime.mainCloudObj)->file, 0), 0);
+        layer = Shader_getLayer(ObjModel_GetRenderOp(Obj_GetActiveModel(gCloudActionRuntime.mainCloudObj)->file, 0), 0);
         tex = objFindTexture((GameObject*)(gCloudActionRuntime.mainCloudObj), 0, 0);
         if (tex != NULL)
         {
@@ -89,7 +89,7 @@ void* cloudGetLayerTexture(f32* out1, f32* out2)
             *out1 = d;
             *out2 = d;
         }
-        return textureIdxToPtr(*layer);
+        return layer->texture;
     }
     {
         f32 d = 0.0f;

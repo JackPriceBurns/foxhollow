@@ -6647,7 +6647,7 @@ int playerStateOnBike(GameObject* obj, PlayerState* state)
     }
     if (((PlayerState*)state)->baddie.moveJustStartedA != 0)
     {
-        if (*(void**)((char*)inner + 0x6e8) == NULL)
+        if (inner->moveSequence == NULL)
         {
             inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[0];
         }
@@ -6764,7 +6764,7 @@ int playerStateMountBike(GameObject* obj, PlayerState* state, f32 fv)
         switch (sub->anim.romDefNo)
         {
         case 0x72:
-            inner->moveSequence = base + 0x3f0;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[0];
             inner->moveSequenceFlags = 3;
             if (coordsToMapCell(obj->anim.localPosX, obj->anim.localPosZ) == 0x13)
             {
@@ -6773,27 +6773,27 @@ int playerStateMountBike(GameObject* obj, PlayerState* state, f32 fv)
             (*gCameraInterface)->setMode(0x45, 1, 0, 0, NULL, 0, 0xff);
             break;
         case 0x38c:
-            inner->moveSequence = base + 0x3f0;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[0];
             inner->moveSequenceFlags = 3;
             (*gCameraInterface)->setFocus((void*)sub, 0);
             (*gCameraInterface)->setMode(0x45, 1, 0, 0, NULL, 0, 0xff);
             break;
         case 0x419:
-            inner->moveSequence = base + 0x420;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[2];
             (*gCameraInterface)->setMode(CAMERA_MODE_CLOUDRUNNER_RESOURCE_ID, 1, 0, 0, NULL, 0x2d, 0xff);
             break;
         case 0x416:
-            inner->moveSequence = base + 0x438;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[3];
             inner->moveSequenceFlags = 8;
             (*gCameraInterface)->setFocus((void*)sub, 0);
             (*gCameraInterface)->loadTriggeredCamAction(0, 0x69, 0);
             break;
         case 0x8c:
-            inner->moveSequence = base + 0x408;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[1];
             inner->moveSequenceFlags = 4;
             break;
         default:
-            inner->moveSequence = base + 0x420;
+            inner->moveSequence = (char*)gPlayerMotionTuning.moveSequences[2];
             inner->moveSequenceFlags = 4;
             (*gCameraInterface)->loadTriggeredCamAction(0, 0x1d, 0);
             break;
@@ -15698,7 +15698,7 @@ void playerUpdateMotionState(GameObject* obj, void* inner, BaddieState* baddieSt
         ((PlayerState*)inner)->bodyLeanRateSigned = ((PlayerState*)inner)->bodyLeanRate;
     }
     ((PlayerState*)inner)->cameraTargetObject = (void*)(*gCameraInterface)->getTarget();
-    cam = (GameObject*)*(char**)((char*)inner + 0x4b8);
+    cam = ((PlayerState*)inner)->cameraTargetObject;
     if (cam != NULL)
     {
         dx = cam->anim.localPosX - obj->anim.localPosX;
@@ -16933,12 +16933,12 @@ int player_SeqFn(GameObject* obj, GameObject* obj2, ObjSeqState* seq, int endFla
                     case 0x38c:
                         Music_Trigger(MUSICTRIG_drako_2, 1);
                         mainSetBits(0xc1f, 0);
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x3f0;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[0];
                         ((PlayerState*)inner)->moveSequenceFlags = 3;
                         ObjAnim_SetCurrentMove(obj, 0x17, 0.0f, 1);
                         break;
                     case 0x8c:
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x408;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[1];
                         ((PlayerState*)inner)->moveSequenceFlags = 4;
                         ObjAnim_SetCurrentMove(obj, 0x7b, 0.0f, 1);
                         if (getSbGalleon() != NULL)
@@ -16949,26 +16949,26 @@ int player_SeqFn(GameObject* obj, GameObject* obj2, ObjSeqState* seq, int endFla
                         break;
                     case 0x416:
                         Music_Trigger(MUSICTRIG_WLC_Puzzle, 1);
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x438;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[3];
                         ((PlayerState*)inner)->moveSequenceFlags = 8;
-                        ObjAnim_SetCurrentMove(obj, *(s16*)(tbl + 0x438), 0.0f, 1);
+                        ObjAnim_SetCurrentMove(obj, gPlayerMotionTuning.moveSequences[3][0], 0.0f, 1);
                         break;
                     case 0x419:
                         Music_Trigger(MUSICTRIG_starfox_rwing_1_e6, 1);
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x408;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[1];
                         ((PlayerState*)inner)->moveSequenceFlags = 4;
                         ObjAnim_SetCurrentMove(obj, 0x7b, 0.0f, 1);
                         break;
                     case 0x484:
                         Music_Trigger(MUSICTRIG_starfox_rwing_1_e6, 1);
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x420;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[2];
                         ((PlayerState*)inner)->moveSequenceFlags = 4;
                         ObjAnim_SetCurrentMove(obj, 0xf8, 0.0f, 1);
                         break;
                     default:
                         Music_Trigger(MUSICTRIG_inside_warlock, 1);
                     case 0x714:
-                        ((PlayerState*)inner)->moveSequence = tbl + 0x420;
+                        ((PlayerState*)inner)->moveSequence = (char*)gPlayerMotionTuning.moveSequences[2];
                         ((PlayerState*)inner)->moveSequenceFlags = 4;
                         ObjAnim_SetCurrentMove(obj, 0xf8, 0.0f, 1);
                     }
@@ -18379,6 +18379,7 @@ void objLoadPlayerFromSave(GameObject* obj)
     gPlayerChildObject = NULL;
     inner->flags3F4.b40 = 1;
     inner->moveAnimTable = base + 0x190;
+    inner->moveParams = base + 0x390;
     inner->moveSlots = base + 0x854;
     inner->moveSlotCount = 0x1c;
     inner->paramCurve0 = base + 0x450;

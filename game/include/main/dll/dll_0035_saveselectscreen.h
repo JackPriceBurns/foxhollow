@@ -16,7 +16,7 @@ extern FrontendSaveSlot* saveFileSelect_saveSlotsBase;
 extern FrontendSaveSlot* saveFileSelect_saveSlots;
 extern u16 saveFileSelect_debugCheatSequence[6];
 extern u16 saveFileSelect_slotCheatSequence[6];
-extern char sFrontendCompletionPercentFormat[5];
+extern char sFrontendCompletionPercentFormat[];
 extern char sFrontendSingleDigitFormat[4];
 extern char sFrontendTimeFormat[14];
 

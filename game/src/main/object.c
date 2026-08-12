@@ -1207,7 +1207,7 @@ u8* loadObjectFile(int id)
         buf->avoidRadiusX = fhSwap16(*(u16*)(blob + 0x84));
         buf->avoidRadiusZ = fhSwap16(*(u16*)(blob + 0x86));
         buf->shadowModelScaleBase = *(f32*)&(u32){fhSwap32(*(u32*)(blob + 0x88))};
-        memcpy(&buf->pad8C, blob + 0x8c, 3);
+        memcpy(&buf->maxLights, blob + 0x8c, 5);
         for (mi = 0; mi < buf->modelCount; mi++)
         {
             buf->modelFileIds[mi] = (s32)fhSwap32((u32)buf->modelFileIds[mi]);
@@ -1768,10 +1768,10 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags)
     }
     if (modelDef->hitboxStateCount != 0)
     {
-        size = roundUpTo4(size) + 0xb8;
+        size = roundUpTo4(size) + sizeof(ObjHitsPriorityState);
         if ((s8)modelDef->primaryHitboxShapeFlags & 8)
         {
-            size += 0x110;
+            size += sizeof(ObjHitboxTransformState);
         }
     }
     if (modelDef->jointCount != 0)

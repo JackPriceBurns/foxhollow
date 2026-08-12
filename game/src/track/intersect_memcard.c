@@ -133,7 +133,7 @@ int cardFormatMemoryCard(void)
         res = CARDGetSerialNo(0, &serial);
         if (res == 0)
         {
-            u64 cache = *(u64*)&gSaveCardSerialHi;
+            u64 cache = ((u64)gSaveCardSerialHi << 32) | gSaveCardSerialLo;
             if (cache == 0 || cache != serial)
             {
                 res = -0x55;

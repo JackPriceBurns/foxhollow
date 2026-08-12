@@ -267,7 +267,9 @@ int optionsMenu_openSelectedSubmenu(int action, int option)
 
 void languageMenuInit(void)
 {
-    MenuPanelGroup* panel;
+    OptionsScreenPanelConfig* panel;
+    TitleMenuTextEntry* entries;
+    u8 count;
 
     if (gOptionsActivePanel != -1)
     {
@@ -275,28 +277,30 @@ void languageMenuInit(void)
     }
     gOptionsActivePanel = OPTIONS_PANEL_MISC;
 
-    panel = (MenuPanelGroup*)gOptionsPanelTable;
+    panel = &gOptionsPanelTable[OPTIONS_PANEL_MISC];
+    entries = (TitleMenuTextEntry*)panel->items;
+    count = (u8)(panel->itemLayout >> 8);
     gOptionsMenuItems[0] =
         gTitleMenuItemInterface->vtable->createWithWindow(0x36b, 0x22, 0, 1,
                                                          (s16)(gOptionsSaveData->subtitlesEnabled == 0));
 
     if (isCheatUnlocked(LANGUAGE_MENU_CHEAT_ID) != 0 && gGameTextFontIsSjis == 0)
     {
-        panel->entries[panel->count - 2].downLink = panel->count - 1;
-        panel->entries[panel->count - 1].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
+        entries[count - 2].downLink = count - 1;
+        entries[count - 1].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
 
         gOptionsMenuItems[1] = gTitleMenuItemInterface->vtable->createWithWindow(
             0x36b, 0x23, 0, 1, (s16)(saveFileStruct_isCheatActive(LANGUAGE_MENU_CHEAT_ID) == 0));
     }
     else
     {
-        panel->entries[panel->count - 2].downLink = -1;
-        panel->entries[panel->count - 1].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
+        entries[count - 2].downLink = -1;
+        entries[count - 1].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
     }
 
     gTitleMenuItemInterface->vtable->setEnabled(gOptionsMenuItems[0], 1);
 
-    gTitleMenuLinkInterface->vtable->setup(panel->entries, panel->count, 0, NULL, 0, 0, 0x14, 0xc8, 0xff, 0xff, 0xff,
+    gTitleMenuLinkInterface->vtable->setup(entries, count, 0, NULL, 0, 0, 0x14, 0xc8, 0xff, 0xff, 0xff,
                                            0xff);
 
     gOptionsLayoutRefreshFrames = 2;
@@ -318,21 +322,11 @@ void languageMenuInit(void)
  * its exact role is unconfirmed.
  */
 
-typedef struct OptionsMenuPanels
-{
-    u8 pad00[0x10];
-    TitleMenuTextEntry* audioEntries;
-    u32 unk_14;
-    u8 audioCount;
-    u8 pad19[0x20 - 0x19];
-    TitleMenuTextEntry* optionEntries;
-    u32 unk_24;
-    u8 optionCount;
-} OptionsMenuPanels;
-
 void optionsMenu_openAudioPanel(void)
 {
-    OptionsMenuPanels* panels;
+    OptionsScreenPanelConfig* panel;
+    TitleMenuTextEntry* entries;
+    u8 count;
     TitleMenuItem* item;
 
     if (gOptionsActivePanel != -1)
@@ -340,21 +334,23 @@ void optionsMenu_openAudioPanel(void)
         gTitleMenuLinkInterface->vtable->free();
     }
     gOptionsActivePanel = 1;
-    panels = (OptionsMenuPanels*)gOptionsPanelTable;
+    panel = &gOptionsPanelTable[gOptionsActivePanel];
+    entries = (TitleMenuTextEntry*)panel->items;
+    count = (u8)(panel->itemLayout >> 8);
 
     if (isCheatUnlocked(2) != 0)
     {
-        panels->audioEntries[4].downLink = 5;
-        panels->audioEntries[5].flags = (u16)(panels->audioEntries[5].flags & ~TITLE_MENU_TEXT_ENTRY_HIDDEN);
-        panels->audioEntries[5].upLink = 4;
+        entries[4].downLink = 5;
+        entries[5].flags = (u16)(entries[5].flags & ~TITLE_MENU_TEXT_ENTRY_HIDDEN);
+        entries[5].upLink = 4;
     }
     else
     {
-        panels->audioEntries[4].downLink = -1;
-        panels->audioEntries[5].flags = (u16)(panels->audioEntries[5].flags | TITLE_MENU_TEXT_ENTRY_HIDDEN);
+        entries[4].downLink = -1;
+        entries[5].flags = (u16)(entries[5].flags | TITLE_MENU_TEXT_ENTRY_HIDDEN);
     }
 
-    gTitleMenuLinkInterface->vtable->setup(panels->audioEntries, panels->audioCount, 0, NULL, 0, 0, 0x14, 0xc8, 0xff,
+    gTitleMenuLinkInterface->vtable->setup(entries, count, 0, NULL, 0, 0, 0x14, 0xc8, 0xff,
                                            0xff, 0xff, 0xff);
 
     if (OSGetSoundMode() == 1)
@@ -389,7 +385,9 @@ void optionsMenu_openAudioPanel(void)
 
 void optionsMenu_openGeneralPanel(void)
 {
-    OptionsMenuPanels* panels;
+    OptionsScreenPanelConfig* panel;
+    TitleMenuTextEntry* entries;
+    u8 count;
     int lastUnlocked;
     int entryIndex;
     int cheatId;
@@ -403,7 +401,9 @@ void optionsMenu_openGeneralPanel(void)
         gTitleMenuLinkInterface->vtable->free();
     }
     gOptionsActivePanel = 2;
-    panels = (OptionsMenuPanels*)gOptionsPanelTable;
+    panel = &gOptionsPanelTable[gOptionsActivePanel];
+    entries = (TitleMenuTextEntry*)panel->items;
+    count = (u8)(panel->itemLayout >> 8);
 
     lastUnlocked = -1;
     cheatId = 3;
@@ -412,14 +412,14 @@ void optionsMenu_openGeneralPanel(void)
     {
         if (isCheatUnlocked((u8)(cheatId - 2)) != 0)
         {
-            panels->optionEntries[entryIndex - 1].downLink = cheatId;
-            panels->optionEntries[entryIndex].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
+            entries[entryIndex - 1].downLink = cheatId;
+            entries[entryIndex].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
             lastUnlocked = cheatId;
         }
         else
         {
-            panels->optionEntries[entryIndex - 1].downLink = lastUnlocked;
-            panels->optionEntries[entryIndex].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
+            entries[entryIndex - 1].downLink = lastUnlocked;
+            entries[entryIndex].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
         }
         entryIndex--;
         cheatId--;
@@ -432,15 +432,15 @@ void optionsMenu_openGeneralPanel(void)
     {
         if (isCheatUnlocked((u8)(cheatId2 - 2)) != 0)
         {
-            panels->optionEntries[entryIndex2].upLink = lastUnlocked2;
-            panels->optionEntries[entryIndex2].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
+            entries[entryIndex2].upLink = lastUnlocked2;
+            entries[entryIndex2].flags &= ~TITLE_MENU_TEXT_ENTRY_HIDDEN;
             lastUnlocked2 = cheatId2;
         }
         entryIndex2++;
         cheatId2++;
     } while (cheatId2 < 4);
 
-    gTitleMenuLinkInterface->vtable->setup(panels->optionEntries, panels->optionCount, 0, NULL, 0, 0, 0x14, 0xc8, 0xff,
+    gTitleMenuLinkInterface->vtable->setup(entries, count, 0, NULL, 0, 0, 0x14, 0xc8, 0xff,
                                            0xff, 0xff, 0xff);
 
     gOptionsMenuItems[0] =
@@ -540,6 +540,41 @@ OptionsScreenPanelConfig gOptionsPanelTable[4] = {
     {gOptionsMiscPanelEntries, 0, 0x0203, 0x035b, 0x0368, 0},
 };
 
+#ifdef TARGET_PC
+static u8 gOptionsPanelEntriesNormalized;
+
+static void optionsScreenNormalizePanelEntries(void)
+{
+    int panelIndex;
+    int entryIndex;
+    int byteOffset;
+
+    if (gOptionsPanelEntriesNormalized != 0)
+    {
+        return;
+    }
+    for (panelIndex = 0; panelIndex < 4; panelIndex++)
+    {
+        TitleMenuTextEntry* entries = (TitleMenuTextEntry*)gOptionsPanelTable[panelIndex].items;
+        int count = (u8)(gOptionsPanelTable[panelIndex].itemLayout >> 8);
+
+        for (entryIndex = 0; entryIndex < count; entryIndex++)
+        {
+            u8* bytes = (u8*)&entries[entryIndex];
+
+            for (byteOffset = offsetof(TitleMenuTextEntry, upLink);
+                 byteOffset < (int)sizeof(TitleMenuTextEntry); byteOffset += 2)
+            {
+                u8 first = bytes[byteOffset];
+                bytes[byteOffset] = bytes[byteOffset + 1];
+                bytes[byteOffset + 1] = first;
+            }
+        }
+    }
+    gOptionsPanelEntriesNormalized = 1;
+}
+#endif
+
 ObjectDescriptor6 OptionsScreen_funcs = {
     0,
     0,
@@ -560,7 +595,7 @@ void OptionsScreen_render(int arg)
     int fade;
     TitleMenuItem** item;
     int i;
-    u16* panel = (u16*)gOptionsPanelTable + gOptionsActivePanel * 8;
+    OptionsScreenPanelConfig* panel = &gOptionsPanelTable[gOptionsActivePanel];
 
     if (shouldShowCredits() != 0)
     {
@@ -584,16 +619,16 @@ void OptionsScreen_render(int arg)
     }
 
     titleScreenDrawMenuFrame(fade, 0, 0);
-    if (panel[5] != 0xffff)
+    if (panel->selectionTextId != 0xffff)
     {
         gameTextSetColor(0xff, 0xff, 0xff, 0xff);
-        *(u8*)((char*)gameTextGetBox(*(u8*)((char*)gameTextGet(panel[5]) + 4)) + 0x1e) = fade;
-        gameTextShow(panel[5]);
+        *(u8*)((char*)gameTextGetBox(*(u8*)((char*)gameTextGet(panel->selectionTextId) + 4)) + 0x1e) = fade;
+        gameTextShow(panel->selectionTextId);
     }
-    if (panel[6] != 0xffff)
+    if (panel->headingTextId != 0xffff)
     {
         gameTextSetColor(0xff, 0xff, 0xff, fade);
-        gameTextShow(panel[6]);
+        gameTextShow(panel->headingTextId);
     }
 
     item = gOptionsMenuItems;
@@ -764,6 +799,9 @@ void OptionsScreen_release(void)
 
 void OptionsScreen_initialise(void)
 {
+#ifdef TARGET_PC
+    optionsScreenNormalizePanelEntries();
+#endif
     (*gScreenTransitionInterface)->step(20, SCREEN_TRANSITION_HUD);
     gameTextLoadDir(21);
     lbl_803DD70C = 0;

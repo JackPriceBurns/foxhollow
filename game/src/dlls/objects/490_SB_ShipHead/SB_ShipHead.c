@@ -11,6 +11,7 @@
 #include "dlls/objects/490_SB_ShipHead.h"
 
 #include "dlls/objects/488_SB_Galleon.h"
+#include "dlls/objects/493_SB_FireBall.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_stop_channel_api.h"
@@ -73,9 +74,9 @@ void SB_ShipHead_render(GameObject* obj, int renderArg2, int renderArg3, int ren
     if (visible != 0) {
         state = object->extra;
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
-        parentObj = (GameObject*)object->anim.parentAddress;
+        parentObj = object->anim.parent;
         if ((((void*)parentObj != NULL && (parentObj->anim.romDefNo == SB_GALLEON_FIRING_SEQUENCE_ID)) &&
-             (damagePhase = SB_GALLEON_VTBL(parentObj)->getDamagePhase((int)parentObj), damagePhase != 0)) &&
+             (damagePhase = SB_GALLEON_VTBL(parentObj)->getDamagePhase(parentObj), damagePhase != 0)) &&
             (damagePhase != 2)) {
             state->swayA = state->swayA - timeDelta;
             if (state->swayA <= 0.0f) {
@@ -123,6 +124,7 @@ void SB_ShipHead_update(GameObject* obj) {
     int message;
     int messageSender[2];
     GameObject* object;
+    GameObject* spawnedObject;
 
     object = obj;
     firingCue = 0;
@@ -162,14 +164,14 @@ void SB_ShipHead_update(GameObject* obj) {
             break;
         }
     }
-    if ((SB_GALLEON_VTBL(galleon)->getPhase((int)galleon) >= 2) && (object->userData2 <= 0) &&
+    if ((SB_GALLEON_VTBL(galleon)->getPhase(galleon) >= 2) && (object->userData2 <= 0) &&
         (((u32)(galleonPhase - 3) <= 1 || (galleonPhase == 5))) &&
         (ObjHits_GetPriorityHit(obj, &hit, 0, 0) != 0) && (hit->anim.romDefNo != SB_FIREBALL_OBJECT_ID)) {
         Obj_SetModelColorFadeRecursive(obj, 0xf, 200, 0, 0, 1);
         Sfx_PlayFromObject(obj, SFXTRIG_wp_gcfir1_c_37);
         state->health -= 1;
         if (state->health <= 0) {
-            SB_GALLEON_VTBL(galleon)->onPartDestroyed((int)galleon);
+            SB_GALLEON_VTBL(galleon)->onPartDestroyed(galleon);
             object->userData2 = 300;
             ObjHits_DisableObject(obj);
         }
@@ -206,16 +208,16 @@ void SB_ShipHead_update(GameObject* obj) {
         placementBytes->posX = spawnX;
         placementBytes->posY = spawnY;
         placementBytes->posZ = spawnZ;
-        result = (int)objSetupObject(placementBytes, 5, -1, -1, 0);
-        deltaX = player->anim.worldPosX - ((GameObject*)result)->anim.localPosX;
-        deltaY = (player->anim.worldPosY - gSbShipHeadFireballSpeed) - ((GameObject*)result)->anim.localPosY;
-        deltaZ = player->anim.worldPosZ - ((GameObject*)result)->anim.localPosZ;
+        spawnedObject = objSetupObject(placementBytes, 5, -1, -1, 0);
+        deltaX = player->anim.worldPosX - spawnedObject->anim.localPosX;
+        deltaY = (player->anim.worldPosY - gSbShipHeadFireballSpeed) - spawnedObject->anim.localPosY;
+        deltaZ = player->anim.worldPosZ - spawnedObject->anim.localPosZ;
         speedScale = gSbShipHeadFireballSpeed / sqrtf(deltaZ * deltaZ + (deltaX * deltaX + deltaY * deltaY));
-        ((GameObject*)result)->anim.velocityX = deltaX * speedScale;
-        ((GameObject*)result)->anim.velocityY = deltaY * speedScale;
-        ((GameObject*)result)->anim.velocityZ = deltaZ * speedScale;
-        ((GameObject*)result)->userData1 = 0x78;
-        ((GameObject*)result)->userData2 = (int)state->target;
+        spawnedObject->anim.velocityX = deltaX * speedScale;
+        spawnedObject->anim.velocityY = deltaY * speedScale;
+        spawnedObject->anim.velocityZ = deltaZ * speedScale;
+        spawnedObject->userData1 = 0x78;
+        ((SBFireBallState*)spawnedObject->extra)->target = state->target;
     }
     if ((firingCue == 1) && (Obj_IsLoadingLocked() != 0)) {
         Sfx_PlayFromObject(obj, SFXTRIG_gcexp1_c);

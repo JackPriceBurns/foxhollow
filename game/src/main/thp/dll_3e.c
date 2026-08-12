@@ -15,8 +15,7 @@
  * prepareAttractMode() seeks to a movie within the attract package
  * (offset table indexed by movieIndex), spins up the decode/read threads,
  * primes the message queues (InitAllMessageQueue) and installs the
- * retrace callback. Operates on the AttractMovieControl block at
- * gAttractMovieAudioDmaBuffer and the AttractMoviePlayer at gAttractMoviePlayer.
+ * retrace callback.
  */
 #include "global.h"
 #include "dolphin/ai.h"
@@ -24,56 +23,14 @@
 #include "dolphin/vi/vifuncs.h"
 #include "main/dll/FRONT/dll_3B.h"
 #include "main/dll/FRONT/n_options.h"
+#include "main/attract_movie_api.h"
 #include "main/fileio.h"
 #include "main/audio_decode_thread.h"
 #include "main/dll/FRONT/picmenu.h"
 #include "main/dll/dll_3e_api.h"
 #include "dolphin/thp/THPDraw.h"
+#include "dolphin/thp/THPDecode.h"
 
-typedef struct AttractMovieControl {
-    u8 pad000[0x560];
-    u32 readBufBegin; /* 0x560 */
-    u32 readBufEnd;   /* 0x564 */
-    u8 pad568[0x5f0 - 0x568];
-    u32 movieCount;     /* 0x5f0 */
-    u32 firstMovieSize; /* 0x5f4 */
-    s32 initReadSize;   /* 0x5f8 */
-    u8 pad5fc[0x600 - 0x5fc];
-    u32 offsetTable; /* 0x600 */
-    u32 dataOffset;  /* 0x604 */
-    u8 pad608[0x638 - 0x608];
-    s32 enabled;    /* 0x638 */
-    u8 isPrepared;  /* 0x63c */
-    u8 field63d;    /* 0x63d */
-    u8 playFlags;   /* 0x63e */
-    u8 audioExists; /* 0x63f */
-    u8 pad640[0x648 - 0x640];
-    s32 preloaded;   /* 0x648 */
-    void* loopFrame; /* 0x64c */
-    u32 frameOffset; /* 0x650 */
-    u32 frameSize;   /* 0x654 */
-    u32 movieIndex;  /* 0x658 */
-    u8 pad65c[0x670 - 0x65c];
-    u32 field670; /* 0x670 */
-    u8 pad674[0x684 - 0x674];
-    u32 field684; /* 0x684 */
-    u32 field688; /* 0x688 */
-    u32 field68c; /* 0x68c */
-    u32 field690; /* 0x690 */
-} AttractMovieControl;
-
-STATIC_ASSERT(offsetof(AttractMovieControl, readBufBegin) == 0x560);
-STATIC_ASSERT(offsetof(AttractMovieControl, movieCount) == 0x5f0);
-STATIC_ASSERT(offsetof(AttractMovieControl, offsetTable) == 0x600);
-STATIC_ASSERT(offsetof(AttractMovieControl, enabled) == 0x638);
-STATIC_ASSERT(offsetof(AttractMovieControl, isPrepared) == 0x63c);
-STATIC_ASSERT(offsetof(AttractMovieControl, preloaded) == 0x648);
-STATIC_ASSERT(offsetof(AttractMovieControl, frameOffset) == 0x650);
-STATIC_ASSERT(offsetof(AttractMovieControl, field670) == 0x670);
-STATIC_ASSERT(offsetof(AttractMovieControl, field684) == 0x684);
-STATIC_ASSERT(offsetof(AttractMovieControl, field690) == 0x690);
-
-/* playFlags bits (shared by AttractMoviePlayer and AttractMovieControl) */
 enum {
     THP_PLAY_LOOP = 1,
     THP_PLAY_EVEN_FIELD = 2,
@@ -91,6 +48,75 @@ uintptr_t gAttractMovieAudioMixSourceAddr;
 s32 gAttractMovieAudioMode;
 AIDCallback gAttractMovieAudioPrevDmaCallback;
 static VIRetraceCallback OldVIPostCallback;
+
+#ifdef TARGET_PC
+extern void fhTHPVideoSetCompressedSize(u32 size);
+
+static u32 sPcMovieReadOffset;
+static u32 sPcMovieReadSize;
+static u32 sPcMovieFrame;
+static u32 sPcMovieTexture;
+static OSTime sPcMovieNextFrameTime;
+static OSTime sPcMovieFrameTicks;
+
+static BOOL DecodeNextMovieFramePC(void)
+{
+    AttractMoviePlayer* player = &gAttractMoviePlayer;
+    AttractMovieReadBuffer* readBuffer = &player->readBuffer[0];
+    AttractMovieTextureSet* textureSet = &player->textureSet[sPcMovieTexture];
+    u32* componentSizes;
+    u8* componentData;
+    BOOL decoded = FALSE;
+    u32 i;
+
+    if (DVDRead(&player->fileInfo, readBuffer->ptr, sPcMovieReadSize, sPcMovieReadOffset) != (s32)sPcMovieReadSize)
+    {
+        player->dvdError = -1;
+        return FALSE;
+    }
+
+    componentSizes = (u32*)(readBuffer->ptr + 8);
+    componentData = readBuffer->ptr + 8 + player->compInfo.mNumComponents * sizeof(u32);
+    for (i = 0; i < player->compInfo.mNumComponents; i++)
+    {
+        u32 componentSize = fhSwap32(componentSizes[i]);
+        if (player->compInfo.mFrameComp[i] == 0)
+        {
+            s32 decodeError;
+            fhTHPVideoSetCompressedSize(componentSize);
+            decodeError = THPVideoDecode(componentData, textureSet->yTexture, textureSet->uTexture,
+                                         textureSet->vTexture, player->thpWorkArea);
+            if (decodeError != 0 && player->curTextureSet == NULL)
+            {
+                player->videoError = decodeError;
+                return FALSE;
+            }
+            decoded = decodeError == 0;
+        }
+        componentData += componentSize;
+    }
+
+    player->curAudioTrack = sPcMovieFrame;
+    if (decoded)
+    {
+        player->videoError = 0;
+        textureSet->frameNumber = sPcMovieFrame;
+        player->curTextureSet = textureSet;
+        sPcMovieTexture = (sPcMovieTexture + 1) % 3;
+    }
+    sPcMovieReadOffset += sPcMovieReadSize;
+    sPcMovieReadSize = fhSwap32(*(u32*)readBuffer->ptr);
+    sPcMovieFrame++;
+    if (sPcMovieFrame >= player->header.mNumFrames)
+    {
+        sPcMovieFrame = 0;
+        sPcMovieReadOffset = player->header.mMovieDataOffsets;
+        sPcMovieReadSize = player->header.mFirstFrameSize;
+        gAttractMovieLoopCompleted = 1;
+    }
+    return TRUE;
+}
+#endif
 
 static void PlayControl(u32 retraceCount) {
     AttractMovieTextureSet* decodedTexture;
@@ -114,6 +140,29 @@ static void PlayControl(u32 retraceCount) {
         gAttractMoviePlayer.state = 5;
         return;
     }
+
+#ifdef TARGET_PC
+    OSTime now;
+
+    gAttractMovieIdleFrameCount = 0;
+    gAttractMoviePlayer.retraceCount++;
+    if (gAttractMoviePlayer.retraceCount == 0)
+    {
+        gAttractMoviePlayer.internalState = 2;
+        return;
+    }
+    now = OSGetTime();
+    if (now >= sPcMovieNextFrameTime)
+    {
+        DecodeNextMovieFramePC();
+        sPcMovieNextFrameTime += sPcMovieFrameTicks;
+        if (now - sPcMovieNextFrameTime >= sPcMovieFrameTicks)
+        {
+            sPcMovieNextFrameTime = now + sPcMovieFrameTicks;
+        }
+    }
+    return;
+#endif
 
     if ((gAttractMoviePlayer.retraceCount == 0) &&
         ((gAttractMoviePlayer.internalState == 0) || (gAttractMoviePlayer.internalState == 4))) {
@@ -255,55 +304,77 @@ BOOL THPPlayerPlay(void) {
 }
 
 BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
-    char* base;
-    AttractMovieControl* ctrl;
+    AttractMoviePlayer* player;
     s32 readyMsg;
     uintptr_t startOffset;
+    extern char gPicMenuDvdReadBuffer[0x40];
 
-    base = gAttractMovieAudioDmaBuffer;
-    ctrl = (AttractMovieControl*)base;
+    player = &gAttractMoviePlayer;
     gAttractMovieLoopCompleted = 0;
 
-    if (ctrl->enabled != 0 && ctrl->isPrepared == 0) {
+    if (player->isOpen != 0 && player->state == 0) {
         if ((s32)movieIndex > 0) {
-            u32 offsetTable = ctrl->offsetTable;
+            u32 offsetTable = player->header.mOffsetDataOffsets;
 
             if (offsetTable == 0) {
                 return FALSE;
             }
-            if (ctrl->movieCount > movieIndex) {
-                if (DVDRead((DVDFileInfo*)(base + 0x5a0), base + 0x560, 0x20,
+            if (player->header.mNumFrames > movieIndex) {
+                if (DVDRead(&player->fileInfo, gPicMenuDvdReadBuffer, 0x20,
                             offsetTable + ((movieIndex - 1) * sizeof(u32))) < 0) {
                     return FALSE;
                 }
 
-                ctrl->frameOffset = ctrl->dataOffset + ctrl->readBufBegin;
-                ctrl->movieIndex = movieIndex;
-                ctrl->frameSize = ctrl->readBufEnd - ctrl->readBufBegin;
+                player->initOffset = player->header.mMovieDataOffsets + fhSwap32(*(u32*)gPicMenuDvdReadBuffer);
+                player->initReadFrame = movieIndex;
+                player->initReadSize = fhSwap32(*(u32*)(gPicMenuDvdReadBuffer + 4)) -
+                                       fhSwap32(*(u32*)gPicMenuDvdReadBuffer);
             } else {
                 return FALSE;
             }
         } else {
-            ctrl->frameOffset = ctrl->dataOffset;
-            ctrl->frameSize = ctrl->firstMovieSize;
-            ctrl->movieIndex = movieIndex;
+            player->initOffset = player->header.mMovieDataOffsets;
+            player->initReadSize = player->header.mFirstFrameSize;
+            player->initReadFrame = movieIndex;
         }
 
-        ctrl->playFlags = playFlags;
-        ctrl->field670 = 0;
+        player->playFlags = playFlags;
+        player->videoDecodeCount = 0;
 
-        if (ctrl->preloaded != 0) {
-            if (DVDRead((DVDFileInfo*)(base + 0x5a0), ctrl->loopFrame, ctrl->initReadSize, ctrl->dataOffset) < 0) {
+#ifdef TARGET_PC
+        sPcMovieReadOffset = player->initOffset;
+        sPcMovieReadSize = player->initReadSize;
+        sPcMovieFrame = player->initReadFrame;
+        sPcMovieTexture = 0;
+        sPcMovieFrameTicks = (OSTime)((f64)OS_TIMER_CLOCK / player->header.mFrameRate);
+        sPcMovieNextFrameTime = OSGetTime() + sPcMovieFrameTicks;
+        player->curAudioTrack = 0;
+        player->curVideoNumber = 0;
+        player->curTextureSet = NULL;
+        player->dispTextureSet = NULL;
+        if (!DecodeNextMovieFramePC())
+        {
+            return FALSE;
+        }
+        player->state = 1;
+        player->internalState = 0;
+        OldVIPostCallback = VISetPostRetraceCallback(PlayControl);
+        return TRUE;
+#endif
+
+        if (player->isOnMemory != 0) {
+            if (DVDRead(&player->fileInfo, player->loopFrame, player->header.mMovieDataSize,
+                        player->header.mMovieDataOffsets) < 0) {
                 return FALSE;
             }
-            startOffset = ((uintptr_t)ctrl->loopFrame + ctrl->frameOffset) - ctrl->dataOffset;
+            startOffset = ((uintptr_t)player->loopFrame + player->initOffset) - player->header.mMovieDataOffsets;
             CreateVideoDecodeThread(0xf, startOffset);
-            if (ctrl->audioExists != 0) {
+            if (player->audioExists != 0) {
                 CreateAudioDecodeThread(0xc, (void*)startOffset);
             }
         } else {
             CreateVideoDecodeThread(0xf, 0);
-            if (ctrl->audioExists != 0) {
+            if (player->audioExists != 0) {
                 CreateAudioDecodeThread(0xc, NULL);
             }
             CreateReadThread(8);
@@ -311,23 +382,23 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
 
         InitAllMessageQueue();
         VideoDecodeThreadStart();
-        if (ctrl->audioExists != 0) {
+        if (player->audioExists != 0) {
             AudioDecodeThreadStart();
         }
-        if (ctrl->preloaded == 0) {
+        if (player->isOnMemory == 0) {
             ReadThreadStart();
         }
 
-        OSReceiveMessage((OSMessageQueue*)(base + 0x52c), (OSMessage*)&readyMsg, OS_MESSAGE_BLOCK);
+        OSReceiveMessage(&gAttractMoviePrepareReadyQueue, (OSMessage*)&readyMsg, OS_MESSAGE_BLOCK);
         if (readyMsg == 0) {
             return FALSE;
         }
-        ctrl->isPrepared = 1;
-        ctrl->field63d = 0;
-        ctrl->field68c = 0;
-        ctrl->field690 = 0;
-        ctrl->field684 = 0;
-        ctrl->field688 = 0;
+        player->state = 1;
+        player->internalState = 0;
+        player->curAudioTrack = 0;
+        player->curVideoNumber = 0;
+        player->curTextureSet = NULL;
+        player->dispTextureSet = NULL;
         OldVIPostCallback = VISetPostRetraceCallback(PlayControl);
         return TRUE;
     }

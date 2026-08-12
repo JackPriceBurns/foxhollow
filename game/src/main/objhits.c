@@ -134,7 +134,7 @@ int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointDa
     joint = modelFile->jointCount;
     while (--joint != 0) {
         if (jointData->jointCullDistances[joint] > rootCullDistance) {
-            parent = modelFile->joints[joint].parentJoint;
+            parent = ((ObjHitsModelJointInfo*)modelFile->jointData)[joint].parent;
             jointMatrix = ObjModel_GetJointMatrix((u8*)model, joint);
             jointPos.x = jointMatrix->translationX;
             jointPos.y = jointMatrix->translationY;
@@ -271,7 +271,7 @@ int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointDa
     joint = modelFile->jointCount;
     while (--joint != 0) {
         if (jointData->jointCullDistances[joint] > rootCullDistance) {
-            parent = modelFile->joints[joint].parentJoint;
+            parent = ((ObjHitsModelJointInfo*)modelFile->jointData)[joint].parent;
             jointMatrix = ObjModel_GetJointMatrix((u8*)model, joint);
             jointPos.x = jointMatrix->translationX;
             jointPos.y = jointMatrix->translationY;
@@ -875,49 +875,53 @@ void ObjHits_TickPriorityHitCooldowns(void) {
 }
 
 void ObjHitbox_UpdateRotatedBounds(ObjHitbox* hitbox, int advanceMatrix) {
+    GameObject* obj;
+    ObjHitboxDef* def;
     ObjHitboxTransformState* transformState;
     float* matrixBase;
     int matrixFloatOffset;
     MatrixTransform xform;
 
-    transformState = hitbox->transformState;
+    obj = (GameObject*)hitbox;
+    def = (ObjHitboxDef*)obj->anim.hitReactState;
+    transformState = obj->anim.hitboxTransformState;
     if (transformState != 0) {
         if (advanceMatrix != 0) {
             transformState->activeMatrixIndex = (transformState->activeMatrixIndex + 1) & 1;
         }
         matrixFloatOffset = transformState->activeMatrixIndex * OBJHITBOX_STATE_MATRIX_FLOAT_COUNT;
         matrixBase = (float*)transformState->matrices + matrixFloatOffset;
-        xform.rotX = -hitbox->rotationX;
-        if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
+        xform.rotX = -obj->anim.rotX;
+        if ((def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
             xform.rotY = 0;
         } else {
-            xform.rotY = -hitbox->rotationY;
+            xform.rotY = -obj->anim.rotY;
         }
-        if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Z) != 0) {
+        if ((def->flags & OBJHITBOX_DEF_CLAMP_Z) != 0) {
             xform.rotZ = 0;
         } else {
-            xform.rotZ = -hitbox->rotationZ;
+            xform.rotZ = -obj->anim.rotZ;
         }
         xform.scale = gObjHitsScalarOne[0];
-        xform.x = -hitbox->radiusX;
-        xform.y = -hitbox->radiusY;
-        xform.z = -hitbox->radiusZ;
+        xform.x = -obj->anim.worldPosX;
+        xform.y = -obj->anim.worldPosY;
+        xform.z = -obj->anim.worldPosZ;
         mtxRotateByVec3s(matrixBase, &xform);
-        xform.rotX = hitbox->rotationX;
-        if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
+        xform.rotX = obj->anim.rotX;
+        if ((def->flags & OBJHITBOX_DEF_CLAMP_Y) != 0) {
             xform.rotY = 0;
         } else {
-            xform.rotY = hitbox->rotationY;
+            xform.rotY = obj->anim.rotY;
         }
-        if ((hitbox->def->flags & OBJHITBOX_DEF_CLAMP_Z) != 0) {
+        if ((def->flags & OBJHITBOX_DEF_CLAMP_Z) != 0) {
             xform.rotZ = 0;
         } else {
-            xform.rotZ = hitbox->rotationZ;
+            xform.rotZ = obj->anim.rotZ;
         }
         xform.scale = gObjHitsScalarOne[0];
-        xform.x = hitbox->radiusX;
-        xform.y = hitbox->radiusY;
-        xform.z = hitbox->radiusZ;
+        xform.x = obj->anim.worldPosX;
+        xform.y = obj->anim.worldPosY;
+        xform.z = obj->anim.worldPosZ;
         matrixFloatOffset = (transformState->activeMatrixIndex + 2) * OBJHITBOX_STATE_MATRIX_FLOAT_COUNT;
         setMatrixFromObjectPos((float*)transformState->matrices + matrixFloatOffset, &xform);
         if (transformState->resetFrames != 0) {
@@ -1031,7 +1035,7 @@ int ObjHits_CheckHitVolumes(GameObject* objA, GameObject* objB, GameObject* srcO
         countA = modelFile->hitVolumeCount;
         spheresA = modelBank->activeHitVolumeSpheres;
         defA = modelBank->hitVolumeSphereBuffers[((modelBank->hitBufferFlags >> 2) & 1) ^ 1];
-        volA = modelFile->hitVolumes;
+        volA = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
         if (srcObj != objA) {
             radiusA = stateSrc->secondaryRadiusXZ;
         } else {
@@ -1067,7 +1071,7 @@ int ObjHits_CheckHitVolumes(GameObject* objA, GameObject* objB, GameObject* srcO
         modelFile = modelBank->modelFile;
         countB = modelFile->hitVolumeCount;
         spheresB = modelBank->activeHitVolumeSpheres;
-        volB = modelFile->hitVolumes;
+        volB = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
         radiusB = stateB->secondaryRadiusXZ;
         if ((objB->anim.flags & OBJANIM_FLAG_HIDDEN) != 0) {
             return 0;
@@ -1879,6 +1883,7 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
     ObjHitsModelBank* modelBank;
     int i;
     ObjHitsModelFileHeader* modelFile;
+    ObjHitsModelHitVolume* hitVolumes;
     float* curSpheres;
     float* prevSpheres;
     ObjHitsPriorityState* stateB;
@@ -1896,14 +1901,15 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
         if ((stateB->secondaryShapeFlags & OBJHITS_SHAPE_MODEL_HIT_VOLUMES) != 0) {
             modelBank = ObjHits_GetActiveModel(objB);
             modelFile = modelBank->modelFile;
+            hitVolumes = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
             bits = modelBank->hitBufferFlags >> 2 & 1;
             curSpheres = modelBank->hitVolumeSphereBuffers[bits];
             prevSpheres = modelBank->hitVolumeSphereBuffers[bits ^ 1];
             pointCount = 0;
             for (i = 0; i < (int)(u32)modelFile->hitVolumeCount; i = i + 1) {
-                if ((i == modelFile->hitVolumes[i].sphereIndex) &&
-                    ((mask2 & 1 << modelFile->hitVolumes[i].maskBit) != 0)) {
-                    bits = modelFile->hitVolumes[i].linkedSpheres;
+                if ((i == hitVolumes[i].sphereIndex) &&
+                    ((mask2 & 1 << hitVolumes[i].maskBit) != 0)) {
+                    bits = hitVolumes[i].linkedSpheres;
                     if (bits != 0) {
                         for (; (u16)bits != 0; bits = (u16)((bits & 0xffff) << 4)) {
                             sphereIdx = (((u16)bits & 0xf000) >> 0xc) + i & 0xffff;
@@ -2307,14 +2313,16 @@ void ObjHitReact_ResetActiveObjects(int objectCount) {
 }
 
 uintptr_t ObjHitbox_AllocRotatedBounds(ObjHitbox* hitbox, uintptr_t arena) {
+    GameObject* obj;
     ObjHitboxTransformState* transformState;
 
+    obj = (GameObject*)hitbox;
     transformState = (ObjHitboxTransformState*)((arena + 3) & ~(uintptr_t)3);
-    hitbox->transformState = transformState;
-    if (hitbox->transformState != NULL) {
-        hitbox->transformState->activeMatrixIndex = 0;
-        hitbox->transformState->resetFrames = OBJHITBOX_ROTATED_BOUNDS_RESET_FRAMES;
-        hitbox->transformState->contactObjectCount = 0;
+    obj->anim.hitboxTransformState = transformState;
+    if (obj->anim.hitboxTransformState != NULL) {
+        obj->anim.hitboxTransformState->activeMatrixIndex = 0;
+        obj->anim.hitboxTransformState->resetFrames = OBJHITBOX_ROTATED_BOUNDS_RESET_FRAMES;
+        obj->anim.hitboxTransformState->contactObjectCount = 0;
         ObjHitbox_UpdateRotatedBounds(hitbox, 1);
         ObjHitbox_UpdateRotatedBounds(hitbox, 1);
     }

@@ -71,6 +71,7 @@
 #include "string.h"
 #include "main/rcp_dolphin.h"
 #include "main/gameloop_internal.h"
+#include "main/lightmap_internal.h"
 
 extern char sTrackLoadBlockOverrunError[];
 extern char sShaderUnusedWordTable[];
@@ -177,7 +178,7 @@ int gMapBlockOriginWorldX;
 #define SHADER_SNOWBIKE_OBJ 0x72
 static void mapBuildRomListIndex(MapRomListPage* page, MapRomListIndex* romListIndex, int slot, int unloading);
 int mapCoordsToId(int x, int z, int layer);
-extern char gLightmapDrawQueue[];
+extern LightSortEntry gLightmapDrawQueue[];
 typedef struct ShaderRomListSlot
 {
     void* romlist;
@@ -2510,15 +2511,18 @@ static void mapInitSetRects(MapBounds* rect, u8* bitmap, int originX, int origin
 {
     MapsBinHeader* self = (MapsBinHeader*)gMapInfoBuffer;
     int tabOff = idx * 7 << 2;
-    int offset0 = *(int*)(gMapsTab + tabOff);
+    s32 sectionOffsets[3];
+    int offset0;
     u32* cells;
 
-    getTabEntry(self, MLDF_FILEID_MAPS_BIN, offset0, *(int*)((gMapsTab + 8) + tabOff) - offset0);
+    mapsLoadTabOffsets(tabOff >> 2, sectionOffsets, 3);
+    offset0 = sectionOffsets[0];
+    getTabEntry(self, MLDF_FILEID_MAPS_BIN, offset0, sectionOffsets[2] - offset0);
     self->sizeX = (s16)fhSwap16((u16)self->sizeX);
     self->sizeZ = (s16)fhSwap16((u16)self->sizeZ);
     self->originX = (s16)fhSwap16((u16)self->originX);
     self->originZ = (s16)fhSwap16((u16)self->originZ);
-    cells = (u32*)((char*)self + *(int*)((gMapsTab + 4) + tabOff) - *(int*)(gMapsTab + tabOff));
+    cells = (u32*)((char*)self + sectionOffsets[1] - offset0);
     fhSwapU32Array(cells, (u32)((u16)self->sizeX * (u16)self->sizeZ));
     rect->minX = originX - self->originX;
     rect->minZ = originZ - self->originZ;
@@ -3063,28 +3067,38 @@ int mapProcessRomList(int slot)
 MapRomListPage* mapGetRomListAndOffsets(int p1, int flag)
 {
     int words = p1 * 7;
-    int offset0 = *(int*)(gMapsTab + (words << 2));
-    int tailLen = *(int*)((gMapsTab + 0x1c) + ((u32)words << 2)) - offset0;
+    s32 sectionOffsets[8];
+    int offset0;
+    int tailLen;
     int v0, v1, v2;
     int i;
     char* raw;
 
+    mapsLoadTabOffsets(words, sectionOffsets, 8);
+    offset0 = sectionOffsets[0];
+    tailLen = sectionOffsets[7] - offset0;
     mapsBinGetRomlistSize(offset0, &v0, &v1, &v2, words);
-    gCurRomListPage = mmAlloc(sizeof(MapRomListPage) + tailLen + (v0 + 7 >> 3) + 0x401 + v2, 5, 0);
+    gCurRomListPage = mmAlloc(sizeof(MapRomListPage) + tailLen + ((v0 + 7) >> 3) + 0x401 + v2, 5, 0);
     raw = (char*)gCurRomListPage + sizeof(MapRomListPage);
     fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, raw, offset0, tailLen);
     memcpy(gCurRomListPage, raw, 0xC);
     fhSwapU16Array(gCurRomListPage, 6);
 
-    ((MapRomListPage*)gCurRomListPage)->cells = (u32*)(raw + *(int*)((gMapsTab + 4) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->cellRects = (u32*)(raw + *(int*)((gMapsTab + 8) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->visCellRects = (u32*)(raw + *(int*)((gMapsTab + 0xc) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->layerRects = (u32*)(raw + *(int*)((gMapsTab + 0x10) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->visLayerRects = (u32*)(raw + *(int*)((gMapsTab + 0x14) + (words << 2)) - offset0);
-    ((MapRomListPage*)gCurRomListPage)->objects = (ObjPlacement*)(raw + *(int*)((gMapsTab + 0x18) + (words << 2)) - offset0);
+    ((MapRomListPage*)gCurRomListPage)->cells = (u32*)(raw + sectionOffsets[1] - offset0);
+    ((MapRomListPage*)gCurRomListPage)->cellRects = (u32*)(raw + sectionOffsets[2] - offset0);
+    ((MapRomListPage*)gCurRomListPage)->visCellRects = (u32*)(raw + sectionOffsets[3] - offset0);
+    ((MapRomListPage*)gCurRomListPage)->layerRects = (u32*)(raw + sectionOffsets[4] - offset0);
+    ((MapRomListPage*)gCurRomListPage)->visLayerRects = (u32*)(raw + sectionOffsets[5] - offset0);
+    ((MapRomListPage*)gCurRomListPage)->objects = (ObjPlacement*)(raw + sectionOffsets[6] - offset0);
+    for (i = 1; i < 6; i++)
+    {
+        int sectionStart = sectionOffsets[i];
+        int sectionEnd = sectionOffsets[i + 1];
+        fhSwapU32Array(raw + sectionStart - offset0, (u32)(sectionEnd - sectionStart) >> 2);
+    }
 
-    piRomLoadSection(*(int*)((gMapsTab + 0x18) + (words << 2)), p1, ((MapRomListPage*)gCurRomListPage)->objects);
-    ((MapRomListPage*)gCurRomListPage)->loadedObjectBits = (u8*)((*(int*)((gMapsTab + 0x1c) + (words << 2)) + v2) + raw - offset0);
+    piRomLoadSection(sectionOffsets[6], p1, ((MapRomListPage*)gCurRomListPage)->objects);
+    ((MapRomListPage*)gCurRomListPage)->loadedObjectBits = (u8*)((sectionOffsets[7] + v2) + raw - offset0);
 
     for (i = 0; i < (v0 + 7 >> 3) + 1; i++)
     {
@@ -3482,4 +3496,4 @@ uintptr_t gShaderMapRomBuffers[0x5];
 f32 distortionFilterVector[0x1c];
 ModelLightStruct* gGlowLightList[100];
 u8 gCloudLayerTexMatrix[0x30];
-char gLightmapDrawQueue[0x3F48];
+LightSortEntry gLightmapDrawQueue[1000];

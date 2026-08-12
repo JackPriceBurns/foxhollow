@@ -908,24 +908,24 @@ int snowPrintSnowCloud(void* arg, int cloudId)
                     part->z - 2.0f * p->flakeMaxZ;
             }
         }
-        yb = part->y - *(f32*)((u8*)p + part->angle * 4 + 8);
-        quadOffsetX = ((f32*)p)[part->quadIndex * 11 + 1026];
+        yb = part->y - ((f32*)p->unk0008)[part->angle];
+        quadOffsetX = p->quads[part->quadIndex].verts[0];
         vx[0] = quadOffsetX * part->fallSpeed + part->x;
-        quadOffsetY = ((f32*)p)[part->quadIndex * 11 + 1029];
+        quadOffsetY = p->quads[part->quadIndex].verts[3];
         vy[0] = quadOffsetY * part->fallSpeed + yb;
-        quadOffsetZ = ((f32*)p)[part->quadIndex * 11 + 1032];
+        quadOffsetZ = p->quads[part->quadIndex].verts[6];
         vz[0] = quadOffsetZ * part->fallSpeed + part->z;
-        quadOffsetX = ((f32*)p)[part->quadIndex * 11 + 1027];
+        quadOffsetX = p->quads[part->quadIndex].verts[1];
         vx[1] = quadOffsetX * part->fallSpeed + part->x;
-        quadOffsetY = ((f32*)p)[part->quadIndex * 11 + 1030];
+        quadOffsetY = p->quads[part->quadIndex].verts[4];
         vy[1] = quadOffsetY * part->fallSpeed + yb;
-        quadOffsetZ = ((f32*)p)[part->quadIndex * 11 + 1033];
+        quadOffsetZ = p->quads[part->quadIndex].verts[7];
         vz[1] = quadOffsetZ * part->fallSpeed + part->z;
-        quadOffsetX = ((f32*)p)[part->quadIndex * 11 + 1028];
+        quadOffsetX = p->quads[part->quadIndex].verts[2];
         vx[2] = quadOffsetX * part->fallSpeed + part->x;
-        quadOffsetY = ((f32*)p)[part->quadIndex * 11 + 1031];
+        quadOffsetY = p->quads[part->quadIndex].verts[5];
         vy[2] = quadOffsetY * part->fallSpeed + yb;
-        quadOffsetZ = ((f32*)p)[part->quadIndex * 11 + 1034];
+        quadOffsetZ = p->quads[part->quadIndex].verts[8];
         vz[2] = quadOffsetZ * part->fallSpeed + part->z;
         puv = attr.uvs.uv;
         GXPosition3f32((f64)qx[0], (f64)qy[0], (f64)qz[0]);
@@ -1248,6 +1248,14 @@ u8 lbl_8030F500[160] = {255, 206, 0,   0,   255, 206, 255, 206, 0, 100, 255, 206
                         0,   0,   0,   12,  0,   0,   0,   24,  0, 0,   0,   24,  0, 0,   0, 32,  0,   0,   0, 32,
                         0,   0,   0,   40,  0,   0,   0,   40,  0, 0,   0,   48,  0, 0,   0, 48,  0,   0,   0, 56};
 
+static const int sSnowSpinRanges[][2] = {
+    {0, 6}, {2, 8}, {2, 16}, {8, 32}, {40, 48},
+};
+
+static const int sSnowSizeRanges[][2] = {
+    {1, 2}, {2, 4}, {3, 6}, {6, 12}, {12, 24}, {24, 32}, {32, 40}, {40, 48}, {48, 56},
+};
+
 #define NC_PARTS (gNewClouds[id]->flakes)
 
 #undef NC_CLOUD
@@ -1259,8 +1267,6 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
     int ok;
     int i;
     u8 fl;
-    int (*sizeRange)[2];
-    int (*spinRange)[2];
 
     strs = (char*)lbl_8030F500;
     ok = 1;
@@ -1389,9 +1395,8 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
         NC_PARTS[i].quadIndex = randomGetRange(0, 0x13);
         if (((NewCloud*)NC_CLOUD)->cloudType == 0)
         {
-            sizeRange = (int(*)[2])(strs + 0x58);
             NC_PARTS[i].size =
-                (randomGetRange(sizeRange[params->sizeClass][0], sizeRange[params->sizeClass][1]) /
+                (randomGetRange(sSnowSizeRanges[params->sizeClass][0], sSnowSizeRanges[params->sizeClass][1]) /
                     4);
             NC_PARTS[i].fallSpeed =
                 (int)
@@ -1401,9 +1406,8 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
         }
         else
         {
-            sizeRange = (int(*)[2])(strs + 0x58);
             NC_PARTS[i].size =
-                (randomGetRange(sizeRange[params->sizeClass][0], sizeRange[params->sizeClass][1]) *
+                (randomGetRange(sSnowSizeRanges[params->sizeClass][0], sSnowSizeRanges[params->sizeClass][1]) *
                     2);
             NC_PARTS[i].fallSpeed = 1.0f;
             NC_PARTS[i].texLayer = 0;
@@ -1412,10 +1416,9 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
         {
             NC_PARTS[i].size = 1;
         }
-        spinRange = (int(*)[2])(strs + 0x30);
         NC_PARTS[i].spin =
-            (((int(*)[2])(strs + 0x30))[params->spinClass][1] / 2 -
-                randomGetRange(spinRange[params->spinClass][0], spinRange[params->spinClass][1]));
+            (sSnowSpinRanges[params->spinClass][1] / 2 -
+                randomGetRange(sSnowSpinRanges[params->spinClass][0], sSnowSpinRanges[params->spinClass][1]));
     }
     if (gNewCloudWindSourcesInit != 0)
     {
@@ -1819,9 +1822,9 @@ void newclouds_run(void)
                 65536.0f;
             {
                 f32 zero = 0.0f;
-                ((f32*)clouds)[54] = zero;
-                ((f32*)clouds)[55] = -1.0f;
-                ((f32*)clouds)[56] = zero;
+                lbl_8039A8F0[0] = zero;
+                lbl_8039A8F0[1] = -1.0f;
+                lbl_8039A8F0[2] = zero;
             }
             viewRotationMatrix = Camera_GetViewRotationMatrix();
             if (nearestCloud->cloudType == 0)
@@ -1844,7 +1847,7 @@ void newclouds_run(void)
             }
             PSMTXConcat((MtxPtr)viewRotationMatrix, mtx, mtx);
             {
-                Vec* flashVector = (Vec*)((u32)clouds + 0xd8);
+                Vec* flashVector = (Vec*)lbl_8039A8F0;
                 PSMTXMultVec(mtx, flashVector, flashVector);
             }
             if (gNewCloudSnowFlashScroll < -16.0f)
@@ -1948,7 +1951,8 @@ extern int gNewCloudMusicIdByType[5];
 
 void newclouds_updateEnvfxAct(GameObject* objA, GameObject* objB, u8* params)
 {
-    CloudSpawnParams* cfg = (CloudSpawnParams*)params;
+    CloudSpawnParams decoded;
+    CloudSpawnParams* cfg;
     u8* env;
     NewCloud* cloud;
     u8 fl;
@@ -1964,6 +1968,16 @@ void newclouds_updateEnvfxAct(GameObject* objA, GameObject* objB, u8* params)
     {
         return;
     }
+    decoded = *(CloudSpawnParams*)params;
+    decoded.driftBase = *(f32*)&(u32){fhSwap32(*(u32*)&decoded.driftBase)};
+    decoded.heightBase = *(f32*)&(u32){fhSwap32(*(u32*)&decoded.heightBase)};
+    decoded.driftMax = *(f32*)&(u32){fhSwap32(*(u32*)&decoded.driftMax)};
+    decoded.envfxActId = fhSwap16(decoded.envfxActId);
+    decoded.cloudIndex = fhSwap16(decoded.cloudIndex);
+    decoded.flakeCount = fhSwap16(decoded.flakeCount);
+    decoded.fillDivisor = fhSwap16(decoded.fillDivisor);
+    decoded.drainDivisor = fhSwap16(decoded.drainDivisor);
+    cfg = &decoded;
     if (objA != NULL)
     {
         posA[0] = objA->anim.worldPosX;
@@ -1976,32 +1990,32 @@ void newclouds_updateEnvfxAct(GameObject* objA, GameObject* objB, u8* params)
         posB[1] = objB->anim.worldPosY;
         posB[2] = objB->anim.worldPosZ;
     }
-    if ((u32)cfg->cloudIndex > 8)
+    if ((u32)cfg->cloudIndex >= 8)
     {
         return;
     }
     cloud = (NewCloud*)NC_CLOUD;
     if (cloud == NULL)
     {
-        fl = ((CloudSpawnParams*)params)->flags58;
+        fl = cfg->flags58;
         if (!(fl & NEWCLOUD_CMD_DESPAWN) && !(fl & NEWCLOUD_CMD_RELOCATE) && !(fl & NEWCLOUD_CMD_KILL))
         {
-            if ((fl & NEWCLOUD_CMD_SPAWN) && (fl & NEWCLOUD_CMD_ANCHOROBJ) && ((CloudSpawnParams*)params)->stationaryInit != 0)
+            if ((fl & NEWCLOUD_CMD_SPAWN) && (fl & NEWCLOUD_CMD_ANCHOROBJ) && cfg->stationaryInit != 0)
             {
-                newClouds((CloudSpawnParams*)params, objB, posA[0], posA[1], posA[2]);
+                newClouds(cfg, objB, posA[0], posA[1], posA[2]);
             }
             else if ((fl & NEWCLOUD_CMD_SPAWN) && (fl & NEWCLOUD_CMD_ANCHOROBJ))
             {
-                newClouds((CloudSpawnParams*)params, objB, posB[0], posB[1], posB[2]);
+                newClouds(cfg, objB, posB[0], posB[1], posB[2]);
             }
             else if (fl & NEWCLOUD_CMD_SPAWN)
             {
-                newClouds((CloudSpawnParams*)params, objB, posA[0], posA[1], posA[2]);
+                newClouds(cfg, objB, posA[0], posA[1], posA[2]);
             }
         }
         if (cfg->flags58 & NEWCLOUD_CMD_SPAWN)
         {
-            if (((CloudSpawnParams*)params)->cloudType == 0 || ((CloudSpawnParams*)params)->cloudType == 4)
+            if (cfg->cloudType == 0 || cfg->cloudType == 4)
             {
                 switch (cfg->cloudIndex)
                 {
@@ -2092,7 +2106,7 @@ void newclouds_updateEnvfxAct(GameObject* objA, GameObject* objB, u8* params)
     {
         return;
     }
-    if ((fl = ((CloudSpawnParams*)params)->flags58) & NEWCLOUD_CMD_SPAWN)
+    if ((fl = cfg->flags58) & NEWCLOUD_CMD_SPAWN)
     {
         return;
     }

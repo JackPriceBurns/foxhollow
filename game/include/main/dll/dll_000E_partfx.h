@@ -8,11 +8,11 @@
 typedef int (*PartFxSpawnCallback)(GameObject*, int, PartFxSpawnParams*, u32, u8, void*);
 
 typedef struct PartFxResourceVTable {
-    u8 pad00[0x08];
+    void (*pad00_slots[2])(void);
     PartFxSpawnCallback spawnObject;
 } PartFxResourceVTable;
 
-STATIC_ASSERT(offsetof(PartFxResourceVTable, spawnObject) == 0x08);
+STATIC_ASSERT(offsetof(PartFxResourceVTable, spawnObject) == sizeof(void*) * 2);
 
 typedef struct PartFxResource {
     PartFxResourceVTable* vtable;

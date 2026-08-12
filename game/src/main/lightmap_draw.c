@@ -64,13 +64,13 @@ typedef struct LightmapDrawEntry
 {
     union
     {
-        u32 value;
+        uintptr_t value;
         GameObject* object;
         MapBlockBoundsRec* bounds;
     } arg0;
     union
     {
-        u32 value;
+        uintptr_t value;
         MapBlockData* block;
     } arg1;
     u32 sortKey;
@@ -622,7 +622,7 @@ void sceneDrawTransparentPolys(void)
 }
 
 
-void lightmap_queueExternalRenderEntry(u32 a, u32 b, f32* p)
+void lightmap_queueExternalRenderEntry(uintptr_t a, u32 b, f32* p)
 {
     s32 t;
     if (gLightmapDrawQueueCount == 1000)

@@ -46,7 +46,7 @@ int SB_MiniFire_getObjectTypeId(void) {
 }
 
 void SB_MiniFire_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     (*gModgfxInterface)->detachSource(obj);
 }
 

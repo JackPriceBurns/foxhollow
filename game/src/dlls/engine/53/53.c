@@ -218,12 +218,12 @@ s8 gSaveSelectPanelIndex = -1;
 int gSaveSelectInfoStartSlot[1] = {0};
 int lbl_803DBA00[1] = {0};
 s16 gSaveSelectTextureIds[4] = {0x31D, 0x31F, 0x31E, 0};
-char sFrontendCompletionPercentFormat[] = "%1d%";
+char sFrontendCompletionPercentFormat[] = "%1d%%";
 char sFrontendSingleDigitFormat[] = "%1d";
 char sFrontendFoxName[] = "FOX";
 char sFrontendStringFormat[] = "%s";
 char lbl_803DBA20[4] = "";
-char sFrontendPercentFormat[] = "%d%";
+char sFrontendPercentFormat[] = "%d%%";
 
 typedef enum SaveSelectPanelId
 {
@@ -277,11 +277,7 @@ extern char sSaveGameBinPathFormat[];
 
 static void saveSelectOpenFile(int sel, int slot)
 {
-    TitleMenuTextEntry** pp;
-    int off;
-
-    off = gSaveSelectPanelIndex * 0xc;
-    pp = (TitleMenuTextEntry**)gSaveSelectPanels;
+    SaveSelectPanel* panel = &gSaveSelectPanels[gSaveSelectPanelIndex];
     if (sel == 0)
     {
         if (gSaveSelectMenuItem != NULL)
@@ -303,14 +299,13 @@ static void saveSelectOpenFile(int sel, int slot)
             }
             else
             {
-                (*(TitleMenuTextEntry**)((char*)pp + off))->flags =
-                    (u16)((*(TitleMenuTextEntry**)((char*)pp + off))->flags | TITLE_MENU_TEXT_ENTRY_HIDDEN);
-                (*(TitleMenuTextEntry**)((char*)pp + off))[1].upLink = -1;
-                (*(TitleMenuTextEntry**)((char*)pp + off))[1].textId = 984;
+                panel->entries[0].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
+                panel->entries[1].upLink = -1;
+                panel->entries[1].textId = 984;
                 gSaveSelectMenuItemActive = 1;
                 gSaveSelectMenuItem = gTitleMenuItemInterface->vtable->createWithWindow(983, 41, 0, 1, 0);
                 gTitleMenuItemInterface->vtable->setEnabled(gSaveSelectMenuItem, 1);
-                gTitleMenuLinkInterface->vtable->copyItems(*(TitleMenuTextEntry**)((char*)pp + off));
+                gTitleMenuLinkInterface->vtable->copyItems(panel->entries);
             }
         }
         else
@@ -594,7 +589,6 @@ void SaveSelectScreen_render(int param)
     case SAVE_SELECT_PANEL_OPEN_FILE:
     {
         u8* infoTextIds;
-        int taskTextOffset;
         int slotCount;
         int infoIndex;
         FrontendSaveSlot* slot;
@@ -609,16 +603,10 @@ void SaveSelectScreen_render(int param)
         }
         infoIndex = 0;
         infoTextIds = gSaveSelectInfoTextIds + (u8)(3 - slotCount);
-        taskTextOffset = 0;
         while (infoIndex < slotCount)
         {
-            gameTextAppendStr(
-                ((FrontendSaveSlot*)((char*)saveFileSelect_saveSlots +
-                                     saveFileSelect_currentSlotIndex * 0x24 + taskTextOffset))
-                    ->taskTexts[0],
-                *infoTextIds);
+            gameTextAppendStr(slot->taskTexts[infoIndex], *infoTextIds);
             infoTextIds++;
-            taskTextOffset += 4;
             infoIndex++;
         }
         if (gSaveSelectMenuItem != NULL)
@@ -638,20 +626,21 @@ void SaveSelectScreen_render(int param)
         if (gSaveGameEnabled != 0)
         {
             int slotIndex;
-            int slotOffset;
+            FrontendSaveSlot* slot;
 
             saveFileSelect_saveSlots = saveFileSelect_saveSlotsBase;
             slotIndex = 0;
-            slotOffset = 0;
             do
             {
-                sprintf(gSaveSelectTextBuffers[slotIndex], sFrontendPercentFormat,
-                        ((FrontendSaveSlot*)((u8*)saveFileSelect_saveSlots + slotOffset))->completionPercent);
-                gameTextSetColor(0xff, 0xff, 0xff, alpha);
-                gameTextAppendStr(gSaveSelectTextBuffers[slotIndex], gSaveSelectSlotTextIds[slotIndex]);
-                slotOffset += sizeof(FrontendSaveSlot);
+                slot = &saveFileSelect_saveSlots[slotIndex];
+                if (slot->isOccupied != 0)
+                {
+                    sprintf(gSaveSelectTextBuffers[slotIndex], sFrontendPercentFormat, slot->completionPercent);
+                    gameTextSetColor(0xff, 0xff, 0xff, alpha);
+                    gameTextAppendStr(gSaveSelectTextBuffers[slotIndex], gSaveSelectSlotTextIds[slotIndex]);
+                }
                 slotIndex++;
-            } while (slotIndex < 3);
+            } while (slotIndex < FRONTEND_SAVE_SLOT_COUNT);
         }
         break;
     }
@@ -875,8 +864,8 @@ void SaveSelectScreen_initialise(void)
     int i;
     SaveSelectPanel* panel;
 
-    saveFileSelect_saveSlotsBase = mmAlloc(0x6c, 5, 0);
-    lbl_803DD6AC = mmAlloc(0x6c, 5, 0);
+    saveFileSelect_saveSlotsBase = mmAlloc(sizeof(FrontendSaveSlot) * FRONTEND_SAVE_SLOT_COUNT, 5, 0);
+    lbl_803DD6AC = mmAlloc(sizeof(FrontendSaveSlot) * FRONTEND_SAVE_SLOT_COUNT, 5, 0);
     gSaveSelectTexture = textureLoadAsset(SAVESELECTSCREEN_TEXTURE_ID);
     gameTextLoadDir(0x15);
 

@@ -165,57 +165,11 @@ typedef struct ObjHitsPriorityWorkSlot
     u8 pad0C[OBJHITS_PRIORITY_WORK_SLOT_SIZE - 0x0C];
 } ObjHitsPriorityWorkSlot;
 
-typedef struct ObjHitsModelJointInfo
-{
-    s8 parentJoint;
-    u8 pad01[0x1C - 0x01];
-} ObjHitsModelJointInfo;
-
-typedef struct ObjHitsModelHitVolume
-{
-    f32 radius;
-    f32 x;
-    f32 y;
-    f32 z;
-    u8 pad10[OBJHITS_MODEL_HIT_VOLUME_LINKS_OFFSET - 0x10];
-    u16 linkedSpheres;
-    s8 sphereIndex;
-    s8 maskBit;
-} ObjHitsModelHitVolume;
-
-typedef struct ObjHitsModelFileHeader
-{
-    u8 pad00[0x3C];
-    ObjHitsModelJointInfo* joints;
-    u8 pad40[0x58 - 0x40];
-    ObjHitsModelHitVolume* hitVolumes;
-    u8 pad5C[0xF3 - 0x5C];
-    u8 jointCount;
-    u8 padF4[0xF7 - 0xF4];
-    u8 hitVolumeCount;
-} ObjHitsModelFileHeader;
-
-typedef struct ObjHitsSkeletonJointData
-{
-    u8 pad00[0x04];
-    f32* jointRadii;
-    u8 pad08[0x0C - 0x08];
-    f32* jointLengths;
-    f32* jointCullDistances;
-    u8 pad14[0x18 - 0x14];
-    u8* touchedJoints;
-} ObjHitsSkeletonJointData;
-
-typedef struct ObjHitsModelBank
-{
-    ObjHitsModelFileHeader* modelFile;
-    u8 pad04[0x14 - 0x04];
-    ObjHitsSkeletonJointData* skeletonJointData;
-    u16 hitBufferFlags;
-    u8 pad1A[0x48 - 0x1A];
-    f32* hitVolumeSphereBuffers[2];
-    f32* activeHitVolumeSpheres;
-} ObjHitsModelBank;
+typedef ModelBone ObjHitsModelJointInfo;
+typedef ModelHitSphereDef ObjHitsModelHitVolume;
+typedef ModelFileHeader ObjHitsModelFileHeader;
+typedef ModelJointWork ObjHitsSkeletonJointData;
+typedef ObjModel ObjHitsModelBank;
 
 /*
  * The skeleton collectors fill a 0x48-byte hit record and terminate the list

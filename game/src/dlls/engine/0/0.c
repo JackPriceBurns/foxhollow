@@ -402,7 +402,7 @@ extern const f32 gPauseMenuRingScale;
 extern const f32 lbl_803E209C;
 extern const f32 lbl_803E20B8;
 extern const f32 gGameUiAngleDivisor;
-extern Texture* hudTextures[102];
+extern Texture** hudTextures;
 extern s16 gFearTestMeterAlpha;
 extern s8 lbl_803DD7F8;
 extern s8 lbl_803DD7F9;
@@ -991,7 +991,7 @@ int pauseMenuHoloRenderFn(int* this, int* p2, int p3)
     indmtx = sGameUiZeroIndTexMtx;
     op = ObjModel_GetRenderOp((ModelFileHeader*)*p2, p3);
     layer = Shader_getLayer(op, 0);
-    tex0 = textureIdxToPtr(*(int*)layer);
+    tex0 = ((ShaderLayer*)layer)->texture;
 
     PSMTXCopy((MtxPtr)lbl_803A8950, m1);
     m1[0][3] = 0.0f;
@@ -2134,7 +2134,14 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
     }
 }
 
-char lbl_803A87F0[0x40];
+/*
+ * The original symbol is the start of the GameUI work area, not a standalone
+ * 0x40-byte object.  On GameCube the following BSS labels happened to provide
+ * the rest of that contiguous area.  Native linkers are free to reorder those
+ * symbols, and native pointers also make the largest view (CMenuHud) wider, so
+ * accesses through lbl_803A87F0 used to overwrite unrelated DLL state.
+ */
+char lbl_803A87F0[sizeof(CMenuHud)] __attribute__((aligned(8)));
 void hudDrawMagicBar(u8 alpha, int elemAlpha, u8 flags)
 {
     int total = lbl_803A9364[8];
@@ -3255,7 +3262,7 @@ void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
                 textObj = gameTextGet(0x2AD);
             }
             if (icon != 0 && textObj != NULL &&
-                textObj->count > *(aPhraseIndex = (u8*)(icon * 2 + ((u32)gHudButtonIcons + 1))))
+                textObj->count > *(aPhraseIndex = &gHudButtonIcons[icon * 2 + 1]))
             {
                 aTextPtr = textObj->strings[*aPhraseIndex];
                 aPrevCharset2 = gameTextGetCharset();
@@ -3317,7 +3324,7 @@ void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
             gameTextSetCharset(3, 3);
             textObj = gameTextGet(0x2AD);
             if (icon != 0 && textObj != NULL &&
-                textObj->count > *(bPhraseIndex = (u8*)(icon * 2 + ((u32)gHudButtonIcons + 1))))
+                textObj->count > *(bPhraseIndex = &gHudButtonIcons[icon * 2 + 1]))
             {
                 bTextPtr = textObj->strings[*bPhraseIndex];
                 bPrevCharset2 = gameTextGetCharset();
@@ -3771,7 +3778,7 @@ int cMenuRingModelRenderFn(GameObject* obj, int block, int idx)
     renderOp = (Shader*)ObjModel_GetRenderOp((ModelFileHeader*)*(int*)block, idx);
     Rcp_ResetTextureStageState();
     cfg.a = obj->anim.renderAlpha;
-    addTexLayerStageSwizzled(textureIdxToPtr(renderOp->layers[0].textureIndex), NULL, 0, &cfg, 0, 1);
+    addTexLayerStageSwizzled(renderOp->layers[0].texture, NULL, 0, &cfg, 0, 1);
     Rcp_ApplyTextureStageCounts();
     GXSetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
     gxSetZMode_(0, GX_ALWAYS, 0);
@@ -9174,6 +9181,6 @@ int lbl_803A9320[0x11];
 int gCMenuItemTargetTable[0xBA];
 u8 gCMenuItemEnabledTable[0x3C0];
 s16 lbl_803A8B48[0x98];
-Texture* hudTextures[102];
+Texture** hudTextures = ((GameUiHud*)lbl_803A87F0)->hudTextures;
 f32 lbl_803A8950[0x18];
 char lbl_803A8830[0x120];
