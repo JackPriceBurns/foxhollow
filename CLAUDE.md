@@ -20,7 +20,7 @@ First configure fetches Dawn — slow, expected.
 ## The bug class
 
 Almost every bug here is the same shape: **the code is correct, the data is misread.**
-Two rules define it.
+Three rules define it.
 
 **Only pointers changed width (4 → 8).** An `s16` is still an `s16`. So a struct's layout
 only drifts *after* a pointer field — everything before it keeps its retail offset. Any code
@@ -29,6 +29,10 @@ still using a hardcoded retail offset then reads the wrong bytes.
 **File-backed data is big-endian and is not swapped globally.** Placement data, tab files and
 asset headers arrive raw. Each consumer swaps its own fields; `u8` fields read fine, which is
 why these bugs present as "mostly works, one thing is insane".
+
+**Packed scalar constants reinterpreted as byte structs are endian-dependent.** A retail-style
+`u32 color = 0xRRGGBBAA` followed by `*(GXColor*)&color` has the intended channel order only on
+big-endian hosts. Define the value as a `GXColor` with explicit fields, or unpack it with shifts.
 
 **Hardware conversion intrinsics are behavioral contracts, not ordinary C casts.** GameCube
 paired-single quantized stores and the Dolphin `OSFastCast` helpers saturate values to the target
@@ -51,6 +55,10 @@ Worked examples, both real:
   `psq_st` saturated `33172.289` to `32767`; Aurora's `(s16)` cast wrapped it to roughly `-32364`,
   pulling a small group of ear vertices straight through the model until the animation moved back
   in range. The fix was a port-owned saturating `OSFastCast.h`, not a change to the game animation.
+- `gBlurFilterKColor = 0x666666FF` was reinterpreted as a `GXColor`. Retail read gray RGBA
+  `(0x66, 0x66, 0x66, 0xFF)`; the little-endian port read translucent red
+  `(0xFF, 0x66, 0x66, 0x66)`, tinting the Ship Battle intro. Declaring it as `GXColor` fixed the
+  channel order without disabling the depth-of-field blur.
 
 `STATIC_ASSERT` is a **no-op** outside MWERKS (`global.h`), so no struct layout is verified.
 Enabling it as `_Static_assert` yields ~369 failures across ~20 structs; most are vtables and

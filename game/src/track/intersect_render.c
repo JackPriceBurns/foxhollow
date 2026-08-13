@@ -3881,7 +3881,7 @@ void doBlurFilter(f32 wx, f32 wy, f32 wz, u8 param4, u8 param5)
 
     GXSetTevKColor(GX_KCOLOR0, c0);
     GXSetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KASEL_K0_A);
-    c1 = *(GXColor*)&gBlurFilterKColor;
+    c1 = gBlurFilterKColor;
     GXSetTevKColor(GX_KCOLOR1, c1);
 
     GXSetNumTexGens(6);

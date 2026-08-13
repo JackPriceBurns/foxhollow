@@ -71,7 +71,7 @@ extern GXColor gReflectionKColor;
 extern u32 gWaterReflectionKColorR;
 extern u32 gWaterReflectionKColorG;
 extern u32 gWaterReflectionKColorB;
-extern u32 gBlurFilterKColor;
+extern GXColor gBlurFilterKColor;
 extern GXColor gMotionBlurKColor;
 extern GXColor gHeatEffectKColor;
 extern u32 gObjectShadowTevColor;
