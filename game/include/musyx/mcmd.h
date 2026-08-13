@@ -2,6 +2,7 @@
 #define MUSYX_MCMD_H_
 
 #include "musyx/adsr.h"
+#include "musyx/synth_delayed_node.h"
 
 #define MAC_STATE_RUNNABLE 0
 #define MAC_STATE_YIELDED 1
@@ -108,7 +109,7 @@ typedef struct CALLSTACK {
 } CALLSTACK;
 
 typedef struct McmdVoiceState {
-    u8 unk00[0x24];
+    SynthDelayedNode delayedJob[3];
     u32 lastLowCallTimeHi;
     u32 lastLowCallTimeLo;
     u32 lastZeroCallTimeHi;

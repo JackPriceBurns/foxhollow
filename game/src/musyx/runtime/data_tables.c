@@ -11,11 +11,9 @@
 #include "musyx/data_tables.h"
 #include "musyx/snd_service.h"
 #include "musyx/synth_jobs.h"
+#include "musyx/endian.h"
+#include <string.h>
 
-
-#define dataLayerTab           (((SynthDataTables*)dataSmpSDirs)->layer)
-#define dataMacMainTab         (((SynthDataTables*)dataSmpSDirs)->macMain)
-#define dataMacSubTabmem       (((SynthDataTables*)dataSmpSDirs)->macSub)
 LAYER_TAB* dataGetLayer_result;
 DATA_TAB* dataGetKeymap_result;
 DATA_TAB dataGetKeymap_key;
@@ -46,26 +44,107 @@ static MAC_MAINTAB dataMacroBucketTable[512];
 static MAC_SUBTAB dataMacroTable[2048];
 static FX_GROUP dataFXGroupTable[128];
 
+typedef struct DataKeymapEntry
+{
+    u16 id;
+    s8 transpose;
+    u8 panning;
+    s16 prioOffset;
+    u8 reserved[2];
+} DataKeymapEntry;
+
+typedef struct DataLayerEntry
+{
+    u16 id;
+    u8 keyLow;
+    u8 keyHigh;
+    s8 transpose;
+    u8 volume;
+    s16 prioOffset;
+    u8 panning;
+    u8 reserved[3];
+} DataLayerEntry;
+
+static const void* dataSDirRaw[128];
+static SDIR_DATA* dataSDirNative[128];
+static u16 dataSDirNativeCount;
+
+static SDIR_DATA* dataConvertSDir(const void* rawData)
+{
+    const u8* raw = rawData;
+    SDIR_DATA* converted;
+    u32 count;
+    u32 i;
+
+    for (i = 0; i < dataSDirNativeCount; i++)
+    {
+        if (dataSDirRaw[i] == rawData)
+        {
+            return dataSDirNative[i];
+        }
+    }
+
+    for (count = 0; musyxReadBE16(raw + count * 0x20) != 0xFFFF; count++)
+    {
+    }
+
+    converted = salMalloc((count + 1) * sizeof(SDIR_DATA));
+    if (converted == NULL)
+    {
+        return NULL;
+    }
+
+    for (i = 0; i < count; i++)
+    {
+        const u8* source = raw + i * 0x20;
+        u32 extraOffset = musyxReadBE32(source + 0x1c);
+        converted[i].id = musyxReadBE16(source);
+        converted[i].ref_cnt = musyxReadBE16(source + 2);
+        converted[i].offset = musyxReadBE32(source + 4);
+        converted[i].addr = NULL;
+        converted[i].header.info = musyxReadBE32(source + 0xc);
+        converted[i].header.length = musyxReadBE32(source + 0x10);
+        converted[i].header.loopOffset = musyxReadBE32(source + 0x14);
+        converted[i].header.loopLength = musyxReadBE32(source + 0x18);
+        converted[i].extraData = extraOffset != 0 ? (void*)(raw + extraOffset) : NULL;
+    }
+    converted[count].id = 0xFFFF;
+    converted[count].ref_cnt = 0;
+    converted[count].offset = 0;
+    converted[count].addr = NULL;
+    converted[count].header.info = 0;
+    converted[count].header.length = 0;
+    converted[count].header.loopOffset = 0;
+    converted[count].header.loopLength = 0;
+    converted[count].extraData = NULL;
+
+    dataSDirRaw[dataSDirNativeCount] = rawData;
+    dataSDirNative[dataSDirNativeCount] = converted;
+    dataSDirNativeCount++;
+    return converted;
+}
+
 int dataInsertKeymap(u16 cid, void* keymapData)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
+    DataKeymapEntry* converted;
+    DataKeymapEntry* source;
     DATA_TAB* c;
 
     sndBegin();
 
-    c = &t->keymap[0];
+    c = dataKeymapTable;
     for (i = 0; i < dataKeymapNum && c->id < cid; ++c, ++i)
         ;
 
     if (i < dataKeymapNum)
     {
-        if (cid != t->keymap[i].id)
+        if (cid != dataKeymapTable[i].id)
         {
             if (dataKeymapNum < 256)
             {
-                c = t->keymap;
+                c = dataKeymapTable;
                 for (j = dataKeymapNum - 1; j >= i; --j)
                     c[j + 1] = c[j];
                 ++dataKeymapNum;
@@ -78,7 +157,7 @@ int dataInsertKeymap(u16 cid, void* keymapData)
         }
         else
         {
-            t->keymap[i].refCount++;
+            dataKeymapTable[i].refCount++;
             sndEnd();
             return 0;
         }
@@ -93,9 +172,29 @@ int dataInsertKeymap(u16 cid, void* keymapData)
         return 0;
     }
 
-    t->keymap[i].id = cid;
-    t->keymap[i].data = keymapData;
-    t->keymap[i].refCount = 1;
+    converted = salMalloc(128 * sizeof(DataKeymapEntry));
+    if (converted == NULL)
+    {
+        for (j = i; j + 1 < dataKeymapNum; j++)
+        {
+            dataKeymapTable[j] = dataKeymapTable[j + 1];
+        }
+        dataKeymapNum--;
+        sndEnd();
+        return 0;
+    }
+    source = keymapData;
+    for (j = 0; j < 128; j++)
+    {
+        converted[j].id = musyxReadBE16(&source[j].id);
+        converted[j].transpose = source[j].transpose;
+        converted[j].panning = source[j].panning;
+        converted[j].prioOffset = (s16)musyxReadBE16(&source[j].prioOffset);
+        memcpy(converted[j].reserved, source[j].reserved, sizeof(converted[j].reserved));
+    }
+    dataKeymapTable[i].id = cid;
+    dataKeymapTable[i].data = converted;
+    dataKeymapTable[i].refCount = 1;
     sndEnd();
     return 1;
 }
@@ -104,21 +203,21 @@ int dataRemoveKeymap(u16 sid)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
     long num;
 
     sndBegin();
     num = dataKeymapNum;
     {
-        DATA_TAB* c = &t->keymap[0];
+        DATA_TAB* c = dataKeymapTable;
         for (i = 0; i < num && sid != c->id; ++c, ++i)
             ;
     }
 
-    if (i != num && --t->keymap[i].refCount == 0)
+    if (i != num && --dataKeymapTable[i].refCount == 0)
     {
+        salFree(dataKeymapTable[i].data);
         {
-            DATA_TAB* keymap = t->keymap;
+            DATA_TAB* keymap = dataKeymapTable;
             DATA_TAB* p = &keymap[i + 1];
             for (j = i + 1; j < num; j++)
             {
@@ -138,24 +237,25 @@ s32 dataInsertLayer(u16 cid, void* layerdata, u16 size)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
+    DataLayerEntry* converted;
+    DataLayerEntry* source;
 
     sndBegin();
 
     {
-        LAYER_TAB* c = &t->layer[0];
+        LAYER_TAB* c = dataLayerTable;
         for (i = 0; i < dataLayerNum && c->id < cid; ++c, ++i)
             ;
     }
 
     if (i < dataLayerNum)
     {
-        if (cid != t->layer[i].id)
+        if (cid != dataLayerTable[i].id)
         {
             if (dataLayerNum < 256)
             {
                 {
-                    LAYER_TAB* layer = t->layer;
+                    LAYER_TAB* layer = dataLayerTable;
                     for (j = dataLayerNum - 1; j >= i; --j)
                         layer[j + 1] = layer[j];
                 }
@@ -169,7 +269,7 @@ s32 dataInsertLayer(u16 cid, void* layerdata, u16 size)
         }
         else
         {
-            t->layer[i].refCount++;
+            dataLayerTable[i].refCount++;
             sndEnd();
             return 0;
         }
@@ -184,10 +284,33 @@ s32 dataInsertLayer(u16 cid, void* layerdata, u16 size)
         return 0;
     }
 
-    t->layer[i].id = cid;
-    t->layer[i].data = layerdata;
-    t->layer[i].num = size;
-    t->layer[i].refCount = 1;
+    converted = salMalloc(size * sizeof(DataLayerEntry));
+    if (converted == NULL)
+    {
+        for (j = i; j + 1 < dataLayerNum; j++)
+        {
+            dataLayerTable[j] = dataLayerTable[j + 1];
+        }
+        dataLayerNum--;
+        sndEnd();
+        return 0;
+    }
+    source = layerdata;
+    for (j = 0; j < size; j++)
+    {
+        converted[j].id = musyxReadBE16(&source[j].id);
+        converted[j].keyLow = source[j].keyLow;
+        converted[j].keyHigh = source[j].keyHigh;
+        converted[j].transpose = source[j].transpose;
+        converted[j].volume = source[j].volume;
+        converted[j].prioOffset = (s16)musyxReadBE16(&source[j].prioOffset);
+        converted[j].panning = source[j].panning;
+        memcpy(converted[j].reserved, source[j].reserved, sizeof(converted[j].reserved));
+    }
+    dataLayerTable[i].id = cid;
+    dataLayerTable[i].data = converted;
+    dataLayerTable[i].num = size;
+    dataLayerTable[i].refCount = 1;
     sndEnd();
     return 1;
 }
@@ -196,21 +319,21 @@ s32 dataRemoveLayer(u16 sid)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
     long num;
 
     sndBegin();
     num = dataLayerNum;
     {
-        LAYER_TAB* c = &t->layer[0];
+        LAYER_TAB* c = dataLayerTable;
         for (i = 0; i < num && sid != c->id; ++c, ++i)
             ;
     }
 
-    if (i != num && --t->layer[i].refCount == 0)
+    if (i != num && --dataLayerTable[i].refCount == 0)
     {
+        salFree(dataLayerTable[i].data);
         {
-            LAYER_TAB* layer = t->layer;
+            LAYER_TAB* layer = dataLayerTable;
             LAYER_TAB* p = &layer[i + 1];
             for (j = i + 1; j < num; j++)
             {
@@ -232,21 +355,20 @@ s32 dataInsertCurve(u16 cid, void* curvedata)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
 
     sndBegin();
 
-    for (i = 0; i < dataCurveNum && ((DATA_TAB*)((u8*)t + 0x600))[i].id < cid; ++i)
+    for (i = 0; i < dataCurveNum && dataCurveTable[i].id < cid; ++i)
         ;
 
     if (i < dataCurveNum)
     {
-        if (cid != t->curve[i].id)
+        if (cid != dataCurveTable[i].id)
         {
             if (dataCurveNum < 2048)
             {
                 for (j = dataCurveNum - 1; j >= i; --j)
-                    ((DATA_TAB*)(t->sdir + 128))[j + 1] = ((DATA_TAB*)(t->sdir + 128))[j];
+                    dataCurveTable[j + 1] = dataCurveTable[j];
                 ++dataCurveNum;
             }
             else
@@ -258,7 +380,7 @@ s32 dataInsertCurve(u16 cid, void* curvedata)
         else
         {
             sndEnd();
-            t->curve[i].refCount++;
+            dataCurveTable[i].refCount++;
             return 0;
         }
     }
@@ -272,9 +394,9 @@ s32 dataInsertCurve(u16 cid, void* curvedata)
         return 0;
     }
 
-    t->curve[i].id = cid;
-    t->curve[i].data = curvedata;
-    t->curve[i].refCount = 1;
+    dataCurveTable[i].id = cid;
+    dataCurveTable[i].data = curvedata;
+    dataCurveTable[i].refCount = 1;
     sndEnd();
     return 1;
 }
@@ -283,21 +405,20 @@ s32 dataRemoveCurve(u16 sid)
 {
     long i;
     long j;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
     long num;
 
     sndBegin();
     num = dataCurveNum;
     {
-        DATA_TAB* c = &t->curve[0];
+        DATA_TAB* c = dataCurveTable;
         for (i = 0; i < num && sid != c->id; ++c, ++i)
             ;
     }
 
-    if (i != num && --t->curve[i].refCount == 0)
+    if (i != num && --dataCurveTable[i].refCount == 0)
     {
         {
-            DATA_TAB* curve = t->curve;
+            DATA_TAB* curve = dataCurveTable;
             DATA_TAB* p = &curve[i + 1];
             for (j = i + 1; j < num; j++)
             {
@@ -334,6 +455,12 @@ u32 dataInsertSDir(SDIR_DATA* sdir, void* smp_data)
     u16 n;
     u16 j;
     u16 k;
+
+    sdir = dataConvertSDir(sdir);
+    if (sdir == NULL)
+    {
+        return 0;
+    }
 
     for (i = 0; i < dataSmpSDirNum && dataSmpSDirs[i].data != sdir; ++i)
         ;
@@ -399,7 +526,6 @@ s32 dataAddSampleReference(u16 sid)
     u32 i;
     SDIR_TAB* tab;
     SAMPLE_HEADER* header;
-    SynthDataTables* t;
     SDIR_DATA* data;
     SDIR_DATA* sdir;
 
@@ -409,8 +535,8 @@ s32 dataAddSampleReference(u16 sid)
 
     if (sdir->ref_cnt == 0)
     {
-        tab = (t = (SynthDataTables*)dataSmpSDirs)->sdir;
-        sdir->addr = (void*)(sdir->offset + (u32)tab[i].base);
+        tab = dataSmpSDirs;
+        sdir->addr = (void*)(sdir->offset + (uintptr_t)tab[i].base);
         header = &sdir->header;
         hwSaveSample(&header, &sdir->addr);
     }
@@ -448,9 +574,25 @@ u32 dataInsertFX(u16 gid, FX_TAB* fx, u16 fxNum)
 {
     long i;
     FX_GROUP* g;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
+    FX_TAB* source = fx;
+    fx = salMalloc(fxNum * sizeof(FX_TAB));
+    if (fx == NULL)
+    {
+        return 0;
+    }
+    for (i = 0; i < fxNum; i++)
+    {
+        fx[i].id = musyxReadBE16(&source[i].id);
+        fx[i].macro = musyxReadBE16(&source[i].macro);
+        fx[i].maxVoices = source[i].maxVoices;
+        fx[i].priority = source[i].priority;
+        fx[i].volume = source[i].volume;
+        fx[i].panning = source[i].panning;
+        fx[i].key = source[i].key;
+        fx[i].vGroup = source[i].vGroup;
+    }
 
-    g = t->fxGroup;
+    g = dataFXGroupTable;
     for (i = 0; i < dataFXGroupNum && gid != g[i].gid; ++i)
     {
     }
@@ -459,9 +601,9 @@ u32 dataInsertFX(u16 gid, FX_TAB* fx, u16 fxNum)
     {
         sndBegin();
         i = dataFXGroupNum;
-        t->fxGroup[i].gid = gid;
-        t->fxGroup[i].fxNum = fxNum;
-        t->fxGroup[i].fxTab = fx;
+        dataFXGroupTable[i].gid = gid;
+        dataFXGroupTable[i].fxNum = fxNum;
+        dataFXGroupTable[i].fxTab = fx;
 
         for (i = 0; i < fxNum; ++i, ++fx)
         {
@@ -472,6 +614,7 @@ u32 dataInsertFX(u16 gid, FX_TAB* fx, u16 fxNum)
         sndEnd();
         return 1;
     }
+    salFree(fx);
     return 0;
 }
 
@@ -588,15 +731,20 @@ void* dataGetMacro(u16 mid)
 {
     u16 num;
 
-    dataGetMacro_bucket = (mid >> 6) & 0x3fff;
-    num = dataMacMainTab[dataGetMacro_bucket].num;
+    dataGetMacro_bucket = mid >> 6;
+    if (dataGetMacro_bucket >= 512)
+    {
+        return NULL;
+    }
+    num = dataMacroBucketTable[dataGetMacro_bucket].num;
 
     if (num != 0)
     {
-        dataGetMacro_main = dataMacMainTab[dataGetMacro_bucket].subTabIndex;
+        dataGetMacro_main = dataMacroBucketTable[dataGetMacro_bucket].subTabIndex;
         dataGetMacro_key.id = mid;
-        if ((dataGetMacro_result = (MAC_SUBTAB*)sndBSearch(&dataGetMacro_key, &dataMacSubTabmem[dataGetMacro_main], num,
-                                                           8, maccmp)) != NULL)
+        if ((dataGetMacro_result =
+                 (MAC_SUBTAB*)sndBSearch(&dataGetMacro_key, &dataMacroTable[dataGetMacro_main], num,
+                                         sizeof(MAC_SUBTAB), maccmp)) != NULL)
         {
             return dataGetMacro_result->data;
         }
@@ -613,14 +761,13 @@ static s32 smpcmp(void* p1, void* p2)
 s32 dataGetSample(u16 sid, SAMPLE_INFO* newsmp)
 {
     long i;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
-
-    t->getSampleKey.id = sid;
+    dataGetSampleSearchKey.id = sid;
 
     for (i = 0; i < dataSmpSDirNum; ++i)
     {
-        if ((dataGetSample_result = (SDIR_DATA*)sndBSearch(&t->getSampleKey, t->sdir[i].data, t->sdir[i].numSmp,
-                                                           sizeof(SDIR_DATA), smpcmp)) != NULL)
+        if ((dataGetSample_result =
+                 (SDIR_DATA*)sndBSearch(&dataGetSampleSearchKey, dataSmpSDirs[i].data,
+                                        dataSmpSDirs[i].numSmp, sizeof(SDIR_DATA), smpcmp)) != NULL)
         {
             if (dataGetSample_result->ref_cnt != 0xFFFF)
             {
@@ -635,7 +782,7 @@ s32 dataGetSample(u16 sid, SAMPLE_INFO* newsmp)
 
                 if (dataGetSample_result->extraData)
                 {
-                    newsmp->extraData = (void*)((u32) & (t->sdir[i].data)->id + dataGetSample_result->extraData);
+                    newsmp->extraData = dataGetSample_result->extraData;
                 }
                 return 0;
             }
@@ -679,11 +826,10 @@ static s32 layercmp(void* p1, void* p2)
 
 void* dataGetLayer(u16 cid, u16* count)
 {
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
-
-    t->getLayerKey.id = cid;
+    dataGetLayerSearchKey.id = cid;
     if ((dataGetLayer_result =
-             (LAYER_TAB*)sndBSearch(&t->getLayerKey, dataLayerTab, dataLayerNum, sizeof(LAYER_TAB), layercmp)))
+             (LAYER_TAB*)sndBSearch(&dataGetLayerSearchKey, dataLayerTable, dataLayerNum,
+                                    sizeof(LAYER_TAB), layercmp)))
     {
         *count = dataGetLayer_result->num;
         return dataGetLayer_result->data;
@@ -701,16 +847,15 @@ FX_TAB* dataGetFX(u16 fid)
     FX_TAB* ret;
     long i;
     FX_TAB* tab;
-    SynthDataTables* t = (SynthDataTables*)dataSmpSDirs;
     FX_GROUP* g;
-    int zero;
 
-    t->getFXKey.id = fid;
-    g = t->fxGroup;
-    for (i = (zero = 0); i < dataFXGroupNum; ++i)
+    dataGetFXSearchKey.key.id = fid;
+    g = dataFXGroupTable;
+    for (i = 0; i < dataFXGroupNum; ++i)
     {
         tab = g[i].fxTab;
-        if ((ret = (FX_TAB*)sndBSearch(&t->getFXKey, tab, g[i].fxNum, sizeof(FX_TAB), fxcmp)))
+        if ((ret = (FX_TAB*)sndBSearch(&dataGetFXSearchKey.key, tab, g[i].fxNum,
+                                       sizeof(FX_TAB), fxcmp)))
         {
             return ret;
         }
@@ -729,6 +874,7 @@ void dataInit(u32 smpBase, u32 smpLength)
     dataLayerNum = 0;
     dataFXGroupNum = 0;
     dataMacTotal = 0;
+    dataSDirNativeCount = 0;
     for (i = 0; i < 512; ++i)
     {
         dataMacroBucketTable[i].num = 0;

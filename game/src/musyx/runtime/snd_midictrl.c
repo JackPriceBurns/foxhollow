@@ -30,17 +30,17 @@ static u8 gInpChannelDefaults[64];
 
 static inline void inpSetRPNHi(u8 set, u8 channel, u8 value)
 {
-    InpMidiState* st = (InpMidiState*)lbl_803CD760;
     u16 rpn;
     u32 i;
     u8 range;
 
-    rpn = (st->midiCtrl[set][channel][MIDI_CC_RPN_LSB]) | (st->midiCtrl[set][channel][MIDI_CC_RPN_MSB] << 8);
+    rpn = gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_LSB] |
+          (gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_MSB] << 8);
     switch (rpn)
     {
     case MIDI_RPN_PITCH_BEND_SENSITIVITY:
         range = value > 24 ? 24 : value;
-        st->pbRange[set][channel] = range;
+        gInpChannelDefaultsByKey[set][channel] = range;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
             if (set == synthVoice[i].midiSet && channel == synthVoice[i].midi)
@@ -61,21 +61,21 @@ static inline void inpSetRPNLo(u8 set, u8 channel, u8 value)
 
 static inline void inpSetRPNDec(u8 set, u8 channel)
 {
-    InpMidiState* st = (InpMidiState*)lbl_803CD760;
     u16 rpn;
     u32 i;
     u8 range;
 
-    rpn = (st->midiCtrl[set][channel][MIDI_CC_RPN_LSB]) | (st->midiCtrl[set][channel][MIDI_CC_RPN_MSB] << 8);
+    rpn = gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_LSB] |
+          (gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_MSB] << 8);
     switch (rpn)
     {
     case MIDI_RPN_PITCH_BEND_SENSITIVITY:
-        range = st->pbRange[set][channel];
+        range = gInpChannelDefaultsByKey[set][channel];
         if (range != 0)
         {
             --range;
         }
-        st->pbRange[set][channel] = range;
+        gInpChannelDefaultsByKey[set][channel] = range;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
             if (set == synthVoice[i].midiSet && channel == synthVoice[i].midi)
@@ -92,21 +92,21 @@ static inline void inpSetRPNDec(u8 set, u8 channel)
 
 static inline void inpSetRPNInc(u8 set, u8 channel)
 {
-    InpMidiState* st = (InpMidiState*)lbl_803CD760;
     u16 rpn;
     u32 i;
     u8 range;
 
-    rpn = (st->midiCtrl[set][channel][MIDI_CC_RPN_LSB]) | (st->midiCtrl[set][channel][MIDI_CC_RPN_MSB] << 8);
+    rpn = gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_LSB] |
+          (gInpMidiCtrlByKey[set][channel][MIDI_CC_RPN_MSB] << 8);
     switch (rpn)
     {
     case MIDI_RPN_PITCH_BEND_SENSITIVITY:
-        range = st->pbRange[set][channel];
+        range = gInpChannelDefaultsByKey[set][channel];
         if (range < 24)
         {
             ++range;
         }
-        st->pbRange[set][channel] = range;
+        gInpChannelDefaultsByKey[set][channel] = range;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
             if (set == synthVoice[i].midiSet && channel == synthVoice[i].midi)
@@ -131,7 +131,6 @@ void inpSetGlobalMIDIDirtyFlag(u8 channel, u8 set, u32 flags)
  */
 void inpSetMidiCtrl(u8 ctrl, u8 channel, u8 set, u8 value)
 {
-    InpMidiState* st = (InpMidiState*)lbl_803CD760;
     u32 i;
 
     if (channel == 0xFF)
@@ -157,7 +156,7 @@ void inpSetMidiCtrl(u8 ctrl, u8 channel, u8 set, u8 value)
             break;
         }
 
-        st->midiCtrl[set][channel][ctrl] = value & 0x7f;
+        gInpMidiCtrlByKey[set][channel][ctrl] = value & 0x7f;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
             if (set == synthVoice[i].midiSet && channel == synthVoice[i].midi)
@@ -166,7 +165,7 @@ void inpSetMidiCtrl(u8 ctrl, u8 channel, u8 set, u8 value)
                 synthKeyStateUpdate(&synthVoice[i]);
             }
         }
-        st->globalDirty[set][channel] = 0xFF;
+        lbl_803D3CA0[set][channel] = 0xFF;
     }
     else
     {
@@ -186,7 +185,7 @@ void inpSetMidiCtrl(u8 ctrl, u8 channel, u8 set, u8 value)
             break;
         }
 
-        st->fxCtrl[channel][ctrl] = value & 0x7f;
+        gInpMidiCtrl[channel][ctrl] = value & 0x7f;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
             if (set == synthVoice[i].midiSet && channel == synthVoice[i].midi)
@@ -230,8 +229,13 @@ void inpSetMidiCtrl14(u8 ctrl, u8 channel, u8 set, u16 value)
     }
 }
 
-extern u8 sInpMidiCtrlFullResetPreset[];
-extern u8 sInpMidiCtrlMaskedResetPreset[];
+extern u32 sInpMidiCtrlFullResetPreset[];
+extern u32 sInpMidiCtrlMaskedResetPreset[];
+
+static u8 inpGetResetPresetByte(const u32* preset, u32 index)
+{
+    return preset[index >> 2] >> (24 - ((index & 3) * 8));
+}
 
 /*
  * Reset a MIDI-controller/default table from one of two preset banks,
@@ -240,9 +244,10 @@ extern u8 sInpMidiCtrlMaskedResetPreset[];
 void inpResetMidiCtrl(u8 channel, u8 key, u32 mode)
 {
     u8* dst;
-    u8* src;
+    const u32* preset;
+    u32 i;
 
-    src = (mode != 0) ? sInpMidiCtrlFullResetPreset : sInpMidiCtrlMaskedResetPreset;
+    preset = (mode != 0) ? sInpMidiCtrlFullResetPreset : sInpMidiCtrlMaskedResetPreset;
 
     if (key != INP_INVALID_SLOT)
     {
@@ -253,19 +258,12 @@ void inpResetMidiCtrl(u8 channel, u8 key, u32 mode)
         dst = gInpMidiCtrl[channel];
     }
 
-    if (mode != 0)
+    for (i = 0; i < 0x86; i++)
     {
-        memcpy(dst, src, 0x86);
-    }
-    else
-    {
-        int i;
-        for (i = 0; i < 0x86; i++)
+        u8 value = inpGetResetPresetByte(preset, i);
+        if (mode != 0 || value != 0xff)
         {
-            if (src[i] != 0xff)
-            {
-                dst[i] = src[i];
-            }
+            dst[i] = value;
         }
     }
 
@@ -398,43 +396,33 @@ void inpFXCopyCtrl(u8 controller, McmdVoiceState* dstState, McmdVoiceState* srcS
     u32 ctrl;
     u32 dstVoice;
     u32 srcVoice;
-    u8* stateBase;
-    u8* bank;
 
     ctrl = controller & 0xff;
-    stateBase = (u8*)lbl_803CD760;
     dstVoice = dstState->id & 0xff;
     srcVoice = srcState->id & 0xff;
 
     if (ctrl < 0x40)
     {
         ctrl = controller & 0x1f;
-        *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) =
-            *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
-        bank = stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + 0x20;
-        *(bank + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) = *(bank + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
+        gInpMidiCtrl[dstVoice][ctrl] = gInpMidiCtrl[srcVoice][ctrl];
+        gInpMidiCtrl[dstVoice][ctrl + 0x20] = gInpMidiCtrl[srcVoice][ctrl + 0x20];
         return;
     }
     if (controller == MCMD_CTRL_PITCH_BEND || controller == MCMD_CTRL_PITCH_BEND + 1)
     {
         ctrl = controller & 0xfe;
-        *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) =
-            *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
-        bank = stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + 1;
-        *(bank + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) = *(bank + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
+        gInpMidiCtrl[dstVoice][ctrl] = gInpMidiCtrl[srcVoice][ctrl];
+        gInpMidiCtrl[dstVoice][ctrl + 1] = gInpMidiCtrl[srcVoice][ctrl + 1];
         return;
     }
     if (controller == MCMD_CTRL_DOPPLER || controller == MCMD_CTRL_DOPPLER + 1)
     {
         ctrl = controller & 0xfe;
-        *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) =
-            *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
-        bank = stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + 1;
-        *(bank + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) = *(bank + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
+        gInpMidiCtrl[dstVoice][ctrl] = gInpMidiCtrl[srcVoice][ctrl];
+        gInpMidiCtrl[dstVoice][ctrl + 1] = gInpMidiCtrl[srcVoice][ctrl + 1];
         return;
     }
-    *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + dstVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl) =
-        *(stateBase + INP_MIDI_CTRL_GLOBAL_OFFSET + srcVoice * INP_MIDI_CTRL_BANK_SIZE + ctrl);
+    gInpMidiCtrl[dstVoice][ctrl] = gInpMidiCtrl[srcVoice][ctrl];
 }
 
 /*

@@ -4,6 +4,7 @@
 #include <aurora/event.h>
 #include <SDL3/SDL_timer.h>
 #include <stdlib.h>
+#include "foxhollow_compat.h"
 #include "shim_log.h"
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
@@ -61,6 +62,7 @@ void VIWaitForRetrace(void) {
     pump_events();
   }
   sFrameOpen = 1;
+  fhAIPump();
 
   sRetraceCount++;
   if (sPreRetraceCallback) {

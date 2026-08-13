@@ -3865,7 +3865,7 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
         {
             break;
         }
-        if (*(u8*)(*(u8**)action + 0xf9) == 0)
+        if (((ObjModel*)action)->file->morphTargetCount == 0)
         {
             break;
         }

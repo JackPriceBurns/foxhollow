@@ -16,7 +16,7 @@ typedef struct SDIR_DATA {
     u32 offset;
     void *addr;
     SAMPLE_HEADER header;
-    u32 extraData;
+    void* extraData;
 } SDIR_DATA;
 
 typedef struct SDIR_TAB {
@@ -66,30 +66,6 @@ typedef struct FX_GROUP {
     u16 fxNum;
     FX_TAB *fxTab;
 } FX_GROUP;
-
-typedef struct SynthDataTables {
-    SDIR_TAB sdir[128];       /* 0x0000 dataSmpSDirs */
-    DATA_TAB curve[2048];     /* 0x0600 dataCurveTable */
-    DATA_TAB keymap[256];     /* 0x4600 dataKeymapTable */
-    LAYER_TAB layer[256];     /* 0x4E00 dataLayerTable */
-    MAC_MAINTAB macMain[512]; /* 0x5A00 dataMacroBucketTable */
-    MAC_SUBTAB macSub[2048];  /* 0x6200 dataMacroTable */
-    FX_GROUP fxGroup[128];    /* 0xA200 dataFXGroupTable */
-    SDIR_DATA getSampleKey;   /* 0xA600 dataGetSampleSearchKey */
-    LAYER_TAB getLayerKey;    /* 0xA620 dataGetLayerSearchKey */
-    FX_TAB getFXKey;          /* 0xA62C dataGetFXSearchKey */
-} SynthDataTables;
-
-STATIC_ASSERT(offsetof(SynthDataTables, curve) == 0x600);
-STATIC_ASSERT(offsetof(SynthDataTables, keymap) == 0x4600);
-STATIC_ASSERT(offsetof(SynthDataTables, layer) == 0x4E00);
-STATIC_ASSERT(offsetof(SynthDataTables, macMain) == 0x5A00);
-STATIC_ASSERT(offsetof(SynthDataTables, macSub) == 0x6200);
-STATIC_ASSERT(offsetof(SynthDataTables, fxGroup) == 0xA200);
-STATIC_ASSERT(offsetof(SynthDataTables, getSampleKey) == 0xA600);
-STATIC_ASSERT(offsetof(SynthDataTables, getLayerKey) == 0xA620);
-STATIC_ASSERT(offsetof(SynthDataTables, getFXKey) == 0xA62C);
-STATIC_ASSERT(sizeof(SynthDataTables) == 0xA638);
 
 typedef DATA_TAB DataRefEntry;
 typedef LAYER_TAB DataLayerRef;

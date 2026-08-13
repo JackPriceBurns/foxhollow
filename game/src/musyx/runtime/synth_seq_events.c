@@ -1,4 +1,5 @@
 #include "musyx/synth_seq_events.h"
+#include "musyx/endian.h"
 
 #define SYNTH_TRACK_COMMAND_END  0xFFFF
 #define SYNTH_TRACK_COMMAND_JUMP 0xFFFE
@@ -30,13 +31,13 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
             if (pattern->noteData == 0)
             {
             process_track_command:
-                if (TRACK_CMD(track)->command == SYNTH_TRACK_COMMAND_END)
+                if (musyxReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_END)
                 {
                     track->current = 0;
                     return 0;
                 }
 
-                if (TRACK_CMD(track)->command == SYNTH_TRACK_COMMAND_JUMP)
+                if (musyxReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_JUMP)
                 {
                     if (cseq->keyGroupMap == 0)
                     {
@@ -53,13 +54,14 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
                     }
 
                     ev->type = 3;
-                    ev->time = TRACK_CMD(track)->value0;
-                    track->current = track->base + TRACK_CMD(track)->arg * sizeof(SynthTrackCommand);
+                    ev->time = musyxReadBE32(&TRACK_CMD(track)->value0);
+                    track->current = track->base +
+                                     musyxReadBE16(&TRACK_CMD(track)->arg) * sizeof(SynthTrackCommand);
                     return ev;
                 }
 
                 ev->type = 4;
-                ev->time = TRACK_CMD(track)->value0;
+                ev->time = musyxReadBE32(&TRACK_CMD(track)->value0);
                 ev->data = track->current;
                 track->current = TRACK_CMD(track) + 1;
                 return ev;
@@ -70,7 +72,7 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
 
             for (;;)
             {
-                patternTime = *(u16*)pattern->noteData + pattern->lastTime;
+                patternTime = musyxReadBE16(pattern->noteData) + pattern->lastTime;
                 if (patternTime < pitchTime)
                 {
                     if (patternTime >= modTime)

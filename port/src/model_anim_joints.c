@@ -189,6 +189,52 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
     return recordCount;
 }
 
+static void fhAnimApplyJointOverrides(int slot, const u8* scratch)
+{
+    const s16* entry;
+
+    if (scratch == NULL)
+    {
+        return;
+    }
+    entry = (const s16*)scratch + slot;
+    while ((u16)entry[0] != 0x1000)
+    {
+        u16 offset = (u16)entry[0];
+        int recordIndex = offset >> 6;
+        int componentOffset = offset & 0x3f;
+        s16 value = entry[2];
+
+        if (recordIndex >= 0 && recordIndex < sFhAnimRecordCount[slot])
+        {
+            FhAnimJointRecord* record = &sFhAnimRecords[slot][recordIndex];
+
+            switch (componentOffset)
+            {
+                case 0x00:
+                case 0x02:
+                case 0x04:
+                    record->rot[componentOffset >> 1] =
+                        (s16)(record->rot[componentOffset >> 1] + value);
+                    break;
+                case 0x0c:
+                case 0x0e:
+                case 0x10:
+                    record->scale[(componentOffset - 0x0c) >> 1] =
+                        (s16)(record->scale[(componentOffset - 0x0c) >> 1] + value);
+                    break;
+                case 0x18:
+                case 0x1a:
+                case 0x1c:
+                    record->trans[(componentOffset - 0x18) >> 1] =
+                        (s16)(record->trans[(componentOffset - 0x18) >> 1] + value);
+                    break;
+            }
+        }
+        entry += 4;
+    }
+}
+
 static void fhAnimEulerToQuat(const s16* rot, f32* q)
 {
     f32 hx = (f32)rot[0] * FH_ANIM_ANGLE_TO_HALF_RAD;
@@ -234,8 +280,6 @@ void modelAnimBuildJointMatrices(int* out, u8* dst, void* animState, u8* jointDa
     s32 blendFrac;
     int j;
 
-    (void)scratch;
-
     if (out == NULL || animState == NULL || jointData == NULL || jointCount <= 0)
     {
         return;
@@ -260,6 +304,7 @@ void modelAnimBuildJointMatrices(int* out, u8* dst, void* animState, u8* jointDa
     {
         fhAnimDecodeChannel(0, (const u8*)work->frameData[0], work->frameStreamCursors[0],
                             work->frameStreamStrides[0], work->framePhases[0]);
+        fhAnimApplyJointOverrides(0, scratch);
     }
     else
     {
@@ -269,6 +314,7 @@ void modelAnimBuildJointMatrices(int* out, u8* dst, void* animState, u8* jointDa
     {
         fhAnimDecodeChannel(1, (const u8*)work->frameData[1], work->frameStreamCursors[1],
                             work->frameStreamStrides[1], work->framePhases[1]);
+        fhAnimApplyJointOverrides(1, scratch);
         if ((mode & FH_ANIM_MODE_ROOT_ROT_OVERRIDE) && sFhAnimRecordCount[1] > 0)
         {
             sFhAnimRecords[1][0].rot[0] = gModelRootRotX;

@@ -2,6 +2,7 @@
 #define FOXHOLLOW_COMPAT_H
 
 #include <math.h>
+#include <stdint.h>
 #include <string.h>
 
 static inline double __frsqrte(double x) { return 1.0 / sqrt(x); }
@@ -44,5 +45,8 @@ void sfaSrand(unsigned int seed);
 
 #define GX_PNMTX_IDENTITY 27
 void fhLoadIdentityPosMtx(void);
+void fhAIPump(void);
+uintptr_t fhAIGetDMAStartAddr(void);
+void fhMusyxMix(short* destination);
 
 #endif

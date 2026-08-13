@@ -23,6 +23,7 @@
 #include "musyx/snd_core.h"
 #include "string.h"
 #include "musyx/hw_adsr.h"
+#include "musyx/endian.h"
 
 #define SYNTH_GLOBAL_REG(index) (synthGlobalVariable[(index) - 0x10])
 
@@ -52,8 +53,8 @@ STATIC_ASSERT(sizeof(MacDataTables) == 0x280);
 extern u8 lbl_8032EDD0[];
 McmdCommandArgs macCurrentCmd;
 u64 macRealTime;
-int macTimeQueueRoot;
-int macActiveRoot;
+McmdVoiceState* macTimeQueueRoot;
+McmdVoiceState* macActiveRoot;
 u8 macStepsThisFrame;
 extern const f32 sMacDlsScaleMax; /* 1023.0f */
 extern const f32 sMacOne;         /* 1.0f */
@@ -695,8 +696,8 @@ void macHandleActive(McmdVoiceState* sv)
         }
 
         ex = 0;
-        macCurrentCmd.flags = ((McmdCommandArgs*)sv->curAddr)->flags;
-        *cmdValuePtr = ((McmdCommandArgs*)sv->curAddr)->value;
+        macCurrentCmd.flags = musyxReadBE32(&((McmdCommandArgs*)sv->curAddr)->flags);
+        *cmdValuePtr = musyxReadBE32(&((McmdCommandArgs*)sv->curAddr)->value);
         sv->curAddr += 8;
         cmd = macCurrentCmd.flags;
 
@@ -1254,7 +1255,7 @@ void macHandle(u32 deltaTime)
     McmdVoiceState* nextSv;
     u64 wakeTime;
 
-    for (sv = (McmdVoiceState*)macTimeQueueRoot; sv != 0 && *(u64*)&sv->waitHi <= macRealTime;)
+    for (sv = macTimeQueueRoot; sv != 0 && *(u64*)&sv->waitHi <= macRealTime;)
     {
         nextSv = sv->nextTimeQueueMacro;
         wakeTime = *(u64*)&sv->waitHi;
@@ -1263,7 +1264,7 @@ void macHandle(u32 deltaTime)
         sv = nextSv;
     }
 
-    for (sv = (McmdVoiceState*)macActiveRoot; sv != 0; sv = sv->nextMacActive)
+    for (sv = macActiveRoot; sv != 0; sv = sv->nextMacActive)
     {
         u32 hasTrap;
         if (sv->trapEventAny != 0)
@@ -1354,7 +1355,7 @@ void TimeQueueAdd(McmdVoiceState* state)
     McmdVoiceState* prev;
     McmdVoiceState* cur;
 
-    next = (McmdVoiceState*)macTimeQueueRoot;
+    next = macTimeQueueRoot;
     prev = 0;
     while ((cur = next) != 0 && *(u64*)&cur->waitHi < *(u64*)&state->waitHi)
     {
@@ -1366,7 +1367,7 @@ void TimeQueueAdd(McmdVoiceState* state)
     {
         if (prev == 0)
         {
-            macTimeQueueRoot = (int)state;
+            macTimeQueueRoot = state;
             state->nextTimeQueueMacro = 0;
             state->prevTimeQueueMacro = 0;
             return;
@@ -1387,7 +1388,7 @@ void TimeQueueAdd(McmdVoiceState* state)
     }
     else
     {
-        macTimeQueueRoot = (int)state;
+        macTimeQueueRoot = state;
     }
     cur->prevTimeQueueMacro = state;
 }
@@ -1403,7 +1404,7 @@ void TimeQueueRemove(McmdVoiceState* sv, u32 disableUpdate)
         {
             if (sv->prevTimeQueueMacro == 0)
             {
-                macTimeQueueRoot = (int)sv->nextTimeQueueMacro;
+                macTimeQueueRoot = sv->nextTimeQueueMacro;
             }
             else
             {
@@ -1437,7 +1438,7 @@ void macMakeActive(McmdVoiceState* sv)
             {
                 if (sv->prevTimeQueueMacro == 0)
                 {
-                    macTimeQueueRoot = (int)sv->nextTimeQueueMacro;
+                    macTimeQueueRoot = sv->nextTimeQueueMacro;
                 }
                 else
                 {
@@ -1453,12 +1454,12 @@ void macMakeActive(McmdVoiceState* sv)
             *(u64*)&sv->waitTimeHi = macRealTime;
             MAC_CFLAGS(sv) &= ~MAC_FLAG64(0, 0x40004);
         }
-        if ((sv->nextMacActive = (McmdVoiceState*)macActiveRoot) != 0)
+        if ((sv->nextMacActive = macActiveRoot) != 0)
         {
-            ((McmdVoiceState*)macActiveRoot)->prevMacActive = sv;
+            macActiveRoot->prevMacActive = sv;
         }
         sv->prevMacActive = 0;
-        macActiveRoot = (int)sv;
+        macActiveRoot = sv;
         sv->macState = MAC_STATE_RUNNABLE;
     }
 }
@@ -1478,7 +1479,7 @@ void macMakeInactive(McmdVoiceState* sv, int newState)
     {
         if (sv->prevMacActive == 0)
         {
-            macActiveRoot = (int)sv->nextMacActive;
+            macActiveRoot = sv->nextMacActive;
         }
         else
         {
@@ -1498,7 +1499,7 @@ void macMakeInactive(McmdVoiceState* sv, int newState)
             {
                 if (sv->prevTimeQueueMacro == 0)
                 {
-                    macTimeQueueRoot = (int)sv->nextTimeQueueMacro;
+                    macTimeQueueRoot = sv->nextTimeQueueMacro;
                 }
                 else
                 {
@@ -1548,7 +1549,7 @@ u32 macStart(u16 macid, u8 priority, u8 maxVoices, u16 allocId, u8 key, u8 vol, 
                 {
                     if (sv->prevMacActive == 0)
                     {
-                        macActiveRoot = (int)sv->nextMacActive;
+                        macActiveRoot = sv->nextMacActive;
                     }
                     else
                     {
@@ -1620,12 +1621,12 @@ u32 macStart(u16 macid, u8 priority, u8 maxVoices, u16 allocId, u8 key, u8 vol, 
                 if (sv->macState != MAC_STATE_RUNNABLE)
                 {
                     TimeQueueRemove(sv, 0);
-                    if ((sv->nextMacActive = (McmdVoiceState*)macActiveRoot) != 0)
+                    if ((sv->nextMacActive = macActiveRoot) != 0)
                     {
-                        ((McmdVoiceState*)macActiveRoot)->prevMacActive = sv;
+                        macActiveRoot->prevMacActive = sv;
                     }
                     sv->prevMacActive = 0;
-                    macActiveRoot = (int)sv;
+                    macActiveRoot = sv;
                     sv->macState = MAC_STATE_RUNNABLE;
                 }
                 return vid;

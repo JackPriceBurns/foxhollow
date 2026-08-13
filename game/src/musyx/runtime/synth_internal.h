@@ -44,15 +44,6 @@ typedef struct SynthCallbackLink
     u8 unk12[2];
 } SynthCallbackLink;
 
-typedef struct SynthDelayedNode
-{
-    struct SynthDelayedNode* next;
-    struct SynthDelayedNode* prev;
-    u8 voiceIndex;
-    u8 jobTabIndex;
-    u8 pad[2];
-} SynthDelayedNode;
-
 typedef struct SynthPitchPoint
 {
     u32 threshold;
@@ -207,20 +198,6 @@ typedef struct SynthVoice
     SynthSequenceQueue section[SYNTH_VOICE_NOTE_COUNT];
 } SynthVoice;
 
-typedef struct SynthVoiceRuntime
-{
-    SynthCallbackLink callbacks[SYNTH_CALLBACK_COUNT];
-    SynthVoice voices[SYNTH_MAX_VOICES];
-    u16 voiceNotes[SYNTH_MAX_VOICES][SYNTH_VOICE_NOTE_COUNT];
-} SynthVoiceRuntime;
-
-#define SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, voiceIndex, channel) \
-    (*(u16*)((u8*)(runtime) + 0x291A + ((voiceIndex) * sizeof(SynthVoice)) + ((channel) * 0x38)))
-#define SYNTH_RUNTIME_PENDING_VALUE16(runtime, voiceIndex) \
-    (*(u16*)((u8*)(runtime) + 0x22D8 + ((voiceIndex) * sizeof(SynthVoice))))
-#define SYNTH_RUNTIME_PENDING_FLAGS(runtime, voiceIndex) \
-    (*(u8*)((u8*)(runtime) + 0x22DA + ((voiceIndex) * sizeof(SynthVoice))))
-
 extern SynthCallbackLink seqNote[SYNTH_CALLBACK_COUNT];
 extern u8 synthJobTableIndex;
 extern SynthCallbackLink* noteFree;
@@ -234,9 +211,6 @@ extern SynthVoice* seqFreeRoot;
 extern SynthVoice* seqActiveRoot;
 extern SynthVoice* seqPausedRoot;
 extern u32 seq_next_id;
-
-#define SYNTH_VOICE_RUNTIME() ((SynthVoiceRuntime*)(void*)seqNote)
-
 
 void synthSetBpm(int bpm, u8 set, u8 section);
 int synthGetTicksPerSecond(McmdVoiceState *slot);

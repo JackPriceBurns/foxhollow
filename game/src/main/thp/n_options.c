@@ -416,12 +416,12 @@ void AttractMovieAudio_DmaCallback(void)
                 gAttractMovieAudioMixSourceAddr = gAttractMovieAudioPendingSourceAddr;
             }
             gAttractMovieAudioPrevDmaCallback();
-            gAttractMovieAudioPendingSourceAddr = AIGetDMAStartAddr() + 0x80000000 /* phys -> cached RAM */;
+            gAttractMovieAudioPendingSourceAddr = fhAIGetDMAStartAddr();
         }
         else
         {
             gAttractMovieAudioPrevDmaCallback();
-            gAttractMovieAudioMixSourceAddr = AIGetDMAStartAddr() + 0x80000000 /* phys -> cached RAM */;
+            gAttractMovieAudioMixSourceAddr = fhAIGetDMAStartAddr();
         }
 
         gAttractMovieAudioDmaBufferIndex ^= 1;

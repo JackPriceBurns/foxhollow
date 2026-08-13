@@ -296,6 +296,7 @@ void salCtrlDsp(s16* dest)
 {
     u32 elapsed = salGetStartDelay();
     salBuildCommandList(dest, elapsed);
+    fhMusyxMix(dest);
     {
         u32 saved = (u32)dspCmdList;
         salDspCallbackEnabled = 0;
@@ -308,6 +309,7 @@ void salCtrlDsp(s16* dest)
         while (DSPCheckMailToDSP() != 0)
         {
         }
+        dspResumeCallback(&sDspTask.task);
     }
 }
 

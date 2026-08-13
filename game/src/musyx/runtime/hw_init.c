@@ -33,7 +33,7 @@ static void snd_handle_irq(void)
 
     streamCorrectLoops();
     hwIRQEnterCritical();
-    salCtrlDsp((s16*)salAiGetDest());
+    salCtrlDsp(salAiGetDest());
     hwIRQLeaveCritical();
     hwIRQEnterCritical();
     salHandleAuxProcessing();

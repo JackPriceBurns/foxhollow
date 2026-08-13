@@ -36,15 +36,6 @@
 #include "musyx/synth_control.h"
 
 
-struct SynthDelayedNode
-{
-    struct SynthDelayedNode* next;
-    struct SynthDelayedNode* prev;
-    u8 voiceIndex;
-    u8 jobTabIndex;
-    u8 pad[2];
-};
-
 typedef void (*SynthDelayedBucketCallback)(int voiceIndex);
 
 #define SYNTH_FADE_COUNT                     0x20
@@ -715,7 +706,7 @@ static void LowPrecisionHandler(int voice)
         cpitch = convert_cents(sv, ccents);
         cpitch += sv->sweepOff[0] + sv->sweepOff[1];
         hwSetPitch(voice, sv->curPitch = ((cpitch >> 16) * inpGetDoppler(sv)) >> 13);
-        synthAddJob((SynthDelayedNode*)sv, 0, 0xF00);
+        synthAddJob(sv->delayedJob, 0, 0xF00);
 
     }
     UpdateTimeMIDICtrl(sv);
@@ -883,7 +874,7 @@ static void ZeroOffsetHandler(int voice)
             hwSetPriority(voice, sv->prio << 24 | sv->age >> 15);
         }
 
-        synthAddJob((SynthDelayedNode*)sv, 1, (5 - hwGetTimeOffset()) * 256);
+        synthAddJob(sv->delayedJob, 1, (5 - hwGetTimeOffset()) * 256);
 
     }
     UpdateTimeMIDICtrl(sv);
@@ -1010,19 +1001,19 @@ void synthStartSynthJobHandling(McmdVoiceState* voice)
 {
     *(u64*)&voice->lastLowCallTimeHi = synthRealTime;
     *(u64*)&voice->lastZeroCallTimeHi = synthRealTime;
-    synthAddJob((SynthDelayedNode*)voice, 0, 0);
-    synthAddJob((SynthDelayedNode*)voice, 1, 0);
+    synthAddJob(voice->delayedJob, 0, 0);
+    synthAddJob(voice->delayedJob, 1, 0);
 }
 
 void synthForceLowPrecisionUpdate(McmdVoiceState* voice)
 {
-    synthAddJob((SynthDelayedNode*)voice, 0, 0);
-    synthAddJob((SynthDelayedNode*)voice, 1, 0);
+    synthAddJob(voice->delayedJob, 0, 0);
+    synthAddJob(voice->delayedJob, 1, 0);
 }
 
 void synthKeyStateUpdate(McmdVoiceState* voice)
 {
-    synthAddJob((SynthDelayedNode*)voice, 2, 0);
+    synthAddJob(voice->delayedJob, 2, 0);
 }
 
 void HandleJobQueue(SynthDelayedNode** head, SynthDelayedBucketCallback callback)
@@ -1487,47 +1478,49 @@ void synthInit(u32 sampleRate, u32 voiceCount)
     synthFlags = 0;
     synthMessageCallback = 0;
 
-    synthVoice = salMalloc(voiceCount * SYNTH_VOICE_STRIDE);
-    memset(synthVoice, 0, voiceCount * SYNTH_VOICE_STRIDE);
+    synthVoice = salMalloc(voiceCount * sizeof(*synthVoice));
+    memset(synthVoice, 0, voiceCount * sizeof(*synthVoice));
 
     for (voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++)
     {
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0xF4) = SYNTH_INVALID_LINK_ID;
-        *(u64*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x114) = 0;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x110) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x10C) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x121) = 0xFF;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x154) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x192) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x190) = 0x80;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x191) = 0;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x180) = 0x400000;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x170) = 0x400000;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x184) = 0;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x174) = 0;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1A0) = 0;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1A4) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1B8) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1B9) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x11C) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x11E) = 0x17;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x104) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x193) = 1;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1C0) = 0;
-        *(u16*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1C4) = 0;
-        *(u16*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1C6) = 0x7FFF;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1CC) = 0;
-        *(u16*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1D0) = 0;
-        *(u16*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x1D2) = 0x7FFF;
-        *(u32*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x13C) = 0x6400;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x131) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x11F) = 0;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x08) = (u8)voiceIndex;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x09) = 0xFF;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x14) = (u8)voiceIndex;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x15) = 0xFF;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x20) = (u8)voiceIndex;
-        *(u8*)((u8*)synthVoice + voiceIndex * SYNTH_VOICE_STRIDE + 0x21) = 0xFF;
+        McmdVoiceState* voice = &synthVoice[voiceIndex];
+        voice->id = SYNTH_INVALID_LINK_ID;
+        voice->cFlagsHi = 0;
+        voice->cFlagsLo = 0;
+        voice->age = 0;
+        voice->prio = 0;
+        voice->midi = 0xFF;
+        voice->volume = 0;
+        voice->volTable = 0;
+        voice->revVolScale = 0x80;
+        voice->revVolOffset = 0;
+        voice->panTarget[0] = 0x400000;
+        voice->panning[0] = 0x400000;
+        voice->panTarget[1] = 0;
+        voice->panning[1] = 0;
+        voice->sweepOff[0] = 0;
+        voice->sweepOff[1] = 0;
+        voice->sweepNum[0] = 0;
+        voice->sweepNum[1] = 0;
+        voice->block = 0;
+        voice->vGroup = 0x17;
+        voice->keyGroup = 0;
+        voice->itdMode = 1;
+        voice->lfo[0].period = 0;
+        voice->lfo[0].value = 0;
+        voice->lfo[0].lastValue = 0x7FFF;
+        voice->lfo[1].period = 0;
+        voice->lfo[1].value = 0;
+        voice->lfo[1].lastValue = 0x7FFF;
+        voice->portTime = 0x6400;
+        voice->portType = 0;
+        voice->studio = 0;
+        voice->delayedJob[0].voiceIndex = (u8)voiceIndex;
+        voice->delayedJob[0].jobTabIndex = 0xFF;
+        voice->delayedJob[1].voiceIndex = (u8)voiceIndex;
+        voice->delayedJob[1].jobTabIndex = 0xFF;
+        voice->delayedJob[2].voiceIndex = (u8)voiceIndex;
+        voice->delayedJob[2].jobTabIndex = 0xFF;
     }
 
     {

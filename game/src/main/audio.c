@@ -20,6 +20,7 @@
 #include "main/audio/stream_api.h"
 #include "musyx/snd3d.h"
 #include "musyx/snd_core.h"
+#include "musyx/endian.h"
 
 /* Local prototypes: this TU declares sndMasterVolume with int volume/time,
    which disagrees with the musyx definition -- retail calls it directly with
@@ -107,6 +108,59 @@ AudioArqRequestEntry gAudioArqRequests[AUDIO_ARQ_REQUEST_COUNT];
 ReverbState gAudioReverbSettings;
 
 const SalHooks gAudioMemHooks = {_audioAlloc, audioFree};
+
+static void audioConvertMusicTriggers(void)
+{
+    int i;
+    for (i = 0; i < gMusicTriggersCount; i++)
+    {
+        MusicTrigger* trigger = &gMusicTriggersData[i];
+        u8 flags = ((u8*)trigger)[0xf];
+        trigger->id = musyxReadBE16(&trigger->id);
+        trigger->track = musyxReadBE16(&trigger->track);
+        trigger->fadeTime = musyxReadBE16(&trigger->fadeTime);
+        trigger->speed = musyxReadBE16(&trigger->speed);
+        ((u8*)trigger)[0xf] = (flags >> 6) | (((flags >> 5) & 1) << 2) | ((flags & 0x1f) << 3);
+    }
+}
+
+static void audioConvertSfxTriggers(void)
+{
+    int i;
+    int j;
+    SfxTriggerFull* triggers = gSfxTriggersData;
+    for (i = 0; i < gSfxTriggersCount; i++)
+    {
+        u8* bits = (u8*)&triggers[i];
+        u8 e = bits[0x1e];
+        u8 f = bits[0x1f];
+        triggers[i].id = musyxReadBE16(&triggers[i].id);
+        triggers[i].nearDistanceRaw = musyxReadBE16(&triggers[i].nearDistanceRaw);
+        triggers[i].farDistanceRaw = musyxReadBE16(&triggers[i].farDistanceRaw);
+        for (j = 0; j < 6; j++)
+        {
+            triggers[i].sfxIds[j] = musyxReadBE16(&triggers[i].sfxIds[j]);
+        }
+        triggers[i].selectRange = musyxReadBE16(&triggers[i].selectRange);
+        bits[0x1e] = ((e >> 4) & 0xf) | (((e >> 3) & 1) << 4) | (((e >> 1) & 3) << 5) | ((e & 1) << 7);
+        bits[0x1f] = (f >> 4) | (f << 4);
+    }
+}
+
+static void audioConvertStreams(void)
+{
+    int i;
+    for (i = 0; i < gStreamsCount; i++)
+    {
+        u8* bytes = (u8*)&gStreamsData[i];
+        u8 fade = bytes[2];
+        u8 volume = bytes[3];
+        gStreamsData[i].id = musyxReadBE16(&gStreamsData[i].id);
+        bytes[2] = ((fade >> 6) & 3) | ((fade >> 2) & 0xc) | ((fade << 2) & 0x30) | ((fade << 6) & 0xc0);
+        bytes[3] = (volume >> 7) | (volume << 1);
+        gStreamsData[i].lengthRaw = musyxReadBE16(&gStreamsData[i].lengthRaw);
+    }
+}
 
 void AudioAramReadAllocAsync(u32 source, u32 size, void** outBuf, AudioArqRequestCallback callback,
                              MusicTrackSlot* callbackArg1, MusicChannel* callbackArg2,
@@ -486,6 +540,7 @@ void streamsLoadedCallback(s32 status, DVDFileInfo* fileInfo)
         mmSetFreeDelay(saved);
         gAudioPendingLoadFlags &= ~AUDIO_LOAD_STREAMS;
         gAudioCompletedLoadFlags |= AUDIO_LOAD_STREAMS;
+        audioConvertStreams();
         stream = gStreamsData;
         streamCount = gStreamsCount;
         for (i = 0; i != streamCount; i++)
@@ -516,6 +571,7 @@ void sfxTriggersLoadedCallback(s32 status, DVDFileInfo* fileInfo)
         mmSetFreeDelay(saved);
         gAudioPendingLoadFlags &= ~AUDIO_LOAD_SFX_TRIGGERS;
         gAudioCompletedLoadFlags |= AUDIO_LOAD_SFX_TRIGGERS;
+        audioConvertSfxTriggers();
     }
 }
 
@@ -538,12 +594,12 @@ void musicTriggersLoadedCallback(s32 status, DVDFileInfo* fileInfo)
         mmSetFreeDelay(saved);
         gAudioPendingLoadFlags &= ~AUDIO_LOAD_MUSIC_TRIGGERS;
         gAudioCompletedLoadFlags |= AUDIO_LOAD_MUSIC_TRIGGERS;
+        audioConvertMusicTriggers();
     }
 }
 
 void audioLoadTriggerData(void)
 {
-    char* base = sSampleBufferSLoadedCallbackLoadError;
     int info;
     int delay;
     if (gMusicTriggersData != NULL)
@@ -555,13 +611,13 @@ void audioLoadTriggerData(void)
         mmSetFreeDelay(delay);
     }
     gAudioPendingLoadFlags |= AUDIO_LOAD_MUSIC_TRIGGERS;
-    gMusicTriggersData = loadFileByPathAsync(base + 0x1b4, &info, 1, musicTriggersLoadedCallback);
+    gMusicTriggersData = loadFileByPathAsync("/audio/data/Music.bin", &info, 1, musicTriggersLoadedCallback);
     gMusicTriggersCount = (u32)info >> 4;
     gAudioPendingLoadFlags |= AUDIO_LOAD_SFX_TRIGGERS;
-    gSfxTriggersData = loadFileByPathAsync(base + 0x1cc, &info, 1, sfxTriggersLoadedCallback);
+    gSfxTriggersData = loadFileByPathAsync("/audio/data/Sfx.bin", &info, 1, sfxTriggersLoadedCallback);
     gSfxTriggersCount = (u32)info >> 5;
     gAudioPendingLoadFlags |= AUDIO_LOAD_STREAMS;
-    gStreamsData = loadFileByPathAsync(base + 0x1e0, &info, 1, streamsLoadedCallback);
+    gStreamsData = loadFileByPathAsync("/audio/data/Streams.bin", &info, 1, streamsLoadedCallback);
     gStreamsCount = info / sizeof(StreamEntry);
 }
 
@@ -679,7 +735,6 @@ void audioUpdate(void)
 
 int audioInit(void)
 {
-    char* base = sSampleBufferSLoadedCallbackLoadError;
     SalHooks hooks;
     void* reverbWork;
     int delay;
@@ -727,7 +782,7 @@ int audioInit(void)
         {
             if (!sndIsInstalled())
             {
-                OSReport(base + 0x1f8);
+                OSReport("audioInit: sndIsInstalled() returned FALSE!\n");
                 return 0xff;
             }
         }
@@ -739,17 +794,17 @@ int audioInit(void)
         testAndSet_onlyUseHeap3(1);
         gAudioPendingLoadFlags |= AUDIO_LOAD_M_POOL;
         gAudioStarfoxMPoolDataHandle =
-            loadFileByPathAsync(base + 0x228, NULL, 0, poolDataMLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxm.poo", NULL, 0, poolDataMLoadedCallback);
         gAudioPendingLoadFlags |= AUDIO_LOAD_M_PROJECT;
         gAudioStarfoxMProjectDataHandle =
-            loadFileByPathAsync(base + 0x23c, NULL, 0, projectDataMLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxm.pro", NULL, 0, projectDataMLoadedCallback);
         gAudioPendingLoadFlags |= AUDIO_LOAD_M_SAMPLE_DIR;
         gAudioStarfoxMSampleDirectoryHandle =
-            loadFileByPathAsync(base + 0x250, NULL, 0, sampleDirectoryMLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxm.sdi", NULL, 0, sampleDirectoryMLoadedCallback);
         testAndSet_onlyUseHeap3(0);
         gAudioPendingLoadFlags |= AUDIO_LOAD_M_SAMPLE_BUF;
         gAudioStarfoxMSampleBufferHandle =
-            loadFileByPathAsync(base + 0x264, NULL, 0, sampleBufferMLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxm.sam", NULL, 0, sampleBufferMLoadedCallback);
         if (gAudioStarfoxMPoolDataHandle == NULL || gAudioStarfoxMProjectDataHandle == NULL ||
             gAudioStarfoxMSampleDirectoryHandle == NULL || gAudioStarfoxMSampleBufferHandle == NULL)
         {
@@ -770,17 +825,17 @@ int audioInit(void)
         testAndSet_onlyUseHeap3(1);
         gAudioPendingLoadFlags |= AUDIO_LOAD_S_POOL;
         gAudioStarfoxSPoolDataHandle =
-            loadFileByPathAsync(base + 0x278, NULL, 0, poolDataSLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxs.poo", NULL, 0, poolDataSLoadedCallback);
         gAudioPendingLoadFlags |= AUDIO_LOAD_S_PROJECT;
         gAudioStarfoxSProjectDataHandle =
-            loadFileByPathAsync(base + 0x28c, NULL, 0, projectDataSLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxs.pro", NULL, 0, projectDataSLoadedCallback);
         gAudioPendingLoadFlags |= AUDIO_LOAD_S_SAMPLE_DIR;
         gAudioStarfoxSSampleDirectoryHandle =
-            loadFileByPathAsync(base + 0x2a0, NULL, 0, sampleDirectorySLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxs.sdi", NULL, 0, sampleDirectorySLoadedCallback);
         testAndSet_onlyUseHeap3(0);
         gAudioPendingLoadFlags |= AUDIO_LOAD_S_SAMPLE_BUF;
         gAudioStarfoxSSampleBufferHandle =
-            loadFileByPathAsync(base + 0x2b4, NULL, 0, sampleBufferSLoadedCallback);
+            loadFileByPathAsync("/audio/starfoxs.sam", NULL, 0, sampleBufferSLoadedCallback);
         if (gAudioStarfoxSPoolDataHandle == NULL || gAudioStarfoxSProjectDataHandle == NULL ||
             gAudioStarfoxSSampleDirectoryHandle == NULL || gAudioStarfoxSSampleBufferHandle == NULL)
         {
@@ -796,7 +851,7 @@ int audioInit(void)
             if (sndPushGroup(gAudioStarfoxSProjectDataHandle, group, gAudioStarfoxSSampleBufferHandle,
                              gAudioStarfoxSSampleDirectoryHandle, gAudioStarfoxSPoolDataHandle) == 0)
             {
-                OSReport(base + 0x2c8, group);
+                OSReport("sndPushGroup failed on group %d\n", group);
             }
         }
         delay = mmSetFreeDelay(0);
@@ -1287,7 +1342,7 @@ u8 musicInitMidiWad(void)
             if (found != NULL)
             {
                 found->offset = arenaOffset;
-                found->size = ((int*)gMidiWadFileData)[track];
+                found->size = musyxReadBE32(&((int*)gMidiWadFileData)[track]);
             }
             {
                 u32 size2 = found->size;

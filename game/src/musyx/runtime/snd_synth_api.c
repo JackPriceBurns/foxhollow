@@ -18,8 +18,6 @@
 #include "musyx/synth_handle.h"
 #include "musyx/synth_queue.h"
 
-#define SYNTH_VOICE_DIRTY_FLAGS_OFFSET        0x114
-
 /* sndOutputMode() output configuration (MusyX SND_OUTPUTMODE) */
 #define SND_OUTPUTMODE_MONO     0 /* mono downmix */
 #define SND_OUTPUTMODE_STEREO   1 /* plain stereo */
@@ -165,7 +163,7 @@ void sndOutputMode(int mode)
         u32 i;
         for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i)
         {
-            *(u64*)((u8*)synthVoice + i * SYNTH_VOICE_STRIDE + SYNTH_VOICE_DIRTY_FLAGS_OFFSET) |= 0x0000200000000000ULL;
+            *(u64*)&synthVoice[i].cFlagsHi |= 0x0000200000000000ULL;
         }
         streamOutputModeChanged();
     }
@@ -237,20 +235,17 @@ void synthActivateStudio(u8 studio, u32 isMaster, SND_STUDIO_TYPE type)
  */
 void synthDeactivateStudio(u8 studio)
 {
-    u32 offset;
     u32 i;
-    u8* voice;
 
     i = 0;
-    offset = 0;
     for (; i < SYNTH_CONFIGURATION->voiceCount; i++)
     {
-        voice = (u8*)synthVoice + offset;
-        if (studio == ((McmdVoiceState*)voice)->studio)
+        McmdVoiceState* voice = &synthVoice[i];
+        if (studio == voice->studio)
         {
-            if (((McmdVoiceState*)voice)->id != 0xffffffff)
+            if (voice->id != 0xffffffff)
             {
-                voiceKillSound(((McmdVoiceState*)voice)->vidList->vid);
+                voiceKillSound(voice->vidList->vid);
             }
             else
             {
@@ -260,7 +255,6 @@ void synthDeactivateStudio(u8 studio)
                 }
             }
         }
-        offset += SYNTH_VOICE_STRIDE;
     }
     sndBegin();
     synthAuxACallback[studio] = 0;

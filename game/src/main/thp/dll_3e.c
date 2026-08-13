@@ -93,6 +93,10 @@ static BOOL DecodeNextMovieFramePC(void)
             }
             decoded = decodeError == 0;
         }
+        else if (player->compInfo.mFrameComp[i] == 1)
+        {
+            AttractMovieAudio_DecodeFramePC(componentData, sPcMovieFrame);
+        }
         componentData += componentSize;
     }
 
@@ -352,6 +356,10 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         player->curVideoNumber = 0;
         player->curTextureSet = NULL;
         player->dispTextureSet = NULL;
+        if (player->audioExists != 0)
+        {
+            AttractMovieAudio_InitQueuesPC();
+        }
         if (!DecodeNextMovieFramePC())
         {
             return FALSE;

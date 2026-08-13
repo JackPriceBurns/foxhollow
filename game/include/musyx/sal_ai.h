@@ -13,7 +13,7 @@ void dspResumeCallback(void* task);
 int salInitAi(SalAiCallback userCallback, u32 unused, u32* outSampleCount);
 void salStartAi(void);
 int salExitAi(void);
-int salAiGetDest(void);
+s16* salAiGetDest(void);
 
 extern volatile u32 salDspInitIsDone;
 extern volatile u32 salLastTick;

@@ -2508,7 +2508,7 @@ void Obj_UpdateModelBlendStates(void)
                                 {
                                     bp = 0;
                                 }
-                                if (c0 == 0 || (bp != 0 && *(s8*)(bp + 0x56) == 0))
+                                if (c0 == 0 || (bp != 0 && ((ObjSeqState*)bp)->movementState == 0))
                                 {
                                     ObjModel_AdvanceBlendChannels((u8*)m, timeDelta);
                                 }

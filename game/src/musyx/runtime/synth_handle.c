@@ -6,21 +6,13 @@
 #include "musyx/snd_groups.h"
 #include "musyx/synth_volume.h"
 
-#define SYNTH_VOICE_TRACK_VOLUME_GROUP_OFFSET ((u32) & (((SynthVoice*)0)->trackVolumeGroup))
-#define SYNTH_RUNTIME_VOICES_OFFSET            ((u32) & (((SynthVoiceRuntime*)0)->voices))
-
 void seqVolume(u8 volume, u16 time, u32 seqId, u8 mode)
 {
-    SynthVoiceRuntime* runtime;
-    u8* voiceBase;
-    u8* voiceBytes;
-    u8* voiceCursor;
     SynthVoice* voice;
     u32 voiceIndex;
     u32 studioIndex;
     u32 pub_id;
 
-    runtime = SYNTH_VOICE_RUNTIME();
     pub_id = seqId;
     studioIndex = seqGetPrivateIdInline(seqId);
 
@@ -28,23 +20,16 @@ void seqVolume(u8 volume, u16 time, u32 seqId, u8 mode)
     {
         if ((studioIndex & SYNTH_HANDLE_QUEUED_FLAG) == 0)
         {
-            voiceBase = (u8*)runtime + studioIndex * sizeof(SynthVoice);
-            synthVolume(volume, time,
-                        ((SynthVoice*)(voiceBase + SYNTH_RUNTIME_VOICES_OFFSET))->defaultVolumeGroup,
-                        mode, pub_id);
-            voice = (SynthVoice*)(voiceBase + SYNTH_RUNTIME_VOICES_OFFSET);
-            voiceBytes = (u8*)voice;
-            voiceCursor = (u8*)voice;
+            voice = &seqInstance[studioIndex];
+            synthVolume(volume, time, voice->defaultVolumeGroup, mode, pub_id);
             voiceIndex = 0;
             do
             {
-                if (voiceBytes[SYNTH_VOICE_TRACK_VOLUME_GROUP_OFFSET] != voice->defaultVolumeGroup)
+                if (voice->trackVolumeGroup[voiceIndex] != voice->defaultVolumeGroup)
                 {
-                    synthVolume(volume, time, voiceCursor[SYNTH_VOICE_TRACK_VOLUME_GROUP_OFFSET], 0,
+                    synthVolume(volume, time, voice->trackVolumeGroup[voiceIndex], 0,
                                 SYNTH_HANDLE_INVALID);
                 }
-                voiceBytes++;
-                voiceCursor++;
                 voiceIndex++;
             } while (voiceIndex < SYNTH_SEQUENCE_TRACK_COUNT);
         }
@@ -54,18 +39,18 @@ void seqVolume(u8 volume, u16 time, u32 seqId, u8 mode)
             switch (mode & 0xF)
             {
             case 0:
-                runtime->voices[seqId].syncCrossInfo.vol2 = volume;
+                seqInstance[seqId].syncCrossInfo.vol2 = volume;
                 break;
             case 1:
-                runtime->voices[seqId].syncSeqIdPtr = 0;
+                seqInstance[seqId].syncSeqIdPtr = 0;
                 break;
             case 2:
-                runtime->voices[seqId].syncCrossInfo.flags |= SND_CROSSFADE_PAUSENEW;
-                runtime->voices[seqId].syncCrossInfo.vol2 = volume;
+                seqInstance[seqId].syncCrossInfo.flags |= SND_CROSSFADE_PAUSENEW;
+                seqInstance[seqId].syncCrossInfo.vol2 = volume;
                 break;
             case 3:
-                runtime->voices[seqId].syncCrossInfo.flags |= SND_CROSSFADE_MUTENEW;
-                runtime->voices[seqId].syncCrossInfo.vol2 = volume;
+                seqInstance[seqId].syncCrossInfo.flags |= SND_CROSSFADE_MUTENEW;
+                seqInstance[seqId].syncCrossInfo.vol2 = volume;
                 break;
             }
         }
@@ -97,7 +82,6 @@ static inline u32 resolveHandle(u32 handle)
 
 void seqCrossFade(SynthStartRequest* ci, u32* new_seqId, u8 irq_call)
 {
-    SynthVoiceRuntime* runtime;
     SynthPlayParams params;
     u32 deadSlot0;
     u32 deadSlot1;
@@ -112,17 +96,15 @@ void seqCrossFade(SynthStartRequest* ci, u32* new_seqId, u8 irq_call)
     SynthVoice* pendingVoice;
     SynthStartRequest* pendingRequest;
 
-    runtime = SYNTH_VOICE_RUNTIME();
-
     slot = resolveHandle(ci->seqId1);
     flags = ci->flags;
     if ((flags & SND_CROSSFADE_SYNC) != 0)
     {
-        pendingVoice = (SynthVoice*)((u8*)runtime + slot * sizeof(SynthVoice));
-        pendingRequest = (SynthStartRequest*)((u8*)pendingVoice + 0x22B4);
+        pendingVoice = &seqInstance[slot];
+        pendingRequest = &pendingVoice->syncCrossInfo;
         *pendingRequest = *ci;
-        *(u8*)((u8*)pendingVoice + 0x22E0) = 1;
-        *(u32**)((u8*)pendingVoice + 0x22DC) = new_seqId;
+        pendingVoice->syncActive = 1;
+        pendingVoice->syncSeqIdPtr = new_seqId;
         pendingRequest->flags &= ~SND_CROSSFADE_SYNC;
         *new_seqId = ci->seqId1 | SYNTH_HANDLE_QUEUED_FLAG;
         return;
@@ -183,15 +165,15 @@ void seqCrossFade(SynthStartRequest* ci, u32* new_seqId, u8 irq_call)
                     {
                         if ((newHandle & SYNTH_HANDLE_QUEUED_FLAG) == 0)
                         {
-                            runtime->voices[newHandle].trackMute[0] = mixValue0;
-                            runtime->voices[newHandle].trackMute[1] = mixValue1;
+                            seqInstance[newHandle].trackMute[0] = mixValue0;
+                            seqInstance[newHandle].trackMute[1] = mixValue1;
                         }
                         else
                         {
-                            runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
+                            seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
                                 SND_CROSSFADE_TRACKMUTE;
-                            runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[0] = mixValue0;
-                            runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[1] = mixValue1;
+                            seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[0] = mixValue0;
+                            seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[1] = mixValue1;
                         }
                     }
                 }
@@ -202,28 +184,17 @@ void seqCrossFade(SynthStartRequest* ci, u32* new_seqId, u8 irq_call)
                     newHandle = seqGetPrivateId(newHandle);
                     if ((newHandle & SYNTH_HANDLE_QUEUED_FLAG) == 0)
                     {
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 0) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 1) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 2) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 3) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 4) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 5) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 6) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 7) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 8) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 9) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 10) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 11) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 12) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 13) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 14) = speed;
-                        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, newHandle, 15) = speed;
+                        u32 section;
+                        for (section = 0; section < SYNTH_VOICE_NOTE_COUNT; section++)
+                        {
+                            seqInstance[newHandle].section[section].speed = speed;
+                        }
                     }
                     else
                     {
-                        runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
+                        seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
                             SND_CROSSFADE_SPEED;
-                        runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.speed2 = speed;
+                        seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.speed2 = speed;
                     }
                 }
             }
@@ -279,15 +250,15 @@ void seqCrossFade(SynthStartRequest* ci, u32* new_seqId, u8 irq_call)
             {
                 if ((newHandle & SYNTH_HANDLE_QUEUED_FLAG) == 0)
                 {
-                    runtime->voices[newHandle].trackMute[0] = 0;
-                    runtime->voices[newHandle].trackMute[1] = 0;
+                    seqInstance[newHandle].trackMute[0] = 0;
+                    seqInstance[newHandle].trackMute[1] = 0;
                 }
                 else
                 {
-                    runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
+                    seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |=
                         SND_CROSSFADE_TRACKMUTE;
-                    runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[0] = 0;
-                    runtime->voices[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[1] = 0;
+                    seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[0] = 0;
+                    seqInstance[newHandle & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[1] = 0;
                 }
             }
         }

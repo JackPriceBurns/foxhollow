@@ -6,6 +6,7 @@
 #include "musyx/synth_jobs.h"
 #include "musyx/synth_queue.h"
 #include "musyx/snd_core.h"
+#include "musyx/endian.h"
 
 
 typedef struct GROUP_DATA
@@ -85,12 +86,12 @@ static inline MEM_DATA* GetMacroAddr(u16 id, POOL_DATA* pool)
     MEM_DATA* m;
     if (pool == NULL)
         return NULL;
-    m = (MEM_DATA*)((u8*)pool + pool->macroOff);
-    while (m->nextOff != 0xFFFFFFFF)
+    m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->macroOff));
+    while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (m->id == id)
+        if (musyxReadBE16(&m->id) == id)
             return m;
-        m = (MEM_DATA*)((u8*)m + m->nextOff);
+        m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
     return NULL;
 }
@@ -100,12 +101,12 @@ static inline MEM_DATA* GetCurveAddr(u16 id, POOL_DATA* pool)
     MEM_DATA* m;
     if (pool == NULL)
         return NULL;
-    m = (MEM_DATA*)((u8*)pool + pool->curveOff);
-    while (m->nextOff != 0xFFFFFFFF)
+    m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->curveOff));
+    while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (m->id == id)
+        if (musyxReadBE16(&m->id) == id)
             return m;
-        m = (MEM_DATA*)((u8*)m + m->nextOff);
+        m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
     return NULL;
 }
@@ -115,12 +116,12 @@ static inline MEM_DATA* GetKeymapAddr(u16 id, POOL_DATA* pool)
     MEM_DATA* m;
     if (pool == NULL)
         return NULL;
-    m = (MEM_DATA*)((u8*)pool + pool->keymapOff);
-    while (m->nextOff != 0xFFFFFFFF)
+    m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->keymapOff));
+    while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (m->id == id)
+        if (musyxReadBE16(&m->id) == id)
             return m;
-        m = (MEM_DATA*)((u8*)m + m->nextOff);
+        m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
     return NULL;
 }
@@ -130,12 +131,12 @@ static inline MEM_DATA* GetLayerAddr(u16 id, POOL_DATA* pool)
     MEM_DATA* m;
     if (pool == NULL)
         return NULL;
-    m = (MEM_DATA*)((u8*)pool + pool->layerOff);
-    while (m->nextOff != 0xFFFFFFFF)
+    m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->layerOff));
+    while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (m->id == id)
+        if (musyxReadBE16(&m->id) == id)
             return m;
-        m = (MEM_DATA*)((u8*)m + m->nextOff);
+        m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
     return NULL;
 }
@@ -190,7 +191,7 @@ static void InsertData(u16 id, void* data, u8 dataType, u32 remove)
         {
             if ((m = GetLayerAddr(id, data)) != NULL)
             {
-                dataInsertLayer(id, &m->data.layer.entry, m->data.layer.num);
+                dataInsertLayer(id, &m->data.layer.entry, musyxReadBE32(&m->data.layer.num));
             }
             else
             {
@@ -237,12 +238,13 @@ static void ScanIDList(u16* ref, void* data, u8 dataType, u32 remove)
 {
     u16 id;
 
-    while (*ref != 0xFFFF)
+    while (musyxReadBE16(ref) != 0xFFFF)
     {
-        if ((*ref & 0x8000))
+        u16 value = musyxReadBE16(ref);
+        if ((value & 0x8000))
         {
-            id = *ref & 0x3fff;
-            while (id <= ref[1])
+            id = value & 0x3fff;
+            while (id <= musyxReadBE16(&ref[1]))
             {
                 InsertData(id, data, dataType, remove);
                 ++id;
@@ -251,7 +253,8 @@ static void ScanIDList(u16* ref, void* data, u8 dataType, u32 remove)
         }
         else
         {
-            InsertData(*ref++, data, dataType, remove);
+            InsertData(value, data, dataType, remove);
+            ref++;
         }
     }
 }
@@ -268,34 +271,34 @@ s32 sndPushGroup(void* prj_data, u16 gid, void* samples, void* sdir, void* pool)
     {
         g = prj_data;
 
-        while (g->nextOff != 0xFFFFFFFF)
+        while (musyxReadBE32(&g->nextOff) != 0xFFFFFFFF)
         {
-            if (g->id == gid)
+            if (musyxReadBE16(&g->id) == gid)
             {
                 gsTab[curSp].gAddr = g;
                 gsTab[curSp].prjAddr = prj_data;
                 poolPtr = pool;
                 gsTab[curSp].sdirAddr = sdir;
-                sampleRef = (u16*)((u8*)prj_data + g->sampleOff);
+                sampleRef = (u16*)((u8*)prj_data + musyxReadBE32(&g->sampleOff));
                 if (dataInsertSDir(sdir, hwTransAddr(samples)))
                 {
                     ScanIDList(sampleRef, sdir, 1, 0);
                 }
-                ScanIDList((u16*)((u8*)prj_data + g->macroOff), poolPtr, 0, 0);
-                ScanIDList((u16*)((u8*)prj_data + g->curveOff), poolPtr, 4, 0);
-                ScanIDList((u16*)((u8*)prj_data + g->keymapOff), pool, 2, 0);
-                ScanIDList((u16*)((u8*)prj_data + g->layerOff), pool, 3, 0);
-                if (g->type == 1)
+                ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->macroOff)), poolPtr, 0, 0);
+                ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->curveOff)), poolPtr, 4, 0);
+                ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->keymapOff)), pool, 2, 0);
+                ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->layerOff)), pool, 3, 0);
+                if (musyxReadBE16(&g->type) == 1)
                 {
-                    FX_DATA* fd = (FX_DATA*)((u8*)prj_data + g->data.song.normpageOff);
-                    dataInsertFX(gid, fd->fx, fd->num);
+                    FX_DATA* fd = (FX_DATA*)((u8*)prj_data + musyxReadBE32(&g->data.song.normpageOff));
+                    dataInsertFX(gid, fd->fx, musyxReadBE16(&fd->num));
                 }
                 hwSyncSampleMem();
                 ++sp;
                 return 1;
             }
 
-            g = (GROUP_DATA*)((u8*)prj_data + g->nextOff);
+            g = (GROUP_DATA*)((u8*)prj_data + musyxReadBE32(&g->nextOff));
         }
     }
 
@@ -315,21 +318,21 @@ u32 seqPlaySong(u16 sgid, u16 sid, void* arrfile, SynthPlayParams* para, u8 irq_
 
     for (i = 0; i < sp; ++i)
     {
-        if (gs[i].gAddr->id != sgid)
+        if (musyxReadBE16(&gs[i].gAddr->id) != sgid)
         {
             continue;
         }
 
-        if (gs[i].gAddr->type == 0)
+        if (musyxReadBE16(&gs[i].gAddr->type) == 0)
         {
             g = gs[i].gAddr;
             prj = gs[i].prjAddr;
-            norm = (SynthPage*)((u8*)prj + g->data.song.normpageOff);
-            drum = (SynthPage*)((u8*)prj + g->data.song.drumpageOff);
-            midiSetup = (SynthMidiSetup*)((u8*)prj + g->data.song.midiSetupOff);
-            while (midiSetup->songId != 0xFFFF)
+            norm = (SynthPage*)((u8*)prj + musyxReadBE32(&g->data.song.normpageOff));
+            drum = (SynthPage*)((u8*)prj + musyxReadBE32(&g->data.song.drumpageOff));
+            midiSetup = (SynthMidiSetup*)((u8*)prj + musyxReadBE32(&g->data.song.midiSetupOff));
+            while (musyxReadBE16(&midiSetup->songId) != 0xFFFF)
             {
-                if (midiSetup->songId == sid)
+                if (musyxReadBE16(&midiSetup->songId) == sid)
                 {
                     if (irq_call != 0)
                     {

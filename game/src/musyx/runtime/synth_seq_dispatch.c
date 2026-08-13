@@ -15,6 +15,7 @@
 #include "musyx/synth_config.h"
 #include "musyx/synth_job_queue.h"
 #include "musyx/synth_channel_scale.h"
+#include "musyx/endian.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "musyx/synth_volume.h"
 #include "src/musyx/runtime/synth_internal.h"
@@ -67,9 +68,8 @@ static inline void InitStream(SynthSequenceStream* stream, u32 streamDataOffset)
 
     if (streamDataOffset != 0)
     {
-        if ((stream->cursor = GetStreamValue(
-                 (u8*)(streamDataOffset + (u32)cseq->arrbase), &delta,
-                 &stream->step)) != 0)
+        if ((stream->cursor = GetStreamValue(cseq->arrbase + streamDataOffset, &delta,
+                                             &stream->step)) != 0)
         {
             stream->nextTime = delta;
         }
@@ -107,9 +107,9 @@ static inline u16 HandleStream(SynthSequenceStream* stream)
     return stream->value;
 }
 
-static inline void DoPrgChange(SynthVoiceRuntime* rt, SynthVoice* voice, u8 program, u32 midi)
+static inline void DoPrgChange(SynthVoice* voice, u8 program, u32 midi)
 {
-    rt->voiceNotes[curSeqId][midi] = 0xFFFF;
+    seqMIDIPriority[curSeqId][midi] = 0xFFFF;
     if (midi != 9)
     {
         program = voice->normTrans[program];
@@ -117,7 +117,7 @@ static inline void DoPrgChange(SynthVoiceRuntime* rt, SynthVoice* voice, u8 prog
         {
             return;
         }
-        voice->prgState[midi].macId = voice->normtab[program].macro;
+        voice->prgState[midi].macId = musyxReadBE16(&voice->normtab[program].macro);
         voice->prgState[midi].priority = voice->normtab[program].priority;
         voice->prgState[midi].maxVoices = voice->normtab[program].maxVoices;
         return;
@@ -127,7 +127,7 @@ static inline void DoPrgChange(SynthVoiceRuntime* rt, SynthVoice* voice, u8 prog
     {
         return;
     }
-    voice->prgState[midi].macId = voice->drumtab[program].macro;
+    voice->prgState[midi].macId = musyxReadBE16(&voice->drumtab[program].macro);
     voice->prgState[midi].priority = voice->drumtab[program].priority;
     voice->prgState[midi].maxVoices = voice->drumtab[program].maxVoices;
 }
@@ -147,9 +147,6 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
     SynthCallbackLink* note;
     SeqTrackEntry* tEntry;
     SynthSequenceState* pattern;
-    SynthVoiceRuntime* rt;
-
-    rt = SYNTH_VOICE_RUNTIME();
     switch (event->type)
     {
     case 4:
@@ -158,27 +155,30 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
         u8* seq;
         SynthSeqPattern* pat;
         u8 prog;
+        u32 patternTableOffset;
+        u32 patternOffset;
 
         tEntry = (SeqTrackEntry*)event->data;
         sv = cseq;
         seq = sv->arrbase;
         pattern = &sv->pattern[event->trackId];
-        pat = (SynthSeqPattern*)(*(u32*)(((SynthArrangement*)seq)->patternTableOffset + (u32)seq + tEntry->pattern * 4) +
-                                 (u32)seq);
+        patternTableOffset = musyxReadBE32(&((SynthArrangement*)seq)->patternTableOffset);
+        patternOffset = musyxReadBE32(seq + patternTableOffset + musyxReadBE16(&tEntry->pattern) * 4);
+        pat = (SynthSeqPattern*)(seq + patternOffset);
         pattern->noteData = (u8*)(pat + 1);
         pattern->lastTime = 0;
-        pattern->baseTime = tEntry->time;
+        pattern->baseTime = musyxReadBE32(&tEntry->time);
         pattern->patternInfo = tEntry;
-        InitStream(&pattern->pitchBend, pat->pitchBendOffset);
+        InitStream(&pattern->pitchBend, musyxReadBE32(&pat->pitchBendOffset));
         pattern->pitchBend.value = 0x2000;
-        InitStream(&pattern->modulation, pat->modulationOffset);
+        InitStream(&pattern->modulation, musyxReadBE32(&pat->modulationOffset));
         pattern->modulation.value = 0;
-        pattern->midi = *(u8*)(((SynthArrangement*)cseq->arrbase)->trackMidiTableOffset +
-                               (u32)cseq->arrbase + event->trackId);
+        pattern->midi = cseq->arrbase[musyxReadBE32(
+            &((SynthArrangement*)cseq->arrbase)->trackMidiTableOffset) + event->trackId];
         prog = tEntry->prgChange;
         if (prog != 0xff)
         {
-            DoPrgChange(rt, cseq, prog, pattern->midi);
+            DoPrgChange(cseq, prog, pattern->midi);
         }
         if (tEntry->velocity != 0xff)
         {
@@ -198,7 +198,7 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
             switch (velocity)
             {
             case 0:
-                DoPrgChange(rt, cseq, key & 0x7f, midi);
+                DoPrgChange(cseq, key & 0x7f, midi);
                 break;
             case 1:
                 inpSetMidiCtrl(SEQ_META_KEY_OFF, midi, curSeqId & 0xff, key & 0x7f);
@@ -216,10 +216,10 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
                         }
                         break;
                     case SEQ_META_LOOP_MARK:
-                        rt->voiceNotes[curSeqId][midi] = key & 0x7f;
+                        seqMIDIPriority[curSeqId][midi] = key & 0x7f;
                         break;
                     case SEQ_META_LOOP_MARK_HI:
-                        rt->voiceNotes[curSeqId][midi] = (key & 0x7f) + 0x80;
+                        seqMIDIPriority[curSeqId][midi] = (key & 0x7f) + 0x80;
                         break;
                     case SEQ_META_RESET_CTRL:
                         inpResetMidiCtrl(midi, curSeqId & 0xff, 0);
@@ -246,7 +246,7 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
                     key = key > 0x7f ? 0x7f : key < 0 ? 0 : key;
                     velocity += ((SeqTrackEntry*)pa->patternInfo)->velocityAdd;
                     velocity = velocity > 0x7f ? 0x7f : velocity < 0 ? 0 : velocity;
-                    if ((note = AllocateNote(event->time + pe->length, voice)) != NULL)
+                    if ((note = AllocateNote(event->time + musyxReadBE16(&pe->length), voice)) != NULL)
                     {
                         SynthVoice* sv2;
                         s16 mod;
@@ -422,7 +422,7 @@ u32 HandleTrackEvents(u8 voice, u32 param)
     SynthTimeWord unusedTime;
 
     flag = 0;
-    vp = (SynthSequenceQueue*)((u8*)cseq + voice * 56 + 0x14e8);
+    vp = &cseq->section[voice];
     while ((vp->eventList == NULL ? 0 : vp->eventList->time) <= vp->time[vp->timeIndex].high)
     {
         SynthSequenceEvent* ev = vp->eventList;
@@ -438,17 +438,14 @@ u32 HandleTrackEvents(u8 voice, u32 param)
             }
             flag = 0;
             vp->timeIndex ^= 1;
-            vp->time[vp->timeIndex].high = ((SynthArrangement*)cseq->arrbase)->loopPoint[voice];
+            vp->time[vp->timeIndex].high =
+                musyxReadBE32(&((SynthArrangement*)cseq->arrbase)->loopPoint[voice]);
             vp->time[vp->timeIndex].low = vp->time[vp->timeIndex ^ 1].low;
+            if (vp->masterTrackBase != NULL)
             {
-                u8* voiceState = (u8*)(voice * 56);
-                voiceState += (u32)cseq;
-                if (*(void**)(voiceState + 0x14e8) != NULL)
-                {
-                    *(int*)(voiceState + 0x14ec) = *(int*)(voiceState + 0x14e8);
-                    HandleMasterTrack(voice);
-                    SetTickDelta((SynthSequenceQueue*)((u8*)cseq + voice * 56 + 0x14e8), param);
-                }
+                vp->masterTrackCursor = vp->masterTrackBase;
+                HandleMasterTrack(voice);
+                SetTickDelta(vp, param);
             }
             vp->loopCount += 1;
             InitTrackEventsSection(voice);
@@ -513,25 +510,27 @@ static inline void SetTickDeltaInline(SynthSequenceQueue* section, u32 deltaTime
 static inline void HandleMasterTrackInline(u8 secIndex)
 {
     SynthSequenceQueue* section;
-    u32* evt;
+    u32 eventTime;
+    u32 bpm;
 
     section = &cseq->section[secIndex];
     if (section->masterTrackBase != NULL)
     {
-        while (*(evt = (u32*)section->masterTrackCursor) != 0xffffffff)
+        while ((eventTime = musyxReadBE32(section->masterTrackCursor)) != 0xffffffff)
         {
-            if (*evt > section->time[section->timeIndex].high)
+            if (eventTime > section->time[section->timeIndex].high)
             {
                 break;
             }
-            if ((((SynthArrangement*)cseq->arrbase)->info & 0x40000000) != 0)
+            bpm = musyxReadBE32(section->masterTrackCursor + 4);
+            if ((musyxReadBE32(&((SynthArrangement*)cseq->arrbase)->info) & 0x40000000) != 0)
             {
-                synthSetBpm((section->bpm = evt[1]) >> 10, curSeqId, secIndex);
+                synthSetBpm((section->bpm = bpm) >> 10, curSeqId, secIndex);
             }
             else
             {
-                synthSetBpm(evt[1], curSeqId, secIndex);
-                section->bpm = ((u32*)section->masterTrackCursor)[1] << 10;
+                synthSetBpm(bpm, curSeqId, secIndex);
+                section->bpm = bpm << 10;
             }
             section->masterTrackCursor += 8;
         }
@@ -631,15 +630,15 @@ void seqHandle(u32 deltaTime)
     }
 }
 
-static inline void ClearNotes(SynthVoiceRuntime* runtime) {
+static inline void ClearNotes(void) {
     SynthCallbackLink* prev;
     SynthCallbackLink* callback;
     u32 i;
 
     prev = NULL;
-    noteFree = &runtime->callbacks[0];
+    noteFree = &seqNote[0];
     for (i = 0; i < 0x100; i++) {
-        callback = &runtime->callbacks[i];
+        callback = &seqNote[i];
         callback->prev = prev;
         if (prev != NULL) {
             prev->next = callback;
@@ -656,15 +655,13 @@ void seqInit(void)
 {
     u16* note;
     SynthVoice* voice;
-    SynthVoiceRuntime* runtime;
     u32 i;
     int j;
 
-    runtime = SYNTH_VOICE_RUNTIME();
     seqActiveRoot = NULL;
     seqPausedRoot = NULL;
-    voice = &runtime->voices[0];
-    note = runtime->voiceNotes[0];
+    voice = &seqInstance[0];
+    note = seqMIDIPriority[0];
     for (i = 0; i < 8; i++)
     {
         if (i == 0)
@@ -675,7 +672,7 @@ void seqInit(void)
         else
         {
             (voice - 1)->next = voice;
-            voice->prev = &SYNTH_VOICE_RUNTIME()->voices[i - 1];
+            voice->prev = &seqInstance[i - 1];
         }
         voice->slotIndex = i;
         voice->state = 0;
@@ -686,8 +683,8 @@ void seqInit(void)
         note += 16;
         voice++;
     }
-    runtime->voices[i - 1].next = NULL;
+    seqInstance[i - 1].next = NULL;
 
-    ClearNotes(runtime);
+    ClearNotes();
     seq_next_id = 0;
 }

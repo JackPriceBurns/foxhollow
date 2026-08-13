@@ -50,6 +50,35 @@ void PushFreeAudioBuffer(void* message)
     OSSendMessage(&gAttractMovieFreeAudioQueueAndStack.queue, message, OS_MESSAGE_NOBLOCK);
 }
 
+void AttractMovieAudio_InitQueuesPC(void)
+{
+    s32 i;
+
+    OSInitMessageQueue(&gAttractMovieFreeAudioQueueAndStack.queue, gAttractMovieAudioDecodeContext.free,
+                       ARRAY_COUNT(gAttractMovieAudioDecodeContext.free));
+    OSInitMessageQueue(&gAttractMovieDecodedAudioQueue, gAttractMovieAudioDecodeContext.decoded,
+                       ARRAY_COUNT(gAttractMovieAudioDecodeContext.decoded));
+    for (i = 0; i < ARRAY_COUNT(gAttractMoviePlayer.audioBuffer); i++)
+    {
+        PushFreeAudioBuffer(&gAttractMoviePlayer.audioBuffer[i]);
+    }
+}
+
+void AttractMovieAudio_DecodeFramePC(u8* audioFrame, s32 frameNumber)
+{
+    AttractMovieAudioBuffer* audioBuffer;
+
+    if (OSReceiveMessage(&gAttractMovieFreeAudioQueueAndStack.queue, (OSMessage*)&audioBuffer,
+                         OS_MESSAGE_NOBLOCK) == 0)
+    {
+        return;
+    }
+    audioBuffer->validSample = THPAudioDecode(audioBuffer->buffer, audioFrame, 0);
+    audioBuffer->curPtr = audioBuffer->buffer;
+    audioBuffer->frameNumber = frameNumber;
+    OSSendMessage(&gAttractMovieDecodedAudioQueue, audioBuffer, OS_MESSAGE_NOBLOCK);
+}
+
 static void AttractMovieAudio_Decode(void* readBufferArg) {
     u32* audioFrameSizes;
     AttractMovieReadBuffer* readBuffer;

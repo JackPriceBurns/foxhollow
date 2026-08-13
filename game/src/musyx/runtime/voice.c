@@ -246,36 +246,34 @@ int vidGetInternalId(u32 id)
 void voiceRemovePriority(McmdVoiceState* state)
 {
     McmdVoiceState* s = state;
-    VidListTables* vb;
     SynthVoiceListNode* vps;
     SynthRootListNode* pr;
 
-    vb = (VidListTables*)vidList;
-    vps = &((SynthVoiceListNode*)((u8*)vb + offsetof(VidListTables, priorityLinks)))[s->id & 0xff];
+    vps = &voicePriorityLinks[s->id & 0xff];
     if (vps->user != 1)
     {
         return;
     }
     if (vps->prev != 0xff)
     {
-        vb->priorityLinks[vps->prev].next = vps->next;
+        voicePriorityLinks[vps->prev].next = vps->next;
     }
     else
     {
-        vb->priorityGroupHeads[s->prio] = vps->next;
+        voicePriorityGroupHeads[s->prio] = vps->next;
     }
     if (vps->next != 0xff)
     {
-        vb->priorityLinks[vps->next].prev = vps->prev;
+        voicePriorityLinks[vps->next].prev = vps->prev;
     }
     else if (vps->prev == 0xff)
     {
         u32 prevv;
-        pr = &((SynthRootListNode*)((u8*)vb + offsetof(VidListTables, prioritySortLinks)))[s->prio];
+        pr = &voicePrioritySortLinks[s->prio];
         prevv = pr->prev;
         if (prevv != 0xffff)
         {
-            vb->prioritySortLinks[prevv].next = pr->next;
+            voicePrioritySortLinks[prevv].next = pr->next;
         }
         else
         {
@@ -283,17 +281,11 @@ void voiceRemovePriority(McmdVoiceState* state)
         }
         if (pr->next != 0xffff)
         {
-            vb->prioritySortLinks[pr->next].prev = pr->prev;
+            voicePrioritySortLinks[pr->next].prev = pr->prev;
         }
     }
     vps->user = 0;
 }
-
-#define VB_PRIO_HEAD(vb, p)      (*(u8*)((u8*)&(vb)->priorityGroupHeads[0] + (p)))
-#define VB_PRIO_LINK(vb, i)      ((SynthVoiceListNode*)((u8*)&(vb)->priorityLinks[0] + (i) * sizeof(SynthVoiceListNode)))
-#define VB_PRIO_SORT_NEXT(vb, p) (((SynthRootListNode*)&(vb)->prioritySortLinks[0])[p].next)
-#define VB_PRIO_SORT_PREV(vb, p) \
-    (((SynthRootListNode*)((u8*)&(vb)->prioritySortLinks[0] + offsetof(SynthRootListNode, prev)))[p].next)
 
 /*
  * Insert the voice into the new priority group's list and keep the global
@@ -302,15 +294,13 @@ void voiceRemovePriority(McmdVoiceState* state)
 void voiceSetPriority(McmdVoiceState* svoice, u8 prio)
 {
     u32 voiceIdx;
-    VidListTables* vb;
     u16 li;
     SynthVoiceListNode* vps;
     u16 root;
     u16 i;
 
     voiceIdx = (u8)svoice->id;
-    vb = (VidListTables*)vidList;
-    vps = VB_PRIO_LINK(vb, voiceIdx);
+    vps = &voicePriorityLinks[voiceIdx];
     if (vps->user == 1)
     {
         if (svoice->prio == prio)
@@ -323,15 +313,15 @@ void voiceSetPriority(McmdVoiceState* svoice, u8 prio)
 
     vps->user = 1;
     vps->prev = 0xff;
-    if ((vps->next = VB_PRIO_HEAD(vb, prio)) != 0xFF)
+    if ((vps->next = voicePriorityGroupHeads[prio]) != 0xFF)
     {
-        VB_PRIO_LINK(vb, VB_PRIO_HEAD(vb, prio))->prev = voiceIdx;
+        voicePriorityLinks[voicePriorityGroupHeads[prio]].prev = voiceIdx;
     }
     else if (root = voicePrioSortedRoot, root != 0xFFFF)
     {
         if (prio >= root)
         {
-            for (i = root; i != 0xFFFF; i = VB_PRIO_SORT_NEXT(vb, i))
+            for (i = root; i != 0xFFFF; i = voicePrioritySortLinks[i].next)
             {
                 if (i > prio)
                 {
@@ -340,37 +330,36 @@ void voiceSetPriority(McmdVoiceState* svoice, u8 prio)
                 li = i;
             }
 
-            VB_PRIO_SORT_NEXT(vb, li) = prio;
-            VB_PRIO_SORT_PREV(vb, prio) = li;
-            VB_PRIO_SORT_NEXT(vb, prio) = i;
+            voicePrioritySortLinks[li].next = prio;
+            voicePrioritySortLinks[prio].prev = li;
+            voicePrioritySortLinks[prio].next = i;
             if (i != 0xFFFF)
             {
-                VB_PRIO_SORT_PREV(vb, i) = prio;
+                voicePrioritySortLinks[i].prev = prio;
             }
         }
         else
         {
-            VB_PRIO_SORT_NEXT(vb, prio) = root;
-            VB_PRIO_SORT_PREV(vb, prio) = 0xFFFF;
-            VB_PRIO_SORT_PREV(vb, root) = prio;
+            voicePrioritySortLinks[prio].next = root;
+            voicePrioritySortLinks[prio].prev = 0xFFFF;
+            voicePrioritySortLinks[root].prev = prio;
             voicePrioSortedRoot = prio;
         }
     }
     else
     {
-        VB_PRIO_SORT_NEXT(vb, prio) = 0xFFFF;
-        VB_PRIO_SORT_PREV(vb, prio) = 0xFFFF;
+        voicePrioritySortLinks[prio].next = 0xFFFF;
+        voicePrioritySortLinks[prio].prev = 0xFFFF;
         voicePrioSortedRoot = prio;
     }
 
-    VB_PRIO_HEAD(vb, prio) = voiceIdx;
+    voicePriorityGroupHeads[prio] = voiceIdx;
     svoice->prio = prio;
     hwSetPriority(svoice->id & 0xFF, ((u32)prio << 24) | (svoice->age >> 15));
 }
 
 #define VOICE_CFLAGS(i) (*(u64*)&synthVoice[i].cFlagsHi)
 
-#define VB_PRIO_LINK_NEXT(vb, i) (((SynthVoiceListNode*)((u8*)&(vb)->priorityLinks[0] + (i) * 4))->next)
 #define VOICE_PRIORITY_NONE      0xFFFF
 
 /*
@@ -387,8 +376,6 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
     u32 restrictToStreamKind;
     u16 priorityGroupIndex;
     SynthVoiceListNode* freeSlot;
-    SynthVoiceListNode* slotBase;
-    VidListTables* voiceLists = (VidListTables*)vidList;
 
     if (!synthIdleWaitActive)
     {
@@ -421,8 +408,8 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
             while (prio != VOICE_PRIORITY_NONE && priority >= prio && selectedVoice == -1)
             {
                 u32 group = prio;
-                for (i = VB_PRIO_HEAD(voiceLists, group); i != SYNTH_INVALID_VOICE_U8;
-                     i = VB_PRIO_LINK_NEXT(voiceLists, i))
+                for (i = voicePriorityGroupHeads[group]; i != SYNTH_INVALID_VOICE_U8;
+                     i = voicePriorityLinks[i].next)
                 {
                     if (allocId != synthVoice[i].allocId)
                         continue;
@@ -444,7 +431,7 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
                     }
                 }
 
-                prio = VB_PRIO_SORT_NEXT(voiceLists, group);
+                prio = voicePrioritySortLinks[group].next;
             }
 
             if (allocationCount >= maxInstances)
@@ -455,7 +442,7 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
             while (prio != VOICE_PRIORITY_NONE && allocationCount < maxInstances)
             {
                 u32 group = prio;
-                i = VB_PRIO_HEAD(voiceLists, group);
+                i = voicePriorityGroupHeads[group];
                 while (i != SYNTH_INVALID_VOICE_U8)
                 {
                     if (allocId == synthVoice[i].allocId)
@@ -463,10 +450,10 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
                         allocationCount++;
                     }
 
-                    i = VB_PRIO_LINK_NEXT(voiceLists, i);
+                    i = voicePriorityLinks[i].next;
                 }
 
-                prio = VB_PRIO_SORT_NEXT(voiceLists, group);
+                prio = voicePrioritySortLinks[group].next;
             }
 
             if (allocationCount >= maxInstances)
@@ -494,8 +481,8 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
                 while (prio != VOICE_PRIORITY_NONE && priority >= prio && selectedVoice == -1)
                 {
                     priorityGroupIndex = prio;
-                    for (i = VB_PRIO_HEAD(voiceLists, priorityGroupIndex); i != SYNTH_INVALID_VOICE_U8;
-                         i = VB_PRIO_LINK_NEXT(voiceLists, i))
+                    for (i = voicePriorityGroupHeads[priorityGroupIndex]; i != SYNTH_INVALID_VOICE_U8;
+                         i = voicePriorityLinks[i].next)
                     {
                         if ((synthVoice[i].block == 0) &&
                             (!restrictToStreamKind || fxFlag == synthVoice[i].fxFlag))
@@ -514,7 +501,7 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
                             }
                         }
                     }
-                    prio = VB_PRIO_SORT_NEXT(voiceLists, priorityGroupIndex);
+                    prio = voicePrioritySortLinks[priorityGroupIndex].next;
                 }
 
                 if (selectedVoice == -1)
@@ -535,15 +522,14 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
             goto ret_invalid;
         }
 
-        slotBase = (SynthVoiceListNode*)((u8*)voiceLists + selectedVoice * 4);
-        if (slotBase[offsetof(VidListTables, freeList) / sizeof(*slotBase)].user == 1)
+        freeSlot = &voiceFreeListSlots[selectedVoice];
+        if (freeSlot->user == 1)
         {
-            freeSlot = (SynthVoiceListNode*)((u8*)slotBase + offsetof(VidListTables, freeList));
             i = freeSlot->prev;
 
             if (i != SYNTH_INVALID_VOICE_U8)
             {
-                voiceLists->freeList[i].next = freeSlot->next;
+                voiceFreeListSlots[i].next = freeSlot->next;
             }
             else
             {
@@ -553,7 +539,7 @@ u32 voiceAllocate(u8 priority, u8 maxInstances, u16 allocId, u8 fxFlag)
             i = freeSlot->next;
             if (i != SYNTH_INVALID_VOICE_U8)
             {
-                voiceLists->freeList[i].prev = freeSlot->prev;
+                voiceFreeListSlots[i].prev = freeSlot->prev;
             }
 
             if (selectedVoice == voiceFreeListTail)

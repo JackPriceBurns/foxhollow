@@ -6,22 +6,7 @@
 #include "musyx/synth_queue.h"
 #include "musyx/synth_callback.h"
 #include "musyx/synth_channel_scale.h"
-
-typedef union SynthSeqRuntime
-{
-    struct
-    {
-        u8 callbackStorage[0x1400];
-        SynthVoice voices[SYNTH_MAX_VOICES];
-    } data;
-    u8 bytes[0x1400 + sizeof(SynthVoice) * SYNTH_MAX_VOICES];
-} SynthSeqRuntime;
-
-typedef struct SynthVoiceRuntimeView
-{
-    u8 callbackStorage[0x1400];
-    SynthVoice voice;
-} SynthVoiceRuntimeView;
+#include "musyx/endian.h"
 
 /* SynthVoice.state - which intrusive list the voice sits on */
 #define SYNTH_VOICE_STATE_FREE      0 /* unallocated */
@@ -53,9 +38,11 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
     SynthVoice* seq;
     u32 seqId;
     long i;
-    u32* trackOffsets;
+    u8* trackOffsets;
     SynthArrangement* arrangement;
     u8 program;
+    u8* songBase;
+    u32 arrangementInfo;
 
     if ((seq = seqFreeRoot) == 0)
     {
@@ -153,17 +140,19 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
     }
 
     arrangement = (SynthArrangement*)song;
-    if (arrangement->info & 0x80000000)
+    songBase = (u8*)song;
+    arrangementInfo = musyxReadBE32(&arrangement->info);
+    if (arrangementInfo & 0x80000000)
     {
-        seq->keyGroupMap = (u8*)(arrangement->trackSectionTableOffset + (u32)song);
+        seq->keyGroupMap = songBase + musyxReadBE32(&arrangement->trackSectionTableOffset);
     }
     else
     {
         seq->keyGroupMap = 0;
     }
 
-    bpm = arrangement->info & 0x0FFFFFFF;
-    if (!(arrangement->info & 0x40000000))
+    bpm = arrangementInfo & 0x0FFFFFFF;
+    if (!(arrangementInfo & 0x40000000))
     {
         bpm <<= 10;
     }
@@ -172,9 +161,9 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
     {
         seq->section[i].bpm = bpm;
         synthSetBpm(bpm >> 10, seqId, i);
-        if (arrangement->masterTrackOffset != 0)
+        if (musyxReadBE32(&arrangement->masterTrackOffset) != 0)
         {
-            seq->section[i].masterTrackBase = (u8*)(arrangement->masterTrackOffset + (u32)song);
+            seq->section[i].masterTrackBase = songBase + musyxReadBE32(&arrangement->masterTrackOffset);
             seq->section[i].masterTrackCursor = seq->section[i].masterTrackBase;
         }
         else
@@ -185,14 +174,14 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
         seq->section[i].loopCount = 0;
     }
 
-    trackOffsets = (u32*)(arrangement->trackTableOffset + (u32)song);
+    trackOffsets = songBase + musyxReadBE32(&arrangement->trackTableOffset);
     for (i = 0; i < 64; i++)
     {
         synthTrackVolume[i] = 0x7F;
         seq->pattern[i].noteData = 0;
-        if (trackOffsets[i] != 0)
+        if (musyxReadBE32(trackOffsets + i * 4) != 0)
         {
-            seq->track[i].current = seq->track[i].base = (u8*)(trackOffsets[i] + (u32)song);
+            seq->track[i].current = seq->track[i].base = songBase + musyxReadBE32(trackOffsets + i * 4);
         }
         else
         {
@@ -228,7 +217,7 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
                 program = seq->normTrans[program];
                 if (program != 0xFF)
                 {
-                    seq->prgState[(u8)i].macId = seq->normtab[program].macro;
+                    seq->prgState[(u8)i].macId = musyxReadBE16(&seq->normtab[program].macro);
                     seq->prgState[(u8)i].priority = seq->normtab[program].priority;
                     seq->prgState[(u8)i].maxVoices = seq->normtab[program].maxVoices;
                 }
@@ -238,7 +227,7 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
                 program = seq->drumTrans[program];
                 if (program != 0xFF)
                 {
-                    seq->prgState[(u8)i].macId = seq->drumtab[program].macro;
+                    seq->prgState[(u8)i].macId = musyxReadBE16(&seq->drumtab[program].macro);
                     seq->prgState[(u8)i].priority = seq->drumtab[program].priority;
                     seq->prgState[(u8)i].maxVoices = seq->drumtab[program].maxVoices;
                 }
@@ -284,28 +273,28 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
 void HandleMasterTrack(u8 secIndex)
 {
     SynthSequenceQueue* section;
+    u32 eventTime;
+    u32 bpm;
 
     section = &cseq->section[secIndex];
     if (section->masterTrackBase != 0)
     {
-        while (((SynthMasterTrackEvent*)section->masterTrackCursor)->time != 0xFFFFFFFF)
+        while ((eventTime = musyxReadBE32(section->masterTrackCursor)) != 0xFFFFFFFF)
         {
-            if (((SynthMasterTrackEvent*)section->masterTrackCursor)->time > section->time[section->timeIndex].high)
+            if (eventTime > section->time[section->timeIndex].high)
             {
                 break;
             }
 
-            if (((SynthArrangement*)cseq->arrbase)->info & 0x40000000)
+            bpm = musyxReadBE32(section->masterTrackCursor + 4);
+            if (musyxReadBE32(&((SynthArrangement*)cseq->arrbase)->info) & 0x40000000)
             {
-                synthSetBpm((section->bpm = ((SynthMasterTrackEvent*)section->masterTrackCursor)->bpm) >>
-                                               10,
-                                           curSeqId, secIndex);
+                synthSetBpm((section->bpm = bpm) >> 10, curSeqId, secIndex);
             }
             else
             {
-                synthSetBpm(((SynthMasterTrackEvent*)section->masterTrackCursor)->bpm,
-                                           curSeqId, secIndex);
-                section->bpm = ((SynthMasterTrackEvent*)section->masterTrackCursor)->bpm << 10;
+                synthSetBpm(bpm, curSeqId, secIndex);
+                section->bpm = bpm << 10;
             }
 
             section->masterTrackCursor += 8;
@@ -407,13 +396,9 @@ void seqPause(u32 seqId)
 
 void seqStop(u32 seqId)
 {
-    SynthSeqRuntime* runtime;
     SynthVoice* voice;
     u32 slot;
     u32 i;
-    SynthVoiceRuntimeView* runtimeView;
-
-    runtime = (SynthSeqRuntime*)(void*)seqNote;
 
     slot = seqGetPrivateIdInline(seqId);
 
@@ -424,9 +409,8 @@ void seqStop(u32 seqId)
 
     if ((slot & 0x80000000) == 0)
     {
-        runtimeView = (SynthVoiceRuntimeView*)(runtime->bytes + slot * 6248);
-        voice = &runtimeView->voice;
-        switch (runtimeView->voice.state)
+        voice = &seqInstance[slot];
+        switch (voice->state)
         {
         case SYNTH_VOICE_STATE_QUEUED:
             if (voice->prev != 0)
@@ -450,7 +434,7 @@ void seqStop(u32 seqId)
                 }
             }
             {
-                SynthCallbackLink* callback = runtime->data.voices[slot].callbackLists[2];
+                SynthCallbackLink* callback = voice->callbackLists[2];
                 while (callback != 0)
                 {
                     voiceKillSound(callback->callbackId);
@@ -486,8 +470,7 @@ void seqStop(u32 seqId)
     }
     else
     {
-        if ((voice = &runtime->data.voices[slot & 0x7fffffffu],
-             runtime->data.voices[slot & 0x7fffffffu].state) != SYNTH_VOICE_STATE_FREE)
+        if ((voice = &seqInstance[slot & 0x7fffffffu], voice->state) != SYNTH_VOICE_STATE_FREE)
         {
             voice->syncSeqIdPtr = 0;
         }
@@ -497,35 +480,22 @@ void seqStop(u32 seqId)
 void seqSpeed(u32 seqId, u16 speed)
 {
     u32 slot;
-    SynthSeqRuntime* runtime;
+    u32 section;
 
-    runtime = (SynthSeqRuntime*)(void*)seqNote;
     slot = seqGetPrivateIdInline(seqId);
 
     if ((slot & 0x80000000) == 0)
     {
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 0) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 1) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 2) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 3) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 4) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 5) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 6) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 7) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 8) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 9) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 10) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 11) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 12) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 13) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 14) = speed;
-        SYNTH_RUNTIME_CHANNEL_SPEED_VALUE(runtime, slot, 15) = speed;
+        for (section = 0; section < SYNTH_VOICE_NOTE_COUNT; section++)
+        {
+            seqInstance[slot].section[section].speed = speed;
+        }
     }
     else
     {
         u32 idx = slot & 0x7fffffffu;
-        SYNTH_RUNTIME_PENDING_FLAGS(runtime, idx) |= 0x20;
-        SYNTH_RUNTIME_PENDING_VALUE16(runtime, idx) = speed;
+        seqInstance[idx].syncCrossInfo.flags |= SND_CROSSFADE_SPEED;
+        seqInstance[idx].syncCrossInfo.speed2 = speed;
     }
 }
 
