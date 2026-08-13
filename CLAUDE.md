@@ -30,6 +30,13 @@ still using a hardcoded retail offset then reads the wrong bytes.
 asset headers arrive raw. Each consumer swaps its own fields; `u8` fields read fine, which is
 why these bugs present as "mostly works, one thing is insane".
 
+**Hardware conversion intrinsics are behavioral contracts, not ordinary C casts.** GameCube
+paired-single quantized stores and the Dolphin `OSFastCast` helpers saturate values to the target
+integer range. Replacing them with `(s16)float`, `(s8)float`, or unsigned equivalents changes the
+behavior for out-of-range values; the C conversion is undefined or implementation-defined and may
+wrap to the opposite end of the range. Audit compatibility shims against the retail instruction,
+especially around packed vertices, normals, colors, animation data, and fixed-point streams.
+
 Corollary: **"identical to the decomp" does not mean correct.** Decomp-faithful code that
 hardcodes an offset or reads a BE float is still broken here. Diffing against `~/Code/sfa`
 proves faithfulness, not correctness — and the decomp is ~100%, not 100%, so it can be wrong too.
@@ -40,6 +47,10 @@ Worked examples, both real:
   parenting worked and only path queries broke.
 - `DustMoteSou` read its placement `f32 scale` unswapped: `0x7B10203E` = `7.7e+35` instead of
   `0x3E20107B` = `0.156`. A blinking jukebox button became a screen-filling white pane.
+- `SB_ShipHead` exceeded the signed-16 vertex range during its mouth-open animation. Retail
+  `psq_st` saturated `33172.289` to `32767`; Aurora's `(s16)` cast wrapped it to roughly `-32364`,
+  pulling a small group of ear vertices straight through the model until the animation moved back
+  in range. The fix was a port-owned saturating `OSFastCast.h`, not a change to the game animation.
 
 `STATIC_ASSERT` is a **no-op** outside MWERKS (`global.h`), so no struct layout is verified.
 Enabling it as `_Static_assert` yields ~369 failures across ~20 structs; most are vtables and
@@ -84,6 +95,13 @@ Omitting `TARGET_PC` silently changes `u32` to 8 bytes and invalidates every num
 
 **Read disc data directly** — `~/Code/sfa/orig/GSAE01/files/` has the extracted files
 (`TEXTABLE.bin`, `TEX0.tab`, …) for checking what an id *should* resolve to.
+
+**Replay asset math without rendering.** For intermittent deformation bugs, load the exact model
+and animation assets into a small native harness, parse the display-list vertex-to-matrix bindings,
+then sweep every animation frame, transition weight, morph target, and CPU skinning chunk. Inspect
+the floating-point value immediately before packed conversion and compare the port result with the
+retail instruction's range behavior. A useful regression must fail under the old shim and pass under
+the fix; bounded final poses alone can miss a one-instruction packing mismatch.
 
 **Extract frames from screen recordings** with AVFoundation via `swiftc`, then crop/zoom, to
 inspect an artifact frame by frame instead of relying on description.
