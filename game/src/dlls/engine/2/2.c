@@ -687,7 +687,8 @@ typedef struct ObjSeqStreamMapEntry
 
 #define OBJSEQ_STREAM_MAP_COUNT 5
 
-STATIC_ASSERT(sizeof(ObjSeqStreamMapEntry) == 8);
+STATIC_ASSERT(offsetof(ObjSeqStreamMapEntry, streamIds) == 8);
+STATIC_ASSERT(sizeof(ObjSeqStreamMapEntry) == 16);
 
 STATIC_ASSERT(offsetof(ObjSeqAnimPlacement, animDataIndex) == 0x18);
 STATIC_ASSERT(offsetof(ObjSeqAnimPlacement, sequenceGameBit) == 0x1A);
@@ -1937,6 +1938,20 @@ ObjSeqStreamMapEntry gObjSeqStreamTableB[OBJSEQ_STREAM_MAP_COUNT] = {
     {0xC3, lbl_8030EC7C},  {0x122, lbl_8030EC98},
 };
 
+static u32* ObjSeq_FindStreamIds(ObjSeqStreamMapEntry* entries, int trackId)
+{
+    int i;
+
+    for (i = 0; i < OBJSEQ_STREAM_MAP_COUNT; i++)
+    {
+        if (entries[i].trackId == trackId)
+        {
+            return entries[i].streamIds;
+        }
+    }
+    return NULL;
+}
+
 s16 gObjSeqSlotValues[86] = {0};
 
 int gObjSeqScriptedButtonMasks[7] = {0x100, 0x200, 0x40000, 0x80000, 0x20000, 0x10000, -1};
@@ -2703,7 +2718,7 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
         {
             trackId = (u32)(gObjSeqSlotSeqIdTable[slot] - 1) & 0x3fff;
             gObjSeqCurrentTrackId = trackId;
-            streams = (int*)seqPairTableLookup(gObjSeqStreamTableA, OBJSEQ_STREAM_MAP_COUNT, trackId);
+            streams = (int*)ObjSeq_FindStreamIds(gObjSeqStreamTableA, trackId);
             if (streams != NULL)
             {
                 off = cmdArg * 4;
@@ -2711,7 +2726,7 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
                 {
                     gObjSeqPreparingStreamSlot = slot;
                 }
-                streams = (int*)seqPairTableLookup(gObjSeqStreamTableB, OBJSEQ_STREAM_MAP_COUNT, trackId);
+                streams = (int*)ObjSeq_FindStreamIds(gObjSeqStreamTableB, trackId);
                 if (streams != NULL)
                 {
                     gObjSeqSubtitleId = *(int*)((u8*)streams + off);
@@ -5767,7 +5782,6 @@ void ObjSeq_initialise(void)
     gObjSeqCamModeArgB = 1;
     gObjSeqCamModeArgD = 0x5a;
     gObjSeqCamMode = 0x42;
-    seqPairTablePrepare(gObjSeqStreamTableA, 5);
 }
 
 void ObjSeq_copyDefaultColor(GXColor* out)

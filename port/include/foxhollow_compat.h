@@ -47,6 +47,7 @@ void sfaSrand(unsigned int seed);
 void fhLoadIdentityPosMtx(void);
 void fhAIPump(void);
 uintptr_t fhAIGetDMAStartAddr(void);
+int fhAIPrepareStream(void* fileInfo);
 void fhMusyxMix(short* destination);
 
 #endif
