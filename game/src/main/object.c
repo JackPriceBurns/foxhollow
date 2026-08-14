@@ -1188,25 +1188,25 @@ u8* loadObjectFile(int id)
         rawOff = fhSwap32(*(u32*)(blob + 0x40));
         buf->hitVolumes = rawOff ? (ObjDefHitVolume*)(blob + rawOff) : NULL;
         buf->flags = fhSwap32(*(u32*)(blob + 0x44));
-        buf->shadowType = (s16)fhSwap16(*(u16*)(blob + 0x48));
-        buf->shadowTextureId = (s16)fhSwap16(*(u16*)(blob + 0x4a));
-        buf->hitboxFlags = (s16)fhSwap16(*(u16*)(blob + 0x4e));
-        buf->dllId = (s16)fhSwap16(*(u16*)(blob + 0x50));
-        buf->category = (s16)fhSwap16(*(u16*)(blob + 0x52));
+        buf->shadowType = fhReadBES16(blob + 0x48);
+        buf->shadowTextureId = fhReadBES16(blob + 0x4a);
+        buf->hitboxFlags = fhReadBES16(blob + 0x4e);
+        buf->dllId = fhReadBES16(blob + 0x50);
+        buf->category = fhReadBES16(blob + 0x52);
         memcpy(&buf->pad54, blob + 0x54, 0x14);
-        buf->primaryCapsuleOffsetA = (s16)fhSwap16(*(u16*)(blob + 0x68));
-        buf->primaryCapsuleOffsetB = (s16)fhSwap16(*(u16*)(blob + 0x6a));
-        buf->secondaryCapsuleOffsetA = (s16)fhSwap16(*(u16*)(blob + 0x6c));
-        buf->secondaryCapsuleOffsetB = (s16)fhSwap16(*(u16*)(blob + 0x6e));
+        buf->primaryCapsuleOffsetA = fhReadBES16(blob + 0x68);
+        buf->primaryCapsuleOffsetB = fhReadBES16(blob + 0x6a);
+        buf->secondaryCapsuleOffsetA = fhReadBES16(blob + 0x6c);
+        buf->secondaryCapsuleOffsetB = fhReadBES16(blob + 0x6e);
         memcpy(&buf->sourceHitMask, blob + 0x70, 8);
-        buf->mapLoadObjectId = (s16)fhSwap16(*(u16*)(blob + 0x78));
-        buf->npcDialogueTextId = (s16)fhSwap16(*(u16*)(blob + 0x7a));
+        buf->mapLoadObjectId = fhReadBES16(blob + 0x78);
+        buf->npcDialogueTextId = fhReadBES16(blob + 0x7a);
         for (mi = 0; mi < 4; mi++)
         {
-            buf->helpTextIds[mi] = (s16)fhSwap16(*(u16*)(blob + 0x7c + mi * 2));
+            buf->helpTextIds[mi] = fhReadBES16(blob + 0x7c + mi * 2);
         }
-        buf->avoidRadiusX = fhSwap16(*(u16*)(blob + 0x84));
-        buf->avoidRadiusZ = fhSwap16(*(u16*)(blob + 0x86));
+        buf->avoidRadiusX = fhReadBE16(blob + 0x84);
+        buf->avoidRadiusZ = fhReadBE16(blob + 0x86);
         buf->shadowModelScaleBase = *(f32*)&(u32){fhSwap32(*(u32*)(blob + 0x88))};
         memcpy(&buf->maxLights, blob + 0x8c, 5);
         for (mi = 0; mi < buf->modelCount; mi++)
@@ -2707,8 +2707,8 @@ void Obj_InitObjectSystem(void)
         gObjFileCount++;
     }
     gObjFileCount--;
-    gObjFileBufferTable = mmAlloc(gObjFileCount * 4, 0xe, 0);
-    gObjFileRefCount = mmAlloc(gObjFileCount, 0xe, 0);
+    gObjFileBufferTable = mmAlloc(gObjFileCount * sizeof(*gObjFileBufferTable), 0xe, 0);
+    gObjFileRefCount = mmAlloc(gObjFileCount * sizeof(*gObjFileRefCount), 0xe, 0);
     for (i = 0; i < gObjFileCount; i++)
     {
         gObjFileRefCount[i] = 0;

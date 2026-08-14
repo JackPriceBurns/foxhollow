@@ -84,7 +84,7 @@ static SDIR_DATA* dataConvertSDir(const void* rawData)
         }
     }
 
-    for (count = 0; musyxReadBE16(raw + count * 0x20) != 0xFFFF; count++)
+    for (count = 0; fhReadBE16(raw + count * 0x20) != 0xFFFF; count++)
     {
     }
 
@@ -98,8 +98,8 @@ static SDIR_DATA* dataConvertSDir(const void* rawData)
     {
         const u8* source = raw + i * 0x20;
         u32 extraOffset = musyxReadBE32(source + 0x1c);
-        converted[i].id = musyxReadBE16(source);
-        converted[i].ref_cnt = musyxReadBE16(source + 2);
+        converted[i].id = fhReadBE16(source);
+        converted[i].ref_cnt = fhReadBE16(source + 2);
         converted[i].offset = musyxReadBE32(source + 4);
         converted[i].addr = NULL;
         converted[i].header.info = musyxReadBE32(source + 0xc);
@@ -186,10 +186,10 @@ int dataInsertKeymap(u16 cid, void* keymapData)
     source = keymapData;
     for (j = 0; j < 128; j++)
     {
-        converted[j].id = musyxReadBE16(&source[j].id);
+        converted[j].id = fhReadBE16(&source[j].id);
         converted[j].transpose = source[j].transpose;
         converted[j].panning = source[j].panning;
-        converted[j].prioOffset = (s16)musyxReadBE16(&source[j].prioOffset);
+        converted[j].prioOffset = fhReadBES16(&source[j].prioOffset);
         memcpy(converted[j].reserved, source[j].reserved, sizeof(converted[j].reserved));
     }
     dataKeymapTable[i].id = cid;
@@ -298,12 +298,12 @@ s32 dataInsertLayer(u16 cid, void* layerdata, u16 size)
     source = layerdata;
     for (j = 0; j < size; j++)
     {
-        converted[j].id = musyxReadBE16(&source[j].id);
+        converted[j].id = fhReadBE16(&source[j].id);
         converted[j].keyLow = source[j].keyLow;
         converted[j].keyHigh = source[j].keyHigh;
         converted[j].transpose = source[j].transpose;
         converted[j].volume = source[j].volume;
-        converted[j].prioOffset = (s16)musyxReadBE16(&source[j].prioOffset);
+        converted[j].prioOffset = fhReadBES16(&source[j].prioOffset);
         converted[j].panning = source[j].panning;
         memcpy(converted[j].reserved, source[j].reserved, sizeof(converted[j].reserved));
     }
@@ -582,8 +582,8 @@ u32 dataInsertFX(u16 gid, FX_TAB* fx, u16 fxNum)
     }
     for (i = 0; i < fxNum; i++)
     {
-        fx[i].id = musyxReadBE16(&source[i].id);
-        fx[i].macro = musyxReadBE16(&source[i].macro);
+        fx[i].id = fhReadBE16(&source[i].id);
+        fx[i].macro = fhReadBE16(&source[i].macro);
         fx[i].maxVoices = source[i].maxVoices;
         fx[i].priority = source[i].priority;
         fx[i].volume = source[i].volume;

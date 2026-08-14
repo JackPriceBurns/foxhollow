@@ -90,11 +90,11 @@ void textureInitGXTexObj(void* textureData);
 static void textureUnpackGCHeader(Texture* tex, const u8* gc)
 {
     memset(tex, 0, sizeof(Texture));
-    tex->width = fhSwap16(*(const u16*)(gc + 0x0a));
-    tex->height = fhSwap16(*(const u16*)(gc + 0x0c));
-    tex->refCount = fhSwap16(*(const u16*)(gc + 0x0e));
-    tex->animationFrameCount = fhSwap16(*(const u16*)(gc + 0x10));
-    tex->animationFrameStep = fhSwap16(*(const u16*)(gc + 0x14));
+    tex->width = fhReadBE16(gc + 0x0a);
+    tex->height = fhReadBE16(gc + 0x0c);
+    tex->refCount = fhReadBE16(gc + 0x0e);
+    tex->animationFrameCount = fhReadBE16(gc + 0x10);
+    tex->animationFrameStep = fhReadBE16(gc + 0x14);
     tex->format = gc[0x16];
     tex->wrapS = gc[0x17];
     tex->wrapT = gc[0x18];

@@ -824,7 +824,15 @@ static inline ObjAnimMoveData *ObjAnim_GetCurrentBlendMoveData(ObjAnimDef *animD
 }
 
 static inline s16 ObjAnim_ReadPackedS16(const void *value) {
-  return (s16)fhSwap16(*(const u16 *)value);
+  return fhReadBES16(value);
+}
+
+static inline s16 ObjAnim_ReadPlacementS16(const ObjAnimComponent *objAnim,
+                                           const void *value) {
+  if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+    return *(const s16 *)value;
+  }
+  return fhReadBES16(value);
 }
 
 static inline f32 ObjAnim_ReadPackedF32(const void *value) {

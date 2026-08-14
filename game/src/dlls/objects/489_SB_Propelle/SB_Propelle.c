@@ -165,7 +165,7 @@ void SB_Propeller_init(GameObject* obj, SBPropellerPlacementView* placement) {
     state->spinBlend = 1.0f;
     state->spinRate = 1200;
     state->health = 4;
-    obj->anim.bankIndex = (s8)fhSwap16((u16)placement->modelBankIndex);
+    obj->anim.bankIndex = (s8)fhReadBES16(&placement->modelBankIndex);
     if (obj->anim.romDefNo != SB_PROPELLER_SEQ_ID) {
         gSbPropellerObject = obj;
     }

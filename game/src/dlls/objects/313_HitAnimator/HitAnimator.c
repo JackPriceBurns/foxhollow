@@ -63,7 +63,7 @@ void HitAnimator_update(GameObject* obj) {
         state->flags |= HIT_ANIMATOR_STATE_BLOCK_UPDATE_PENDING;
         return;
     }
-    state->gameBitValue = mainGetBit(placement->gameBit);
+    state->gameBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit));
     if (state->previousGameBitValue != state->gameBitValue) {
         state->active = state->active ^ 1;
         if (placement->toggleMode == 1) {
@@ -107,7 +107,7 @@ void HitAnimator_init(GameObject* obj, HitAnimatorPlacement* placement) {
     initialBit = (s8)(placement->setupFlags & HIT_ANIMATOR_SETUP_INITIAL_INVERT);
     state->active = initialBit;
     state->flags = 0;
-    if (mainGetBit(placement->gameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit)) != 0) {
         state->active = state->active ^ 1;
         if (placement->toggleMode == 1) {
             state->flags |= HIT_ANIMATOR_STATE_TOGGLE_PENDING;
@@ -124,7 +124,7 @@ void HitAnimator_init(GameObject* obj, HitAnimatorPlacement* placement) {
     if ((placement->setupFlags & HIT_ANIMATOR_SETUP_BLOCK_UPDATE) != 0) {
         state->flags |= HIT_ANIMATOR_STATE_BLOCK_UPDATE_PENDING;
     }
-    gameBitValue = mainGetBit(placement->gameBit);
+    gameBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit));
     state->gameBitValue = gameBitValue;
     state->previousGameBitValue = gameBitValue;
     obj->objectFlags |= (OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN);

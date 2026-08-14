@@ -117,7 +117,7 @@ static inline void DoPrgChange(SynthVoice* voice, u8 program, u32 midi)
         {
             return;
         }
-        voice->prgState[midi].macId = musyxReadBE16(&voice->normtab[program].macro);
+        voice->prgState[midi].macId = fhReadBE16(&voice->normtab[program].macro);
         voice->prgState[midi].priority = voice->normtab[program].priority;
         voice->prgState[midi].maxVoices = voice->normtab[program].maxVoices;
         return;
@@ -127,7 +127,7 @@ static inline void DoPrgChange(SynthVoice* voice, u8 program, u32 midi)
     {
         return;
     }
-    voice->prgState[midi].macId = musyxReadBE16(&voice->drumtab[program].macro);
+    voice->prgState[midi].macId = fhReadBE16(&voice->drumtab[program].macro);
     voice->prgState[midi].priority = voice->drumtab[program].priority;
     voice->prgState[midi].maxVoices = voice->drumtab[program].maxVoices;
 }
@@ -163,7 +163,7 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
         seq = sv->arrbase;
         pattern = &sv->pattern[event->trackId];
         patternTableOffset = musyxReadBE32(&((SynthArrangement*)seq)->patternTableOffset);
-        patternOffset = musyxReadBE32(seq + patternTableOffset + musyxReadBE16(&tEntry->pattern) * 4);
+        patternOffset = musyxReadBE32(seq + patternTableOffset + fhReadBE16(&tEntry->pattern) * 4);
         pat = (SynthSeqPattern*)(seq + patternOffset);
         pattern->noteData = (u8*)(pat + 1);
         pattern->lastTime = 0;
@@ -246,7 +246,7 @@ SynthSequenceEvent* HandleEvent(SynthSequenceEvent* event, u8 voice, u32* flag)
                     key = key > 0x7f ? 0x7f : key < 0 ? 0 : key;
                     velocity += ((SeqTrackEntry*)pa->patternInfo)->velocityAdd;
                     velocity = velocity > 0x7f ? 0x7f : velocity < 0 ? 0 : velocity;
-                    if ((note = AllocateNote(event->time + musyxReadBE16(&pe->length), voice)) != NULL)
+                    if ((note = AllocateNote(event->time + fhReadBE16(&pe->length), voice)) != NULL)
                     {
                         SynthVoice* sv2;
                         s16 mod;

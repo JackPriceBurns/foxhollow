@@ -35,11 +35,6 @@ static f32 dustmotesou_getScale(const DustMoteSouMapData* mapData)
     return out;
 }
 
-static s16 dustmotesou_getGameBit(const DustMoteSouMapData* mapData)
-{
-    return (s16)fhSwap16((u16)mapData->gameBit);
-}
-
 int dustmotesou_getExtraSize(void)
 {
     return 0;
@@ -71,7 +66,7 @@ void dustmotesou_update(GameObject* source)
 {
     DustMoteSouMapData* mapData = (DustMoteSouMapData*)source->anim.placementData;
     f32 scale = dustmotesou_getScale(mapData);
-    s16 gameBit = dustmotesou_getGameBit(mapData);
+    s16 gameBit = ObjAnim_ReadPlacementS16(&source->anim, &mapData->gameBit);
 
     if (gameBit != -1 && mainGetBit(gameBit) == 0)
     {

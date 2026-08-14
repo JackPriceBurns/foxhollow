@@ -3,12 +3,6 @@
 
 #include "types.h"
 
-static inline u16 musyxReadBE16(const void* ptr)
-{
-    const u8* bytes = ptr;
-    return ((u16)bytes[0] << 8) | bytes[1];
-}
-
 static inline u32 musyxReadBE32(const void* ptr)
 {
     const u8* bytes = ptr;

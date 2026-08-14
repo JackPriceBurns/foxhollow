@@ -89,7 +89,7 @@ static inline MEM_DATA* GetMacroAddr(u16 id, POOL_DATA* pool)
     m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->macroOff));
     while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (musyxReadBE16(&m->id) == id)
+        if (fhReadBE16(&m->id) == id)
             return m;
         m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
@@ -104,7 +104,7 @@ static inline MEM_DATA* GetCurveAddr(u16 id, POOL_DATA* pool)
     m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->curveOff));
     while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (musyxReadBE16(&m->id) == id)
+        if (fhReadBE16(&m->id) == id)
             return m;
         m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
@@ -119,7 +119,7 @@ static inline MEM_DATA* GetKeymapAddr(u16 id, POOL_DATA* pool)
     m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->keymapOff));
     while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (musyxReadBE16(&m->id) == id)
+        if (fhReadBE16(&m->id) == id)
             return m;
         m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
@@ -134,7 +134,7 @@ static inline MEM_DATA* GetLayerAddr(u16 id, POOL_DATA* pool)
     m = (MEM_DATA*)((u8*)pool + musyxReadBE32(&pool->layerOff));
     while (musyxReadBE32(&m->nextOff) != 0xFFFFFFFF)
     {
-        if (musyxReadBE16(&m->id) == id)
+        if (fhReadBE16(&m->id) == id)
             return m;
         m = (MEM_DATA*)((u8*)m + musyxReadBE32(&m->nextOff));
     }
@@ -238,13 +238,13 @@ static void ScanIDList(u16* ref, void* data, u8 dataType, u32 remove)
 {
     u16 id;
 
-    while (musyxReadBE16(ref) != 0xFFFF)
+    while (fhReadBE16(ref) != 0xFFFF)
     {
-        u16 value = musyxReadBE16(ref);
+        u16 value = fhReadBE16(ref);
         if ((value & 0x8000))
         {
             id = value & 0x3fff;
-            while (id <= musyxReadBE16(&ref[1]))
+            while (id <= fhReadBE16(&ref[1]))
             {
                 InsertData(id, data, dataType, remove);
                 ++id;
@@ -273,7 +273,7 @@ s32 sndPushGroup(void* prj_data, u16 gid, void* samples, void* sdir, void* pool)
 
         while (musyxReadBE32(&g->nextOff) != 0xFFFFFFFF)
         {
-            if (musyxReadBE16(&g->id) == gid)
+            if (fhReadBE16(&g->id) == gid)
             {
                 gsTab[curSp].gAddr = g;
                 gsTab[curSp].prjAddr = prj_data;
@@ -288,10 +288,10 @@ s32 sndPushGroup(void* prj_data, u16 gid, void* samples, void* sdir, void* pool)
                 ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->curveOff)), poolPtr, 4, 0);
                 ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->keymapOff)), pool, 2, 0);
                 ScanIDList((u16*)((u8*)prj_data + musyxReadBE32(&g->layerOff)), pool, 3, 0);
-                if (musyxReadBE16(&g->type) == 1)
+                if (fhReadBE16(&g->type) == 1)
                 {
                     FX_DATA* fd = (FX_DATA*)((u8*)prj_data + musyxReadBE32(&g->data.song.normpageOff));
-                    dataInsertFX(gid, fd->fx, musyxReadBE16(&fd->num));
+                    dataInsertFX(gid, fd->fx, fhReadBE16(&fd->num));
                 }
                 hwSyncSampleMem();
                 ++sp;
@@ -318,21 +318,21 @@ u32 seqPlaySong(u16 sgid, u16 sid, void* arrfile, SynthPlayParams* para, u8 irq_
 
     for (i = 0; i < sp; ++i)
     {
-        if (musyxReadBE16(&gs[i].gAddr->id) != sgid)
+        if (fhReadBE16(&gs[i].gAddr->id) != sgid)
         {
             continue;
         }
 
-        if (musyxReadBE16(&gs[i].gAddr->type) == 0)
+        if (fhReadBE16(&gs[i].gAddr->type) == 0)
         {
             g = gs[i].gAddr;
             prj = gs[i].prjAddr;
             norm = (SynthPage*)((u8*)prj + musyxReadBE32(&g->data.song.normpageOff));
             drum = (SynthPage*)((u8*)prj + musyxReadBE32(&g->data.song.drumpageOff));
             midiSetup = (SynthMidiSetup*)((u8*)prj + musyxReadBE32(&g->data.song.midiSetupOff));
-            while (musyxReadBE16(&midiSetup->songId) != 0xFFFF)
+            while (fhReadBE16(&midiSetup->songId) != 0xFFFF)
             {
-                if (musyxReadBE16(&midiSetup->songId) == sid)
+                if (fhReadBE16(&midiSetup->songId) == sid)
                 {
                     if (irq_call != 0)
                     {

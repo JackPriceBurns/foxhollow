@@ -1175,10 +1175,10 @@ void CameraModeNormal_init(CameraObject* cam, int mode, CameraModeNormalInitSett
     case 0:
         memset(gCameraModeNormalState, 0, sizeof(CameraModeNormalState));
         if (settings != NULL) {
-            fVal = (f32)(u32)fhSwap16(p->minDistanceWide);
+            fVal = (f32)fhReadBE16(&p->minDistanceWide);
             gCameraModeNormalState->minDistance = fVal;
             gCameraModeNormalState->targetMinDistance = fVal;
-            fVal = (f32)(u32)fhSwap16(p->maxDistanceWide);
+            fVal = (f32)fhReadBE16(&p->maxDistanceWide);
             gCameraModeNormalState->maxDistance = fVal;
             gCameraModeNormalState->targetMaxDistance = fVal;
             fVal = (f32)(u32)p->heightOffsetWide;

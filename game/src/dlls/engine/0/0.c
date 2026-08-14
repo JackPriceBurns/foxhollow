@@ -299,15 +299,8 @@ typedef enum HudStatusSlot
 typedef struct TrickyHud
 {
     u8 pad000[0x1c0];
-    void* icons[0x55]; /* 0x1c0 */
-    void* icon314;     /* 0x314 */
-    void* icon318;     /* 0x318 */
-    void* icon31c;     /* 0x31c */
-    u8 pad320[0x348 - 0x320];
-    void* icon348; /* 0x348 */
-    u8 pad34C[0x354 - 0x34c];
-    void* icon354; /* 0x354 */
-    u8 pad358[0xAC8 - 0x358];
+    void* icons[0x66]; /* 0x1c0 */
+    u8 pad358[offsetof(CMenuHud, padAC8) - (0x1c0 + sizeof(void*) * 0x66)];
     f32 statusAnimation[HUD_STATUS_COUNT]; /* 0xac8 */
     f32 statusOpacity[HUD_STATUS_COUNT];   /* 0xafc */
     int statusPrevious[HUD_STATUS_COUNT];  /* 0xb30 */
@@ -316,9 +309,6 @@ typedef struct TrickyHud
     int statusValue[HUD_STATUS_COUNT]; /* 0xb74 */
 } TrickyHud;
 
-STATIC_ASSERT(offsetof(TrickyHud, icon314) == 0x314);
-STATIC_ASSERT(offsetof(TrickyHud, icon348) == 0x348);
-STATIC_ASSERT(offsetof(TrickyHud, icon354) == 0x354);
 STATIC_ASSERT(offsetof(TrickyHud, statusAnimation) == 0xAC8);
 STATIC_ASSERT(offsetof(TrickyHud, statusOpacity) == 0xAFC);
 STATIC_ASSERT(offsetof(TrickyHud, statusPrevious) == 0xB30);
@@ -359,6 +349,8 @@ extern char lbl_803A87F0[];
 extern GameObject* gGameUiProjballObject;
 extern GameObject* gGameUiCommCubeObjects[2];
 extern GameObject* gGameUiCommunicatorObjects[2];
+extern GameObject* gCMenuRingObjs[3];
+extern GameObject* gCMenuRingFrontObjs[3];
 extern u8 gHudMagicCostPreview;
 extern u8 gHudForceShowMask;
 extern u8 gTrickyHudShowNearestInfo;
@@ -793,6 +785,7 @@ void gameUiLoadResources(void)
         for (; i < 3; i++)
         {
             *ringModels = objSetupObject(Obj_AllocObjectSetup(0x20, CMENU_CHILD_OBJ_RING_MODEL), 4, -1, -1, NULL);
+            gCMenuRingObjs[i] = *ringModels;
             (*ringModels)->anim.localPosX = x;
             (*ringModels)->anim.localPosY = y;
             (*ringModels)->anim.localPosZ = z;
@@ -800,6 +793,7 @@ void gameUiLoadResources(void)
             (*ringModels)->anim.bankIndex = i;
             ObjModel_SetRenderCallback((u8*)Obj_GetActiveModel(*ringModels), cMenuRingModelRenderFn);
             *ringIcons = objSetupObject(Obj_AllocObjectSetup(0x20, CMENU_CHILD_OBJ_RING_ICON), 4, -1, -1, NULL);
+            gCMenuRingFrontObjs[i] = *ringIcons;
             (*ringIcons)->anim.localPosX = x;
             (*ringIcons)->anim.localPosY = y;
             (*ringIcons)->anim.localPosZ = z;
@@ -1562,8 +1556,6 @@ void hudDrawAirMeter(void)
 extern NpcDialoguePhraseState gNpcDialoguePhraseState;
 extern int gHudTimedElementTexSlot[6];
 extern GameObject* gHeadDisplayModelObjs[6];
-extern GameObject* gCMenuRingObjs[3];
-extern GameObject* gCMenuRingFrontObjs[3];
 extern void* gCMenuRingIconTextures[7];
 extern int gCMenuRingIconActiveFlags[7];
 extern HudItemInfoPopup gHudItemInfoPopup;
@@ -2017,7 +2009,7 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
                     sel = 0x12;
                 else
                     sel = (b74 & 3) + 0x12;
-                drawTexture(*(void**)((u8*)&base->icons[0] + sel * 4), (f32)(int)((u8)i * 0x21 + 0x1e), 31.0f,
+                drawTexture(base->icons[sel], (f32)(int)((u8)i * 0x21 + 0x1e), 31.0f,
                             alpha, 0x100);
             }
         }
@@ -2039,7 +2031,7 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
     }
     if ((u8)krazoa != 0)
     {
-        drawTexture(base->icon348, (f32)(int)(s16)((u8)magicId ? 0x140 : 0x122), 31.0f, alpha, 0x100);
+        drawTexture(base->icons[0x62], (f32)(int)(s16)((u8)magicId ? 0x140 : 0x122), 31.0f, alpha, 0x100);
     }
     if (alpha != 0 && tricky != NULL)
     {
@@ -2048,23 +2040,23 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
               base->statusOpacity[HUD_STATUS_TRICKY_ENERGY] < 150.0f &&
               ((int)base->statusOpacity[HUD_STATUS_TRICKY_ENERGY] & 8)))
         {
-            drawTexture(base->icon314, 30.0f, 92.0f, alpha, 0x100);
+            drawTexture(base->icons[0x55], 30.0f, 92.0f, alpha, 0x100);
         }
         for (i = 0; (u8)i < 0x14u; i += 4)
         {
             int b98 = base->statusValue[HUD_STATUS_TRICKY_ENERGY];
             if ((b98 & 0xfc) == (int)(u8)i && (b98 & 2) != 0)
             {
-                drawScaledTexture(base->icon31c, (f32)(int)(((u8)i * 0xf) / 4 + 0x40), 102.0f, alpha, 0x100, 6,
+                drawScaledTexture(base->icons[0x57], (f32)(int)(((u8)i * 0xf) / 4 + 0x40), 102.0f, alpha, 0x100, 6,
                                   0x12, 0);
-                drawPartialTexture(base->icon318, (f32)(int)(((u8)i * 0xf) / 4 + 0x46), 102.0f, alpha, 0x100, 7,
+                drawPartialTexture(base->icons[0x56], (f32)(int)(((u8)i * 0xf) / 4 + 0x46), 102.0f, alpha, 0x100, 7,
                                    0x12, 6, 0);
             }
             else
             {
                 int sel = (b98 > (int)(u8)i) ? 0x57 : 0x56;
                 int yo = ((u8)i * 0xf) / 4;
-                drawTexture(*(void**)((u8*)&base->icons[0] + sel * 4), (f32)(int)(yo + 0x40), 102.0f, alpha,
+                drawTexture(base->icons[sel], (f32)(int)(yo + 0x40), 102.0f, alpha,
                             0x100);
             }
         }
@@ -2075,7 +2067,7 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
         {
         case 0x47:
         case 0x48:
-            drawTexture(base->icon354, 30.0f, (f32)(int)((s8)itemTex + 0x5f), alpha, 0x100);
+            drawTexture(base->icons[0x65], 30.0f, (f32)(int)((s8)itemTex + 0x5f), alpha, 0x100);
             break;
         }
     }
@@ -2701,7 +2693,6 @@ void pauseMenuDrawStatus(void)
     int statusOffset;
     u8* trickyEnergy;
     f32* opacity;
-    u8* base;
     TrickyHud* hud;
     int magicDelta;
     f32 nextOpacity;
@@ -2718,8 +2709,7 @@ void pauseMenuDrawStatus(void)
     f32 zero = 0.0f;
     int statuses[HUD_STATUS_COUNT];
 
-    base = (u8*)lbl_803A87F0;
-    hud = (TrickyHud*)base;
+    hud = (TrickyHud*)lbl_803A87F0;
     player = Obj_GetPlayerObject();
     getTrickyObject();
     trickyEnergy = (*gMapEventInterface)->getTrickyEnergy();
@@ -2811,25 +2801,25 @@ void pauseMenuDrawStatus(void)
             case HUD_STATUS_FIREFLIES:
             case HUD_STATUS_MOON_SEEDS:
             case HUD_STATUS_FUEL_CELLS:
-                if ((((f32*)(base + 0xAFC))[animationSlot] >= 0.0f && ((player->objectFlags & TRICKY_OBJFLAG_PARENT_SLACK) == 0) &&
+                if ((hud->statusOpacity[animationSlot] >= 0.0f && ((player->objectFlags & TRICKY_OBJFLAG_PARENT_SLACK) == 0) &&
                       (pauseMenuState == 0) && (airMeter == NULL) && (getHudHiddenFrameCount() == 0) &&
                       ((*gCameraInterface)->getMode() != CAMERA_MODE_VIEWFINDER_RESOURCE_ID)) ||
                     ((animationSlot == HUD_STATUS_SCARABS) && ((gHudForceShowMask & 2) != 0)))
                 {
-                    flashThreshold = 8.5f * timeDelta + ((f32*)(base + 0xAC8))[animationSlot];
-                    ((f32*)(base + 0xAC8))[animationSlot] = flashThreshold;
+                    flashThreshold = 8.5f * timeDelta + hud->statusAnimation[animationSlot];
+                    hud->statusAnimation[animationSlot] = flashThreshold;
                     if (flashThreshold > hudElementOpacity)
                     {
-                        ((f32*)(base + 0xAC8))[animationSlot] = hudElementOpacity;
+                        hud->statusAnimation[animationSlot] = hudElementOpacity;
                     }
                 }
                 else
                 {
-                    flashThreshold = -(8.5f * timeDelta - ((f32*)(base + 0xAC8))[animationSlot]);
-                    ((f32*)(base + 0xAC8))[animationSlot] = flashThreshold;
+                    flashThreshold = -(8.5f * timeDelta - hud->statusAnimation[animationSlot]);
+                    hud->statusAnimation[animationSlot] = flashThreshold;
                     if (flashThreshold < 0.0f)
                     {
-                        ((f32*)(base + 0xAC8))[animationSlot] = 0.0f;
+                        hud->statusAnimation[animationSlot] = 0.0f;
                     }
                 }
                 break;
@@ -2844,8 +2834,8 @@ void pauseMenuDrawStatus(void)
         for (statusSlot = 0; statusSlot < HUD_STATUS_COUNT; statusSlot++)
         {
             int initialValue = statuses[statusSlot];
-            ((int*)(base + 0xB30))[statusSlot] = ((int*)(base + 0xB74))[statusSlot] = initialValue;
-            ((f32*)(base + 0xAFC))[statusSlot] = -30.0f;
+            hud->statusPrevious[statusSlot] = hud->statusValue[statusSlot] = initialValue;
+            hud->statusOpacity[statusSlot] = -30.0f;
         }
         if ((mainGetBit(GAMEBIT_ITEM_BombSpore_ShowCount) != 0) ||
             (statuses[HUD_STATUS_BOMB_SPORES] != 0))
@@ -2882,7 +2872,7 @@ void pauseMenuDrawStatus(void)
         {
             statusIndex = statusSlot;
             statusOffset = statusIndex * sizeof(int);
-            opacity = ((f32*)(base + 0xAFC)) + statusIndex;
+            opacity = hud->statusOpacity + statusIndex;
             previousOpacity = *opacity;
             nextOpacity = previousOpacity - timeDelta;
             *opacity = nextOpacity;
@@ -2892,7 +2882,7 @@ void pauseMenuDrawStatus(void)
                 {
                 case HUD_STATUS_SCARABS:
                     Sfx_PlayFromObject(0, SFXTRIG_scabshort32);
-                    displayedValuePtr = (int*)(base + 0xB74) + statusIndex;
+                    displayedValuePtr = hud->statusValue + statusIndex;
                     displayedValue = *displayedValuePtr;
                     statusValue = statuses[statusIndex];
                     if (displayedValue > statusValue)
@@ -2909,13 +2899,13 @@ void pauseMenuDrawStatus(void)
                     }
                     break;
                 default:
-                    ((int*)(base + 0xB74))[statusIndex] = *(int*)((u8*)statuses + statusOffset);
+                    hud->statusValue[statusIndex] = *(int*)((u8*)statuses + statusOffset);
                     break;
                 }
             }
             if (*(int*)((u8*)statuses + statusOffset) != 0)
             {
-                if (((u8*)(base + 0xB64))[statusIndex] == 0)
+                if (hud->statusGameBitSet[statusIndex] == 0)
                 {
                     showCountBit = 0;
                     switch (statusSlot)
@@ -2942,13 +2932,13 @@ void pauseMenuDrawStatus(void)
                     if (showCountBit != 0)
                     {
                         mainSetBits(showCountBit, 1);
-                        ((u8*)(base + 0xB64))[statusIndex] = 1;
+                        hud->statusGameBitSet[statusIndex] = 1;
                     }
                 }
             }
-            if (*(int*)((u8*)statuses + statusOffset) != ((int*)(base + 0xB30))[statusIndex])
+            if (*(int*)((u8*)statuses + statusOffset) != hud->statusPrevious[statusIndex])
             {
-                ((int*)(base + 0xB30))[statusIndex] = *(int*)((u8*)statuses + statusOffset);
+                hud->statusPrevious[statusIndex] = *(int*)((u8*)statuses + statusOffset);
                 if (*opacity <= 150.0f)
                 {
                     *opacity = 180.0f - timeDelta;
@@ -3025,7 +3015,7 @@ void hudUpdateMinimapReveal(void)
 
 void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
 {
-    u8* base;
+    CMenuHud* base;
     int i;
     GameObject* player;
     int k;
@@ -3068,7 +3058,7 @@ void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
     int icon;
     f32 zero = 0.0f;
 
-    base = (u8*)lbl_803A87F0;
+    base = (CMenuHud*)lbl_803A87F0;
     player = Obj_GetPlayerObject();
     label = gHudBlankButtonLabel;
     icon = 0;
@@ -3122,11 +3112,11 @@ void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
             if (slots[k] == 0)
             {
                 GXSetScissor(0, 0, 0x280, 0x1E0);
-                ((int*)(base + 0xBD4))[(i + 3) - sel] = ((int*)(base + 0x9C8))[k];
-                ((int*)(base + 0xBB8))[(i + 3) - sel] = ((u8*)(base + 0x488))[k];
-                if (((u8*)(base + 0x448))[k] > 1)
+                base->visibleItemTextures[(i + 3) - sel] = base->itemTextures[k];
+                base->visibleItemStates[(i + 3) - sel] = base->enabled[k];
+                if (base->itemFlags[k] > 1)
                 {
-                    gCMenuItemIcons[(i + 3) - sel] = ((u8*)(base + 0x448))[k];
+                    gCMenuItemIcons[(i + 3) - sel] = base->itemFlags[k];
                 }
             }
             k++;
@@ -3193,7 +3183,7 @@ void hudDrawButtons(int cMenuArg0, int cMenuArg1, int cMenuArg2)
                 icon = 0x5A;
                 break;
             }
-            drawTexture(((void**)(base + 0x1C0))[icon], 575.0f, 102.0f,
+            drawTexture(base->textures1C0[icon], 575.0f, 102.0f,
                         (u8)(fade * gCMenuHighlightFade / 0xFF), 0x100);
         }
     }
@@ -3556,14 +3546,12 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
     s16* items = (s16*)itemsArg;
     s16* stP;
     s16* src;
-    int halfOff[1];
     s16* ids;
     s16* dst;
     int count;
     int* wordP;
     CMenuHud* base;
     u8* flP;
-    int wordOff;
     s16* w1;
     s16* w2;
     s16* w3;
@@ -3587,8 +3575,7 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
     {
         *w2 = *w1;
         *w1 = -1;
-        halfOff[0] = 0;
-        *w3 = halfOff[0];
+        *w3 = 0;
         *w4 = 1;
         w1++;
         w2++;
@@ -3596,7 +3583,6 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
         w4++;
     }
     count = 0;
-    wordOff = 0;
     wordP = base->ownedBits;
     *wordP = -1;
     if (useTricky == 0)
@@ -3611,15 +3597,15 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
                 {
                     if (src[1] < 0 || mainGetBit(src[1]) == 0)
                     {
-                        *(s16*)((char*)base + halfOff[0] + 0x948) = src[3];
-                        *(int*)((char*)base + wordOff + 0x848) = src[0];
-                        *(int*)((char*)base + wordOff + 0x748) = src[2];
-                        *(int*)((char*)base + wordOff + 0x648) = src[1];
-                        *(u8*)((char*)base + count + 0x448) = active;
-                        *(s16*)((char*)base + halfOff[0] + 0x548) = src[6];
-                        *(s16*)((char*)base + halfOff[0] + 0x5c8) = src[5];
-                        *(u8*)((char*)base + count + 0x508) = *(u8*)(src + 7);
-                        *(u8*)((char*)base + count + 0x4c8) = ((u8*)src)[0xf];
+                        base->textureIds[count] = src[3];
+                        base->ownedBits[count] = src[0];
+                        base->activeBits[count] = src[2];
+                        base->usedBits[count] = src[1];
+                        base->itemFlags[count] = active;
+                        base->textIds[count] = src[6];
+                        base->auxiliaryValues[count] = src[5];
+                        base->auxiliaryBytes[count] = *(u8*)(src + 7);
+                        base->closeMode[count] = ((u8*)src)[0xf];
                         if (src[2] < 0 || mainGetBit(src[2]) == 0)
                         {
                             *(u8*)(count + 0x488 + (char*)base) = 1;
@@ -3629,8 +3615,6 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
                             *(u8*)(count + 0x488 + (char*)base) = 0;
                         }
                         count++;
-                        wordOff += 4;
-                        halfOff[0] += 2;
                     }
                 }
                 else if (src[1] < 0 || mainGetBit(src[1]) == 0)
@@ -3639,15 +3623,15 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
                     {
                         gCMenuForcedSelIndex = count;
                     }
-                    *(s16*)((char*)base + halfOff[0] + 0x948) = src[3];
-                    *(int*)((char*)base + wordOff + 0x848) = src[0];
-                    *(int*)((char*)base + wordOff + 0x748) = src[2];
-                    *(int*)((char*)base + wordOff + 0x648) = src[1];
-                    *(u8*)((char*)base + count + 0x448) = active;
-                    *(s16*)((char*)base + halfOff[0] + 0x548) = src[6];
-                    *(s16*)((char*)base + halfOff[0] + 0x5c8) = src[5];
-                    *(u8*)((char*)base + count + 0x508) = *(u8*)(src + 7);
-                    *(u8*)((char*)base + count + 0x4c8) = ((u8*)src)[0xf];
+                    base->textureIds[count] = src[3];
+                    base->ownedBits[count] = src[0];
+                    base->activeBits[count] = src[2];
+                    base->usedBits[count] = src[1];
+                    base->itemFlags[count] = active;
+                    base->textIds[count] = src[6];
+                    base->auxiliaryValues[count] = src[5];
+                    base->auxiliaryBytes[count] = *(u8*)(src + 7);
+                    base->closeMode[count] = ((u8*)src)[0xf];
                     if (src[2] < 0 || mainGetBit(src[2]) == 0)
                     {
                         *(u8*)(count + 0x488 + (char*)base) = 1;
@@ -3657,8 +3641,6 @@ int cMenuSetItems(CMenuItemDef* itemsArg, char useTricky)
                         *(u8*)(count + 0x488 + (char*)base) = 0;
                     }
                     count++;
-                    wordOff += 4;
-                    halfOff[0] += 2;
                 }
             }
         }
@@ -4015,28 +3997,28 @@ void cMenuUpdateRingRotation(void)
             *(u8*)&gCMenuCurSection = gCMenuPendingSection;
         }
         rot = cur;
-        *(s16*)gCMenuRingObjs[0] = rot;
-        *(s16*)gCMenuRingFrontObjs[0] = rot;
+        gCMenuRingObjs[0]->anim.rotX = rot;
+        gCMenuRingFrontObjs[0]->anim.rotX = rot;
         rot += 0x5555;
-        *(s16*)gCMenuRingObjs[1] = rot;
-        *(s16*)gCMenuRingFrontObjs[1] = rot;
+        gCMenuRingObjs[1]->anim.rotX = rot;
+        gCMenuRingFrontObjs[1]->anim.rotX = rot;
         rot += 0x5555;
-        *(s16*)gCMenuRingObjs[2] = rot;
-        *(s16*)gCMenuRingFrontObjs[2] = rot;
+        gCMenuRingObjs[2]->anim.rotX = rot;
+        gCMenuRingFrontObjs[2]->anim.rotX = rot;
         best = cMenuMinRingAbs();
         r = (s16)(int)(255.0 - 0.023346 * best);
         gCMenuHighlightFade = (r > 0) ? r : 0;
     }
     cur = gCMenuRingAngle;
     rot = cur;
-    *(s16*)gCMenuRingObjs[0] = rot;
-    *(s16*)gCMenuRingFrontObjs[0] = rot;
+    gCMenuRingObjs[0]->anim.rotX = rot;
+    gCMenuRingFrontObjs[0]->anim.rotX = rot;
     rot += 0x5555;
-    *(s16*)gCMenuRingObjs[1] = rot;
-    *(s16*)gCMenuRingFrontObjs[1] = rot;
+    gCMenuRingObjs[1]->anim.rotX = rot;
+    gCMenuRingFrontObjs[1]->anim.rotX = rot;
     rot += 0x5555;
-    *(s16*)gCMenuRingObjs[2] = rot;
-    *(s16*)gCMenuRingFrontObjs[2] = rot;
+    gCMenuRingObjs[2]->anim.rotX = rot;
+    gCMenuRingFrontObjs[2]->anim.rotX = rot;
     best = cMenuMinRingAbs();
     r = (s16)(int)(255.0 - 0.023346 * best);
     gCMenuHighlightFade = (r > 0) ? r : 0;

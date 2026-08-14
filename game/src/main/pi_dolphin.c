@@ -4872,8 +4872,8 @@ void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
     fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, &romListHeader, sectionOffsets[6], sizeof(romListHeader));
     fhFixPackHeader((volatile u32*)&romListHeader);
 
-    *out1 = (s16)fhSwap16(*(u16*)&sizeFields[0]);
-    *out2 = (s16)fhSwap16(*(u16*)&sizeFields[2]);
+    *out1 = fhReadBES16(&sizeFields[0]);
+    *out2 = fhReadBES16(&sizeFields[2]);
     *out3 = romListHeader.decompressedSize;
 }
 

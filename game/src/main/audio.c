@@ -116,10 +116,10 @@ static void audioConvertMusicTriggers(void)
     {
         MusicTrigger* trigger = &gMusicTriggersData[i];
         u8 flags = ((u8*)trigger)[0xf];
-        trigger->id = musyxReadBE16(&trigger->id);
-        trigger->track = musyxReadBE16(&trigger->track);
-        trigger->fadeTime = musyxReadBE16(&trigger->fadeTime);
-        trigger->speed = musyxReadBE16(&trigger->speed);
+        trigger->id = fhReadBE16(&trigger->id);
+        trigger->track = fhReadBE16(&trigger->track);
+        trigger->fadeTime = fhReadBE16(&trigger->fadeTime);
+        trigger->speed = fhReadBE16(&trigger->speed);
         ((u8*)trigger)[0xf] = (flags >> 6) | (((flags >> 5) & 1) << 2) | ((flags & 0x1f) << 3);
     }
 }
@@ -134,14 +134,14 @@ static void audioConvertSfxTriggers(void)
         u8* bits = (u8*)&triggers[i];
         u8 e = bits[0x1e];
         u8 f = bits[0x1f];
-        triggers[i].id = musyxReadBE16(&triggers[i].id);
-        triggers[i].nearDistanceRaw = musyxReadBE16(&triggers[i].nearDistanceRaw);
-        triggers[i].farDistanceRaw = musyxReadBE16(&triggers[i].farDistanceRaw);
+        triggers[i].id = fhReadBE16(&triggers[i].id);
+        triggers[i].nearDistanceRaw = fhReadBE16(&triggers[i].nearDistanceRaw);
+        triggers[i].farDistanceRaw = fhReadBE16(&triggers[i].farDistanceRaw);
         for (j = 0; j < 6; j++)
         {
-            triggers[i].sfxIds[j] = musyxReadBE16(&triggers[i].sfxIds[j]);
+            triggers[i].sfxIds[j] = fhReadBE16(&triggers[i].sfxIds[j]);
         }
-        triggers[i].selectRange = musyxReadBE16(&triggers[i].selectRange);
+        triggers[i].selectRange = fhReadBE16(&triggers[i].selectRange);
         bits[0x1e] = ((e >> 4) & 0xf) | (((e >> 3) & 1) << 4) | (((e >> 1) & 3) << 5) | ((e & 1) << 7);
         bits[0x1f] = (f >> 4) | (f << 4);
     }
@@ -155,10 +155,10 @@ static void audioConvertStreams(void)
         u8* bytes = (u8*)&gStreamsData[i];
         u8 fade = bytes[2];
         u8 volume = bytes[3];
-        gStreamsData[i].id = musyxReadBE16(&gStreamsData[i].id);
+        gStreamsData[i].id = fhReadBE16(&gStreamsData[i].id);
         bytes[2] = ((fade >> 6) & 3) | ((fade >> 2) & 0xc) | ((fade << 2) & 0x30) | ((fade << 6) & 0xc0);
         bytes[3] = (volume >> 7) | (volume << 1);
-        gStreamsData[i].lengthRaw = musyxReadBE16(&gStreamsData[i].lengthRaw);
+        gStreamsData[i].lengthRaw = fhReadBE16(&gStreamsData[i].lengthRaw);
     }
 }
 

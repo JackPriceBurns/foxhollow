@@ -152,32 +152,32 @@ void modelApplyBoneTransform(u8* p, u8* out, u16 n, u8** pd, u8** pe, int f, u16
 
     while (i < n)
     {
-        aIdx = ((s16)fhSwap16(*(u16*)a) & 0x1fff) - pos;
-        bIdx = ((s16)fhSwap16(*(u16*)b) & 0x1fff) - pos;
+        aIdx = (fhReadBES16(a) & 0x1fff) - pos;
+        bIdx = (fhReadBES16(b) & 0x1fff) - pos;
         if (i >= aIdx)
         {
             if (i == bIdx)
             {
                 b = modelBoneTransforms_next(b, &bx, &by, &bz);
                 a = modelBoneTransforms_next(a, &ax, &ay, &az);
-                *(u16*)out = fhSwap16(((u32)(ax * wHi + bx * f) >> 16) + (s16)fhSwap16(*(u16*)p));
-                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi + by * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
-                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi + bz * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
+                *(u16*)out = fhSwap16(((u32)(ax * wHi + bx * f) >> 16) + fhReadBES16(p));
+                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi + by * f) >> 16) + fhReadBES16(p + 2));
+                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi + bz * f) >> 16) + fhReadBES16(p + 4));
             }
             else
             {
                 a = modelBoneTransforms_next(a, &ax, &ay, &az);
-                *(u16*)out = fhSwap16(((u32)(ax * wHi) >> 16) + (s16)fhSwap16(*(u16*)p));
-                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
-                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
+                *(u16*)out = fhSwap16(((u32)(ax * wHi) >> 16) + fhReadBES16(p));
+                *(u16*)(out + 2) = fhSwap16(((u32)(ay * wHi) >> 16) + fhReadBES16(p + 2));
+                *(u16*)(out + 4) = fhSwap16(((u32)(az * wHi) >> 16) + fhReadBES16(p + 4));
             }
         }
         else if (i >= bIdx)
         {
             b = modelBoneTransforms_next(b, &bx, &by, &bz);
-            *(u16*)out = fhSwap16(((u32)(bx * f) >> 16) + (s16)fhSwap16(*(u16*)p));
-            *(u16*)(out + 2) = fhSwap16(((u32)(by * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 2)));
-            *(u16*)(out + 4) = fhSwap16(((u32)(bz * f) >> 16) + (s16)fhSwap16(*(u16*)(p + 4)));
+            *(u16*)out = fhSwap16(((u32)(bx * f) >> 16) + fhReadBES16(p));
+            *(u16*)(out + 2) = fhSwap16(((u32)(by * f) >> 16) + fhReadBES16(p + 2));
+            *(u16*)(out + 4) = fhSwap16(((u32)(bz * f) >> 16) + fhReadBES16(p + 4));
         }
         else
         {
@@ -194,25 +194,25 @@ void modelApplyBoneTransform(u8* p, u8* out, u16 n, u8** pd, u8** pe, int f, u16
 
 u8* modelBoneTransforms_next(u8* stream, int* dx, int* dy, int* dz)
 {
-    u16 flags = fhSwap16(*(u16*)stream);
+    u16 flags = fhReadBE16(stream);
 
     stream += 2;
     *dx = 0;
     if (flags & MODEL_BONEXFORM_HAS_X)
     {
-        *dx = (s16)fhSwap16(*(u16*)stream);
+        *dx = fhReadBES16(stream);
         stream += 2;
     }
     *dy = 0;
     if (flags & MODEL_BONEXFORM_HAS_Y)
     {
-        *dy = (s16)fhSwap16(*(u16*)stream);
+        *dy = fhReadBES16(stream);
         stream += 2;
     }
     *dz = 0;
     if (flags & MODEL_BONEXFORM_HAS_Z)
     {
-        *dz = (s16)fhSwap16(*(u16*)stream);
+        *dz = fhReadBES16(stream);
         stream += 2;
     }
     return stream;
@@ -267,7 +267,7 @@ void modelAnimUpdateChannels(ModelFileHeader* file, ObjAnimState* work, int chan
         {
             work->frameStreamStrides[i] = (s16)(-frameStride * frameIdx);
         }
-        streamOff = (s16)fhSwap16(*(u16*)(frameStream + 2));
+        streamOff = fhReadBES16(frameStream + 2);
         work->frameStreamCursors[i] = frameStream + streamOff + frameStride * frameIdx;
     }
 }
@@ -2086,7 +2086,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
         {
             ch->frameStreamStrides[0] = (s16)(-bv * n);
         }
-        ch->frameStreamCursors[0] = anim + (s16)fhSwap16(*(u16*)(anim + 2)) + bv * n;
+        ch->frameStreamCursors[0] = anim + fhReadBES16(anim + 2) + bv * n;
     }
     modelRenderInterpolateRootTransform(ch, srot, outRot);
     ch->moveFrameData = saved;
@@ -2718,8 +2718,8 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
     memset(base, 0, pad);
     hdr->refCount = gc[0x00];
     hdr->unk01 = gc[0x01];
-    hdr->flags = fhSwap16(*(u16*)(gc + 0x02));
-    hdr->modelId = fhSwap16(*(u16*)(gc + 0x04));
+    hdr->flags = fhReadBE16(gc + 0x02);
+    hdr->modelId = fhReadBE16(gc + 0x04);
     memcpy(hdr->unk06, gc + 0x06, sizeof(hdr->unk06));
     hdr->dataSize = (s32)(fhSwap32(*(u32*)(gc + 0x0c)) + pad);
     memcpy(hdr->unk10, gc + 0x10, sizeof(hdr->unk10));
@@ -2731,15 +2731,15 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
     hdr->normals = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x2c, pad);
     hdr->colors = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x30, pad);
     hdr->texCoords = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x34, pad);
-    hdr->cullDistance = fhSwap16(*(u16*)(gc + 0xe0));
-    hdr->shaderFlags = fhSwap16(*(u16*)(gc + 0xe2));
-    hdr->vertexCount = fhSwap16(*(u16*)(gc + 0xe4));
-    hdr->normalCount = fhSwap16(*(u16*)(gc + 0xe6));
-    hdr->colorCount = fhSwap16(*(u16*)(gc + 0xe8));
-    hdr->texCoordCount = fhSwap16(*(u16*)(gc + 0xea));
-    hdr->animationCount = fhSwap16(*(u16*)(gc + 0xec));
+    hdr->cullDistance = fhReadBE16(gc + 0xe0);
+    hdr->shaderFlags = fhReadBE16(gc + 0xe2);
+    hdr->vertexCount = fhReadBE16(gc + 0xe4);
+    hdr->normalCount = fhReadBE16(gc + 0xe6);
+    hdr->colorCount = fhReadBE16(gc + 0xe8);
+    hdr->texCoordCount = fhReadBE16(gc + 0xea);
+    hdr->animationCount = fhReadBE16(gc + 0xec);
     memcpy(hdr->unkEE, gc + 0xee, sizeof(hdr->unkEE));
-    hdr->collisionBlockCount = fhSwap16(*(u16*)(gc + 0xf0));
+    hdr->collisionBlockCount = fhReadBE16(gc + 0xf0);
     hdr->textureCount = gc[0xf2];
     hdr->jointCount = gc[0xf3];
     hdr->extraJointCount = gc[0xf4];
@@ -2835,12 +2835,12 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
 
     for (i = 0; i < 8; i++)
     {
-        hdr->animGroupBaseIndices[i] = (s16)fhSwap16(*(u16*)(gc + 0x70 + i * 2));
+        hdr->animGroupBaseIndices[i] = fhReadBES16(gc + 0x70 + i * 2);
     }
     hdr->animationDataFileOffset = (s32)fhSwap32(*(u32*)(gc + 0x80));
-    hdr->headerSize = (s16)fhSwap16(*(u16*)(gc + 0x84));
+    hdr->headerSize = fhReadBES16(gc + 0x84);
     memcpy(hdr->unk86, gc + 0x86, sizeof(hdr->unk86));
-    hdr->vertexAnimCount = fhSwap16(*(u16*)(gc + 0x8a));
+    hdr->vertexAnimCount = fhReadBE16(gc + 0x8a);
     memcpy(hdr->unk8C, gc + 0x8c, sizeof(hdr->unk8C));
     hdr->vertexAnimEntriesRaw = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0x94, pad);
     memcpy(hdr->unk98, gc + 0x98, sizeof(hdr->unk98));
@@ -2852,7 +2852,7 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
     }
     hdr->vertexAnimBase = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xa8, pad);
     memcpy(hdr->unkAC, gc + 0xac, sizeof(hdr->unkAC));
-    hdr->blendAnimCount = fhSwap16(*(u16*)(gc + 0xae));
+    hdr->blendAnimCount = fhReadBE16(gc + 0xae);
     memcpy(hdr->unkB0, gc + 0xb0, sizeof(hdr->unkB0));
     hdr->blendAnimEntriesRaw = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xb8, pad);
     memcpy(hdr->unkBC, gc + 0xbc, sizeof(hdr->unkBC));
@@ -2875,13 +2875,13 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
             u16 dSize;
             p = gc + off + i * 0x1c;
             dOff = fhSwap32(*(u32*)p);
-            dSize = fhSwap16(*(u16*)(p + 4));
+            dSize = fhReadBE16(p + 4);
             *(u32*)p = dOff + pad;
             *(u16*)(p + 8) = dSize;
         }
     }
     hdr->instrs = (u8*)(uintptr_t)modelFileOffsetAt(gc, 0xd4, pad);
-    hdr->instrsBitLenWords = fhSwap16(*(u16*)(gc + 0xd8));
+    hdr->instrsBitLenWords = fhReadBE16(gc + 0xd8);
     memcpy(hdr->unkDA, gc + 0xda, sizeof(hdr->unkDA));
 
     off = fhSwap32(*(u32*)(gc + 0xdc));
@@ -3042,7 +3042,7 @@ void* ObjModel_Load(int id, int loadFlag, int* outSize)
     else
     {
         fileLoadToBufferOffset(MLDF_FILEID_MODELIND_BIN, gModelResourceBuffer, idc * 2, 8);
-        realId[0] = (s16)fhSwap16((u16)gModelResourceBuffer[0]);
+        realId[0] = fhReadBES16(gModelResourceBuffer);
     }
     if (ModelList_getHeader(gModelList, realId[0], &header) == 0)
     {
@@ -3294,9 +3294,9 @@ void ObjModel_TransformVerticesWithTranslation(u8* m1, u8* m2, u8* src, u8* d1, 
         w0 = __OSu8tof32(w) * (1.0f / 128.0f);
         w1 = __OSu8tof32(w + 1) * (1.0f / 128.0f);
         w += 2;
-        x = (f32)(s16)fhSwap16(*(u16*)&in[0]) * invScale;
-        y = (f32)(s16)fhSwap16(*(u16*)&in[1]) * invScale;
-        z = (f32)(s16)fhSwap16(*(u16*)&in[2]) * invScale;
+        x = (f32)fhReadBES16(&in[0]) * invScale;
+        y = (f32)fhReadBES16(&in[1]) * invScale;
+        z = (f32)fhReadBES16(&in[2]) * invScale;
         in += 3;
         ox = (ma[0] * x + ma[3] * y + ma[6] * z + ma[9]) * w0 +
              (mb[0] * x + mb[3] * y + mb[6] * z + mb[9]) * w1;

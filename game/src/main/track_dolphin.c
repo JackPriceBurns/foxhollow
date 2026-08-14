@@ -153,8 +153,7 @@ typedef struct IntersectLine
  * native little-endian builds must assemble the value explicitly. */
 static inline s16 trackReadSharedLineHeight(const void* record)
 {
-    const u8* bytes = record;
-    return (s16)(((u16)bytes[0] << 8) | bytes[1]);
+    return fhReadBES16(record);
 }
 
 struct IntersectModLineObject

@@ -115,7 +115,7 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
         recordCount = FH_ANIM_MAX_JOINT_RECORDS;
     }
     descriptors = frameData + 4;
-    descriptorEnd = record + (s16)fhSwap16(*(const u16*)(record + 2));
+    descriptorEnd = record + fhReadBES16(record + 2);
     if (descriptorEnd < descriptors)
     {
         sFhAnimRecordCount[slot] = 0;
@@ -149,7 +149,7 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
                 recordCount = i;
                 break;
             }
-            d = fhSwap16(*(const u16*)descriptors);
+            d = fhReadBE16(descriptors);
             descriptors += 2;
             sample = fhAnimSample(&a, &b, d & 0xf, frac, 14);
             sample = (s32)(d & 0xfff0) + (sample << 2);
@@ -159,7 +159,7 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
             {
                 continue;
             }
-            d = fhSwap16(*(const u16*)descriptors);
+            d = fhReadBE16(descriptors);
             if ((d & 0x10) != 0)
             {
                 sample = fhAnimSample(&a, &b, d & 0xf, frac, 0);
@@ -177,7 +177,7 @@ static int fhAnimDecodeChannel(int slot, const u8* frameData, const u8* cursor, 
                 {
                     continue;
                 }
-                d = fhSwap16(*(const u16*)descriptors);
+                d = fhReadBE16(descriptors);
             }
             sample = fhAnimSample(&a, &b, d & 0xf, frac, 16);
             sample = (s32)(d & 0xfff0) + sample;

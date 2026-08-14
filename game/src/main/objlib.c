@@ -139,7 +139,7 @@ extern int gObjContactCallbackCount;
 typedef struct ObjMsgEntry {
     u32 message;
     uintptr_t sender;
-    u32 param;
+    uintptr_t param;
 } ObjMsgEntry;
 
 typedef struct ObjMsgQueue {
@@ -447,7 +447,7 @@ int ObjMsg_Peek(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* out
     return 0;
 }
 
-int ObjMsg_Pop(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outParam) {
+int ObjMsg_PopNative(GameObject* obj, u32* outMessage, uintptr_t* outSender, uintptr_t* outParam) {
     ObjMsgQueue* queue;
     ObjMsgQueueCursor* slot;
     u32 i;
@@ -478,9 +478,20 @@ int ObjMsg_Pop(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outP
     return 0;
 }
 
+int ObjMsg_Pop(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outParam) {
+    uintptr_t param;
+    int result;
+
+    result = ObjMsg_PopNative(obj, outMessage, outSender, outParam != NULL ? &param : NULL);
+    if (result != 0 && outParam != NULL) {
+        *outParam = (u32)param;
+    }
+    return result;
+}
+
 char sObjMsgOverflowInObjectWarning[64] = "objmsg (%x): overflow in object %d defno=%d FROM: defno %d\n";
 
-void ObjMsg_SendToNearbyObjects(int targetId, float radius, u32 flags, void* sender, u32 message, u32 param) {
+void ObjMsg_SendToNearbyObjects(int targetId, float radius, u32 flags, void* sender, u32 message, uintptr_t param) {
     GameObject** objects;
     u32 count;
     int maskedFlags;
@@ -519,7 +530,7 @@ void ObjMsg_SendToNearbyObjects(int targetId, float radius, u32 flags, void* sen
     return;
 }
 
-void ObjMsg_SendToObjects(int targetId, u32 flags, void* sender, u32 message, u32 param) {
+void ObjMsg_SendToObjects(int targetId, u32 flags, void* sender, u32 message, uintptr_t param) {
     GameObject** objects;
     u32 count;
     int maskedFlags;
@@ -575,7 +586,7 @@ void ObjMsg_SendToObjects(int targetId, u32 flags, void* sender, u32 message, u3
     return;
 }
 
-u32 ObjMsg_SendToObject(GameObject* obj, u32 message, void* sender, u32 param) {
+u32 ObjMsg_SendToObject(GameObject* obj, u32 message, void* sender, uintptr_t param) {
     u32 count;
     GameObject* senderObj;
     ObjMsgQueue* queue;

@@ -16122,10 +16122,10 @@ void playerUpdateSurfaceResponse(GameObject* obj, PlayerState* state, PlayerStat
 void playerProcessMessages(GameObject* obj, PlayerState* inner, PlayerState* state)
 {
     GameObject* p;
-    int param = 0;
+    uintptr_t param = 0;
     int msg;
 
-    while (ObjMsg_Pop((GameObject*)obj, (u32*)&msg, (uintptr_t*)&p, (u32*)&param) != 0)
+    while (ObjMsg_PopNative((GameObject*)obj, (u32*)&msg, (uintptr_t*)&p, &param) != 0)
     {
         switch (msg)
         {
@@ -16266,13 +16266,13 @@ void playerProcessMessages(GameObject* obj, PlayerState* inner, PlayerState* sta
         }
         case 0x7000a:
         {
-            void* t;
+            ObjModelState* modelState;
             s16 bit;
             ((PlayerState*)inner)->triggerGameBitPtr = (char*)(uintptr_t)param;
-            t = *(void**)((char*)p + 0x64);
-            if (t != NULL)
+            modelState = p->anim.modelState;
+            if (modelState != NULL)
             {
-                *(u32*)((char*)t + 0x30) &= ~0x4LL;
+                modelState->flags &= ~OBJ_MODEL_STATE_SHADOW_VISIBLE;
             }
             bit = *(s16*)((PlayerState*)inner)->triggerGameBitPtr;
             if (bit > 0)
@@ -16286,16 +16286,16 @@ void playerProcessMessages(GameObject* obj, PlayerState* inner, PlayerState* sta
                 {
                     f32 k;
                     f32 lim;
-                    f32 r = *(f32*)((char*)p + 8) / *(f32*)((char*)p->anim.modelInstance + 4);
+                    f32 r = p->anim.rootMotionScale / p->anim.modelInstance->rootMotionScaleBase;
                     lim = 30.0f;
                     k = 0.99f;
                     while (r * (((GameObject*)obj)->anim.hitboxScale * ((GameObject*)obj)->anim.rootMotionScale) > lim)
                     {
-                        *(f32*)((char*)p + 8) = *(f32*)((char*)p + 8) * k;
-                        r = *(f32*)((char*)p + 8) / *(f32*)((char*)p->anim.modelInstance + 4);
+                        p->anim.rootMotionScale = p->anim.rootMotionScale * k;
+                        r = p->anim.rootMotionScale / p->anim.modelInstance->rootMotionScaleBase;
                     }
                     mainSetBits(*(s16*)((PlayerState*)inner)->triggerGameBitPtr, 1);
-                    (*gObjectTriggerInterface)->setObjects(*(s16*)((char*)p + 0x46), 0, 0);
+                    (*gObjectTriggerInterface)->setObjects(p->anim.romDefNo, 0, 0);
                     (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
                 }
             }
@@ -16303,23 +16303,23 @@ void playerProcessMessages(GameObject* obj, PlayerState* inner, PlayerState* sta
             {
                 f32 k;
                 f32 lim;
-                f32 r = *(f32*)((char*)p + 8) / *(f32*)((char*)p->anim.modelInstance + 4);
+                f32 r = p->anim.rootMotionScale / p->anim.modelInstance->rootMotionScaleBase;
                 lim = 30.0f;
                 k = 0.99f;
                 while (r * (((GameObject*)obj)->anim.hitboxScale * ((GameObject*)obj)->anim.rootMotionScale) > lim)
                 {
-                    *(f32*)((char*)p + 8) = *(f32*)((char*)p + 8) * k;
-                    r = *(f32*)((char*)p + 8) / *(f32*)((char*)p->anim.modelInstance + 4);
+                    p->anim.rootMotionScale = p->anim.rootMotionScale * k;
+                    r = p->anim.rootMotionScale / p->anim.modelInstance->rootMotionScaleBase;
                 }
-                (*gObjectTriggerInterface)->setObjects(*(s16*)((char*)p + 0x46), 0, 0);
+                (*gObjectTriggerInterface)->setObjects(p->anim.romDefNo, 0, 0);
                 (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
             }
             ((PlayerState*)inner)->interactObject = p;
             ((PlayerState*)inner)->unk688 = *(s16*)(((PlayerState*)inner)->triggerGameBitPtr + 2);
-            t = *(void**)((char*)((PlayerState*)inner)->interactObject + 0x64);
-            if (t != NULL)
+            modelState = ((PlayerState*)inner)->interactObject->anim.modelState;
+            if (modelState != NULL)
             {
-                *(int*)((char*)t + 0x30) = 0x1000;
+                modelState->flags = OBJ_MODEL_STATE_SHADOW_FADE_OUT;
             }
             if (gPlayerPathObject != 0 && ((PlayerState*)inner)->flags3F4.b40 != 0)
             {

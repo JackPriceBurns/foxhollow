@@ -217,7 +217,7 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
                 program = seq->normTrans[program];
                 if (program != 0xFF)
                 {
-                    seq->prgState[(u8)i].macId = musyxReadBE16(&seq->normtab[program].macro);
+                    seq->prgState[(u8)i].macId = fhReadBE16(&seq->normtab[program].macro);
                     seq->prgState[(u8)i].priority = seq->normtab[program].priority;
                     seq->prgState[(u8)i].maxVoices = seq->normtab[program].maxVoices;
                 }
@@ -227,7 +227,7 @@ u32 seqStartPlay(SynthPage* norm, SynthPage* drum, SynthMidiSetup* midiSetup, u3
                 program = seq->drumTrans[program];
                 if (program != 0xFF)
                 {
-                    seq->prgState[(u8)i].macId = musyxReadBE16(&seq->drumtab[program].macro);
+                    seq->prgState[(u8)i].macId = fhReadBE16(&seq->drumtab[program].macro);
                     seq->prgState[(u8)i].priority = seq->drumtab[program].priority;
                     seq->prgState[(u8)i].maxVoices = seq->drumtab[program].maxVoices;
                 }

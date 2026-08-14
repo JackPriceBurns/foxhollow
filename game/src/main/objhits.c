@@ -1995,7 +1995,7 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
 void ObjHits_Update(int objectCount) {
     u8 skeletonScratchB[1036];
     u8 skeletonScratchC[1040];
-    u8 skeletonHits[1512];
+    ObjHitsSkeletonHit skeletonHits[OBJHITS_SKELETON_HIT_CAPACITY + 2];
     u8 skeletonScratchD[100];
     u8 skeletonScratchE[100];
     GameObject* listObj;

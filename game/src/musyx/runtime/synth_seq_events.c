@@ -31,13 +31,13 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
             if (pattern->noteData == 0)
             {
             process_track_command:
-                if (musyxReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_END)
+                if (fhReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_END)
                 {
                     track->current = 0;
                     return 0;
                 }
 
-                if (musyxReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_JUMP)
+                if (fhReadBE16(&TRACK_CMD(track)->command) == SYNTH_TRACK_COMMAND_JUMP)
                 {
                     if (cseq->keyGroupMap == 0)
                     {
@@ -56,7 +56,7 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
                     ev->type = 3;
                     ev->time = musyxReadBE32(&TRACK_CMD(track)->value0);
                     track->current = track->base +
-                                     musyxReadBE16(&TRACK_CMD(track)->arg) * sizeof(SynthTrackCommand);
+                                     fhReadBE16(&TRACK_CMD(track)->arg) * sizeof(SynthTrackCommand);
                     return ev;
                 }
 
@@ -72,7 +72,7 @@ SynthSequenceEvent* GenerateNextTrackEvent(u8 channel)
 
             for (;;)
             {
-                patternTime = musyxReadBE16(pattern->noteData) + pattern->lastTime;
+                patternTime = fhReadBE16(pattern->noteData) + pattern->lastTime;
                 if (patternTime < pitchTime)
                 {
                     if (patternTime >= modTime)

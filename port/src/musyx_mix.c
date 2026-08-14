@@ -1,3 +1,4 @@
+#include "foxhollow_compat.h"
 #include "main/unknown/autos/musyx_dsp.h"
 #include "musyx/dsp_voice_state.h"
 #include "musyx/endian.h"
@@ -60,8 +61,8 @@ static void musyxDecodeFrame(MusyxMixVoice* state, const DSPvoice* voice, u32 fr
     const u8* source = aram + state->aramBase + frameIndex * 8;
     u8 predictor = source[0] >> 4;
     u8 shift = source[0] & 0xf;
-    s16 coefficient1 = (s16)musyxReadBE16(info + 8 + predictor * 4);
-    s16 coefficient2 = (s16)musyxReadBE16(info + 10 + predictor * 4);
+    s16 coefficient1 = fhReadBES16(info + 8 + predictor * 4);
+    s16 coefficient2 = fhReadBES16(info + 10 + predictor * 4);
     u32 i;
 
     for (i = 0; i < 14; i++)
@@ -152,7 +153,7 @@ static s16 musyxReadSample(MusyxMixVoice* state, const DSPvoice* voice, u32 samp
     case SAMPLE_TYPE_ADPCM_PLUS:
         return musyxReadAdpcm(state, voice, sampleIndex);
     case SAMPLE_TYPE_PCM16:
-        return (s16)musyxReadBE16(aram + state->aramBase + sampleIndex * 2);
+        return fhReadBES16(aram + state->aramBase + sampleIndex * 2);
     case SAMPLE_TYPE_PCM8:
         return (s16)((s8)aram[state->aramBase + sampleIndex] * 256);
     default:

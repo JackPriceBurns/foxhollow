@@ -1568,7 +1568,12 @@ static u32 mapBlockReadU32(u8* raw, u32 offset)
 
 static u16 mapBlockReadU16(u8* raw, u32 offset)
 {
-    return fhSwap16(*(u16*)(raw + offset));
+    return fhReadBE16(raw + offset);
+}
+
+static s16 mapBlockReadS16(u8* raw, u32 offset)
+{
+    return fhReadBES16(raw + offset);
 }
 
 static f32 mapBlockReadF32(u8* raw, u32 offset)
@@ -1635,12 +1640,12 @@ static void mapBlockUnpackDisplayLists(MapBlockBoundsRec* lists, u8* raw, u32 of
         MapBlockBoundsRec* list = &lists[i];
         list->dlist = (void*)(uintptr_t)(mapBlockReadU32(src, 0) + rawOffset);
         list->dlistSize = mapBlockReadU16(src, 4);
-        list->minX = (s16)mapBlockReadU16(src, 6);
-        list->minY = (s16)mapBlockReadU16(src, 8);
-        list->minZ = (s16)mapBlockReadU16(src, 0x0a);
-        list->maxX = (s16)mapBlockReadU16(src, 0x0c);
-        list->maxY = (s16)mapBlockReadU16(src, 0x0e);
-        list->maxZ = (s16)mapBlockReadU16(src, 0x10);
+        list->minX = mapBlockReadS16(src, 6);
+        list->minY = mapBlockReadS16(src, 8);
+        list->minZ = mapBlockReadS16(src, 0x0a);
+        list->maxX = mapBlockReadS16(src, 0x0c);
+        list->maxY = mapBlockReadS16(src, 0x0e);
+        list->maxZ = mapBlockReadS16(src, 0x10);
         list->flags = src[0x12];
         list->pad13 = src[0x13];
         list->renderBitOffset = mapBlockReadU16(src, 0x14);
@@ -1707,9 +1712,9 @@ static void mapBlockUnpackFile(MapBlockData* block, u8* raw, u32 rawOffset, u32 
     block->nRenderInstrsMain = mapBlockReadU16(raw, 0x84);
     block->nRenderInstrsTransp = mapBlockReadU16(raw, 0x86);
     block->nRenderInstrsWater = mapBlockReadU16(raw, 0x88);
-    block->minY = (s16)mapBlockReadU16(raw, 0x8a);
-    block->maxY = (s16)mapBlockReadU16(raw, 0x8c);
-    block->collisionYOffset = (s16)mapBlockReadU16(raw, 0x8e);
+    block->minY = mapBlockReadS16(raw, 0x8a);
+    block->maxY = mapBlockReadS16(raw, 0x8c);
+    block->collisionYOffset = mapBlockReadS16(raw, 0x8e);
     block->vertexCount = mapBlockReadU16(raw, 0x90);
     block->unk92 = mapBlockReadU16(raw, 0x92);
     block->colorCount = mapBlockReadU16(raw, 0x94);

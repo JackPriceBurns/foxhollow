@@ -33,13 +33,6 @@ typedef struct THPRGBTexture
 
 static THPRGBTexture sRGBTextures[3];
 
-static u16 thpReadU16(const void* ptr)
-{
-    u16 value;
-    memcpy(&value, ptr, sizeof(value));
-    return fhSwap16(value);
-}
-
 static u32 thpReadU32(const void* ptr)
 {
     u32 value;
@@ -359,8 +352,8 @@ static s32 thpAudioNextSample(THPAudioCursor* cursor)
 
 static s16 thpAudioDecodeSample(THPAudioCursor* cursor, const u8* coefficients, s16* yn1, s16* yn2)
 {
-    s64 value = (s64)(s16)thpReadU16(coefficients + (cursor->predictor * 4) + 2) * *yn2;
-    value += (s64)(s16)thpReadU16(coefficients + (cursor->predictor * 4)) * *yn1;
+    s64 value = (s64)fhReadBES16(coefficients + (cursor->predictor * 4) + 2) * *yn2;
+    value += (s64)fhReadBES16(coefficients + (cursor->predictor * 4)) * *yn1;
     value += ((s64)thpAudioNextSample(cursor) << cursor->scale) << 11;
     value = (value + 1024) >> 11;
     if (value > 32767)
@@ -401,10 +394,10 @@ u32 THPAudioDecode(s16* buffer, u8* audioFrame, s32 flag)
     sampleCount = thpReadU32(audioFrame + 4);
     leftCoefficients = audioFrame + 8;
     rightCoefficients = leftCoefficients + 32;
-    leftYn1 = (s16)thpReadU16(audioFrame + 72);
-    leftYn2 = (s16)thpReadU16(audioFrame + 74);
-    rightYn1 = (s16)thpReadU16(audioFrame + 76);
-    rightYn2 = (s16)thpReadU16(audioFrame + 78);
+    leftYn1 = fhReadBES16(audioFrame + 72);
+    leftYn2 = fhReadBES16(audioFrame + 74);
+    rightYn1 = fhReadBES16(audioFrame + 76);
+    rightYn2 = fhReadBES16(audioFrame + 78);
     leftData = audioFrame + sizeof(THPAudioRecordHeader);
     rightData = leftData + channelOffset;
     thpAudioCursorInit(&leftCursor, leftData);
