@@ -336,12 +336,12 @@ void wmseqpoint_init(GameObject* obj, WmSeqPointMapData* setup)
     mapData = setup;
     obj->animEventCallback = wmseqpoint_SeqFn;
     obj->anim.rotX = (s16)(mapData->rotXByte << 8);
-    state->triggerRadius = mapData->triggerRadius;
-    state->sequenceId = mapData->sequenceId;
+    state->triggerRadius = fhReadBES16(&mapData->triggerRadius);
+    state->sequenceId = fhReadBES16(&mapData->sequenceId);
     state->doneLatch = 0;
     state->triggerMode = mapData->triggerMode;
-    state->conditionGameBit = mapData->conditionGameBit;
-    state->disableGameBit = mapData->disableGameBit;
+    state->conditionGameBit = fhReadBES16(&mapData->conditionGameBit);
+    state->disableGameBit = fhReadBES16(&mapData->disableGameBit);
     state->command = 0;
     state->unk0A = 0;
 }

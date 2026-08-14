@@ -238,6 +238,7 @@ void saveGame_saveObjectPos(GameObject* obj)
 {
     int objectId;
     int i;
+    SaveGameObjectPosition* position;
     if ((obj->anim.flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0 || (s32)saveGameLoadStatus != 0)
     {
         return;
@@ -252,12 +253,11 @@ void saveGame_saveObjectPos(GameObject* obj)
     }
     if (i == SAVEGAME_OBJECT_POSITION_COUNT)
         return;
-    *(u32*)((int)gSaveGameData + SAVEGAME_OBJECT_POSITION_OFFSET + (i << 4)) =
-        ((SaveGameRomListPosition*)obj->anim.placementData)->objectId;
-    *(f32*)((int)gSaveGameData + (SAVEGAME_OBJECT_POSITION_OFFSET + 4) + (i << 4)) = obj->anim.localPosX;
-    *(f32*)((int)gSaveGameData + (SAVEGAME_OBJECT_POSITION_OFFSET + 8) + (i << 4)) = obj->anim.localPosY;
-    *(f32*)((int)gSaveGameData + (SAVEGAME_OBJECT_POSITION_OFFSET + 12) + (i << 4)) =
-        obj->anim.localPosZ;
+    position = &((SaveGameData*)gSaveGameData)->positions[i];
+    position->objectId = ((SaveGameRomListPosition*)obj->anim.placementData)->objectId;
+    position->x = obj->anim.localPosX;
+    position->y = obj->anim.localPosY;
+    position->z = obj->anim.localPosZ;
     ((SaveGameRomListPosition*)obj->anim.placementData)->x = obj->anim.localPosX;
     ((SaveGameRomListPosition*)obj->anim.placementData)->y = obj->anim.localPosY;
     ((SaveGameRomListPosition*)obj->anim.placementData)->z = obj->anim.localPosZ;
@@ -952,7 +952,6 @@ int SaveGame_gplayDidTimeExpire(int id)
 void SaveGame_gplayAddTime(int id, f32 time)
 {
     SaveGameData* base;
-    u8* p;
     s16 count;
     int i;
     f32 total;
@@ -965,19 +964,17 @@ void SaveGame_gplayAddTime(int id, f32 time)
     total = 2e+01f * time;
     total += base->playTime;
     i = 0;
-    p = (u8*)base;
     for (; i < count; i++)
     {
-        if (((SaveGameData*)p)->timeEntries[0].objId == id)
+        if (base->timeEntries[i].objId == id)
             break;
-        p += 8;
     }
     if (i == count)
     {
         base->timeEntryCount++;
     }
-    *(int*)((int)gSaveGameData + 0x6f0 + (i << 3)) = id;
-    *(f32*)((int)gSaveGameData + 0x6f4 + (i << 3)) = total;
+    base->timeEntries[i].objId = id;
+    base->timeEntries[i].time = total;
 }
 
 void* SaveGame_getSidekickStats(void)

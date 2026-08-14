@@ -2415,7 +2415,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
         {
             o = nxt;
         }
-        sh = ((u8*)o->anim.modelState->shadowCastSlot)[0x65];
+        sh = o->anim.modelState->shadowCastSlot->mode;
         if (sh == 0xff)
         {
             GXSetTevColor(GX_TEVREG2, *(GXColor*)&lbl_803DB468);
@@ -2815,7 +2815,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
             {
                 o = nxt;
             }
-            sh = ((u8*)o->anim.modelState->shadowCastSlot)[0x65];
+            sh = o->anim.modelState->shadowCastSlot->mode;
             if (sh == 0xff)
             {
                 GXSetTevColor(GX_TEVREG2, *(GXColor*)&lbl_803DB468);
@@ -3345,7 +3345,7 @@ static void objRenderChild(GameObject* child, GameObject* parent, u8 isShadow)
 
 void objRenderModel(GameObject* obj)
 {
-    u32 d1;
+    Texture* d1;
     f32 d2;
     int d3;
     int d4;
@@ -3438,7 +3438,7 @@ void objRenderModel(GameObject* obj)
     gObjShadowColor[3] = obj->anim.modelState->shadowAlpha;
     getObjectShadowDrawParams(obj, &d1, &d2, &d3, &d4);
     col = *(u32*)gObjShadowColor;
-    hudDrawColored((Texture*)(uintptr_t)d1, d3, d4, &col, (s32)(256.0f * d2), 1);
+    hudDrawColored(d1, d3, d4, &col, (s32)(256.0f * d2), 1);
 }
 
 void objSetRenderingShadowPass(u8 x)

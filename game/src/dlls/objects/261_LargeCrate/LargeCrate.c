@@ -561,9 +561,9 @@ void LargeCrate_init(GameObject* obj, LargeCratePlacement* placement) {
     state = obj->extra;
     obj->animEventCallback = LargeCrate_seq;
     obj->anim.rotX = (s16)((int)placement->rotXByte << 8);
-    state->brokenGameBit = placement->brokenGameBit;
+    state->brokenGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->brokenGameBit);
 
-    value = placement->respawnMinutes;
+    value = ObjAnim_ReadPlacementS16(&obj->anim, &placement->respawnMinutes);
     if (value == LARGECRATE_RESPAWN_DISABLED) {
         state->respawnDelay = LARGECRATE_RESPAWN_DISABLED;
     } else if (value == LARGECRATE_RESPAWN_PERMANENT) {

@@ -2108,6 +2108,7 @@ void skyResetState(void)
 
 void skyUpdateEnvfxAct(int a, int b, u8* cfg)
 {
+    Sky2Config* config;
     s16* envp;
     u8* env2;
     u8 mask;
@@ -2118,10 +2119,11 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
     int vis;
     Texture* tmp;
 
+    config = (Sky2Config*)cfg;
     envp = (s16*)saveGameGetEnvState();
-    if (cfg != NULL && ((int)((Sky2Config*)cfg)->flags & 2) != 0)
+    if (config != NULL && ((int)config->flags & 2) != 0)
     {
-        switch (((Sky2Config*)cfg)->cloudMode)
+        switch (fhReadBE16(&config->cloudMode))
         {
         case 0:
         default:
@@ -2150,33 +2152,33 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
         {
             if ((mask & (1 << i)) != 0)
             {
-                envp[2] = (s16)((Sky2Config*)cfg)->envfxActId - 1;
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[0] = (f32)(u32)((Sky2Config*)cfg)->redKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[1] = (f32)(u32)((Sky2Config*)cfg)->redKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[2] = (f32)(u32)((Sky2Config*)cfg)->redKeys[1];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[3] = (f32)(u32)((Sky2Config*)cfg)->redKeys[2];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[4] = (f32)(u32)((Sky2Config*)cfg)->redKeys[3];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[5] = (f32)(u32)((Sky2Config*)cfg)->redKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[6] = (f32)(u32)((Sky2Config*)cfg)->redKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[0] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[1] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[2] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[1];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[3] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[2];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[4] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[3];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[5] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[6] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[0] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[1] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[2] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[1];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[3] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[2];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[4] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[3];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[5] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[0];
-                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[6] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[0];
+                envp[2] = (s16)(fhReadBE16(&config->envfxActId) - 1);
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[0] = (f32)(u32)config->redKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[1] = (f32)(u32)config->redKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[2] = (f32)(u32)config->redKeys[1];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[3] = (f32)(u32)config->redKeys[2];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[4] = (f32)(u32)config->redKeys[3];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[5] = (f32)(u32)config->redKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].redCurve[6] = (f32)(u32)config->redKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[0] = (f32)(u32)config->greenKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[1] = (f32)(u32)config->greenKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[2] = (f32)(u32)config->greenKeys[1];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[3] = (f32)(u32)config->greenKeys[2];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[4] = (f32)(u32)config->greenKeys[3];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[5] = (f32)(u32)config->greenKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].greenCurve[6] = (f32)(u32)config->greenKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[0] = (f32)(u32)config->blueKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[1] = (f32)(u32)config->blueKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[2] = (f32)(u32)config->blueKeys[1];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[3] = (f32)(u32)config->blueKeys[2];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[4] = (f32)(u32)config->blueKeys[3];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[5] = (f32)(u32)config->blueKeys[0];
+                ((SkyState*)(gSkyState + iofs))->lights[0].blueCurve[6] = (f32)(u32)config->blueKeys[0];
                 ((SkyState*)(gSkyState + iofs))->lights[0].blendFactor = 1.0f;
-                if (((Sky2Config*)cfg)->fadeDurationA != 0)
+                if (fhReadBE16(&config->fadeDurationA) != 0)
                 {
                     ((SkyState*)(gSkyState + iofs))->lights[0].blendRate =
-                        1.0f / (10.0f * (f32)(u32)((Sky2Config*)cfg)->fadeDurationA);
+                        1.0f / (10.0f * (f32)fhReadBE16(&config->fadeDurationA));
                 }
                 else
                 {
@@ -2195,10 +2197,10 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
                     slot->lights[0].blendTargetG = ((SkyState*)(gSkyState + iofs))->lights[0].sunColorG;
                     slot->lights[0].blendTargetB = ((SkyState*)(gSkyState + iofs))->lights[0].sunColorB;
                 }
-                if (((Sky2Config*)cfg)->cloudBlendMode != 0)
+                if (config->cloudBlendMode != 0)
                 {
                     ((SkyLight*)(gSkyState + iofs + 0x20))->flags.cloud =
-                        (((Sky2Config*)cfg)->cloudBlendMode & 1) + 1;
+                        (config->cloudBlendMode & 1) + 1;
                 }
                 else
                 {
@@ -2208,11 +2210,11 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
             envp++;
             iofs += 0xa4;
         }
-        if (((Sky2Config*)cfg)->cloudBlendMode != 0)
+        if (config->cloudBlendMode != 0)
         {
-            skySetSlotFlag80(mask, (((Sky2Config*)cfg)->cloudBlendMode > 2 ? 1 : 0));
+            skySetSlotFlag80(mask, (config->cloudBlendMode > 2 ? 1 : 0));
         }
-        vis = ((Sky2Config*)cfg)->visibility;
+        vis = fhReadBE16(&config->visibility);
         for (i = 0; i < 2; i++)
         {
             if ((mask & (1 << i)) != 0)
@@ -2222,16 +2224,16 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
         }
         ((SkyState*)gSkyState)->lights[2].flags.visibility =
             ((SkyState*)gSkyState)->lights[((SkyState*)gSkyState)->currentLightIndex].flags.visibility;
-        if ((((Sky2Config*)cfg)->flags & 1) == 0)
+        if ((config->flags & 1) == 0)
         {
-            ((SkyState*)gSkyState)->skyTextureIds[0] = ((Sky2Config*)cfg)->skyTexId0 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[1] = ((Sky2Config*)cfg)->skyTexId1 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[2] = ((Sky2Config*)cfg)->skyTexId2 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[3] = ((Sky2Config*)cfg)->skyTexId3 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[4] = ((Sky2Config*)cfg)->skyTexId4 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[5] = ((Sky2Config*)cfg)->skyTexId5 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[6] = ((Sky2Config*)cfg)->skyTexId6 + 0xc38;
-            ((SkyState*)gSkyState)->skyTextureIds[7] = ((Sky2Config*)cfg)->skyTexId7 + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[0] = fhReadBE16(&config->skyTexId0) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[1] = fhReadBE16(&config->skyTexId1) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[2] = fhReadBE16(&config->skyTexId2) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[3] = fhReadBE16(&config->skyTexId3) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[4] = fhReadBE16(&config->skyTexId4) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[5] = fhReadBE16(&config->skyTexId5) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[6] = fhReadBE16(&config->skyTexId6) + 0xc38;
+            ((SkyState*)gSkyState)->skyTextureIds[7] = fhReadBE16(&config->skyTexId7) + 0xc38;
             tmp = SKY_TEXTURE_SLOT(4);
             SKY_TEXTURE_SLOT(4) = SKY_TEXTURE_SLOT(((SkyState*)gSkyState)->swapTexIndex + 2);
             SKY_TEXTURE_SLOT(((SkyState*)gSkyState)->swapTexIndex + 2) = tmp;
@@ -2239,10 +2241,10 @@ void skyUpdateEnvfxAct(int a, int b, u8* cfg)
             if (((SkyState*)gSkyState)->fadeFlags.fadePending != 0)
             {
                 ((SkyState*)gSkyState)->fadeFactor = 1.0f;
-                if (((Sky2Config*)cfg)->fadeDurationA != 0)
+                if (fhReadBE16(&config->fadeDurationA) != 0)
                 {
                     ((SkyState*)gSkyState)->fadeRate =
-                        1.0f / (10.0f * (f32)(u32)((Sky2Config*)cfg)->fadeDurationA);
+                        1.0f / (10.0f * (f32)fhReadBE16(&config->fadeDurationA));
                 }
                 else
                 {

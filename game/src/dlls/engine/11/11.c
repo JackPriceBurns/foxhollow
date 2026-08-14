@@ -11,6 +11,7 @@
 #include "main/shader_api.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "main/dll/modgfx_types.h"
+#include "main/dll/modgfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
 #include "game/objects/object_interface.h"
@@ -31,10 +32,13 @@
 #include "dolphin/gx/GXTransform.h"
 #include "track/intersect_api.h"
 
-typedef union Dll0BDescriptorTable
+typedef struct Dll0BDescriptorTable
 {
-    uintptr_t words[30];
-    u64 align8;
+    u32 metadata[4];
+    ResourceDescriptorCallback initialise;
+    ResourceDescriptorCallback release;
+    ModgfxInterface interface;
+    ResourceDescriptorCallback trailing;
 } Dll0BDescriptorTable;
 
 void modgfx_scrollTexCoords(PartfxEffectState* state, f32* in);
@@ -90,7 +94,7 @@ STATIC_ASSERT(offsetof(PartfxEffectState, emitterCount) == 0x139);
 STATIC_ASSERT(offsetof(PartfxEffectState, textureIsBorrowed) == 0x13F);
 
 ModgfxSpawnContext gModgfxSpawnContext;
-ModgfxPendingSpawn gModgfxPendingSpawnQueue[0x300 / sizeof(ModgfxPendingSpawn)];
+ModgfxPendingSpawn gModgfxPendingSpawnQueue[0x20];
 void partfx_freeEffectsBySequence(s16 a, int b);
 #define MODGFX_ZERO 0.0f
 #define MODGFX_ONE  1.0f
@@ -140,7 +144,13 @@ void dll_0B_spawnSequence(void* a, void* b, void* c, void* d, void* e, int f, vo
 
 void dll_0B_setSequenceParams(void* params)
 {
-    memcpy(gModgfxSpawnContext.sequenceParams, params, 0xe);
+    u8* source = params;
+    int i;
+
+    for (i = 0; i < PARTFX_STAGE_COUNT; i++)
+    {
+        gModgfxSpawnContext.sequenceParams[i] = fhReadBES16(source + i * sizeof(s16));
+    }
 }
 
 void dll_0B_setSequenceParamValue(s16 value)
@@ -158,7 +168,7 @@ void dll_0B_nextSequenceParam(void)
     gModgfxSequenceParamIndex++;
 }
 
-void dll_0B_addSequenceSpawn(int modelOrResource, float posX, float posY, float posZ, s16 param14, int param10)
+void dll_0B_addSequenceSpawn(int modelOrResource, float posX, float posY, float posZ, s16 param14, void* param10)
 {
     u32 sequenceIndex = gModgfxSequenceParamIndex;
     gModgfxPendingSpawnWriteCursor->sequenceIndex = sequenceIndex;
@@ -1128,11 +1138,11 @@ void dll_0B_updateActiveEffects(void)
             }
             scaleGroupIndex = 0;
             alphaGroupIndex = 0;
-            ((ExpFn3)modgfx_restoreBaseVertices)(eff, PENDING_SPAWNS + emIdx * 0x18, active);
+            ((ExpFn3)modgfx_restoreBaseVertices)(eff, PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn), active);
             feFlag = 0;
             emIdx = 0;
             emOff = 0;
-            for (; emIdx < ((PartfxEffectState*)eff)->emitterCount; emOff += 0x18, emIdx++)
+            for (; emIdx < ((PartfxEffectState*)eff)->emitterCount; emOff += sizeof(ModgfxPendingSpawn), emIdx++)
             {
                 s16 frameIndex;
                 char* pendingSpawns;
@@ -1147,9 +1157,9 @@ void dll_0B_updateActiveEffects(void)
                 flags = emitter->modelOrResource;
                 if ((flags & 0x1000) && emitter->posX > MODGFX_ZERO && frameIndex > 0)
                 {
-                    ((PartfxEffectState*)eff)->currentStage = ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->param14;
-                    ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->posX =
-                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->posX - MODGFX_ONE;
+                    ((PartfxEffectState*)eff)->currentStage = ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->param14;
+                    ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->posX =
+                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->posX - MODGFX_ONE;
                     ((PartfxEffectState*)eff)->stageFrameCountdown = -1;
                     break;
                 }
@@ -1158,8 +1168,8 @@ void dll_0B_updateActiveEffects(void)
                     if (((PartfxEffectState*)eff)->releaseRequested != 0)
                     {
                         ((PartfxEffectState*)eff)->releaseRequested = 0;
-                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->modelOrResource = 0;
-                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->modelOrResource = 0x20;
+                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->modelOrResource = 0;
+                        ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->modelOrResource = 0x20;
                         ((PartfxEffectState*)eff)->stageFrameCountdown = -1;
                         reprocess = 1;
                         feFlag = 0;
@@ -1169,7 +1179,7 @@ void dll_0B_updateActiveEffects(void)
                     {
                         feFlag = 1;
                         ((PartfxEffectState*)eff)->currentStage =
-                            ((ModgfxPendingSpawn*)(pendingSpawns + emIdx * 0x18))->param14;
+                            ((ModgfxPendingSpawn*)(pendingSpawns + emIdx * sizeof(ModgfxPendingSpawn)))->param14;
                         ((PartfxEffectState*)eff)->stageFrameCountdown = -1;
                         reprocess = 1;
                         break;
@@ -1245,17 +1255,17 @@ void dll_0B_updateActiveEffects(void)
                             {
                                 Obj_FreeObject((GameObject*)o);
                                 *eff = 0;
-                                ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->modelOrResource ^= 0x10000000;
-                                if (((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->posZ >= MODGFX_ZERO &&
+                                ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->modelOrResource ^= 0x10000000;
+                                if (((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->posZ >= MODGFX_ZERO &&
                                     (int*)((PartfxEffectState*)eff)->sourceObject != NULL)
                                 {
                                     (*gPartfxInterface)
                                         ->spawnObject((int*)((PartfxEffectState*)eff)->sourceObject,
-                                                      (int)((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->posZ, &tmpl,
+                                                      (int)((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->posZ, &tmpl,
                                                       0x200001, -1, 0);
                                 }
                                 ((PartfxEffectState*)eff)->requestedStage =
-                                    ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * 0x18))->posY;
+                                    ((ModgfxPendingSpawn*)(PENDING_SPAWNS + emIdx * sizeof(ModgfxPendingSpawn)))->posY;
                                 break;
                             }
                         }
@@ -1497,7 +1507,6 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
     f32 fz434;
     f32 fz430;
     PartfxEffectState** arr;
-    int emitterAddress;
     int base0;
     int total;
 
@@ -1510,11 +1519,10 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
         return 0;
     }
     {
-        off = 0;
         spawnCount = context->pendingSpawnCount;
-        for (i = 0; i < spawnCount; i++, off += 0x18)
+        for (i = 0; i < spawnCount; i++)
         {
-            ModgfxPendingSpawn* item = (ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off);
+            ModgfxPendingSpawn* item = &context->pendingSpawns[i];
             if ((item->modelOrResource & 0xf7fff180) == 0 && item->param14 != 0)
             {
                 total += item->param14;
@@ -1529,8 +1537,9 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
     }
 
     arr = (PartfxEffectState**)gPartfxActiveEffects;
-    arr[slot] =
-        (PartfxEffectState*)mmAlloc(base0 + 0x240 + spawnCount * 0x18 + total * 2, 0x15, 0);
+    arr[slot] = (PartfxEffectState*)mmAlloc(
+        sizeof(PartfxEffectState) + base0 + 0x100 + spawnCount * sizeof(ModgfxPendingSpawn) + total * 2,
+        0x15, 0);
     if (arr[slot] == NULL)
     {
         partfx_freeEffectsBySequence(0, 0);
@@ -1570,14 +1579,14 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
     }
     if ((context->flags & 0x800) == 0)
     {
-        for (i = 0, off = i; i < 3; off += 4, i++)
+        for (i = 0; i < 3; i++)
         {
             s16* sd;
             int j;
             int bias;
             u8* dstc;
 
-            dstc = (u8*)((PartfxEffectState*)((u8*)arr[slot] + off))->colorBuffers[0];
+            dstc = arr[slot]->colorBuffers[i];
             bias = 0;
             j = 0;
             sd = colorData;
@@ -1587,9 +1596,9 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
                 {
                     bias = context->drawGroupStride;
                 }
-                dstc[1] = sd[0] - bias;
-                dstc[2] = sd[1] - bias;
-                dstc[3] = sd[2] - bias;
+                dstc[1] = fhReadBES16(&sd[0]) - bias;
+                dstc[2] = fhReadBES16(&sd[1]) - bias;
+                dstc[3] = fhReadBES16(&sd[2]) - bias;
                 dstc += 0x10;
                 sd += 3;
             }
@@ -1611,26 +1620,26 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
 
     if ((context->flags & 0x800) == 0)
     {
-        for (i = 0, off = i; i < 3; off += 4, i++)
+        for (i = 0; i < 3; i++)
         {
             int j;
             s16* sb;
             u8* dstv;
-            dstv = (u8*)((PartfxEffectState*)((u8*)arr[slot] + off))->vertexBuffers[0];
+            dstv = arr[slot]->vertexBuffers[i];
             sb = vertexData;
             for (j = 0; j < vertexCount; j++)
             {
-                *(s16*)(dstv + 0) = sb[0];
-                *(s16*)(dstv + 2) = sb[1];
-                *(s16*)(dstv + 4) = sb[2];
+                *(s16*)(dstv + 0) = fhReadBES16(&sb[0]);
+                *(s16*)(dstv + 2) = fhReadBES16(&sb[1]);
+                *(s16*)(dstv + 4) = fhReadBES16(&sb[2]);
                 if (arr[slot]->textureResource != NULL)
                 {
                     *(s16*)(dstv + 8) =
                         128.0f *
-                        ((f32)sb[3] / (f32)((Texture*)arr[slot]->textureResource)->width);
+                        ((f32)fhReadBES16(&sb[3]) / (f32)((Texture*)arr[slot]->textureResource)->width);
                     *(s16*)(dstv + 0xa) =
                         128.0f *
-                        ((f32)sb[4] / (f32)((Texture*)arr[slot]->textureResource)->height);
+                        ((f32)fhReadBES16(&sb[4]) / (f32)((Texture*)arr[slot]->textureResource)->height);
                 }
                 dstv[0xc] = 0xff;
                 dstv[0xd] = 0xff;
@@ -1659,68 +1668,39 @@ s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount,
     arr[slot]->stageDurations[4] = context->sequenceParams[4];
     arr[slot]->stageDurations[5] = context->sequenceParams[5];
     arr[slot]->stageDurations[6] = context->sequenceParams[6];
-    emitterAddress = base0;
-    emitterAddress += (int)arr[slot]->inlineData;
-    emitterAddress += 0x100;
-    arr[slot]->emitterCommands = (u8*)emitterAddress;
+    arr[slot]->emitterCommands = (u8*)arr[slot]->inlineData + base0 + 0x100;
     arr[slot]->auxSequenceBuffer = NULL;
     if (total != 0)
     {
         arr[slot]->auxSequenceBuffer =
             (u8*)arr[slot]->emitterCommands +
-            context->pendingSpawnCount * 0x18;
+            context->pendingSpawnCount * sizeof(ModgfxPendingSpawn);
     }
 
     {
         u8* dst = arr[slot]->auxSequenceBuffer;
-        for (i = 0, off = i; i < arr[slot]->emitterCount; off += 0x18, i++)
+        for (i = 0; i < arr[slot]->emitterCount; i++)
         {
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->sequenceIndex = ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->sequenceIndex;
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->param14 = ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->param14;
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->param10 = 0;
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->modelOrResource =
-                ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->modelOrResource;
-            if ((((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                     ->modelOrResource &
-                 0xf7fff180) == 0 &&
-                ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                        ->param14 != 0)
+            ModgfxPendingSpawn* emitter = &((ModgfxPendingSpawn*)arr[slot]->emitterCommands)[i];
+            ModgfxPendingSpawn* pending = &context->pendingSpawns[i];
+
+            emitter->sequenceIndex = pending->sequenceIndex;
+            emitter->param14 = pending->param14;
+            emitter->param10 = NULL;
+            emitter->modelOrResource = pending->modelOrResource;
+            if ((emitter->modelOrResource & 0xf7fff180) == 0 && emitter->param14 != 0)
             {
                 int k;
-                ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                    ->param10 = 0;
-                *(u8**)&((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands +
-                                               off))
-                     ->param10 = dst;
-                dst += ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands +
-                                              off))
-                           ->param14 *
-                       2;
-                for (k = 0;
-                     k <
-                     ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands +
-                                            off))
-                         ->param14;
-                     k++)
+                emitter->param10 = dst;
+                dst += emitter->param14 * 2;
+                for (k = 0; k < emitter->param14; k++)
                 {
-                    *(s16*)(*(u8**)&((ModgfxPendingSpawn*)((u8*)arr[slot]
-                                                               ->emitterCommands +
-                                                           off))
-                                 ->param10 +
-                            k * 2) =
-                        *(s16*)(*(u8**)((u8*)&((ModgfxPendingSpawn*)context->pendingSpawns)->param10 + off) + k * 2);
+                    ((s16*)emitter->param10)[k] = fhReadBES16(&((s16*)pending->param10)[k]);
                 }
             }
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->posX = ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->posX;
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->posY = ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->posY;
-            ((ModgfxPendingSpawn*)((u8*)arr[slot]->emitterCommands + off))
-                ->posZ = ((ModgfxPendingSpawn*)((u8*)context->pendingSpawns + off))->posZ;
+            emitter->posX = pending->posX;
+            emitter->posY = pending->posY;
+            emitter->posZ = pending->posZ;
         }
     }
 
@@ -1844,33 +1824,36 @@ void dll_0B_initialise(void)
     }
 }
 
-Dll0BDescriptorTable dll_0B_funcs = {{0x00000000,
-                                      0x00000000,
-                                      0x00000000,
-                                      0x00180000,
-                                      (uintptr_t)dll_0B_initialise,
-                                      (uintptr_t)dll_0B_release,
-                                      0x00000000,
-                                      (uintptr_t)dll_0B_onMapSetup,
-                                      (uintptr_t)dll_0B_spawnEffect,
-                                      (uintptr_t)dll_0B_updateActiveEffects,
-                                      (uintptr_t)dll_0B_releaseAll,
-                                      (uintptr_t)dll_0B_freeSourceEffects,
-                                      (uintptr_t)dll_0B_detachSource,
-                                      (uintptr_t)dll_0B_renderEffects,
-                                      (uintptr_t)dll_0B_releaseHandle,
-                                      (uintptr_t)dll_0B_func0B,
-                                      (uintptr_t)dll_0B_func0C,
-                                      (uintptr_t)dll_0B_func0D,
-                                      (uintptr_t)dll_0B_markSourceFrameUpdated,
-                                      (uintptr_t)dll_0B_beginSequence,
-                                      (uintptr_t)dll_0B_resetSequenceSpawns,
-                                      (uintptr_t)dll_0B_addSequenceSpawn,
-                                      (uintptr_t)dll_0B_nextSequenceParam,
-                                      (uintptr_t)dll_0B_setSequenceParamIndex,
-                                      (uintptr_t)dll_0B_setSequenceParamValue,
-                                      (uintptr_t)dll_0B_setSequenceParams,
-                                      (uintptr_t)dll_0B_spawnSequence,
-                                      (uintptr_t)dll_0B_addSequenceFlags,
-                                      (uintptr_t)dll_0B_getLastSpawnHandle,
-                                      0x00000000}};
+Dll0BDescriptorTable dll_0B_funcs = {
+    .metadata = {0x00000000, 0x00000000, 0x00000000, 0x00180000},
+    .initialise = dll_0B_initialise,
+    .release = dll_0B_release,
+    .interface = {
+        .pad00_slots = {NULL},
+        .onMapSetup = dll_0B_onMapSetup,
+        .spawnEffect = (ModgfxSpawnEffectFn)dll_0B_spawnEffect,
+        .updateActiveEffects = (ModgfxUpdateActiveEffectsFn)dll_0B_updateActiveEffects,
+        .releaseAll = dll_0B_releaseAll,
+        .freeSourceEffects = dll_0B_freeSourceEffects,
+        .detachSource = dll_0B_detachSource,
+        .renderEffects = dll_0B_renderEffects,
+        .releaseHandle = dll_0B_releaseHandle,
+        .pad24_slots = {
+            dll_0B_func0B,
+            (ResourceDescriptorCallback)dll_0B_func0C,
+            (ResourceDescriptorCallback)dll_0B_func0D,
+        },
+        .markSourceFrameUpdated = (ModgfxMarkSourceFrameUpdatedFn)dll_0B_markSourceFrameUpdated,
+        .beginSequence = (ModgfxBeginSequenceFn)dll_0B_beginSequence,
+        .resetSequenceSpawns = dll_0B_resetSequenceSpawns,
+        .addSequenceSpawn = (ModgfxAddSequenceSpawnFn)dll_0B_addSequenceSpawn,
+        .nextSequenceParam = dll_0B_nextSequenceParam,
+        .setSequenceParamIndex = dll_0B_setSequenceParamIndex,
+        .setSequenceParamValue = dll_0B_setSequenceParamValue,
+        .setSequenceParams = dll_0B_setSequenceParams,
+        .spawnSequence = (ModgfxSpawnSequenceFn)dll_0B_spawnSequence,
+        .addSequenceFlags = dll_0B_addSequenceFlags,
+        .getLastSpawnHandle = dll_0B_getLastSpawnHandle,
+    },
+    .trailing = NULL,
+};

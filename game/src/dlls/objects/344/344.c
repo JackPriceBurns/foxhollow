@@ -103,10 +103,10 @@ void gunpowderBarrel_setHeldState(GameObject* obj) {
 
 void gunpowderBarrel_launchAtTarget(GameObject* obj, u8 usePlayerStrength) {
     int index;
-    u32* generators;
+    GameObject** generators;
     GameObject* generator;
     GunpowderBarrelPlacement* placement;
-    u32* generatorIter;
+    s16 generatorLinkId;
     int generatorCount;
     GunpowderBarrelState* state = obj->extra;
     PlayerState* playerState;
@@ -137,17 +137,16 @@ void gunpowderBarrel_launchAtTarget(GameObject* obj, u8 usePlayerStrength) {
     state->motionFlags = state->motionFlags | GUNPOWDER_BARREL_MOTION_FLAG_IN_FLIGHT;
     if (state->configFlags.returnHome != 0) {
         placement = (GunpowderBarrelPlacement*)obj->anim.placement;
+        generatorLinkId = fhReadBES16(&placement->generatorLinkId);
         generator = NULL;
-        if (placement->generatorLinkId != 0) {
-            generators = (u32*)objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
+        if (generatorLinkId != 0) {
+            generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
             index = 0;
-            generatorIter = generators;
             for (; index < generatorCount; index++) {
-                if (placement->generatorLinkId == barrelgener_getLinkId((GameObject*)(*generatorIter))) {
-                    generator = (GameObject*)generators[index];
+                if (generatorLinkId == barrelgener_getLinkId(generators[index])) {
+                    generator = generators[index];
                     break;
                 }
-                generatorIter++;
             }
         } else {
             generator = objGetNearestTypeTo(BARREL_GENERATOR_OBJECT_GROUP, obj, 0);
@@ -292,7 +291,7 @@ void gunpowderBarrel_triggerExplosion(GameObject* obj) {
     GameObject* hitObject;
     int generatorCount;
     u8* tricky;
-    int* timerObject;
+    GameObject* timerObject;
 
     state = obj->extra;
     if (ObjHits_GetPriorityHit(obj, &hitObject, 0, 0) != 0 ||
@@ -304,22 +303,21 @@ void gunpowderBarrel_triggerExplosion(GameObject* obj) {
     if (state->detonationTrigger != 0) {
         if (state->configFlags.returnHome) {
             int index;
-            u32* generators;
+            GameObject** generators;
             GameObject* generator;
             GunpowderBarrelPlacement* placement;
-            u32* generatorIter;
+            s16 generatorLinkId;
             placement = (GunpowderBarrelPlacement*)obj->anim.placement;
+            generatorLinkId = fhReadBES16(&placement->generatorLinkId);
             generator = NULL;
-            if (placement->generatorLinkId != 0) {
-                generators = (u32*)objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
+            if (generatorLinkId != 0) {
+                generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
                 index = 0;
-                generatorIter = generators;
                 for (; index < generatorCount; index++) {
-                    if (placement->generatorLinkId == barrelgener_getLinkId((GameObject*)(*generatorIter))) {
-                        generator = (GameObject*)generators[index];
+                    if (generatorLinkId == barrelgener_getLinkId(generators[index])) {
+                        generator = generators[index];
                         break;
                     }
-                    generatorIter++;
                 }
             } else {
                 generator = objGetNearestTypeTo(BARREL_GENERATOR_OBJECT_GROUP, obj, 0);
@@ -363,9 +361,9 @@ void gunpowderBarrel_triggerExplosion(GameObject* obj) {
             trickyImpress((GameObject*)tricky);
         }
         state->motionFlags = state->motionFlags & ~GUNPOWDER_BARREL_MOTION_FLAG_IN_FLIGHT;
-        timerObject = (int*)state->linkedTimerObject;
+        timerObject = state->linkedTimerObject;
         if (timerObject != 0) {
-            timer_clearManualFlags((GameObject*)(timerObject));
+            timer_clearManualFlags(timerObject);
         }
     }
 }
@@ -502,7 +500,7 @@ void gunpowderBarrel_free(GameObject* obj, int keepLinkedTimer) {
     objFreeObjectType(obj, GUNPOWDER_BARREL_OBJECT_GROUP);
     objFreeObjectType(obj, GUNPOWDER_BARREL_LOOSE_OBJECT_GROUP);
     if (state->fuseFrames != 0) {
-        (*gExpgfxInterface)->freeSource2((u32)obj);
+        (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     }
 }
 
@@ -674,8 +672,7 @@ void gunpowderBarrel_update(GameObject* obj) {
     }
     if (obj->childObjs[0] == NULL) {
         f32 timerRange = 50.0f;
-        if ((u32)(state->linkedTimerObject =
-                      objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, &timerRange)) != 0 &&
+        if ((state->linkedTimerObject = objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, &timerRange)) != NULL &&
             timer_isEffectMode(state->linkedTimerObject) != 0 && state->linkedTimerObject->ownerObj == NULL) {
             ObjLink_AttachChild(obj, state->linkedTimerObject, 0);
         }
@@ -720,24 +717,23 @@ void gunpowderBarrel_update(GameObject* obj) {
         }
         if (state->fuseFrames > GUNPOWDER_BARREL_FUSE_DURATION_FRAMES) {
             int index;
-            u32* generators;
+            GameObject** generators;
             GameObject* generator;
+            s16 generatorLinkId;
             if (state->heldFlags.playerHeld != 0) {
                 gunpowderBarrel_setPlayerHeldState(obj, 0);
             }
             generator = 0;
-            if (placement->generatorLinkId != 0) {
+            generatorLinkId = fhReadBES16(&placement->generatorLinkId);
+            if (generatorLinkId != 0) {
                 int generatorCount;
-                u32* generatorIter;
-                generators = (u32*)objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
+                generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
                 index = 0;
-                generatorIter = generators;
                 for (; index < generatorCount; index++) {
-                    if (placement->generatorLinkId == barrelgener_getLinkId((GameObject*)(*generatorIter))) {
-                        generator = (GameObject*)generators[index];
+                    if (generatorLinkId == barrelgener_getLinkId(generators[index])) {
+                        generator = generators[index];
                         break;
                     }
-                    generatorIter++;
                 }
             } else {
                 generator = objGetNearestTypeTo(BARREL_GENERATOR_OBJECT_GROUP, obj, 0);

@@ -72,8 +72,8 @@ typedef struct MoveLibState
     u8 phase;
     u8 needsReinit;
     u8 pad602[2];
-    GameObject* lastTarget;
-    GameObject* lockTarget;
+    u32 lastTarget;
+    u32 lockTarget;
     s16 yawLimitA;
     s16 yawLimitB;
     u8 pointCount;

@@ -34,14 +34,16 @@ u8 gCmbsrcColorCycleIndexTable[8] = {5, 6, 4, 0, 0, 0, 0, 0};
 
 u8 cmbsrc_shouldDeactivate(GameObject* obj, CmbSrcState* sourceState, CmbSrcMapData* mapData)
 {
+    s16 gameBit;
     u8 result = 0;
     f32 sunTime;
 
+    gameBit = fhReadBES16(&mapData->gameBit);
     if (sourceState->light != NULL && modelLightStruct_getActiveState(sourceState->light) != 2)
     {
         return 0;
     }
-    if (mapData->gameBit != -1 && mainGetBit(mapData->gameBit) == 0)
+    if (gameBit != -1 && mainGetBit(gameBit) == 0)
     {
         result = 1;
     }
@@ -59,14 +61,16 @@ u8 cmbsrc_shouldDeactivate(GameObject* obj, CmbSrcState* sourceState, CmbSrcMapD
 
 u8 cmbsrc_shouldActivate(GameObject* obj, CmbSrcState* sourceState, CmbSrcMapData* mapData)
 {
+    s16 gameBit;
     u8 result = 0;
     f32 sunTime;
 
+    gameBit = fhReadBES16(&mapData->gameBit);
     if (sourceState->light != NULL && modelLightStruct_getActiveState(sourceState->light) != 0)
     {
         return 0;
     }
-    if (mapData->gameBit != -1 && mainGetBit(mapData->gameBit) != 0)
+    if (gameBit != -1 && mainGetBit(gameBit) != 0)
     {
         result = 1;
     }
@@ -145,6 +149,7 @@ u8 cmbsrc_cycleColor(GameObject* cmbsrc, CmbSrcState* sourceState)
 void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
 {
     CmbSrcMapData* setup = (CmbSrcMapData*)cmbsrc->anim.placementData;
+    f32 radius = fhReadBEF32(&setup->radius);
     int colorIdx = 0;
     int effectMode = 0;
     int subMode = 0;
@@ -156,7 +161,7 @@ void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
     viewSlot = Camera_GetCurrent();
     if (sourceState->active == 0)
     {
-        sourceState->radius = 2.0f * setup->radius;
+        sourceState->radius = 2.0f * radius;
     }
     else
     {
@@ -164,8 +169,8 @@ void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
         f32 radiusScaled;
         f32 fullRadius;
         t = t;
-        radiusScaled = setup->radius / 4.0f;
-        fullRadius = 2.0f * setup->radius;
+        radiusScaled = radius / 4.0f;
+        fullRadius = 2.0f * radius;
         sourceState->radius += interpolate(t * (fullRadius - radiusScaled) + radiusScaled - sourceState->radius,
                                            0.1f, timeDelta);
     }
@@ -329,7 +334,7 @@ void cmbsrc_setExternalActive(GameObject* obj, u8 active)
 
 int cmbsrc_getExtraSize(void)
 {
-    return CMBSRC_EXTRA_STATE_BYTES;
+    return sizeof(CmbSrcState);
 }
 
 int cmbsrc_getObjectTypeId(void)
@@ -414,6 +419,7 @@ void cmbsrc_update(GameObject* cmbsrc)
 {
     CmbSrcState* state = cmbsrc->extra;
     CmbSrcMapData* setup = (CmbSrcMapData*)cmbsrc->anim.placementData;
+    s16 gameBit = fhReadBES16(&setup->gameBit);
 
     switch (state->active)
     {
@@ -430,9 +436,9 @@ void cmbsrc_update(GameObject* cmbsrc)
                 Sfx_StopObjectChannel(cmbsrc, CMBSRC_LOOP_SOUND_CHANNEL);
             }
             ObjHits_DisableObject(cmbsrc);
-            if (setup->gameBit != -1)
+            if (gameBit != -1)
             {
-                mainSetBits(setup->gameBit, 0);
+                mainSetBits(gameBit, 0);
             }
         }
         else
@@ -477,9 +483,9 @@ void cmbsrc_update(GameObject* cmbsrc)
             {
                 ObjHits_EnableObject(cmbsrc);
             }
-            if (setup->gameBit != -1)
+            if (gameBit != -1)
             {
-                mainSetBits(setup->gameBit, 1);
+                mainSetBits(gameBit, 1);
             }
             state->hitCharge = CMBSRC_MAX_HIT_CHARGE;
             state->inactiveTimer = 0.0f;
@@ -495,6 +501,7 @@ void cmbsrc_init(GameObject* cmbsrc, CmbSrcMapData* mapData)
     u8* c1;
     u8* c0;
     CmbSrcState* state = cmbsrc->extra;
+    f32 radius = fhReadBEF32(&mapData->radius);
     int lightVariant;
 
     switch (cmbsrc->anim.romDefNo)
@@ -631,7 +638,7 @@ void cmbsrc_init(GameObject* cmbsrc, CmbSrcMapData* mapData)
     {
         state->hitFlags.disabled = 1;
         ObjHitbox_SetSphereRadius(
-            &cmbsrc->anim, (int)(2.0f * (mapData->radius *
+            &cmbsrc->anim, (int)(2.0f * (radius *
                                (cmbsrc->anim.rootMotionScale * gCmbsrcColorRadiusScaleTable[mapData->colorIndex]))));
         if (mapData->flags & CMBSRC_MAP_ENABLE_HIT_VOLUME)
         {
@@ -661,7 +668,7 @@ void cmbsrc_init(GameObject* cmbsrc, CmbSrcMapData* mapData)
         }
     }
     state->colorCycleTimer = randomGetRange(0, 0x64);
-    state->radius = 2.0f * mapData->radius;
+    state->radius = 2.0f * radius;
     cmbsrc->animEventCallback = cmbsrc_updateAndReturnZero;
 }
 

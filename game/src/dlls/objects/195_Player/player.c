@@ -17602,34 +17602,30 @@ void playerRender(GameObject* obj, int a, int b, int c, int d, int flag)
         }
         {
             in2 = ((GameObject*)obj)->extra;
-            if (in2->heldObj != NULL && *(int*)((char*)in2->heldObj + 0xf8) == 1)
+            if (in2->heldObj != NULL && in2->heldObj->userData2 == 1)
             {
+                GameObject* heldObj = in2->heldObj;
                 ObjPath_GetPointWorldPosition((GameObject*)obj, 8, &px, &py, &pz, 0);
                 ObjPath_GetPointWorldPosition((GameObject*)obj, 9, &qx, &qy, &qz, 0);
                 px = 0.5f * (px + qx);
                 py = 0.5f * (py + qy);
                 pz = 0.5f * (pz + qz);
-                if (*(s16*)((char*)in2->heldObj + 0x46) == 0x112)
+                if (heldObj->anim.romDefNo == 0x112)
                 {
                     py += 2.0f;
                 }
-                *(f32*)((char*)in2->heldObj + 0xc) = *(f32*)((char*)in2->heldObj + 0x18) =
-                    px;
-                *(f32*)((char*)in2->heldObj + 0x10) =
-                    *(f32*)((char*)in2->heldObj + 0x1c) = py;
-                *(f32*)((char*)in2->heldObj + 0x14) =
-                    *(f32*)((char*)in2->heldObj + 0x20) = pz;
-                if ((s16*)((GameObject*)obj)->anim.parent != NULL)
+                heldObj->anim.localPosX = heldObj->anim.worldPosX = px;
+                heldObj->anim.localPosY = heldObj->anim.worldPosY = py;
+                heldObj->anim.localPosZ = heldObj->anim.worldPosZ = pz;
+                if (obj->anim.parentAnim != NULL)
                 {
-                    *(s16*)in2->heldObj =
-                        *(s16*)((GameObject*)obj)->anim.parent + ((GameObject*)obj)->anim.rotX;
+                    heldObj->anim.rotX = obj->anim.parentAnim->rotX + obj->anim.rotX;
                 }
                 else
                 {
-                    *(s16*)in2->heldObj = in2->targetYaw;
+                    heldObj->anim.rotX = in2->targetYaw;
                 }
-                VEHICLE_INTERFACE(in2->heldObj)
-                    ->render((GameObject*)in2->heldObj, 0, 0, 0, 0, -1);
+                VEHICLE_INTERFACE(heldObj)->render(heldObj, 0, 0, 0, 0, -1);
             }
         }
         if (inner->knockbackTimer > 0.0f || (inner->pendingFxFlags & 2) != 0)
@@ -17824,7 +17820,8 @@ void playerDoHitDetection(GameObject* obj)
         }
         if ((((PlayerState*)inner)->flags360 & 2) != 0)
         {
-            ObjAnimComponent* h = *(void**)((char*)inner + 0xdc);
+            ObjAnimComponent* h =
+                ((PlayerState*)inner)->baddie.curvesCollision.segmentHits.objects[3];
             if (h != NULL &&
                 ((fl = h->modelInstance->flags) & OBJMODEL_FLAG_SKIP_RESET_UPDATE) != 0 &&
                 (fl & 0x8000) == 0)

@@ -10,6 +10,7 @@
 #include "main/dll/FRONT/POST.h"
 #include "main/obj_path.h"
 #include "main/obj_query.h"
+#include "main/obj_list.h"
 #include "main/objtype.h"
 #include "main/frame_timing.h"
 #include "main/vecmath.h"
@@ -22,7 +23,7 @@
 
 #define MOVELIB_CURVE_WALK_DONE 0x10
 
-extern u8 gMoveLibDefaultMoveData[];
+extern s16 gMoveLibDefaultMoveData[];
 
 typedef struct ProjNearSearch
 {
@@ -31,6 +32,33 @@ typedef struct ProjNearSearch
     f32 dy;
     f32 dz;
 } ProjNearSearch;
+
+static u32 moveLibTargetToHandle(GameObject* target)
+{
+    return (u32)(uintptr_t)target;
+}
+
+static GameObject* moveLibTargetFromHandle(u32 handle)
+{
+    GameObject** objects;
+    int count;
+    int i;
+
+    if (handle == 0)
+    {
+        return NULL;
+    }
+
+    objects = ObjList_GetObjects(NULL, &count);
+    for (i = 0; i < count; i++)
+    {
+        if (moveLibTargetToHandle(objects[i]) == handle)
+        {
+            return objects[i];
+        }
+    }
+    return NULL;
+}
 
 int dll_2E_func0F_ret_0(void)
 {
@@ -422,7 +450,7 @@ int dll_2E_updateSequenceTurn(GameObject* obj, ObjSeqState* seq, MoveLibState* s
                 s->animPhase = 0.005f;
                 break;
             }
-            s->lastTarget = player;
+            s->lastTarget = moveLibTargetToHandle(player);
             ObjAnim_AdvanceCurrentMove(obj, s->animPhase, framesThisStep, NULL);
             if (s->phase == MOVELIB_PHASE_FINISH)
             {
@@ -494,8 +522,8 @@ void dll_2E_initState(GameObject* obj, MoveLibState* s, s16 a, s16 b, int count)
     zero = 0.0f;
     s->animPhase = zero;
     s->setupFlag = 0;
-    s->lastTarget = NULL;
-    s->lockTarget = NULL;
+    s->lastTarget = 0;
+    s->lockTarget = 0;
     s->lookAtMaxDistance = 1000.0f;
     s->phase = MOVELIB_PHASE_IDLE;
     s->needsReinit = 1;
@@ -518,14 +546,14 @@ void dll_2E_setReattackDelay(MoveLibState* state, int reattackDelayBase, int rea
 
 void dll_2E_setLockTarget(MoveLibState* state, GameObject* target)
 {
-    state->lockTarget = target;
+    state->lockTarget = moveLibTargetToHandle(target);
 }
 
 void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
 {
     register int yawDelta;
-    register int seqHandle;
-    register u32 target;
+    register int* seqHandle;
+    register GameObject* target;
     GameObject* targetObj;
     int bit1;
     int ival;
@@ -538,7 +566,7 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
     sv.range = 1000.0f;
     targetYaw = 30.0f;
     yawDelta = 0;
-    seqHandle = (int)objGetLookAtJointKeys();
+    seqHandle = objGetLookAtJointKeys();
     (void)Obj_GetPlayerObject();
     if (s->needsReinit == 0)
     {
@@ -548,7 +576,7 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
             s->phase = MOVELIB_PHASE_HELD;
             if ((s->modeBits & 8) == 0)
             {
-                objJointTracksCaptureCurrentAngles(obj, (int*)seqHandle, (u32)s->pointCount, s->animChannels);
+                objJointTracksCaptureCurrentAngles(obj, seqHandle, (u32)s->pointCount, s->animChannels);
                 s->setupFlag = 0x50;
                 objJointTracksSetAngles(s->animChannels, (u32)s->pointCount, 0, 0);
             }
@@ -562,7 +590,7 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
             s->phase = MOVELIB_PHASE_IDLE;
             if ((s->modeBits & 8) == 0)
             {
-                objJointTracksCaptureCurrentAngles(obj, (int*)seqHandle, (u32)s->pointCount, s->animChannels);
+                objJointTracksCaptureCurrentAngles(obj, seqHandle, (u32)s->pointCount, s->animChannels);
                 s->setupFlag = 0x50;
             }
         }
@@ -570,7 +598,7 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
         {
             if (s->setupFlag != 0 && (s->modeBits & 8) == 0)
             {
-                s->setupFlag = !characterTrackJointList(obj, (int*)seqHandle, s->pointCount, s->animChannels);
+                s->setupFlag = !characterTrackJointList(obj, seqHandle, s->pointCount, s->animChannels);
             }
             else
             {
@@ -579,10 +607,9 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
         }
         else
         {
-            targetObj = s->lockTarget;
-            target = (u32)(targetObj != NULL ? targetObj
-                                             : (targetObj = objGetNearestTypeTo(MOVELIB_TARGET_OBJGROUP,
-                                                                                              obj, (f32*)&sv)));
+            targetObj = moveLibTargetFromHandle(s->lockTarget);
+            target = targetObj != NULL ? targetObj
+                                       : (targetObj = objGetNearestTypeTo(MOVELIB_TARGET_OBJGROUP, obj, (f32*)&sv));
             if (targetObj != NULL)
             {
                 if ((s->modeBits & 0x20) != 0)
@@ -603,13 +630,13 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                         s->targetZ = s->targetZ * blendA + obj->anim.localPosZ * blendB;
                     }
                 }
-                if ((s->reattackDelayBase != -1) && (target == (u32)s->lastTarget))
+                if ((s->reattackDelayBase != -1) && (moveLibTargetToHandle(target) == s->lastTarget))
                 {
                     ival = -framesThisStep + s->reattackTimer;
                     s->reattackTimer = ival;
                     if ((ival <= 0) && ((int)(s->reattackTimer + framesThisStep) > 0))
                     {
-                        objJointTracksCaptureCurrentAngles(obj, (int*)seqHandle, (u32)s->pointCount, s->animChannels);
+                        objJointTracksCaptureCurrentAngles(obj, seqHandle, (u32)s->pointCount, s->animChannels);
                         s->setupFlag = 0x50;
                         objJointTracksSetAngles(s->animChannels, (u32)s->pointCount, 0, 0);
                         s->phase = MOVELIB_PHASE_IDLE;
@@ -617,7 +644,7 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                     }
                     if (s->setupFlag != 0)
                     {
-                        s->setupFlag = !characterTrackJointList(obj, (int*)seqHandle, s->pointCount, s->animChannels);
+                        s->setupFlag = !characterTrackJointList(obj, seqHandle, s->pointCount, s->animChannels);
                     }
                     if (s->reattackTimer < -s->reattackDelayMin)
                     {
@@ -630,12 +657,12 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                 {
                     s->reattackTimer = s->reattackDelayBase;
                 }
-                if ((target != (u32)s->lastTarget) && (target != 0))
+                if ((moveLibTargetToHandle(target) != s->lastTarget) && (target != NULL))
                 {
-                    if (((GameObject*)target)->anim.hitReactState != NULL)
+                    if (target->anim.hitReactState != NULL)
                     {
                         ObjHitsPriorityState* hitShape =
-                            (ObjHitsPriorityState*)((GameObject*)target)->anim.hitReactState;
+                            (ObjHitsPriorityState*)target->anim.hitReactState;
                         if ((hitShape->shapeFlags & 2) != 0)
                         {
                             targetYaw = 4.0f * (float)(int)hitShape->primaryCapsuleOffsetB;
@@ -654,9 +681,9 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                         targetYaw = 30.0f;
                     }
                 }
-                if (target != 0)
+                if (target != NULL)
                 {
-                    yawDelta = Obj_GetYawDeltaToObject(obj, (GameObject*)target, NULL);
+                    yawDelta = Obj_GetYawDeltaToObject(obj, target, NULL);
                 }
                 if ((s->modeBits & 0x10) != 0)
                 {
@@ -665,12 +692,12 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                 }
                 ival = (short)yawDelta;
                 ival = (ival >= 0) ? ival : -ival;
-                if (((ival > 0x5555) || (target == 0)) ||
-                    (Vec_distance(&obj->anim.worldPosX, &((GameObject*)target)->anim.worldPosX) > s->lookAtMaxDistance))
+                if (((ival > 0x5555) || (target == NULL)) ||
+                    (Vec_distance(&obj->anim.worldPosX, &target->anim.worldPosX) > s->lookAtMaxDistance))
                 {
-                    if ((s->phase != MOVELIB_PHASE_IDLE) || ((target == 0 && ((u32)s->lastTarget != 0))))
+                    if ((s->phase != MOVELIB_PHASE_IDLE) || ((target == NULL && s->lastTarget != 0)))
                     {
-                        objJointTracksCaptureCurrentAngles(obj, (int*)seqHandle, (u32)s->pointCount, s->animChannels);
+                        objJointTracksCaptureCurrentAngles(obj, seqHandle, (u32)s->pointCount, s->animChannels);
                         s->setupFlag = 10;
                         objJointTracksSetAngles(s->animChannels, (u32)s->pointCount, 0, 0);
                         s->phase = MOVELIB_PHASE_IDLE;
@@ -678,28 +705,28 @@ void dll_2E_updateLookAt(GameObject* obj, MoveLibState* s)
                 }
                 else
                 {
-                    if ((target != (u32)s->lastTarget) || (s->phase == MOVELIB_PHASE_IDLE))
+                    if ((moveLibTargetToHandle(target) != s->lastTarget) || (s->phase == MOVELIB_PHASE_IDLE))
                     {
-                        objJointTracksCaptureCurrentAngles(obj, (int*)seqHandle, (u32)s->pointCount, s->animChannels);
+                        objJointTracksCaptureCurrentAngles(obj, seqHandle, (u32)s->pointCount, s->animChannels);
                         s->setupFlag = 1;
                     }
                     if ((s->modeBits & 8) != 0)
                     {
                         s->setupFlag = 0;
                     }
-                    objJointTracksAimAtTarget(obj, (GameObject*)target, &s->targetX,
+                    objJointTracksAimAtTarget(obj, target, &s->targetX,
                                               (s->setupFlag != 0) ? s->animChannels : NULL, s->turnTable, targetYaw, 8,
                                               s->yawLimitA);
                     s->phase = MOVELIB_PHASE_TURN;
                 }
-                *(u32*)&s->lastTarget = target;
+                s->lastTarget = moveLibTargetToHandle(target);
                 if (s->setupFlag == 0)
                 {
-                    s->lockTarget = NULL;
+                    s->lockTarget = 0;
                 }
                 if (((s->modeBits & 8) == 0) && (s->setupFlag != 0))
                 {
-                    s->setupFlag = !characterTrackJointList(obj, (int*)seqHandle, s->pointCount, s->animChannels);
+                    s->setupFlag = !characterTrackJointList(obj, seqHandle, s->pointCount, s->animChannels);
                 }
             }
         }
@@ -833,8 +860,7 @@ void dll_2E_initialise_nop(void)
 {
 }
 
-u8 gMoveLibDefaultMoveData[20] = {0x00, 0x23, 0x00, 0x23, 0x00, 0x23, 0x00, 0x23, 0x00, 0x23,
-                                  0x00, 0x23, 0x00, 0x23, 0x00, 0x23, 0x00, 0x23, 0x00, 0x23};
+s16 gMoveLibDefaultMoveData[10] = {0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23};
 
 typedef struct Dll2EDllInterface {
     u32 reserved0;

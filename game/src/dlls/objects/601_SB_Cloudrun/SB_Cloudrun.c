@@ -41,21 +41,10 @@
 #include "main/pad.h"
 #include "dlls/object_descriptor.h"
 #include "main/dll/ship_battle_api.h"
-#include "main/dll/dll_0255_snowbike.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 #include "main/objseq.h"
 #include "dlls/objects/488_SB_Galleon.h"
-
-void SB_CloudRunner_onSeqFree(GameObject* obj)
-{
-    SnowBikeState* state = obj->extra;
-    state->riderPosX = obj->anim.localPosX;
-    state->riderPosY = obj->anim.localPosY;
-    state->riderPosZ = obj->anim.localPosZ;
-    state->riderYawOnFree = (s16)(obj->anim.rotX - 0x4000);
-    state->riderPitchOnFree = obj->anim.rotZ;
-}
 
 
 typedef struct SBCloudRunnerBurstSetup
@@ -355,6 +344,16 @@ STATIC_ASSERT(offsetof(SBCloudRunnerState, done) == 0x6E);
 STATIC_ASSERT(offsetof(SBCloudRunnerState, stickX) == 0x70);
 STATIC_ASSERT(offsetof(SBCloudRunnerState, steerX) == 0x78);
 STATIC_ASSERT(sizeof(SBCloudRunnerState) == 0x84);
+
+void SB_CloudRunner_onSeqFree(GameObject* obj)
+{
+    SBCloudRunnerState* state = obj->extra;
+    state->spawnPosX = obj->anim.localPosX;
+    state->spawnPosY = obj->anim.localPosY;
+    state->spawnPosZ = obj->anim.localPosZ;
+    state->rotXAccum = (s16)(obj->anim.rotX - 0x4000);
+    state->rotZ = obj->anim.rotZ;
+}
 
 #define SBCLOUDRUNNER_OBJGROUP 0xa
 

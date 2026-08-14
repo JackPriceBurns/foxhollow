@@ -17,7 +17,7 @@
 #define DUSTMOTESOU_DEF_ID 0x05A0
 #define CMBSRC_OBJECT_DEF_BYTES 0xA0
 #define CMBSRC_PLACEMENT_BYTES 0x30
-#define CMBSRC_EXTRA_STATE_BYTES 0x28
+#define CMBSRC_EXTRA_STATE_BYTES 0x2C
 
 #define CMBSRC_SEQ_DEFAULT 0x06E8
 #define CMBSRC_SEQ_THUSTER_SOURCE 0x0758
@@ -114,16 +114,16 @@ STATIC_ASSERT(offsetof(CmbSrcMapData, glowProjectionMode) == 0x2C);
 
 STATIC_ASSERT(sizeof(CmbSrcState) == CMBSRC_EXTRA_STATE_BYTES);
 STATIC_ASSERT(offsetof(CmbSrcState, light) == 0x00);
-STATIC_ASSERT(offsetof(CmbSrcState, colorCycleTimer) == 0x10);
-STATIC_ASSERT(offsetof(CmbSrcState, inactiveTimer) == 0x14);
-STATIC_ASSERT(offsetof(CmbSrcState, radius) == 0x18);
-STATIC_ASSERT(offsetof(CmbSrcState, inactiveFrameCount) == 0x20);
-STATIC_ASSERT(offsetof(CmbSrcState, flags) == 0x22);
-STATIC_ASSERT(offsetof(CmbSrcState, colorCycleIndex) == 0x23);
-STATIC_ASSERT(offsetof(CmbSrcState, priorityHitType) == 0x24);
-STATIC_ASSERT(offsetof(CmbSrcState, active) == 0x25);
-STATIC_ASSERT(offsetof(CmbSrcState, hitCharge) == 0x26);
-STATIC_ASSERT(offsetof(CmbSrcState, hitFlags) == 0x27);
+STATIC_ASSERT(offsetof(CmbSrcState, colorCycleTimer) == 0x14);
+STATIC_ASSERT(offsetof(CmbSrcState, inactiveTimer) == 0x18);
+STATIC_ASSERT(offsetof(CmbSrcState, radius) == 0x1C);
+STATIC_ASSERT(offsetof(CmbSrcState, inactiveFrameCount) == 0x24);
+STATIC_ASSERT(offsetof(CmbSrcState, flags) == 0x26);
+STATIC_ASSERT(offsetof(CmbSrcState, colorCycleIndex) == 0x27);
+STATIC_ASSERT(offsetof(CmbSrcState, priorityHitType) == 0x28);
+STATIC_ASSERT(offsetof(CmbSrcState, active) == 0x29);
+STATIC_ASSERT(offsetof(CmbSrcState, hitCharge) == 0x2A);
+STATIC_ASSERT(offsetof(CmbSrcState, hitFlags) == 0x2B);
 
 extern ObjectDescriptor gCmbSrcObjDescriptor;
 extern u8 gCmbsrcColorCycleIndexTable[8];

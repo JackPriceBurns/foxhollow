@@ -5,10 +5,11 @@
 
 struct CMenuItemDef;
 struct GameObject;
+struct ObjModel;
 int cMenuSetItems(struct CMenuItemDef* items, char useTricky);
-int cMenuRingModelRenderFn(struct GameObject* obj, int block, int idx);
+int cMenuRingModelRenderFn(struct GameObject* obj, struct ObjModel* model, int idx);
 void drawTrickyHudOverlay(int obj, int unused1, int unused2);
-int cMenuRingIconRenderFn(struct GameObject* obj, int block, int idx);
+int cMenuRingIconRenderFn(struct GameObject* obj, struct ObjModel* model, int idx);
 void hudDrawCMenu(int p1, int p2, int p3);
 void cMenuUpdateRingRotation(void);
 

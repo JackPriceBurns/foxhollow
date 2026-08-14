@@ -383,14 +383,14 @@ void cloudaction_update(int p1, int p2, u8* state, int p4, int val)
     {
         return;
     }
-    envState->cloudActionEnvfxActId = (s16)((s16)cfg->envfxActId - 1);
+    envState->cloudActionEnvfxActId = (s16)(fhReadBE16(&cfg->envfxActId) - 1);
     if ((cfg->flags2 & 1) == 0)
     {
         return;
     }
     lbl_803DB618[0] = lbl_803DB618[1];
     lbl_803DB618[1] = (u16)val;
-    gCloudActionRuntime.textureScrollStep = cfg->scrollSpeed / 3.0f;
+    gCloudActionRuntime.textureScrollStep = fhReadBEF32(&cfg->scrollSpeed) / 3.0f;
     gCloudActionRuntime.pad19 = 0;
     if ((cfg->flags2 & 4) != 0)
     {

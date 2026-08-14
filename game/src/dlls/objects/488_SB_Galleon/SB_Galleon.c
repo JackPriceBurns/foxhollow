@@ -16,6 +16,7 @@
 #include "main/objseq.h"
 #include "main/screen_transition.h"
 #include "main/gamebits.h"
+#include "main/gamebit_ids.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
@@ -49,7 +50,6 @@
 #define DBPROTECTION_GAMEBIT_CYCLE_B_DONE     0xa3f
 #define DBPROTECTION_GAMEBIT_TRANSITION_ARMED 0x9f
 #define DBPROTECTION_GAMEBIT_TRANSITION_USED  0xa0
-#define DBPROTECTION_GAMEBIT_TRANSITION_READY 0x91c
 #define DBPROTECTION_GAMEBIT_MUTE_SFX         0xa71
 #define DBPROTECTION_ENVFX_A                  0x467e7
 #define DBPROTECTION_ENVFX_B                  0x467e8
@@ -756,7 +756,7 @@ void SB_Galleon_updateShield(GameObject* obj) {
 
     if (mainGetBit(DBPROTECTION_GAMEBIT_TRANSITION_ARMED) != 0 &&
         mainGetBit(DBPROTECTION_GAMEBIT_TRANSITION_USED) == 0 &&
-        mainGetBit(DBPROTECTION_GAMEBIT_TRANSITION_READY) != 0) {
+        mainGetBit(GAMEBIT_ITEM_WMGoldKey_Got) != 0) {
         gSB_GalleonTransitionPending = 1;
         mainSetBits(DBPROTECTION_GAMEBIT_TRANSITION_USED, 1);
         (*gScreenTransitionInterface)->start(0xa, SCREEN_TRANSITION_BLACK);
@@ -1157,6 +1157,8 @@ void SB_Galleon_skipBattle(GameObject* obj, GameObject* cloudRunner) {
     state->stage = 7;
     state->headingLatch = 200;
     state->fadeTimer = 0;
+    mainSetBits(GAMEBIT_ITEM_WMGoldKey_Got, 1);
+    mainSetBits(GAMEBIT_EnableCMenu, 1);
 }
 
 #endif

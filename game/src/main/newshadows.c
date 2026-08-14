@@ -701,12 +701,12 @@ void renderShadows(int unused0, int unused1, int unused2)
             else if ((u8)texIdx < 5)
             {
                 w = 0x80;
-                orthoHalf = 0.25f;
+                orthoHalf = 0.5f;
             }
             else
             {
                 w = 0x40;
-                orthoHalf = 0.125f;
+                orthoHalf = 0.5f;
             }
             if ((u8)texIdx == 0)
                 screenW = w << 1;
@@ -805,7 +805,7 @@ void renderShadows(int unused0, int unused1, int unused2)
                     Texture** texturePool = gNewShadowCastTextures;
                     texture = texturePool + (u8)texIdx;
                     castSlot->texture = *texture;
-                    castSlot->mode = gShadowCastModeTable[(u8)texIdx];
+                    castSlot->mode = 0xff;
                     objRenderShadowIfVisible(obj, 0, 0, 0, 0, 0);
                     if (casterPtr->flags == 2)
                     {
@@ -827,14 +827,11 @@ void renderShadows(int unused0, int unused1, int unused2)
                     }
                     else
                     {
-                        if ((u8)texIdx == 0)
-                        {
-                            gxSetZMode_(1, GX_LEQUAL, 1);
-                            GXSetTexCopySrc(0, 0, screenW, screenW);
-                            GXSetTexCopyDst(w, w, GX_CTF_R4, GX_TRUE);
-                            GXCopyTex(*texture + 1, GX_TRUE);
-                            castSlot->texture = *texture;
-                        }
+                        gxSetZMode_(1, GX_LEQUAL, 1);
+                        GXSetTexCopySrc(0, 0, screenW, screenW);
+                        GXSetTexCopyDst(w, w, GX_CTF_R4, GX_TRUE);
+                        GXCopyTex(*texture + 1, GX_TRUE);
+                        castSlot->texture = *texture;
                         texIdx++;
                     }
                 }
@@ -879,18 +876,6 @@ void renderShadows(int unused0, int unused1, int unused2)
             memcpy(&obj->anim.localPos, mc48, sizeof(Vec3f));
             memcpy(&obj->anim.worldPos, mc54p, sizeof(Vec3f));
         }
-    }
-    if ((u8)texIdx > 1)
-    {
-        GXRenderModeObj* renderMode;
-        gxSetZMode_(1, GX_LEQUAL, 1);
-        renderMode = gRenderModeObj;
-        GXSetCopyFilter(0, renderMode->sample_pattern, 0, renderMode->vfilter);
-        GXSetTexCopySrc(0, 0, 0x100, 0x100);
-        GXSetTexCopyDst(0x100, 0x100, GX_CTF_R8, GX_FALSE);
-        GXCopyTex(gNewShadowCastTextures[1] + 1, GX_TRUE);
-        GXPixModeSync();
-        setDisplayCopyFilter();
     }
     clearScreenWidth();
     slot->x = sCamX;
@@ -1102,7 +1087,7 @@ uintptr_t getNewShadowReflectionGradientTexture(void)
     return gNewShadowReflectionGradientTexture;
 }
 
-u32 getNewShadowInverseRampTexture(void)
+uintptr_t getNewShadowInverseRampTexture(void)
 {
     return gNewShadowInverseRampTexture;
 }
@@ -1766,16 +1751,19 @@ void allocLotsOfTextures(void)
 
     u8 saved = testAndSet_onlyUseHeap3(1);
 
-    renderTargets[0] = textureAlloc(0x100, 0x100, 0, 0, 0, 0, 0, 1, 1);
-    renderTargets[1] = textureAlloc(0x100, 0x100, 1, 0, 0, 0, 0, 0, 0);
-    renderTargets[2] = renderTargets[1];
-    renderTargets[3] = renderTargets[1];
-    renderTargets[4] = renderTargets[1];
-    renderTargets[5] = renderTargets[1];
-    renderTargets[6] = renderTargets[1];
-    renderTargets[7] = renderTargets[1];
-    memset(renderTargets[0] + 1, 0, renderTargets[0]->dataSize);
-    DCFlushRange(renderTargets[0] + 1, renderTargets[0]->dataSize);
+    for (i = 0; i < NEW_SHADOW_MAX_CAST_TEXTURES; i++)
+    {
+        int size;
+        if (i < 3)
+            size = 0x100;
+        else if (i < 5)
+            size = 0x80;
+        else
+            size = 0x40;
+        renderTargets[i] = textureAlloc(size, size, 0, 0, 0, 0, 0, 1, 1);
+        memset(renderTargets[i] + 1, 0, renderTargets[i]->dataSize);
+        DCFlushRange(renderTargets[i] + 1, renderTargets[i]->dataSize);
+    }
 
     gNewShadowReflectionTexture = textureAlloc(0x140, 0xf0, 4, 0, 0, 0, 0, 1, 1);
     gNewShadowReflectionSmallTexture = (uintptr_t)textureAlloc(0x50, 0x3c, 4, 0, 0, 0, 0, 1, 1);

@@ -4,7 +4,7 @@
 #include "types.h"
 
 uintptr_t getNewShadowFalloffTexture(void);
-u32 getNewShadowInverseRampTexture(void);
+uintptr_t getNewShadowInverseRampTexture(void);
 void allocLotsOfTextures(void);
 
 #endif /* MAIN_NEWSHADOWS_TEXTURE_API_H_ */

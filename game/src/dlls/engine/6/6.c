@@ -98,10 +98,16 @@ void sky2GetTargetColor(int* red, int* green, int* blue, f32* blend)
 
 void sky2ResetStateFromConfig(u8* cfg, u8 flags)
 {
+    Sky2Config* config;
+    u16 fadeDurationA;
+    u16 fadeDurationB;
     int i;
     int idx;
 
-    if (((Sky2Config*)cfg)->flags & 0x80)
+    config = (Sky2Config*)cfg;
+    fadeDurationA = fhReadBE16(&config->fadeDurationA);
+    fadeDurationB = fhReadBE16(&config->fadeDurationB);
+    if (config->flags & 0x80)
     {
         idx = 1;
     }
@@ -133,8 +139,10 @@ void sky2ResetStateFromConfig(u8* cfg, u8 flags)
         ((SkySlotAnim*)(&gSky2State)[idx])->target[i] = (f32)(u32)((Sky2Config*)cfg)->redKeys[gSkyConfigFieldIndices[i]];
         ((SkySlotAnim*)(&gSky2State)[idx])->target[i + 0xb] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[gSkyConfigFieldIndices[i]];
         ((SkySlotAnim*)(&gSky2State)[idx])->target[i + 0x16] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[gSkyConfigFieldIndices[i]];
-        ((SkySlotAnim*)(&gSky2State)[idx])->target2[i] = (f32)(u32)((Sky2Config*)cfg)->fogNearKeys[gSkyConfigFieldIndices[i]];
-        ((SkySlotAnim*)(&gSky2State)[idx])->target2[i + 0xb] = (f32)(u32)((Sky2Config*)cfg)->fogFarKeys[gSkyConfigFieldIndices[i]];
+        ((SkySlotAnim*)(&gSky2State)[idx])->target2[i] =
+            (f32)fhReadBE16(&config->fogNearKeys[gSkyConfigFieldIndices[i]]);
+        ((SkySlotAnim*)(&gSky2State)[idx])->target2[i + 0xb] =
+            (f32)fhReadBE16(&config->fogFarKeys[gSkyConfigFieldIndices[i]]);
     }
     ((SkySlotAnim*)(&gSky2State)[idx])->flags4 = cfg[0x58];
     ((SkySlotAnim*)(&gSky2State)[idx])->flags6 = ((Sky2Config*)cfg)->flags2;
@@ -142,33 +150,33 @@ void sky2ResetStateFromConfig(u8* cfg, u8 flags)
     ((SkySlotAnim*)(&gSky2State)[idx])->wobbleAmp = 0.0f;
     ((SkySlotAnim*)(&gSky2State)[idx])->b314 = -1;
     ((SkySlotAnim*)(&gSky2State)[idx])->wobbleOffset = 0.0f;
-    if (((Sky2Config*)cfg)->fadeDurationA == 0)
+    if (fadeDurationA == 0)
     {
-        ((Sky2Config*)cfg)->fadeDurationA = 1;
+        fadeDurationA = 1;
     }
-    if (((Sky2Config*)cfg)->fadeDurationA != 0)
+    if (fadeDurationA != 0)
     {
-        ((SkySlotAnim*)(&gSky2State)[idx])->fadeDurationA = ((Sky2Config*)cfg)->fadeDurationA;
+        ((SkySlotAnim*)(&gSky2State)[idx])->fadeDurationA = fadeDurationA;
         ((SkySlotAnim*)(&gSky2State)[idx])->unk48 = 1;
-        ((SkySlotAnim*)(&gSky2State)[idx])->unk08 = ((Sky2Config*)cfg)->skyTexId0;
-        ((SkySlotAnim*)(&gSky2State)[idx])->unk5C = 1.0f / (f32)(u32)((Sky2Config*)cfg)->fadeDurationA;
+        ((SkySlotAnim*)(&gSky2State)[idx])->unk08 = fhReadBE16(&config->skyTexId0);
+        ((SkySlotAnim*)(&gSky2State)[idx])->unk5C = 1.0f / (f32)fadeDurationA;
     }
     else
     {
         ((SkySlotAnim*)(&gSky2State)[idx])->fadeDurationA = 0;
         ((SkySlotAnim*)(&gSky2State)[idx])->unk5C = 1.0f;
     }
-    if (((Sky2Config*)cfg)->fadeDurationB == 0)
+    if (fadeDurationB == 0)
     {
-        ((Sky2Config*)cfg)->fadeDurationB = 1;
+        fadeDurationB = 1;
     }
-    if (((Sky2Config*)cfg)->fadeDurationB != 0)
+    if (fadeDurationB != 0)
     {
-        ((SkySlotAnim*)(&gSky2State)[idx])->fadeDurationB = ((Sky2Config*)cfg)->fadeDurationB;
+        ((SkySlotAnim*)(&gSky2State)[idx])->fadeDurationB = fadeDurationB;
         ((SkySlotAnim*)(&gSky2State)[idx])->fadeRate =
-            255.0f / (60.0f * ((f32)(u32)((Sky2Config*)cfg)->fadeDurationB / 10.0f));
+            255.0f / (60.0f * ((f32)fadeDurationB / 10.0f));
         ((SkySlotAnim*)(&gSky2State)[idx])->unk0C = 0x5dc;
-        ((SkySlotAnim*)(&gSky2State)[idx])->unk60 = 1.0f / (f32)(u32)((Sky2Config*)cfg)->fadeDurationB;
+        ((SkySlotAnim*)(&gSky2State)[idx])->unk60 = 1.0f / (f32)fadeDurationB;
     }
     else
     {
@@ -916,6 +924,7 @@ void sky2_onMapSetup(void)
 
 void sky2_update(int a, int b, u8* cfg)
 {
+    Sky2Config* config;
     SaveGameEnvState* env;
     u16 bits;
     SkySlotAnim* st;
@@ -929,9 +938,10 @@ void sky2_update(int a, int b, u8* cfg)
     env = saveGameGetEnvState();
     if (cfg != NULL)
     {
-        (&gSky2EnvfxActIndex)[1] = gSky2EnvfxActIndex = (s16)((Sky2Config*)cfg)->envfxActId - 1;
-        env->sky2EnvfxActId = (s16)((Sky2Config*)cfg)->envfxActId - 1;
-        flags58 = ((Sky2Config*)cfg)->flags;
+        config = (Sky2Config*)cfg;
+        (&gSky2EnvfxActIndex)[1] = gSky2EnvfxActIndex = (s16)(fhReadBE16(&config->envfxActId) - 1);
+        env->sky2EnvfxActId = (s16)(fhReadBE16(&config->envfxActId) - 1);
+        flags58 = config->flags;
         b1 = (flags58 & 0x80) ? 1 : 0;
         if (((SkySlotAnim*)(&gSky2State)[b1])->b317 == 0)
         {
@@ -963,12 +973,12 @@ void sky2_update(int a, int b, u8* cfg)
                 ((SkySlotAnim*)(&gSky2State)[b1])->target[i + 0xb] = (f32)(u32)((Sky2Config*)cfg)->greenKeys[gSkyConfigFieldIndices[i]];
                 ((SkySlotAnim*)(&gSky2State)[b1])->target[i + 0x16] = (f32)(u32)((Sky2Config*)cfg)->blueKeys[gSkyConfigFieldIndices[i]];
                 ((SkySlotAnim*)(&gSky2State)[b1])->target2[i] =
-                    (f32)(u32)((Sky2Config*)cfg)->fogNearKeys[gSkyConfigFieldIndices[i]];
+                    (f32)fhReadBE16(&config->fogNearKeys[gSkyConfigFieldIndices[i]]);
                 ((SkySlotAnim*)(&gSky2State)[b1])->target2[i + 0xb] =
-                    (f32)(u32)((Sky2Config*)cfg)->fogFarKeys[gSkyConfigFieldIndices[i]];
+                    (f32)fhReadBE16(&config->fogFarKeys[gSkyConfigFieldIndices[i]]);
             }
-            ((SkySlotAnim*)(&gSky2State)[b1])->fadeDurationA = ((Sky2Config*)cfg)->fadeDurationA;
-            ((SkySlotAnim*)(&gSky2State)[b1])->fadeDurationB = ((Sky2Config*)cfg)->fadeDurationB;
+            ((SkySlotAnim*)(&gSky2State)[b1])->fadeDurationA = fhReadBE16(&config->fadeDurationA);
+            ((SkySlotAnim*)(&gSky2State)[b1])->fadeDurationB = fhReadBE16(&config->fadeDurationB);
             ((SkySlotAnim*)(&gSky2State)[b1])->b314 = -1;
             if ((((Sky2Config*)cfg)->flags2 & 0x20) != 0)
             {

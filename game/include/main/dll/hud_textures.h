@@ -10,7 +10,7 @@
  * maybetemplate.c and dll_0000_gameui.c; unobserved ranges padded.
  */
 typedef struct HudTextures {
-    u8 pad0[0x28 - 0x0];
+    void* pad0[0x28 / 4];
     void * tex28;
     void * tex2C;
     void * tex30;
@@ -18,48 +18,48 @@ typedef struct HudTextures {
     void * tex38;
     void * tex3C;
     void * tex40;
-    u8 pad44[0x5C - 0x44];
+    void* pad44[(0x5C - 0x44) / 4];
     void * tex5C;
-    u8 pad60[0x80 - 0x60];
+    void* pad60[(0x80 - 0x60) / 4];
     void * tex80;
-    u8 pad84[0xB8 - 0x84];
+    void* pad84[(0xB8 - 0x84) / 4];
     void * texB8;
     void * texBC;
     void * texC0;
-    u8 padC4[0xF8 - 0xC4];
+    void* padC4[(0xF8 - 0xC4) / 4];
     void * texF8;
     void * texFC;
     void * tex100;
     void * tex104;
-    u8 pad108[0x10C - 0x108];
+    void* pad108[(0x10C - 0x108) / 4];
     void * tex10C;
     void * tex110;
     void * tex114;
     void * tex118;
     void * tex11C;
-    u8 pad120[0x134 - 0x120];
+    void* pad120[(0x134 - 0x120) / 4];
     void * tex134;
-    u8 pad138[0x13C - 0x138];
+    void* pad138[(0x13C - 0x138) / 4];
     Texture* textBoxFrameTex[5]; /* 0x13C: the five game-text box frame textures
         copied into gGameTextBoxFrameTextures */
     void * tex150;
-    u8 pad154[0x170 - 0x154];
+    void* pad154[(0x170 - 0x154) / 4];
     void * tex170;
-    u8 pad174[0x17C - 0x174];
+    void* pad174[(0x17C - 0x174) / 4];
     void * tex17C;
     void * tex180;
     void * tex184;
-    u8 pad188[0x198 - 0x188];
+    void* pad188[(0x198 - 0x188) / 4];
 } HudTextures;
 
-STATIC_ASSERT(sizeof(HudTextures) == 0x198);
-STATIC_ASSERT(offsetof(HudTextures, tex28) == 0x28);
-STATIC_ASSERT(offsetof(HudTextures, tex5C) == 0x5C);
-STATIC_ASSERT(offsetof(HudTextures, tex80) == 0x80);
-STATIC_ASSERT(offsetof(HudTextures, texBC) == 0xBC);
-STATIC_ASSERT(offsetof(HudTextures, texF8) == 0xF8);
-STATIC_ASSERT(offsetof(HudTextures, tex134) == 0x134);
-STATIC_ASSERT(offsetof(HudTextures, textBoxFrameTex) == 0x13C);
-STATIC_ASSERT(offsetof(HudTextures, tex170) == 0x170);
+STATIC_ASSERT(sizeof(HudTextures) == sizeof(void*) * (0x198 / 4));
+STATIC_ASSERT(offsetof(HudTextures, tex28) == sizeof(void*) * (0x28 / 4));
+STATIC_ASSERT(offsetof(HudTextures, tex5C) == sizeof(void*) * (0x5C / 4));
+STATIC_ASSERT(offsetof(HudTextures, tex80) == sizeof(void*) * (0x80 / 4));
+STATIC_ASSERT(offsetof(HudTextures, texBC) == sizeof(void*) * (0xBC / 4));
+STATIC_ASSERT(offsetof(HudTextures, texF8) == sizeof(void*) * (0xF8 / 4));
+STATIC_ASSERT(offsetof(HudTextures, tex134) == sizeof(void*) * (0x134 / 4));
+STATIC_ASSERT(offsetof(HudTextures, textBoxFrameTex) == sizeof(void*) * (0x13C / 4));
+STATIC_ASSERT(offsetof(HudTextures, tex170) == sizeof(void*) * (0x170 / 4));
 
 #endif

@@ -370,7 +370,7 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
 /* Shared frozen-state update + per-baddie reaction dispatch. */
 void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
 {
-    int player;
+    GameObject* player;
     int hit;
     int result;
     u16 sector;
@@ -393,7 +393,7 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
     u32 hitEffects;
     u16 hitStun;
 
-    player = (int)Obj_GetPlayerObject();
+    player = Obj_GetPlayerObject();
     colors = gTrickyFrozenFxColors;
     result = 2;
     if ((((EnemyState*)state)->controlFlags & 0x1800) == 0)
@@ -428,7 +428,7 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
         {
             ((EnemyState*)state)->freezeRecoverTimer = 0.0f;
         }
-        playerGetAttackHitProperties((GameObject*)(player), &hitEffects, &fxA, &fxB, &fxC, &hitStun);
+        playerGetAttackHitProperties(player, &hitEffects, &fxA, &fxB, &fxC, &hitStun);
         baddie_decodePlayerAttackFlags((EnemyState*)state, hitEffects, fxA, hitStun);
         if (hit != 0)
         {

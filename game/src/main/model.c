@@ -2768,6 +2768,18 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
         hdr->renderOps = (Shader*)(uintptr_t)shaderTabOff;
     }
 
+    off = fhSwap32(*(u32*)(gc + 0x18));
+    if (off != 0)
+    {
+        fhSwapU32Array(gc + off, hdr->jointCount);
+    }
+
+    off = fhSwap32(*(u32*)(gc + 0x1c));
+    if (off != 0)
+    {
+        fhSwapU32Array(gc + off, hdr->jointCount);
+    }
+
     off = fhSwap32(*(u32*)(gc + 0x3c));
     if (off != 0)
     {

@@ -23,6 +23,13 @@ cmake --build build --target foxhollow
 
 The first configure fetches and builds Dawn (WebGPU); expect it to take a while.
 
+## Documentation
+
+- [Roadmap](docs/ROADMAP.md)
+- [Porting notes](docs/PORTING_NOTES.md)
+- [Runtime porting and debugging](docs/DEBUGGING.md) — recurring bug classes, shared endian and
+  native-width helpers, LLDB triage, and development sequence skips
+
 ## Credits
 
 - [SFA-Decomp](https://github.com/zcanann/SFA-Decomp) contributors — the decompilation this port is built from

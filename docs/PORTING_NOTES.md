@@ -3,6 +3,9 @@
 Decisions made while getting the vendored decomp compiling under clang. Each entry lists the
 change and what to re-audit later.
 
+For runtime failure patterns, the shared endian/native-width helpers, and the development sequence
+skips, see [Runtime porting and debugging](DEBUGGING.md).
+
 ## Types
 
 - **`bool` is now `<stdbool.h>`** (game `include/types.h` used `typedef int bool;`). Size drops

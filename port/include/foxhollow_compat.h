@@ -18,6 +18,17 @@ static inline unsigned int __cvt_fp2unsigned(double x) {
 
 static inline unsigned int fhSwap32(unsigned int v) { return __builtin_bswap32(v); }
 static inline unsigned short fhSwap16(unsigned short v) { return __builtin_bswap16(v); }
+static inline uint32_t fhReadBE32(const void* p) {
+  const uint8_t* bytes = (const uint8_t*)p;
+  return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) |
+         ((uint32_t)bytes[2] << 8) | bytes[3];
+}
+static inline float fhReadBEF32(const void* p) {
+  uint32_t bits = fhReadBE32(p);
+  float value;
+  memcpy(&value, &bits, sizeof(value));
+  return value;
+}
 static inline uint16_t fhReadBE16(const void* p) {
   const uint8_t* bytes = (const uint8_t*)p;
   return ((uint16_t)bytes[0] << 8) | bytes[1];
