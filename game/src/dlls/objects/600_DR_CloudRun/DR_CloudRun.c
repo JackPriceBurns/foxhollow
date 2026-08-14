@@ -720,7 +720,7 @@ int DR_CloudRunner_stateHandler04(GameObject* obj, CloudRunnerState* baddie)
         (obj)->anim.velocityY = fz;
         (obj)->anim.velocityZ = fz;
         inner2 = (obj)->extra;
-        placement = (DRCloudRunnerPlacement*)(obj)->anim.placementDataAddress;
+        placement = (DRCloudRunnerPlacement*)(obj)->anim.placementData;
         inner2->flagsBC0.b02 = 1;
         (*gGameUIInterface)
             ->initAirMeter(placement->airMeterCapacity, DRCLOUDRUNNER_AIRMETER_BGTEXTURE);
@@ -1301,7 +1301,7 @@ void DR_CloudRunner_init(GameObject* obj, DRCloudRunnerPlacement* def)
     inner->baddie.gravity = 0.17f;
     DR_CloudRunner_setupPath(obj, (CloudRunnerState*)inner, inner->flagsBC0.b20);
     dll_2E_initState(obj, &inner->moveLib, -0x11c7, 0x1555, 1);
-    dll_2E_setReattackDelay((MoveLibState*)((u8*)inner + 0x4c4), 0x12c, 0x78);
+    dll_2E_setReattackDelay(&inner->moveLib, 0x12c, 0x78);
     objAddObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
     inner->flagsBC0.b01 = 0;
 }

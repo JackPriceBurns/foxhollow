@@ -196,7 +196,7 @@ void arwingandrossstuff_hitDetect(GameObject* obj)
             arwarwing_setVelocity(arwing, &w);
             doRumble(5.0f);
         }
-        if (((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject == (u32)arwing)
+        if (((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject == (uintptr_t)arwing)
         {
             if (arwarwing_isBarrelRolling(arwing) != 0)
             {

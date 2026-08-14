@@ -220,7 +220,7 @@ int pushable_updateCurtain(GameObject* obj, PushableState* state) {
     ObjPlacement* placement;
     GameObject* player;
 
-    placement = (ObjPlacement*)obj->anim.placementDataAddress;
+    placement = (ObjPlacement*)obj->anim.placementData;
     player = Obj_GetPlayerObject();
     if (((state->flags & PUSHABLE_FLAG_PUSH_LOCKED) != 0) || (playerGetStateValue(player, 10) != 0)) {
         Sfx_StopObjectChannel(obj, 8);
@@ -692,7 +692,6 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
     char pushDirection;
     GameObject* player;
     int blocked;
-    char* historyCursor;
     f32* worldPoint;
     f32* localPoint;
     f32* delta;
@@ -711,11 +710,9 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
     player = Obj_GetPlayerObject();
     state = obj->extra;
     pushDirection = PUSHABLE_DIRECTION_NONE;
-    historyEntryCount = 5;
-    historyCursor = (char*)state + 0x14;
-    while (historyCursor -= 4, historyEntryCount--) {
-        *(f32*)(historyCursor + 0x118) = *(f32*)(historyCursor + 0x114);
-        *(f32*)(historyCursor + 0x12c) = *(f32*)(historyCursor + 0x128);
+    for (historyEntryCount = 4; historyEntryCount > 0; historyEntryCount--) {
+        state->posHistX[historyEntryCount] = state->posHistX[historyEntryCount - 1];
+        state->posHistZ[historyEntryCount] = state->posHistZ[historyEntryCount - 1];
     }
     state->posHistX[0] = obj->anim.localPosX;
     state->posHistZ[0] = obj->anim.localPosZ;

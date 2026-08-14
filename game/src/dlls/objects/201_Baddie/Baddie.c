@@ -262,13 +262,13 @@ void Tricky_resumeAfterCommand(GameObject* obj, EnemyState* state)
 void tricky_handleDefeat(GameObject* obj, EnemyState* state)
 {
     ObjHitsPriorityState* hitState;
-    int setup;
+    EnemyPlacement* setup;
     int alpha;
     void* tricky;
     int spawnBits;
     u8 moveId;
 
-    setup = obj->anim.placementDataAddress;
+    setup = (EnemyPlacement*)obj->anim.placementData;
     state->actionId = 0;
     if (((state->controlFlags & 0x800) != 0) && ((state->prevControlFlags & 0x800) == 0))
     {
@@ -279,13 +279,13 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         }
         if ((state->flags2E4 & 0x40000000) == 0)
         {
-            if (((EnemyPlacement*)setup)->gameBit != -1)
+            if (setup->gameBit != -1)
             {
-                gameBitIncrement(((EnemyPlacement*)setup)->gameBit);
+                gameBitIncrement(setup->gameBit);
             }
-            if (((EnemyPlacement*)setup)->gameBit2 != -1)
+            if (setup->gameBit2 != -1)
             {
-                mainSetBits(((EnemyPlacement*)setup)->gameBit2, 0);
+                mainSetBits(setup->gameBit2, 0);
             }
         }
         state->trackedObj = NULL;
@@ -310,17 +310,17 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
             }
             else
             {
-                spawnBits = ((EnemyPlacement*)setup)->droppedItemId & 0xf00;
+                spawnBits = setup->droppedItemId & 0xf00;
                 if (spawnBits != 0)
                 {
                     baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 1);
                 }
-                spawnBits = ((EnemyPlacement*)setup)->droppedItemId & 0xf000;
+                spawnBits = setup->droppedItemId & 0xf000;
                 if (spawnBits != 0)
                 {
                     baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 2);
                 }
-                spawnBits = ((EnemyPlacement*)setup)->droppedItemId & 0xff;
+                spawnBits = setup->droppedItemId & 0xff;
                 if (spawnBits != 0)
                 {
                     baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 3);
@@ -336,13 +336,13 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
     {
         if ((state->flags2E4 & 0x40000000) != 0)
         {
-            if (((EnemyPlacement*)setup)->gameBit != -1)
+            if (setup->gameBit != -1)
             {
-                gameBitIncrement(((EnemyPlacement*)setup)->gameBit);
+                gameBitIncrement(setup->gameBit);
             }
-            if (((EnemyPlacement*)setup)->gameBit2 != -1)
+            if (setup->gameBit2 != -1)
             {
-                mainSetBits(((EnemyPlacement*)setup)->gameBit2, 0);
+                mainSetBits(setup->gameBit2, 0);
             }
         }
         state->particleScale = 0.0f;
@@ -356,10 +356,10 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         }
         else
         {
-            if (((EnemyPlacement*)setup)->respawnDelay != 0)
+            if (setup->respawnDelay != 0)
             {
                 (*gMapEventInterface)
-                    ->addTime(((ObjPlacement*)setup)->ident, 60.0f * (f32)((EnemyPlacement*)setup)->respawnDelay);
+                    ->addTime(((ObjPlacement*)setup)->ident, 60.0f * (f32)setup->respawnDelay);
             }
             state->controlFlags = state->controlFlags & ~(u64)0x800;
             state->flags2E8 = state->flags2E8 & ~3LL;
@@ -729,7 +729,7 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
     u32 rewardSpawnIds0;
     GameObject* nearest;
     ObjPlacement* parentSetup;
-    int setup;
+    ObjPlacement* setup;
     int index;
     f32 savedX;
     f32 savedY;
@@ -737,7 +737,7 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
     f32 v;
 
     (void)state;
-    parentSetup = (ObjPlacement*)obj->anim.placementDataAddress;
+    parentSetup = (ObjPlacement*)obj->anim.placementData;
     *(struct TrickyCommandSpawnPair*)commandSpawnIds = *(struct TrickyCommandSpawnPair*)lbl_803E2558;
     rewardSpawnIds0 = *(u32*)lbl_803E2560;
     rewardTail.pair = *(u32*)lbl_803E2564;
@@ -758,7 +758,7 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
         {
             index = 3;
         }
-        setup = (int)Obj_AllocObjectSetup(0x30, *(u16*)((int)commandSpawnIds + index * 2));
+        setup = Obj_AllocObjectSetup(0x30, ((u16*)commandSpawnIds)[index]);
     }
     else if (mode == 2)
     {
@@ -767,26 +767,26 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
         {
             index = 1;
         }
-        setup = (int)Obj_AllocObjectSetup(0x30, *(u16*)((int)&rewardSpawnIds0 + index * 2));
+        setup = Obj_AllocObjectSetup(0x30, ((u16*)&rewardSpawnIds0)[index]);
     }
     else if (mode == 3)
     {
         switch (spawnBits)
         {
         case 1:
-            setup = (int)Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_MAGIC_DUST);
+            setup = Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_MAGIC_DUST);
             break;
         case 3:
-            setup = (int)Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_ENERGY_EGG);
+            setup = Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_ENERGY_EGG);
             break;
         case 4:
-            setup = (int)Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_MAGIC_DUST);
+            setup = Obj_AllocObjectSetup(0x30, TRICKY_CHILD_OBJ_MAGIC_DUST);
             break;
         case 5:
             savedX = obj->anim.worldPosX;
             savedY = obj->anim.worldPosY;
             savedZ = obj->anim.worldPosZ;
-            parentSetup = (ObjPlacement*)obj->anim.placementDataAddress;
+            parentSetup = (ObjPlacement*)obj->anim.placementData;
             if ((void*)parentSetup != NULL)
             {
                 obj->anim.worldPosX = parentSetup->posX;
@@ -826,15 +826,15 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
         {
             return 0;
         }
-        setup = (int)Obj_AllocObjectSetup(0x30, ((u16*)((u8*)&rewardTail.pair - 2))[index]);
+        setup = Obj_AllocObjectSetup(0x30, ((u16*)((u8*)&rewardTail.pair - 2))[index]);
     }
     ((CollectibleSetup*)setup)->unk1A = 0x14;
     ((CollectibleSetup*)setup)->counterGameBit = -1;
     ((CollectibleSetup*)setup)->hideGameBit = -1;
     ((CollectibleSetup*)setup)->visibilityGameBit = -1;
-    ((ObjPlacement*)setup)->posX = obj->anim.localPosX;
-    ((ObjPlacement*)setup)->posY = 30.0f + obj->anim.localPosY;
-    ((ObjPlacement*)setup)->posZ = obj->anim.localPosZ;
+    setup->posX = obj->anim.localPosX;
+    setup->posY = 30.0f + obj->anim.localPosY;
+    setup->posZ = obj->anim.localPosZ;
     if ((useAltMode & 0xff) != 0)
     {
         ((CollectibleSetup*)setup)->spawnMode = 2;
@@ -843,16 +843,15 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
     {
         ((CollectibleSetup*)setup)->spawnMode = 1;
     }
-    ((ObjPlacement*)setup)->color[0] = parentSetup->color[0];
-    ((ObjPlacement*)setup)->color[2] = parentSetup->color[2];
-    ((ObjPlacement*)setup)->color[1] = parentSetup->color[1];
-    ((ObjPlacement*)setup)->color[3] = parentSetup->color[3];
-    nearest = objSetupObject((ObjPlacement*)setup, 5, obj->anim.mapEventSlot, -1, obj->anim.parent);
+    setup->color[0] = parentSetup->color[0];
+    setup->color[2] = parentSetup->color[2];
+    setup->color[1] = parentSetup->color[1];
+    setup->color[3] = parentSetup->color[3];
+    nearest = objSetupObject(setup, 5, obj->anim.mapEventSlot, -1, obj->anim.parent);
     gTrickyNearestObject = (GameObject*)nearest;
     if ((nearest->anim.romDefNo == TRICKY_OBJ_APPLE) || (nearest->anim.romDefNo == TRICKY_CHILD_OBJ_ENERGY_EGG))
     {
-        (*(void (**)(int, f32, f32, f32))(*(int*)((int)nearest->anim.dll) + 0x2c))(
-            (int)nearest, 0.0f, 1.0f, 0.0f);
+        ((void (*)(GameObject*, f32, f32, f32))nearest->anim.dll[0][11])(nearest, 0.0f, 1.0f, 0.0f);
     }
     return (int)gTrickyNearestObject;
 }
@@ -863,7 +862,7 @@ void baddieInstantiateWeapon(GameObject* obj, EnemyState* state)
     void* child;
     ObjPlacement* setup;
 
-    parentSetup = (BaddieInstantiateWeaponPlacement*)obj->anim.placementDataAddress;
+    parentSetup = (BaddieInstantiateWeaponPlacement*)obj->anim.placementData;
     if ((state->spawnedWeaponRomDefNo != state->weaponRomDefNo) && (obj->anim.alpha != 0))
     {
         if (obj->childObjs[0] != NULL)
@@ -927,7 +926,7 @@ u8 baddie_canSeeTarget(GameObject* obj, EnemyState* state, void* from, void* to)
         PSVECSubtract((Vec*)from, &probe, &delta);
         if (PSVECMag(&delta) < 1905.0f)
         {
-            if (obj->anim.parentAddress == 0)
+            if (obj->anim.parent == NULL)
             {
                 visible = voxmaps_traceLine((VoxPos*)toGrid, (VoxPos*)fromGrid, NULL, traceHit, 0);
             }
@@ -968,7 +967,7 @@ void baddie_updateSightQuadrants(GameObject* obj, EnemyState* state, f32 radius)
     probe.y = 20.0f + obj->anim.localPosY;
     probe.z = obj->anim.localPosZ;
     voxmaps_worldToGrid((f32*)&probe, baseGrid);
-    if (obj->anim.parentAddress != 0)
+    if (obj->anim.parent != NULL)
     {
         baseAngle = obj->anim.rotX + *(s16*)obj->anim.parent;
     }
@@ -994,7 +993,7 @@ void baddie_updateSightQuadrants(GameObject* obj, EnemyState* state, f32 radius)
         PSVECSubtract(&obj->anim.worldPos, &probe, &delta);
         if (PSVECMag(&delta) < 1905.0f)
         {
-            if (obj->anim.parentAddress != 0)
+            if (obj->anim.parent != NULL)
             {
                 visible = 1;
             }
@@ -2600,7 +2599,7 @@ void enemy_hitDetect(GameObject* obj)
         ModelLightStruct_free(state->modelLight);
         state->modelLight = NULL;
     }
-    state->lastHitObject = ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject;
+    state->lastHitObject = (GameObject*)((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject;
     if (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject != 0)
     {
         ((ObjHitsPriorityState*)obj->anim.hitReactState)->suppressOutgoingHits = 1;

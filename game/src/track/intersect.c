@@ -68,7 +68,11 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
     u8 vecIdx;
     u8 cnt;
     f32* vec;
+    f32 waterDepth;
     int n;
+    int contactSfxFlags;
+    int contactSfxMuted;
+    int isPlayer;
     GameObject* desc;
 
     tbl = gSurfaceSfxTable;
@@ -132,11 +136,28 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
     {
         return;
     }
-    if (!(((BaddieState*)state)->contactSfxFlags & 0x10) && ((BaddieState*)state)->contactSfxMuted != 0)
+    isPlayer = obj == Obj_GetPlayerObject();
+    if (isPlayer)
+    {
+        CurvesCollisionState* collision = (CurvesCollisionState*)state;
+        contactSfxFlags = collision->surfaceFlags;
+        contactSfxMuted = collision->subtype;
+        n = (s8)collision->segmentHits.surfaceTypes[0];
+        desc = (GameObject*)collision->segmentHits.objects[0];
+        waterDepth = collision->resultWaterDepth;
+    }
+    else
+    {
+        contactSfxFlags = ((BaddieState*)state)->contactSfxFlags;
+        contactSfxMuted = ((BaddieState*)state)->contactSfxMuted;
+        n = ((BaddieState*)state)->surfaceSoundIndex;
+        desc = (GameObject*)(((BaddieState*)state)->contactObj);
+        waterDepth = ((BaddieState*)state)->waterDepth;
+    }
+    if (!(contactSfxFlags & 0x10) && contactSfxMuted != 0)
     {
         return;
     }
-    n = ((BaddieState*)state)->surfaceSoundIndex;
     if (n < 0 || n >= 0x23)
     {
         n = 0;
@@ -146,7 +167,6 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
         n = tbl[0xb4 + n];
     }
     sfx = n;
-    desc = (GameObject*)(((BaddieState*)state)->contactObj);
     if (desc != NULL)
     {
         switch (desc->anim.romDefNo)
@@ -161,14 +181,14 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
     if (sfxTab != NULL)
     {
         vec = (f32*)points + vecIdx * 3;
-        if (((BaddieState*)state)->waterDepth > 0.0f)
+        if (waterDepth > 0.0f)
         {
-            (*gWaterfxInterface)->spawnImpactSurface((u8*)obj, flags, (f32*)points, (u8*)state, unused);
+            (*gWaterfxInterface)->spawnImpactSurface((u8*)obj, flags, (f32*)points, waterDepth, unused);
             sfx = 5;
         }
-        if (obj == Obj_GetPlayerObject())
+        if (isPlayer)
         {
-            if (*(s16*)((u8*)obj->extra + 0x81a) == 1)
+            if (((PlayerState*)obj->extra)->characterId == 1)
             {
                 Sfx_PlayFromObject(0, SFXTRIG_foot_ice_scuff);
             }

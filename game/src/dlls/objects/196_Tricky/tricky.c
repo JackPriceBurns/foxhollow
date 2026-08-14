@@ -3182,7 +3182,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
                                 free_ = -1;
                             }
                             state->packedSlots.zzzSlot = free_;
-                            state->child = (void*)objSetupObject((ObjPlacement*)setup, 4, -1, -1, (void*)obj->anim.parentAddress);
+                            state->child = (void*)objSetupObject((ObjPlacement*)setup, 4, -1, -1, obj->anim.parent);
                             ObjLink_AttachChild(obj, state->child, state->packedSlots.zzzSlot);
                             {
                                 f32 z3 = 0.0f;
@@ -3239,7 +3239,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
                         setup->head.color[1] = 1;
                         setup->index = i;
                         ((TrickyState*)p)->flameChildren[0] = objSetupObject(
-                            (ObjPlacement*)setup, 5, obj->anim.mapEventSlot, -1, (void*)obj->anim.parentAddress);
+                            (ObjPlacement*)setup, 5, obj->anim.mapEventSlot, -1, obj->anim.parent);
                         p += 4;
                     }
                 }
@@ -6676,7 +6676,6 @@ int Tricky_updateSideCommandPrompts(GameObject* obj) {
     TrickyState* refB;
     TrickyState* refC;
     u16* setup;
-    u32 spawnedObj;
     u8 i;
     char flagsB[4];
     char flagsA[4];
@@ -6775,9 +6774,7 @@ int Tricky_updateSideCommandPrompts(GameObject* obj) {
                     bitVal = 0xffffffff;
                 }
                 state->packedSlots.promptBSlot = bitVal;
-                spawnedObj =
-                    (int)objSetupObject((ObjPlacement*)setup, 4, -1, 0xffffffff, obj->anim.parent);
-                *(u32*)((u8*)state + 0x7b0) = spawnedObj; /* raw: arrow form shifts bytes */
+                state->childB = objSetupObject((ObjPlacement*)setup, 4, -1, 0xffffffff, obj->anim.parent);
                 ObjLink_AttachChild(obj, state->childB,
                                     state->packedSlots.promptBSlot);
             }
@@ -6785,7 +6782,7 @@ int Tricky_updateSideCommandPrompts(GameObject* obj) {
             state->promptBDespawnTimer = state->promptBDespawnTimer - timeDelta;
             if (state->promptBDespawnTimer <= 0.0f) {
                 objAnimFreeChildren(obj, state,
-                                    (GameObject**)((u8*)state + 0x7b0)); /* raw: arrow form shifts bytes */
+                                    &state->childB);
             }
         }
         if ((promptA) && ((state->stateFlags & 0x200) == 0)) {
@@ -6835,9 +6832,7 @@ int Tricky_updateSideCommandPrompts(GameObject* obj) {
                     bitVal = 0xffffffff;
                 }
                 state->packedSlots.promptASlot = bitVal;
-                spawnedObj =
-                    (int)objSetupObject((ObjPlacement*)setup, 4, -1, 0xffffffff, obj->anim.parent);
-                *(u32*)((u8*)state + 0x7a8) = spawnedObj; /* raw: arrow form shifts bytes */
+                state->childA = objSetupObject((ObjPlacement*)setup, 4, -1, 0xffffffff, obj->anim.parent);
                 ObjLink_AttachChild(obj, state->childA,
                                     state->packedSlots.promptASlot);
             }
@@ -6845,7 +6840,7 @@ int Tricky_updateSideCommandPrompts(GameObject* obj) {
             state->promptADespawnTimer = state->promptADespawnTimer - timeDelta;
             if (state->promptADespawnTimer <= 0.0f) {
                 objAnimFreeChildren(obj, state,
-                                    (GameObject**)((u8*)state + 0x7a8)); /* raw: arrow form shifts bytes */
+                                    &state->childA);
             }
         }
         return commandMask;

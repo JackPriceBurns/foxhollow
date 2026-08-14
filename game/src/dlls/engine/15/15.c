@@ -1005,11 +1005,12 @@ void player_update(char* pos, char* state, float dt, float pathDt, void* stateFn
 
     if ((*(int*)state & 0x1000000) == 0 && (*(int*)state & 0x400000) == 0 && keepPathControls != 0)
     {
-        (*gPathControlInterface)->update(pos, state + 0x4, dt);
-        (*gPathControlInterface)->apply(pos, state + 0x4);
-        (*gPathControlInterface)->advance(pos, state + 0x4, pathDt);
+        CurvesCollisionState* collision = &((BaddieState*)state)->curvesCollision;
+        (*gPathControlInterface)->update(pos, collision, dt);
+        (*gPathControlInterface)->apply(pos, collision);
+        (*gPathControlInterface)->advance(pos, collision, pathDt);
 
-        if (((s32)((BaddieState*)state)->surfaceFlags & 0x10) != 0)
+        if (((s32)collision->surfaceFlags & 0x10) != 0)
         {
             *(u32*)state |= 0x40000;
         }
@@ -1020,7 +1021,7 @@ void player_update(char* pos, char* state, float dt, float pathDt, void* stateFn
 
         if ((*(int*)state & 0x800000) != 0)
         {
-            if (((s32)((BaddieState*)state)->surfaceFlags & 2) != 0 || ((BaddieState*)state)->groundContact != 0)
+            if (((s32)collision->surfaceFlags & 2) != 0 || collision->localPointHitMask != 0)
             {
                 ((GameObject*)pos)->anim.velocityX =
                     (((GameObject*)pos)->anim.localPosX -

@@ -22,6 +22,10 @@ static u32 sStreamVolRight;
 static u32 sDmaRunning;
 static u32 sStreamSampleCount;
 static u32 sStreamTrigger;
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+static u32 sMuted;
+static u32 sMuteKeyWasDown;
+#endif
 static SDL_AudioStream* sOutputStream;
 static SDL_AudioStream* sStreamOutput;
 static u8* sStreamData;
@@ -31,6 +35,32 @@ static s32 sStreamHistLeft1;
 static s32 sStreamHistLeft2;
 static s32 sStreamHistRight1;
 static s32 sStreamHistRight2;
+
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+static void aiSetMuted(u32 muted) {
+  float gain = muted != 0 ? 0.0f : 1.0f;
+
+  sMuted = muted;
+  if (sOutputStream != NULL) {
+    SDL_SetAudioStreamGain(sOutputStream, gain);
+  }
+  if (sStreamOutput != NULL) {
+    SDL_SetAudioStreamGain(sStreamOutput, gain);
+  }
+  fprintf(stderr, "[foxhollow] audio %s\n", muted != 0 ? "muted" : "unmuted");
+}
+
+static void aiUpdateMuteToggle(void) {
+  int keyCount;
+  const bool* keys = SDL_GetKeyboardState(&keyCount);
+  u32 muteKeyDown = keyCount > SDL_SCANCODE_M && keys[SDL_SCANCODE_M];
+
+  if (muteKeyDown != 0 && sMuteKeyWasDown == 0) {
+    aiSetMuted(sMuted == 0);
+  }
+  sMuteKeyWasDown = muteKeyDown;
+}
+#endif
 
 static void aiOpenOutput(void) {
   SDL_AudioSpec spec;
@@ -50,6 +80,11 @@ static void aiOpenOutput(void) {
   if (sOutputStream == NULL) {
     fprintf(stderr, "[foxhollow] SDL audio output failed: %s\n", SDL_GetError());
   }
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+  else {
+    SDL_SetAudioStreamGain(sOutputStream, sMuted != 0 ? 0.0f : 1.0f);
+  }
+#endif
 }
 
 static void aiOpenStreamOutput(void) {
@@ -70,6 +105,11 @@ static void aiOpenStreamOutput(void) {
   if (sStreamOutput == NULL) {
     fprintf(stderr, "[foxhollow] SDL stream audio output failed: %s\n", SDL_GetError());
   }
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+  else {
+    SDL_SetAudioStreamGain(sStreamOutput, sMuted != 0 ? 0.0f : 1.0f);
+  }
+#endif
 }
 
 static s16 aiDecodeStreamSample(s32 bits, s32 predictorScale, s32* hist1, s32* hist2) {
@@ -208,6 +248,9 @@ void AIStopDMA(void) {
 void fhAIPump(void) {
   int dmaQueued = sOutputStream != NULL ? SDL_GetAudioStreamQueued(sOutputStream) : 0;
 
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+  aiUpdateMuteToggle();
+#endif
   aiPumpStream();
   while (sDmaRunning != 0 && sOutputStream != NULL && dmaQueued < AI_DMA_QUEUE_BYTES) {
     AIDCallback callback;

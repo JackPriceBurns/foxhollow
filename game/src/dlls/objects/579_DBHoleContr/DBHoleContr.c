@@ -27,7 +27,7 @@ int dbholecontrol1_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
     void* res;
     GameObject** objs;
     int count;
-    Dbholecontrol1Placement* data = (Dbholecontrol1Placement*)obj->anim.placementDataAddress;
+    Dbholecontrol1Placement* data = (Dbholecontrol1Placement*)obj->anim.placementData;
     int i;
 
     for (i = 0; i < animUpdate->eventCount; i++)

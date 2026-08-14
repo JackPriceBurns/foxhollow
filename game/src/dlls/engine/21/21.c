@@ -425,26 +425,33 @@ void curves_updateSurfaceTilt(GameObject* obj, CurvesCollisionState* state)
     f32 nx;
     f32 ny;
     f32 nz;
-    short outVec[4];
-    f32 matrixBuf[20];
+    f32 normal[3];
+    MatrixTransform transform;
+    f32 matrix[16];
 
     collision = state;
     if (((s8)collision->surfaceFlags & 0x10) != 0)
     {
-        outVec[0] = -obj->anim.rotX;
+        transform.rotX = -obj->anim.rotX;
         if (obj->anim.parent != NULL)
         {
-            outVec[0] = outVec[0] - obj->anim.parentAnim->rotX;
+            transform.rotX = transform.rotX - obj->anim.parentAnim->rotX;
         }
-        outVec[1] = 0;
-        outVec[2] = 0;
-        matrixBuf[0] = CURVES_ONE;
-        matrixBuf[1] = 0.0f;
-        matrixBuf[2] = 0.0f;
-        matrixBuf[3] = 0.0f;
-        mtxRotateByVec3s(&matrixBuf[4], outVec);
-        Matrix_TransformPoint((f32*)((u8*)matrixBuf + 0x10), (double)collision->surfaceNormalX, (double)collision->surfaceNormalY,
-                              (double)collision->surfaceNormalZ, &nx, &ny, &nz);
+        transform.rotY = 0;
+        transform.rotZ = 0;
+        transform.pad06 = 0;
+        transform.scale = CURVES_ONE;
+        transform.x = 0.0f;
+        transform.y = 0.0f;
+        transform.z = 0.0f;
+        mtxRotateByVec3s(matrix, &transform);
+        normal[0] = collision->surfaceNormalX;
+        normal[1] = collision->surfaceNormalY;
+        normal[2] = collision->surfaceNormalZ;
+        Matrix_TransformVector(matrix, normal, normal);
+        nx = normal[0];
+        ny = normal[1];
+        nz = normal[2];
         angle = getAngle(ny, nz);
         pitch = 0x4000 - angle;
         collision->tiltPitchTarget = pitch;
@@ -720,7 +727,7 @@ void curves_preparePointCollisionFrame(GameObject* obj, CurvesCollisionState* co
                 Obj_TransformLocalPointToWorld(((GameObject*)obj)->anim.localPosX, ((GameObject*)obj)->anim.localPosY,
                                                ((GameObject*)obj)->anim.localPosZ, &((GameObject*)obj)->anim.worldPosX,
                                                &((GameObject*)obj)->anim.worldPosY, &((GameObject*)obj)->anim.worldPosZ,
-                                               (GameObject*)((GameObject*)obj)->anim.parentAddress);
+                                               (GameObject*)((GameObject*)obj)->anim.parent);
             }
         }
         else
@@ -1373,7 +1380,7 @@ void curves_updateQueryBounds(GameObject* obj, CurvesCollisionState* state, f32 
             {
                 Obj_TransformLocalPointToWorld(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ,
                                                &obj->anim.worldPosX, &obj->anim.worldPosY, &obj->anim.worldPosZ,
-                                               (GameObject*)obj->anim.parentAddress);
+                                               (GameObject*)obj->anim.parent);
             }
         }
         else

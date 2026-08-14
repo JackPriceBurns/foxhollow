@@ -6,6 +6,7 @@
 #include "game/objects/object.h"
 #include "main/byte_flags.h"
 #include "main/dll/baddie_state.h"
+#include "main/objprint_character_api.h"
 
 typedef struct PlayerStatus {
     s8 health;
@@ -75,7 +76,8 @@ typedef struct PlayerState {
     };
     PlayerStatus* playerStatus;
     u32 flags360; /* player state flag word; bits 2/0x2000/0x800000/0x2000000... */
-    u8 pad364[0x3C4 - 0x364];
+    CharacterEyeAnimState eyeAnimState; /* 0x364: head-aim / eye-blink record (characterDoEyeAnims / playerUpdateBlinkAnimation) */
+    u8 pad390[0x3C4 - 0x390];
     f32 footPoints[2][3];
     char* moveSlots; /* MoveSlot/HitDesc array base; indexed by moveSlotIndex, stride 0xB0 */
     int pendingParentObj;
@@ -220,7 +222,7 @@ typedef struct PlayerState {
     f32 climbStartPosX; /* localPosX assigned at the climb move start (getAngle drives targetYaw from 0x56c/groundNormalZ) */
     u8 pad590[0x594 - 0x590];
     f32 climbStartPosZ; /* localPosZ assigned at the climb move start */
-    u8 pad598[0x5A4 - 0x598];
+    f32 unk598[3]; /* 0x598: blend-anchor vector passed to playerSetMoveBlendFromPlane alongside groundNormalX */
     s16 animEventState; /* anim event-state word written each frame via ObjAnim_WriteStateWord(...EVENT_STATE); from playerSetMoveBlendFromPlane or a scaled move-blend factor */
     s16 moveAltToggle; /* alternating selector for a paired repeating move: !=0 picks move 0x15, ==0 picks 0x16; XOR-toggled each cycle (e.g. left/right climb step) */
     f32 leapSpeed;   /* leap/launch speed magnitude filled by playerBuildLedgeClimbProbe (base = &leapSpeed): threshold-compared vs lbl_803E8040/8048 to pick the jump move (0xe/0x16/0x12) then normalized (leapSpeed-lo)/(hi-lo) into the move blend */
@@ -411,7 +413,7 @@ typedef struct PlayerState {
     u8 staffActionRequest; /* pending staff grow/shrink action: 0=none,1=shrink,2=begin-grow,4=grow */
     u8 pad8B5[0x8B8 - 0x8B5];
     u8 queuedBitCount; /* count (0..4) of queued bit-index bytes stored in the following array at 0x8b9; a "case 1" push appends a byte and increments this, clamped to 4; on state init the loop ORs (1 << each stored byte) into the bitmask at 0x310 then this is reset to 0 */
-    u8 pad8B9[0x8BF - 0x8B9]; /* queued bit-index byte array filled by the queuedBitCount push API */
+    u8 queuedBits[0x8BF - 0x8B9]; /* queued bit-index byte array filled by the queuedBitCount push API */
     u8 unk8BF;
     u8 moveChainIndex; /* 0x8c0: branch index into the current move slot's next-move table (slot+0x15+moveChainIndex selects the follow-up moveSlotIndex); set 0 or from state+0x34b */
     u8 attackVariantMode; /* 0x8c1: attack/swing variant (0/1/2) chosen from moveSlotIndex (0x11->0, 0xf/0x1b/else->1/2); read as `mode`, selects camera-flag bits 0x100/0x200/0x400 */

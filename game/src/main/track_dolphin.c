@@ -148,6 +148,15 @@ typedef struct IntersectLine
     u8 pad0E[2]; /* 0xe */
 } IntersectLine;
 
+/* When flag 0x80 is set, the two endpoint bytes are one signed big-endian
+ * height. The original PowerPC code could read them through an s16 pointer;
+ * native little-endian builds must assemble the value explicitly. */
+static inline s16 trackReadSharedLineHeight(const void* record)
+{
+    const u8* bytes = record;
+    return (s16)(((u16)bytes[0] << 8) | bytes[1]);
+}
+
 struct IntersectModLineObject
 {
     u8 pad00[0x30];
@@ -312,7 +321,10 @@ void Obj_SetParent(GameObject* obj, GameObject* newParent, int updateLocalTransf
 
 int trackSweepCircleAgainstPoint(f32* x, f32* z, f32 centerX, f32 centerZ, f32 radius, s8 resolveCollision);
 int trackResolveSurfacePenetration(f32* a, f32* b, f32* c, f32* p, f32 f1p, f32 y, u8 type);
-int trackSweepSphereAgainstEdge(void* tri, f32* rayOrig, f32* rayDir, f32 maxd, f32* out29, f32* outNrm, f32 maxStep, f32* outDist, f32 epsArg);
+int trackSweepSphereAgainstEdge(const f32* edgeStart, const f32* edgeDirection, f32 edgeLength,
+                                f32 radius, f32 radiusSq,
+                                f32* rayOrig, f32* rayDir, f32 maxd, f32* out29, f32* outNrm,
+                                f32 maxStep, f32* outDist, f32 epsArg);
 void* trackGetBlockDescriptors(u32* outVal);
 
 int trackSweepCircleAgainstPoint(f32* x, f32* z, f32 centerX, f32 centerZ, f32 radius, s8 resolveCollision) {
@@ -587,7 +599,7 @@ int trackSweepCircleAgainstLines(f32* startPos, f32* endPos, f32 radius, int fla
             ylo = ylo - (f32)yTolerance;
             if (lineFlags & 0x80)
             {
-                ha = (f32)*(s16*)rec;
+                ha = (f32)trackReadSharedLineHeight(rec);
                 hb = ha;
             }
             else
@@ -852,7 +864,7 @@ int trackSweepCircleAgainstLines(f32* startPos, f32* endPos, f32 radius, int fla
             int j1 = rec2[3];
             if ((s8) * (u8*)((u8*)rec2 + 2) & 0x80)
             {
-                fa = rec2[0];
+                fa = trackReadSharedLineHeight(rec2);
                 fb = fa;
             }
             else
@@ -2001,7 +2013,9 @@ int trackResolveSurfacePenetration(f32* a, f32* b, f32* c, f32* p, f32 f1p, f32 
     return 1;
 }
 
-int trackSweepSphereAgainstEdge(void* tri, f32* rayOrig, f32* rayDir, f32 maxd, f32* out29, f32* outNrm,
+int trackSweepSphereAgainstEdge(const f32* edgeStart, const f32* edgeDirection, f32 edgeLength,
+                                f32 radius, f32 radiusSq,
+                                f32* rayOrig, f32* rayDir, f32 maxd, f32* out29, f32* outNrm,
                                 f32 maxStep, f32* outDist, f32 epsArg)
 {
     f32 nrm[3];
@@ -2009,31 +2023,30 @@ int trackSweepSphereAgainstEdge(void* tri, f32* rayOrig, f32* rayDir, f32 maxd, 
     f32 tmp14[3];
     f32 hit[3];
     f32 len, f29, f12, zero;
-    f32* T = tri;
 
-    Vec3_Cross(rayDir, T + 6, nrm);
+    Vec3_Cross(rayDir, edgeDirection, nrm);
     len = Vec3_Normalize(nrm);
     if (0.0f == len)
         return 0;
-    e[0] = rayOrig[0] - T[0];
-    e[1] = rayOrig[1] - T[1];
-    e[2] = rayOrig[2] - T[2];
+    e[0] = rayOrig[0] - edgeStart[0];
+    e[1] = rayOrig[1] - edgeStart[1];
+    e[2] = rayOrig[2] - edgeStart[2];
     {
         f32 d0 = nrm[1] * e[1];
         f29 = d0 + nrm[0] * e[0] + nrm[2] * e[2];
     }
     f29 = f29 * f29;
-    if (f29 <= T[10])
+    if (f29 <= radiusSq)
     {
-        Vec3_Cross(e, T + 6, tmp14);
+        Vec3_Cross(e, edgeDirection, tmp14);
         {
             f32 dl = tmp14[1] * nrm[1];
             len = -(dl + tmp14[0] * nrm[0] + tmp14[2] * nrm[2]) / len;
         }
-        Vec3_Cross(nrm, T + 6, tmp14);
+        Vec3_Cross(nrm, edgeDirection, tmp14);
         Vec3_Normalize(tmp14);
         {
-            f32 s = sqrtf(T[10] - f29);
+            f32 s = sqrtf(radiusSq - f29);
             f32 dd = rayDir[1] * tmp14[1];
             f32 dn = dd + rayDir[0] * tmp14[0] + rayDir[2] * tmp14[2];
             f32 r = s / dn;
@@ -2053,26 +2066,27 @@ int trackSweepSphereAgainstEdge(void* tri, f32* rayOrig, f32* rayDir, f32 maxd, 
                 hit[1] = rayOrig[1] + hit[1];
                 hit[2] = rayOrig[2] + hit[2];
                 {
-                    f32 d2 = T[7] * T[1];
-                    f12 = (hit[0] * T[6] + hit[1] * T[7] + hit[2] * T[8]) - (d2 + T[6] * T[0] + T[8] * T[2]);
+                    f32 d2 = edgeDirection[1] * edgeStart[1];
+                    f12 = (hit[0] * edgeDirection[0] + hit[1] * edgeDirection[1] + hit[2] * edgeDirection[2]) -
+                          (d2 + edgeDirection[0] * edgeStart[0] + edgeDirection[2] * edgeStart[2]);
                 }
                 if (f12 >= zero)
                 {
-                    if (f12 <= T[11])
+                    if (f12 <= edgeLength)
                     {
-                        tmp14[0] = T[6] * f12;
-                        tmp14[1] = T[7] * f12;
-                        tmp14[2] = T[8] * f12;
-                        tmp14[0] = T[0] + tmp14[0];
-                        tmp14[1] = T[1] + tmp14[1];
-                        tmp14[2] = T[2] + tmp14[2];
+                        tmp14[0] = edgeDirection[0] * f12;
+                        tmp14[1] = edgeDirection[1] * f12;
+                        tmp14[2] = edgeDirection[2] * f12;
+                        tmp14[0] = edgeStart[0] + tmp14[0];
+                        tmp14[1] = edgeStart[1] + tmp14[1];
+                        tmp14[2] = edgeStart[2] + tmp14[2];
                         outNrm[0] = hit[0] - tmp14[0];
                         outNrm[1] = hit[1] - tmp14[1];
                         outNrm[2] = hit[2] - tmp14[2];
                         Vec3_Normalize(outNrm);
                         {
                             f32 dh = hit[1] * outNrm[1];
-                            outNrm[3] = T[9] - (dh + hit[0] * outNrm[0] + hit[2] * outNrm[2]);
+                            outNrm[3] = radius - (dh + hit[0] * outNrm[0] + hit[2] * outNrm[2]);
                         }
                         out29[0] = *(f32*)((u8*)hit + 0);
                         out29[1] = *(f32*)((u8*)hit + 4);
@@ -2336,7 +2350,8 @@ int trackGetIntersect2(int mode, void* tri1, void* tri2, f32* startPos, f32* end
                             vb[2] = tri->vz[k];
                             PSVECSubtract((Vec*)vbp, (Vec*)va, (Vec*)evecp);
                             rdatap[2] = Vec3_Normalize(evecp);
-                            if (trackSweepSphereAgainstEdge(va, ws, dir, mag, hitpt, plane, maxStep, &frac, 0.0f))
+                            if (trackSweepSphereAgainstEdge(va, evec, rdata[2], rdata[0], rdata[1], ws, dir, mag,
+                                                            hitpt, plane, maxStep, &frac, 0.0f))
                             {
                                 hit = 1;
                                 goto hitCheck;
@@ -2868,12 +2883,8 @@ TrackTriangle* trackBuildModelTriangles(TrackTriangle* cur, TrackBlockDescriptor
 TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int z0, int x1, int y1, int z1, int flags, u8 doEdges)
 {
     MapBlockData* cells[16];
-    f32 e2[3];
-    f32 e1[3];
-    f32 e0[3];
-    f32 verts2[3];
-    f32 verts[3];
-    f32 v0[3];
+    f32 edges[3][3];
+    f32 vertices[3][3];
     f32 en[3];
     uintptr_t offA;
     int* firstp;
@@ -2894,7 +2905,6 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
     u8 typeb;
     uintptr_t bb;
     u32 dmaflip;
-    f32* vertp;
     MapBlockData** p1;
     int* q1;
     MapBlockData** p2;
@@ -3089,12 +3099,9 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
             t0 = ((MapTriGroup*)tri)->firstTri;
             vq = (u8*)(uintptr_t)(bb + t0 * 8);
             vEnd = ((MapTriGroup*)tri)[1].firstTri;
-            vertp = verts;
             for (; t0 < vEnd; t0++, vq += 8)
             {
-                u8* vo;
                 s16* vp;
-                f32* vf;
                 u8 maxYi, minYi;
                 u16* tw;
                 int minX, maxX, minY, maxY, minZ, maxZ;
@@ -3115,15 +3122,13 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
                 cur->vx[0] = minX + dxoff;
                 cur->vy[0] = minY;
                 cur->vz[0] = minZ + dzoff;
-                v0[0] = __OSs16tof32(&cur->vx[0]);
-                v0[1] = __OSs16tof32(&cur->vy[0]);
-                v0[2] = __OSs16tof32(&cur->vz[0]);
+                vertices[0][0] = __OSs16tof32(&cur->vx[0]);
+                vertices[0][1] = __OSs16tof32(&cur->vy[0]);
+                vertices[0][2] = __OSs16tof32(&cur->vz[0]);
                 maxYi = 0;
                 minYi = 0;
                 j = 1;
                 tw = &((MapTriIndex*)vq)->vert[1];
-                vo = (u8*)cur + 2;
-                vf = verts;
                 for (; j < 3; j++)
                 {
                     int x, yy, z;
@@ -3149,15 +3154,13 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
                         maxZ = z;
                     else if (z < minZ)
                         minZ = z;
-                    ((TrackTriangle*)vo)->vx[0] = x + dxoff;
-                    ((TrackTriangle*)vo)->vy[0] = yy;
-                    ((TrackTriangle*)vo)->vz[0] = z + dzoff;
-                    vf[0] = __OSs16tof32(((TrackTriangle*)vo)->vx);
-                    vf[1] = __OSs16tof32(((TrackTriangle*)vo)->vy);
-                    vf[2] = __OSs16tof32(((TrackTriangle*)vo)->vz);
+                    cur->vx[j] = x + dxoff;
+                    cur->vy[j] = yy;
+                    cur->vz[j] = z + dzoff;
+                    vertices[j][0] = __OSs16tof32(&cur->vx[j]);
+                    vertices[j][1] = __OSs16tof32(&cur->vy[j]);
+                    vertices[j][2] = __OSs16tof32(&cur->vz[j]);
                     tw++;
-                    vo += 2;
-                    vf += 3;
                 }
                 if (minY > y1)
                     continue;
@@ -3172,9 +3175,9 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
                 if (maxZ < relz0)
                     continue;
 
-                PSVECSubtract((Vec*)v0, (Vec*)vertp, (Vec*)e0);
-                PSVECSubtract((Vec*)vertp, (Vec*)verts2, (Vec*)e1);
-                PSVECCrossProduct((Vec*)e0, (Vec*)e1, (Vec*)cur->planeN);
+                PSVECSubtract((Vec*)vertices[0], (Vec*)vertices[1], (Vec*)edges[0]);
+                PSVECSubtract((Vec*)vertices[1], (Vec*)vertices[2], (Vec*)edges[1]);
+                PSVECCrossProduct((Vec*)edges[0], (Vec*)edges[1], (Vec*)cur->planeN);
                 mag = PSVECMag((Vec*)cur->planeN);
                 if (!(mag > 0.0f))
                     continue;
@@ -3195,17 +3198,17 @@ TrackTriangle* trackBuildBlockTriangles(TrackTriangle* cur, int x0, int y0, int 
                     if (cur->planeN[1] < 0.707f && cur->planeN[1] > -0.707f)
                         continue;
                 }
-                cur->planeD = -PSVECDotProduct((Vec*)cur->planeN, (Vec*)v0);
+                cur->planeD = -PSVECDotProduct((Vec*)cur->planeN, (Vec*)vertices[0]);
                 if (doEdges)
                 {
                     int k22, deg, j2;
                     f32* ep;
                     f32 one, eps;
-                    PSVECSubtract((Vec*)verts2, (Vec*)v0, (Vec*)e2);
+                    PSVECSubtract((Vec*)vertices[2], (Vec*)vertices[0], (Vec*)edges[2]);
                     k22 = 0;
                     deg = 0;
                     j2 = 0;
-                    ep = e0;
+                    ep = edges[0];
                     eps = 0.0f;
                     one = 1.0f;
                     do

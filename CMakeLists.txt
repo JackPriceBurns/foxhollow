@@ -7,6 +7,8 @@ endif ()
 
 project(foxhollow LANGUAGES C CXX VERSION 0.0.1)
 
+option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
+
 if (APPLE)
     enable_language(OBJC OBJCXX)
     if (NOT CMAKE_OSX_SYSROOT)
@@ -33,6 +35,9 @@ if (FOXHOLLOW_GAME_SOURCES)
     add_library(game STATIC ${FOXHOLLOW_GAME_SOURCES})
     target_include_directories(game PRIVATE port/include extern/aurora/include game/include game)
     target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1 TARGET_PC=1)
+    if (FOXHOLLOW_DEBUG_SHORTCUTS)
+        target_compile_definitions(game PRIVATE FOXHOLLOW_DEBUG_SHORTCUTS=1)
+    endif ()
     target_compile_options(game PRIVATE -std=gnu11 -fsigned-char -fcommon -w
             -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
 endif ()
@@ -68,6 +73,9 @@ file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)
 target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
+if (FOXHOLLOW_DEBUG_SHORTCUTS)
+    target_compile_definitions(port_shims PRIVATE FOXHOLLOW_DEBUG_SHORTCUTS=1)
+endif ()
 target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char -fcommon)
 target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG)
 

@@ -823,12 +823,37 @@ static inline ObjAnimMoveData *ObjAnim_GetCurrentBlendMoveData(ObjAnimDef *animD
   return ObjAnim_GetBlendMoveData(animDef, state, state->blendCacheSlot);
 }
 
+static inline s16 ObjAnim_ReadPackedS16(const void *value) {
+  return (s16)fhSwap16(*(const u16 *)value);
+}
+
+static inline f32 ObjAnim_ReadPackedF32(const void *value) {
+  union {
+    u32 bits;
+    f32 value;
+  } packed;
+  packed.bits = fhSwap32(*(const u32 *)value);
+  return packed.value;
+}
+
+static inline s16 ObjAnim_GetMoveDataRootCurveOffset(ObjAnimMoveData *moveData) {
+  return ObjAnim_ReadPackedS16(&moveData->rootCurveOffset);
+}
+
 static inline ObjAnimRootCurve *ObjAnim_GetMoveDataRootCurve(ObjAnimMoveData *moveData) {
-  return (ObjAnimRootCurve *)((u8 *)moveData + moveData->rootCurveOffset);
+  return (ObjAnimRootCurve *)((u8 *)moveData + ObjAnim_GetMoveDataRootCurveOffset(moveData));
 }
 
 static inline s16 *ObjAnim_GetRootCurveAxisData(ObjAnimRootCurve *curve) {
   return &curve->axes[0].firstSample;
+}
+
+static inline f32 ObjAnim_GetRootCurveScale(ObjAnimRootCurve *curve) {
+  return ObjAnim_ReadPackedF32(&curve->scale);
+}
+
+static inline s16 ObjAnim_GetRootCurveSampleCount(ObjAnimRootCurve *curve) {
+  return ObjAnim_ReadPackedS16(&curve->sampleCount);
 }
 
 static inline ObjAnimRootCurve *ObjAnim_GetMoveRootCurve(ObjAnimDef *animDef,
@@ -836,7 +861,7 @@ static inline ObjAnimRootCurve *ObjAnim_GetMoveRootCurve(ObjAnimDef *animDef,
   ObjAnimMoveData *moveData;
 
   moveData = ObjAnim_GetCurrentMoveData(animDef, state);
-  if (moveData->rootCurveOffset == 0) {
+  if (ObjAnim_GetMoveDataRootCurveOffset(moveData) == 0) {
     return NULL;
   }
   return ObjAnim_GetMoveDataRootCurve(moveData);
@@ -847,7 +872,7 @@ static inline ObjAnimRootCurve *ObjAnim_GetBlendMoveRootCurve(ObjAnimDef *animDe
   ObjAnimMoveData *moveData;
 
   moveData = ObjAnim_GetCurrentBlendMoveData(animDef, state);
-  if (moveData->rootCurveOffset == 0) {
+  if (ObjAnim_GetMoveDataRootCurveOffset(moveData) == 0) {
     return NULL;
   }
   return ObjAnim_GetMoveDataRootCurve(moveData);

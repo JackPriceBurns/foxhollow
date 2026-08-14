@@ -1282,7 +1282,7 @@ void ktrex_updateAttackEffects(GameObject* obj)
             ->spawnObject((void*)obj, 0x487, &gKTRexState->spawnWork[0], 0x200001, -1, &gKTRexState->vecX);
     }
     gKTRexState->phaseFlags &= 0x1800LL;
-    if (((ObjHitsPriorityState*)(obj)->anim.hitReactState)->lastHitObject == (int)Obj_GetPlayerObject())
+    if (((ObjHitsPriorityState*)(obj)->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject())
     {
         Sfx_PlayFromObject(Obj_GetPlayerObject(), SFXTRIG_mv_bflconc1_2b9);
     }

@@ -407,7 +407,7 @@ void dbegg_computeFlocking(GameObject* obj, f32* vel)
             f32 dx = sibling->anim.localPosX - obj->anim.localPosX;
             f32 dz = sibling->anim.localPosZ - obj->anim.localPosZ;
             f32 dist = sqrtf(dx * dx + dz * dz);
-            f32 radius = 1.5f * (f32)(u32)((DbeggPlacement*)sibling->anim.placementDataAddress)->forceRadiusByte;
+            f32 radius = 1.5f * (f32)(u32)((DbeggPlacement*)sibling->anim.placementData)->forceRadiusByte;
             if (dist < radius)
             {
                 force = (radius - dist) / radius;
@@ -520,7 +520,7 @@ char sAnimGreaterMessage[11] = " GREATER \n\000";
 
 void dbegg_update(GameObject* obj)
 {
-    DbeggPlacement* data = (DbeggPlacement*)(obj)->anim.placementDataAddress;
+    DbeggPlacement* data = (DbeggPlacement*)(obj)->anim.placementData;
 #define hitState ((ObjHitsPriorityState*)(obj)->anim.hitReactState)
     GameObject* player;
     DbEggState* egg;
@@ -688,7 +688,7 @@ void dbegg_update(GameObject* obj)
             {
                 playerObj = Obj_GetPlayerObject();
                 pickupState = obj->extra;
-                placement = (DbeggPlacement*)(obj)->anim.placementDataAddress;
+                placement = (DbeggPlacement*)(obj)->anim.placementData;
                 objFreeObjectType(obj, DBEGG_OBJGROUP);
                 pickupState->mode = DBEGG_MODE_RELEASED;
                 mainSetBits(0x3c4, 1);
@@ -859,7 +859,7 @@ void dbegg_update(GameObject* obj)
                         DbEggState* pickupState;
                         GameObject* playerObj = Obj_GetPlayerObject();
                         pickupState = obj->extra;
-                        placement = (DbeggPlacement*)(obj)->anim.placementDataAddress;
+                        placement = (DbeggPlacement*)(obj)->anim.placementData;
                         objFreeObjectType(obj, DBEGG_OBJGROUP);
                         pickupState->mode = DBEGG_MODE_RELEASED;
                         mainSetBits(0x3c4, 1);

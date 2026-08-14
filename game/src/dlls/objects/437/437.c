@@ -854,7 +854,8 @@ void Lightfoot_hitDetect(void) {
 
 void Lightfoot_update(GameObject* obj) {
     LightfootState* inner = obj->extra;
-    int workValue = obj->anim.placementDataAddress;
+    LightfootPlacement* placement = (LightfootPlacement*)obj->anim.placementData;
+    int workValue;
     LightfootControlState* control = inner->groundBaddie.control;
     f32 pulseOffset[3];
     f32 effectParams[6];
@@ -871,7 +872,7 @@ void Lightfoot_update(GameObject* obj) {
     }
 
     if (obj->anim.romDefNo == DLL1B5_SEQUENCE_ID_SC_BABY_LIGHTFOOT && inner->groundBaddie.gameBitA != -1) {
-        switch (((LightfootPlacement*)workValue)->base.ident) {
+        switch (placement->base.ident) {
         case 0x4993F:
         case 0x49940:
         case 0x49941:
@@ -950,9 +951,9 @@ void Lightfoot_update(GameObject* obj) {
     }
 
     if (obj->userData1 != 0) {
-        if (((((LightfootPlacement*)workValue)->base.ident == 0x499B5 && mainGetBit(0xC42) &&
+        if (((placement->base.ident == 0x499B5 && mainGetBit(0xC42) &&
               (mainGetBit(0xC3B) == 0 || mainGetBit(0xC3C) == 0 || mainGetBit(0xC3D) == 0)) ||
-             (((LightfootPlacement*)workValue)->base.ident == 0x499B6 && mainGetBit(0xC46) &&
+             (placement->base.ident == 0x499B6 && mainGetBit(0xC46) &&
               (mainGetBit(0xC3E) == 0 || mainGetBit(0xC3F) == 0 || mainGetBit(0xC40) == 0)))) {
             effectParams[3] = 0.0f;
             effectParams[4] = 24.0f;

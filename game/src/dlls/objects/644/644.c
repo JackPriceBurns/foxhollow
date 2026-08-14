@@ -189,7 +189,7 @@ void shopitem_renderSparkle(GameObject* obj, int p2, int p3, int p4, int p5)
 void shopitem_onSeqFree(GameObject* obj)
 {
     ShopItemState* state = obj->extra;
-    ShopItemDef* def = (ShopItemDef*)obj->anim.placementDataAddress;
+    ShopItemDef* def = (ShopItemDef*)obj->anim.placementData;
     PushcartState97* b = &state->flags97;
     if (b->flag_40 == 0)
     {
@@ -304,7 +304,7 @@ void shopitem_hitDetect(void)
 
 void shopitem_update(GameObject* obj)
 {
-    ShopItemDef* def = (ShopItemDef*)(obj)->anim.placementDataAddress;
+    ShopItemDef* def = (ShopItemDef*)(obj)->anim.placementData;
     void* player = Obj_GetPlayerObject();
     int state = (int)obj->extra;
     f32 range = 10000.0f;
@@ -366,7 +366,7 @@ void shopitem_update(GameObject* obj)
                 {
                 case SHOPITEM_SEQ_BSPLINE:
                     (obj)->anim.localPosY =
-                        20.0f + ((ShopItemDef*)(obj)->anim.placementDataAddress)->splineYOffset;
+                        20.0f + ((ShopItemDef*)(obj)->anim.placementData)->splineYOffset;
                     break;
                 }
                 if (money >= price)

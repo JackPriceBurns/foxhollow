@@ -138,7 +138,7 @@ void wmwallcrawler_hitDetect(GameObject* obj)
         {
             state->mode = WMWALLCRAWLER_MODE_DIE;
         }
-        else if (*(void**)((obj)->anim.placementDataAddress + 0x14) == NULL)
+        else if (((ObjPlacement*)obj->anim.placementData)->ident == 0)
         {
             ObjHits_DisableObject(obj);
             Obj_FreeObject(obj);
@@ -224,7 +224,7 @@ void wmwallcrawler_update(GameObject* obj)
                     mainSetBits(state->counterGameBit,
                                 mainGetBit(state->counterGameBit) + 1);
                 }
-                if (*(void**)(ob->anim.placementDataAddress + 0x14) == 0)
+                if (((ObjPlacement*)ob->anim.placementData)->ident == 0)
                 {
                     ObjHits_DisableObject((GameObject*)ob);
                     Obj_FreeObject((GameObject*)ob);
@@ -254,7 +254,7 @@ void wmwallcrawler_update(GameObject* obj)
                 if (timerCountDown((f32*)&state->despawnTimer) != 0)
                 {
                     ob->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-                    if (*(void**)(ob->anim.placementDataAddress + 0x14) == 0)
+                    if (((ObjPlacement*)ob->anim.placementData)->ident == 0)
                     {
                         ObjHits_DisableObject((GameObject*)ob);
                         Obj_FreeObject((GameObject*)ob);
@@ -275,7 +275,7 @@ void wmwallcrawler_update(GameObject* obj)
             }
             if (sum >= 6)
             {
-                if (*(void**)(ob->anim.placementDataAddress + 0x14) == 0)
+                if (((ObjPlacement*)ob->anim.placementData)->ident == 0)
                 {
                     ObjHits_DisableObject((GameObject*)ob);
                     Obj_FreeObject((GameObject*)ob);
@@ -322,7 +322,7 @@ void wmwallcrawler_update(GameObject* obj)
                                 {
                                     state->mode = WMWALLCRAWLER_MODE_DIE;
                                 }
-                                else if (*(void**)(ob->anim.placementDataAddress + 0x14) == 0)
+                                else if (((ObjPlacement*)ob->anim.placementData)->ident == 0)
                                 {
                                     ObjHits_DisableObject((GameObject*)ob);
                                     Obj_FreeObject((GameObject*)ob);

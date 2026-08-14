@@ -69,8 +69,6 @@ GameObject* explodable_spawnFragmentObject(GameObject* obj, int fragmentObjectId
 
 void explodable_buildFragments(GameObject* obj, ExplodablePlacement* placementAddress, int skipCentroid, ExplodableState* state) {
     ExplodableChunk* chunk;
-    int modelBankOffset;
-    int childSlotAddress;
     int fragmentIndex;
     int fragmentObjectId;
     u8 spinScale;
@@ -90,8 +88,6 @@ void explodable_buildFragments(GameObject* obj, ExplodablePlacement* placementAd
     if (fragmentObjectId != -1) {
         fragmentIndex = 0;
         chunk = (ExplodableChunk*)state;
-        modelBankOffset = 0;
-        childSlotAddress = (int)state;
         for (; fragmentIndex < state->fragmentCount; fragmentIndex++) {
             state->spawnedFlags[fragmentIndex] = 1;
             chunk->spinScale = spinScale;
@@ -100,7 +96,7 @@ void explodable_buildFragments(GameObject* obj, ExplodablePlacement* placementAd
                 chunk->centroidX = zero;
                 chunk->centroidY = zero;
                 chunk->centroidZ = zero;
-                model = (ModelFileHeader*)*(int*)(*(int*)((int)obj->anim.banks + modelBankOffset));
+                model = obj->anim.modelBanks[fragmentIndex]->file;
                 centroidScratch.sum[0] = zero;
                 centroidScratch.sum[1] = zero;
                 centroidScratch.sum[2] = zero;
@@ -120,11 +116,9 @@ void explodable_buildFragments(GameObject* obj, ExplodablePlacement* placementAd
             explodable_computeFragmentLaunch(obj, chunk, placementAddress);
             chunk->unknown6B = EXPLODABLE_FRAGMENT_FULL_ALPHA;
             chunk->gameBitMode = mainGetBit(placementAddress->doneGameBit) != 0 ? 2 : 0;
-            ((ExplodableState*)childSlotAddress)->children[0] =
+            state->children[fragmentIndex] =
                 explodable_spawnFragmentObject(obj, fragmentObjectId, chunk, fragmentIndex);
             chunk++;
-            modelBankOffset += 4;
-            childSlotAddress += 4;
         }
         state->phase = (mainGetBit(placementAddress->doneGameBit) != 0)
                            ? EXPLODABLE_PHASE_BREAKING
@@ -209,17 +203,15 @@ int explodable_getExtraSize(void) {
 }
 
 void explodable_free(GameObject* obj, int keepChildren) {
-    int stateAddress;
+    ExplodableState* state;
     int fragmentIndex = -1;
-    int childSlotAddress;
     GameObject* child;
 
-    stateAddress = (int)obj->extra;
+    state = (ExplodableState*)obj->extra;
     objFreeObjectType(obj, EXPLODABLE_OBJECT_GROUP);
     if (keepChildren == 0) {
-        childSlotAddress = stateAddress - 4;
-        while (childSlotAddress += 4, ++fragmentIndex < EXPLODABLE_FRAGMENT_COUNT) {
-            child = ((ExplodableState*)childSlotAddress)->children[0];
+        while (++fragmentIndex < EXPLODABLE_FRAGMENT_COUNT) {
+            child = state->children[fragmentIndex];
             if (child != NULL) {
                 Obj_FreeObject(child);
             }
@@ -231,23 +223,18 @@ void explodable_render(void) {
 }
 
 void explodable_update(GameObject* obj) {
-    int childSlotAddress;
-    int placementAddress;
     int fragmentIndex;
-    int stateAddress;
     int fragmentStatus;
-    int fragmentObject;
+    GameObject* fragmentObject;
     ExplodableState* state;
     ExplodablePlacement* placement;
 
-    stateAddress = (int)obj->extra;
-    placementAddress = obj->anim.placementDataAddress;
-    state = (ExplodableState*)stateAddress;
-    placement = (ExplodablePlacement*)placementAddress;
+    state = (ExplodableState*)obj->extra;
+    placement = (ExplodablePlacement*)obj->anim.placementData;
     if (state->phase != EXPLODABLE_PHASE_BROKEN) {
         if (state->phase == EXPLODABLE_PHASE_WAIT) {
             if (mainGetBit(placement->activateGameBit) != 0) {
-                explodable_buildFragments(obj, (ExplodablePlacement*)placementAddress, 0, (ExplodableState*)stateAddress);
+                explodable_buildFragments(obj, placement, 0, state);
                 if (state->breakSfxId != 0) {
                     Sfx_PlayFromObject(obj, state->breakSfxId & 0xffff);
                 }
@@ -258,16 +245,15 @@ void explodable_update(GameObject* obj) {
             }
         } else {
             fragmentIndex = 0;
-            childSlotAddress = stateAddress;
             do {
-                fragmentObject = (int)((ExplodableState*)childSlotAddress)->children[0];
-                if ((void*)fragmentObject != NULL) {
-                    fragmentStatus = EXPLODED_INTERFACE(fragmentObject)->getPhase((GameObject*)fragmentObject);
+                fragmentObject = state->children[fragmentIndex];
+                if (fragmentObject != NULL) {
+                    fragmentStatus = EXPLODED_INTERFACE(fragmentObject)->getPhase(fragmentObject);
                     switch (fragmentStatus) {
                     case EXPLODED_PHASE_EXPIRED:
                         mainSetBits(placement->doneGameBit, TRUE);
-                        Obj_FreeObject(((ExplodableState*)childSlotAddress)->children[0]);
-                        ((ExplodableState*)childSlotAddress)->children[0] = NULL;
+                        Obj_FreeObject(state->children[fragmentIndex]);
+                        state->children[fragmentIndex] = NULL;
                         break;
                     case EXPLODED_PHASE_IDLE:
                         mainSetBits(placement->doneGameBit, TRUE);
@@ -277,7 +263,6 @@ void explodable_update(GameObject* obj) {
                         break;
                     }
                 }
-                childSlotAddress += 4;
                 fragmentIndex++;
             } while (fragmentIndex < EXPLODABLE_FRAGMENT_COUNT);
         }
@@ -285,7 +270,6 @@ void explodable_update(GameObject* obj) {
 }
 
 void explodable_init(GameObject* obj, ExplodablePlacement* placementAddress) {
-    int stateAddress = (int)obj->extra;
     int recipeIndex;
     ExplodableBreakRecipe* recipes;
     u32 fragmentCount;
@@ -293,8 +277,7 @@ void explodable_init(GameObject* obj, ExplodablePlacement* placementAddress) {
     ExplodablePlacement* placement = placementAddress;
 
     objAddObjectType(obj, EXPLODABLE_OBJECT_GROUP);
-    stateAddress = (int)obj->extra;
-    state = (ExplodableState*)stateAddress;
+    state = (ExplodableState*)obj->extra;
     fragmentCount = placement->fragmentCount;
     if (fragmentCount == 0) {
         fragmentCount = 1;

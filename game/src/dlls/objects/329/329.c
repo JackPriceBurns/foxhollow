@@ -206,14 +206,14 @@ void windLift_updateRider(GameObject* obj, GameObject* rider, WindLiftSlot* slot
             }
         }
         if (isPlayer != 0) {
-            Player_SetLiftVelocityY((int)rider, slot->riseSpeed);
+            Player_SetLiftVelocityY(rider, slot->riseSpeed);
         } else {
             rider->anim.localPosY = slot->riseSpeed * timeDelta + rider->anim.localPosY;
             rider->anim.velocityY = slot->riseSpeed * timeDelta;
         }
     } else {
         if (isPlayer != 0) {
-            Player_SetLiftVelocityY((int)rider, 0.0f);
+            Player_SetLiftVelocityY(rider, 0.0f);
         }
         if (isPlayer == 0) {
             ObjMsg_SendToObject(rider, WINDLIFT_RIDER_EXIT_MESSAGE, obj, riderGameBit);
@@ -234,7 +234,7 @@ int windLift_getObjectTypeId(void) {
 
 void windLift_free(GameObject* obj) {
     GameObject* player = Obj_GetPlayerObject();
-    if (player == NULL || Player_GetLiftVelocityY((int)player) == 0.0f) {
+    if (player == NULL || Player_GetLiftVelocityY(player) == 0.0f) {
         Music_Trigger(MUSICTRIG_DIM_Cavern, 0);
     }
     objFreeObjectType(obj, CFWINDLIFT_OBJECT_GROUP);
@@ -308,7 +308,7 @@ void windLift_update(GameObject* obj) {
             }
             if ((state->slots[0].phaseFlags & WINDLIFT_SLOT_PHASE_FLAGS) != 0) {
                 u8 flags;
-                Player_SetLiftVelocityY((int)player, 0.0f);
+                Player_SetLiftVelocityY(player, 0.0f);
                 flags = state->slots[0].phaseFlags;
                 if ((flags & WINDLIFT_SLOT_DIRECTION_FLAGS) != 0) {
                     state->slots[0].phaseFlags = flags | WINDLIFT_SLOT_FLAG_PENDING;

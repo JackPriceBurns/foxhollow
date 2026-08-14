@@ -548,7 +548,7 @@ void worldobj_init(GameObject* obj, const WorldObjSetup* setup) {
         Obj_SetActiveModelIndex(obj, idx);
         obj->anim.alpha = gWorldObjVariantAlphaTable[idx];
         for (i = 0; i < 0xb; i++) {
-            placement = (ObjPlacement*)obj->anim.placementDataAddress;
+            placement = (ObjPlacement*)obj->anim.placementData;
             if (Obj_IsLoadingLocked() != 0) {
                 ObjPlacement* childPlacement = Obj_AllocObjectSetup(0x20, WORLDOBJ_SUNRAY_OBJ);
                 childPlacement->color[0] = placement->color[0];

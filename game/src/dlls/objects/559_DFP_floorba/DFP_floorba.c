@@ -91,7 +91,7 @@ u8 gDfpfloorbarModeTable[DFPFLOORBAR_MODE_TABLE_STORAGE] = {
 
 void DFP_Floorbar_update(GameObject* obj)
 {
-    DfpfloorbarPlacement* placement = (DfpfloorbarPlacement*)(obj)->anim.placementDataAddress;
+    DfpfloorbarPlacement* placement = (DfpfloorbarPlacement*)(obj)->anim.placementData;
     DfpFloorbarState* state = (obj)->extra;
     s16 score = -1;
     int mode;

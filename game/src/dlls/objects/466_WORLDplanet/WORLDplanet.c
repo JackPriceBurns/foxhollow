@@ -242,7 +242,7 @@ void worldplanet_update(GameObject* obj) {
     if (state->foxSpawnTimer == 1) {
         ObjPlacement* def;
         state->foxSpawnTimer = randomGetRange(WORLDPLANET_FOX_SPAWN_MIN_FRAMES, WORLDPLANET_FOX_SPAWN_MAX_FRAMES);
-        def = (ObjPlacement*)(obj)->anim.placementDataAddress;
+        def = (ObjPlacement*)(obj)->anim.placementData;
         if (Obj_IsLoadingLocked() != 0) {
             WorldPlanetFoxSpawnSetup* setup = (WorldPlanetFoxSpawnSetup*)Obj_AllocObjectSetup(
                 WORLDPLANET_FOX_SPAWN_SETUP_SIZE, WORLDPLANET_FOX_SPAWN_OBJECT_ID);
@@ -665,7 +665,7 @@ void worldplanet_init(GameObject* obj) {
     unlockLevel(0, 0, 1);
     mapUnload(WORLDPLANET_MAIN_MAP_ID, WORLDPLANET_MAP_PRELOAD_FLAG);
     layer = getCurMapLayer();
-    (*gMapEventInterface)->savePoint((int)&obj->anim.localPosX, 0, 0, layer);
+    (*gMapEventInterface)->savePoint(&obj->anim.localPosX, 0, 0, layer);
     (*gScreenTransitionInterface)->step(WORLDPLANET_CANCEL_LOCKOUT_FRAMES, SCREEN_TRANSITION_BLACK);
     gWorldPlanetInputLockTimer = WORLDPLANET_COUNTDOWN_FRAMES;
     mainSetBits(gWorldPlanetGameBitTable[WORLDPLANET_SLOT_DINOSAUR_PLANET], 1);

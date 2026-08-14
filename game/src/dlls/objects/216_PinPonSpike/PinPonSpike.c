@@ -134,8 +134,8 @@ void pinponspike_update(GameObject* obj) {
         ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj, PINPONSPIKE_HIT_VOLUME_SLOT, 1, 0);
         ObjHits_EnableObject(obj);
         if (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject != 0 &&
-            (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)Obj_GetPlayerObject() ||
-             ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)getTrickyObject())) {
+            (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject() ||
+             ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)getTrickyObject())) {
             int particleIndex;
             obj->anim.alpha = 0;
             obj->userData1 = PINPONSPIKE_IMPACT_DESPAWN_DELAY;

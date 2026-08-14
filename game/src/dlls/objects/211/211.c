@@ -1200,7 +1200,7 @@ void dll_D3_update(GameObject* obj)
 #define dy           vec[2]
 #define dz           vec[3]
 
-    trans = (DllD3Placement*)(obj->anim.placementDataAddress);
+    trans = (DllD3Placement*)(obj->anim.placementData);
     state = obj->extra;
     extra = (LandedArwingState*)state->control;
     player = Obj_GetPlayerObject();

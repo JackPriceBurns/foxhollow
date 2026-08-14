@@ -1817,12 +1817,12 @@ typedef struct
 
 s32 SnowBike_getRouteRank(GameObject* obj)
 {
-    return (*gCheckpointInterface)->getRouteRank((CheckpointRankItem*)((int)obj->extra + 0x28));
+    return (*gCheckpointInterface)->getRouteRank((CheckpointRankItem*)((u8*)obj->extra + 0x28));
 }
 
 s32 SnowBike_isAtRankGate(GameObject* obj)
 {
-    int result = (*gCheckpointInterface)->getRouteRank((CheckpointRankItem*)((int)obj->extra + 0x28));
+    int result = (*gCheckpointInterface)->getRouteRank((CheckpointRankItem*)((u8*)obj->extra + 0x28));
     if (result == 3)
     {
         if (gSnowBikeLeaderRouteRank == -1)

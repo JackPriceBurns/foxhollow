@@ -231,7 +231,7 @@ void ccGasVentControl_update(GameObject* obj) {
     case CC_GAS_VENT_CONTROL_PHASE_SAVE_POINT: {
         GameObject* player = Obj_GetPlayerObject();
 
-        (*gMapEventInterface)->savePoint((int)&player->anim.localPosX, player->anim.rotX, 1, 0);
+        (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 1, 0);
         state->phase = CC_GAS_VENT_CONTROL_PHASE_WAIT_FOR_CLEAR;
         break;
     }

@@ -111,7 +111,7 @@ void MikaBomb_update(GameObject* obj) {
         ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj, MIKABOMB_HIT_VOLUME_SLOT, 1, 0);
         ObjHits_EnableObject(obj);
         if (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject != 0 &&
-            ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)Obj_GetPlayerObject()) {
+            ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject()) {
             if (obj->anim.alpha == 0xff) {
                 MikaBombState* impactState = obj->extra;
                 u32 effectId;

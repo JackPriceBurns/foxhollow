@@ -165,8 +165,8 @@ void KaldachomSpit_update(GameObject* obj) {
                 kaldachomspit_burst(obj);
                 return;
             }
-            if ((((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)Obj_GetPlayerObject()) ||
-                (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)getTrickyObject())) {
+            if ((((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject()) ||
+                (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)getTrickyObject())) {
                 kaldachomspit_burst(obj);
                 return;
             }

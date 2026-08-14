@@ -184,6 +184,9 @@ typedef struct CameraModeNormalState {
     u8 wallAvoidanceTimer;
     CameraModeNormalClampFlags clampFlags;
     u8 padC9[3];
+    u8 traceHitMask;
+    u8 padCD[3];
+    f32 traceNormalY;
 } CameraModeNormalState;
 
 STATIC_ASSERT(offsetof(CameraModeNormalState, minDistance) == 0x00);

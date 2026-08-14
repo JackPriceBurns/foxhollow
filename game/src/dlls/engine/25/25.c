@@ -426,7 +426,7 @@ int dll_19_updateHitReaction(GameObject* obj, void* baddieState, void* hitbox, s
         {
             if (((Dll19State*)state)->oscValue > 2.0f)
             {
-                GroundBaddiePlacement* other = (GroundBaddiePlacement*)obj->anim.placementDataAddress;
+                GroundBaddiePlacement* other = (GroundBaddiePlacement*)obj->anim.placementData;
                 ((Dll19State*)state)->oscValue = 0.0f;
                 ((Dll19State*)state)->flags = ((Dll19State*)state)->flags & ~DLL19_FLAG_OSC_ACTIVE;
                 ((BaddieState*)baddieState)->hitPoints = 0;
@@ -724,7 +724,7 @@ GameObject* dll_19_findAggroTarget(GameObject* self, void* state, f32 frange, in
                 delta = getAngle(-dp[0], -dp[2]) & 0xffff;
                 if (self->anim.parent != NULL)
                 {
-                    delta -= (self->anim.rotX + *(s16*)(self->anim.parentAddress)) & 0xffff;
+                    delta -= (self->anim.rotX + self->anim.parentAnim->rotX) & 0xffff;
                     if (delta > 0x8000)
                     {
                         delta -= 0xffff;
@@ -1105,7 +1105,7 @@ f32 dll_19_func05(GameObject* obj, f32 px, f32 pz, f32 range, GameObject* mover)
             mover->anim.worldPosZ = mover->anim.worldPosZ - c * d1;
             Obj_TransformWorldPointToLocal(mover->anim.worldPosX, mover->anim.worldPosY, mover->anim.worldPosZ,
                                            &mover->anim.localPosX, &mover->anim.localPosY, &mover->anim.localPosZ,
-                                           (GameObject*)mover->anim.parentAddress);
+                                           (GameObject*)mover->anim.parent);
         }
         else if (d2 > 1.0f)
         {

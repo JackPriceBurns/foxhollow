@@ -172,6 +172,9 @@ u8 SB_Galleon_getDamagePhase(GameObject* obj);
 int SB_Galleon_getPhase(GameObject* obj);
 s32 SB_Galleon_getStage(GameObject* obj);
 int SB_Galleon_onPartDestroyed(GameObject* obj);
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+void SB_Galleon_skipBattle(GameObject* obj, GameObject* cloudRunner);
+#endif
 int SB_Galleon_getExtraSize(void);
 int SB_Galleon_getObjectTypeId(void);
 void SB_Galleon_free(GameObject* obj, int leavingMap);

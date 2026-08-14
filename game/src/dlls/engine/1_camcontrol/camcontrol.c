@@ -1092,12 +1092,12 @@ void Camera_setTarget(GameObject* target) {
     gCamcontrolCamera->currentTarget = target;
 }
 
-int Camera_getTarget(void) {
-    return (int)gCamcontrolCamera->currentTarget;
+GameObject* Camera_getTarget(void) {
+    return gCamcontrolCamera->currentTarget;
 }
 
-int Camera_getOverrideTarget(void) {
-    return (int)gCamcontrolCamera->overrideTarget;
+GameObject* Camera_getOverrideTarget(void) {
+    return gCamcontrolCamera->overrideTarget;
 }
 
 void camcontrol_getRelativePosition(void* targetObj, f32* outX, f32* outY, f32* outZ, f32* outDistanceXZ,

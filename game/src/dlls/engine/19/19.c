@@ -685,9 +685,8 @@ void waterfx_run(int frames)
  * water-plane height; the actor's BaddieState.waterDepth is added to it to
  * reach the impact height. impactPositions is one vec3 per limb.
  */
-void waterfx_spawnImpactSurface(u8* objHeader, u16 limbMask, f32* impactPositions, u8* surface, f32 speed)
+void waterfx_spawnImpactSurface(u8* objHeader, u16 limbMask, f32* impactPositions, f32 waterDepth, f32 speed)
 {
-    BaddieState* surf = (BaddieState*)surface;
     f32* pos = impactPositions;
     while (limbMask != 0)
     {
@@ -695,19 +694,19 @@ void waterfx_spawnImpactSurface(u8* objHeader, u16 limbMask, f32* impactPosition
         {
             f32 px = pos[0];
             f32 pz = pos[2];
-            if (surf->waterDepth < WATERFX_SHALLOW_DEPTH)
+            if (waterDepth < WATERFX_SHALLOW_DEPTH)
             {
                 if (speed > WATERFX_SPLASH_SPEED_THRESHOLD)
                 {
-                    waterfx_spawnSplashBurst(objHeader, px, ((GameObject*)objHeader)->anim.localPosY + surf->waterDepth, pz,
+                    waterfx_spawnSplashBurst(objHeader, px, ((GameObject*)objHeader)->anim.localPosY + waterDepth, pz,
                                              WATERFX_ZERO);
                 }
             }
             gWaterfxRippleScale = WATERFX_DEFAULT_SCALE;
-            waterfx_spawnRipple(px, ((GameObject*)objHeader)->anim.localPosY + surf->waterDepth, pz, ((GameObject*)objHeader)->anim.rotX,
+            waterfx_spawnRipple(px, ((GameObject*)objHeader)->anim.localPosY + waterDepth, pz, ((GameObject*)objHeader)->anim.rotX,
                                 WATERFX_ZERO, 4);
             gWaterfxPendingImpactPosition[0] = px;
-            gWaterfxPendingImpactPosition[1] = ((GameObject*)objHeader)->anim.localPosY + surf->waterDepth;
+            gWaterfxPendingImpactPosition[1] = ((GameObject*)objHeader)->anim.localPosY + waterDepth;
             gWaterfxPendingImpactPosition[2] = pz;
             gWaterfxPendingImpactPositionValid = 1;
         }

@@ -2289,7 +2289,7 @@ void animatedObjFreeAndSavePlayerPos(GameObject* obj, GameObject* seqObj, u8* se
     if (((ObjSeqState*)seq)->flags136.mapEvent != 0U)
     {
         player = Obj_GetPlayerObject();
-        (*gMapEventInterface)->savePoint((int)&player->anim.localPosX, player->anim.rotX, 0, getCurMapLayer());
+        (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 0, getCurMapLayer());
         clearBit = 0;
         ((ObjSeqState*)seq)->flags136.mapEvent = clearBit;
     }
@@ -2568,7 +2568,7 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
         ((ObjSeqState*)seq)->flags136.mapEvent = 1;
         break;
     case 36:
-        (*gMapEventInterface)->savePoint(0, 0, 1, getCurMapLayer());
+        (*gMapEventInterface)->savePoint(NULL, 0, 1, getCurMapLayer());
         break;
     case 38:
         playerLock(Obj_GetPlayerObject(), cmdArg);
@@ -2826,7 +2826,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
                 freeSlot = -1;
                 for (j = 0; j < 10; j++)
                 {
-                    slotVal = seq[j + 0x12c];
+                    slotVal = ((ObjSeqState*)seq)->conditionOpcodes[j];
                     if (slotVal == operand)
                     {
                         found = 1;
@@ -2838,7 +2838,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
                 }
                 if (found == 0 && freeSlot != -1)
                 {
-                    seq[freeSlot + 0x12c] = operand;
+                    ((ObjSeqState*)seq)->conditionOpcodes[freeSlot] = operand;
                     ((ObjSeqState*)seq)->conditionFrames[freeSlot] = objSeqFindLabel(seq, top16);
                 }
                 result = 0;

@@ -143,7 +143,6 @@ void CameraModeClimb_init(CameraObject* camera, int mode, CameraModeClimbTransit
     f32 defaultMinHeight;
     f32 defaultMaxHeight;
     f32 defaultRelPos;
-    int handler;
 
     if (gCameraModeClimbState == NULL) {
         gCameraModeClimbState = (CameraModeClimbState*)mmAlloc(sizeof(CameraModeClimbState), 0xf, 0);
@@ -165,9 +164,8 @@ void CameraModeClimb_init(CameraObject* camera, int mode, CameraModeClimbTransit
     case 1:
     default:
         memset(gCameraModeClimbState, 0, sizeof(CameraModeClimbState));
-        handler = (int)(*gCameraInterface)->getDefaultHandlerEntry();
-        (*(VtableFn*)(**(int**)(handler + 4) + 0x20))(&defaultDistB, &defaultDistA, &defaultMinHeight,
-                                                      &defaultMaxHeight, &defaultRelPos);
+        gCameraModeNormalDescriptor.getSettings(&defaultDistB, &defaultDistA, &defaultMinHeight,
+                                                &defaultMaxHeight, &defaultRelPos);
         (*gCameraInterface)
             ->getRelativePosition(camera, &outX, &outY, &outZ, &defaultDistXZ,
                                   (f32)(u16)gCameraModeClimbState->relativePosition, 0);

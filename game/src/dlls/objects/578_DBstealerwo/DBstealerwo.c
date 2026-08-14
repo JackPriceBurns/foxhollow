@@ -112,7 +112,7 @@ int dbstealerworm_stateHandlerB06(GameObject* obj, BaddieState* baddie)
 
     GroundBaddieState* state = (obj)->extra;
     DbStealerwormControl* sub;
-    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementDataAddress;
+    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementData;
     int count;
     const DbStealerwormScript* entry;
     char* ptr;
@@ -211,7 +211,7 @@ int dbstealerworm_stateHandlerB05(GameObject* obj, BaddieState* baddie)
 {
     GroundBaddieState* state = (obj)->extra;
     DbStealerwormControl* sub;
-    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementDataAddress;
+    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementData;
     const DbStealerwormScript* base;
     int routeIndex;
     GameObject* found;
@@ -1539,7 +1539,7 @@ int dbstealerworm_stateHandlerA06(GameObject* obj, BaddieState* baddie)
 
 
     GroundBaddieState* sub = (obj)->extra;
-    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementDataAddress;
+    GroundBaddiePlacement* data = (GroundBaddiePlacement*)(obj)->anim.placementData;
     DbStealerwormControl* control = (DbStealerwormControl*)sub->control;
     BaddieState* bs = baddie;
 
@@ -1758,7 +1758,7 @@ int dbstealerworm_stateHandlerA01(GameObject* obj, BaddieState* baddie)
     GroundBaddiePlacement* placementData;
 
     sub = (obj)->extra;
-    placementData = (GroundBaddiePlacement*)(obj)->anim.placementDataAddress;
+    placementData = (GroundBaddiePlacement*)(obj)->anim.placementData;
     control = (DbStealerwormControl*)sub->control;
     if (bs->moveJustStartedA != '\0')
     {
@@ -2081,7 +2081,7 @@ void dbstealerworm_acquireTarget(GameObject* obj, GroundBaddieState* groundState
         f32 d[3];
     } stk;
     stk.range = 100.0f;
-    data = (GroundBaddiePlacement*)obj->anim.placementDataAddress;
+    data = (GroundBaddiePlacement*)obj->anim.placementData;
     near = (*gBaddieControlInterface)
                ->findAggroTarget(obj, (void*)baddie, st->aggroRange, 0x8000);
     if (near == 0 && (st->configFlags & 0x10) != 0)

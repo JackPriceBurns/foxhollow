@@ -1223,6 +1223,16 @@ u8* loadObjectFile(int id)
                 ap->rot[c] = (s16)fhSwap16((u16)ap->rot[c]);
             }
         }
+        for (mi = 0; buf->hitVolumes != NULL && mi < buf->hitVolumeCount; mi++)
+        {
+            ObjDefHitVolume* hitVolume = &buf->hitVolumes[mi];
+            hitVolume->jointOffsetX = (s16)fhSwap16((u16)hitVolume->jointOffsetX);
+            hitVolume->jointOffsetY = (s16)fhSwap16((u16)hitVolume->jointOffsetY);
+            hitVolume->jointOffsetZ = (s16)fhSwap16((u16)hitVolume->jointOffsetZ);
+            hitVolume->posX = (s16)fhSwap16((u16)hitVolume->posX);
+            hitVolume->posY = (s16)fhSwap16((u16)hitVolume->posY);
+            hitVolume->posZ = (s16)fhSwap16((u16)hitVolume->posZ);
+        }
         if (buf->weaponDaTable != NULL)
         {
             s16* wt = buf->weaponDaTable;
@@ -2144,7 +2154,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     {
     case OBJECT_SEQID_SABRE:
     case OBJECT_SEQID_KRYSTAL:
-        dllStateSize = 0x8e0;
+        dllStateSize = sizeof(PlayerState);
         break;
     default:
         if (obj->anim.dll != NULL &&

@@ -105,8 +105,8 @@ void Pollen_update(GameObject* obj) {
         ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, POLLEN_HITBOX_RADIUS);
         ObjHits_EnableObject(obj);
         if (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject != 0 &&
-            (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)Obj_GetPlayerObject() ||
-             ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (u32)getTrickyObject())) {
+            (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject() ||
+             ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)getTrickyObject())) {
             CameraShake_Enable();
             CameraShake_SetOffset(1.0f);
             Sfx_PlayFromObject(obj, SFXTRIG_id_b6);

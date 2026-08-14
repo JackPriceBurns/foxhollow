@@ -779,9 +779,7 @@ void gameUiLoadResources(void)
         s32 rotation;
         u32* ids;
         GameObject** menuObjects;
-        u32 addressLimit;
         GameObject* object;
-        u32* placementAddress;
         s32 j;
         f32 z, y, x;
 
@@ -854,7 +852,6 @@ void gameUiLoadResources(void)
         menuObjects = base->menuObjects;
         z = 0.0f;
         y = -5.0f;
-        addressLimit = 0x90000000;
         for (; j < 6; j++)
         {
             *menuObjects = objSetupObject(Obj_AllocObjectSetup(0x20, *ids), 4, -1, -1, NULL);
@@ -863,11 +860,6 @@ void gameUiLoadResources(void)
             (*menuObjects)->anim.localPosZ = y;
             (*menuObjects)->anim.rotX = 0x7447;
             (*menuObjects)->anim.rootMotionScale = z;
-            placementAddress = &(*menuObjects)->anim.placementDataAddress;
-            if (*placementAddress > addressLimit)
-            {
-                *placementAddress = 0;
-            }
             ids++;
             menuObjects++;
         }
@@ -4246,10 +4238,6 @@ void headDisplayDraw(void)
         if (gHeadDisplayModelObjs[panelType] != NULL)
         {
             ObjAnim_AdvanceCurrentMove(gHeadDisplayModelObjs[panelType], gPauseMenuPanelAnims.speeds[panelType], timeDelta, NULL);
-            if (gHeadDisplayModelObjs[panelType]->anim.placementDataAddress > 0x90000000u)
-            {
-                gHeadDisplayModelObjs[panelType]->anim.placementDataAddress = 0;
-            }
             gHeadDisplayModelObjs[panelType]->anim.renderAlpha = 0xff;
             objRender(0, 0, 0, 0, gHeadDisplayModelObjs[panelType], 1);
             Obj_GetActiveModel(gHeadDisplayModelObjs[panelType])->bufferFlags &= ~8;
@@ -4359,10 +4347,6 @@ void headDisplayFreeModels(void)
         GameObject* obj = gHeadDisplayModelObjs[i];
         if (obj != NULL)
         {
-            if (obj->anim.placementDataAddress > 0x90000000u)
-            {
-                obj->anim.placementDataAddress = 0;
-            }
             Obj_FreeObject(gHeadDisplayModelObjs[i]);
             gHeadDisplayModelObjs[i] = 0;
         }
@@ -5672,10 +5656,6 @@ void pauseMenuDoSave(void)
         {
             continue;
         }
-        if (gGameUiHudAnimObjects[i]->anim.placementDataAddress > 0x90000000U)
-        {
-            gGameUiHudAnimObjects[i]->anim.placementDataAddress = 0;
-        }
         objRender(0, 0, 0, 0, gGameUiHudAnimObjects[i], 1);
         Obj_GetActiveModel(gGameUiHudAnimObjects[i])->bufferFlags &= ~0x8;
         gGameUiHudAnimObjects[i]->anim.renderAlpha = 0xff;
@@ -5780,13 +5760,6 @@ void pauseMenuRenderSlotShadow(void)
     GXSetViewport(0.0f, 0.0f, (f32)gRenderModeObj->fbWidth,
                   gRenderModeObj->xfbHeight, 0.0f, 1.0f);
     renderObjectShadowTexture(gGameUiHudAnimObjects[gPauseMenuPageIndex]);
-    {
-        GameObject* slot = gGameUiHudAnimObjects[gPauseMenuPageIndex];
-        if (slot->anim.placementDataAddress > 0x90000000U)
-        {
-            slot->anim.placementDataAddress = 0;
-        }
-    }
     Camera_SetCurrentViewIndex(0);
     Camera_SetFovY(saved_fov);
     Camera_RebuildProjectionMatrix();
@@ -6677,7 +6650,7 @@ int pauseMenuIsFox(void)
     inner = s->anim.parent;
     if (inner != NULL)
     {
-        lookup = *((u8*)inner + 0xac);
+        lookup = ((GameObject*)inner)->anim.mapEventSlot;
     }
     else
     {
@@ -6975,7 +6948,6 @@ void pauseMenuAnimateCarousel(void)
     s16 step;
     int kk;
     s16 delta;
-    u32 watermark;
     f32 base;
     ObjAnimEventList animEvents;
 
@@ -7039,15 +7011,10 @@ void pauseMenuAnimateCarousel(void)
     }
     ObjAnim_AdvanceCurrentMove(gGameUiCommunicatorObjects[1], 0.01f, timeDelta,
                                &animEvents);
-    watermark = 0x90000000;
     for (; k <= last; k++)
     {
         f32 sel;
         f32 a;
-        if (gGameUiHudAnimObjects[k]->anim.placementDataAddress > watermark)
-        {
-            gGameUiHudAnimObjects[k]->anim.placementDataAddress = 0;
-        }
         kk = k;
         if (kk == gPauseMenuPageIndex)
         {

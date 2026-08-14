@@ -430,13 +430,13 @@ void triggerEvalEndpointSpheres(GameObject* obj, GameObject* seqObj) {
 void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range) {
     char* desc = (char*)&gTriggerObjDescriptor;
     u8* state = obj->extra;
-    u8* p = (u8*)(obj->anim.placementDataAddress + 0x18);
+    u8* p = (u8*)obj->anim.placementData + 0x18;
     u8 i = 0;
     u8 b;
     u8 sflags;
     u8 groupStatus;
-    int t;
-    int t2;
+    intptr_t t;
+    intptr_t t2;
     int* tbl;
     u32 op;
     u32 v;
@@ -495,25 +495,25 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             case 7:
                 break;
             case 8:
-                t = (int)Obj_GetPlayerObject();
+                t = (intptr_t)Obj_GetPlayerObject();
                 if ((void*)t != NULL) {
                     playerSetStateValue((GameObject*)t, 1, 0.0f);
                 }
                 break;
             case 9:
-                t = (int)Obj_GetPlayerObject();
+                t = (intptr_t)Obj_GetPlayerObject();
                 if ((void*)t != NULL) {
                     playerSetStateValue((GameObject*)t, 10, 0.0f);
                 }
                 break;
             case 10:
-                t = (int)Obj_GetPlayerObject();
+                t = (intptr_t)Obj_GetPlayerObject();
                 if ((void*)t != NULL) {
                     playerSetStateValue((GameObject*)t, 0xb, 0.0f);
                 }
                 break;
             case 0xb:
-                t = (int)Obj_GetPlayerObject();
+                t = (intptr_t)Obj_GetPlayerObject();
                 if ((void*)t != NULL) {
                     playerSetStateValue((GameObject*)t, 1, 14.0f);
                 }
@@ -613,7 +613,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             switch (p[2]) {
             case 0:
             case 3:
-                t = (int)objGetNearestTypeTo(TARGET_OBJGROUP, obj, 0);
+                t = (intptr_t)objGetNearestTypeTo(TARGET_OBJGROUP, obj, 0);
                 if ((void*)t != NULL) {
                     (*gObjectTriggerInterface)->runSequence(p[3], (void*)t, -1);
                 }
@@ -633,7 +633,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             triggerId = (u16)((p[2] << 8) | p[3]);
             objects = ObjList_GetObjects(&first, &count);
             for (; first < count; first++) {
-                t2 = (int)objects[first];
+                t2 = (intptr_t)objects[first];
                 tbl = (int*)((GameObject*)t2)->anim.placementData;
                 if (tbl == NULL) {
                     continue;
@@ -705,7 +705,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             OSReport(desc + 0x114, p[2], p[3]);
             break;
         case 0x2f:
-            t = (int)objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, 0);
+            t = (intptr_t)objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, 0);
             if ((void*)t != NULL) {
                 timer_addDuration((GameObject*)(t), p[3] * 0x3c);
             }
@@ -719,7 +719,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             (*gMapEventInterface)->setObjGroupStatus((int)obj->anim.mapEventSlot, id, groupStatus ^ 1);
             break;
         case 0x15:
-            t = (int)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
+            t = (intptr_t)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
             if ((void*)t != NULL) {
                 for (tbl = (int*)t; *tbl != -1; tbl++) {
                     if ((void*)getLoadedTexture(*tbl) == NULL) {
@@ -729,10 +729,10 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             }
             break;
         case 0x16:
-            t = (int)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
+            t = (intptr_t)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
             if ((void*)t != NULL) {
                 for (tbl = (int*)t; *tbl != -1; tbl++) {
-                    t2 = (int)getLoadedTexture(*tbl);
+                    t2 = (intptr_t)getLoadedTexture(*tbl);
                     if ((void*)t2 != NULL) {
                         textureFree((Texture*)((u8*)t2));
                     }
@@ -755,7 +755,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             mainSetBits(GAMEBIT_TrickyTalk, (p[2] << 8) | p[3]);
             break;
         case 0x1f:
-            t = (int)Obj_GetPlayerObject();
+            t = (intptr_t)Obj_GetPlayerObject();
             angleDiff = obj->anim.rotX - (u16) * (s16*)t;
             if (angleDiff > 0x8000) {
                 angleDiff = (angleDiff - 0x10000) + 1;
@@ -770,9 +770,9 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             }
             if (ang > 0x4000) {
                 (*gMapEventInterface)
-                    ->savePoint((int)obj + 0xc, (int)(s16)(obj->anim.rotX + 0x8000), p[3], getCurMapLayer());
+                    ->savePoint(&obj->anim.localPosX, (int)(s16)(obj->anim.rotX + 0x8000), p[3], getCurMapLayer());
             } else {
-                (*gMapEventInterface)->savePoint((int)obj + 0xc, (int)obj->anim.rotX, p[3], getCurMapLayer());
+                (*gMapEventInterface)->savePoint(&obj->anim.localPosX, (int)obj->anim.rotX, p[3], getCurMapLayer());
             }
             break;
         case 0x20:
@@ -799,7 +799,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             }
             break;
         case 0x26:
-            t = (int)getTrickyObject();
+            t = (intptr_t)getTrickyObject();
             if ((void*)t != NULL) {
                 switch (p[2]) {
                 case 0:
@@ -809,9 +809,9 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
                     Obj_FreeObject(getTrickyObject());
                     break;
                 case 2:
-                    t2 = (int)objGetNearestTypeTo(TRICKY_TARGET_OBJGROUP, (GameObject*)t, 0);
+                    t2 = (intptr_t)objGetNearestTypeTo(TRICKY_TARGET_OBJGROUP, (GameObject*)t, 0);
                     if ((void*)t2 == NULL) {
-                        t2 = (int)objGetNearestTypeTo(TRICKY_TARGET_OBJGROUP_FALLBACK, (GameObject*)t, 0);
+                        t2 = (intptr_t)objGetNearestTypeTo(TRICKY_TARGET_OBJGROUP_FALLBACK, (GameObject*)t, 0);
                     }
                     if ((void*)t2 != NULL) {
                         TRICKY_INTERFACE(t)->requestMoveToObject((GameObject*)t, (GameObject*)t2);
@@ -877,7 +877,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
             *(f32*)seqObj->extra = 0.1f * (f32)(s32)((p[2] << 8) | p[3]);
             break;
         case 0x2d:
-            t = (int)Obj_GetPlayerObject();
+            t = (intptr_t)Obj_GetPlayerObject();
             if ((void*)t != NULL) {
                 (*gGameUIInterface)->showNpcDialogue((p[2] << 8) | p[3], 0x14, 0x8c, 1);
             } else if ((void*)getArwing() != NULL) {
@@ -945,14 +945,15 @@ void Trigger_hitDetect(GameObject* obj) {
     int i;
     u8 targetKind;
     f32 dist[1];
+    GameObject* focusObject;
 
     dist[0] = 200.0f;
     if (((TriggerPlacement*)def)->triggerId <= 0 || ((TriggerPlacement*)def)->typeId == 0xf4) {
         triggerObj = Obj_GetPlayerObject();
         if (triggerObj != NULL) {
-            inside = (int)playerGetFocusObject(triggerObj);
-            if ((void*)inside != NULL) {
-                triggerObj = (GameObject*)inside;
+            focusObject = playerGetFocusObject(triggerObj);
+            if (focusObject != NULL) {
+                triggerObj = focusObject;
             }
         } else {
             triggerObj = getArwing();

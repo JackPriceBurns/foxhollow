@@ -661,7 +661,7 @@ void kaldachom_update(GameObject* obj) {
     f32 scrollPhase;
 
     objectState = obj->extra;
-    placement = (ObjPlacement*)obj->anim.placementDataAddress;
+    placement = (ObjPlacement*)obj->anim.placementData;
     if (obj->userData1 != 0) {
         if ((objectState->substate != 3) &&
             (cond = (*gMapEventInterface)->shouldNotSaveTime(placement->ident), cond != 0)) {
