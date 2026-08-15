@@ -1,6 +1,7 @@
 /*
  * DLL 105 / 0x69 - a modgfx effect spawner.
  */
+#include <stdio.h>
 #include "main/dll/dll_0069_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/modgfx_types.h"
@@ -20,11 +21,15 @@ STATIC_ASSERT(offsetof(Dll69EffectResourceView, allVertexIndices) == 0x68);
 STATIC_ASSERT(offsetof(Dll69EffectResourceView, sequenceParams) == 0x78);
 STATIC_ASSERT(sizeof(Dll69EffectResourceView) == 0x88);
 
-u32 gDll69EffectResourceData[sizeof(Dll69EffectResourceView) / sizeof(u32)] = {
-    0xfc180000, 0x00000000, 0x00000000, 0x0000fc18, 0x00000000, 0x03e80000, 0x00000040, 0x00000000, 0x000003e8,
-    0x00400000, 0xfc180fa0, 0x00000000, 0x00400000, 0x0fa0fc18, 0x00000040, 0x03e80fa0, 0x00000040, 0x00400000,
-    0x0fa003e8, 0x00400040, 0x00000002, 0x00060000, 0x00060004, 0x00010003, 0x00070001, 0x00070005, 0x00000001,
-    0x00020003, 0x00040005, 0x00060007, 0x00000104, 0x001e0001, 0x01040000, 0x00000000,
+u16 gDll69EffectResourceData[sizeof(Dll69EffectResourceView) / sizeof(u16)] = {
+    0xfc18, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xfc18, 0x0000,
+    0x0000, 0x03e8, 0x0000, 0x0000, 0x0040, 0x0000, 0x0000, 0x0000, 0x03e8,
+    0x0040, 0x0000, 0xfc18, 0x0fa0, 0x0000, 0x0000, 0x0040, 0x0000, 0x0fa0,
+    0xfc18, 0x0000, 0x0040, 0x03e8, 0x0fa0, 0x0000, 0x0040, 0x0040, 0x0000,
+    0x0fa0, 0x03e8, 0x0040, 0x0040, 0x0000, 0x0002, 0x0006, 0x0000, 0x0006,
+    0x0004, 0x0001, 0x0003, 0x0007, 0x0001, 0x0007, 0x0005, 0x0000, 0x0001,
+    0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0000, 0x0104, 0x001e,
+    0x0001, 0x0104, 0x0000, 0x0000, 0x0000,
 };
 
 s16 dll_69_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags, int unusedArg4,
@@ -33,6 +38,13 @@ s16 dll_69_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u3
     GfxCmd* command;
     GfxCmd* entries;
     u8* resourceData = (u8*)gDll69EffectResourceData;
+    if (spawnParams != NULL) {
+        f32* fp = (f32*)spawnParams;
+        fprintf(stderr, "[DLL69] spawn variant=%d params=(%g,%g,%g,%g,%g) flags=0x%x\n",
+                variant, fp[0], fp[1], fp[2], fp[3], fp[4], spawnFlags);
+    } else {
+        fprintf(stderr, "[DLL69] spawn variant=%d params=NULL flags=0x%x\n", variant, spawnFlags);
+    }
     int param1 = 0x30;
     int param2 = 0x31;
     int param0 = 1;
