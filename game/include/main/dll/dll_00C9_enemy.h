@@ -20,7 +20,7 @@ struct ObjModelChain;
 typedef struct EnemyState {
     void* pathWalker;
     u32 flags; /* head word of the embedded gPathControlInterface record at +4 */
-    u8 unk8[0x19C - 0x8];
+    u8 unk8[0x19C - 0x8 + 16];
     s16 spawnRotY; /* engine-maintained pitch pair; the family handlers restore anim.rotY/rotZ from it after a move change */
     s16 spawnRotZ;
     u8 unk1A0[0x1B8 - 0x1A0];
