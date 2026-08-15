@@ -60,9 +60,9 @@ Worked examples, both real:
   `(0xFF, 0x66, 0x66, 0x66)`, tinting the Ship Battle intro. Declaring it as `GXColor` fixed the
   channel order without disabling the depth-of-field blur.
 
-### Four consequences of the 4 → 8 pointer growth
+### Five consequences of the 4 → 8 pointer growth
 
-These are the same root cause wearing different clothes. All four are mechanically detectable.
+These are the same root cause wearing different clothes. All five are mechanically detectable.
 
 **Pointers squeezed through 32-bit storage are fatal, not lossy.** `AllocMEM1` is
 `calloc(1, 128MB)` (`OSMemory.cpp`), so MEM1 lands **above 4 GB** (observed `0xb32000000`).
@@ -114,6 +114,38 @@ use to stash a `GameObject*`. Widening both to `intptr_t` fixes every writer/rea
 once — including ones you have not found — where rewiring individual sites silently breaks
 any pair you miss. Verify first that nothing reads the struct tail by raw offset and that
 allocation is `sizeof`-based (it is: `object.c:1775`, `object.c:2101`).
+
+**Two hand-padded views of the same bytes drift apart, and only one of them is right.**
+The worst instance of the class, because both structs look internally consistent and the
+compiler cannot see it. `BaddieState` is a *union* of the real `CurvesCollisionState` and an
+anonymous struct that re-describes the same bytes with `u8 unkNNN[0xB - 0xA]` padding written
+in **retail** offsets. `EnemyState` is a third view of the same memory, separately padded.
+The collision engine (DLL 21) writes through the curves view; the player and the baddies read
+through the padded views. Nested records inside the curves struct grew — `TrackHitResults`
+0x7C→0x88 (three pointers), `TrackBBoxHit` 0x54→0x58 (one) — so from `0x0E4` on, the views
+drifted: **+12** after `segmentHits`, **+16** after `localHit`. Ground contact was written at
+`BaddieState+0x278` and read at `+0x268`.
+
+Effect: the player never saw ground contact, so the ledge/fall state was never entered and she
+rode the shared controller's terminal velocity (`-gravity/(1-0.97)` = a flat **-4/frame**, no
+acceleration, no free-fall or landing animation) straight down. `waterSurfaceY`, `spawnRotY`
+and the floor/water results were misaligned by the same drift. `EnemyState` had it too, a
+uniform -16 from `spawnRotY` on.
+
+The tell was **a bitmask that behaved like a coordinate**: logged `surfaceFlags` ran
+`0xa7,0xa3,0x9f,0x9b…`, decreasing by exactly 4 per frame in lockstep with the player's Y —
+because those bytes land in the curves struct's *height* arrays. A flags field that counts, or
+holds a value tracking a position, is this bug and nothing else. Reading the code will not find
+it; every view is self-consistent on its own.
+
+Audit by measuring, never by reading: build an `offsetof` harness (real flags, see Debugging
+tactics) that asserts `offsetof(Outer, field) == offsetof(Outer, unionMember) +
+offsetof(Inner, aliasField)` for every field the two views share, and log both views of the
+same field at runtime to confirm which one the writer updates. Fix by padding the *derived*
+view to the measured native offsets — not by "correcting" the retail constants. Check
+`sizeof` afterwards: `BaddieState` stayed `0x3b0` (the union is sized by the curves member),
+but `EnemyState` grew `0x388`→`0x398`, which is only safe because `enemy_getExtraSize` returns
+`sizeof` and nothing embeds it by value.
 
 ### Placement data: the base header is swapped, the payload is not
 
