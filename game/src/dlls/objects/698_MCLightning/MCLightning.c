@@ -50,7 +50,7 @@ int mclightning_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 
 int mclightning_getExtraSize(void)
 {
-    return 0x1c;
+    return sizeof(McLightningState);
 }
 
 void mclightning_free(GameObject* obj)

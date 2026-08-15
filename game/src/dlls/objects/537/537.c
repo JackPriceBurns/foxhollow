@@ -27,7 +27,7 @@ int dll_219_getObjectTypeId(void)
     return 0x0;
 }
 
-void dll_219_free(int obj)
+void dll_219_free(GameObject* obj)
 {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
@@ -85,7 +85,7 @@ void dll_219_init(GameObject* obj, Dll219Setup* placement)
 {
     Dll219State* state = obj->extra;
     obj->anim.rotX = (s16)(placement->rotX << 8);
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
 }
 

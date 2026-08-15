@@ -81,7 +81,7 @@ void dfshLaserBeam_update(GameObject* obj) {
     state = obj->extra;
 
     state->cycleTimer -= framesThisStep;
-    if (mainGetBit(placement->disableGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) == 0) {
         if (state->cycleTimer < 0) {
             if (state->beamBlocked == 0) {
                 state->cycleTimer = 0x190;
@@ -124,7 +124,7 @@ void dfshLaserBeam_update(GameObject* obj) {
         Sfx_SetObjectChannelVolume(obj, DFSH_LASER_BEAM_SFX_CHANNEL, 127.0f * state->beamVolumeScale, 0.5f);
     }
 
-    beamRange = (f32)(int)placement->beamRange;
+    beamRange = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->beamRange));
     beamRangeSq = beamRange * beamRange;
     beamDirectionX = mathCosf((3.1415927f * obj->anim.rotX) / 32768.0f);
     beamDirectionZ = mathSinf((3.1415927f * obj->anim.rotX) / 32768.0f);
@@ -156,7 +156,7 @@ void dfshLaserBeam_update(GameObject* obj) {
     } else {
         state->beamState = 1;
     }
-    if (mainGetBit(placement->disableGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) != 0) {
         state->beamState = 0;
     }
 

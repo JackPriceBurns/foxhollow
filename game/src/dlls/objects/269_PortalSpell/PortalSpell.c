@@ -62,7 +62,7 @@ void PortalSpellDoor_update(GameObject* obj) {
         if (objGetAnimState80A(player) == GAMEBIT_STAFF_ABILITY_OPEN_PORTAL) {
             playerCancelSpell(player, PORTAL_SPELL_DOOR_CANCEL_ANY_SPELL);
         }
-        mainSetBits(placement->openedGameBit, TRUE);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)), TRUE);
     } else if (objGetAnimState80A(player) == GAMEBIT_STAFF_ABILITY_OPEN_PORTAL &&
                state->openTimer == PORTAL_SPELL_DOOR_TIMER_INACTIVE) {
         state->openTimer = 0;
@@ -89,10 +89,10 @@ void PortalSpellDoor_update(GameObject* obj) {
 void PortalSpellDoor_init(GameObject* obj, PortalSpellDoorPlacement* placement) {
     PortalSpellDoorState* state = obj->extra;
     obj->anim.rotX = (s16)((s32)placement->rotXByte << PORTAL_SPELL_DOOR_ROTATION_SHIFT);
-    obj->anim.rotY = (s16)((s32)placement->rotY << PORTAL_SPELL_DOOR_ROTATION_SHIFT);
+    obj->anim.rotY = (s16)((s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotY)) << PORTAL_SPELL_DOOR_ROTATION_SHIFT);
     obj->anim.rootMotionScale = 3.1499999f;
     state->openAmount = obj->anim.hitboxScale * obj->anim.rootMotionScale / 2.0f;
-    if (mainGetBit(placement->openedGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit))) != 0) {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         obj->objectFlags |= OBJECT_OBJFLAG_UPDATE_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
     }

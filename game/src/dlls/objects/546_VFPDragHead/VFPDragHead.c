@@ -153,10 +153,10 @@ void VFPDragHead_init(GameObject* obj, VfpDragHeadPlacement* data)
     {
         (obj)->anim.rotX = (((s32)def->rotXByte) << 8);
     }
-    state->gameBitA = def->gameBitA;
-    state->gameBitB = def->gameBitB;
+    state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitA));
+    state->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitB));
     state->unk_04 = 0x64;
-    state->headIndex = def->headIndex;
+    state->headIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(def->headIndex));
     if (def->variant == 1)
     {
         (obj)->anim.rootMotionScale = (obj)->anim.modelInstance->rootMotionScaleBase / 2.0f;

@@ -93,7 +93,7 @@ u32 PaymentKiosk_testEvent(GameObject* obj, int unused, int eventId) {
         result = 0;
     } else {
         state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
-        if (playerGetMoney(player) >= placement->price) {
+        if (playerGetMoney(player) >= ObjAnim_ReadPlacementS16(&obj->anim, &(placement->price))) {
             result = 1;
             state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
         } else {
@@ -130,8 +130,8 @@ int PaymentKiosk_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
         eventId = animUpdate->eventIds[eventIndex];
         switch (eventId) {
         case PAYMENT_KIOSK_SEQEV_PAY:
-            mainSetBits(placement->gameBit, 1);
-            playerAddMoney(player, -placement->price);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)), 1);
+            playerAddMoney(player, -ObjAnim_ReadPlacementS16(&obj->anim, &(placement->price)));
             state->payState = PAYMENT_KIOSK_STATE_PAID;
             break;
         case PAYMENT_KIOSK_SEQEV_SHOW_PROMPT:
@@ -181,7 +181,7 @@ void PaymentKiosk_update(GameObject* obj) {
 
     switch (payState) {
     case PAYMENT_KIOSK_STATE_RESOLVE:
-        if (placement->gameBit != PAYMENT_KIOSK_NO_GAME_BIT && mainGetBit(placement->gameBit) != 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) != PAYMENT_KIOSK_NO_GAME_BIT && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0) {
             state->payState = PAYMENT_KIOSK_STATE_PAID;
         } else {
             state->payState = PAYMENT_KIOSK_STATE_ACTIVE;

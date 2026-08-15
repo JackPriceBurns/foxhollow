@@ -286,8 +286,8 @@ void dll414_init(GameObject* obj, const Dll19EPlacement* placement) {
 
     state = obj->extra;
     obj->anim.rotX = (s16)(((s32)placement->rotationIndex & DLL19E_ROTATION_INDEX_MASK) << DLL19E_ROTATION_INDEX_SHIFT);
-    if (placement->scalePacked > 0) {
-        obj->anim.rootMotionScale = placement->scalePacked / DLL19E_PACKED_SCALE_DIVISOR;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scalePacked)) > 0) {
+        obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scalePacked)) / DLL19E_PACKED_SCALE_DIVISOR;
     } else {
         obj->anim.rootMotionScale = DLL19E_DEFAULT_SCALE;
     }
@@ -295,19 +295,19 @@ void dll414_init(GameObject* obj, const Dll19EPlacement* placement) {
     state->mode = placement->mode;
     state->active = 0;
     state->sequenceIndex = 0;
-    state->gameBitId = placement->gameBitId;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId));
     effectSpawn.scale = DLL19E_EFFECT_SCALE;
 
     switch (state->mode) {
     case DLL19E_MODE_SPARKLE:
         state->active = 1;
         effectResource = Resource_Acquire(DLL19E_EFFECT_RESOURCE_ID, 1);
-        if (placement->sequenceIndex == 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceIndex)) == 0) {
             (*effectResource)->spawn(obj, 0, effectSpawn.args, DLL19E_EFFECT_SPAWN_FLAGS, -1, NULL);
         }
         break;
     case DLL19E_MODE_EGG_INTERACTION:
-        state->sequenceIndex = placement->sequenceIndex;
+        state->sequenceIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceIndex));
         state->needsOpenSfx = 0;
         state->settleTimer = state->sequenceIndex * DLL19E_SEQUENCE_SETTLE_STEP + DLL19E_SEQUENCE_SETTLE_BASE;
         state->previousActive = 0;

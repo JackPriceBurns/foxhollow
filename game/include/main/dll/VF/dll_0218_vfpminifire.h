@@ -16,7 +16,7 @@ typedef struct VfpMinifireState
 
 int VFP_MiniFire_getExtraSize(void);
 int VFP_MiniFire_getObjectTypeId(void);
-void VFP_MiniFire_free(int obj);
+void VFP_MiniFire_free(GameObject* obj);
 void VFP_MiniFire_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis);
 void VFP_MiniFire_hitDetect(void);
 void VFP_MiniFire_update(GameObject* obj);

@@ -24,14 +24,7 @@
 #include "main/audio/sfx_looped_object_api.h"
 #include "main/audio/sfx_play_api.h"
 
-typedef struct
-{
-    u16 pairAB;
-    u8 byteC;
-} SpscarabPalette;
-
-const u16 gSpScarabPaletteBytesA = 0x0213;
-const u8 gSpScarabPaletteByteB = 0x16;
+const u8 gSpScarabPaletteBytes[3] = {0x02, 0x13, 0x16};
 
 typedef struct SpscarabPlacement
 {
@@ -90,7 +83,7 @@ void SPScarab_update(GameObject* obj)
     f32 distance;
     f32 phase;
     f32 outV[3];
-    f32 hit_buf[24]; /* trackGetLineIntersect collision output */
+    TrackBBoxHit hit_buf;
 
     state = (SpscarabState*)obj->extra;
     placement = (SpscarabPlacement*)obj->anim.placementData;
@@ -117,9 +110,9 @@ void SPScarab_update(GameObject* obj)
     }
 
     if (trackGetLineIntersect(&obj->anim.previousLocalPosX, &obj->anim.localPosX, 3.0f, 0,
-                           (TrackBBoxHit*)&hit_buf[0], obj, 8, -1, 0xff, 0xa) != 0)
+                           &hit_buf, obj, 8, -1, 0xff, 0xa) != 0)
     {
-        Vec3_ReflectAgainstNormal((f32*)&hit_buf[7], &obj->anim.velocityX, outV);
+        Vec3_ReflectAgainstNormal(&hit_buf.normalX, &obj->anim.velocityX, outV);
         obj->anim.velocityX = outV[0];
         obj->anim.velocityZ = outV[2];
         angle = (s16)getAngle(-obj->anim.velocityX, -obj->anim.velocityZ);
@@ -158,17 +151,9 @@ void SPScarab_init(GameObject* obj, SpscarabPlacement* def)
     ObjAnimComponent* objAnim;
     SpscarabState* state;
     ObjModel* model;
-    SpscarabPalette paletteBytes;
 
     objAnim = &obj->anim;
     state = (SpscarabState*)obj->extra;
-    {
-        const u16* palettePair = &gSpScarabPaletteBytesA;
-        const u8* paletteByte = &gSpScarabPaletteByteB;
-        paletteBytes.pairAB = *palettePair;
-        paletteBytes.byteC = *paletteByte;
-    }
-
     (obj)->objectFlags = (obj)->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     (obj)->anim.rotX = (s16)((s32)def->rotXByte << 8);
 
@@ -177,7 +162,7 @@ void SPScarab_init(GameObject* obj, SpscarabPlacement* def)
 
     objAnim->bankIndex = (s8)(1 - def->kind);
 
-    state->groundY = (f32)(s32)def->groundY;
+    state->groundY = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(def->groundY));
     state->speedScale = 0.4f + randomGetRange(0, 0x64) / 100.0f;
     state->vendorObj = def->vendorObj;
     def->vendorObj = -1;
@@ -188,7 +173,7 @@ void SPScarab_init(GameObject* obj, SpscarabPlacement* def)
     switch (def->kind)
     {
     case 0:
-        model->textureRefs->swapSelector = *((u8*)&paletteBytes + randomGetRange(0, 2));
+        model->textureRefs->swapSelector = gSpScarabPaletteBytes[randomGetRange(0, 2)];
         state->sfxId = 0x41;
         state->mode = 4;
         state->burstCount = 2;

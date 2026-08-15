@@ -18,6 +18,8 @@ static inline unsigned int __cvt_fp2unsigned(double x) {
 
 static inline unsigned int fhSwap32(unsigned int v) { return __builtin_bswap32(v); }
 static inline unsigned short fhSwap16(unsigned short v) { return __builtin_bswap16(v); }
+static inline unsigned long long fhSwap64(unsigned long long v) { return __builtin_bswap64(v); }
+static inline int fhAboveRetailMem1Watermark(const void* p) { (void)p; return 0; }
 static inline uint32_t fhReadBE32(const void* p) {
   const uint8_t* bytes = (const uint8_t*)p;
   return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) |

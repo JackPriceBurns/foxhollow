@@ -728,7 +728,7 @@ void DR_EarthWarrior_setMountState(GameObject* obj, enum VehicleMountState mount
         EarthWarriorState* reloadedState = obj->extra;
         DREarthWarriorPlacement* placement = (DREarthWarriorPlacement*)obj->anim.placementData;
         reloadedState->sub.flags994.b02 = 1;
-        (*gGameUIInterface)->initAirMeter(placement->energyCapacity, DREARTHWARRIOR_AIRMETER_BGTEXTURE);
+        (*gGameUIInterface)->initAirMeter(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->energyCapacity)), DREARTHWARRIOR_AIRMETER_BGTEXTURE);
         (*gGameUIInterface)->runAirMeter(reloadedState->sub.energy);
         mainSetBits(GAMEBIT_DR_EarthWarriorUnknown_2, 1);
         mainSetBits(GAMEBIT_DR_EarthWarriorUnknown_3, 0);
@@ -787,7 +787,7 @@ int DR_EarthWarrior_canMount(void)
 
 int DR_EarthWarrior_getExtraSize(void)
 {
-    return 0x14fc;
+    return sizeof(EarthWarriorState);
 }
 
 int DR_EarthWarrior_getObjectTypeId(void)
@@ -1126,7 +1126,7 @@ void DR_EarthWarrior_init(GameObject* obj, DREarthWarriorPlacement* def)
     dll_2E_setLookAtMaxDistance(&state->moveLib, 150.0f);
     state->moveLib.modeBits |= 2;
     state->sub.maxSpeed = 4.32f;
-    state->sub.energy = def->energyCapacity;
+    state->sub.energy = ObjAnim_ReadPlacementS16(&obj->anim, &(def->energyCapacity));
     state->sub.moveTable = (const s16*)base->moveTable;
     state->sub.configRow = base->configRow;
     {

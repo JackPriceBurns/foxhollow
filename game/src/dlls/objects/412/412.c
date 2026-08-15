@@ -89,7 +89,7 @@ void dll412_update(GameObject* obj) {
 }
 
 void dll412_init(GameObject* obj, const Dll19CPlacement* placement) {
-    register int objectAddress = (int)obj;
+    register uintptr_t objectAddress = (uintptr_t)obj;
     register int stateAddress = (int)((GameObject*)objectAddress)->extra;
 
     ((GameObject*)objectAddress)->anim.rotX = (s16)((int)placement->initialYaw << 8);

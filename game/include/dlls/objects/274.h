@@ -32,7 +32,7 @@ typedef struct SeqObjectPlacement {
 typedef struct SeqObjectState {
     u8 flags;
     s8 triggerBitState; /* 0x01: previous sampled value of triggerGameBit */
-    u8 placementEndianConverted;
+    u8 pad02;
 } SeqObjectState;
 
 STATIC_ASSERT(offsetof(SeqObjectPlacement, base) == 0x0);
@@ -50,7 +50,7 @@ STATIC_ASSERT(offsetof(SeqObjectPlacement, warpMapId) == 0x24);
 
 STATIC_ASSERT(offsetof(SeqObjectState, flags) == 0x0);
 STATIC_ASSERT(offsetof(SeqObjectState, triggerBitState) == 0x1);
-STATIC_ASSERT(offsetof(SeqObjectState, placementEndianConverted) == 0x2);
+STATIC_ASSERT(offsetof(SeqObjectState, pad02) == 0x2);
 STATIC_ASSERT(sizeof(SeqObjectState) == SEQ_OBJECT_STATE_SIZE);
 
 void objCallOnLoadCallback(GameObject* obj);

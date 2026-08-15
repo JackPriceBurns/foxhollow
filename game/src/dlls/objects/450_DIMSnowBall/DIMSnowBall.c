@@ -89,8 +89,8 @@ void dimsnowball1c2_init(GameObject* obj, DimSnowBallSpawnerPlacement* placement
 
     obj->anim.rotX = (s16)((u32)placement->parentRotationXByte << 8);
     state = obj->extra;
-    state->spawnPeriod = placement->spawnPeriod;
-    state->spawnCountdown = placement->spawnPeriod;
+    state->spawnPeriod = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnPeriod));
+    state->spawnCountdown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnPeriod));
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
 }
 

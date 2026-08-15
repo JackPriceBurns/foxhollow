@@ -26,6 +26,8 @@ struct GameObject;
 typedef int (*ObjSeqTurnToPlayerFn)(struct GameObject* obj, struct ObjSeqState* state, s16 turnDegrees,
                                     s16 yawThreshold, s16 maxAngle, s16 animRight, s16 animLeft);
 
+struct ObjAnimComponent;
+
 typedef struct ObjectTriggerInterface {
     void *unusedSlot02;
     void (*onMapSetup)(void);
@@ -34,7 +36,7 @@ typedef struct ObjectTriggerInterface {
     int (*getBool)(int index);
     int (*update)(u8 *obj, f32 timeStep);
     void (*updateCamera)(void);
-    void (*loadAnimData)(u8 *seq, u8 *obj);
+    void (*loadAnimData)(u8 *seq, u8 *obj, const struct ObjAnimComponent *objAnim);
     void (*initState)(u8 *seq);
     void (*freeState)(u8 *seq);
     void (*run)(void);
@@ -48,7 +50,7 @@ typedef struct ObjectTriggerInterface {
     int (*runSequence)(int seqIndex, void *obj, int flags);
     void (*endSequence)(int seqIndex);
     void (*setCamVars)(int camA, int camB, int camC, int camD);
-    void (*preempt)(int obj, int triggerId);
+    void (*preempt)(uintptr_t obj, int triggerId);
     void (*yield)(ObjSeqState *seq, int value);
     u8 (*getGlobal3)(void);
     void (*setGlobal3)(u8 value);
@@ -58,9 +60,9 @@ typedef struct ObjectTriggerInterface {
     void (*setGlobal2)(s16 value);
     void (*setXrot)(int index, int xrot);
     ObjSeqTurnToPlayerFn func20;
-    int (*setObjects)(int a, int b, int c);
+    int (*setObjects)(int a, struct GameObject *b, int c);
     int (*setOverridePos)(f32 x, f32 y, f32 z);
-    int (*setRunSequenceWorldSpace)(int unused, int mode);
+    int (*setRunSequenceWorldSpace)(uintptr_t unused, int mode);
 } ObjectTriggerInterface;
 
 extern ObjectTriggerInterface **gObjectTriggerInterface;

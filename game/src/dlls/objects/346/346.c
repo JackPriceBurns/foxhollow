@@ -115,12 +115,12 @@ void explodable_buildFragments(GameObject* obj, ExplodablePlacement* placementAd
             chunk->offsetZ = chunk->centroidZ;
             explodable_computeFragmentLaunch(obj, chunk, placementAddress);
             chunk->unknown6B = EXPLODABLE_FRAGMENT_FULL_ALPHA;
-            chunk->gameBitMode = mainGetBit(placementAddress->doneGameBit) != 0 ? 2 : 0;
+            chunk->gameBitMode = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->doneGameBit))) != 0 ? 2 : 0;
             state->children[fragmentIndex] =
                 explodable_spawnFragmentObject(obj, fragmentObjectId, chunk, fragmentIndex);
             chunk++;
         }
-        state->phase = (mainGetBit(placementAddress->doneGameBit) != 0)
+        state->phase = (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->doneGameBit))) != 0)
                            ? EXPLODABLE_PHASE_BREAKING
                            : EXPLODABLE_PHASE_WAIT;
     }
@@ -134,22 +134,27 @@ void explodable_computeFragmentLaunch(GameObject* obj, ExplodableChunk* chunk, E
     f32 scale;
     int secondaryRandomMaximum;
     int randomMaximum;
+    s16 rotation[3];
+    u16 launchDelayBase;
     ExplodablePlacement* placement = placementAddress;
     f32 zero = 0.0f;
 
-    vecRotateZXY((s16*)&placement->rotX, &chunk->offsetX);
+    rotation[0] = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rotX);
+    rotation[1] = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rotY);
+    rotation[2] = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rotZ);
+    vecRotateZXY(rotation, &chunk->offsetX);
     chunk->positionX = chunk->offsetX * obj->anim.rootMotionScale + placement->base.posX;
     chunk->positionY = chunk->offsetY * obj->anim.rootMotionScale + placement->base.posY;
     chunk->positionZ = chunk->offsetZ * obj->anim.rootMotionScale + placement->base.posZ;
-    chunk->rotX = placement->rotX;
-    chunk->rotY = placement->rotY;
-    chunk->rotZ = placement->rotZ;
-    dx = chunk->offsetX - (f32)placement->originX;
-    dy = chunk->offsetY - (f32)placement->originY;
-    dz = chunk->offsetZ - (f32)placement->originZ;
+    chunk->rotX = rotation[0];
+    chunk->rotY = rotation[1];
+    chunk->rotZ = rotation[2];
+    dx = chunk->offsetX - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->originX);
+    dy = chunk->offsetY - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->originY);
+    dz = chunk->offsetZ - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->originZ);
     magnitude = sqrtf(dz * dz + (dx * dx + dy * dy));
     if (magnitude != zero) {
-        scale = (f32)placement->launchForce / (5.0f * magnitude);
+        scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->launchForce) / (5.0f * magnitude);
         if (dx != zero || dy != zero || dz != zero) {
             normalize(&dx, &dy, &dz);
         }
@@ -160,7 +165,7 @@ void explodable_computeFragmentLaunch(GameObject* obj, ExplodableChunk* chunk, E
         chunk->spinX = (f32)randomGetRange(0, randomMaximum) / 50.0f;
         chunk->spinY = (f32)randomGetRange(0, randomMaximum) / 50.0f;
         chunk->spinZ = (f32)randomGetRange(0, randomMaximum) / 50.0f;
-        scale = (f32)placement->secondaryLaunchScale / 1000.0f;
+        scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->secondaryLaunchScale) / 1000.0f;
         if (obj->anim.velocityX > 0.0f) {
             chunk->launchFlags |= EXPLODABLE_LAUNCH_FLAG_VELOCITY_X;
         }
@@ -184,14 +189,15 @@ void explodable_computeFragmentLaunch(GameObject* obj, ExplodableChunk* chunk, E
         chunk->secondaryVelocityY = dy * scale - 0.07f;
         chunk->secondaryVelocityZ = dz * scale;
         {
-            int height = placement->fragmentHeight;
+            int height = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fragmentHeight);
             if (height != 0) {
                 chunk->height = height;
             }
         }
-        chunk->launchDelayBase = placement->launchDelayBase;
-        if (placement->launchDelayBase != 0) {
-            chunk->launchDelay = (int)(placement->launchDelayBase * (randomGetRange(0, 100) + 100)) / 200;
+        launchDelayBase = ObjAnim_ReadPlacementU16(&obj->anim, &placement->launchDelayBase);
+        chunk->launchDelayBase = launchDelayBase;
+        if (launchDelayBase != 0) {
+            chunk->launchDelay = (int)(launchDelayBase * (randomGetRange(0, 100) + 100)) / 200;
         } else {
             chunk->launchDelay = -1;
         }
@@ -233,7 +239,7 @@ void explodable_update(GameObject* obj) {
     placement = (ExplodablePlacement*)obj->anim.placementData;
     if (state->phase != EXPLODABLE_PHASE_BROKEN) {
         if (state->phase == EXPLODABLE_PHASE_WAIT) {
-            if (mainGetBit(placement->activateGameBit) != 0) {
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activateGameBit))) != 0) {
                 explodable_buildFragments(obj, placement, 0, state);
                 if (state->breakSfxId != 0) {
                     Sfx_PlayFromObject(obj, state->breakSfxId & 0xffff);
@@ -251,12 +257,12 @@ void explodable_update(GameObject* obj) {
                     fragmentStatus = EXPLODED_INTERFACE(fragmentObject)->getPhase(fragmentObject);
                     switch (fragmentStatus) {
                     case EXPLODED_PHASE_EXPIRED:
-                        mainSetBits(placement->doneGameBit, TRUE);
+                        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit)), TRUE);
                         Obj_FreeObject(state->children[fragmentIndex]);
                         state->children[fragmentIndex] = NULL;
                         break;
                     case EXPLODED_PHASE_IDLE:
-                        mainSetBits(placement->doneGameBit, TRUE);
+                        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit)), TRUE);
                         if ((state->completedFragmentMask & (1 << fragmentIndex)) == 0) {
                             state->completedFragmentMask |= 1 << fragmentIndex;
                         }
@@ -299,10 +305,10 @@ void explodable_init(GameObject* obj, ExplodablePlacement* placementAddress) {
     state->children[12] = 0;
     state->children[13] = 0;
     state->children[14] = 0;
-    obj->anim.rotX = placement->rotX;
-    obj->anim.rotY = placement->rotY;
-    obj->anim.rotZ = placement->rotZ;
-    if (mainGetBit(placement->doneGameBit) != 0) {
+    obj->anim.rotX = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotX));
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotY));
+    obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotZ));
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit))) != 0) {
         state->phase = EXPLODABLE_PHASE_BROKEN;
     }
     for (recipeIndex = 0; recipeIndex < EXPLODABLE_RECIPE_COUNT; recipeIndex++) {

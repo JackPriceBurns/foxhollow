@@ -249,6 +249,7 @@ int pushable_updateCurtain(GameObject* obj, PushableState* state) {
 
 void pushable_initWcPushBlock(GameObject* obj, PushableState* state) {
     PushableObjectDef* placement = (PushableObjectDef*)obj->anim.placementData;
+    s16 gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
 
     switch (placement->base.ident) {
     case PUSHABLE_WC_MAP_ID_HIT_10:
@@ -264,7 +265,7 @@ void pushable_initWcPushBlock(GameObject* obj, PushableState* state) {
         break;
     }
 
-    if (mainGetBit(placement->gameBit) != 0) {
+    if (mainGetBit(gameBit) != 0) {
         ObjTextureRuntimeSlot* texture;
         state->flags = (u16)(state->flags | PUSHABLE_FLAG_PUSH_LOCKED);
         texture = objFindTexture(obj, 0, 0);
@@ -388,8 +389,8 @@ void pushable_initMagicGem(GameObject* obj, PushableState* state) {
                        (f32)randomGetRange(PUSHABLE_MAGIC_GEM_BLINK_TIME_MIN, PUSHABLE_MAGIC_GEM_BLINK_TIME_MAX);
     sharedValue = PUSHABLE_ZERO;
     state->blinkPhase = sharedValue;
-    state->gameBit = placement->gameBit;
-    state->gameBit2 = placement->gameBit2;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
+    state->gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit2);
     state->magicGemDistanceThreshold = sharedValue;
     state->nearestObj = NULL;
     mainSetBits(state->gameBit, 0);
@@ -475,7 +476,7 @@ void pushable_resolveCollisions(GameObject* obj, PushableState* state) {
                     if (collision.kind != PUSHABLE_NO_HIT_ID && (state->flags & PUSHABLE_FLAG_RESTORED) == 0) {
                         int gameBit;
                         state->flags |= PUSHABLE_FLAG_RESTORED;
-                        gameBit = placement->gameBit;
+                        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
                         if (gameBit > PUSHABLE_NO_GAME_BIT) {
                             switch (obj->anim.romDefNo) {
                             case PUSHABLE_SEQ_ID_MAGIC_GEM_411:
@@ -488,7 +489,7 @@ void pushable_resolveCollisions(GameObject* obj, PushableState* state) {
                                     if (texture != NULL) {
                                         texture->textureId = PUSHABLE_WC_ACTIVATED_TEXTURE_ID;
                                     }
-                                    mainSetBits(placement->gameBit, 1);
+                                    mainSetBits(gameBit, 1);
                                     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
                                     state->flags |= PUSHABLE_FLAG_PUSH_LOCKED;
                                 }
@@ -687,7 +688,6 @@ int pushable_isWithinCullDistance(GameObject* obj, GameObject* other) {
 }
 
 int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f32 pushZ) {
-    PushableCollisionProbe* collisionProbe;
     PushableState* state;
     char pushDirection;
     GameObject* player;
@@ -696,8 +696,7 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
     f32* localPoint;
     f32* delta;
     int historyEntryCount;
-    PushableCollisionProbe collisionProbeStorage;
-    char hitBuffer[64];
+    TrackHitResults hitBuffer;
     f32 transformMtx[16];
     f32 worldPoints[12];
     f32 deltas[12];
@@ -719,10 +718,10 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
     probeStart[0] = target->anim.localPosX;
     probeStart[1] = PUSHABLE_PROBE_HEIGHT + target->anim.localPosY;
     probeStart[2] = target->anim.localPosZ;
-    (collisionProbe = &collisionProbeStorage)->radii[0] = PUSHABLE_FORWARD_PROBE_DISTANCE;
-    collisionProbe->unk10 = -1;
-    collisionProbe->unk14 = 3;
-    collisionProbe->unk2C = 0;
+    hitBuffer.radii[0] = PUSHABLE_FORWARD_PROBE_DISTANCE;
+    hitBuffer.surfaceTypes[0] = (u8)-1;
+    hitBuffer.queryTypes[0] = 3;
+    hitBuffer.hitCount = 0;
     blocked = 0;
     if (pushX > PUSHABLE_ZERO) {
         probeEnd[0] =
@@ -730,11 +729,11 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
         probeEnd[1] = probeStart[1];
         probeEnd[2] =
             PUSHABLE_FORWARD_PROBE_DISTANCE * mathCosf(PUSHABLE_PI * state->yaw / PUSHABLE_HALF_TURN) + probeStart[2];
-        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, collisionProbe->radii, 1);
+        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, hitBuffer.radii, 1);
         trackIntersectBroadphase(NULL, &sweep, 0x208, 1);
-        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, hitBuffer, 8);
+        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, &hitBuffer, 8);
         if (blocked == 0) {
-            blocked = trackGetLineIntersect(probeStart, probeEnd, collisionProbe->radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
+            blocked = trackGetLineIntersect(probeStart, probeEnd, hitBuffer.radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
         }
         if (blocked != 0) {
             f32 pushAmount;
@@ -751,11 +750,11 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
         probeEnd[2] =
             PUSHABLE_SIDE_PROBE_DISTANCE * mathCosf(PUSHABLE_PI * (f32)(state->yaw + 0x4000) / PUSHABLE_HALF_TURN) +
             probeStart[2];
-        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, collisionProbe->radii, 1);
+        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, hitBuffer.radii, 1);
         trackIntersectBroadphase(NULL, &sweep, 0x208, 1);
-        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, hitBuffer, 8);
+        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, &hitBuffer, 8);
         if (blocked == 0) {
-            blocked = trackGetLineIntersect(probeStart, probeEnd, collisionProbe->radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
+            blocked = trackGetLineIntersect(probeStart, probeEnd, hitBuffer.radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
         }
         if (blocked != 0) {
             f32 pushAmount;
@@ -772,11 +771,11 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
         probeEnd[2] =
             PUSHABLE_SIDE_PROBE_DISTANCE * mathCosf(PUSHABLE_PI * (f32)(state->yaw - 0x4000) / PUSHABLE_HALF_TURN) +
             probeStart[2];
-        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, collisionProbe->radii, 1);
+        hitDetect_calcSweptSphereBounds(&sweep, probeStart, probeEnd, hitBuffer.radii, 1);
         trackIntersectBroadphase(NULL, &sweep, 0x208, 1);
-        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, hitBuffer, 8);
+        blocked = trackGetIntersect(NULL, probeStart, probeEnd, 1, &hitBuffer, 8);
         if (blocked == 0) {
-            blocked = trackGetLineIntersect(probeStart, probeEnd, collisionProbe->radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
+            blocked = trackGetLineIntersect(probeStart, probeEnd, hitBuffer.radii[0], 0, NULL, obj, 1, -1, 0xff, 0);
         }
         if (blocked != 0) {
             f32 pushAmount;
@@ -864,7 +863,7 @@ int pushable_push(GameObject* obj, GameObject* target, int active, f32 pushX, f3
             if ((flags & PUSHABLE_FLAG_RESTORED) != 0) {
                 s16 gameBit;
                 movedState->flags = flags & ~PUSHABLE_FLAG_RESTORED;
-                gameBit = placement->gameBit;
+                gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
                 if (gameBit > -1) {
                     switch (obj->anim.romDefNo) {
                     case PUSHABLE_SEQ_ID_MAGIC_GEM_21E:
@@ -934,6 +933,7 @@ void pushable_free(GameObject* obj) {
     PushableObjectDef* placement = (PushableObjectDef*)obj->anim.placementData;
     PushableState* state = obj->extra;
     s16 sequenceId = obj->anim.romDefNo;
+    s16 gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
     int savedIdentIndex;
 
     switch (sequenceId) {
@@ -944,7 +944,7 @@ void pushable_free(GameObject* obj) {
         mainSetBits(state->gameBit, 0);
         break;
     default:
-        if (placement->gameBit > PUSHABLE_NO_GAME_BIT && sequenceId != PUSHABLE_SEQ_ID_VFP_BLOCK2 &&
+        if (gameBit > PUSHABLE_NO_GAME_BIT && sequenceId != PUSHABLE_SEQ_ID_VFP_BLOCK2 &&
             sequenceId != PUSHABLE_SEQ_ID_5AE && sequenceId != PUSHABLE_SEQ_ID_DIM2_ICE_BLOCK &&
             state->savePosEnabled != 0) {
             saveGame_saveObjectPos(obj);
@@ -1238,6 +1238,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     int i;
     f32* modelMtx;
     f32 vertex[3];
+    s16 gameBit;
 
     if (setup->base.ident == PUSHABLE_FORCE_HIT_ID_MAP) {
         setup->requiredHitId = 1;
@@ -1250,18 +1251,20 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     objSetSlot(obj, PUSHABLE_OBJECT_SLOT);
     obj->animEventCallback = pushable_SeqFn;
     state = obj->extra;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->gameBit);
     state->pointCount = 0;
     activeModelSlot = (int*)((ObjAnimComponent*)obj)->banks[((ObjAnimComponent*)obj)->bankIndex];
     model = (ModelFileHeader*)*activeModelSlot;
-    state->unkB0 = setup->unk1C;
-    state->scale = (f32) * &setup->scaleRaw / PUSHABLE_SCALE_DENOM;
+    state->unkB0 = ObjAnim_ReadPlacementS32(&obj->anim, &setup->unk1C);
+    state->scale = (f32)ObjAnim_ReadPlacementU16(&obj->anim, &setup->scaleRaw) /
+                   PUSHABLE_SCALE_DENOM;
     state->scale = state->scale * obj->anim.modelInstance->rootMotionScaleBase;
     state->cullDistance = state->scale * (f32)modelFileHeaderGetCullDistance((ModelFileHeader*)*activeModelSlot) +
                           PUSHABLE_MIN_GROUND_CLEARANCE;
     {
         f32 z0 = PUSHABLE_ZERO;
         state->renderTimer = z0;
-        state->gameBit = setup->gameBit;
+        state->gameBit = gameBit;
         ObjAnim_SetCurrentMove(obj, 0, z0, 0);
     }
     ObjMsg_AllocQueue(obj, PUSHABLE_MSG_QUEUE_SIZE);
@@ -1365,7 +1368,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
         ((void (*)(GameObject*, PushableState*))pushable_initWcPushBlock)(obj, state);
         break;
     case PUSHABLE_SEQ_ID_DIM_PUSH_BLOCK:
-        if (setup->gameBit > PUSHABLE_NO_GAME_BIT && mainGetBit(setup->gameBit) != 0) {
+        if (gameBit > PUSHABLE_NO_GAME_BIT && mainGetBit(gameBit) != 0) {
             state->flags = state->flags | (PUSHABLE_FLAG_RESTORED | PUSHABLE_FLAG_PUSH_LOCKED);
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             pushable_savePos(obj);
@@ -1373,7 +1376,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
         state->savePosEnabled = 0;
         break;
     default:
-        if (setup->gameBit > PUSHABLE_NO_GAME_BIT && mainGetBit(setup->gameBit) != 0) {
+        if (gameBit > PUSHABLE_NO_GAME_BIT && mainGetBit(gameBit) != 0) {
             state->flags = state->flags | PUSHABLE_FLAG_RESTORED;
         }
         break;

@@ -54,7 +54,7 @@ int wcbeacon_aButtonCallback(GameObject* obj)
     if (isGameTimerDisabled() == 0)
     {
         state->acceptedInteraction = 1;
-        mainSetBits(setup->solvedBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
     }
     return 1;
 }
@@ -95,7 +95,7 @@ void wcbeacon_update(GameObject* obj)
     if (phase == WCBEACON_PHASE_WAITING_FOR_TRICKY)
     {
         GameObject* tricky = getTrickyObject();
-        if (mainGetBit(setup->armBit) == 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->armBit))) == 0)
         {
             GameObject* stayPoint = trickyGetStayPoint(tricky);
             if (stayPoint != obj || Tricky_requestRecallAndCheckBusy(tricky) != 0)
@@ -124,7 +124,7 @@ void wcbeacon_update(GameObject* obj)
     }
     else if (phase == WCBEACON_PHASE_IDLE)
     {
-        if (mainGetBit(setup->armBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->armBit))) != 0)
         {
             (*gObjectTriggerInterface)->runSequence(WCBEACON_TRIGGER_ARM_SLOT, obj, WCBEACON_TRIGGER_NO_ARG);
             state->phase = WCBEACON_PHASE_WAITING_FOR_TRICKY;
@@ -149,7 +149,7 @@ void wcbeacon_update(GameObject* obj)
         }
         if (obj->userData1 == 0)
         {
-            (*gObjectTriggerInterface)->preempt((int)obj, WCBEACON_FINAL_TRIGGER_ID);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, WCBEACON_FINAL_TRIGGER_ID);
             (*gObjectTriggerInterface)->runSequence(WCBEACON_TRIGGER_ARM_SLOT, obj, WCBEACON_TRIGGER_ACCEPT_ARG);
         }
     }
@@ -169,9 +169,9 @@ void wcbeacon_init(GameObject* obj, WCBeaconSetup* setup)
     {
         obj->anim.bankIndex = 0;
     }
-    if (mainGetBit(setup->armBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->armBit))) != 0)
     {
-        if (mainGetBit(setup->solvedBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) != 0)
         {
             state->phase = WCBEACON_PHASE_ACTIVE;
         }

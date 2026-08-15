@@ -48,15 +48,15 @@ void CntCounter_update(GameObject* obj)
         {
             hudNumberSet(state->remainingCount);
         }
-        bit = mainGetBit(setup->decrementGameBit);
+        bit = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit)));
         if (bit != 0)
         {
-            mainSetBits(setup->decrementGameBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit)), 0);
             state->remainingCount -= bit;
             if (state->remainingCount <= 0)
             {
                 state->remainingCount = 0;
-                mainSetBits(setup->doneGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->doneGameBit)), 1);
                 if (state->displayHud != 0)
                 {
                     hudNumberSet(-1);
@@ -67,10 +67,10 @@ void CntCounter_update(GameObject* obj)
     }
     else
     {
-        if (mainGetBit(setup->decrementGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit))) != 0)
         {
             state->displayHud = setup->displayHud;
-            state->remainingCount = setup->initialCount;
+            state->remainingCount = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->initialCount));
         }
     }
 }

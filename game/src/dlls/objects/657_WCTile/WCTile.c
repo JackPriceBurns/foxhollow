@@ -205,7 +205,7 @@ void wctile_init(GameObject* obj, WCTileSetup* setup)
     {
         objAnim->bankIndex = 0;
     }
-    state->targetTile = setup->initialTile;
+    state->targetTile = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->initialTile));
     ObjModel_SetPostRenderCallback(Obj_GetActiveModel(obj), postRenderSetAlphaBlendState);
     objAnim->alpha = 0;
 }

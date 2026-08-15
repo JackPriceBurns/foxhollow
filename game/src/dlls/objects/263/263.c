@@ -418,7 +418,7 @@ void windLift107_init(GameObject* obj, WindLift107Placement* placement) {
     state->disableTimer = 0;
     state->throwState = WINDLIFT107_THROW_NONE;
     {
-        s16 cooldownParam = placement->cooldownParam;
+        s16 cooldownParam = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldownParam));
         if (cooldownParam == 0) {
             state->cooldownDuration = 0;
         } else {
@@ -432,8 +432,8 @@ void windLift107_init(GameObject* obj, WindLift107Placement* placement) {
     state->timer = 100;
     state->unk18 = 400;
     obj->anim.rotX = (s16)(placement->rotXParam << WINDLIFT107_ROTATION_PARAM_SHIFT);
-    state->unk14 = placement->unk1E;
-    state->leashRange = placement->leashRange;
+    state->unk14 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unk1E));
+    state->leashRange = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->leashRange));
     if (state->leashRange == 0) {
         state->leashRange = WINDLIFT107_DEFAULT_LEASH_RANGE;
     }

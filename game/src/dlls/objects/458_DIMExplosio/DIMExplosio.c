@@ -549,10 +549,10 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
     int i;
     int debrisCount;
     state->flameCount = 0;
-    if (placementAddress->scaleParam == 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->scaleParam)) == 0) {
         scale = 100.0f;
     } else {
-        scale = (f32)(int)placementAddress->scaleParam * sExplosionSpeedScale[0];
+        scale = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->scaleParam)) * sExplosionSpeedScale[0];
         if (scale > 100.0f) {
             scale = 100.0f;
         }
@@ -560,9 +560,9 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
     explosion_spawnFlame(obj, 0, 0.4f * scale, obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->modelKind =
-        placementAddress->configFlags & DIM_EXPLOSION_MODEL_KIND_MASK;
+        ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->configFlags)) & DIM_EXPLOSION_MODEL_KIND_MASK;
     Obj_SetActiveModelIndex(obj, state->modelKind);
-    if (placementAddress->configFlags & DIM_EXPLOSION_CONFIG_HAS_GRAVITY) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->configFlags)) & DIM_EXPLOSION_CONFIG_HAS_GRAVITY) {
         state->gravity = 0.1f;
     } else {
         state->gravity = sExplosionZero[0];
@@ -577,7 +577,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
     } else {
         state->groundY = obj->anim.localPosY;
     }
-    if (placementAddress->configFlags & DIM_EXPLOSION_CONFIG_SPAWNS_DEBRIS) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->configFlags)) & DIM_EXPLOSION_CONFIG_SPAWNS_DEBRIS) {
         debrisCount = (int)((f32)(6.0f * scale) / 100.0f);
         for (i = 0, cursor = (uintptr_t)state; i < debrisCount; i++) {
             if (state->nearGround != 0) {
@@ -628,7 +628,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
         state->debrisCount = 0;
     }
     state->light = 0;
-    if (placementAddress->configFlags & DIM_EXPLOSION_CONFIG_HAS_LIGHT) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->configFlags)) & DIM_EXPLOSION_CONFIG_HAS_LIGHT) {
         state->light = objCreateLight(0, 1);
         if ((void*)state->light != NULL) {
             modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
@@ -642,7 +642,7 @@ void explosion_init(GameObject* obj, DimExplosionPlacement* placementAddress) {
         }
     }
     obj->anim.alpha = 0xff;
-    if (placementAddress->configFlags & DIM_EXPLOSION_CONFIG_HAS_RAYS) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placementAddress->configFlags)) & DIM_EXPLOSION_CONFIG_HAS_RAYS) {
         if (state->nearGround == 0) {
             state->rayCount = 2;
             state->rays[0].yaw = randomGetRange(0, 0x4000);

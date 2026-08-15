@@ -41,6 +41,7 @@
 #include "main/audio/sfx_stop_channel_api.h"
 #include "main/obj_message.h"
 #include "main/objhits.h"
+#include "main/dll/curve_walker.h"
 
 GameObject* gDll19NearestObj;
 f32 gDll19SegmentRadius;
@@ -70,13 +71,8 @@ typedef struct Dll19ChildObjectIdTable
 
 STATIC_ASSERT(sizeof(Dll19ChildObjectIdTable) == 0xA);
 
-typedef struct
-{
-    u32 w0, w1;
-} IdPair;
-
-const IdPair sDll19DropObjectIds = {0x02C402CD, 0x02CE02CF};
-const IdPair sDll19DropObjectIdsAlt = {0x000B000B, 0x000B000B};
+const u16 sDll19DropObjectIds[4] = {0x02C4, 0x02CD, 0x02CE, 0x02CF};
+const u16 sDll19DropObjectIdsAlt[4] = {0x000B, 0x000B, 0x000B, 0x000B};
 union Dll19ConstU32 { u32 u; };
 const union Dll19ConstU32 gDll19DefaultCurveMode = { 2 };
 
@@ -229,9 +225,9 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     {
         ((BaddieState*)state)->hitPoints = 6;
     }
-    ((GroundBaddieState*)state)->gameBitB = config->gameBitB;
-    ((GroundBaddieState*)state)->gameBitC = config->gameBitC;
-    ((GroundBaddieState*)state)->gameBitD = config->gameBitD;
+    ((GroundBaddieState*)state)->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &config->gameBitB);
+    ((GroundBaddieState*)state)->gameBitC = ObjAnim_ReadPlacementS16(&obj->anim, &config->gameBitC);
+    ((GroundBaddieState*)state)->gameBitD = ObjAnim_ReadPlacementS16(&obj->anim, &config->gameBitD);
     if (((GroundBaddieState*)state)->gameBitB != -1)
     {
         mainSetBits(((GroundBaddieState*)state)->gameBitB, 0);
@@ -252,15 +248,15 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     }
     (*gPathControlInterface)->attachObject((void*)obj, path);
     ((GroundBaddieState*)state)->configFlags = config->flags;
-    ((GroundBaddieState*)state)->triggerId = config->triggerId;
+    ((GroundBaddieState*)state)->triggerId = ObjAnim_ReadPlacementS16(&obj->anim, &config->triggerId);
     ((GroundBaddieState*)state)->aggression = config->aggression;
     state[1031] = config->initialWeaponId;
     state[1032] = config->unk28;
     obj->objectFlags = obj->objectFlags | ((s8)state[1032] & 7);
     if ((flags & 8) != 0)
     {
-        ((GroundBaddieState*)state)->soundIdA = config->soundIdA;
-        ((GroundBaddieState*)state)->soundIdB = config->soundIdB;
+        ((GroundBaddieState*)state)->soundIdA = ObjAnim_ReadPlacementS16(&obj->anim, &config->soundIdA);
+        ((GroundBaddieState*)state)->soundIdB = ObjAnim_ReadPlacementS16(&obj->anim, &config->soundIdB);
     }
     else
     {
@@ -274,7 +270,7 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     obj->anim.rotX = (s16)((s8)config->rotX << 8);
     obj->anim.alpha = 255;
     obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED;
-    ((GroundBaddieState*)state)->gameBitA = config->gameBitA;
+    ((GroundBaddieState*)state)->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &config->gameBitA);
     if (((GroundBaddieState*)state)->gameBitA != -1)
     {
         if (obj->anim.romDefNo == 636)
@@ -320,11 +316,11 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     {
         if (((GroundBaddieState*)state)->path == NULL && (flags & 0x20) == 0)
         {
-            ((GroundBaddieState*)state)->path = mmAlloc(264, 26, 0);
+            ((GroundBaddieState*)state)->path = mmAlloc(sizeof(RomCurveWalker), 26, 0);
         }
         if (((GroundBaddieState*)state)->path != NULL)
         {
-            memset(((GroundBaddieState*)state)->path, 0, 264);
+            memset(((GroundBaddieState*)state)->path, 0, sizeof(RomCurveWalker));
         }
         if ((*gRomCurveInterface)
                 ->initCurve(((GroundBaddieState*)state)->path, (void*)obj,
@@ -433,7 +429,7 @@ int dll_19_updateHitReaction(GameObject* obj, void* baddieState, void* hitbox, s
                 obj->anim.alpha = 0;
                 obj->userData1 = 1;
                 obj->anim.flags = obj->anim.flags | OBJANIM_FLAG_HIDDEN;
-                (*gMapEventInterface)->addTime(other->base.ident, (f32)(s32)(other->respawnDelay * 60));
+                (*gMapEventInterface)->addTime(other->base.ident, (f32)(s32)(ObjAnim_ReadPlacementS16(&obj->anim, &(other->respawnDelay)) * 60));
             }
         }
         else
@@ -522,16 +518,16 @@ GameObject* dll_19_dropCollectable(GameObject* obj, int spawnType, int unused, i
     GameObject* source = obj;
     GroundBaddiePlacement* state = (GroundBaddiePlacement*)obj->anim.placementData;
     CollectibleSetup* setup;
-    u16 ids1[4];
-    u16 ids2[4];
+    const u16* ids1;
+    const u16* ids2;
     int idx;
     f32 savedX, savedY, savedZ;
     f32 nearDist;
     f32 scale;
 
     scale = 0.0f;
-    *(IdPair*)ids1 = sDll19DropObjectIds;
-    *(IdPair*)ids2 = sDll19DropObjectIdsAlt;
+    ids1 = sDll19DropObjectIds;
+    ids2 = sDll19DropObjectIdsAlt;
     if (spawnType == 0)
     {
         return 0;
@@ -540,7 +536,7 @@ GameObject* dll_19_dropCollectable(GameObject* obj, int spawnType, int unused, i
     {
         return 0;
     }
-    if ((state->triggerId & 0xf00) != 0)
+    if ((ObjAnim_ReadPlacementS16(&obj->anim, &(state->triggerId)) & 0xf00) != 0)
     {
         idx = ((spawnType & 0xf00) >> 8) - 1;
         if (idx > 3)
@@ -550,7 +546,7 @@ GameObject* dll_19_dropCollectable(GameObject* obj, int spawnType, int unused, i
         setup = (CollectibleSetup*)Obj_AllocObjectSetup(sizeof(CollectibleSetup), ids1[idx]);
         scale = 30.0f;
     }
-    if ((state->triggerId & 0xf000) != 0)
+    if ((ObjAnim_ReadPlacementS16(&obj->anim, &(state->triggerId)) & 0xf000) != 0)
     {
         idx = ((spawnType & 0xf000) >> 12) - 1;
         if (idx > 3)
@@ -560,7 +556,7 @@ GameObject* dll_19_dropCollectable(GameObject* obj, int spawnType, int unused, i
         setup = (CollectibleSetup*)Obj_AllocObjectSetup(sizeof(CollectibleSetup), ids2[idx]);
         scale = 30.0f;
     }
-    if ((int)(u8)state->triggerId != 0)
+    if ((int)(u8)ObjAnim_ReadPlacementS16(&obj->anim, &(state->triggerId)) != 0)
     {
         switch (spawnType)
         {
@@ -687,7 +683,7 @@ void dll_19_startHitReaction(GameObject* obj, void* state, void* hitbox, s16 gam
 
 GameObject* dll_19_findAggroTarget(GameObject* self, void* state, f32 frange, int halfAngle)
 {
-    f32 bboxOut[20];
+    TrackBBoxHit bboxOut;
     GameObject* objs[3];
     f32 diff[3];
     f32 gridIn[3];
@@ -754,7 +750,7 @@ GameObject* dll_19_findAggroTarget(GameObject* self, void* state, f32 frange, in
                 {
                     found = 0;
                 }
-                if (Player_GetCurrentHealth((int)obj) <= 0)
+                if (Player_GetCurrentHealth((uintptr_t)obj) <= 0)
                 {
                     found = 0;
                 }
@@ -771,7 +767,7 @@ GameObject* dll_19_findAggroTarget(GameObject* self, void* state, f32 frange, in
                     traced = voxmaps_traceLine((VoxPos*)gridB, (VoxPos*)gridA, NULL, &losOut, 0);
                     if (losOut == 1 || traced != 0)
                     {
-                        if (trackGetLineIntersect(&self->anim.localPosX, gridIn, 1.0f, 0, (TrackBBoxHit*)bboxOut,
+                        if (trackGetLineIntersect(&self->anim.localPosX, gridIn, 1.0f, 0, &bboxOut,
                                                self, 4, -1, 0, 0) != 0)
                         {
                             found = 0;
@@ -806,7 +802,7 @@ int dll_19_shouldDropTarget(GameObject* obj, void* state, f32 distThreshold, int
             {
                 result = 1;
             }
-            else if (Player_GetCurrentHealth((int)player) <= 0)
+            else if (Player_GetCurrentHealth((uintptr_t)player) <= 0)
             {
                 result = 1;
             }
@@ -1041,7 +1037,7 @@ u16 dll_19_func0A(GameObject* obj)
 {
     Dll19Placement* placement = (Dll19Placement*)(obj)->anim.placementData;
     if (placement != NULL)
-        return placement->spawnCount;
+        return ObjAnim_ReadPlacementU16(&obj->anim, &(placement->spawnCount));
     return 0xd2;
 }
 
@@ -1198,7 +1194,7 @@ u8 dll_19_getClearDirectionMask(GameObject* obj, void* state, f32 dist)
     int grid1[2];
     int grid0[2];
     f32 world[3];
-    u8 bboxOut[0x54];
+    TrackBBoxHit bboxOut;
     int cur;
     s16* ovr;
     u8 ok;
@@ -1239,7 +1235,7 @@ u8 dll_19_getClearDirectionMask(GameObject* obj, void* state, f32 dist)
         }
         if (ok != 0)
         {
-            if (trackGetLineIntersect(&obj->anim.localPosX, world, 1.0f, 0, (TrackBBoxHit*)bboxOut,
+            if (trackGetLineIntersect(&obj->anim.localPosX, world, 1.0f, 0, &bboxOut,
                                    obj, ((Dll19State*)state)->bboxTraceFlags, -1, 0, 0) != 0)
             {
                 ok = 0;

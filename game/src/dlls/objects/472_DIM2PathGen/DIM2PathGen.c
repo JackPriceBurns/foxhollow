@@ -65,7 +65,7 @@ void DIM2PathGenerator_update(GameObject* obj) {
     int count;
 
     placement = (const Dim2PathGeneratorPlacementView*)obj->anim.placementData;
-    if (mainGetBit(placement->activeGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit))) == 0) {
         return;
     }
 
@@ -148,17 +148,23 @@ void DIM2PathGenerator_update(GameObject* obj) {
 
 void DIM2PathGenerator_init(GameObject* obj, int* placementData) {
     Dim2PathGeneratorState* state;
+    Dim2PathGeneratorPlacementView* placement =
+        (Dim2PathGeneratorPlacementView*)placementData;
+    s16 spawnPeriod = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->spawnPeriod);
+    u16 primarySpawnType = ObjAnim_ReadPlacementU16(
+        &obj->anim, &placement->primarySpawnType);
+    s16 secondarySpawnType = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->secondarySpawnType);
 
-    obj->anim.rotX = (s16)((u32)((Dim2PathGeneratorPlacementView*)placementData)->childRotationXByte << 8);
+    obj->anim.rotX = (s16)((u32)placement->childRotationXByte << 8);
     state = obj->extra;
-    state->spawnPeriod = ((Dim2PathGeneratorPlacementView*)placementData)->spawnPeriod;
-    state->spawnTimer = (s16)((Dim2PathGeneratorPlacementView*)placementData)->initialSpawnDelay;
-    state->spawnTypes[0] = (s16)((Dim2PathGeneratorPlacementView*)placementData)->primarySpawnType;
+    state->spawnPeriod = spawnPeriod;
+    state->spawnTimer = (s16)placement->initialSpawnDelay;
+    state->spawnTypes[0] = (s16)primarySpawnType;
     {
-        s16 secondarySpawnType = ((Dim2PathGeneratorPlacementView*)placementData)->secondarySpawnType;
-
         if (secondarySpawnType == -1) {
-            state->spawnTypes[1] = (s16)((Dim2PathGeneratorPlacementView*)placementData)->primarySpawnType;
+            state->spawnTypes[1] = (s16)primarySpawnType;
         } else {
             state->spawnTypes[1] = secondarySpawnType;
         }

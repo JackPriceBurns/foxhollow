@@ -135,7 +135,7 @@ void ProjectileSwitch_hitDetect(GameObject* obj) {
         if ((placement->modelIndexAndMode & PROJECTILE_SWITCH_MODE_MASK) == PROJECTILE_SWITCH_MODE_TIMED_RESET) {
             switchState->autoResetTimerFrames =
                 PROJECTILE_SWITCH_FRAMES_PER_SECOND *
-                (PROJECTILE_SWITCH_TENTHS_PER_SECOND * (f32)placement->autoResetDelayTenths);
+                (PROJECTILE_SWITCH_TENTHS_PER_SECOND * (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->autoResetDelayTenths)));
         }
     }
 }
@@ -207,7 +207,7 @@ void ProjectileSwitch_init(GameObject* obj, ProjectileSwitchPlacement* placement
             switchState->gameBitId = PROJECTILE_SWITCH_NO_GAME_BIT;
         }
     } else {
-        switchState->gameBitId = placement->gameBitId;
+        switchState->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId));
     }
     switchState->isOn = mainGetBit(switchState->gameBitId);
     if (switchState->isOn != 0) {

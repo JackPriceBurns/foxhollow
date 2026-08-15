@@ -262,7 +262,7 @@ void DFP_LevelControl_init(GameObject* obj, DfpLevelControlPlacement* placement)
     state->flags07.b20 = mainGetBit(0xd5a);
     (obj)->animEventCallback = (void*)DFP_LevelControl_sequenceCallback;
     state->mode = 1;
-    mode = placement->mode;
+    mode = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->mode));
     if (mode != 0 && mode <= 2)
     {
         state->mode = mode;

@@ -107,7 +107,7 @@ void KT_Lazerwall_render(GameObject* obj)
             mm_free(bolt);
             state->bolt = NULL;
             state->flags &= ~KT_LAZERWALL_FLAG_BOLT_ACTIVE;
-            mainSetBits(placement->activeBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeBit)), 0);
         }
     }
 }
@@ -125,15 +125,15 @@ void KT_Lazerwall_update(GameObject* obj)
     int i;
     state->previousFlags = state->flags;
     state->flags &= ~(KT_LAZERWALL_FLAG_TRIGGERED | 0x2);
-    intensity = (s16)mainGetBit(placement->intensityBit);
-    if (intensity >= placement->fireThreshold)
+    intensity = (s16)mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->intensityBit)));
+    if (intensity >= ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fireThreshold)))
     {
         state->flags |= KT_LAZERWALL_FLAG_FIRING;
     }
     else
     {
         state->flags &= ~KT_LAZERWALL_FLAG_FIRING;
-        if (mainGetBit(placement->activeBit) == 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeBit))) == 0)
         {
             return;
         }
@@ -142,7 +142,7 @@ void KT_Lazerwall_update(GameObject* obj)
     if (intensity >= 15 &&
         (state->flags & (KT_LAZERWALL_FLAG_TRIGGERED | KT_LAZERWALL_FLAG_BOLT_ACTIVE)) == 0)
     {
-        mainSetBits(placement->activeBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeBit)), 1);
         state->flags |= KT_LAZERWALL_FLAG_TRIGGERED | KT_LAZERWALL_FLAG_BOLT_ACTIVE;
         KT_Lazerwall_spawnEnergyArc(obj, 230.0f, 120);
         (*gPartfxInterface)->spawnObject((void*)obj, 1150, NULL, 2, -1, NULL);

@@ -78,7 +78,7 @@ int wctempledia_interactCallback(GameObject* obj, int unused, ObjSeqState* animU
 
 int wctempledia_getExtraSize(void)
 {
-    return WCTEMPLE_DIA_EXTRA_SIZE;
+    return sizeof(WCTempleDiaState);
 }
 
 int wctempledia_getObjectTypeId(void)
@@ -168,7 +168,7 @@ void wctempledia_update(GameObject* obj)
     wctempledia_syncPartVisibility(go, state->stageMask);
     if (state->stageMask == WCTEMPLE_DIA_ALL_STAGES_MASK)
     {
-        mainSetBits(setup->solvedBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
         Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
         state->flags |= WCTEMPLE_DIA_FLAG_SOLVED;
     }
@@ -203,7 +203,7 @@ void wctempledia_init(GameObject* obj, WCTempleDiaSetup* setup)
             state->stageMask |= (1 << i);
         }
     }
-    if (mainGetBit(setup->solvedBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) != 0)
     {
         state->stageMask = WCTEMPLE_DIA_ALL_STAGES_MASK;
         state->flags |= WCTEMPLE_DIA_FLAG_SOLVED;

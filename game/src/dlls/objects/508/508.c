@@ -89,7 +89,7 @@ void LaserBeam_update(GameObject* obj) {
     placement = (const LaserBeamPlacementView*)obj->anim.placementData;
     state = obj->extra;
     state->cycleTimer -= framesThisStep;
-    if (mainGetBit(placement->disableGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) == 0) {
         if (state->cycleTimer < 0) {
             if (state->beamBlocked == 0) {
                 beamKind = state->beamKind;
@@ -159,7 +159,7 @@ void LaserBeam_update(GameObject* obj) {
     } else if (state->beamKind == 0 && state->effectHandle != -1) {
         (*gModgfxInterface)->releaseHandle(&state->effectHandle);
     }
-    beamRange = (f32)(int)placement->beamRange;
+    beamRange = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->beamRange));
     beamRangeSquared = beamRange * beamRange;
     beamDirectionX = mathCosf((gLaserBeamObjPi * (f32)(int)obj->anim.rotX) / gLaserBeamObjAngleToRadScale);
     beamDirectionZ = mathSinf((gLaserBeamObjPi * (f32)(int)obj->anim.rotX) / gLaserBeamObjAngleToRadScale);
@@ -191,7 +191,7 @@ void LaserBeam_update(GameObject* obj) {
     } else {
         state->beamState = 2;
     }
-    if (mainGetBit(placement->disableGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) != 0) {
         state->beamState = 0;
     }
     if (state->damageCooldown == 0) {
@@ -287,10 +287,10 @@ void LaserBeam_init(GameObject* obj, const LaserBeamPlacementView* placement) {
     state = obj->extra;
     ObjMsg_AllocQueue(obj, 2);
     obj->anim.rotX = (s16)((s32)placement->initialYaw << 8);
-    if (placement->cyclePeriod == 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cyclePeriod)) == 0) {
         state->cyclePeriod = (s16)(randomGetRange(-80, 80) + 400);
     } else {
-        state->cyclePeriod = placement->cyclePeriod;
+        state->cyclePeriod = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cyclePeriod));
     }
     state->cycleTimer = state->cyclePeriod;
     state->blastPhase = 0;

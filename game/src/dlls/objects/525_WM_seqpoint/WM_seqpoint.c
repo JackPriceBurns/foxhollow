@@ -87,9 +87,9 @@ void wmseqpoint_onSeqFree(GameObject* obj)
         if (state->skyEnabledLatch != 0 && skyOn == 0)
         {
             getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_NIGHT_A, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 4, 1);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 10, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 0xb, 0);
@@ -97,9 +97,9 @@ void wmseqpoint_onSeqFree(GameObject* obj)
         else if (state->skyEnabledLatch == 0 && skyOn != 0)
         {
             getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_DAY_A, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_DAY_B, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_DAY_C, 0);
-            getEnvfxActImmediatelyVoid((int)obj, (int)obj, WMSEQPOINT_ENVFX_DAY_D, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_B, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_C, 0);
+            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_D, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 4, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 10, 1);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 0xb, 1);
@@ -199,14 +199,14 @@ void wmseqpoint_free(void)
 {
 }
 
-void wmseqpoint_render(int obj, int p2, int p3, int p4, int p5, s8 visible)
+void wmseqpoint_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
     s32 isVisible;
 
     isVisible = visible;
     if (isVisible != 0)
     {
-        objRenderModelAndHitVolumesFwdLegacy(obj, p2, p3, p4, p5, 1.0f);
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
     }
 }
 
@@ -336,12 +336,12 @@ void wmseqpoint_init(GameObject* obj, WmSeqPointMapData* setup)
     mapData = setup;
     obj->animEventCallback = wmseqpoint_SeqFn;
     obj->anim.rotX = (s16)(mapData->rotXByte << 8);
-    state->triggerRadius = fhReadBES16(&mapData->triggerRadius);
-    state->sequenceId = fhReadBES16(&mapData->sequenceId);
+    state->triggerRadius = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->triggerRadius);
+    state->sequenceId = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->sequenceId);
     state->doneLatch = 0;
     state->triggerMode = mapData->triggerMode;
-    state->conditionGameBit = fhReadBES16(&mapData->conditionGameBit);
-    state->disableGameBit = fhReadBES16(&mapData->disableGameBit);
+    state->conditionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->conditionGameBit);
+    state->disableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->disableGameBit);
     state->command = 0;
     state->unk0A = 0;
 }

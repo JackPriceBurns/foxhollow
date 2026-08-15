@@ -197,7 +197,7 @@ void ObjSeq_AudioStreamCallback(void)
     }
 }
 
-int ObjSeq_SetCoordinateSpace(int unused, int space)
+int ObjSeq_SetCoordinateSpace(uintptr_t unused, int space)
 {
     switch (space)
     {
@@ -464,7 +464,7 @@ void ObjSeq_yield(ObjSeqState* seq, int value)
     seq->sequenceControlFlags |= OBJSEQ_CONTROL_RESTART_AT_SAVED_FRAME;
 }
 
-void ObjSeq_preempt(int key, int value)
+void ObjSeq_preempt(uintptr_t key, int value)
 {
     u8 count = gObjSeqPreemptCount;
     int i = (s8)count;
@@ -1423,6 +1423,7 @@ int ObjSeq_resolveTargetObject(GameObject* obj)
     f32 dy;
     f32 dz;
     f32 distSq;
+    s16 targetType;
 
     objects = (void**)ObjList_GetObjects(&unused, &objectCount);
     seqObj = obj->extra;
@@ -1432,8 +1433,9 @@ int ObjSeq_resolveTargetObject(GameObject* obj)
         ((ObjSeqState*)seqObj)->targetObj = NULL;
         return -1;
     }
+    targetType = ObjAnim_ReadPlacementS16(&obj->anim, &model->targetType);
 
-    switch (model->targetType)
+    switch (targetType)
     {
     case 0:
         ((ObjSeqState*)seqObj)->targetObj = NULL;
@@ -1446,7 +1448,7 @@ int ObjSeq_resolveTargetObject(GameObject* obj)
         break;
     case 3:
         ((ObjSeqState*)seqObj)->targetObj = NULL;
-        ((ObjSeqState*)seqObj)->isCameraSeq = (s8)(model->targetType - 2);
+        ((ObjSeqState*)seqObj)->isCameraSeq = (s8)(targetType - 2);
         if (gObjSeqCamOwnerSeqIndex != 0)
         {
             gObjSeqCamOwnerSeqIndex = 0;
@@ -1458,7 +1460,7 @@ int ObjSeq_resolveTargetObject(GameObject* obj)
         break;
     default:
         ((ObjSeqState*)seqObj)->targetObj = NULL;
-        objType = model->targetType - 4;
+        objType = targetType - 4;
         if (objType == OBJSEQ_KRYSTAL_OBJ || objType == OBJSEQ_SABRE_OBJ)
         {
             ((ObjSeqState*)seqObj)->targetObj = Obj_GetPlayerObject();
@@ -1529,6 +1531,7 @@ void* ObjSeq_FindTargetObject(GameObject* obj)
     f32 dz;
     f32 distSq;
     f32 bestDistSq;
+    s16 targetType;
 
     targetId = ((ObjSeqState*)obj->extra)->targetObjId;
     if (targetId != 0)
@@ -1537,7 +1540,9 @@ void* ObjSeq_FindTargetObject(GameObject* obj)
     }
 
     objects = (void**)ObjList_GetObjects(&unused, &objectCount);
-    objectType = ((ObjSeqPlacement*)obj->anim.placementData)->targetType - 4;
+    targetType = ObjAnim_ReadPlacementS16(
+        &obj->anim, &((ObjSeqPlacement*)obj->anim.placementData)->targetType);
+    objectType = targetType - 4;
     if (objectType == 0x1f || objectType == 0)
     {
         return Obj_GetPlayerObject();
@@ -1602,6 +1607,7 @@ void ObjSeq_runBgCmds(void)
     ObjSeqBgRotationCmd keepBuf[0x1e];
     int objectCount;
     int unused;
+    s16 targetType;
 
     objects = ObjSeq_GetObjects(&unused, &objectCount);
     if (lbl_803DD060 != lbl_803DD062)
@@ -1671,10 +1677,11 @@ void ObjSeq_runBgCmds(void)
                 seqp = candidate->extra;
                 if (model != NULL && model->slot == index)
                 {
-                    if (model->targetType >= 4 && ObjSeq_FindTargetObject(candidate) == NULL)
+                    targetType = ObjAnim_ReadPlacementS16(&candidate->anim, &model->targetType);
+                    if (targetType >= 4 && ObjSeq_FindTargetObject(candidate) == NULL)
                     {
                         ok = 0;
-                        logPrintf(sObjSequenceMissingObjectFormat, model->targetType - 4);
+                        logPrintf(sObjSequenceMissingObjectFormat, targetType - 4);
                     }
                     else
                     {
@@ -1813,21 +1820,21 @@ void ObjSeq_seqState_init(u8* seq)
 }
 
 
-void objLoadAnimdata(ObjSeqState* seq, ObjSeqAnimPlacement* placement)
+void objLoadAnimdata(ObjSeqState* seq, ObjSeqAnimPlacement* placement, const ObjAnimComponent* objAnim)
 {
     s16 size;
     int animId;
     int fileOffset;
     ObjSeqAnimDataHeader hdr;
 
-    if (placement->animDataIndex == -1)
+    if (ObjAnim_ReadPlacementS16(objAnim, &placement->animDataIndex) == -1)
     {
         return;
     }
 
     seq->animCount = 0;
     seq->cmdCount = 0;
-    animId = placement->animDataIndex;
+    animId = ObjAnim_ReadPlacementS16(objAnim, &placement->animDataIndex);
     if ((animId & 0x8000) != 0)
     {
         getTabEntry(gObjSeqAnimLookup, MLDF_FILEID_OBJSEQ2C_TAB, ((animId & 0x7ff0) >> 4) * 2, 8);
@@ -2806,10 +2813,10 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
                 switch ((s8)gObjSeqMsgSendModes[operand])
                 {
                 case 1:
-                    ObjMsg_SendToObjects(0, 2, obj, gObjSeqMsgIds[operand], (u32)obj);
+                    ObjMsg_SendToObjects(0, 2, obj, gObjSeqMsgIds[operand], (uintptr_t)obj);
                     break;
                 case 2:
-                    ObjMsg_SendToNearbyObjects(0, 600.0f, 2, obj, gObjSeqMsgIds[operand], (u32)obj);
+                    ObjMsg_SendToNearbyObjects(0, 600.0f, 2, obj, gObjSeqMsgIds[operand], (uintptr_t)obj);
                     break;
                 default:
                     ObjMsg_SendToObject(sourceObj, gObjSeqMsgIds[operand], obj, 0);
@@ -4326,7 +4333,7 @@ void ObjSeq_RebuildCurveStateToFrame(GameObject* obj, GameObject* seqObj, u8* se
     f32 prevX;
     f32 prevZ;
     int opcode;
-    ObjSeqBgCmd* entry;
+    ObjSeqPendingCmd0B* entry;
 
     ObjSeqState* state = (ObjSeqState*)seq;
 
@@ -4536,7 +4543,7 @@ void ObjSeq_RebuildCurveStateToFrame(GameObject* obj, GameObject* seqObj, u8* se
 
         for (i = 0; i < gObjSeqPendingCmd0BCount; i++)
         {
-            if (seqDoSubCmd0B(obj, seqObj, seq, (u8*)entry[i].object, entry[i].flags, entry[i].param, 1, 0) != 0)
+            if (seqDoSubCmd0B(obj, seqObj, seq, entry[i].cmd, entry[i].frame, entry[i].reps, 1, 0) != 0)
             {
                 i = gObjSeqPendingCmd0BCount;
             }

@@ -256,7 +256,7 @@ int VFPLift_getObjectTypeId(void)
     return 0x0;
 }
 
-void VFPLift_free(int obj)
+void VFPLift_free(GameObject* obj)
 {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
@@ -305,10 +305,10 @@ void VFPLift_init(GameObject* obj, VfpLiftPlacement* init)
     obj->animEventCallback = VFPLift_SeqFn;
     obj->anim.rotX = (s16)(init->rotXByte << 8);
     state->mode = VFPLIFT_STATE_IDLE;
-    state->hitDisableGameBit = init->hitDisableGameBit;
-    state->toggleGameBit = init->toggleGameBit;
-    state->travelDistance = (f32)(s32)init->travelDistance;
-    state->mapEventNo = init->mapEventNo;
+    state->hitDisableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(init->hitDisableGameBit));
+    state->toggleGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(init->toggleGameBit));
+    state->travelDistance = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(init->travelDistance));
+    state->mapEventNo = ObjAnim_ReadPlacementS16(&obj->anim, &(init->mapEventNo));
     state->anim[0] = 0;
     state->anim[1] = 0;
     state->anim[2] = 0;

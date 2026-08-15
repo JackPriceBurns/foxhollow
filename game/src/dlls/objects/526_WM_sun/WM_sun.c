@@ -200,7 +200,7 @@ void wmsun_updateGlare(GameObject* obj)
 
 int wmsun_getExtraSize(void)
 {
-    return 0x10;
+    return sizeof(WmSunState);
 }
 
 int wmsun_getObjectTypeId(void)
@@ -474,9 +474,9 @@ void wmsun_init(GameObject* obj, WmSunMapData* mapData)
     {
         obj->anim.rotX = (s16)(mapData->rotXByte << 8);
         state->riseStep = 100;
-        if (mapData->rootMotionScaleParam >= 1000)
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) >= 1000)
         {
-            obj->anim.rootMotionScale = mapData->rootMotionScaleParam / 1000.0f;
+            obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) / 1000.0f;
         }
         else
         {
@@ -491,9 +491,9 @@ void wmsun_init(GameObject* obj, WmSunMapData* mapData)
         lbl_803DDCAA = 800;
         gWmSunQuakeTimer = 800;
         obj->anim.rotX = (s16)(mapData->rotXByte << 8);
-        if (mapData->rootMotionScaleParam >= 0)
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) >= 0)
         {
-            obj->anim.rootMotionScale = mapData->rootMotionScaleParam / 1000.0f;
+            obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) / 1000.0f;
         }
         else
         {
@@ -532,9 +532,9 @@ void wmsun_init(GameObject* obj, WmSunMapData* mapData)
             ((WmSunGlareParams*)((u8*)state->glareParams + j))->alphaValues[0] = randomGetRange(0x50, 0xff);
         }
         objAnim->alpha = 0;
-        if (mapData->rootMotionScaleParam != 0)
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) != 0)
         {
-            obj->anim.rootMotionScale = 1.0f / ((f32)mapData->rootMotionScaleParam / 1000.0f);
+            obj->anim.rootMotionScale = 1.0f / ((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->rootMotionScaleParam)) / 1000.0f);
         }
     }
 }

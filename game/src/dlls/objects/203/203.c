@@ -216,7 +216,7 @@ void dll_CB_seekAndUpdate(GameObject* obj, ObjSeqState* sequenceState, GroundBad
         state->baddie.hasTarget = 0;
         if (placement->trackYieldEnable != -1) {
             if (sequenceState != NULL) {
-                (*gObjectTriggerInterface)->yield(sequenceState, placement->trackYieldId);
+                (*gObjectTriggerInterface)->yield(sequenceState, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->trackYieldId)));
             }
             objectState->subMode = DLL_CB_SUBMODE_SEQUENCE;
         } else {
@@ -280,7 +280,7 @@ int dll_CB_seqFn(GameObject* obj, int unused, ObjSeqState* sequenceState) {
         }
         dll_CB_advanceAI(obj, state, state);
         if (state->gameBitC != -1 && mainGetBit(state->gameBitC) != 0) {
-            (*gObjectTriggerInterface)->yield(sequenceState, placement->gameBitId);
+            (*gObjectTriggerInterface)->yield(sequenceState, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)));
             state->gameBitC = -1;
         }
         switch (state->subMode) {

@@ -42,7 +42,7 @@ STATIC_ASSERT(sizeof(DllAASequenceResourceView) == 0x1EC);
 extern u8 gDllAASequenceResourceData[sizeof(DllAASequenceResourceView)];
 
 void dll_AA_spawnSequence(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 sequenceFlags) {
-    u8* resourceData = (u8*)(int)gDllAASequenceResourceData;
+    u8* resourceData = (u8*)gDllAASequenceResourceData;
     f32 scale;
 
     scale = 8.0f;
@@ -76,7 +76,7 @@ void dll_AA_spawnSequence(GameObject* sourceObj, int variant, PartFxSpawnParams*
         ->addSequenceSpawn(4, 0.0f, 0.0f, 0.0f, 7,
                            &resourceData[offsetof(DllAASequenceResourceView, middleSevenVertexIndices.indices)]);
     (*gModgfxInterface)
-        ->spawnSequence(spawnParams, (u8*)(int)gDllAASequenceResourceData, 0x15,
+        ->spawnSequence(spawnParams, (u8*)gDllAASequenceResourceData, 0x15,
                         &resourceData[offsetof(DllAASequenceResourceView, triangles)], 0x18, 0x3e9, 0);
     (*gModgfxInterface)->getLastSpawnHandle();
 }

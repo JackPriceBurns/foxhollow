@@ -26,7 +26,7 @@ STATIC_ASSERT(sizeof(Dll59EffectResourceView) == 0x130);
 
 void dll_59_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resource = (u8*)(int)gDll59EffectResourceData;
+    u8* resource = (u8*)gDll59EffectResourceData;
     GfxCmd* commands = packet.entries;
     GameObject* sourceContext;
     f32 one;
@@ -133,7 +133,7 @@ void dll_59_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x11, (u8*)(int)gDll59EffectResourceData, 8,
+        ->spawnEffect(&packet, 0, 0x11, (u8*)gDll59EffectResourceData, 8,
                       &resource[offsetof(Dll59EffectResourceView, colorData)], DLL59_EFFECT_ID, 0);
 }
 

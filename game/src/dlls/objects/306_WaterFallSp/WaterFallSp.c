@@ -60,6 +60,7 @@ void WaterFallSpray_update(GameObject* obj) {
     f32 zDelta;
     f32 distance;
     int cooldown;
+    s16 enableGameBit;
     s16 enabled;
     s16 i;
 
@@ -67,8 +68,9 @@ void WaterFallSpray_update(GameObject* obj) {
     placement = (WaterFallSprayPlacement*)obj->anim.placement;
     playerObj = Obj_GetPlayerObject();
     if (playerObj != NULL) {
-        if (placement->enableGameBit != WATERFALLSPRAY_GAME_BIT_NONE) {
-            enabled = mainGetBit(placement->enableGameBit);
+        enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+        if (enableGameBit != WATERFALLSPRAY_GAME_BIT_NONE) {
+            enabled = mainGetBit(enableGameBit);
         } else {
             enabled = 1;
         }

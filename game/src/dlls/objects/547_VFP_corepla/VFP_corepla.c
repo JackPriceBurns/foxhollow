@@ -2,7 +2,7 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/gamebits.h"
-#include "main/object_render_legacy.h"
+#include "main/object_render.h"
 #include "game/objects/object_setup.h"
 
 
@@ -38,12 +38,12 @@ int VFP_coreplat_getObjectTypeId(void)
     return 0x0;
 }
 
-void VFP_coreplat_free(int obj)
+void VFP_coreplat_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2(obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
-void VFP_coreplat_render(int p1, int p2, int p3, int p4, int p5, s8 visible)
+void VFP_coreplat_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 visible)
 {
     objRenderModelAndHitVolumes(p1, p2, p3, p4, p5, 1.0f);
 }
@@ -62,7 +62,7 @@ void VFP_coreplat_init(GameObject* obj, VfpCorePlatformPlacement* data)
     VfpCorePlatformState* state = obj->extra;
 
     obj->anim.rotX = (((s32)def->rotXByte) << 8);
-    state->gameBitId = def->gameBitId;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitId));
     obj->animEventCallback = VFP_coreplat_sequenceCallback;
     if (obj->anim.romDefNo == 0x3cb)
     {

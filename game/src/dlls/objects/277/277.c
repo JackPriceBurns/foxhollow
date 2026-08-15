@@ -35,9 +35,10 @@ int dll_115_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpda
         int nextStep = step + 1;
 
         if (nextStep < DLL_115_STEP_COUNT) {
-            s16 nextGameBit = placement->activeGameBits[nextStep];
+            s16 nextGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBits[nextStep]);
 
-            if (nextGameBit != DLL_115_GAME_BIT_NONE && nextGameBit != placement->activeGameBits[step]) {
+            if (nextGameBit != DLL_115_GAME_BIT_NONE &&
+                nextGameBit != ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBits[step])) {
                 if (mainGetBit(nextGameBit) != 0) {
                     (*gObjectTriggerInterface)->endSequence(obj->seqIndex);
                 }
@@ -74,14 +75,13 @@ void dll_115_hitDetect(void) {
 void dll_115_update(GameObject* obj) {
     Dll115State* state;
     Dll115Placement* placement;
-    s16* placementCursor;
     int previousStep;
     int gameBit;
 
     state = obj->extra;
     placement = (Dll115Placement*)obj->anim.placementData;
     if ((state->flags & DLL_115_STATE_ADVANCE_PENDING) != 0) {
-        gameBit = placement->completionGameBits[state->step];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[state->step]);
         if (gameBit != DLL_115_GAME_BIT_NONE) {
             mainSetBits(gameBit, DLL_115_GAME_BIT_SET);
         }
@@ -91,14 +91,14 @@ void dll_115_update(GameObject* obj) {
 
     switch (state->step) {
     case DLL_115_STEP_FINISH:
-        (*gObjectTriggerInterface)->preempt((int)obj, placement->finishPreemptId);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->finishPreemptId)));
         (*gObjectTriggerInterface)->runSequence(placement->finishSequenceId, obj, placement->finishSequenceParam);
         break;
     case DLL_115_STEP_IDLE:
     case DLL_115_STEP_DONE:
         break;
     default:
-        gameBit = placement->activeGameBits[state->step];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBits[state->step]);
         if (gameBit == DLL_115_GAME_BIT_NONE) {
             state->step = DLL_115_STEP_IDLE;
         } else if (mainGetBit(gameBit) != 0) {
@@ -112,9 +112,8 @@ void dll_115_update(GameObject* obj) {
     }
 
     previousStep = state->step - 1;
-    placementCursor = (s16*)placement + previousStep;
     while (previousStep >= 0) {
-        gameBit = placementCursor[DLL_115_COMPLETION_GAME_BIT_HALFWORD_INDEX];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[previousStep]);
         if (gameBit == DLL_115_GAME_BIT_NONE) {
             break;
         }
@@ -122,13 +121,11 @@ void dll_115_update(GameObject* obj) {
             break;
         }
         state->step--;
-        placementCursor--;
         previousStep--;
     }
 }
 
 void dll_115_init(GameObject* obj, Dll115Placement* placement) {
-    s16* placementCursor;
     Dll115State* state;
     int step;
 
@@ -139,19 +136,21 @@ void dll_115_init(GameObject* obj, Dll115Placement* placement) {
     objAddObjectType(obj, DLL_115_GROUP);
 
     step = 0;
-    placementCursor = (s16*)placement;
     do {
-        if (placementCursor[DLL_115_COMPLETION_GAME_BIT_HALFWORD_INDEX] == DLL_115_GAME_BIT_NONE) {
+        s16 completionGameBit =
+            ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[step]);
+
+        if (completionGameBit == DLL_115_GAME_BIT_NONE) {
             break;
         }
-        if (mainGetBit(placementCursor[DLL_115_COMPLETION_GAME_BIT_HALFWORD_INDEX]) == 0) {
+        if (mainGetBit(completionGameBit) == 0) {
             break;
         }
-        placementCursor++;
         step++;
     } while (step < DLL_115_STEP_COUNT);
 
-    if (step < DLL_115_STEP_COUNT && placement->completionGameBits[step] == DLL_115_GAME_BIT_NONE) {
+    if (step < DLL_115_STEP_COUNT &&
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[step]) == DLL_115_GAME_BIT_NONE) {
         state->step = DLL_115_STEP_IDLE;
     } else {
         state->step = step;

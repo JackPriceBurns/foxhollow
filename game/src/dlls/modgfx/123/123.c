@@ -31,7 +31,7 @@ extern u8 gDll7BEffectResourceData[];
 
 void dll_7B_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll7BEffectResourceData;
+    u8* resourceData = (u8*)gDll7BEffectResourceData;
     GfxCmd* commandCursor;
     GfxCmd* commands = packet.entries;
     if (variant == 1) {
@@ -200,7 +200,7 @@ void dll_7B_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0xe, (u8*)(int)gDll7BEffectResourceData, 0xc,
+        ->spawnEffect(&packet, 0, 0xe, (u8*)gDll7BEffectResourceData, 0xc,
                       &resourceData[offsetof(Dll7BEffectResourceView, triangles)], 0x8e, 0);
 }
 

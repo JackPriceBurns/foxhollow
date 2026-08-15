@@ -74,7 +74,7 @@ int kytesmum_updateInteractionRangeCallback(GameObject* obj, int unused, u8* arg
     f32 dist;
     ObjHits_DisableObject(obj);
     dist = Vec_xzDistance(&player->anim.worldPosX, &(obj)->anim.worldPosX);
-    if (dist < setup->interactionRange)
+    if (dist < ObjAnim_ReadPlacementS16(&obj->anim, &(setup->interactionRange)))
     {
         arg[0x90] |= 4;
     }
@@ -281,7 +281,7 @@ int kytesmum_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpd
 
 int kytesmum_getExtraSize(void)
 {
-    return KYTESMUM_EXTRA_SIZE;
+    return sizeof(KytesMumRuntime);
 }
 
 int kytesmum_getObjectTypeId(void)
@@ -326,7 +326,7 @@ void kytesmum_update(GameObject* obj)
     {
         if (runtime->updateCallback((int)obj) != 0)
         {
-            mainSetBits(setup->completionGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->completionGameBit)), 1);
             runtime->questComplete = 1;
         }
     }
@@ -388,7 +388,7 @@ void kytesmum_init(GameObject* obj, KytesMumSetup* setup)
     KytesMumRuntime* runtime = obj->extra;
     int startMove;
     obj->anim.rotX = (s16)(setup->yaw << 8);
-    if (mainGetBit(setup->completionGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->completionGameBit))) != 0)
     {
         runtime->questComplete = 1;
     }

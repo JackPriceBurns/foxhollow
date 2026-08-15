@@ -43,7 +43,7 @@ int dfpfloorbar_SeqFn(void)
 
 int DFP_Floorbar_getExtraSize(void)
 {
-    return 0xc;
+    return sizeof(DfpFloorbarState);
 }
 
 int DFP_Floorbar_getObjectTypeId(void)
@@ -55,7 +55,7 @@ void DFP_Floorbar_free(GameObject* obj)
 {
     DfpFloorbarState* state;
 
-    state = (DfpFloorbarState*)(int)obj->extra;
+    state = (DfpFloorbarState*)obj->extra;
     (*gExpgfxInterface)->freeSource2((u32)obj);
     state->linkedObject = NULL;
     return;
@@ -75,7 +75,7 @@ void DFP_Floorbar_hitDetect(GameObject* obj)
     GameObject* linkedObject;
     int** state;
     s32 hitFlag;
-    state = (int**)(int)obj->extra;
+    state = (int**)obj->extra;
     linkedObject = (GameObject*)state[2];
     if (linkedObject == NULL)
         return;
@@ -231,13 +231,13 @@ void DFP_Floorbar_init(GameObject* obj, DfpfloorbarPlacement* params)
     obj->anim.rotX = (s16)((s8)placement->rotXByte << 8);
     obj->animEventCallback = dfpfloorbar_SeqFn;
     state->modeIndex = placement->modeIndex;
-    state->triggerGameBit = placement->triggerGameBit;
-    state->completionGameBit = placement->completionGameBit;
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit));
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit));
     state->linkedObject = NULL;
 
-    if (placement->travelRange != 0)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->travelRange)) != 0)
     {
-        obj->anim.rootMotionScale = 1.0f / ((f32)(s32)placement->travelRange / 1000.0f);
+        obj->anim.rootMotionScale = 1.0f / ((f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->travelRange)) / 1000.0f);
     }
 
     if (mainGetBit((int)state->completionGameBit) != 0)

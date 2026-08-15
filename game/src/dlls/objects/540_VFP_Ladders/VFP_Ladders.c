@@ -115,8 +115,8 @@ void VFP_Ladders_init(GameObject* obj, VfpLaddersSetup* setup)
 {
     VfpLaddersState* state = obj->extra;
     obj->anim.rotX = (s16)(setup->rotXByte << 8);
-    state->triggerGameBit = setup->triggerGameBit;
-    state->baseGameBit = setup->baseGameBit;
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->triggerGameBit));
+    state->baseGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseGameBit));
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     obj->animEventCallback = vfpladders_SeqFn;
 }

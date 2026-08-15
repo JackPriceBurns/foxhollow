@@ -39,7 +39,7 @@
 
 int drmusiccont_getExtraSize(void)
 {
-    return 4;
+    return sizeof(DrmusiccontState);
 }
 
 int drmusiccont_getObjectTypeId(void)
@@ -47,7 +47,7 @@ int drmusiccont_getObjectTypeId(void)
     return 0;
 }
 
-void drmusiccont_free(int obj)
+void drmusiccont_free(GameObject* obj)
 {
     cloudClearOverridePosition();
 }

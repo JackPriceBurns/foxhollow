@@ -55,7 +55,7 @@ void arwprojectile_launchForward(GameObject* obj, f32 lifetime);
 void arwprojectile_setParamScalar(GameObject* obj, int scalar);
 int arwarwingbo_getExtraSize(void);
 int arwarwingbo_getObjectTypeId(void);
-void arwarwingbo_free(int obj);
+void arwarwingbo_free(GameObject* obj);
 void arwarwingbo_hitDetect(void);
 void arwarwingbo_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void arwarwingbo_init(GameObject* obj, ArwingBombSetup* setup);

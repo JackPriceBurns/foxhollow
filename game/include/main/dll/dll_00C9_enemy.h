@@ -18,7 +18,7 @@ struct ObjModelChain;
  * reads and writes.
  */
 typedef struct EnemyState {
-    u8 unk0[0x4 - 0x0];
+    void* pathWalker;
     u32 flags; /* head word of the embedded gPathControlInterface record at +4 */
     u8 unk8[0x19C - 0x8];
     s16 spawnRotY; /* engine-maintained pitch pair; the family handlers restore anim.rotY/rotZ from it after a move change */
@@ -239,7 +239,7 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate);
 int enemy_findNearbyEnemies(GameObject* obj, f32 radius, u8 flags, int maxCount, EnemyTargetSearchResult* results);
 void tricky_handleDefeat(GameObject* obj, EnemyState* state);
 void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit);
-int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAltMode, u32 mode);
+uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u32 useAltMode, u32 mode);
 void baddieInstantiateWeapon(GameObject* obj, EnemyState* state);
 u8 baddie_canSeeTarget(GameObject* obj, EnemyState* state, void* from, void* to);
 void baddie_updateSightQuadrants(GameObject* obj, EnemyState* state, f32 radius);
@@ -251,7 +251,7 @@ void enemy_setHealthZero(GameObject* obj);
 void enemy_trackPlayer(GameObject* obj);
 u8 enemy_getFreezeRecoverSeconds(GameObject* obj);
 void enemy_getCurveParams(GameObject* obj, int* outIdx, f32* outA, f32* outB);
-void baddieTurnTowardPoint(GameObject* obj, int state, f32 targetX, f32 targetZ, int divisor, int angleBias);
+void baddieTurnTowardPoint(GameObject* obj, void* state, f32 targetX, f32 targetZ, int divisor, int angleBias);
 f32 enemy_getHealthFraction(GameObject* obj);
 f32 sidekickToy_accelerateTowardTarget3D(GameObject* obj, f32 tx, f32 ty, f32 tz, f32 accel, f32 speedScale,
                                          f32 maxVel, f32 drag);

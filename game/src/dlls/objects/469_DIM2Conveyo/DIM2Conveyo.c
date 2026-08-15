@@ -122,7 +122,7 @@ void dim2conveyor_update(GameObject* obj) {
 }
 
 void dim2conveyor_init(GameObject* obj, const Dim2ConveyorPlacement* placement) {
-    f32 scale = (f32)placement->scrollSpeed / 5.0f;
+    f32 scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scrollSpeed)) / 5.0f;
     Dim2ConveyorState* state;
 
     obj->anim.rotX = (s16)(placement->rotationXByte << 8);

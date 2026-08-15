@@ -65,7 +65,7 @@ void dll_299_update(GameObject* obj)
 
 void dll_299_init(GameObject* obj, Dll299Setup* setup)
 {
-    ((Dll299State*)obj->extra)->id = setup->id;
+    ((Dll299State*)obj->extra)->id = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->id));
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     gDll299Resource = Resource_Acquire(DLL299_RESOURCE_ID, 1);
     (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);

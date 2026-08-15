@@ -187,7 +187,7 @@ f32 gTrickyHudIconFarPlane = 1000.0f;
 f32 gTrickyHudTexScaleX = 0.003125f;
 f32 gTrickyHudTexScaleY = 0.003125f;
 f32 gTrickyHudTexScaleZ = 0.00240625f;
-int gTrickyHudIconKColor = 80;
+GXColor gTrickyHudIconKColor = {0, 0, 0, 80};
 f32 gTrickyHudTexMtxScale = 0.4f;
 char sViewFinderDirN[] = "N\n";
 char sViewFinderDirE[] = "E\n";
@@ -1037,7 +1037,7 @@ int pauseMenuHoloRenderFn(GameObject* obj, ObjModel* model, int renderOpIndex)
     getNewShadowDiskTexture(&tex2);
     selectTexture((Texture*)tex2, 1);
     GXSetTevKAlphaSel(GX_TEVSTAGE2, GX_TEV_KASEL_K0_A);
-    GXSetTevKColor(GX_KCOLOR0, *(GXColor*)&gTrickyHudIconKColor);
+    GXSetTevKColor(GX_KCOLOR0, gTrickyHudIconKColor);
     GXSetTevDirect(GX_TEVSTAGE2);
     GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD2, GX_TEXMAP1, GX_COLOR_NULL);
     GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
@@ -1258,7 +1258,7 @@ static inline void gameUiFreeHudAnims(GameObject** anims)
         {
             (*anim)->anim.modelState->shadowTexture = NULL;
             (*anim)->anim.modelState->shadowWorkBuffer = NULL;
-            if ((u32)(*anim)->anim.placementData > 0x90000000)
+            if (fhAboveRetailMem1Watermark((*anim)->anim.placementData))
             {
                 (*anim)->anim.placementData = NULL;
             }
@@ -4354,7 +4354,7 @@ void pauseMenuCreateHeads(void)
                 ((GameObject*)gHeadDisplayModelObjs[i])->anim.localPosZ = (-5.0f);
                 ((GameObject*)gHeadDisplayModelObjs[i])->anim.rotX = 0x7447;
                 ((GameObject*)gHeadDisplayModelObjs[i])->anim.rootMotionScale = 0.07f;
-                if ((u32)((GameObject*)gHeadDisplayModelObjs[i])->anim.placementData > 0x90000000u)
+                if (fhAboveRetailMem1Watermark(((GameObject*)gHeadDisplayModelObjs[i])->anim.placementData))
                 {
                     ((GameObject*)gHeadDisplayModelObjs[i])->anim.placementData = NULL;
                 }
@@ -6022,7 +6022,7 @@ void pauseMenuUpdate(void)
                 case 3:
                 {
                     GameObject* anim = hud->anims[gPauseMenuPageIndex];
-                    if ((u32)anim->anim.placementData > 0x90000000)
+                    if (fhAboveRetailMem1Watermark(anim->anim.placementData))
                     {
                         anim->anim.placementData = NULL;
                     }
@@ -6051,7 +6051,7 @@ void pauseMenuUpdate(void)
                 case 3:
                 {
                     GameObject* anim = hud->anims[gPauseMenuPageIndex];
-                    if ((u32)anim->anim.placementData > 0x90000000)
+                    if (fhAboveRetailMem1Watermark(anim->anim.placementData))
                     {
                         anim->anim.placementData = NULL;
                     }
@@ -7026,9 +7026,9 @@ void pauseMenuInit(void)
             gGameUiHudAnimObjects[i]->anim.rotX = 0x7447;
             gGameUiHudAnimObjects[i]->anim.rootMotionScale = 0.0f;
             {
-                void* p = gGameUiHudAnimObjects[i];
-                if (((u32*)p)[0x13] > 0x90000000U)
-                    ((u32*)p)[0x13] = 0;
+                GameObject* p = gGameUiHudAnimObjects[i];
+                if (fhAboveRetailMem1Watermark(p->anim.placementData))
+                    p->anim.placementData = NULL;
             }
         }
     }
@@ -7426,7 +7426,7 @@ void drawWorldMapHud(void)
             int i;
             u8* p;
             i = 0;
-            base = (u8*)(int)gGameUiTaskHintCandidates;
+            base = (u8*)gGameUiTaskHintCandidates;
             p = base;
             for (;;)
             {

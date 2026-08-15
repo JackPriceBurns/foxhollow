@@ -215,25 +215,25 @@ int renderWhirlpool(void* obj_a, void** obj_b, int slot)
 
     if (isHeavyFogEnabled() != 0)
     {
-        ((u8*)&gWhirlpoolReflectionTintColor)[0] = gFogColor.r;
-        ((u8*)&gWhirlpoolReflectionTintColor)[1] = gFogColor.g;
-        ((u8*)&gWhirlpoolReflectionTintColor)[2] = gFogColor.b;
-        ((u8*)&gWhirlpoolReflectionTintColor)[3] = 0x80;
+        gWhirlpoolReflectionTintColor.r = gFogColor.r;
+        gWhirlpoolReflectionTintColor.g = gFogColor.g;
+        gWhirlpoolReflectionTintColor.b = gFogColor.b;
+        gWhirlpoolReflectionTintColor.a = 0x80;
     }
     else
     {
         (*gSkyInterface)
-            ->getCurrentAmbientAndLightColors((u8*)&gWhirlpoolReflectionTintColor,
-                                              (u8*)&gWhirlpoolReflectionTintColor + 1,
-                                              (u8*)&gWhirlpoolReflectionTintColor + 2,
+            ->getCurrentAmbientAndLightColors(&gWhirlpoolReflectionTintColor.r,
+                                              &gWhirlpoolReflectionTintColor.g,
+                                              &gWhirlpoolReflectionTintColor.b,
                                               &ignoredLightColor, &ignoredLightColor, &ignoredLightColor);
-        ((u8*)&gWhirlpoolReflectionTintColor)[0] = (u8)((int)((u8*)&gWhirlpoolReflectionTintColor)[0] >> 3);
-        ((u8*)&gWhirlpoolReflectionTintColor)[1] = (u8)((int)((u8*)&gWhirlpoolReflectionTintColor)[1] >> 3);
-        ((u8*)&gWhirlpoolReflectionTintColor)[2] = (u8)((int)((u8*)&gWhirlpoolReflectionTintColor)[2] >> 3);
-        ((u8*)&gWhirlpoolReflectionTintColor)[3] = gReflectionTintAlpha;
+        gWhirlpoolReflectionTintColor.r >>= 3;
+        gWhirlpoolReflectionTintColor.g >>= 3;
+        gWhirlpoolReflectionTintColor.b >>= 3;
+        gWhirlpoolReflectionTintColor.a = gReflectionTintAlpha;
     }
-    GXSetTevColor(GX_TEVREG2, *(GXColor*)&gWhirlpoolReflectionTintColor);
-    GXSetTevKColor(GX_KCOLOR0, *(GXColor*)&gWhirlpoolReflectionKColor);
+    GXSetTevColor(GX_TEVREG2, gWhirlpoolReflectionTintColor);
+    GXSetTevKColor(GX_KCOLOR0, gWhirlpoolReflectionKColor);
     GXSetTevKColorSel(GX_TEVSTAGE1, GX_TEV_KCSEL_K0);
     GXSetIndTexOrder(GX_INDTEXSTAGE0, GX_TEXCOORD2, GX_TEXMAP2);
     GXSetIndTexCoordScale(GX_INDTEXSTAGE0, GX_ITS_1, GX_ITS_1);
@@ -2623,7 +2623,7 @@ void objectShadow_setupSwappedProjectedTexture(ProjectedShadowTexture* shadow, G
     GXSetTevKColor(GX_KCOLOR0, *colorPtr);
     GXSetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KASEL_K0_A);
     GXSetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K0);
-    GXSetTevColor(GX_TEVREG1, *(GXColor*)&gObjectShadowTevColor);
+    GXSetTevColor(GX_TEVREG1, gObjectShadowTevColor);
     GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR_NULL);
     GXSetTevDirect(GX_TEVSTAGE0);
     GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_KONST);
@@ -4127,13 +4127,13 @@ void setupWaterReflectionTev(Texture* handle1, Texture* handle2)
                                               &ignoredLightColor);
     }
 
-    k0 = *(GXColor*)&gWaterReflectionKColorR;
+    k0 = gWaterReflectionKColorR;
     ((void (*)(int, GXColor*))GXSetTevKColor)(0, &k0);
     GXSetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K0);
-    k1 = *(GXColor*)&gWaterReflectionKColorG;
+    k1 = gWaterReflectionKColorG;
     ((void (*)(int, GXColor*))GXSetTevKColor)(1, &k1);
     GXSetTevKColorSel(GX_TEVSTAGE1, GX_TEV_KCSEL_K1);
-    k2 = *(GXColor*)&gWaterReflectionKColorB;
+    k2 = gWaterReflectionKColorB;
     ((void (*)(int, GXColor*))GXSetTevKColor)(2, &k2);
     GXSetTevKColorSel(GX_TEVSTAGE2, GX_TEV_KCSEL_K2);
 
@@ -4494,26 +4494,24 @@ void setupWaterCausticTev(void)
 
     if (isHeavyFogEnabled() != 0)
     {
-        ((u8*)&gWaterCausticKColor)[0] = gFogColor.r;
-        ((u8*)&gWaterCausticKColor)[1] = gFogColor.g;
-        ((u8*)&gWaterCausticKColor)[2] = gFogColor.b;
-        ((u8*)&gWaterCausticKColor)[3] = 0x80;
+        gWaterCausticKColor.r = gFogColor.r;
+        gWaterCausticKColor.g = gFogColor.g;
+        gWaterCausticKColor.b = gFogColor.b;
+        gWaterCausticKColor.a = 0x80;
     }
     else
     {
         u8 ignoredLightColor;
-        u8* p1;
-        u8* p2;
         (*gSkyInterface)
-            ->getCurrentAmbientAndLightColors((u8*)&gWaterCausticKColor, p1 = (u8*)&gWaterCausticKColor + 1,
-                                              p2 = (u8*)&gWaterCausticKColor + 2, &ignoredLightColor, &ignoredLightColor,
+            ->getCurrentAmbientAndLightColors(&gWaterCausticKColor.r, &gWaterCausticKColor.g,
+                                              &gWaterCausticKColor.b, &ignoredLightColor, &ignoredLightColor,
                                               &ignoredLightColor);
-        ((u8*)&gWaterCausticKColor)[0] = (u8)(((u8*)&gWaterCausticKColor)[0] >> 3);
-        *p1 = (u8)(*p1 >> 3);
-        *p2 = (u8)(*p2 >> 3);
-        ((u8*)&gWaterCausticKColor)[3] = gReflectionTintAlpha;
+        gWaterCausticKColor.r >>= 3;
+        gWaterCausticKColor.g >>= 3;
+        gWaterCausticKColor.b >>= 3;
+        gWaterCausticKColor.a = gReflectionTintAlpha;
     }
-    temp = *(GXColor*)&gWaterCausticKColor;
+    temp = gWaterCausticKColor;
     GXSetTevKColor(GX_KCOLOR0, temp);
     GXSetTevKAlphaSel(GX_TEVSTAGE1, GX_TEV_KASEL_K0_A);
     GXSetTevKColorSel(GX_TEVSTAGE1, GX_TEV_KCSEL_K0);

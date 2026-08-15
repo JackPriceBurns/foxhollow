@@ -73,7 +73,7 @@ struct GameObject {
     u8 sphereMapIntensity; /* obj+0xF1: r=g=b konst gray of the sphere-map TEV stage (addSphereMapTexStage and the objprint fuzz/render stages); inherited parent->child; player.c ramps it 4/frame toward skyGetSlotBlendAlpha(2) as its floor */
     u8 lightColorSlot; /* obj+0xF2: sky-light / ambient object-color slot */
     u8 unkF3;
-    s32 userData1; /* obj+0xF4/0xF8: two generic per-instance scratch words. No
+    intptr_t userData1; /* obj+0xF4/0xF8: two generic per-instance scratch words. No
         engine file reads or writes them - every access is in an object-class
         file, and each class picks its own role and width: countdown timer
         (iceball/kaldachomspit/mmshwaterspike, -= timeDelta), one-shot latch
@@ -84,7 +84,7 @@ struct GameObject {
         (mmshwaterspike). Declared s32 = the widest common access; classes
         needing another type launder through a cast. Deliberately NOT given a
         role name - the role belongs to the class, not the engine. */
-    s32 userData2;
+    intptr_t userData2;
     f32 externalVelX; /* obj+0xFC..0x104: velocity imparted externally
         (carrier object's velocity / move-data velocity), added to
         anim.velocity in the localPos integration */

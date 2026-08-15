@@ -29,7 +29,7 @@ STATIC_ASSERT(sizeof(Dll5ESequenceResourceView) == 0x2EC);
 extern u8 gDll5ESequenceResourceData[];
 
 void dll_5E_spawnSequence(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
-    u8* resourceData = (u8*)(int)gDll5ESequenceResourceData;
+    u8* resourceData = (u8*)gDll5ESequenceResourceData;
     (*gModgfxInterface)->beginSequence(sourceObj, (u8)variant, 0x12, 3, 9);
     (*gModgfxInterface)->setSequenceParams(&resourceData[offsetof(Dll5ESequenceResourceView, sequenceParams)]);
     (*gModgfxInterface)->addSequenceFlags(spawnFlags | 0x4004484);
@@ -80,7 +80,7 @@ void dll_5E_spawnSequence(GameObject* sourceObj, int variant, PartFxSpawnParams*
         ->addSequenceSpawn(4, 0.0f, 0.0f, 0.0f, 0x24,
                            &resourceData[offsetof(Dll5ESequenceResourceView, allVertexIndices)]);
     (*gModgfxInterface)
-        ->spawnSequence(spawnParams, (u8*)(int)gDll5ESequenceResourceData, 0x24,
+        ->spawnSequence(spawnParams, (u8*)gDll5ESequenceResourceData, 0x24,
                         &resourceData[offsetof(Dll5ESequenceResourceView, colors)], 0x10, 0x120, 0);
     (*gModgfxInterface)->getLastSpawnHandle();
 }

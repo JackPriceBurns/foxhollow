@@ -67,7 +67,7 @@ int wcapertures_interactCallback(GameObject* obj, int unused, ObjSeqState* animU
 
 int wcapertures_getExtraSize(void)
 {
-    return WCAPERTURES_EXTRA_SIZE;
+    return sizeof(WCAperturesState);
 }
 
 int wcapertures_getObjectTypeId(GameObject* obj)
@@ -161,7 +161,7 @@ void wcapertures_update(GameObject* obj)
         state->targetAlpha = 0;
         break;
     case WCAPERTURES_MODE_CLOSED:
-        if (mainGetBit(setup->armBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->armBit))) != 0)
         {
             state->mode = WCAPERTURES_MODE_ARMED;
         }
@@ -173,7 +173,7 @@ void wcapertures_update(GameObject* obj)
             state->targetAlpha = WCAPERTURES_ALPHA_OPAQUE;
             if (Camera_GetFovY() <= 6.0f && (obj->objectFlags & OBJECT_OBJFLAG_RENDERED))
             {
-                mainSetBits(setup->openBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->openBit)), 1);
                 state->mode = WCAPERTURES_MODE_OPEN;
             }
         }
@@ -223,9 +223,9 @@ void wcapertures_init(GameObject* obj, WCAperturesSetup* setup)
     objAnim->bankIndex = setup->modelIndex;
     if (objAnim->bankIndex >= objAnim->modelInstance->modelCount)
         objAnim->bankIndex = 0;
-    if (mainGetBit(setup->armBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->armBit))) != 0)
     {
-        if (mainGetBit(setup->openBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->openBit))) != 0)
             state->mode = WCAPERTURES_MODE_OPEN;
         else
             state->mode = WCAPERTURES_MODE_ARMED;

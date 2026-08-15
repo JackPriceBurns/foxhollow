@@ -185,7 +185,7 @@ int hightop_stateHandler09(GameObject* obj, HighTopRuntime* stateArg)
             return 0xb;
         }
     }
-    if (mainGetBit(placement->gameBitId) == 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) == 0)
     {
         (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         if (randomChanceOneIn(0x64) != 0)
@@ -1111,7 +1111,7 @@ void HighTop_update(GameObject* obj)
 {
     HighTopRuntime* runtime;
     HighTopRuntime* state;
-    register int self = (int)obj;
+    register uintptr_t self = (uintptr_t)obj;
     state = ((GameObject*)self)->extra;
     runtime = (HighTopRuntime*)state;
     runtime->turnRateThreshold = 5;
@@ -1225,19 +1225,19 @@ void HighTop_init(GameObject* obj, HighTopPlacement* placement)
     dll_2E_setMoveTables(&runtime->lookController, &local2, &local1, 6);
     runtime->lookController.modeBits |= 2;
     runtime->lookController.modeBits |= 8;
-    runtime->airMeterRemaining = placement->airMeterParam;
+    runtime->airMeterRemaining = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->airMeterParam));
     runtime->lookController.modeBits |= 1;
     (obj)->anim.modelInstance->runtimeSourceHitMask = 127;
     runtime->flagsC49.b4 = 0;
     runtime->flagsC49.b7 = 0;
-    gHighTopAirMeterInitValue = placement->airMeterParam;
-    if (placement->curveScaleParam == 0)
+    gHighTopAirMeterInitValue = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->airMeterParam));
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->curveScaleParam)) == 0)
     {
         runtime->curveFollowSpeedScale = 1.9f;
     }
     else
     {
-        runtime->curveFollowSpeedScale = (f32)placement->curveScaleParam / 10.0f;
+        runtime->curveFollowSpeedScale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->curveScaleParam)) / 10.0f;
     }
     runtime->flagsC49.b6 = 0;
     runtime->flagsC4A.b0 = 0;

@@ -113,7 +113,7 @@ void animatedobj_update(GameObject* obj) {
 
     sequence = &((AnimatedObjState*)obj->extra)->sequence;
     placement = (AnimatedObjPlacement*)obj->anim.placementData;
-    if (placement != NULL && placement->animDataIndex != -1) {
+    if (placement != NULL && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
         result = (*gObjectTriggerInterface)->update((u8*)obj, timeDelta);
         if (result != 0 && obj->seqIndex == -2) {
             sequenceIndex = sequence->slot;
@@ -179,7 +179,7 @@ void animatedobj_init(GameObject* obj, AnimatedObjPlacement* placement) {
     objSetSlot(obj, 0x64);
     state = obj->extra;
     sequence = &state->sequence;
-    sequence->gameBit = placement->sequenceGameBit;
+    sequence->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     sequence->flags = -1;
     {
         f32 one = 1.0f;
@@ -193,15 +193,15 @@ void animatedobj_init(GameObject* obj, AnimatedObjPlacement* placement) {
     sequence->baseRotY = 0;
     sequence->freeCallback = NULL;
     loadedAnimDataIndexPlusOne = obj->userData1;
-    if (loadedAnimDataIndexPlusOne == 0 && placement->animDataIndex != 1) {
-        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (loadedAnimDataIndexPlusOne != 0 && placement->animDataIndex != loadedAnimDataIndexPlusOne - 1) {
+    if (loadedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != 1) {
+        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (loadedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != loadedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)sequence);
-        if (placement->animDataIndex != -1) {
-            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
+            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     {
         ObjModelState* modelState = obj->anim.modelState;

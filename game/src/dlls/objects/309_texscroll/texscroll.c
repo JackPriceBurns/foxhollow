@@ -43,7 +43,7 @@ void TexScroll_init(GameObject* obj, TexScrollPlacement* placement, int loadFlag
     state->stepY = (s16)(s32)placement->stepY;
     state->scrollSlot = 0;
     state->flags = 0;
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
     if (loadFlags == 0) {
         state->offsetX = 0;
         state->offsetY = 0;

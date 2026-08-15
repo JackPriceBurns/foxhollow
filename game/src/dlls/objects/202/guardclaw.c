@@ -173,13 +173,14 @@ void guardClaw_update(GameObject* obj, u8* state)
     GroundBaddiePlacement* def = *(GroundBaddiePlacement**)&(obj)->anim.placementData;
     u32 flags;
 
-    if (((EnemyState*)state)->userData1 == 2 && mainGetBit(def->gameBitD) == 0)
+    if (((EnemyState*)state)->userData1 == 2 &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitD))) == 0)
     {
         (obj)->anim.resetHitboxFlags =
             (u8)((obj)->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
         if ((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED)
         {
-            groundBaddieHandlePaidTrigger((int)obj, state);
+            groundBaddieHandlePaidTrigger(obj, state);
         }
     }
     else
@@ -205,7 +206,7 @@ void guardClaw_update(GameObject* obj, u8* state)
         {
             if (flags & 0x20000000)
             {
-                if (mainGetBit(def->gameBitD) != 0)
+                if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitD))) != 0)
                 {
                     ((EnemyState*)state)->userData1 = gSeq11EStateTable[((EnemyState*)state)->userData1].alt;
                 }
@@ -217,14 +218,15 @@ void guardClaw_update(GameObject* obj, u8* state)
         }
         else if (((EnemyState*)state)->userData1 == 2)
         {
-            if (mainGetBit(def->gameBitD) != 0 || !(((EnemyState*)state)->controlFlags & 0x20000000))
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitD))) != 0 ||
+                !(((EnemyState*)state)->controlFlags & 0x20000000))
             {
                 ((EnemyState*)state)->userData1 = gSeq11EStateTable[((EnemyState*)state)->userData1].next;
             }
         }
         else if (((EnemyState*)state)->userData1 == 3)
         {
-            if (mainGetBit(def->gameBitD) != 0)
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitD))) != 0)
             {
                 ((EnemyState*)state)->userData1 = gSeq11EStateTable[((EnemyState*)state)->userData1].alt;
             }
@@ -246,7 +248,7 @@ void guardClaw_update(GameObject* obj, u8* state)
                 Sfx_PlayFromObject(obj, SFXTRIG_baddie_eggsnatch_carry3);
             }
             baddieSetMove(
-                obj, (int)state, animTbl[((EnemyState*)state)->userData1 * 12],
+                obj, state, animTbl[((EnemyState*)state)->userData1 * 12],
                 *(f32*)((u8*)gSeq11EStateTable + ((EnemyState*)state)->userData1 * 12), 0, 0xf);
         }
     }

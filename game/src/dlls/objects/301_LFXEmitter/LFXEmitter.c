@@ -193,6 +193,7 @@ void LFXEmitter_update(GameObject* obj) {
                 getTabEntry(state->lightAction, MLDF_FILEID_LACTIONS_BIN,
                             state->actionIndex * sizeof(LFXEmitterLightAction), sizeof(LFXEmitterLightAction));
                 if (state->lightAction != NULL) {
+                    fhSwapU16Array(state->lightAction, 8);
                     LFXEmitter_copyLightAction(state->lightAction, &gLFXEmitterLightActionCache);
                 }
             }
@@ -209,13 +210,13 @@ void LFXEmitter_init(GameObject* obj, LFXEmitterPlacement* placement) {
     curveFlags = 0x21;
     obj->anim.rootMotionScale = LFXEMITTER_ROOT_MOTION_SCALE * obj->anim.modelInstance->rootMotionScaleBase;
 
-    state->actionIndex = placement->actionIndex;
-    state->lifeTimer = placement->lifeTimer;
+    state->actionIndex = ObjAnim_ReadPlacementS16(&obj->anim, &placement->actionIndex);
+    state->lifeTimer = ObjAnim_ReadPlacementS16(&obj->anim, &placement->lifeTimer);
     state->unk114 = -2;
-    state->enableGameBit = placement->enableGameBit;
-    state->spinRoll = placement->spinRoll;
-    state->spinPitch = placement->spinPitch;
-    state->spinYaw = placement->spinYaw;
+    state->enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    state->spinRoll = ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinRoll);
+    state->spinPitch = ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinPitch);
+    state->spinYaw = ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinYaw);
     obj->anim.localPosX = placement->base.posX;
     obj->anim.localPosY = placement->base.posY;
     obj->anim.localPosZ = placement->base.posZ;

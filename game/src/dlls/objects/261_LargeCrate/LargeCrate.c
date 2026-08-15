@@ -582,7 +582,7 @@ void LargeCrate_init(GameObject* obj, LargeCratePlacement* placement) {
     randomValue = randomGetRange(LARGECRATE_RANDOM_DELAY_MIN, LARGECRATE_RANDOM_DELAY_MAX);
     state->idleTimer = (s16)(randomValue + LARGECRATE_RANDOM_DELAY_BASE);
     state->unk0C = LARGECRATE_UNK_0C_INITIAL;
-    state->unk12 = (u8)placement->unk1A;
+    state->unk12 = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unk1A));
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     obj->anim.rotX = (s16)((int)placement->rotXByte << 8);
 

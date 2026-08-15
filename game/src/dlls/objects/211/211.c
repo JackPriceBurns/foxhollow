@@ -86,7 +86,7 @@ int LandedArwing_UpdateBounceFade(GameObject* obj, BaddieState* baddie)
     LandedArwingState* state;
     ObjHitsPriorityState* hitState;
 
-    state = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     baddie->stateTag = 3;
     if (baddie->moveJustStartedA != 0)
     {
@@ -160,7 +160,7 @@ int LandedArwing_UpdateRetreatChase(GameObject* obj, BaddieState* baddie)
     f32 y;
     f32 z;
 
-    state = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     player = (GameObject*)((int)Obj_GetPlayerObject());
     playerObj = player;
     baddie->stateTag = 1;
@@ -260,7 +260,7 @@ u32 LandedArwing_UpdateFlightChase(GameObject* obj, BaddieState* state)
     f32 targetZ;
     f32 chaseScale;
 
-    sub = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    sub = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     playerObj = Obj_GetPlayerObject();
     state->stateTag = 1;
 
@@ -414,7 +414,7 @@ u32 landedarwing_updateMovementState(GameObject* obj, BaddieState* baddie)
 {
     LandedArwingState* state;
 
-    state = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     baddie->stateTag = 1;
     if (baddie->moveJustStartedA != 0)
     {
@@ -459,13 +459,16 @@ void landedarwing_updateAirborneMotion(GameObject* obj, LandedArwingState* state
     f32 start[3];
     f32 end[3];
     TrackQueryBounds bounds;
-    struct
+    union
     {
-        f32 hit[16];
-        f32 hitRadius;
-        u8 pad[0x10];
-        u8 hitType;
-        u8 pad2[0x1f];
+        TrackHitResults rec;
+        struct
+        {
+            f32 hit[16];
+            f32 hitRadius;
+            u8 pad[0x10];
+            u8 hitType;
+        };
     } hitScratch;
     f32 damping;
     int hitFound;
@@ -822,13 +825,16 @@ void landedarwing_moveAlongSurface(GameObject* obj, LandedArwingState* state)
     f32 start[3];
     f32 end[3];
     TrackQueryBounds bounds;
-    struct
+    union
     {
-        f32 hit[16];
-        f32 hitRadius;
-        u8 pad[0x10];
-        u8 hitType;
-        u8 pad2[0x10];
+        TrackHitResults rec;
+        struct
+        {
+            f32 hit[16];
+            f32 hitRadius;
+            u8 pad[0x10];
+            u8 hitType;
+        };
     } hitScratch;
     f32 speed;
 
@@ -1002,7 +1008,7 @@ void landedarwing_updateConstrainedChaseVelocity(GameObject* obj, f32 targetX, f
     f32 scale;
     f32 dot;
 
-    state = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     if (state->flags92.airborne == 0)
     {
         vx = targetX - (obj)->anim.localPosX;
@@ -1078,7 +1084,7 @@ void landedarwing_updateConstrainedChaseVelocity(GameObject* obj, f32 targetX, f
 
 int dll_D3_getExtraSize_ret_1188(void)
 {
-    return 0x4a4;
+    return sizeof(GroundBaddieState) + sizeof(LandedArwingState);
 }
 
 int dll_D3_getObjectTypeId(void)
@@ -1105,7 +1111,7 @@ void dll_D3_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
     f32 mtx[15];
     f32 scale;
 
-    state = (LandedArwingState*)((GroundBaddieState*)(int)obj->extra)->control;
+    state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
     slideMtx = state->surfaceOrientationMtx;
     if (visible != 0)
     {
@@ -1194,7 +1200,7 @@ void dll_D3_update(GameObject* obj)
     int rc;
     int hits;
     f32 vec[4];
-    int hitResult[21];
+    TrackBBoxHit hitResult;
 #define searchRadius vec[0]
 #define dx           vec[1]
 #define dy           vec[2]
@@ -1321,9 +1327,9 @@ void dll_D3_update(GameObject* obj)
     if (extra->flags92.scriptTargetActive == 0u && extra->surfaceMode == 6)
     {
         hitCount = trackGetLineIntersect(&obj->anim.previousLocalPosX, &obj->anim.localPosX,
-                                      6.0f, 0, (TrackBBoxHit*)hitResult, obj, -0x7c, -1, 0xff,
+                                      6.0f, 0, &hitResult, obj, -0x7c, -1, 0xff,
                                       0);
-        if (hitCount != 0 && ((TrackBBoxHit*)hitResult)->surfaceType == 13)
+        if (hitCount != 0 && hitResult.surfaceType == 13)
         {
             extra->flags92.scriptTargetActive = 1;
             extra->scriptTimer = (u16)(randomGetRange(10, 0xf) * 0x3c);

@@ -103,7 +103,7 @@ void cfPowerBase_update(GameObject* obj) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
     }
     if (obj->userData1 != 0) {
-        (*gObjectTriggerInterface)->preempt((int)obj, CFPOWERBASE_PREEMPT_SEQUENCE_ID);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, CFPOWERBASE_PREEMPT_SEQUENCE_ID);
         (*gObjectTriggerInterface)->runSequence(state->baseIndex, obj, CFPOWERBASE_RESTORE_SEQUENCE_FLAGS);
         obj->userData1 = 0;
     }
@@ -122,7 +122,7 @@ void cfPowerBase_init(GameObject* obj, CfPowerBasePlacement* placement) {
     CfPowerBaseState* state = obj->extra;
     s16 poweredGameBit;
     obj->anim.rotX = (s16)(placement->initialYaw << 8);
-    state->poweredGameBit = placement->poweredGameBit;
+    state->poweredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->poweredGameBit));
     poweredGameBit = state->poweredGameBit;
     switch (poweredGameBit) {
     case GAMEBIT_CF_RedPowerBasePowered:

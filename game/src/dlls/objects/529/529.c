@@ -675,7 +675,7 @@ void wmwallcrawler_init(GameObject* obj, WmwallcrawlerMapData* mapData)
     state->homeX = mapData->base.posX;
     state->homeY = mapData->base.posY;
     state->homeZ = mapData->base.posZ;
-    state->triggerRadius = (f32)(int)mapData->triggerRadius;
+    state->triggerRadius = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->triggerRadius));
     state->variant = mapData->variant;
     state->flags = gWallCrawlerVariantFlags[state->variant];
     storeZeroToFloatParam((f32*)&state->explodeTimer);
@@ -705,11 +705,11 @@ void wmwallcrawler_init(GameObject* obj, WmwallcrawlerMapData* mapData)
         objAnim->alpha = 0;
     }
     state->animSpeed = 0.0f;
-    state->heightOffset = mapData->heightOffset;
+    state->heightOffset = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->heightOffset));
     (obj)->anim.localPosY = mapData->base.posY + (f32)(int)state->heightOffset;
     state->lifeTimer = (s16)(randomGetRange(0, 0x50) + 0x190);
     state->fleeChaseThreshold = 80.0f;
-    state->counterGameBit = mapData->counterGameBit;
+    state->counterGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->counterGameBit));
     if ((state->flags & WMWALLCRAWLER_FLAG_PATH_CONTROL) != 0)
     {
         state->pathState.subtype = 1;

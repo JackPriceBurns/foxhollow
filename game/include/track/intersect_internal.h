@@ -68,13 +68,13 @@ extern GXColor gReflectionBumpTintColor;
 extern GXColor gReflectionBumpKColor;
 extern GXColor gReflectionTintColor;
 extern GXColor gReflectionKColor;
-extern u32 gWaterReflectionKColorR;
-extern u32 gWaterReflectionKColorG;
-extern u32 gWaterReflectionKColorB;
+extern GXColor gWaterReflectionKColorR;
+extern GXColor gWaterReflectionKColorG;
+extern GXColor gWaterReflectionKColorB;
 extern GXColor gBlurFilterKColor;
 extern GXColor gMotionBlurKColor;
 extern GXColor gHeatEffectKColor;
-extern u32 gObjectShadowTevColor;
+extern GXColor gObjectShadowTevColor;
 extern f32 gCausticReflectionDiskScale;
 extern f32 gTrackProjectedTexScale;
 extern f32 gTrackNormalTexScale;
@@ -93,9 +93,9 @@ extern GXColor gScreenImageKColor0;
 extern GXColor gScreenImageKColor1;
 extern GXColor gScreenImageKColor2;
 extern GXColor gScreenImageKColor3;
-extern u32 gWhirlpoolReflectionTintColor;
-extern u32 gWhirlpoolReflectionKColor;
+extern GXColor gWhirlpoolReflectionTintColor;
+extern GXColor gWhirlpoolReflectionKColor;
 
-extern u32 gWaterCausticKColor;
+extern GXColor gWaterCausticKColor;
 
 #endif /* TRACK_INTERSECT_INTERNAL_H_ */

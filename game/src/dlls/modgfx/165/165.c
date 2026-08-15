@@ -27,7 +27,7 @@ s16 gDllA5LastFourVertexIndices[4] = {4, 5, 6, 7};
 
 void dll_A5_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 flags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDllA5EffectResourceData;
+    u8* resourceData = (u8*)gDllA5EffectResourceData;
     GfxCmd* commands = packet.entries;
     u32 fl;
 
@@ -162,7 +162,7 @@ void dll_A5_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 8, (u8*)(int)gDllA5EffectResourceData, 4,
+        ->spawnEffect(&packet, 0, 8, (u8*)gDllA5EffectResourceData, 4,
                       &resourceData[offsetof(DllA5EffectResourceView, triangles)], 0x5e0, 0);
 }
 

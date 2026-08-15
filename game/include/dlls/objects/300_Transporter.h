@@ -76,7 +76,7 @@ void Transporter_updateInteraction(GameObject* obj);
 int Transporter_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate);
 int Transporter_getExtraSize(void);
 void Transporter_render(void);
-void Transporter_hitDetect(int obj);
+void Transporter_hitDetect(GameObject* obj);
 void Transporter_update(GameObject* obj);
 void Transporter_init(GameObject* obj, TransporterPlacement* placement);
 

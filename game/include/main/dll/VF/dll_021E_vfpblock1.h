@@ -7,7 +7,7 @@ typedef struct GameObject GameObject;
 
 int VFP_Block1_getExtraSize(void);
 int VFP_Block1_getObjectTypeId(void);
-void VFP_Block1_free(int obj);
+void VFP_Block1_free(GameObject* obj);
 void VFP_Block1_render(void);
 void VFP_Block1_hitDetect(void);
 void VFP_Block1_update(GameObject* obj);

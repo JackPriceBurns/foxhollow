@@ -1399,17 +1399,22 @@ void Model_GetVertexPosition(ModelFileHeader* model, int vertexIndex, f32* out)
     s16* vertex;
 
     vertex = (s16*)(model->vertices + vertexIndex * 6);
-    if ((model->flags & 0x800) != 0)
     {
-        out[0] = vertex[0];
-        out[1] = vertex[1];
-        out[2] = vertex[2];
-    }
-    else
-    {
-        out[0] = vertex[0] * gModelVertexScale;
-        out[1] = vertex[1] * gModelVertexScale;
-        out[2] = vertex[2] * gModelVertexScale;
+        s16 vx = fhReadBES16(vertex);
+        s16 vy = fhReadBES16(vertex + 1);
+        s16 vz = fhReadBES16(vertex + 2);
+        if ((model->flags & 0x800) != 0)
+        {
+            out[0] = vx;
+            out[1] = vy;
+            out[2] = vz;
+        }
+        else
+        {
+            out[0] = vx * gModelVertexScale;
+            out[1] = vy * gModelVertexScale;
+            out[2] = vz * gModelVertexScale;
+        }
     }
 }
 
@@ -1616,7 +1621,7 @@ void ObjModel_ApplyBlendChannels(ObjModel* model)
     ModelFileHeader* hdr;
     ObjModelBlendChannel* ch;
     int i;
-    s16 defFrame;
+    u16 defFrame;
     ModelBlendChannelFlags chanActive = sModelBlendChannelActiveInit;
     ModelBlendChannelFlags chanFade = sModelBlendChannelFadeInit;
     u8* targetA;
@@ -1630,7 +1635,7 @@ void ObjModel_ApplyBlendChannels(ObjModel* model)
     {
         return;
     }
-    defFrame = hdr->vertexCount + 1;
+    defFrame = fhSwap16((u16)(hdr->vertexCount + 1));
     for (i = 0; i < 3; i++)
     {
         ch = &model->blendChannels[i];

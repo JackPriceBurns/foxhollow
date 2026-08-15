@@ -125,7 +125,7 @@ void timer_update(GameObject* obj)
     if (timerIsActive(&state->countdownTimer) != 0)
     {
         expiredThisFrame = 0;
-        if (flags->manual == 0 && (void*)mainGetBit(setup->startGameBit) == NULL)
+        if (flags->manual == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit))) == 0)
         {
             storeZeroToFloatParam(&state->countdownTimer);
             if (state->mode == TIMER_MODE_GLOBAL)
@@ -143,8 +143,8 @@ void timer_update(GameObject* obj)
         }
         if (timerCountDown(&state->countdownTimer) != 0)
         {
-            mainSetBits(setup->expiredGameBit, 1);
-            mainSetBits(setup->startGameBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->expiredGameBit)), 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit)), 0);
             expiredThisFrame = 1;
         }
         if (expiredThisFrame != 0)
@@ -169,17 +169,17 @@ void timer_update(GameObject* obj)
     }
     else
     {
-        if ((void*)mainGetBit(setup->startGameBit) != NULL || flags->manual != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit))) != 0 || flags->manual != 0)
         {
             storeZeroToFloatParam(&state->countdownTimer);
-            if (setup->durationMinutes != 0)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->durationMinutes)) != 0)
             {
-                s16toFloat(&state->countdownTimer, (s16)(setup->durationMinutes * 60));
+                s16toFloat(&state->countdownTimer, (s16)(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->durationMinutes)) * 60));
             }
             switch (state->mode)
             {
             case TIMER_MODE_GLOBAL:
-                gameTimerInit(GAME_TIMER_ID, setup->durationMinutes);
+                gameTimerInit(GAME_TIMER_ID, ObjAnim_ReadPlacementS16(&obj->anim, &(setup->durationMinutes)));
                 timerSetToCountUp();
                 break;
             case TIMER_MODE_EFFECT:
@@ -196,7 +196,7 @@ void timer_update(GameObject* obj)
     if (state->mode == TIMER_MODE_EFFECT && timerIsActive(&state->countdownTimer) != 0)
     {
         ModelLight* light = state->lightSlot;
-        f32 progress = (f32)(setup->durationMinutes * 60) / state->countdownTimer;
+        f32 progress = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->durationMinutes)) * 60) / state->countdownTimer;
         int scroll = (int)(progress * gTimerTextureScrollScale);
         ObjTextureRuntimeSlot* texPtr = objFindTexture(obj, 0, 0);
         if (texPtr != 0)

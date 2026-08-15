@@ -173,7 +173,7 @@ void DIMLogFire_update(GameObject* obj) {
             ObjHits_DisableObject(obj);
             state->mode = DIM_LOG_FIRE_MODE_LIT;
             state->transitionLatch = 1;
-            mainSetBits(placement->douseGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->douseGameBit)), 1);
         }
         tricky = getTrickyObject();
         if (tricky != NULL) {
@@ -224,10 +224,10 @@ void DIMLogFire_init(GameObject* obj, const DimLogFirePlacement* placement) {
     objAddObjectType(obj, DIM_LOG_FIRE_OBJECT_GROUP);
     state = obj->extra;
     state->unknown20 = 0;
-    state->initialMode = placement->initialMode;
-    state->remainingStrength = (s8)placement->initialStrength;
+    state->initialMode = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialMode));
+    state->remainingStrength = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialStrength));
     state->initialStrength = *(u8*)&state->remainingStrength;
-    if (mainGetBit(placement->douseGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->douseGameBit))) != 0) {
         state->mode = DIM_LOG_FIRE_MODE_LIT;
         state->transitionLatch = 1;
     }

@@ -97,7 +97,7 @@ int CFCrate_getObjectTypeId(void) {
 }
 
 void CFCrate_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void CFCrate_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -328,8 +328,8 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
     switch (objectId) {
     case CFCRATE_OBJ_WM_FALLEN_CO:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        obj->anim.rotY = placement->param1A;
-        obj->anim.rotZ = placement->param1C;
+        obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
+        obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C));
         obj->anim.rootMotionScale = unitScale;
         break;
     case CFCRATE_OBJ_DFSH_COL:
@@ -348,17 +348,17 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
         break;
     case CFCRATE_OBJ_DFP_WATER_HI:
-        state->lingerTimer = placement->param1A;
+        state->lingerTimer = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
         break;
     case CFCRATE_OBJ_VFP_LIFTGRA:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
         state->gameBitBLatch = 0;
-        state->gameBitB = placement->gameBitB;
+        state->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         break;
     case CFCRATE_OBJ_DFPSP_SG:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
         state->gameBitBLatch = 0;
-        state->gameBitB = placement->gameBitB;
+        state->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         if ((mainGetBit(state->gameBitB) != 0) && (state->gameBitBLatch == 0)) {
             obj->anim.rotZ = CFCRATE_MAX_ROTATION;
             state->gameBitBLatch = 1;
@@ -366,41 +366,41 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
         break;
     case CFCRATE_OBJ_VFP_SPELLST:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        obj->anim.rotY = placement->param1A;
-        state->gameBitB = placement->gameBitB;
+        obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
+        state->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         break;
     case CFCRATE_OBJ_VFP_NEWBALL:
-        objAnim->bankIndex = (s8)placement->param1A;
-        state->gameBitA = placement->gameBitB;
+        objAnim->bankIndex = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         if (objAnim->bankIndex >= 3) {
             objAnim->bankIndex = 0;
         }
         Obj_SetActiveModelIndex(obj, objAnim->bankIndex);
         break;
     case CFCRATE_OBJ_DFP_WATER:
-        state->gameBitA = placement->gameBitB;
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         break;
     case CFCRATE_OBJ_VFP_LOCKSYM:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        state->gameBitA = placement->gameBitB;
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         break;
     case CFCRATE_OBJ_MMP_ORGANIC:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        obj->anim.rotY = placement->param1A;
+        obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
         ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
         break;
     case CFCRATE_OBJ_66C:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        state->gameBitA = placement->gameBitB;
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         break;
     case CFCRATE_OBJ_WORLD_ASTERO:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
-        obj->anim.rotY = placement->param1A;
+        obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
         break;
     case CFCRATE_OBJ_DFP_BLOCK_WA:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
         *(u8*)&objAnim->bankIndex = placement->bankIndex;
-        state->gameBitA = placement->gameBitB;
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         if (mainGetBit(state->gameBitA) != 0) {
             obj->anim.localPosY = CFCRATE_BLOCK_WALL_RISE_HEIGHT + placement->base.posY;
         }
@@ -408,8 +408,8 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
     case CFCRATE_OBJ_SB_GALLEON:
         obj->anim.rotX = 0;
         obj->anim.rotY = 0;
-        if (placement->param1C >= CFCRATE_SCALE_PARAM_MIN) {
-            obj->anim.rootMotionScale = unitScale / ((f32)(s32)placement->param1C / CFCRATE_SCALE_PARAM_DIVISOR);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C)) >= CFCRATE_SCALE_PARAM_MIN) {
+            obj->anim.rootMotionScale = unitScale / ((f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C)) / CFCRATE_SCALE_PARAM_DIVISOR);
         } else {
             obj->anim.rootMotionScale = 0.2f;
         }
@@ -427,13 +427,13 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
     case CFCRATE_OBJ_LINKF_COG:
         obj->anim.rotX = (s16)(placement->initialRotX << CFCRATE_ROTATION_BYTE_SHIFT);
         obj->anim.rotY = 0;
-        if (placement->param1C >= CFCRATE_SCALE_PARAM_MIN) {
-            obj->anim.rootMotionScale = unitScale / ((f32)(s32)placement->param1C / CFCRATE_SCALE_PARAM_DIVISOR);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C)) >= CFCRATE_SCALE_PARAM_MIN) {
+            obj->anim.rootMotionScale = unitScale / ((f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C)) / CFCRATE_SCALE_PARAM_DIVISOR);
         } else {
             obj->anim.rootMotionScale = unitScale;
         }
-        state->oscVelB = (f32)(s32)placement->param1A;
-        state->gameBitA = placement->gameBitB;
+        state->oscVelB = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A));
+        state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitB));
         if (mainGetBit(state->gameBitA) != 0) {
             state->oscVelB *= -1.0f;
         }
@@ -464,11 +464,11 @@ void CFCrate_init(GameObject* obj, CFCratePlacement* placement) {
         break;
     case CFCRATE_OBJ_DIM2_ICE_FLOE:
         obj->anim.hitReactState = NULL;
-        if (placement->param1A == 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1A)) == 0) {
             state->sfxTable = gCFCrateDefaultSfxTable;
             state->sfxCount = 1;
         }
-        state->sfxPeriod = (u16)placement->param1C;
+        state->sfxPeriod = (u16)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->param1C));
         state->sfxTimer = state->sfxPeriod;
         break;
     }

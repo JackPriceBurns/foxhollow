@@ -336,14 +336,14 @@ void sh_queenearthwalker_update(GameObject* obj) {
         switch (action) {
         case 1:
             target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_OBJECT_GROUP, obj, NULL);
-            (*gObjectTriggerInterface)->preempt((int)target, 0x1324);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)target, 0x1324);
             (*gObjectTriggerInterface)->runSequence(1, target, 0x10);
             state->flags |= (QUEEN_EARTH_WALKER_FLAG_LATCHED | QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS);
             state->eventTable = gQueenEarthWalkerEventTableAct1;
             break;
         case 2:
             if (mainGetBit(GAMEBIT_ITEM_WhiteGrubTub_Used) == QUEEN_EARTH_WALKER_REQUIRED_FEED_COUNT) {
-                (*gObjectTriggerInterface)->preempt((int)obj, 0x18f6);
+                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x18f6);
                 (*gObjectTriggerInterface)->runSequence(6, obj, 1);
                 state->stateIndex = 3;
             } else {
@@ -359,13 +359,13 @@ void sh_queenearthwalker_update(GameObject* obj) {
         case 5:
         case 6:
         case 7:
-            (*gObjectTriggerInterface)->preempt((int)obj, 0x18f6);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x18f6);
             (*gObjectTriggerInterface)->runSequence(6, obj, 1);
             state->stateIndex = 3;
             break;
         case 8:
             target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_OBJECT_GROUP, obj, NULL);
-            (*gObjectTriggerInterface)->preempt((int)target, 0x6a4);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)target, 0x6a4);
             (*gObjectTriggerInterface)->runSequence(7, target, 8);
             state->stateIndex = 4;
             state->eventTable = gQueenEarthWalkerEventTableDeparture;

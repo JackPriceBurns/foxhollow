@@ -606,7 +606,7 @@ int DFropenode_syncRopeToEndpoints(GameObject* obj) {
 }
 
 int DFropenode_getExtraSize(void) {
-    return 0x34;
+    return sizeof(DFropenodeState);
 }
 
 int DFropenode_getObjectTypeId(void) {
@@ -644,7 +644,7 @@ void DFropenode_render(GameObject* obj, int gdl, int mtxs) {
     DFropenodeState* state = obj->extra;
     DFropenodePlacement* placement = (DFropenodePlacement*)objAnim->placementData;
 
-    if (placement->fadeGameBit != 0 && mainGetBit(placement->fadeGameBit) != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fadeGameBit)) != 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fadeGameBit))) != 0) {
         u32 oldAlpha = objAnim->alpha;
         int fadeAlpha;
         if (oldAlpha == 70) {

@@ -109,7 +109,7 @@ void flameblast_init(GameObject* obj, FlameblastPlacement* placement) {
     FlameblastState* state = obj->extra;
 
     flameblast_seedVelocity(obj, state);
-    state->cycleTimer = FLAMEBLAST_INITIAL_PHASE_SCALE * (f32)placement->streamIndex;
+    state->cycleTimer = FLAMEBLAST_INITIAL_PHASE_SCALE * (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->streamIndex));
     state->hitVolumeDelayCycles = FLAMEBLAST_INITIAL_HIT_DELAY;
 }
 

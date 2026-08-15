@@ -1112,7 +1112,7 @@ void DIMSnowHorn1_spawnFootstepEffects(void* obj, DIMSnowHorn1State* pointState,
 
 int DIMSnowHorn1_getExtraSize(void)
 {
-    return 0xd0c;
+    return sizeof(DIMSnowHorn1State);
 }
 
 int DIMSnowHorn1_getObjectTypeId(void)
@@ -1246,7 +1246,7 @@ const f32 gDIMSnowHorn1OverrideOffsetZ[1] = {-20.0f};
 void DIMSnowHorn1_update(GameObject* obj)
 {
     f32 nearDist;
-    u8* base = (u8*)(int)gDIMSnowHorn1ConfigTable;
+    u8* base = (u8*)gDIMSnowHorn1ConfigTable;
     GameObject* player = Obj_GetPlayerObject();
     DIMSnowHorn1State* data;
     s8 modeIndex = -1;
@@ -1397,7 +1397,9 @@ void DIMSnowHorn1_update(GameObject* obj)
                         SnowHornEntry* tbl = (SnowHornEntry*)base;
                         int bit2;
                         int cc;
-                        mainSetBits(tbl[modeIndex].altPoseGameBit, (found)->anim.placementData[0xd]);
+                        mainSetBits(tbl[modeIndex].altPoseGameBit,
+                                    ObjAnim_ReadPlacementS16(
+                                        &found->anim, &found->anim.placementData[0xd]));
                         bit2 = tbl[modeIndex].flipRotGameBit;
                         cc = modeIndex;
                         flip = 0;

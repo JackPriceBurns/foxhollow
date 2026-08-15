@@ -105,10 +105,10 @@ void VFP_lavastar_init(GameObject* obj, VfpLavaStarMapData* def)
 
     mapData = def;
     state = obj->extra;
-    state->gameBit = mapData->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit));
     state->verticalVelocity = 0.1f * (f32)randomGetRange(10, 0x19);
     state->effectTimer = 0x14;
-    obj->anim.localPosY = mapData->base.posY + (f32)(int)mapData->heightOffset;
+    obj->anim.localPosY = mapData->base.posY + (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->heightOffset));
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->delayRangeMin = (f32)randomGetRange(0x1e, 0x3c);
     state->delayRangeMax = (f32)randomGetRange(100, 200);

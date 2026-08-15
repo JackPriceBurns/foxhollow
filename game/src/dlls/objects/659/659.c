@@ -66,6 +66,8 @@ int suntemple_interactCallback(GameObject* obj, int unused, ObjSeqState* animUpd
     SunTempleSetup* cfg = (SunTempleSetup*)gameObj->anim.placementData;
     int i;
     Vec3f restartPos = gSunTempleRestartPos;
+    s16 activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->activationGameBit);
+    s16 preemptSequenceId = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->preemptSequenceId);
 
     gameObj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     for (i = 0; i < animUpdate->eventCount; i++)
@@ -77,15 +79,15 @@ int suntemple_interactCallback(GameObject* obj, int unused, ObjSeqState* animUpd
             if (cfg->flags & SUNTEMPLE_FLAG_CALLBACK_LATCHES_BIT)
             {
                 ObjTextureRuntimeSlot* tex;
-                mainSetBits(cfg->activationGameBit, 1);
+                mainSetBits(activationGameBit, 1);
                 tex = objFindTexture(obj, 0, 0);
                 if (tex != NULL)
                     tex->textureId = SUNTEMPLE_TEXTURE_LATCHED;
             }
             break;
         case 2:
-            if (cfg->preemptSequenceId != 0)
-                (*gObjectTriggerInterface)->yield(animUpdate, cfg->preemptSequenceId);
+            if (preemptSequenceId != 0)
+                (*gObjectTriggerInterface)->yield(animUpdate, preemptSequenceId);
             break;
         case 3:
             if (gameObj->anim.bankIndex == 1)
@@ -134,10 +136,18 @@ void suntemple_update(GameObject* obj)
     SunTempleSetup* cfg;
     ObjTextureRuntimeSlot* texture;
     int flags;
+    s16 activationGameBit;
+    s16 gateGameBit;
+    s16 preemptSequenceId;
+    s16 readyEventId;
 
     state = gameObj->extra;
     cfg = (SunTempleSetup*)gameObj->anim.placementData;
-    state->activationLatched = mainGetBit(cfg->activationGameBit);
+    activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->activationGameBit);
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->gateGameBit);
+    preemptSequenceId = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->preemptSequenceId);
+    readyEventId = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->readyEventId);
+    state->activationLatched = mainGetBit(activationGameBit);
     if (state->activationLatched == 0)
     {
         texture = objFindTexture(obj, 0, 0);
@@ -150,9 +160,9 @@ void suntemple_update(GameObject* obj)
         gameObj->anim.localPosZ = cfg->base.posZ;
         gameObj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
 
-        if (cfg->gateGameBit != -1)
+        if (gateGameBit != -1)
         {
-            if (mainGetBit(cfg->gateGameBit) != 0)
+            if (mainGetBit(gateGameBit) != 0)
             {
                 gameObj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
             }
@@ -177,7 +187,7 @@ void suntemple_update(GameObject* obj)
 
         if ((gameObj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
         {
-            if (cfg->readyEventId == -1 || (*gGameUIInterface)->isItemBeingUsed(cfg->readyEventId) != 0)
+            if (readyEventId == -1 || (*gGameUIInterface)->isItemBeingUsed(readyEventId) != 0)
             {
                 if (cfg->triggerSlot != -1)
                 {
@@ -209,7 +219,7 @@ void suntemple_update(GameObject* obj)
                 }
                 if ((cfg->flags & SUNTEMPLE_FLAG_CALLBACK_LATCHES_BIT) == 0)
                 {
-                    mainSetBits(cfg->activationGameBit, 1);
+                    mainSetBits(activationGameBit, 1);
                     texture = objFindTexture(obj, 0, 0);
                     if (texture != NULL)
                     {
@@ -218,7 +228,7 @@ void suntemple_update(GameObject* obj)
                 }
                 if ((cfg->flags & SUNTEMPLE_FLAG_CLEAR_GATE_BIT) != 0)
                 {
-                    mainSetBits(cfg->gateGameBit, 0);
+                    mainSetBits(gateGameBit, 0);
                 }
                 else
                 {
@@ -231,9 +241,9 @@ void suntemple_update(GameObject* obj)
     }
     else
     {
-        if (gameObj->userData1 == 0 && cfg->triggerSlot != -1 && cfg->preemptSequenceId != 0)
+        if (gameObj->userData1 == 0 && cfg->triggerSlot != -1 && preemptSequenceId != 0)
         {
-            (*gObjectTriggerInterface)->preempt((int)obj, cfg->preemptSequenceId);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptSequenceId);
             flags = 1;
             if ((cfg->flags & SUNTEMPLE_FLAG_PREEMPT_ARG_2) != 0)
             {
@@ -259,6 +269,7 @@ void suntemple_init(GameObject* obj, SunTempleSetup* setup)
     GameObject* gameObj = obj;
     SunTempleSetup* cfg = setup;
     SunTempleState* state;
+    s16 activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &cfg->activationGameBit);
 
     gameObj->anim.rotX = (s16)(cfg->rotXByte << 8);
     gameObj->anim.rotY = (s16)(cfg->rotYByte << 8);
@@ -270,7 +281,7 @@ void suntemple_init(GameObject* obj, SunTempleSetup* setup)
         gameObj->anim.bankIndex = 0;
     }
     state = gameObj->extra;
-    state->activationLatched = mainGetBit(cfg->activationGameBit);
+    state->activationLatched = mainGetBit(activationGameBit);
     state->mapEventMode = (*gMapEventInterface)->getMapAct(gameObj->anim.mapEventSlot);
     if ((cfg->flags & SUNTEMPLE_FLAG_HIDE_WHEN_ACTIVE) != 0 && state->activationLatched != 0)
     {

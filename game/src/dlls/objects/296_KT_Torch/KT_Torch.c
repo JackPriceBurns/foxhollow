@@ -46,7 +46,7 @@ void KT_Torch_update(GameObject* obj) {
     placement = (KTTorchPlacement*)obj->anim.placementData;
     ObjAnim_AdvanceCurrentMove(obj, (f32)placement->animationSpeed / KT_TORCH_ANIMATION_SPEED_DIVISOR, timeDelta,
                                (ObjAnimEventList*)0);
-    visibilityGameBit = placement->visibilityGameBit;
+    visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibilityGameBit));
     if (visibilityGameBit != KT_TORCH_GAME_BIT_NONE) {
         if (mainGetBit(visibilityGameBit) != 0) {
             obj->anim.alpha = 0xff;
@@ -83,7 +83,7 @@ void KT_Torch_init(GameObject* obj, KTTorchPlacement* placement) {
                             initialAnimationProgress *= KT_TORCH_INITIAL_ANIMATION_PROGRESS_FACTOR),
                            0);
     {
-        s16 visibilityGameBit = placement->visibilityGameBit;
+        s16 visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibilityGameBit));
         if (visibilityGameBit != KT_TORCH_GAME_BIT_NONE) {
             if (mainGetBit(visibilityGameBit) != 0) {
                 objAnim->alpha = 0xff;

@@ -39,7 +39,7 @@ int VFP_statueball_getObjectTypeId(void)
 
 void VFP_statueball_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource((u32)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
 }
 
 void VFP_statueball_render(void)
@@ -77,7 +77,7 @@ void VFP_statueball_update(GameObject* obj)
 
     state->timer -= (s16)timeDelta;
 
-    variant = placement->variant;
+    variant = ObjAnim_ReadPlacementS16(&obj->anim, &placement->variant);
     if (variant == 0)
     {
         objfx_spawnDirectionalBurst(obj, state->burstEffectId, 1.0f, 5, 1, state->burstChance,
@@ -103,7 +103,7 @@ void VFP_statueball_update(GameObject* obj)
         if ((hitObj != NULL) && (hitType != 0) && (hitObj != NULL) &&
             (hitObj->anim.romDefNo == VFPSTATUEBALL_HIT_SEQID))
         {
-            if (Fireball_getColorIndex(hitObj) == placement->variant)
+            if (Fireball_getColorIndex(hitObj) == variant)
             {
                 state->active = (u8)(1 - state->active);
             }
@@ -139,7 +139,7 @@ void VFP_statueball_update(GameObject* obj)
         else
         {
             Sfx_StopObjectChannel(obj, 0x40);
-            (*gExpgfxInterface)->freeSource((u32)obj);
+            (*gExpgfxInterface)->freeSource((uintptr_t)obj);
             if (state->activationGameBit != -1)
             {
                 if (mainGetBit(state->activationGameBit) != 0)
@@ -154,18 +154,21 @@ void VFP_statueball_update(GameObject* obj)
 void VFP_statueball_init(GameObject* obj, VfpStatueBallPlacement* placement)
 {
     VfpStatueBallState* state = obj->extra;
-    state->activationGameBit = placement->activationGameBit;
+    s16 variant = ObjAnim_ReadPlacementS16(&obj->anim, &placement->variant);
+    s16 scale = ObjAnim_ReadPlacementS16(&obj->anim, &placement->scale);
+    state->activationGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->activationGameBit);
     state->timer = 0x19;
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
-    if (placement->variant > 2)
+    if (variant > 2)
     {
-        placement->variant = 2;
+        variant = 2;
     }
-    if (placement->scale > 1)
+    if (scale > 1)
     {
-        obj->anim.rootMotionScale = obj->anim.rootMotionScale * (f32)(s32)placement->scale;
+        obj->anim.rootMotionScale = obj->anim.rootMotionScale * (f32)(s32)scale;
     }
-    Obj_SetActiveModelIndex(obj, placement->variant);
+    Obj_SetActiveModelIndex(obj, variant);
     state->active = mainGetBit(state->activationGameBit);
 }
 

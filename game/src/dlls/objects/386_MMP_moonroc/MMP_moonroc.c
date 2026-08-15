@@ -216,6 +216,9 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
     MMPMoonRockPlacement* rockPlacement;
     s8 pedestalCount;
     s8 inventoryCount;
+    s16 disableGameBit;
+    s16 kindGameBit;
+    s16 moonRockKind;
 
     state = obj->extra;
     list = ObjList_GetObjects(&i, &count);
@@ -225,20 +228,26 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
             Vec_distance(&obj->anim.worldPosX, &otherObj->anim.worldPosX) < 40.0f) {
             ventPlacement = (MMPGeyserVentPlacement*)(list[i])->anim.placementData;
             rockPlacement = (MMPMoonRockPlacement*)obj->anim.placementData;
+            disableGameBit = ObjAnim_ReadPlacementS16(
+                &otherObj->anim, &ventPlacement->disableGameBit);
+            moonRockKind = ObjAnim_ReadPlacementS16(
+                &otherObj->anim, &ventPlacement->moonRockKind);
+            kindGameBit = ObjAnim_ReadPlacementS16(
+                &obj->anim, &rockPlacement->kindGameBit);
             pedestalCount = mainGetBit(MMP_MOON_ROCK_PEDESTAL_COUNT_GAMEBIT);
             inventoryCount = mainGetBit(MMP_MOON_ROCK_INVENTORY_COUNT_GAMEBIT);
             if (place == 0) {
                 (*gCarryableInterface)->setGravityEnabled(state, 1);
-                if (ventPlacement->disableGameBit != -1) {
-                    mainSetBits(ventPlacement->disableGameBit, 0);
+                if (disableGameBit != -1) {
+                    mainSetBits(disableGameBit, 0);
                 }
                 if (state->kind == 3 || state->kind == 4 || state->kind == 6) {
                     pedestalCount -= 1;
                 } else {
                     inventoryCount -= 1;
                 }
-                if (rockPlacement->kindGameBit != -1) {
-                    mainSetBits(rockPlacement->kindGameBit, 0);
+                if (kindGameBit != -1) {
+                    mainSetBits(kindGameBit, 0);
                     state->kind = 0;
                 }
                 {
@@ -253,8 +262,8 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
                 saveGame_saveObjectPos(obj);
             } else {
                 (*gCarryableInterface)->setGravityEnabled(state, 0);
-                if (ventPlacement->disableGameBit != -1) {
-                    mainSetBits(ventPlacement->disableGameBit, 1);
+                if (disableGameBit != -1) {
+                    mainSetBits(disableGameBit, 1);
                 }
                 if (mode == 0) {
                     obj->anim.localPosX = (list[i])->anim.localPosX;
@@ -267,9 +276,9 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
                     state->baseY = y;
                     state->unknown10 = y;
                 }
-                if (rockPlacement->kindGameBit != -1) {
-                    mainSetBits(rockPlacement->kindGameBit, ventPlacement->moonRockKind);
-                    state->kind = ventPlacement->moonRockKind;
+                if (kindGameBit != -1) {
+                    mainSetBits(kindGameBit, moonRockKind);
+                    state->kind = moonRockKind;
                 }
                 if (state->kind == 3 || state->kind == 4 || state->kind == 6) {
                     if (mode != 2) {
@@ -411,7 +420,9 @@ void mmpMoonRock_update(GameObject* obj) {
             0) {
         state->flags |= MMP_MOON_ROCK_FLAG_ACTION_PENDING;
     } else if ((state->flags & MMP_MOON_ROCK_FLAG_PLACED) == 0) {
-        if (placementOrObjects->pickupGateGameBit != -1 && mainGetBit(placementOrObjects->pickupGateGameBit) == 0) {
+        s16 pickupGateGameBit = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placementOrObjects->pickupGateGameBit);
+        if (pickupGateGameBit != -1 && mainGetBit(pickupGateGameBit) == 0) {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         } else if ((*gCarryableInterface)->updateHeld(obj, obj->extra) != 0) {
             isHeld = 1;
@@ -500,7 +511,8 @@ void mmpMoonRock_init(GameObject* obj, const MMPMoonRockPlacement* placement) {
 
     obj->objectFlags = obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->flags = 0;
-    state->kind = mainGetBit(placement->kindGameBit);
+    state->kind = mainGetBit(ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->kindGameBit));
     kind = state->kind;
     if (kind != 0) {
         if ((u8)(kind - 3) <= 1 || kind == 6) {

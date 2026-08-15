@@ -261,7 +261,7 @@ void windLift_update(GameObject* obj) {
     int slotIndex;
     int matchedSlot;
     int objectCount;
-    u32* objects;
+    GameObject** objects;
     int riderGameBit;
     placement = (WindLiftPlacement*)obj->anim.placement;
     if (state->enabled) {
@@ -290,7 +290,7 @@ void windLift_update(GameObject* obj) {
             int rotationStep = framesThisStep * 0xb6;
             obj->anim.rotX -= rotationStep * ((riderGameBit << 2) + 0xe);
         }
-        pullStrength = (f32)placement->pullStrength;
+        pullStrength = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->pullStrength);
         player = Obj_GetPlayerObject();
         if (mainGetBit(state->activationGameBit) != 0) {
             if (!state->musicActive) {
@@ -318,7 +318,7 @@ void windLift_update(GameObject* obj) {
                 state->slots[0].phaseFlags &= ~WINDLIFT_SLOT_RESET_FLAGS;
             }
         }
-        objects = (u32*)objGetAllOfType(WINDLIFT_RIDER_OBJECT_GROUP, &objectCount);
+        objects = objGetAllOfType(WINDLIFT_RIDER_OBJECT_GROUP, &objectCount);
         objectCount = objectCount + 1;
         if (objectCount > WINDLIFT_SLOT_COUNT) {
             objectCount = WINDLIFT_SLOT_COUNT;
@@ -329,13 +329,13 @@ void windLift_update(GameObject* obj) {
         for (objectIndex = 1; objectIndex < objectCount; objectIndex++) {
             matchedSlot = -1;
             for (slotIndex = 1; slotIndex < WINDLIFT_SLOT_COUNT; slotIndex++) {
-                if ((u32)state->slots[slotIndex].riderObject == *objects) {
+                if (state->slots[slotIndex].riderObject == *objects) {
                     matchedSlot = slotIndex;
                 }
             }
             if (matchedSlot == -1) {
                 for (slotIndex = 1; slotIndex < WINDLIFT_SLOT_COUNT; slotIndex++) {
-                    if ((u32)state->slots[slotIndex].riderObject == 0) {
+                    if (state->slots[slotIndex].riderObject == NULL) {
                         matchedSlot = slotIndex;
                         windLift_resetSlot(&state->slots[slotIndex]);
                         slotIndex = WINDLIFT_SLOT_SEARCH_END;
@@ -348,11 +348,11 @@ void windLift_update(GameObject* obj) {
             }
             state->slots[matchedSlot].linkIndex = matchedSlot;
             {
-                GameObject* rider = (GameObject*)*objects;
+                GameObject* rider = *objects;
                 if ((rider->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) != 0) {
                     objects++;
                 } else if (rider != NULL) {
-                    windLift_updateRider(obj, (GameObject*)*objects++, &state->slots[matchedSlot], pullStrength,
+                    windLift_updateRider(obj, *objects++, &state->slots[matchedSlot], pullStrength,
                                          riderGameBit, 0, state->duration, state->liftHeight);
                 }
             }
@@ -369,7 +369,7 @@ void windLift_update(GameObject* obj) {
 void windLift_init(GameObject* obj, WindLiftPlacement* placement) {
     int i;
     WindLiftState* state = obj->extra;
-    state->activationGameBit = placement->activationGameBit;
+    state->activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activationGameBit);
     state->duration =
         seqPairTableLookup(gWindLiftDurationTable, WINDLIFT_DURATION_ENTRY_COUNT, state->activationGameBit);
     state->enableGameBit =
@@ -380,7 +380,7 @@ void windLift_init(GameObject* obj, WindLiftPlacement* placement) {
     if (state->duration == 0) {
         state->duration = WINDLIFT_DEFAULT_DURATION;
     }
-    state->riderGameBit = placement->riderGameBit;
+    state->riderGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->riderGameBit);
     state->timer = 0;
     if (placement->heightParam != 0) {
         state->liftHeight = WINDLIFT_HEIGHT_BYTE_SCALE * (f32)placement->heightParam;

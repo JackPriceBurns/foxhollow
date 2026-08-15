@@ -3554,7 +3554,7 @@ int playerStateStaffBoost(GameObject* obj, PlayerState* state, f32 fv)
     {
         f32 fromVec[3];
         f32 toVec[3];
-        u8 hitBuf[0x58];
+        TrackBBoxHit hitBuf;
         f32 zero = 0.0f;
         ((PlayerState*)state)->baddie.animSpeedC = zero;
         ((PlayerState*)state)->baddie.animSpeedB = zero;
@@ -3577,9 +3577,9 @@ int playerStateStaffBoost(GameObject* obj, PlayerState* state, f32 fv)
         toVec[0] = fromVec[0] - 100.0f * mathSinf(3.1415927f * (f32)(int)inner->targetYaw / 32768.0f);
         toVec[1] = fromVec[1];
         toVec[2] = fromVec[2] - 100.0f * mathCosf(3.1415927f * (f32)(int)inner->targetYaw / 32768.0f);
-        if (trackGetLineIntersect(fromVec, toVec, 0.0f, 3, (TrackBBoxHit*)hitBuf, obj, 1, 1, 0xff, 0) != 0)
+        if (trackGetLineIntersect(fromVec, toVec, 0.0f, 3, &hitBuf, obj, 1, 1, 0xff, 0) != 0)
         {
-            gPlayerStaffBoostTargetY = *(f32*)(hitBuf + 0x3c) - 30.0f;
+            gPlayerStaffBoostTargetY = hitBuf.upperY0 - 30.0f;
         }
         else
         {
@@ -3919,7 +3919,7 @@ int playerStateFireLaser(GameObject* obj, PlayerState* state, f32 fv)
     setBButtonIcon(0xa);
     if (((PlayerState*)state)->baddie.moveJustStartedA != 0)
     {
-        PlayerStatus* p = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+        PlayerStatus* p = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
         int val = p->magic;
         if (val < 0)
         {
@@ -4392,7 +4392,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv)
             inner->stateTimer = x;
             if (x <= 0.0f)
             {
-                PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+                PlayerStatus* sub = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
                 int v = sub->magic - 1;
                 if (v < 0)
                 {
@@ -4470,7 +4470,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv)
                 {
                 case GAMEBIT_STAFF_ABILITY_FIRE_BLASTER:
                 {
-                    PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+                    PlayerStatus* sub = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
                     if (sub->magic >= 2)
                     {
                         ((PlayerState*)state)->baddie.nextStateExitFn = playerStagedEndIceSpellAndRestoreCamera;
@@ -4481,7 +4481,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv)
                 }
                 case 0x958:
                 {
-                    PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+                    PlayerStatus* sub = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
                     if (sub->magic >= 0)
                     {
                         ((PlayerState*)state)->baddie.nextStateExitFn = playerStagedEndIceSpellAndRestoreCamera;
@@ -4492,7 +4492,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv)
                 }
                 case GAMEBIT_STAFF_ABILITY_FREEZE_BLAST:
                 {
-                    PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+                    PlayerStatus* sub = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
                     if (sub->magic >= 1)
                     {
                         PlayerStatus* sub2;
@@ -4502,7 +4502,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv)
                         gPlayerIceSpellSustaining = 1;
                         lbl_803DE430 = 0.0f;
                         inner->stateTimer = 15.0f;
-                        sub2 = *(PlayerStatus**)((char*)((GameObject*)obj)->extra + 0x35c);
+                        sub2 = ((PlayerState*)((GameObject*)obj)->extra)->playerStatus;
                         v = sub2->magic - 1;
                         if (v < 0)
                         {
@@ -9238,14 +9238,14 @@ int playerState08(GameObject* obj, PlayerState* state, f32 fv) {
         if ((*gGameUIInterface)->isItemBeingUsed(0x1ee) != 0)
         {
             char* found;
-            s16* def = NULL;
+            ObjPlacement* def = NULL;
             buttonDisable(0, PAD_BUTTON_A);
             found = (char*)objGetNearestTypeTo(0xf, obj, &dist);
             if (found != NULL)
             {
-                def = (s16*)((GameObject*)found)->anim.placementData;
+                def = (ObjPlacement*)((GameObject*)found)->anim.placementData;
             }
-            if (def != NULL && *def == 0x860 && (((GameObject*)found)->anim.resetHitboxFlags & 4) != 0)
+            if (def != NULL && def->objectId == 0x860 && (((GameObject*)found)->anim.resetHitboxFlags & 4) != 0)
             {
                 mainSetBits(GAMEBIT_ITEM_DinoHorn_3F1, 1);
                 mainSetBits(GAMEBIT_ITEM_DinoHorn_3D8, 1);
@@ -12345,7 +12345,7 @@ void playerSpawnRapidFireLaser(GameObject* unusedObj, PlayerState* unusedState, 
 
 void staffShootFireball(GameObject* obj, PlayerState* state, f32 unused)
 {
-    int spawned = 0;
+    intptr_t spawned = 0;
     PlayerState* inner = obj->extra;
     GameObject* fb;
     Camera* slot;
@@ -12395,7 +12395,7 @@ void staffShootFireball(GameObject* obj, PlayerState* state, f32 unused)
             f32 dz;
             f32 dy;
             target = *(GameObject**)&((PlayerState*)state)->baddie.targetObj;
-            spawned = (int)target;
+            spawned = (intptr_t)target;
             pt = &target->anim.hitVolumeTransforms[target->hitVolumeIndex];
             dx = pt->jointX - (ppo = (GameObject*)gPlayerPathObject)->anim.localPosX;
             dy = pt->jointY - ppo->anim.localPosY;
@@ -12659,7 +12659,7 @@ void playerRenderPostEffects(GameObject* obj, PlayerState* inner, int a, int b, 
     int v;
     if (gPlayerPathObject != NULL && ((u32)((PlayerState*)inner)->flags3F4.b40) != 0)
     {
-        (*gModgfxInterface)->renderEffects((void*)a, b, c, 1, gPlayerPathObject);
+        (*gModgfxInterface)->renderEffects((void*)(uintptr_t)a, b, c, 1, gPlayerPathObject);
     }
     if (((PlayerState*)inner)->pendingBoneEffectId != 0)
     {
@@ -12790,7 +12790,7 @@ void playerCastSpell(GameObject* a, PlayerState* b, int c)
     case GAMEBIT_STAFF_ABILITY_SHARPCLAW_DISGUISE:
         ((PlayerState*)b)->stateTimer = 300.0f;
         {
-            PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)a)->extra + 0x35c);
+            PlayerStatus* sub = ((PlayerState*)((GameObject*)a)->extra)->playerStatus;
             int v = sub->magic - 0xa;
             if (v < 0)
             {
@@ -12808,7 +12808,7 @@ void playerCastSpell(GameObject* a, PlayerState* b, int c)
     case GAMEBIT_STAFF_ABILITY_OPEN_PORTAL:
         c = -1;
         {
-            PlayerStatus* sub = *(PlayerStatus**)((char*)((GameObject*)a)->extra + 0x35c);
+            PlayerStatus* sub = ((PlayerState*)((GameObject*)a)->extra)->playerStatus;
             int v = sub->magic - 0x14;
             if (v < 0)
             {
@@ -13579,7 +13579,7 @@ int playerUpdateAirborneMotion(GameObject* obj, PlayerState* inner, PlayerState*
     char* p35c;
     PlayerState* ps;
     obj->anim.velocityY = -((0.1f * timeDelta) - obj->anim.velocityY);
-    p35c = ((char*)inner) + 0x35c;
+    p35c = (char*)&((PlayerState*)inner)->playerStatus;
     switch (obj->anim.currentMove)
     {
     case 0xa:
@@ -17016,8 +17016,8 @@ int player_SeqFn(GameObject* obj, GameObject* obj2, ObjSeqState* seq, int endFla
                 f32 spd;
                 f32 dy2;
                 (*gObjectTriggerInterface)
-                    ->setObjects(*(s16*)((char*)((GameObject*)obj)->ownerObj + 0x46),
-                                 (int)((GameObject*)obj)->ownerObj, 0);
+                    ->setObjects(((GameObject*)((GameObject*)obj)->ownerObj)->anim.romDefNo,
+                                 ((GameObject*)obj)->ownerObj, 0);
                 {
                     GameObject* prt = ((GameObject*)obj)->ownerObj;
                     obj2 = prt->extra;
@@ -18016,7 +18016,7 @@ void playerUpdate(GameObject* obj)
                 obj->anim.velocityY = z;
                 obj->anim.velocityZ = z;
             }
-            playerRefreshCollisionState(obj, inner, 0xff);
+            playerRefreshCollisionState(obj, (PlayerState*)inner, 0xff);
         }
         else
         {
@@ -18025,7 +18025,6 @@ void playerUpdate(GameObject* obj)
             int i;
             int v;
             u8 hov;
-            u8* bits;
             UiMsgBlock m;
             ((PlayerState*)inner)->curAnimId = (*gCameraInterface)->getMode();
             if (((PlayerState*)inner)->curAnimId == 0x44 && ((PlayerState*)inner)->baddie.controlMode != 1)
@@ -18090,10 +18089,9 @@ void playerUpdate(GameObject* obj)
             ((PlayerState*)inner)->probeHitDist = 100000.0f;
             ((PlayerState*)inner)->cameraFlags = 0;
             ((PlayerState*)inner)->baddie.queuedBitMask = 0;
-            bits = (u8*)inner;
             for (i = 0; i < ((PlayerState*)inner)->queuedBitCount; i++)
             {
-                ((PlayerState*)inner)->baddie.queuedBitMask |= 1 << bits[i + 0x8b9];
+                ((PlayerState*)inner)->baddie.queuedBitMask |= 1 << ((PlayerState*)inner)->queuedBits[i];
             }
             ((PlayerState*)inner)->flags360 &= 0xfffff4ff;
             dt = *(f32*)&timeDelta;

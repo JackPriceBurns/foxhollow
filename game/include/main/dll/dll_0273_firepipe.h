@@ -59,7 +59,7 @@ STATIC_ASSERT(offsetof(FirePipeMapData, startOffset) == 0x20);
 STATIC_ASSERT(offsetof(FirePipeMapData, flags) == 0x22);
 STATIC_ASSERT(sizeof(FirePipeMapData) == 0x24);
 
-int firepipe_spawnEffectObject(FirePipeExtra *extra, GameObject *obj, ObjPlacement *spawnDef);
+GameObject* firepipe_spawnEffectObject(FirePipeExtra *extra, GameObject *obj, ObjPlacement *spawnDef);
 int firepipe_clearLinkedUpdateFlag(GameObject *obj);
 int firepipe_setLinkedUpdateFlag(GameObject *obj);
 void firepipe_updateState(GameObject *obj);

@@ -45,7 +45,8 @@ void explodeplan_hitDetect(void)
 void explodeplan_update(GameObject* obj)
 {
     ExplodePlanPlacement* placement = (ExplodePlanPlacement*)obj->anim.placementData;
-    if (mainGetBit(placement->removeGameBit) != 0)
+    s16 removeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit);
+    if (mainGetBit(removeGameBit) != 0)
     {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         ObjHits_DisableObject(obj);
@@ -59,8 +60,9 @@ void explodeplan_update(GameObject* obj)
 
 void explodeplan_init(GameObject* obj, ExplodePlanPlacement* placement)
 {
+    s16 removeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit);
     ObjHits_EnableObject(obj);
-    if (mainGetBit(placement->removeGameBit) != 0)
+    if (mainGetBit(removeGameBit) != 0)
     {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         ObjHits_DisableObject(obj);

@@ -100,7 +100,7 @@ static const f32 gVambatHeartbeatPeriod[1] = {60.0f};
 
 int gVambatCurveInitData[2] = {2, 3};
 
-void vambat_updateWhileFrozen(int obj, u8* state, GameObject* attacker, int msgFlag, int wpad0, int wpad1, Vec* wpad2,
+void vambat_updateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int msgFlag, int wpad0, int wpad1, Vec* wpad2,
                               int wpad3)
 {
     EnemyState* bs = (EnemyState*)state;
@@ -110,7 +110,7 @@ void vambat_updateWhileFrozen(int obj, u8* state, GameObject* attacker, int msgF
         if (msgFlag == 16)
         {
             bs->flags2E8 = bs->flags2E8 | 0x28;
-            Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_baddie_mika_wingflap);
+            Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_baddie_mika_wingflap);
             bs->current = 0;
         }
     }
@@ -123,13 +123,13 @@ void vambat_updateWhileFrozen(int obj, u8* state, GameObject* attacker, int msgF
         else
         {
             bs->flags2E8 = bs->flags2E8 | 0x8;
-            Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_baddie_mika_wingflap);
+            Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_baddie_mika_wingflap);
             bs->current = 0;
         }
     }
 }
 
-void vambat_updateIdle(GameObject* obj, int state)
+void vambat_updateIdle(GameObject* obj, void* state)
 {
     ObjHitsPriorityState* hitState;
     RomCurveWalker* curve;
@@ -187,7 +187,7 @@ void vambat_updateIdle(GameObject* obj, int state)
     ((EnemyState*)state)->vambat.engagedTimer = gVambatZero[0];
 }
 
-void vambat_updateEngaged(GameObject* obj, int state)
+void vambat_updateEngaged(GameObject* obj, void* state)
 {
     RomCurveWalker* curve;
     f32 vec[3];
@@ -262,7 +262,7 @@ void vambat_updateEngaged(GameObject* obj, int state)
     baddieTurnTowardLookDir(obj, (void*)state, 0xf, 1e+01f, 1.0f, 0);
 }
 
-void vambat_init(GameObject* obj, int state)
+void vambat_init(GameObject* obj, void* state)
 {
     f32 pathStepInit;
     f32 initSpeed;
@@ -296,7 +296,7 @@ void vambat_init(GameObject* obj, int state)
     }
 }
 
-void magicplantSpawnMovePuffs(GameObject* obj, int state)
+void magicplantSpawnMovePuffs(GameObject* obj, void* state)
 {
     u8 count = 0;
     EnemyState* bs = (EnemyState*)state;

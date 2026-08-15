@@ -27,7 +27,7 @@ int moonSeedBush_processAnimEvents(GameObject* obj, int unusedArg2, ObjSeqState*
     int particleIndex;
 
     if (state->seedState == MOON_SEED_BUSH_STATE_UNPLANTED) {
-        if (mainGetBit(placement->growthTriggerGameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->growthTriggerGameBit))) != 0) {
             state->seedState = MOON_SEED_BUSH_STATE_GROWN;
         }
     }
@@ -36,8 +36,8 @@ int moonSeedBush_processAnimEvents(GameObject* obj, int unusedArg2, ObjSeqState*
         switch ((s32)animUpdate->eventIds[eventIndex]) {
         case MOON_SEED_BUSH_ANIM_EVENT_PLANTED:
             state->seedState = MOON_SEED_BUSH_STATE_PLANTED;
-            if (placement->plantedGameBit != -1) {
-                mainSetBits(placement->plantedGameBit, 1);
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit)) != -1) {
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit)), 1);
             }
             break;
         case MOON_SEED_BUSH_ANIM_EVENT_PARTICLES:
@@ -82,9 +82,9 @@ void moonSeedBush_update(GameObject* obj) {
     if ((state->updateFlags & MOON_SEED_BUSH_UPDATE_FLAG_RUN_SEQUENCE) == 0) {
         return;
     }
-    if (placement->preemptTriggerId != 0 && state->seedState != MOON_SEED_BUSH_STATE_UNPLANTED) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->preemptTriggerId)) != 0 && state->seedState != MOON_SEED_BUSH_STATE_UNPLANTED) {
         sequenceFlags = placement->sequenceFlags;
-        (*gObjectTriggerInterface)->preempt((int)obj, placement->preemptTriggerId);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->preemptTriggerId)));
     } else {
         sequenceFlags = -1;
     }
@@ -112,8 +112,8 @@ void moonSeedBush_init(GameObject* obj, const MoonSeedBushPlacement* placement) 
         obj->anim.rootMotionScale = 1.0f;
     }
     obj->anim.rootMotionScale = obj->anim.rootMotionScale * obj->anim.modelInstance->rootMotionScaleBase;
-    if (placement->plantedGameBit != -1) {
-        state->seedState = mainGetBit(placement->plantedGameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit)) != -1) {
+        state->seedState = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit)));
     } else {
         state->seedState = MOON_SEED_BUSH_STATE_UNPLANTED;
     }

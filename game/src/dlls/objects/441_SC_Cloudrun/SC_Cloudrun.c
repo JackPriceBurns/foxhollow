@@ -75,7 +75,7 @@ void sc_cloudrunnera_update(GameObject* obj) {
     if (placement == NULL) {
         return;
     }
-    if (placement->animDataIndex == SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) == SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
         return;
     }
     objectIndex = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStepUnclamped);
@@ -189,7 +189,7 @@ void sc_cloudrunnera_init(GameObject* obj, const ScCloudrunnerAPlacement* placem
 
     objSetSlot(obj, SC_CLOUDRUNNER_A_OBJECT_SLOT);
     sequence = obj->extra;
-    sequence->gameBit = placement->sequenceGameBit;
+    sequence->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     sequence->flags = SC_CLOUDRUNNER_A_SEQUENCE_FLAGS;
     one = 1.0f;
     sequence->posOffsetDecay = one / (one + (f32)(u32)placement->positionDamping);
@@ -197,15 +197,15 @@ void sc_cloudrunnera_init(GameObject* obj, const ScCloudrunnerAPlacement* placem
     obj->userData2 = 0;
 
     cachedAnimDataIndexPlusOne = obj->userData1;
-    if (cachedAnimDataIndexPlusOne == 0 && placement->animDataIndex != SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX) {
-        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (cachedAnimDataIndexPlusOne != 0 && placement->animDataIndex != cachedAnimDataIndexPlusOne - 1) {
+    if (cachedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX) {
+        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (cachedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != cachedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)sequence);
-        if (placement->animDataIndex != SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
-            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
+            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     if (obj->anim.modelState != NULL) {
         obj->anim.modelState->shadowTintA = SC_CLOUDRUNNER_A_SHADOW_TINT_A;

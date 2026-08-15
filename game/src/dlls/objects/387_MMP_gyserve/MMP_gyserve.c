@@ -49,7 +49,7 @@ void mmpGeyserVent_hitDetect(void) {
 void mmpGeyserVent_update(GameObject* obj) {
     const MMPGeyserVentPlacement* placement = (const MMPGeyserVentPlacement*)obj->anim.placementData;
 
-    if (mainGetBit(placement->disableGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) != 0) {
         return;
     }
     MMP_GEYSER_VENT_IDLE_TIMER(obj) -= framesThisStep;

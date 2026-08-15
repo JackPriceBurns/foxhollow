@@ -105,7 +105,7 @@
 
 int wcpushblock_getExtraSize(void)
 {
-    return WCPUSHBLOCK_EXTRA_SIZE;
+    return sizeof(WCPushBlockRuntimeState);
 }
 
 int wcpushblock_getObjectTypeId(GameObject* obj)
@@ -604,7 +604,7 @@ void wcpushblock_init(GameObject* obj, WCPushBlockSetup* setup)
         objAnim->bankIndex = 0;
     }
     ObjHitbox_SetStateIndex(obj, obj->anim.hitReactState, objAnim->bankIndex);
-    state->initialTile = setup->initialTile;
+    state->initialTile = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->initialTile));
     state->baseY = 5.0f + setup->base.posY;
 }
 

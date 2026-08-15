@@ -167,8 +167,8 @@ void dll_F7_update(GameObject* obj) {
         state->unk08 = 0;
         Sfx_PlayFromObject(obj, SFXTRIG_dsmk2_c);
         ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;
-        if ((int)placement->completeGameBit != -1) {
-            mainSetBits((int)placement->completeGameBit, 1);
+        if ((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completeGameBit)) != -1) {
+            mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completeGameBit)), 1);
         }
         if (state->alternateMode == 0 && Obj_IsLoadingLocked() != 0) {
             CollectibleSetup* setup =

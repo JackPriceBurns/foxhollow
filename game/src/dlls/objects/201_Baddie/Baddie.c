@@ -267,8 +267,16 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
     void* tricky;
     int spawnBits;
     u8 moveId;
+    s16 gameBit;
+    s16 gameBit2;
+    s16 droppedItemId;
+    s16 respawnDelay;
 
     setup = (EnemyPlacement*)obj->anim.placementData;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->gameBit);
+    gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &setup->gameBit2);
+    droppedItemId = ObjAnim_ReadPlacementS16(&obj->anim, &setup->droppedItemId);
+    respawnDelay = ObjAnim_ReadPlacementS16(&obj->anim, &setup->respawnDelay);
     state->actionId = 0;
     if (((state->controlFlags & 0x800) != 0) && ((state->prevControlFlags & 0x800) == 0))
     {
@@ -279,13 +287,13 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         }
         if ((state->flags2E4 & 0x40000000) == 0)
         {
-            if (setup->gameBit != -1)
+            if (gameBit != -1)
             {
-                gameBitIncrement(setup->gameBit);
+                gameBitIncrement(gameBit);
             }
-            if (setup->gameBit2 != -1)
+            if (gameBit2 != -1)
             {
-                mainSetBits(setup->gameBit2, 0);
+                mainSetBits(gameBit2, 0);
             }
         }
         state->trackedObj = NULL;
@@ -306,24 +314,24 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         {
             if ((state->flags2E4 & 0x100000) != 0)
             {
-                baddie_spawnRewardDrops(obj, (int)state, state->spawnBits, 0, 4);
+                baddie_spawnRewardDrops(obj, state, state->spawnBits, 0, 4);
             }
             else
             {
-                spawnBits = setup->droppedItemId & 0xf00;
+                spawnBits = droppedItemId & 0xf00;
                 if (spawnBits != 0)
                 {
-                    baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 1);
+                    baddie_spawnRewardDrops(obj, state, spawnBits, 0, 1);
                 }
-                spawnBits = setup->droppedItemId & 0xf000;
+                spawnBits = droppedItemId & 0xf000;
                 if (spawnBits != 0)
                 {
-                    baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 2);
+                    baddie_spawnRewardDrops(obj, state, spawnBits, 0, 2);
                 }
-                spawnBits = setup->droppedItemId & 0xff;
+                spawnBits = droppedItemId & 0xff;
                 if (spawnBits != 0)
                 {
-                    baddie_spawnRewardDrops(obj, (int)state, spawnBits, 0, 3);
+                    baddie_spawnRewardDrops(obj, state, spawnBits, 0, 3);
                 }
             }
         }
@@ -336,30 +344,30 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
     {
         if ((state->flags2E4 & 0x40000000) != 0)
         {
-            if (setup->gameBit != -1)
+            if (gameBit != -1)
             {
-                gameBitIncrement(setup->gameBit);
+                gameBitIncrement(gameBit);
             }
-            if (setup->gameBit2 != -1)
+            if (gameBit2 != -1)
             {
-                mainSetBits(setup->gameBit2, 0);
+                mainSetBits(gameBit2, 0);
             }
         }
         state->particleScale = 0.0f;
         state->controlFlags = 0;
         obj->anim.flags = obj->anim.flags | OBJANIM_FLAG_HIDDEN;
         obj->anim.alpha = 0;
-        *(u32*)&obj->userData1 = 1;
+        obj->userData1 = 1;
         if ((u32)((ObjPlacement*)setup)->ident == 0xFFFFFFFF)
         {
             Obj_FreeObject(obj);
         }
         else
         {
-            if (setup->respawnDelay != 0)
+            if (respawnDelay != 0)
             {
                 (*gMapEventInterface)
-                    ->addTime(((ObjPlacement*)setup)->ident, 60.0f * (f32)setup->respawnDelay);
+                    ->addTime(((ObjPlacement*)setup)->ident, 60.0f * (f32)respawnDelay);
             }
             state->controlFlags = state->controlFlags & ~(u64)0x800;
             state->flags2E8 = state->flags2E8 & ~3LL;
@@ -521,14 +529,14 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
                                                sector);
                     break;
                 case 0x613:
-                    gcRobotPatrol_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    gcRobotPatrol_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x642:
-                    mikaladon_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    mikaladon_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x3fe:
                 case 0x7c6:
-                    vambat_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    vambat_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x58b:
                     kooshy_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
@@ -537,33 +545,33 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
                     weevil_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x251:
-                    pinPon_updateWhileFrozen((int)obj, (EnemyState*)state, attacker, hit, hitArg, hitCount, &hitPos,
+                    pinPon_updateWhileFrozen(obj, (EnemyState*)state, attacker, hit, hitArg, hitCount, &hitPos,
                                              sector);
                     break;
                 case 0x25d:
                     rachnopUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x4d7:
-                    wbUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    wbUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x457:
-                    spittingEbaUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    spittingEbaUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x458:
-                    mutatedEbaUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    mutatedEbaUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x851:
-                    whirlpool_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    whirlpool_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x842:
                 case 0x84b:
-                    snowworm_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    snowworm_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x4ac:
-                    hoodedZyckUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    hoodedZyckUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x427:
-                    battleDroidUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    battleDroidUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x6a2:
                 case 0x6a3:
@@ -572,10 +580,10 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
                     crawler_onHit(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x7c8:
-                    hagabonMK2_updateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    hagabonMK2_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 default:
-                    battleDroidUpdateWhileFrozen((int)obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    battleDroidUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 }
             }
@@ -717,7 +725,7 @@ void baddie_decodePlayerAttackFlags(EnemyState* state, u32 flags, f32 f, u16 hit
     state->hitStunFrames = hitStunFrames;
 }
 
-int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAltMode, u32 mode)
+uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u32 useAltMode, u32 mode)
 {
     u32 commandSpawnIds[2];
     struct TrickyRewardSpawnTail
@@ -810,7 +818,7 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
                 gTrickyNearestObject->anim.worldPosZ = v;
                 gTrickyNearestObject->anim.localPosZ = v;
             }
-            return (int)gTrickyNearestObject;
+            return (uintptr_t)gTrickyNearestObject;
         default:
             return 0;
         }
@@ -853,7 +861,7 @@ int baddie_spawnRewardDrops(GameObject* obj, int state, int spawnBits, u32 useAl
     {
         ((void (*)(GameObject*, f32, f32, f32))nearest->anim.dll[0][11])(nearest, 0.0f, 1.0f, 0.0f);
     }
-    return (int)gTrickyNearestObject;
+    return (uintptr_t)gTrickyNearestObject;
 }
 
 void baddieInstantiateWeapon(GameObject* obj, EnemyState* state)
@@ -1233,28 +1241,28 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 break;
             case ENEMY_VAMBAT_OBJ:
             case ENEMY_FIREBAT_OBJ:
-                vambat_updateEngaged((GameObject*)(obj), (int)state);
+                vambat_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_KOOSHY_OBJ:
-                kooshy_updateEngaged((GameObject*)(obj), (int)state);
+                kooshy_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_WEEVIL_OBJ:
-                weevil_updateEngaged((GameObject*)(obj), (int)state);
+                weevil_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_PINPON_OBJ:
                 pinPon_updateEngaged((GameObject*)(obj), (int*)state);
                 break;
             case ENEMY_RACHNOP_OBJ:
-                rachnopUpdateAttack((GameObject*)obj, (int)state);
+                rachnopUpdateAttack((GameObject*)obj, state);
                 break;
             case ENEMY_SPITTINGEBA_OBJ:
-                spittingEbaUpdateEngaged((GameObject*)(obj), (int)state);
+                spittingEbaUpdateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_WB_OBJ:
-                wbUpdateEngaged((GameObject*)obj, (int)state);
+                wbUpdateEngaged((GameObject*)obj, state);
                 break;
             case ENEMY_MUTATEDEBA_OBJ:
-                mutatedEbaUpdateEngaged((u32)obj, (int)state);
+                mutatedEbaUpdateEngaged((GameObject*)obj, state);
                 break;
             case ENEMY_WHIRLPOOL_OBJ:
                 iceBaddie_enterWhirlpoolGroup((GameObject*)obj, state);
@@ -1267,7 +1275,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 hoodedZyck_update((GameObject*)obj, (u8*)state);
                 break;
             case ENEMY_BATTLEDROID_OBJ:
-                battleDroidUpdateAttack((int)obj, (int)state);
+                battleDroidUpdateAttack((GameObject*)obj, state);
                 break;
             case ENEMY_FIRECRAWLER_OBJ:
             case ENEMY_REDEYE_OBJ:
@@ -1280,7 +1288,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 break;
             case 0x7c7:
             default:
-                battleDroidUpdateAttack((int)obj, (int)state);
+                battleDroidUpdateAttack((GameObject*)obj, state);
                 break;
             }
         }
@@ -1310,28 +1318,28 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 break;
             case ENEMY_VAMBAT_OBJ:
             case ENEMY_FIREBAT_OBJ:
-                vambat_updateEngaged((GameObject*)(obj), (int)state);
+                vambat_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_KOOSHY_OBJ:
-                kooshy_updateEngaged((GameObject*)(obj), (int)state);
+                kooshy_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_WEEVIL_OBJ:
-                weevil_updateEngaged((GameObject*)(obj), (int)state);
+                weevil_updateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_PINPON_OBJ:
                 pinPon_updateEngaged((GameObject*)(obj), (int*)state);
                 break;
             case ENEMY_RACHNOP_OBJ:
-                rachnopUpdateApproach((GameObject*)obj, (int)state);
+                rachnopUpdateApproach((GameObject*)obj, state);
                 break;
             case ENEMY_SPITTINGEBA_OBJ:
-                spittingEbaUpdateEngaged((GameObject*)(obj), (int)state);
+                spittingEbaUpdateEngaged((GameObject*)(obj), state);
                 break;
             case ENEMY_WB_OBJ:
-                wbUpdateEngaged((GameObject*)obj, (int)state);
+                wbUpdateEngaged((GameObject*)obj, state);
                 break;
             case ENEMY_MUTATEDEBA_OBJ:
-                mutatedEbaUpdateEngaged((u32)obj, (int)state);
+                mutatedEbaUpdateEngaged((GameObject*)obj, state);
                 break;
             case ENEMY_WHIRLPOOL_OBJ:
                 iceBaddie_enterWhirlpoolGroup((GameObject*)obj, state);
@@ -1344,7 +1352,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 hoodedZyck_updateB((GameObject*)obj, (u8*)state);
                 break;
             case ENEMY_BATTLEDROID_OBJ:
-                battleDroidUpdate((int)obj, (int)state);
+                battleDroidUpdate((GameObject*)obj, state);
                 break;
             case ENEMY_FIRECRAWLER_OBJ:
             case ENEMY_REDEYE_OBJ:
@@ -1357,7 +1365,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
                 break;
             case 0x7c7:
             default:
-                battleDroidUpdate((int)obj, (int)state);
+                battleDroidUpdate((GameObject*)obj, state);
                 break;
             }
         }
@@ -1421,28 +1429,28 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
             break;
         case ENEMY_VAMBAT_OBJ:
         case ENEMY_FIREBAT_OBJ:
-            vambat_updateIdle((GameObject*)(obj), (int)state);
+            vambat_updateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_KOOSHY_OBJ:
-            kooshy_updateIdle((GameObject*)(obj), (int)state);
+            kooshy_updateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_WEEVIL_OBJ:
-            weevil_updateIdle((GameObject*)(obj), (int)state);
+            weevil_updateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_PINPON_OBJ:
-            pinPon_updateIdle((GameObject*)(obj), (int)state);
+            pinPon_updateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_RACHNOP_OBJ:
-            rachnopUpdateIdle((GameObject*)obj, (int)state);
+            rachnopUpdateIdle((GameObject*)obj, state);
             break;
         case ENEMY_SPITTINGEBA_OBJ:
-            spittingEbaUpdateIdle((GameObject*)(obj), (int)state);
+            spittingEbaUpdateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_WB_OBJ:
-            wbUpdateIdle((GameObject*)obj, (int)state);
+            wbUpdateIdle((GameObject*)obj, state);
             break;
         case ENEMY_MUTATEDEBA_OBJ:
-            mutatedEbaUpdateIdle((u32)obj, (int)state);
+            mutatedEbaUpdateIdle((GameObject*)obj, state);
             break;
         case ENEMY_WHIRLPOOL_OBJ:
             iceBaddie_leaveWhirlpoolGroup((GameObject*)obj, state);
@@ -1452,10 +1460,10 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
             snowworm_applyReactionState((GameObject*)obj, (int*)state);
             break;
         case ENEMY_HOODEDZYCK_OBJ:
-            hoodedZyck_updateIdle((GameObject*)(obj), (int)state);
+            hoodedZyck_updateIdle((GameObject*)(obj), state);
             break;
         case ENEMY_BATTLEDROID_OBJ:
-            battleDroidUpdate((int)obj, (int)state);
+            battleDroidUpdate((GameObject*)obj, state);
             break;
         case ENEMY_FIRECRAWLER_OBJ:
         case ENEMY_REDEYE_OBJ:
@@ -1468,7 +1476,7 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
             break;
         case 0x7c7:
         default:
-            battleDroidUpdate((int)obj, (int)state);
+            battleDroidUpdate((GameObject*)obj, state);
             break;
         }
     }
@@ -1820,6 +1828,11 @@ u32 gEnemyTargetAngleFlagClearMask[] = {
     0x10000, 0x20000, 0x20000, 0x40000, 0x40000, 0x80000, 0x80000, 0x10000,
 };
 
+static void enemy_initFromDescriptor(GameObject* obj, u8* setup)
+{
+    enemy_init(obj, setup, 0);
+}
+
 ObjectDescriptor gBaddieObjDescriptor = {
     0,
     0,
@@ -1828,7 +1841,7 @@ ObjectDescriptor gBaddieObjDescriptor = {
     (ObjectDescriptorCallback)enemy_initialise,
     (ObjectDescriptorCallback)enemy_release,
     0,
-    (ObjectDescriptorCallback)enemy_init,
+    (ObjectDescriptorCallback)enemy_initFromDescriptor,
     (ObjectDescriptorCallback)enemy_update,
     (ObjectDescriptorCallback)enemy_hitDetect,
     (ObjectDescriptorCallback)enemy_render,
@@ -1857,8 +1870,7 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
             obj = getTrickyObject();
             if (obj != NULL)
             {
-                (*(void (*)(GameObject*, int, GameObject*))(*(int*)(*(int*)((int)obj->anim.dll) + 0x34)))(
-                    obj, 1, node);
+                ((void (*)(GameObject*, int, GameObject*))obj->anim.dll[0][13])(obj, 1, node);
                 ((EnemyState*)sub)->controlFlags |= 0x200000LL;
                 ((EnemyState*)sub)->trackedObj = obj;
             }
@@ -1878,7 +1890,7 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
                 ((EnemyState*)sub)->weaponRomDefNo = 0x33;
             break;
         case 3:
-            (*gObjectTriggerInterface)->setCamVars(CAMERA_MODE_COMBAT_RESOURCE_ID, 4, (int)node, 0x3c);
+            (*gObjectTriggerInterface)->setCamVars(CAMERA_MODE_COMBAT_RESOURCE_ID, 4, (int)(uintptr_t)node, 0x3c);
             break;
         case 6:
             if (((EnemyState*)sub)->tailSimHandle != NULL)
@@ -2169,7 +2181,7 @@ void enemy_steerVelocityToward(GameObject* obj, void* state, f32* desiredVec, f3
     Vec turnAxis;
     Mtx rotMtx;
 
-    curMag = PSVECMag((Vec*)((int)state + 0x2b8));
+    curMag = PSVECMag((Vec*)&((EnemyState*)state)->lookDirX);
     if (curMag > 0.0f)
     {
         f32 inv = 1.0f / curMag;
@@ -2381,7 +2393,7 @@ void baddieTurnTowardLookDir(GameObject* node, void* sub, int divisor, f32 fa, f
     if (delta_f < -32768.0f)
         delta_f = 65535.0f + delta_f;
     delta_f *= dt;
-    newVal = (s16)(*(s16*)(int)node + (s32)delta_f);
+    newVal = (s16)(node->anim.rotX + (s32)delta_f);
     node->anim.rotX = newVal;
 
     zero = 0.0f;
@@ -2417,12 +2429,12 @@ void baddieTurnTowardLookDir(GameObject* node, void* sub, int divisor, f32 fa, f
             d2f = -65535.0f + d2f;
         if (d2f < -32768.0f)
             d2f = 65535.0f + d2f;
-        newVal2 = (s16)(*(s16*)((int)node + 2) + (s32)(d2f * dt));
+        newVal2 = (s16)(node->anim.rotY + (s32)(d2f * dt));
         node->anim.rotY = newVal2;
     }
 }
 
-void baddieTurnTowardPoint(GameObject* node, int state, f32 targetX, f32 targetZ, int divisor, int angleBias)
+void baddieTurnTowardPoint(GameObject* node, void* state, f32 targetX, f32 targetZ, int divisor, int angleBias)
 {
     s32 delta;
     f32 dt;
@@ -2443,7 +2455,7 @@ void baddieTurnTowardPoint(GameObject* node, int state, f32 targetX, f32 targetZ
     node->anim.rotX = newVal;
 }
 
-void baddieSetMove(GameObject* obj, int state, u8 moveId, f32 rateScale, u8 moveControlFlags, u8 stateByte)
+void baddieSetMove(GameObject* obj, void* state, u8 moveId, f32 rateScale, u8 moveControlFlags, u8 stateByte)
 {
     ObjHitsPriorityState* hitState;
 
@@ -2459,22 +2471,22 @@ void baddieSetMove(GameObject* obj, int state, u8 moveId, f32 rateScale, u8 move
 
 void baddieAfterUpdateBonesCb(GameObject* obj, ObjModel* model)
 {
-    BaddieAfterUpdateBonesCbState* state = obj->extra;
+    EnemyState* state = obj->extra;
     ModelFileHeader* v = model->file;
     switch (obj->anim.romDefNo)
     {
     case ENEMY_HAGABONMK2_OBJ:
-        ObjModelChain_Update(model, v, (ObjModelChain*)state->tailBoneChain, crawler_rotateVectorYaw);
+        ObjModelChain_Update(model, v, state->tailSimHandle, crawler_rotateVectorYaw);
         break;
     default:
-        ObjModelChain_Update(model, v, (ObjModelChain*)state->tailBoneChain, NULL);
+        ObjModelChain_Update(model, v, state->tailSimHandle, NULL);
         break;
     }
 }
 
 int enemy_getExtraSize(void)
 {
-    return 0x370;
+    return sizeof(EnemyState);
 }
 int enemy_getObjectTypeId(void)
 {
@@ -2499,15 +2511,15 @@ void enemy_free(GameObject* obj, int flag)
         ModelLightStruct_free(state->modelLight);
         state->modelLight = NULL;
     }
-    if (*(void**)state != NULL)
+    if (state->pathWalker != NULL)
     {
-        mm_free((void*)*(int*)state);
-        *(int*)state = 0;
+        mm_free(state->pathWalker);
+        state->pathWalker = NULL;
     }
     switch (obj->anim.romDefNo)
     {
     case ENEMY_HAGABONMK2_OBJ:
-        hagabonMK2_stopLoopSfx((int)obj, (u8*)state);
+        hagabonMK2_stopLoopSfx(obj, (u8*)state);
         break;
     case ENEMY_WHIRLPOOL_OBJ:
         if (objIsObjectType(obj, ENEMY_OBJGROUP_SECONDARY) != 0)
@@ -2529,7 +2541,7 @@ void enemy_free(GameObject* obj, int flag)
             }
         }
     }
-    (*gExpgfxInterface)->freeSource((int)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
     objFreeObjectType(obj, ENEMY_OBJGROUP);
 }
 
@@ -2623,10 +2635,18 @@ void enemy_update(GameObject* obj)
     GameObject* tricky;
     u32 flags;
     EnemyPlacement* s2;
+    EnemyPlacement* enemySetup;
     f32 fz;
+    s16 gameBit;
+    s16 gameBit2;
+    s16 respawnDelay;
 
     state = obj->extra;
     setup = (u8*)obj->anim.placementData;
+    enemySetup = (EnemyPlacement*)setup;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &enemySetup->gameBit);
+    gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &enemySetup->gameBit2);
+    respawnDelay = ObjAnim_ReadPlacementS16(&obj->anim, &enemySetup->respawnDelay);
     tricky = getTrickyObject();
     if (getCurUiDll() == 4)
     {
@@ -2682,9 +2702,9 @@ void enemy_update(GameObject* obj)
     }
     if (obj->userData1 != 0)
     {
-        if (((EnemyPlacement*)setup)->gameBit2 != -1)
+        if (gameBit2 != -1)
         {
-            if (mainGetBit(((EnemyPlacement*)setup)->gameBit2) == 0)
+            if (mainGetBit(gameBit2) == 0)
             {
                 return;
             }
@@ -2697,9 +2717,9 @@ void enemy_update(GameObject* obj)
                 return;
             }
             player = Obj_GetPlayerObject();
-            if (((EnemyPlacement*)setup)->gameBit != -1)
+            if (gameBit != -1)
             {
-                if (mainGetBit(((EnemyPlacement*)setup)->gameBit) != 0)
+                if (mainGetBit(gameBit) != 0)
                 {
                     return;
                 }
@@ -2723,9 +2743,9 @@ void enemy_update(GameObject* obj)
                 return;
             }
         }
-        else if (((EnemyPlacement*)setup)->gameBit != -1)
+        else if (gameBit != -1)
         {
-            if (mainGetBit(((EnemyPlacement*)setup)->gameBit) != 0)
+            if (mainGetBit(gameBit) != 0)
             {
                 return;
             }
@@ -2759,7 +2779,7 @@ void enemy_update(GameObject* obj)
             {
                 return;
             }
-            if (((EnemyPlacement*)setup)->respawnDelay == 0)
+            if (respawnDelay == 0)
             {
                 return;
             }
@@ -2801,7 +2821,7 @@ void enemy_update(GameObject* obj)
     if ((state->controlFlags & 0x8000) != 0)
     {
         setHudForceShowMask(0);
-        (*gPathControlInterface)->attachObject(obj, (u8*)state + 4);
+        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->flags);
         state->controlFlags &= ~0x8003;
         if ((state->flags2E4 & 0x20000) != 0)
         {
@@ -2845,38 +2865,45 @@ void enemy_update(GameObject* obj)
 void enemy_init(GameObject* obj, u8* setup, int flag)
 {
     u8* state = obj->extra;
+    EnemyPlacement* placement = (EnemyPlacement*)setup;
     f32 fz;
+    s16 gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
+    s16 gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit2);
+    s16 respawnDelay = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->respawnDelay);
+    u16 unk34 = ObjAnim_ReadPlacementU16(&obj->anim, &placement->unk34);
 
     obj->userData1 = 0;
     if (flag == 0)
     {
-        if (((EnemyPlacement*)setup)->gameBit2 != -1)
+        if (gameBit2 != -1)
         {
-            if (((EnemyPlacement*)setup)->gameBit != -1)
+            if (gameBit != -1)
             {
-                if (mainGetBit(((EnemyPlacement*)setup)->gameBit) == 0)
+                if (mainGetBit(gameBit) == 0)
                 {
-                    obj->userData1 = mainGetBit(((EnemyPlacement*)setup)->gameBit2) == 0;
+                    obj->userData1 = mainGetBit(gameBit2) == 0;
                 }
             }
             else
             {
-                obj->userData1 = mainGetBit(((EnemyPlacement*)setup)->gameBit2) == 0;
+                obj->userData1 = mainGetBit(gameBit2) == 0;
             }
         }
         if (*(u32*)&((ObjPlacement*)setup)->ident != 0xFFFFFFFF)
         {
             if (obj->userData1 == 0)
             {
-                if (((EnemyPlacement*)setup)->gameBit != -1)
+                if (gameBit != -1)
                 {
-                    obj->userData1 = mainGetBit(((EnemyPlacement*)setup)->gameBit);
+                    obj->userData1 = mainGetBit(gameBit);
                 }
                 if (obj->userData1 == 0)
                 {
-                    if (((EnemyPlacement*)setup)->respawnDelay != 0)
+                    if (respawnDelay != 0)
                     {
-                        if ((*gMapEventInterface)->shouldNotSaveTime(((ObjPlacement*)setup)->ident) == 0)
+                        int snst = (*gMapEventInterface)->shouldNotSaveTime(((ObjPlacement*)setup)->ident);
+                        if (snst == 0)
                         {
                             obj->userData1 = 1;
                         }
@@ -2944,42 +2971,42 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
         case ENEMY_SHARPCLAW_SH_OBJ:
         case ENEMY_SHARPCLAW_SO_OBJ:
         case ENEMY_BOSSGENERAL_OBJ:
-            sharpClawInit((int)obj, state);
+            sharpClawInit(obj, state);
             break;
         case ENEMY_GUARDCLAW_OBJ:
         case 641:
             guardClaw_init(obj, state);
             break;
         case ENEMY_GCROBOTPATROL_OBJ:
-            gcRobotPatrol_init(obj, (int)state);
+            gcRobotPatrol_init(obj, state);
             break;
         case ENEMY_MIKALADON_OBJ:
             mikaladon_init(obj, (EnemyState*)state);
             break;
         case ENEMY_VAMBAT_OBJ:
         case ENEMY_FIREBAT_OBJ:
-            vambat_init(obj, (int)state);
+            vambat_init(obj, state);
             break;
         case ENEMY_KOOSHY_OBJ:
-            kooshy_init((int)obj, (int)state);
+            kooshy_init(obj, state);
             break;
         case ENEMY_WEEVIL_OBJ:
-            weevil_init((int)obj, state);
+            weevil_init(obj, state);
             break;
         case ENEMY_PINPON_OBJ:
             pinPon_init(obj, state);
             break;
         case ENEMY_RACHNOP_OBJ:
-            rachnopInit((int)obj, (int)state);
+            rachnopInit(obj, state);
             break;
         case ENEMY_SPITTINGEBA_OBJ:
-            spittingEbaInit((int)obj, (int)state);
+            spittingEbaInit(obj, state);
             break;
         case ENEMY_WB_OBJ:
-            wbInit((int)obj, (int)state);
+            wbInit(obj, state);
             break;
         case ENEMY_MUTATEDEBA_OBJ:
-            mutatedEbaInit((u32)obj, (int)state);
+            mutatedEbaInit(obj, state);
             break;
         case ENEMY_WHIRLPOOL_OBJ:
             baddie_initWhirlpoolState((int*)obj, (EnemyState*)state);
@@ -2992,7 +3019,7 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
             hoodedZyck_init(obj, (struct EnemyState*)state);
             break;
         case ENEMY_BATTLEDROID_OBJ:
-            battleDroidInit((int)obj, (char*)state);
+            battleDroidInit(obj, (char*)state);
             break;
         case ENEMY_FIRECRAWLER_OBJ:
         case ENEMY_REDEYE_OBJ:
@@ -3004,11 +3031,11 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
             hagabonMK2_init(obj, (struct EnemyState*)state);
             break;
         default:
-            battleDroidInit((int)obj, (char*)state);
+            battleDroidInit(obj, (char*)state);
             break;
         }
         ((EnemyState*)state)->max = ((EnemyState*)state)->current;
-        if (((EnemyPlacement*)setup)->unk34 != 0)
+        if (unk34 != 0)
         {
             ((EnemyState*)state)->flags2E4 = ((EnemyState*)state)->flags2E4 & -39;
         }
@@ -3017,32 +3044,35 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
         ((EnemyState*)state)->actionId = 2;
         if (*(void**)state == NULL)
         {
-            *(int*)state = (int)mmAlloc(264, 26, 0);
+            *(void**)state = mmAlloc(sizeof(RomCurveWalker), 26, 0);
         }
         if (*(void**)state != NULL)
         {
-            memset(*(void**)state, 0, 264);
+            memset(*(void**)state, 0, sizeof(RomCurveWalker));
         }
-        if ((*gRomCurveInterface)
-                ->initCurve(*(void**)state, (void*)obj, ((EnemyState*)state)->sightRange, (int*)&lbl_803DBC58, -1) == 0)
         {
-            ((EnemyState*)state)->controlFlags |= BADDIE_CONTROL_PATH_FOLLOW;
+            int icr = (*gRomCurveInterface)
+                ->initCurve(*(void**)state, (void*)obj, ((EnemyState*)state)->sightRange, (int*)&lbl_803DBC58, -1);
+            if (icr == 0)
+            {
+                ((EnemyState*)state)->controlFlags |= BADDIE_CONTROL_PATH_FOLLOW;
+            }
         }
-        (*gPathControlInterface)->init(state + 4, 0, 422, 1);
+        (*gPathControlInterface)->init(&((EnemyState*)state)->flags, 0, 422, 1);
         if ((((EnemyState*)state)->flags2E4 & 8) != 0)
         {
-            (*gPathControlInterface)->setLocalPointCollision(state + 4, 1, lbl_8031DBE4, &lbl_803DBC64, 4);
+            (*gPathControlInterface)->setLocalPointCollision(&((EnemyState*)state)->flags, 1, lbl_8031DBE4, &lbl_803DBC64, 4);
         }
         if ((((EnemyState*)state)->flags2E4 & 4) != 0)
         {
-            (*gPathControlInterface)->setup(state + 4, 1, lbl_8031DBD8, &lbl_803DBC60, &lbl_803DBC68);
+            (*gPathControlInterface)->setup(&((EnemyState*)state)->flags, 1, lbl_8031DBD8, &lbl_803DBC60, &lbl_803DBC68);
         }
-        (*gPathControlInterface)->attachObject(obj, state + 4);
+        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->flags);
         if ((((EnemyState*)state)->flags2E4 & 0xc) != 0)
         {
             ((EnemyState*)state)->physicsActive = 1;
         }
-        if ((((EnemyState*)state)->flags2E4 & 0x8000022) != 0 || ((EnemyPlacement*)setup)->unk34 != 0 ||
+        if ((((EnemyState*)state)->flags2E4 & 0x8000022) != 0 || unk34 != 0 ||
             obj->anim.romDefNo == ENEMY_VAMBAT_OBJ || obj->anim.romDefNo == ENEMY_FIREBAT_OBJ)
         {
             ((EnemyState*)state)->flags |= 0x40000;

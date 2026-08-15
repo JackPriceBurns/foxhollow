@@ -181,7 +181,7 @@ int trackSweepCircleAgainstLines(f32* startPos, f32* endPos, f32 radius, int fla
 
 extern u8 gTrackGridOrigin[0x104];
 
-TrackBlockDescriptor gTrackBlockDescriptors[20];
+TrackBlockDescriptor gTrackBlockDescriptors[21];
 
 u32 trackGetPackedSurfaceType(int* obj);
 
@@ -2734,18 +2734,21 @@ TrackTriangle* trackBuildModelTriangles(TrackTriangle* cur, TrackBlockDescriptor
             for (j = 0, tw = twn, vout = (u8*)cur; j < 3; j++)
             {
                 s16* v = ObjModel_GetBaseVertexCoords((ModelFileHeader*)hdr, *tw);
+                s16 vx0 = fhReadBES16(v);
+                s16 vy0 = fhReadBES16(v + 1);
+                s16 vz0 = fhReadBES16(v + 2);
                 f32 fx, fy, fz;
                 if (hdr->flags & 0x800)
                 {
-                    fx = v[0] * scale;
-                    fy = v[1] * scale;
-                    fz = v[2] * scale;
+                    fx = vx0 * scale;
+                    fy = vy0 * scale;
+                    fz = vz0 * scale;
                 }
                 else
                 {
-                    fx = v[0] * scale / 256.0f;
-                    fy = v[1] * scale / 256.0f;
-                    fz = v[2] * scale / 256.0f;
+                    fx = vx0 * scale / 256.0f;
+                    fy = vy0 * scale / 256.0f;
+                    fz = vz0 * scale / 256.0f;
                 }
                 if (fx > tMaxX)
                     tMaxX = fx;

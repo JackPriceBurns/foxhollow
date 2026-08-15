@@ -38,7 +38,7 @@ extern u32 gDll96EffectResourceData[sizeof(Dll96EffectResourceView) / sizeof(u32
 
 s16 dll_96_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll96EffectResourceData;
+    u8* resourceData = (u8*)gDll96EffectResourceData;
     GfxCmd* commands;
 
     if (mainGetBit(GAMEBIT_ITEM_SpellStone3_Got) != 0) {
@@ -136,7 +136,7 @@ s16 dll_96_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
         }
     }
     return (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDll96EffectResourceData, 0x18,
+        ->spawnEffect(&packet, 0, 0x15, (u8*)gDll96EffectResourceData, 0x18,
                       &resourceData[offsetof(Dll96EffectResourceView, triangles)], 0x89, 0);
 }
 

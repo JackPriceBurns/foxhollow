@@ -90,7 +90,7 @@ void CurveFish_update(GameObject* obj) {
 
     switch (state->mode) {
     case CURVEFISH_MODE_WAIT: {
-        f32 waitTime = CURVEFISH_FRAMES_PER_SECOND * (f32)(u32)placement->waitSeconds;
+        f32 waitTime = CURVEFISH_FRAMES_PER_SECOND * (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->waitSeconds));
         if (!(state->modeTimer >= waitTime)) {
             return;
         }

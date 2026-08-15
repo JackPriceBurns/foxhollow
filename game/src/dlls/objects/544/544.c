@@ -7,7 +7,7 @@
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/objanim_internal.h"
-#include "main/object_render_legacy.h"
+#include "main/object_render.h"
 #include "main/objfx.h"
 #include "game/objects/object_setup.h"
 #include "main/audio/sfx_play_api.h"
@@ -75,8 +75,8 @@ void vfpdoorswitch_updateExplodingVariant(GameObject* obj)
 
 int VFP_DoorSwitch_getExtraSize(void);
 int VFP_DoorSwitch_getObjectTypeId(void);
-void VFP_DoorSwitch_free(int obj);
-void VFP_DoorSwitch_render(int p1, int p2, int p3, int p4, int p5, s8 visible);
+void VFP_DoorSwitch_free(GameObject* obj);
+void VFP_DoorSwitch_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 visible);
 void VFP_DoorSwitch_hitDetect(void);
 void VFP_DoorSwitch_update(GameObject* obj);
 void VFP_DoorSwitch_init(GameObject* obj, VfpDoorSwitchPlacement* data);
@@ -93,12 +93,12 @@ int VFP_DoorSwitch_getObjectTypeId(void)
     return 0x0;
 }
 
-void VFP_DoorSwitch_free(int obj)
+void VFP_DoorSwitch_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2(obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
-void VFP_DoorSwitch_render(int p1, int p2, int p3, int p4, int p5, s8 visible)
+void VFP_DoorSwitch_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 visible)
 {
     objRenderModelAndHitVolumes(p1, p2, p3, p4, p5, 1.0f);
 }
@@ -133,8 +133,8 @@ void VFP_DoorSwitch_init(GameObject* obj, VfpDoorSwitchPlacement* data)
     VfpDoorSwitchState* state = obj->extra;
     obj->anim.rotX = (((s32)def->rotXByte) << 8);
     obj->anim.rotZ = (((s32)def->rotZByte) << 8);
-    obj->anim.rotY = def->rotY;
-    state->gameBitId = def->gameBitId;
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(def->rotY));
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitId));
     if (mainGetBit(state->gameBitId) != 0)
     {
         ObjAnim_SetMoveProgress((ObjAnimComponent*)obj, 1.0f);

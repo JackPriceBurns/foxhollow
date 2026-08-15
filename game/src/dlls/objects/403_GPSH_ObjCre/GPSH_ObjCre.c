@@ -129,7 +129,7 @@ void gpshObjCreator_init(GameObject* obj, const GPSHObjCreatorPlacement* placeme
     state = obj->extra;
     obj->anim.rotX = (s16)(placement->initialYaw << GPSH_OBJ_CREATOR_YAW_SHIFT);
     obj->userData2 = 0;
-    state->childTypeIndex = (u8)placement->childTypeIndex;
+    state->childTypeIndex = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->childTypeIndex));
     state->flags.childSpawned = 0;
     obj->anim.renderAlpha = GPSH_OBJ_CREATOR_FULL_ALPHA;
     obj->anim.alpha = GPSH_OBJ_CREATOR_FULL_ALPHA;

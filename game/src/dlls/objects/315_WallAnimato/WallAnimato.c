@@ -22,7 +22,7 @@
 u8 WallAnimator_getEnergyCost(GameObject* obj) {
     WallAnimatorPlacement* placement = (WallAnimatorPlacement*)obj->anim.placementData;
 
-    return (u8)placement->spawnRotZ;
+    return (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnRotZ));
 }
 
 u8 WallAnimator_isComplete(GameObject* obj) {
@@ -54,7 +54,7 @@ f32 WallAnimator_applyImpact(GameObject* obj, GameObject* target) {
         vecRotateZXY(&spawn.rotX, offset);
         offset[2] -= 25.0f;
         vecRotateZXY((void*)obj, offset);
-        spawn.rotZ = placement->spawnRotZ;
+        spawn.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnRotZ));
         spawn.rotX = obj->anim.rotX;
         spawn.posX = obj->anim.worldPosX + offset[0];
         spawn.posY = 15.0f + (obj->anim.worldPosY + offset[1]);
@@ -117,7 +117,7 @@ void WallAnimator_update(GameObject* obj) {
 
     if (state->timer >= WALL_ANIMATOR_DONE_TIMER) {
         state->complete = 1;
-        mainSetBits((int)placement->completionBit, 1);
+        mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionBit)), 1);
         Sfx_PlayFromObject(obj, SFXTRIG_menuups16k);
         return;
     }
@@ -143,10 +143,10 @@ void WallAnimator_init(GameObject* objAddress, WallAnimatorPlacement* placement)
     WallAnimatorState* state;
 
     state = objAddress->extra;
-    objAddress->anim.rotX = placement->initialRotX;
+    objAddress->anim.rotX = ObjAnim_ReadPlacementS16(&objAddress->anim, &(placement->initialRotX));
     objAddObjectType(objAddress, WALL_ANIMATOR_GROUP_CLIMBABLE);
     objAddObjectType(objAddress, WALL_ANIMATOR_GROUP_SECONDARY);
-    if (mainGetBit((int)placement->completionBit) != 0) {
+    if (mainGetBit((int)ObjAnim_ReadPlacementS16(&objAddress->anim, &(placement->completionBit))) != 0) {
         state->complete = 1;
         state->timer = WALL_ANIMATOR_DONE_TIMER;
     }

@@ -152,8 +152,8 @@ void DFP_Statue1_init(GameObject* obj, DfpStatue1MapData* mapData)
     obj->anim.rotX = yaw;
     obj->animEventCallback = dfpstatue1_SeqFn;
     state->effectPairCount = mapData->effectPairCount;
-    state->triggerSfxId = mapData->triggerSfxId;
-    state->loopSfxId = mapData->loopSfxId;
+    state->triggerSfxId = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->triggerSfxId));
+    state->loopSfxId = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->loopSfxId));
     if (mainGetBit((int)state->loopSfxId) != 0)
     {
         state->loopActive = 1;

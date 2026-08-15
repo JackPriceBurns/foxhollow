@@ -72,9 +72,11 @@ void WM_Column_update(GameObject* obj) {
                 if (candidate != obj && candidate->anim.romDefNo == WM_COLUMN_SCENE_MARKER_OBJECT_ID &&
                     Vec_distance(&obj->anim.worldPosX, &candidate->anim.worldPosX) < WM_COLUMN_SCENE_MARKER_DISTANCE) {
                     WMColumnPlacement* placement = (WMColumnPlacement*)objects[objectIndex]->anim.placementData;
+                    s16 occupiedGameBit = ObjAnim_ReadPlacementS16(
+                        &candidate->anim, &placement->occupiedGameBit);
 
-                    if (placement->occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
-                        mainSetBits(placement->occupiedGameBit, WM_COLUMN_GAME_BIT_CLEAR);
+                    if (occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
+                        mainSetBits(occupiedGameBit, WM_COLUMN_GAME_BIT_CLEAR);
                     }
                 }
             }
@@ -100,13 +102,15 @@ void WM_Column_update(GameObject* obj) {
                 if (candidate != obj && candidate->anim.romDefNo == WM_COLUMN_SCENE_MARKER_OBJECT_ID &&
                     Vec_distance(&obj->anim.worldPosX, &candidate->anim.worldPosX) < WM_COLUMN_SCENE_MARKER_DISTANCE) {
                     WMColumnPlacement* placement = (WMColumnPlacement*)objects[objectIndex]->anim.placementData;
+                    s16 occupiedGameBit = ObjAnim_ReadPlacementS16(
+                        &candidate->anim, &placement->occupiedGameBit);
 
                     if (obj->anim.romDefNo == (s8)placement->modelBankIndex + WM_COLUMN_OBJECT_ID_BASE) {
-                        if (placement->occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
-                            mainSetBits(placement->occupiedGameBit, WM_COLUMN_GAME_BIT_SET);
+                        if (occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
+                            mainSetBits(occupiedGameBit, WM_COLUMN_GAME_BIT_SET);
                         }
-                    } else if (placement->occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
-                        mainSetBits(placement->occupiedGameBit, WM_COLUMN_GAME_BIT_CLEAR);
+                    } else if (occupiedGameBit != WM_COLUMN_GAME_BIT_NONE) {
+                        mainSetBits(occupiedGameBit, WM_COLUMN_GAME_BIT_CLEAR);
                     }
                     obj->anim.localPosX = objects[objectIndex]->anim.localPosX;
                     obj->anim.localPosY = objects[objectIndex]->anim.localPosY;

@@ -88,7 +88,7 @@ void dimbarrier_update(GameObject* obj) {
         obj->anim.alpha = alpha;
         state->fadeTimer -= framesThisStep;
         if (state->fadeTimer <= 0) {
-            mainSetBits(placement->barrierGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->barrierGameBit)), 1);
             state->phase = DIM_BARRIER_PHASE_RESOLVED;
         }
         break;
@@ -106,7 +106,7 @@ void dimbarrier_init(GameObject* obj, const DimBarrierPlacement* placement) {
     state = obj->extra;
     state->triggerCountdown = DIM_BARRIER_INITIAL_TRIGGER_COUNTDOWN;
     state->phase = DIM_BARRIER_PHASE_ARMED;
-    if (mainGetBit(placement->barrierGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->barrierGameBit))) != 0) {
         ObjHitsPriorityState* hitState;
 
         state->triggerCountdown = 0;

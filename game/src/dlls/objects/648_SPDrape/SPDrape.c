@@ -187,10 +187,10 @@ void spdrape_init(GameObject* obj, SpdrapeObjectDef* def)
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
     obj->anim.rotX = (s16)((s32)def->facingByte << 8);
-    if (def->motionScaleNum != 0)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(def->motionScaleNum)) != 0)
     {
         obj->anim.rootMotionScale =
-            (f32)(s32)def->motionScaleNum / 32767.0f * 10.0f;
+            (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(def->motionScaleNum)) / 32767.0f * 10.0f;
     }
     state->animSpeed = 0.0072f;
     state->planeNormalX = mathSinf(SP_DRAPE_PI * (f32)(s32)obj->anim.rotX / 32768.0f);

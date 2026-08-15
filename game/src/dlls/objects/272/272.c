@@ -76,9 +76,9 @@ int Door_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpdate)
         }
     }
     if (state->phase == DOOR_PHASE_OPEN) {
-        closeRequested = mainGetBit(placement->closeRequestGameBit);
+        closeRequested = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeRequestGameBit)));
         closeReady = 0;
-        if (placement->closeReadyGameBit == DOOR_NO_GAME_BIT || mainGetBit(placement->closeReadyGameBit) != 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeReadyGameBit)) == DOOR_NO_GAME_BIT || mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeReadyGameBit))) != 0) {
             closeReady = 1;
         }
         if (closeRequested != 0 && (state->closeFlags & DOOR_CLOSE_FLAG_REQUESTED) == 0) {
@@ -100,7 +100,7 @@ int Door_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpdate)
             }
         }
     } else if (state->phase == DOOR_PHASE_CLOSED) {
-        if (mainGetBit(placement->closeRequestGameBit) == 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeRequestGameBit))) == 0) {
             state->phase = DOOR_PHASE_OPENING;
             if (state->movementSfx != 0) {
                 Sfx_PlayFromObject(obj, state->movementSfx);
@@ -111,8 +111,8 @@ int Door_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpdate)
         for (eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++) {
             if (animUpdate->eventIds[eventIndex] == DOOR_ANIM_EVENT_CLOSED) {
                 state->phase = DOOR_PHASE_CLOSED;
-                if (placement->closedLatchGameBit != DOOR_NO_GAME_BIT) {
-                    mainSetBits(placement->closedLatchGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)) != DOOR_NO_GAME_BIT) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)), 1);
                 }
                 if (state->movementSfx != 0 && Sfx_IsPlayingFromObject(obj, state->movementSfx) != 0) {
                     Sfx_StopFromObject(obj, state->movementSfx);
@@ -127,8 +127,8 @@ int Door_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpdate)
             if (animUpdate->eventIds[eventIndex] == DOOR_ANIM_EVENT_OPENED) {
                 state->phase = DOOR_PHASE_OPEN;
                 state->closeFlags = 0;
-                if (placement->closedLatchGameBit != DOOR_NO_GAME_BIT) {
-                    mainSetBits(placement->closedLatchGameBit, 0);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)) != DOOR_NO_GAME_BIT) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)), 0);
                 }
                 if (state->movementSfx != 0 && Sfx_IsPlayingFromObject(obj, state->movementSfx) != 0) {
                     Sfx_StopFromObject(obj, state->movementSfx);
@@ -164,10 +164,10 @@ void Door_update(GameObject* obj) {
     state = obj->extra;
     placement = (DoorPlacement*)obj->anim.placementData;
     if (state->initPending != 0) {
-        triggerId = placement->triggerSequenceId;
+        triggerId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerSequenceId));
         if (triggerId != 0 && state->phase != DOOR_PHASE_OPEN) {
             triggerArg = placement->triggerArg & DOOR_TRIGGER_ARG_MASK;
-            (*gObjectTriggerInterface)->preempt((int)obj, triggerId);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, triggerId);
         } else {
             triggerArg = DOOR_TRIGGER_ARG_NONE;
         }
@@ -190,16 +190,16 @@ void Door_init(GameObject* obj, DoorPlacement* placement) {
         obj->anim.rootMotionScale = DOOR_DEFAULT_ROOT_MOTION_SCALE;
     }
     obj->anim.rootMotionScale *= obj->anim.modelInstance->rootMotionScaleBase;
-    if (placement->closedLatchGameBit != DOOR_NO_GAME_BIT) {
-        state->phase = mainGetBit(placement->closedLatchGameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)) != DOOR_NO_GAME_BIT) {
+        state->phase = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closedLatchGameBit)));
     } else {
         state->phase = DOOR_PHASE_OPEN;
     }
     state->closeFlags = 0;
-    if (mainGetBit(placement->closeRequestGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeRequestGameBit))) != 0) {
         state->closeFlags |= DOOR_CLOSE_FLAG_REQUESTED;
     }
-    if (mainGetBit(placement->closeReadyGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->closeReadyGameBit))) != 0) {
         state->closeFlags |= DOOR_CLOSE_FLAG_READY;
     }
     switch (obj->anim.romDefNo) {

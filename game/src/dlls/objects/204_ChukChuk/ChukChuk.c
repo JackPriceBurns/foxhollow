@@ -204,14 +204,14 @@ void ChukChuk_update(GameObject* obj) {
 void ChukChuk_init(GameObject* obj, ChukChukPlacement* placement) {
     ChukChukState* state = obj->extra;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     if (state->gameBit != -1 && mainGetBit(state->gameBit) != 0) {
         ObjHits_DisableObject(obj);
         obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
         state->flags = (u8)(state->flags | CHUKCHUK_FLAG_DEAD);
     } else {
         state->triggerDistance = (u16)(placement->triggerDistanceScale << 3);
-        state->unk08 = placement->unk22;
+        state->unk08 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unk22));
         state->hitsLeft = placement->hitsLeft;
         state->arcHalfAngle = (u16)(placement->arcHalfAngleScale * 0xb6);
         state->attackChance = placement->attackChance;

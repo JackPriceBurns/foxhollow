@@ -38,9 +38,11 @@ void TexScroll2_applyMapTextureScroll(GameObject* obj, TexScroll2State* state) {
     int texWidthFixed, texHeightFixed;
     MapBlockData* block;
     int shaderIndex;
+    s16 textureTableIndex;
     TexScrollPlacement* placement;
 
     placement = (TexScrollPlacement*)obj->anim.placementData;
+    textureTableIndex = ObjAnim_ReadPlacementS16(&obj->anim, &placement->textureTableIndex);
     block = mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
     if (block == NULL) {
         state->needsApply = 1;
@@ -50,7 +52,7 @@ void TexScroll2_applyMapTextureScroll(GameObject* obj, TexScroll2State* state) {
     if (textureTable == NULL) {
         return;
     }
-    texture = getLoadedTexture(-textureTable[(s32)placement->textureTableIndex]);
+    texture = getLoadedTexture(-(s32)fhReadBE32(&textureTable[(s32)textureTableIndex]));
     if (texture == NULL) {
         return;
     }
@@ -148,7 +150,7 @@ void TexScroll2_init(GameObject* obj, TexScrollPlacement* placement, int loadFla
     if (loadFlags == 0) {
         TexScroll2_applyMapTextureScroll(obj, state);
     }
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
     state->previousGameBitValue = -1;
 }
 

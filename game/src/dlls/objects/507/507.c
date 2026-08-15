@@ -75,9 +75,9 @@ void dll507_init(GameObject* obj, const Dll1FBPlacementView* placement) {
     ObjMsg_AllocQueue(obj, DLL1FB_MESSAGE_QUEUE_CAPACITY);
     obj->animEventCallback = dll507_processAnimEvents;
     obj->anim.rotX = (s16)((s32)placement->rotationXHighByte << 8);
-    obj->anim.rotY = placement->rotationY;
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotationY));
     state->baseMove = placement->baseMove;
-    state->triggerMode = placement->triggerMode;
+    state->triggerMode = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerMode));
     ObjAnim_SetCurrentMove(obj, state->baseMove + DLL1FB_MOVE_GROUP_OFFSET, 0.0f, 0);
 }
 

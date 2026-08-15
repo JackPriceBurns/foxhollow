@@ -122,12 +122,12 @@ void LevelName_init(GameObject* obj, LevelNamePlacement* placement) {
 
     state = obj->extra;
     obj->animEventCallback = LevelName_SeqFn;
-    textDef = (GameTextDef*)gameTextGet(placement->textId);
+    textDef = (GameTextDef*)gameTextGet(ObjAnim_ReadPlacementS32(&obj->anim, &placement->textId));
     state->text = *textDef->strings;
     state->holdDuration = LEVELNAME_BANNER_HOLD_DURATION;
     state->textDef = textDef;
     state->triggerRadius = placement->triggerRadius;
-    state->enableGameBit = placement->enableGameBit;
+    state->enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
     state->phase = LEVELNAME_PHASE_WAIT;
     state->bannerY = 0;
     state->elapsedFrames = 0;

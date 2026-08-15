@@ -142,10 +142,10 @@ void WM_ObjCreator_update(GameObject* obj) {
     placement = (WMObjCreatorPlacementView*)obj->anim.placementData;
     state = obj->extra;
     if (Obj_IsLoadingLocked() != 0) {
-        switch (placement->spawnMode) {
+        switch (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnMode))) {
         /* Spawn one WM_Galleon at the placement, unless one is already alive. */
         case WMOBJCREATOR_MODE_GALLEON: {
-            u32* groupObjects;
+            GameObject** groupObjects;
             int objectIndex;
             state = NULL;
             if (obj->userData2 == 0) {
@@ -153,17 +153,17 @@ void WM_ObjCreator_update(GameObject* obj) {
                 if (mainGetBit(GAMEBIT_WM_Galleon_despawn) != 0) {
                     state = NULL;
                 }
-                groupObjects = (u32*)objGetAllOfType(3, &objectCount);
+                groupObjects = objGetAllOfType(3, &objectCount);
                 objectIndex = 0;
-                while (objectIndex < objectCount && (s8)(int)state != 0) {
-                    if (((GameObject*)*groupObjects)->anim.romDefNo == WM_GALLEON_OBJECT_ID) {
+                while (objectIndex < objectCount && state != NULL) {
+                    if ((*groupObjects)->anim.romDefNo == WM_GALLEON_OBJECT_ID) {
                         state = NULL;
                     }
                     groupObjects++;
                     objectIndex++;
                 }
             }
-            if ((s8)(int)state != 0) {
+            if (state != NULL) {
                 setup = Obj_AllocObjectSetup(sizeof(WMGalleonSetup), WM_GALLEON_OBJECT_ID);
                 setup->posX = placement->base.posX;
                 setup->posY = placement->base.posY;
@@ -356,8 +356,8 @@ void WM_ObjCreator_init(GameObject* obj, const WMObjCreatorPlacementView* placem
     WMObjCreatorState* state = obj->extra;
 
     obj->anim.rotX = (s16)((s32)placement->yaw << 8);
-    state->gameBit = placement->gameBit;
-    state->spawnPeriod = placement->spawnPeriod;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
+    state->spawnPeriod = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnPeriod));
     state->spawnTimer = state->spawnPeriod;
     state->spawnJitter = (s16)(s32)placement->spawnJitter;
 }

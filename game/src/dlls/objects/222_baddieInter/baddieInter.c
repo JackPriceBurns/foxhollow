@@ -66,22 +66,22 @@ void BaddieInterestP_hitDetect(GameObject* obj) {
 
 void BaddieInterestP_update(GameObject* obj) {
     BaddieInterestPPlacement* placement = (BaddieInterestPPlacement*)obj->anim.placementData;
+    s16 doneGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->doneGameBit);
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
 
-    if (((int)placement->enableGameBit == BADDIE_INTEREST_GAME_BIT_NONE ||
-         mainGetBit((int)placement->enableGameBit) != 0) &&
-        ((int)placement->doneGameBit == BADDIE_INTEREST_GAME_BIT_NONE ||
-         mainGetBit((int)placement->doneGameBit) == 0)) {
+    if (((int)enableGameBit == BADDIE_INTEREST_GAME_BIT_NONE || mainGetBit((int)enableGameBit) != 0) &&
+        ((int)doneGameBit == BADDIE_INTEREST_GAME_BIT_NONE || mainGetBit((int)doneGameBit) == 0)) {
         int objectCount;
-        u32* objects = (u32*)objGetAllOfType(BADDIE_INTEREST_OBJECT_GROUP, &objectCount);
+        GameObject** objects = objGetAllOfType(BADDIE_INTEREST_OBJECT_GROUP, &objectCount);
         if (objectCount > 0) {
-            u32 targetLinkId = (u32)(u16)placement->targetLinkIdHi << 16;
+            u32 targetLinkId = (u32)ObjAnim_ReadPlacementU16(&obj->anim, &placement->targetLinkIdHi) << 16;
             GameObject* candidate;
             u16 objectIndex;
             u8 foundTarget;
-            targetLinkId |= (u16)placement->targetLinkIdLo;
+            targetLinkId |= ObjAnim_ReadPlacementU16(&obj->anim, &placement->targetLinkIdLo);
             for (objectIndex = 0; objectIndex < objectCount; objectIndex++) {
                 BaddieInterestPPlacement* candidatePlacement;
-                candidate = (GameObject*)objects[objectIndex];
+                candidate = objects[objectIndex];
                 candidatePlacement = (BaddieInterestPPlacement*)candidate->anim.placementData;
                 if (candidatePlacement != NULL) {
                     foundTarget = 0;
@@ -105,9 +105,9 @@ void BaddieInterestP_update(GameObject* obj) {
                                 switch ((modeKind & BADDIE_INTEREST_SUN_MODE_MASK) >> BADDIE_INTEREST_SUN_MODE_SHIFT) {
                                 case BADDIE_INTEREST_SUN_MODE_UNCONDITIONAL: {
                                     kind = modeKind & BADDIE_INTEREST_REACTION_KIND_MASK;
-                                    target = (GameObject*)objects[objectIndex];
-                                    if ((int)placement->doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
-                                        mainSetBits((int)placement->doneGameBit, 1);
+                                    target = objects[objectIndex];
+                                    if ((int)doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
+                                        mainSetBits((int)doneGameBit, 1);
                                     }
                                     switch (target->anim.romDefNo) {
                                     case 0x11:
@@ -116,7 +116,7 @@ void BaddieInterestP_update(GameObject* obj) {
                                     case 0x5b8:
                                     case 0x5b9:
                                     case 0x5e1:
-                                        wispBaddieQueueNextEvent((int)target, kind);
+                                        wispBaddieQueueNextEvent(target, kind);
                                         break;
                                     }
                                     break;
@@ -127,9 +127,9 @@ void BaddieInterestP_update(GameObject* obj) {
                                         int kind;
                                         u8 modeKind = (u8)placement->modeKind;
                                         kind = modeKind & BADDIE_INTEREST_REACTION_KIND_MASK;
-                                        target = (GameObject*)objects[objectIndex];
-                                        if ((int)placement->doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
-                                            mainSetBits((int)placement->doneGameBit, 1);
+                                        target = objects[objectIndex];
+                                        if ((int)doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
+                                            mainSetBits((int)doneGameBit, 1);
                                         }
                                         switch (target->anim.romDefNo) {
                                         case 0x11:
@@ -138,7 +138,7 @@ void BaddieInterestP_update(GameObject* obj) {
                                         case 0x5b8:
                                         case 0x5b9:
                                         case 0x5e1:
-                                            wispBaddieQueueNextEvent((int)target, kind);
+                                            wispBaddieQueueNextEvent(target, kind);
                                             break;
                                         }
                                     }
@@ -149,9 +149,9 @@ void BaddieInterestP_update(GameObject* obj) {
                                         int kind;
                                         u8 modeKind = (u8)placement->modeKind;
                                         kind = modeKind & BADDIE_INTEREST_REACTION_KIND_MASK;
-                                        target = (GameObject*)objects[objectIndex];
-                                        if ((int)placement->doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
-                                            mainSetBits((int)placement->doneGameBit, 1);
+                                        target = objects[objectIndex];
+                                        if ((int)doneGameBit != BADDIE_INTEREST_GAME_BIT_NONE) {
+                                            mainSetBits((int)doneGameBit, 1);
                                         }
                                         switch (target->anim.romDefNo) {
                                         case 0x11:
@@ -160,7 +160,7 @@ void BaddieInterestP_update(GameObject* obj) {
                                         case 0x5b8:
                                         case 0x5b9:
                                         case 0x5e1:
-                                            wispBaddieQueueNextEvent((int)target, kind);
+                                            wispBaddieQueueNextEvent(target, kind);
                                             break;
                                         }
                                     }

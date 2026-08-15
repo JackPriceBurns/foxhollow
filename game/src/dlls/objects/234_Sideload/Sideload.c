@@ -20,7 +20,7 @@ void sideload_update(GameObject* obj) {
 
     placement = (SideloadPlacement*)obj->anim.placementData;
     if (Obj_IsLoadingLocked() != 0 && Obj_GetPlayerObject() != NULL && getTrickyObject() == NULL &&
-        mainGetBit(placement->armingGameBit) != 0) {
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armingGameBit))) != 0) {
         setup = Obj_AllocObjectSetup(sizeof(ObjPlacement), SIDELOAD_TRICKY_SEQ_ID);
         setup->loadFlags = 2;
         setup->mapActFlagsHi = 4;

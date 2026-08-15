@@ -189,6 +189,8 @@ void DFP_Lightni_init(GameObject* obj, DfpLightniMapData* mapData)
 {
     DfpLightniState* state;
     int randomValue;
+    s16 radiusX;
+    s16 radiusY;
 
     if (obj != 0)
     {
@@ -196,13 +198,15 @@ void DFP_Lightni_init(GameObject* obj, DfpLightniMapData* mapData)
         randomValue = randomGetRange(DFPLIGHTNI_RANDOM_TIMER_MIN, DFPLIGHTNI_RANDOM_TIMER_MAX);
         state->timer = randomValue;
         state->effectHandle = 0;
-        if (mapData->radiusX <= 0)
+        radiusX = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->radiusX);
+        radiusY = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->radiusY);
+        if (radiusX <= 0)
         {
-            mapData->radiusX = 1;
+            radiusX = 1;
         }
-        if (mapData->radiusY <= 0)
+        if (radiusY <= 0)
         {
-            mapData->radiusY = 1;
+            radiusY = 1;
         }
         randomValue = randomGetRange(DFPLIGHTNI_RANDOM_TIMER_MIN, DFPLIGHTNI_RANDOM_TIMER_MAX);
         {
@@ -210,11 +214,11 @@ void DFP_Lightni_init(GameObject* obj, DfpLightniMapData* mapData)
             triggerTime = DFPLIGHTNI_TRIGGER_TIME_BASE + triggerTime;
             state->triggerTime = triggerTime;
         }
-        state->radiusX = ((f32)(s32)mapData->radiusX / DFPLIGHTNI_RADIUS_NORM_DIVISOR) * DFPLIGHTNI_RADIUS_MAX;
-        state->radiusY = ((f32)(s32)mapData->radiusY / DFPLIGHTNI_RADIUS_NORM_DIVISOR) * DFPLIGHTNI_RADIUS_MAX;
+        state->radiusX = ((f32)(s32)radiusX / DFPLIGHTNI_RADIUS_NORM_DIVISOR) * DFPLIGHTNI_RADIUS_MAX;
+        state->radiusY = ((f32)(s32)radiusY / DFPLIGHTNI_RADIUS_NORM_DIVISOR) * DFPLIGHTNI_RADIUS_MAX;
         state->angleIndex = mapData->angleIndex;
         state->delayFrames = mapData->delayTicks * DFPLIGHTNI_EVENT_ACTIVE_EFFECT_FRAMES;
-        state->eventId = mapData->eventId;
+        state->eventId = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->eventId);
     }
     return;
 }

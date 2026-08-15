@@ -93,7 +93,7 @@
 
 extern f32 gDusterWallProbeOffsets[];
 
-void rachnopFindWallPlane(GameObject* obj, int state);
+void rachnopFindWallPlane(GameObject* obj, void* state);
 
 static inline int hoodedZyck_getAngleDelta(GameObject* obj, GameObject* target)
 {
@@ -111,7 +111,7 @@ static inline int hoodedZyck_getAngleDelta(GameObject* obj, GameObject* target)
     return d;
 }
 
-void fireflyLanternGetTargetAngleAndDistance(GameObject* obj, int state, u16* outAngle, float* outDistance)
+void fireflyLanternGetTargetAngleAndDistance(GameObject* obj, void* state, u16* outAngle, float* outDistance)
 {
     f32 targetPos[3];
     f32 tmpA[3];
@@ -134,14 +134,14 @@ void fireflyLanternGetTargetAngleAndDistance(GameObject* obj, int state, u16* ou
     vecA[1] = ((EnemyState*)state)->wallPlane.anchorY;
     vecA[2] = ((EnemyState*)state)->wallPlane.anchorZ;
     PSVECSubtract((Vec*)vecA, &obj->anim.localPos, (Vec*)tmpA);
-    d = PSVECDotProduct((Vec*)tmpA, (Vec*)(state + 0x344));
-    vecA[0] = *(f32*)(state + 0x344) * d + obj->anim.localPosX;
-    vecA[1] = *(f32*)(state + 0x348) * d + (objY = obj->anim.localPosY);
-    vecA[2] = *(f32*)(state + 0x34c) * d + obj->anim.localPosZ;
+    d = PSVECDotProduct((Vec*)tmpA, (Vec*)((EnemyState*)state)->wallPlane.normal);
+    vecA[0] = ((EnemyState*)state)->wallPlane.normal[0] * d + obj->anim.localPosX;
+    vecA[1] = ((EnemyState*)state)->wallPlane.normal[1] * d + (objY = obj->anim.localPosY);
+    vecA[2] = ((EnemyState*)state)->wallPlane.normal[2] * d + obj->anim.localPosZ;
     axisA[0] = 0.0f;
     axisA[1] = 1.0f;
     axisA[2] = 0.0f;
-    PSVECCrossProduct((Vec*)axisA, (Vec*)(state + 0x344), (Vec*)crossA);
+    PSVECCrossProduct((Vec*)axisA, (Vec*)((EnemyState*)state)->wallPlane.normal, (Vec*)crossA);
     PSVECNormalize((Vec*)crossA, (Vec*)crossA);
     if (crossA[0] != 0.0f)
     {
@@ -159,14 +159,14 @@ void fireflyLanternGetTargetAngleAndDistance(GameObject* obj, int state, u16* ou
     vecB[1] = ((EnemyState*)state)->wallPlane.anchorY;
     vecB[2] = ((EnemyState*)state)->wallPlane.anchorZ;
     PSVECSubtract((Vec*)vecB, (Vec*)targetPos, (Vec*)tmpB);
-    d = PSVECDotProduct((Vec*)tmpB, (Vec*)(state + 0x344));
-    vecB[0] = *(f32*)(state + 0x344) * d + targetPos[0];
-    vecB[1] = *(f32*)(state + 0x348) * d + (dy = targetPos[1]);
-    vecB[2] = *(f32*)(state + 0x34c) * d + targetPos[2];
+    d = PSVECDotProduct((Vec*)tmpB, (Vec*)((EnemyState*)state)->wallPlane.normal);
+    vecB[0] = ((EnemyState*)state)->wallPlane.normal[0] * d + targetPos[0];
+    vecB[1] = ((EnemyState*)state)->wallPlane.normal[1] * d + (dy = targetPos[1]);
+    vecB[2] = ((EnemyState*)state)->wallPlane.normal[2] * d + targetPos[2];
     axisB[0] = 0.0f;
     axisB[1] = 1.0f;
     axisB[2] = 0.0f;
-    PSVECCrossProduct((Vec*)axisB, (Vec*)(state + 0x344), (Vec*)crossB);
+    PSVECCrossProduct((Vec*)axisB, (Vec*)((EnemyState*)state)->wallPlane.normal, (Vec*)crossB);
     PSVECNormalize((Vec*)crossB, (Vec*)crossB);
     if (crossB[0] != 0.0f)
     {
@@ -196,7 +196,7 @@ void fireflyLanternGetTargetAngleAndDistance(GameObject* obj, int state, u16* ou
     *outDistance = sqrtf(dxDiff * dxDiff + dy * dy);
 }
 
-u32 fireflyLanternSteerTowardTarget(short* obj, int state, u32 turnTime, f32 maxDistance)
+u32 fireflyLanternSteerTowardTarget(short* obj, void* state, u32 turnTime, f32 maxDistance)
 {
     f32 moveTarget[3];
     f32 moveDelta[3];
@@ -374,7 +374,7 @@ void wallPlaneClampMoveTarget(float* outPos, WallPlaneState* plane, float latera
     outPos[2] = scale * plane->normal[2] + outPos[2];
 }
 
-void rachnopFindWallPlane(GameObject* obj, int state)
+void rachnopFindWallPlane(GameObject* obj, void* state)
 {
     u8 didHit;
     float* probeOffsets;
@@ -389,7 +389,7 @@ void rachnopFindWallPlane(GameObject* obj, int state)
     float bv[3];
     float sideAxis[3];
     float dv[3];
-    float hit[18];
+    TrackBBoxHit hit;
 
     didHit = 0;
     probeOffsets = gDusterWallProbeOffsets;
@@ -401,28 +401,28 @@ void rachnopFindWallPlane(GameObject* obj, int state)
         minv[0] = obj->anim.localPosX - probeOffsets[i * 2 + 0];
         minv[1] = obj->anim.localPosY;
         minv[2] = obj->anim.localPosZ - probeOffsets[i * 2 + 1];
-        didHit = trackGetLineIntersect(maxv, minv, 0.0f, 3, (TrackBBoxHit*)hit,
+        didHit = trackGetLineIntersect(maxv, minv, 0.0f, 3, &hit,
                                     obj, 5, 3, 0xff, 0);
     }
     if (didHit != 0)
     {
-        obj->anim.localPosX = (hit[17] - (15.0f)) * ((minv[0] - maxv[0]) / (50.0f)) + maxv[0];
-        obj->anim.localPosZ = (hit[17] - (15.0f)) * ((minv[2] - maxv[2]) / (50.0f)) + maxv[2];
-        ((EnemyState*)state)->wallPlane.normal[0] = hit[7];
-        ((EnemyState*)state)->wallPlane.normal[1] = hit[8];
-        ((EnemyState*)state)->wallPlane.normal[2] = hit[9];
-        ((EnemyState*)state)->wallPlane.normalW = hit[10];
-        ((EnemyState*)state)->wallPlane.anchorY = (hit[3] > hit[4]) ? hit[3] : hit[4];
-        ((EnemyState*)state)->wallPlane.boundMin = (hit[15] < hit[16]) ? hit[15] : hit[16];
+        obj->anim.localPosX = (hit.distance - (15.0f)) * ((minv[0] - maxv[0]) / (50.0f)) + maxv[0];
+        obj->anim.localPosZ = (hit.distance - (15.0f)) * ((minv[2] - maxv[2]) / (50.0f)) + maxv[2];
+        ((EnemyState*)state)->wallPlane.normal[0] = hit.normalX;
+        ((EnemyState*)state)->wallPlane.normal[1] = hit.normalY;
+        ((EnemyState*)state)->wallPlane.normal[2] = hit.normalZ;
+        ((EnemyState*)state)->wallPlane.normalW = hit.normalW;
+        ((EnemyState*)state)->wallPlane.anchorY = (hit.lineStartY > hit.lineEndY) ? hit.lineStartY : hit.lineEndY;
+        ((EnemyState*)state)->wallPlane.boundMin = (hit.upperY0 < hit.upperY1) ? hit.upperY0 : hit.upperY1;
         av[0] = 0.0f;
         av[1] = 1.0f;
         av[2] = 0.0f;
         PSVECCrossProduct((Vec*)av, (Vec*)(state + DUSTER_WALL_PLANE_OFFSET), (Vec*)sideAxis0);
         PSVECNormalize((Vec*)sideAxis0, (Vec*)sideAxis0);
-        ((EnemyState*)state)->wallPlane.anchorX = hit[1];
-        ((EnemyState*)state)->wallPlane.anchorZ = hit[5];
-        cv[0] = hit[2];
-        cv[2] = hit[6];
+        ((EnemyState*)state)->wallPlane.anchorX = hit.lineStartX;
+        ((EnemyState*)state)->wallPlane.anchorZ = hit.lineStartZ;
+        cv[0] = hit.lineEndX;
+        cv[2] = hit.lineEndZ;
         bv[0] = ((EnemyState*)state)->wallPlane.anchorX;
         bv[1] = ((EnemyState*)state)->wallPlane.anchorY;
         bv[2] = ((EnemyState*)state)->wallPlane.anchorZ;
@@ -470,7 +470,7 @@ void rachnopUpdateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, 
     return;
 }
 
-void rachnopUpdateIdle(GameObject* obj, int state)
+void rachnopUpdateIdle(GameObject* obj, void* state)
 {
     int cond;
 
@@ -488,13 +488,13 @@ void rachnopUpdateIdle(GameObject* obj, int state)
         if ((((EnemyState*)state)->controlFlags & BADDIE_CONTROL_SEQUENCE_DRIVEN) != 0)
         {
             Sfx_PlayFromObject(obj, SFXTRIG_id_253);
-            Baddie_SetMove((int)obj, state, 2, 1.0f, 0, 0);
+            Baddie_SetMove(obj, state, 2, 1.0f, 0, 0);
         }
     }
     return;
 }
 
-void rachnopUpdateApproach(GameObject* obj, int state)
+void rachnopUpdateApproach(GameObject* obj, void* state)
 {
     int cond;
 
@@ -508,7 +508,7 @@ void rachnopUpdateApproach(GameObject* obj, int state)
         fireflyLanternSteerTowardTarget((short*)obj, state, 0x19, (double)(0.5f));
         if ((((EnemyState*)state)->controlFlags & BADDIE_CONTROL_SEQUENCE_DRIVEN) != 0)
         {
-            Baddie_SetMove((int)obj, state, 0, (0.5f), 0, 0);
+            Baddie_SetMove(obj, state, 0, (0.5f), 0, 0);
             Sfx_PlayFromObject(obj, SFXTRIG_id_252);
         }
     }
@@ -519,7 +519,7 @@ void rachnopUpdateApproach(GameObject* obj, int state)
     return;
 }
 
-void rachnopUpdateAttack(GameObject* obj, int state)
+void rachnopUpdateAttack(GameObject* obj, void* state)
 {
     short move;
     int cond;
@@ -550,11 +550,11 @@ void rachnopUpdateAttack(GameObject* obj, int state)
             if (outIds[0] < 0x5dc)
             {
                 Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_251);
-                Baddie_SetMove((int)obj, state, 1, 0.5f, 0, 0);
+                Baddie_SetMove(obj, state, 1, 0.5f, 0, 0);
             }
             else
             {
-                Baddie_SetMove((int)obj, state, 3, 0.5f, 0, 0);
+                Baddie_SetMove(obj, state, 3, 0.5f, 0, 0);
             }
         }
     }
@@ -565,7 +565,7 @@ void rachnopUpdateAttack(GameObject* obj, int state)
     return;
 }
 
-void rachnopInit(u32 unused, int state)
+void rachnopInit(GameObject* unused, void* state)
 {
     float fa;
     float fb;

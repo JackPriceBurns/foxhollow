@@ -176,8 +176,10 @@ u8 gSHthorntailRootControlMode3Locomotion8ImpactSfxTable[] = {1, 0x40};
 #define PLAYER_POS_OFFSET                     offsetof(GameObject, anim.worldPosX)
 #define SHTHORNTAIL_PLACEMENT(obj)            ((SHthorntailPlacement*)(obj)->anim.placementData)
 
-static inline s16 SHthorntail_getLinkedGameBit(const SHthorntailPlacement* placement) {
-    return *(const s16*)&placement->controlMode;
+static inline s16 SHthorntail_getLinkedGameBit(const GameObject* obj) {
+    const SHthorntailPlacement* placement = SHTHORNTAIL_PLACEMENT(obj);
+
+    return ObjAnim_ReadPlacementS16(&obj->anim, &placement->controlMode);
 }
 
 int SHthorntail_HasNearbyPendingEventObject(GameObject* obj) {
@@ -209,7 +211,7 @@ int SHthorntail_HasNearbyPendingEventObject(GameObject* obj) {
             enemy_setTrackedObj(objects[index], obj);
             if ((vec3f_distanceSquared(&objects[index]->anim.worldPosX, &obj->anim.worldPosX) <
                  SHTHORNTAIL_LINKED_EVENT_DISTANCE_SQ) &&
-                (mainGetBit(SHthorntail_getLinkedGameBit(SHTHORNTAIL_PLACEMENT(objects[index]))) == 0u)) {
+                (mainGetBit(SHthorntail_getLinkedGameBit(objects[index])) == 0u)) {
                 linkedEventPending = 1;
             }
             matchCount++;
@@ -696,6 +698,41 @@ typedef struct SHthorntailTailSwingEffectScratch {
 #define SHTHORNTAIL_STATE_TRIGGER0_SFX(tables)     ((u16*)((tables) + SHTHORNTAIL_STATE_TRIGGER0_SFX_OFFSET))
 #define SHTHORNTAIL_STATE_TRIGGER7_SFX(tables)     ((u8*)((tables) + SHTHORNTAIL_STATE_TRIGGER7_SFX_OFFSET))
 
+static void SHthorntail_normalizePackedTables(void) {
+#ifdef TARGET_PC
+    static u8 normalized;
+    u8* tables;
+    ObjHitReactEntry* hitEntries;
+    int i;
+
+    if (normalized != 0) {
+        return;
+    }
+    tables = (u8*)&gSHthorntailDataTables;
+    hitEntries = SHTHORNTAIL_NORMAL_HIT_REACT_ENTRIES(tables);
+    for (i = 0; i < SHTHORNTAIL_HIT_REACT_ENTRY_COUNT * 2; i++) {
+        hitEntries[i].primaryHitSfxId = fhReadBES16(&hitEntries[i].primaryHitSfxId);
+        hitEntries[i].secondaryHitSfxId = fhReadBES16(&hitEntries[i].secondaryHitSfxId);
+        hitEntries[i].reactionMoveId = fhReadBES16(&hitEntries[i].reactionMoveId);
+        hitEntries[i].unk06 = fhReadBES16(&hitEntries[i].unk06);
+        hitEntries[i].reactionStepScale = fhReadBEF32(&hitEntries[i].reactionStepScale);
+    }
+    for (i = 0; i < SHTHORNTAIL_STATE_MOVE_ID_COUNT; i++) {
+        s16* moveId = &SHTHORNTAIL_STATE_MOVE_IDS(tables)[i];
+        *moveId = fhReadBES16(moveId);
+    }
+    for (i = 0; i < SHTHORNTAIL_STATE_STEP_SCALE_COUNT; i++) {
+        f32* stepScale = &SHTHORNTAIL_STATE_MOVE_STEP_SCALES(tables)[i];
+        *stepScale = fhReadBEF32(stepScale);
+    }
+    for (i = 0; i < SHTHORNTAIL_STATE_TRIGGER0_SFX_COUNT; i++) {
+        u16* sfxId = &SHTHORNTAIL_STATE_TRIGGER0_SFX(tables)[i];
+        *sfxId = fhReadBE16(sfxId);
+    }
+    normalized = 1;
+#endif
+}
+
 void SHthorntail_updateLevelControlMode1(GameObject* objectId, SHthorntailState* runtime, SHthorntailPlacement* placement) {
     GameObject* playerObj;
     int randomIdleWait;
@@ -892,7 +929,7 @@ void SHthorntail_free(GameObject* obj) {
 
     placement = (SHthorntailPlacement*)obj->anim.placementData;
     activeConfigToken = gSHthorntailActiveConfigToken;
-    if (activeConfigToken == placement->configToken) {
+    if (activeConfigToken == ObjAnim_ReadPlacementS32(&obj->anim, &(placement->configToken))) {
         gSHthorntailActiveConfigToken = SHTHORNTAIL_CONFIG_TOKEN_NONE;
     }
     objFreeObjectType(obj, SHTHORNTAIL_OBJECT_GROUP);
@@ -937,6 +974,7 @@ void SHthorntail_update(GameObject* obj) {
     ObjAnimEventList animEvents;
     SHthorntailTailSwingEffectScratch effectScratch;
 
+    SHthorntail_normalizePackedTables();
     stateTables = (u8*)&gSHthorntailDataTables;
     runtime = obj->extra;
     config = (SHthorntailPlacement*)(obj)->anim.placementData;
@@ -1106,6 +1144,7 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
     u8* moveScratch;
     SHthorntailPathParams pathParam;
 
+    SHthorntail_normalizePackedTables();
     runtime = obj->extra;
     pathParam = sSHthorntailPathParams;
     obj->anim.rotX = (short)((int)placement->initialFacing << 8);
@@ -1130,7 +1169,7 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
         runtime->idleTimer = (f32)(s32)randomTime;
         break;
     }
-    obj->anim.rootMotionScale = obj->anim.modelInstance->rootMotionScaleBase * ((float)placement->scale / 1000.0f);
+    obj->anim.rootMotionScale = obj->anim.modelInstance->rootMotionScaleBase * ((float)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->scale)) / 1000.0f);
     model = Obj_GetActiveModel(obj);
     modelInitBones(obj->anim.rootMotionScale, model);
     moveScratch = runtime->moveScratch;

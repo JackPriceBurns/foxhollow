@@ -543,7 +543,7 @@ void bossdrakor_handleActionEvent(GameObject* obj, BossDrakorState* state, int a
 
 int bossdrakor_getExtraSize(void)
 {
-    return 0x1a4;
+    return sizeof(BossDrakorState);
 }
 
 void bossdrakor_free(GameObject* obj)
@@ -626,7 +626,7 @@ void bossdrakor_hitDetect(GameObject* obj)
             inner->flags198.b08 = 1;
             if (s->airMeterHandle < 0)
             {
-                mainSetBits(setup->defeatedGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->defeatedGameBit)), 1);
                 spawnExplosion((GameObject*)(int*)obj, 50.0f, 1, 1, 1, 1, 1, 1, 1);
                 Obj_RemoveFromUpdateList(obj);
                 (*gMapEventInterface)->setMapAct(BOSSDRAKOR_MAP_ARENA, 3);
@@ -711,7 +711,7 @@ void bossdrakor_update(GameObject* obj)
         obj->anim.localPosY = drakorState->curveWalker.posY;
         state->flags198.b20 = 1;
         drakorState->repeatCount = 0;
-        meterState = (BossDrakorState*)(int)obj->extra;
+        meterState = (BossDrakorState*)obj->extra;
         meterState->flags198.b20 = 1;
         (*gGameUIInterface)->initAirMeter(meterState->airMeterHandle, BOSSDRAKOR_AIRMETER_BGTEXTURE);
         (*gGameUIInterface)->runAirMeter(meterState->airMeterHandle);
@@ -954,19 +954,21 @@ void bossdrakor_init(GameObject* obj, BossdrakorPlacement* init)
 {
     BossDrakorState* inner = obj->extra;
     f32 fz;
+    s16 airMeterMax;
     BossDrakorState* s = (BossDrakorState*)inner;
     if (init->curveAdvanceStep == 0)
     {
         init->curveAdvanceStep = 0xa;
     }
-    if (init->airMeterMax <= 0)
+    airMeterMax = ObjAnim_ReadPlacementS16(&obj->anim, &init->airMeterMax);
+    if (airMeterMax <= 0)
     {
-        init->airMeterMax = 0x1e;
+        airMeterMax = 0x1e;
     }
     s->unk0C = 0;
     inner->flags198.b80 = 0;
     s->curveAdvanceStep = (f32)(u32)init->curveAdvanceStep;
-    s->airMeterHandle = init->airMeterMax;
+    s->airMeterHandle = airMeterMax;
     fz = 0.0f;
     s->attackTimerDuration = fz;
     s->moveState = 0;

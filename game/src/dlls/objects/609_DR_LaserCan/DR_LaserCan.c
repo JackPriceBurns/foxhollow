@@ -83,7 +83,7 @@ s16 gLaserCannonMaxAimStep = 0x400;
 
 typedef struct DrLaserCannonState
 {
-    int beamObject;
+    GameObject* beamObject;
     u8 pad04[DR_LASERCANNON_STATE_LAST_HIT_OBJECT - 0x04];
     GameObject* lastHitObject;
     f32 muzzleX;
@@ -282,7 +282,7 @@ GameObject* drlasercannon_getTrackedTarget(GameObject* obj, int* cooldownTimer)
 
 int DR_LaserCannon_getExtraSize(void)
 {
-    return DR_LASERCANNON_EXTRA_SIZE;
+    return sizeof(DrLaserCannonState);
 }
 
 int DR_LaserCannon_getObjectTypeId(void)
@@ -352,9 +352,9 @@ void DR_LaserCannon_hitDetect(GameObject* obj)
         {
             tricky = (int*)getTrickyObject();
             Sfx_PlayFromObject(obj, SFXTRIG_en_barrelblow11_4b6);
-            spawnExplosion((GameObject*)(int)obj, 50.0f, 0, 1, 1, 1, 0, 1, 0);
+            spawnExplosion((GameObject*)obj, 50.0f, 0, 1, 1, 1, 0, 1, 0);
             state->flags.b0 = 1;
-            mainSetBits(setup->destroyedGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->destroyedGameBit)), 1);
             if (tricky != 0)
             {
                 TRICKY_INTERFACE(tricky)->commandPlayBall((GameObject*)tricky, 0, NULL);
@@ -403,7 +403,7 @@ void DR_LaserCannon_update(GameObject* obj)
     }
     if (state->flags.b4 == 0)
     {
-        if (mainGetBit(setup->destroyedGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->destroyedGameBit))) != 0)
         {
             state->flags.b4 = 1;
             state->flags.b0 = 1;
@@ -422,7 +422,7 @@ void DR_LaserCannon_update(GameObject* obj)
     }
     if (state->flags.b6 != 0)
     {
-        if (mainGetBit(setup->warningOffGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->warningOffGameBit))) != 0)
         {
             state->flags.b6 = 0;
             if (state->warningObject != NULL)
@@ -449,7 +449,7 @@ void DR_LaserCannon_update(GameObject* obj)
     {
         hit = 1;
         dist = Vec_xzDistance(&target->anim.worldPosX, &(obj)->anim.worldPosX);
-        if (dist < setup->targetRange)
+        if (dist < ObjAnim_ReadPlacementS16(&obj->anim, &(setup->targetRange)))
         {
             hit = drlasercannon_aimAtTarget(obj, (GameObject*)target, &state->aim, 0x168, &state->muzzleX);
             if (hit != 0)
@@ -464,7 +464,7 @@ void DR_LaserCannon_update(GameObject* obj)
             v = (s16*)objFindJointPoseVector(obj, 0xb);
             v[0] = (s16)(v[0] >> 1);
         }
-        if (hit == 0 && dist < setup->targetRange)
+        if (hit == 0 && dist < ObjAnim_ReadPlacementS16(&obj->anim, &(setup->targetRange)))
         {
             if ((void*)target == (void*)player)
             {
@@ -476,7 +476,7 @@ void DR_LaserCannon_update(GameObject* obj)
                 state->hitExcludeType = DR_LASERCANNON_BEAM_OBJECT_TYPE;
                 if (timerCountDown(&state->reloadTimer) != 0)
                 {
-                    if (Obj_PredictInterceptPoint((GameObject*)target, setup->beamSpeed / 10.0f,
+                    if (Obj_PredictInterceptPoint((GameObject*)target, ObjAnim_ReadPlacementS16(&obj->anim, &(setup->beamSpeed)) / 10.0f,
                                                   (const Vec3f*)&state->muzzleX, (Vec3f*)hitPos) != 0)
                     {
                         cannonState = (obj)->extra;
@@ -508,10 +508,10 @@ void DR_LaserCannon_update(GameObject* obj)
                             inv[3] = hitPos[0];
                             inv[4] = hitPos[1];
                             inv[5] = hitPos[2];
-                            (*(void (**)(int, f32*, f32*, f32))(*(int*)((int)spawned->anim.dll) +
-                                                                0x24))((int)spawned, outv, inv,
-                                                                       setup->beamSpeed / 10.0f);
-                            state->beamObject = (int)spawned;
+                            ((void (*)(GameObject*, f32*, f32*, f32))spawned->anim.dll[0][9])(
+                                spawned, outv, inv,
+                                ObjAnim_ReadPlacementS16(&obj->anim, &(setup->beamSpeed)) / 10.0f);
+                            state->beamObject = spawned;
                             ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
                             state->animStepScale = 0.018f;
                             Sfx_PlayFromObject(obj, SFXTRIG_wp_cahit2_c);
@@ -588,19 +588,19 @@ void DR_LaserCannon_init(GameObject* obj, DrLaserCannonSetup* setup)
     f32 fz;
     state->health = DR_LASERCANNON_INITIAL_HEALTH;
     ObjHits_EnableObject(obj);
-    if (mainGetBit(setup->destroyedGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->destroyedGameBit))) != 0)
     {
         (obj)->anim.flags |= DR_LASERCANNON_HIDDEN_FLAG;
         Obj_RemoveFromUpdateList(obj);
         ObjHits_DisableObject(obj);
     }
     objAddObjectType(obj, DR_LASERCANNON_GROUP_ID);
-    state->beamObject = 0;
+    state->beamObject = NULL;
     state->flags.b3 = 0;
     (obj)->anim.rotX = (s16)(setup->initialYaw << 8);
     state->trickyCooldown = DR_LASERCANNON_TRICKY_COOLDOWN;
     state->animStepScale = 0.005f;
-    if (mainGetBit(setup->destroyedGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->destroyedGameBit))) != 0)
     {
         state->flags.b0 = 1;
         state->flags.b4 = 1;
@@ -614,7 +614,7 @@ void DR_LaserCannon_init(GameObject* obj, DrLaserCannonSetup* setup)
     (obj)->anim.velocityX = fz;
     (obj)->anim.velocityY = fz;
     (obj)->anim.velocityZ = fz;
-    if (mainGetBit(setup->destroyedGameBit) == 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->destroyedGameBit))) == 0)
     {
         state->warningObject = Shield_spawnOmniShield(obj, 15.0f);
         if (state->warningObject != NULL)

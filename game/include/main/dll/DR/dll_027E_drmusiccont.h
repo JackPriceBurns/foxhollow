@@ -39,7 +39,7 @@ STATIC_ASSERT(offsetof(DrmusiccontState, flags) == 0x8);
 
 int drmusiccont_getExtraSize(void);
 int drmusiccont_getObjectTypeId(void);
-void drmusiccont_free(int obj);
+void drmusiccont_free(GameObject* obj);
 void drmusiccont_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void drmusiccont_hitDetect(void);
 void drmusiccont_release(void);

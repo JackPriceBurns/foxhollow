@@ -86,7 +86,7 @@ void KT_RexFloorSwitch_update(GameObject* obj)
     vecA = gKTrexFloorSwitchLocalEdgeZ;
     vecB = gKTrexFloorSwitchLocalEdgeX;
     (obj)->userData2 = (obj)->userData1;
-    (obj)->userData1 = mainGetBit(placement->activeBit);
+    (obj)->userData1 = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeBit)));
     tex = objFindTexture(obj, 0, 0);
     if ((obj)->userData1 <= 1)
     {
@@ -253,10 +253,10 @@ void KT_RexFloorSwitch_update(GameObject* obj)
         {
             state->chargeTimer =
                 (f32)(u32)placement->chargeReload;
-            level = mainGetBit(placement->levelBit) & 0xff;
+            level = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit))) & 0xff;
             if (level < 0xf)
             {
-                mainSetBits(placement->levelBit, (u8)(level += 1));
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit)), (u8)(level += 1));
                 if ((u8)level == 0xf)
                 {
                     state->flags |= KTREXFLOORSWITCH_FLAG_CHARGED;
@@ -266,7 +266,7 @@ void KT_RexFloorSwitch_update(GameObject* obj)
             {
                 state->flags &= ~KTREXFLOORSWITCH_FLAG_CHARGED;
                 state->flags |= KTREXFLOORSWITCH_FLAG_CHARGE_LOCKED;
-                mainSetBits(placement->levelBit, 0);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit)), 0);
                 if (mainGetBit(GAMEBIT_DR_KTrexPathA) != 0)
                 {
                     mainSetBits(GAMEBIT_DR_KTrexPathA, 0);
@@ -299,7 +299,7 @@ void KT_RexFloorSwitch_update(GameObject* obj)
             {
                 state->flags &= ~KTREXFLOORSWITCH_FLAG_CHARGED;
                 state->flags |= KTREXFLOORSWITCH_FLAG_CHARGE_LOCKED;
-                mainSetBits(placement->levelBit, 0);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit)), 0);
                 if (mainGetBit(GAMEBIT_DR_KTrexPathA) != 0)
                 {
                     mainSetBits(GAMEBIT_DR_KTrexPathA, 0);
@@ -318,8 +318,8 @@ void KT_RexFloorSwitch_update(GameObject* obj)
     if ((state->flags & KTREXFLOORSWITCH_FLAG_CHARGE_LOCKED) == 0 &&
         state->prevGraceTimer != state->graceTimer)
     {
-        mainGetBit(placement->levelBit);
-        mainSetBits(placement->levelBit, 0);
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit)));
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->levelBit)), 0);
     }
     if ((s8)moved != 0 && gKTrexFloorSwitchPrevMoved == 0)
     {

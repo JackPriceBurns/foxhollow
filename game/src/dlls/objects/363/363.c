@@ -87,7 +87,7 @@ void MagicLight_init(GameObject* obj, const MagicLightPlacement* placement) {
     }
     state = obj->extra;
     state->lifetime = randomGetRange(0xC8, 0x258);
-    state->subtype = (s8)placement->subtype;
+    state->subtype = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->subtype));
     state->inRange = 0;
     if (obj->anim.romDefNo == MAGIC_LIGHT_SEQ_PROXIMITY) {
         switch (state->subtype) {

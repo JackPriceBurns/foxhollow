@@ -44,15 +44,19 @@ void dimmagicbridge_updateVertexWave(GameObject* obj, u8* stateBytes) {
     for (; vertexCount = modelFile->vertexCount, vertexIndex < vertexCount; vertexIndex++) {
         s16* currentVertex = ObjModel_GetCurrentVertexCoords(model, vertexIndex);
         s16* baseVertex = ObjModel_GetBaseVertexCoords(modelFile, vertexIndex);
-        int wavePosition = (u16)(int)(phaseScale * ((f32)(int)currentVertex[2] / state->minVertexY));
+        s16 currentZ = fhReadBES16(currentVertex + 2);
+        s16 baseX = fhReadBES16(baseVertex);
+        int wavePosition = (u16)(int)(phaseScale * ((f32)(int)currentZ / state->minVertexY));
+        s16 deformedX;
         wavePosition = wavePosition + state->wavePhase;
-        if (*baseVertex > 0) {
-            *currentVertex =
-                256.0f * mathSinf((3.1415927f * (f32)wavePosition) / 32768.0f) + (f32)(int)*baseVertex;
+        if (baseX > 0) {
+            deformedX =
+                (s16)(256.0f * mathSinf((3.1415927f * (f32)wavePosition) / 32768.0f) + (f32)(int)baseX);
         } else {
-            *currentVertex =
-                -(256.0f * mathSinf((3.1415927f * (f32)wavePosition) / 32768.0f) - (f32)(int)*baseVertex);
+            deformedX =
+                (s16)(-(256.0f * mathSinf((3.1415927f * (f32)wavePosition) / 32768.0f) - (f32)(int)baseX));
         }
+        *(u16*)currentVertex = fhSwap16((u16)deformedX);
     }
     DCStoreRange((void*)ObjModel_GetCurrentVertexCoords(model, 0), vertexCount * 6);
     (obj)->anim.alpha = state->segmentGlow[1];
@@ -187,7 +191,7 @@ void dimmagicbridge_init(GameObject* obj, const DimMagicBridgePlacement* placeme
     index = 0;
     while (index < modelFile->vertexCount) {
         vertex = ObjModel_GetCurrentVertexCoords(model, index);
-        vertexY = vertex[2];
+        vertexY = fhReadBES16(vertex + 2);
         if (vertexY < minVertexY) {
             minVertexY = vertexY;
         }

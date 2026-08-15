@@ -101,7 +101,7 @@ void drakorenergy_update(GameObject* o)
     switch (s->mode)
     {
     case DRAKORENERGY_MODE_IDLE:
-        if (mainGetBit(placement->gameBitId) == 1)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&o->anim, &(placement->gameBitId))) == 1)
         {
             s->mode = DRAKORENERGY_MODE_BOBBING;
         }
@@ -192,7 +192,7 @@ void drakorenergy_init(GameObject* obj, DrakorenergyPlacement* placement)
     obj->anim.velocityX = fz;
     obj->anim.velocityY = -4.0f;
     state->phase = randomGetRange(0, 0xffff);
-    if (mainGetBit(placement->gameBitId) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) != 0)
     {
         state->mode = DRAKORENERGY_MODE_COLLECTED;
     }

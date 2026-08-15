@@ -113,8 +113,8 @@ void dll_224_init(GameObject* obj, void* other) {
     u8 hitboxFlags;
 
     obj->anim.rotX = rotX;
-    extra->completeGameBit = def->completeGameBit;
-    extra->requiredGameBit = def->requiredGameBit;
+    extra->completeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(def->completeGameBit));
+    extra->requiredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(def->requiredGameBit));
     hitboxFlags = (*&obj->anim.resetHitboxMode | INTERACT_FLAG_DISABLED);
     obj->anim.resetHitboxFlags = hitboxFlags;
 }

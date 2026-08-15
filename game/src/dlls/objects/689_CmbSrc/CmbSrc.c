@@ -38,7 +38,7 @@ u8 cmbsrc_shouldDeactivate(GameObject* obj, CmbSrcState* sourceState, CmbSrcMapD
     u8 result = 0;
     f32 sunTime;
 
-    gameBit = fhReadBES16(&mapData->gameBit);
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->gameBit);
     if (sourceState->light != NULL && modelLightStruct_getActiveState(sourceState->light) != 2)
     {
         return 0;
@@ -65,7 +65,7 @@ u8 cmbsrc_shouldActivate(GameObject* obj, CmbSrcState* sourceState, CmbSrcMapDat
     u8 result = 0;
     f32 sunTime;
 
-    gameBit = fhReadBES16(&mapData->gameBit);
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->gameBit);
     if (sourceState->light != NULL && modelLightStruct_getActiveState(sourceState->light) != 0)
     {
         return 0;
@@ -149,7 +149,7 @@ u8 cmbsrc_cycleColor(GameObject* cmbsrc, CmbSrcState* sourceState)
 void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
 {
     CmbSrcMapData* setup = (CmbSrcMapData*)cmbsrc->anim.placementData;
-    f32 radius = fhReadBEF32(&setup->radius);
+    f32 radius = ObjAnim_ReadPlacementF32(&cmbsrc->anim, &setup->radius);
     int colorIdx = 0;
     int effectMode = 0;
     int subMode = 0;
@@ -347,7 +347,7 @@ void cmbsrc_free(GameObject* cmbsrc)
     CmbSrcState* state;
     state = cmbsrc->extra;
 
-    (*gExpgfxInterface)->freeSource((u32)cmbsrc);
+    (*gExpgfxInterface)->freeSource((uintptr_t)cmbsrc);
     if (state->light != NULL)
     {
         ModelLightStruct_free(state->light);
@@ -419,7 +419,7 @@ void cmbsrc_update(GameObject* cmbsrc)
 {
     CmbSrcState* state = cmbsrc->extra;
     CmbSrcMapData* setup = (CmbSrcMapData*)cmbsrc->anim.placementData;
-    s16 gameBit = fhReadBES16(&setup->gameBit);
+    s16 gameBit = ObjAnim_ReadPlacementS16(&cmbsrc->anim, &setup->gameBit);
 
     switch (state->active)
     {
@@ -501,7 +501,7 @@ void cmbsrc_init(GameObject* cmbsrc, CmbSrcMapData* mapData)
     u8* c1;
     u8* c0;
     CmbSrcState* state = cmbsrc->extra;
-    f32 radius = fhReadBEF32(&mapData->radius);
+    f32 radius = ObjAnim_ReadPlacementF32(&cmbsrc->anim, &mapData->radius);
     int lightVariant;
 
     switch (cmbsrc->anim.romDefNo)

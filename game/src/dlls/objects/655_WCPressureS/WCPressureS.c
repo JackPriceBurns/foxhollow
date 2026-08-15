@@ -66,7 +66,7 @@ int wcpressures_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
         obj->anim.localPosZ = setup->base.posX;
         obj->anim.localPosY = setup->base.posY;
         obj->anim.localPosZ = setup->base.posZ;
-        mainSetBits(setup->solvedBit, 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 0);
         animUpdate->curEventId = WCPRESSURES_CALLBACK_NONE;
     }
 
@@ -74,7 +74,7 @@ int wcpressures_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
 }
 
 int wcpressures_getExtraSize(void) {
-    return WCPRESSURES_EXTRA_SIZE;
+    return sizeof(WCPressuresState);
 }
 
 int wcpressures_getObjectTypeId(GameObject* obj) {
@@ -141,8 +141,8 @@ void wcpressures_update(GameObject* obj) {
     int contactIndex;
     f32 pressedY;
 
-    if (setup->activateBit > 0 && mainGetBit(setup->activateBit) == 0) {
-        logPrintf(sWCPressuresActivateFormat, setup->activateBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activateBit)) > 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activateBit))) == 0) {
+        logPrintf(sWCPressuresActivateFormat, ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activateBit)));
         return;
     }
     if ((state->pressTimer -= 1) < 0) {
@@ -163,7 +163,7 @@ void wcpressures_update(GameObject* obj) {
             state->pressTimer = WCPRESSURES_FOUND_TIMER;
         }
     }
-    pressedY = setup->y - (f32)(u32)setup->pressDepth;
+    pressedY = ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y)) - (f32)(u32)setup->pressDepth;
     switch (state->mode) {
     case WCPRESSURES_MODE_RAISED:
         if (state->pressTimer != 0 && obj->anim.localPosY >= pressedY) {
@@ -174,21 +174,21 @@ void wcpressures_update(GameObject* obj) {
     case WCPRESSURES_MODE_LOWERING:
         obj->anim.localPosY = obj->anim.localPosY - 0.05f * timeDelta;
         if (obj->anim.localPosY < pressedY) {
-            mainSetBits(setup->solvedBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
             state->mode = WCPRESSURES_MODE_PRESSED;
             obj->anim.localPosY = pressedY;
         }
         break;
     case WCPRESSURES_MODE_PRESSED:
-        if (mainGetBit(setup->solvedBit) == 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) == 0) {
             Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_c7);
             state->mode = WCPRESSURES_MODE_RISING;
         }
         break;
     case WCPRESSURES_MODE_RISING:
         obj->anim.localPosY = 0.05f * timeDelta + obj->anim.localPosY;
-        if (obj->anim.localPosY > setup->y) {
-            obj->anim.localPosY = setup->y;
+        if (obj->anim.localPosY > ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y))) {
+            obj->anim.localPosY = ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y));
             state->mode = WCPRESSURES_MODE_RAISED;
         }
         break;
@@ -221,7 +221,7 @@ void wcpressures_init(GameObject* obj, WCPressuresSetup* setup) {
         objAnim->bankIndex = 0;
     }
 
-    if (mainGetBit(setup->solvedBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) != 0) {
         obj->anim.localPosY = setup->base.posY - setup->pressDepth;
         state->pressTimer = WCPRESSURES_SOLVED_TIMER;
         state->mode = WCPRESSURES_MODE_PRESSED;

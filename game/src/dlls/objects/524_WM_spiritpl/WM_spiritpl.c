@@ -522,13 +522,13 @@ void WM_spiritplace_init(GameObject* obj, WmSpiritPlaceMapData* placement)
     state = obj->extra;
     obj->animEventCallback = WM_spiritplace_SeqFn;
     obj->anim.rotX = (s16)(placement->rotXByte << 8);
-    obj->anim.rotY = (s16)(placement->rotYAngle << 8);
-    state->heightOffset = (placement->heightOffset / 32767.0f) / 100.0f;
+    obj->anim.rotY = (s16)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotYAngle)) << 8);
+    state->heightOffset = (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->heightOffset)) / 32767.0f) / 100.0f;
     state->unk_04 = 0;
     state->unk_08 = 0;
     state->unk_0A = 0;
-    state->sequenceGameBit = placement->sequenceGameBit;
-    state->promptGameBit = placement->promptGameBit;
+    state->sequenceGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
+    state->promptGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->promptGameBit));
     state->setupParam = placement->setupParam;
     state->sequenceStarted = 0;
     obj->objectFlags =

@@ -263,9 +263,9 @@ void pathSearchExpandNode(PathSearch* search, PathSearchNode* node, int idx) {
                     s16 requiredBit;
                     s16 forbiddenBit;
                     mainGetBit(0x4e2);
-                    requiredBit = linked->requiredBit;
+                    requiredBit = fhReadBES16(&linked->requiredBit);
                     if (requiredBit == -1 || mainGetBit(requiredBit) != 0) {
-                        forbiddenBit = linked->forbiddenBit;
+                        forbiddenBit = fhReadBES16(&linked->forbiddenBit);
                         if (forbiddenBit == -1 || mainGetBit(forbiddenBit) == 0) {
                             if (!(linked->unk1A == 8 && point->unk1A == 9)) {
                                 f32 d = vec3f_distanceSquared(&point->x, &linked->x);

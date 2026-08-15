@@ -68,7 +68,7 @@ int dimlavasmash_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     state = (obj)->extra;
     def = (DimLavaSmashPlacement*)(obj)->anim.placementData;
     if (state->phase == DIM_LAVA_SMASH_PHASE_WAITING) {
-        if (mainGetBit(def->gateGameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &def->gateGameBit)) != 0) {
             hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
             hitState->flags |= OBJHITS_PRIORITY_STATE_ENABLED;
             if (ObjHits_GetPriorityHit(obj, &hit, 0, 0) != 0) {
@@ -86,7 +86,7 @@ int dimlavasmash_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
         }
     } else {
         if (animUpdate->curEventId == DIM_LAVA_SMASH_ANIM_COMMAND_COMPLETE) {
-            mainSetBits(def->triggerGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &def->triggerGameBit), 1);
             state->phase = DIM_LAVA_SMASH_PHASE_COMPLETE;
         }
     }
@@ -141,9 +141,9 @@ void dimlavasmash_init(GameObject* obj, DimLavaSmashPlacement* placement) {
     obj->anim.rotX = (s16)((s32)placement->rotationXByte << 8);
     obj->animEventCallback = dimlavasmash_SeqFn;
     state = obj->extra;
-    state->surfaceLayerId = (u8)placement->surfaceLayerId;
-    state->sequenceSlot = (s8)placement->sequenceSlot;
-    state->phase = mainGetBit(placement->triggerGameBit);
+    state->surfaceLayerId = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->surfaceLayerId);
+    state->sequenceSlot = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceSlot);
+    state->phase = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit));
     if (state->phase == DIM_LAVA_SMASH_PHASE_COMPLETE) {
         block = mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
         if (block != NULL) {

@@ -43,9 +43,10 @@ void DR_Chimmey_update(GameObject* obj)
 {
     DRChimmeySetup* setup = (DRChimmeySetup*)obj->anim.placementData;
     DRChimmeyState* state = obj->extra;
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableGameBit);
 
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    if (setup->enableGameBit != -1 && mainGetBit(setup->enableGameBit) == 0)
+    if (enableGameBit != -1 && mainGetBit(enableGameBit) == 0)
     {
         return;
     }
@@ -89,7 +90,7 @@ void DR_Chimmey_init(GameObject* obj, DRChimmeySetup* setup)
     obj->anim.rotX = (s16)(setup->initialRotX << 8);
     state = obj->extra;
     state->timerDuration = DRCHIMMEY_EVENT_DURATION;
-    state->completionGameBit = setup->completionGameBit;
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->completionGameBit);
     state->offeringsRemaining = DRCHIMMEY_INITIAL_OFFERING_COUNT;
     storeZeroToFloatParam(&state->timer);
 }

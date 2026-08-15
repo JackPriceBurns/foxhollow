@@ -90,7 +90,7 @@ void iceblast_update(GameObject* obj) {
 void iceblast_init(GameObject* obj, IceblastPlacement* placement) {
     IceblastState* state = obj->extra;
 
-    state->launchTimer = placement->initialLaunchTimer;
+    state->launchTimer = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialLaunchTimer));
     ObjHits_SetTargetMask(obj, ICEBLAST_TARGET_MASK);
 }
 

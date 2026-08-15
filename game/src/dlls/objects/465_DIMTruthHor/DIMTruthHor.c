@@ -115,8 +115,8 @@ void dimtruthhornice_update(GameObject* obj) {
 void dimtruthhornice_init(GameObject* obj, const DimTruthHornIcePlacement* placement) {
     DimTruthHornIceState* state = obj->extra;
 
-    state->hitsLeft = (s8)placement->hitCount;
-    state->gameBit = placement->gameBit;
+    state->hitsLeft = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->hitCount));
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
     {
         s16 gameBit = state->gameBit;

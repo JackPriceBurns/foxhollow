@@ -95,7 +95,8 @@ void PressureSwitch_update(GameObject* obj) {
     }
     state->flags.triggerObjectPresent = 0;
     if (obj->anim.hitboxTransformState != NULL && obj->anim.hitboxTransformState->contactObjectCount > 0) {
-        state->retriggerTimer = (s16)(placement->retriggerDelay * PRESSURE_SWITCH_RETRIGGER_FRAMES_PER_SEC);
+        state->retriggerTimer = (s16)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->retriggerDelay)) *
+                                      PRESSURE_SWITCH_RETRIGGER_FRAMES_PER_SEC);
         contactIndex = 0;
         contactHeightThreshold = PRESSURE_SWITCH_CONTACT_HEIGHT_THRESHOLD;
         for (; contactIndex < (contactState = obj->anim.hitboxTransformState)->contactObjectCount; contactIndex++) {
@@ -146,7 +147,7 @@ void PressureSwitch_update(GameObject* obj) {
             if (obj->anim.localPosY > targetY) {
                 obj->anim.localPosY = targetY;
             }
-            mainSetBits(placement->triggerGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 1);
             if (state->flags.triggerObjectPresent) {
                 mainSetBits(state->mapGameBit, 1);
             }
@@ -154,7 +155,7 @@ void PressureSwitch_update(GameObject* obj) {
             obj->anim.localPosY = -(PRESSURE_SWITCH_RISE_SPEED * timeDelta - currentY);
             if (obj->anim.localPosY < targetY) {
                 obj->anim.localPosY = targetY;
-                mainSetBits(placement->triggerGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 1);
                 mapGameBit = state->mapGameBit;
                 if (mapGameBit != -1) {
                     mainSetBits(mapGameBit, 1);
@@ -173,7 +174,7 @@ void PressureSwitch_update(GameObject* obj) {
         } else {
             isMoving = 1;
         }
-        mainSetBits(placement->triggerGameBit, 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 0);
         mapGameBit = state->mapGameBit;
         if (mapGameBit != -1) {
             if (!state->flags.mapBitLatched) {
@@ -201,7 +202,7 @@ void PressureSwitch_init(GameObject* obj, const PressureSwitchPlacementView* pla
     state = obj->extra;
     obj->animEventCallback = PressureSwitch_SeqFn;
     obj->anim.rotX = (s16)((s32)placement->rotationXHighByte << 8);
-    state->retriggerTimer = (s16)(placement->retriggerDelay * PRESSURE_SWITCH_RETRIGGER_FRAMES_PER_SEC);
+    state->retriggerTimer = (s16)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->retriggerDelay)) * PRESSURE_SWITCH_RETRIGGER_FRAMES_PER_SEC);
     state->chimeLatch = 0;
     ident = obj->anim.placement->ident;
     if (ident == 0x1F1A) {
@@ -216,7 +217,7 @@ void PressureSwitch_init(GameObject* obj, const PressureSwitchPlacementView* pla
             state->flags.mapBitLatched = 1;
         }
     }
-    if (mainGetBit(placement->triggerGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) {
         obj->anim.localPosY = placement->base.posY - PRESSURE_SWITCH_INITIAL_PRESS_DEPTH;
         state->holdTimer = PRESSURE_SWITCH_INITIAL_HOLD_FRAMES;
     }

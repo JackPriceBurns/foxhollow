@@ -45,11 +45,11 @@ void InvisibleHitSwitch_update(GameObject* obj) {
     placement = (InvisibleHitSwitchPlacement*)obj->anim.placementData;
     state = obj->extra;
     if (state->isOn != 0) {
-        if (mainGetBit((int)placement->gameBitId) == 0) {
+        if (mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) == 0) {
             state->isOn = 0;
         }
     } else {
-        if (mainGetBit((int)placement->gameBitId) != 0) {
+        if (mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) != 0) {
             state->isOn = 1;
         }
     }
@@ -58,7 +58,7 @@ void InvisibleHitSwitch_update(GameObject* obj) {
         state->autoResetTimerFrames = state->autoResetTimerFrames - (f32)(u32)framesThisStep;
         if (state->autoResetTimerFrames <= 0.0f) {
             state->autoResetTimerFrames = 0.0f;
-            mainSetBits((int)placement->gameBitId, 0);
+            mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)), 0);
         } else {
             return;
         }
@@ -71,7 +71,7 @@ void InvisibleHitSwitch_update(GameObject* obj) {
             if (state->hitPriority == hitPriority) {
                 state->delayedTriggerTimer = 0.0f;
                 state->isOn = 1;
-                mainSetBits((int)placement->gameBitId, 1);
+                mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)), 1);
             } else if (state->delayedTriggerTimer <= 0.0f) {
                 state->delayedTriggerTimer = 0.0f;
             }
@@ -86,18 +86,18 @@ void InvisibleHitSwitch_update(GameObject* obj) {
                 return;
             }
             state->isOn = 0;
-            mainSetBits((int)placement->gameBitId, 0);
+            mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)), 0);
         } else {
             if ((placement->mode & INVISIBLE_HIT_SWITCH_MODE_MASK) == INVISIBLE_HIT_SWITCH_MODE_DELAYED) {
                 state->delayedTriggerTimer = INVISIBLE_HIT_SWITCH_DELAY_START;
                 return;
             }
             state->isOn = 1;
-            mainSetBits((int)placement->gameBitId, 1);
+            mainSetBits((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)), 1);
             if ((placement->mode & INVISIBLE_HIT_SWITCH_MODE_MASK) == INVISIBLE_HIT_SWITCH_MODE_TIMED_RESET) {
                 state->autoResetTimerFrames =
                     INVISIBLE_HIT_SWITCH_FRAMES_PER_SECOND *
-                    (INVISIBLE_HIT_SWITCH_TENTHS_PER_SECOND * (f32)placement->autoResetDelayTenths);
+                    (INVISIBLE_HIT_SWITCH_TENTHS_PER_SECOND * (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->autoResetDelayTenths)));
             }
         }
     }
@@ -117,7 +117,7 @@ void InvisibleHitSwitch_init(GameObject* obj, InvisibleHitSwitchPlacement* place
     ObjHitbox_SetSphereRadius(&obj->anim,
                               (s16)((placement->radiusScale64 * (int)obj->anim.modelInstance->primaryHitboxRadius) /
                                     INVISIBLE_HIT_SWITCH_SCALE_UNITS));
-    state->isOn = mainGetBit(placement->gameBitId);
+    state->isOn = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)));
     switch ((placement->hitPriorityType & INVISIBLE_HIT_SWITCH_HIT_TYPE_MASK) >> INVISIBLE_HIT_SWITCH_HIT_TYPE_SHIFT) {
     case INVISIBLE_HIT_SWITCH_HIT_TYPE_DEFAULT:
     default:

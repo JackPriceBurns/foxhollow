@@ -56,7 +56,7 @@ STATIC_ASSERT(sizeof(DfpObjCreatorState) == 0x1C);
 
 int DFP_ObjCreator_getExtraSize(void)
 {
-    return 0x1c;
+    return sizeof(DfpObjCreatorState);
 }
 int DFP_ObjCreator_getObjectTypeId(void)
 {
@@ -96,7 +96,7 @@ void DFP_ObjCreator_update(GameObject* obj)
 
     if (Obj_IsLoadingLocked() != 0)
     {
-        switch (data->behaviorMode)
+        switch (ObjAnim_ReadPlacementS16(&obj->anim, &(data->behaviorMode)))
         {
         case 7:
             state->spawnTimer -= (s16)timeDelta;
@@ -126,8 +126,8 @@ void DFP_ObjCreator_init(GameObject* obj, DfpobjcreatorObjectDef* def)
 {
     DfpObjCreatorState* state = obj->extra;
     obj->anim.rotX = (s16)((s32)def->rotXByte << 8);
-    state->gameBit = def->gameBit;
-    state->spawnPeriod = def->spawnPeriod;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBit));
+    state->spawnPeriod = ObjAnim_ReadPlacementS16(&obj->anim, &(def->spawnPeriod));
     state->spawnTimer = state->spawnPeriod;
     state->unk12 = (s16)(s32)def->unk1F;
     state->unk14 = (s16)((s32)def->unk20 << 1);

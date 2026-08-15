@@ -227,7 +227,7 @@ void nwLevelControl_update(GameObject* obj) {
             }
             break;
         case NW_LEVEL_CONTROL_MODE_INIT_START:
-            (*gObjectTriggerInterface)->preempt((int)obj, 0x64a);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x64a);
             (*gObjectTriggerInterface)->runSequence(0, obj, 0x20);
             state->mode = NW_LEVEL_CONTROL_MODE_WALK_TABLE;
             mainSetBits(0xecd, 1);
@@ -289,7 +289,7 @@ void nwLevelControl_update(GameObject* obj) {
             }
             break;
         case NW_LEVEL_CONTROL_MODE_RESCUE_RETRIGGER:
-            (*gObjectTriggerInterface)->preempt((int)obj, 0x5a);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x5a);
             (*gObjectTriggerInterface)->runSequence(1, obj, 8);
             state->mode = NW_LEVEL_CONTROL_MODE_CLEANUP;
         }

@@ -31,7 +31,7 @@ extern u32 gDll79EffectResourceData[];
 
 s16 dll_79_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll79EffectResourceData;
+    u8* resourceData = (u8*)gDll79EffectResourceData;
     GfxCmd* commandCursor;
     GfxCmd* commands;
     s16 handle;
@@ -305,19 +305,19 @@ s16 dll_79_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
     if (variant == 0) {
         packet.modeByte = 0;
         handle = (*gModgfxInterface)
-                     ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll79EffectResourceData, 8,
+                     ->spawnEffect(&packet, 0, 9, (u8*)gDll79EffectResourceData, 8,
                                    &resourceData[offsetof(Dll79EffectResourceView, triangles)], 0x156, 0);
     } else if (variant == 1) {
         packet.modeByte = 0;
         packet.flags |= 4;
         handle = (*gModgfxInterface)
-                     ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll79EffectResourceData, 8,
+                     ->spawnEffect(&packet, 0, 9, (u8*)gDll79EffectResourceData, 8,
                                    &resourceData[offsetof(Dll79EffectResourceView, triangles)], 0x89, 0);
     } else if (variant == 2) {
         packet.modeByte = 0;
         packet.flags |= 4;
         handle = (*gModgfxInterface)
-                     ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll79EffectResourceData, 8,
+                     ->spawnEffect(&packet, 0, 9, (u8*)gDll79EffectResourceData, 8,
                                    &resourceData[offsetof(Dll79EffectResourceView, triangles)], 0x23b, 0);
     }
     return handle;

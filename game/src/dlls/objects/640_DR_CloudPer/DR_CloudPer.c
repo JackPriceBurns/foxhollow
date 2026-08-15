@@ -28,7 +28,7 @@ int DR_CloudPer_activate(GameObject* obj)
 {
     GameObject* cloud = obj;
     DrCloudPerSetup* setup = (DrCloudPerSetup*)cloud->anim.placementData;
-    if (mainGetBit(setup->gameBit) == 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->gameBit))) == 0)
     {
         return 0;
     }

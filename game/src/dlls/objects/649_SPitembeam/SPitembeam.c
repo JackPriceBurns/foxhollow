@@ -54,14 +54,14 @@ void spitembeam_update(GameObject* obj)
     searchRadius = 10000.0f;
     if (shop == NULL)
     {
-        obj->userData1 = (int)(int*)objGetNearestTypeTo(SPITEMBEAM_TARGET_OBJGROUP, obj, &searchRadius);
+        obj->userData1 = (intptr_t)objGetNearestTypeTo(SPITEMBEAM_TARGET_OBJGROUP, obj, &searchRadius);
     }
     else
     {
         if (SHOP_INTERFACE(shop)->isItemAvailable((GameObject*)shop,
-                                                  def->itemIndex) == 0 ||
+                                                  ObjAnim_ReadPlacementS16(&obj->anim, &(def->itemIndex))) == 0 ||
             SHOP_INTERFACE(shop)->isItemBought((GameObject*)shop,
-                                               def->itemIndex) != 0)
+                                               ObjAnim_ReadPlacementS16(&obj->anim, &(def->itemIndex))) != 0)
         {
             obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
             obj->objectFlags =
@@ -108,4 +108,3 @@ ObjectDescriptor gSPitembeamObjDescriptor = {
     (ObjectDescriptorCallback)spitembeam_getObjectTypeId,
     spitembeam_getExtraSize,
 };
-

@@ -6,7 +6,7 @@
  */
 #include "main/dll/dfp_types.h"
 #include "main/map_load.h"
-#include "main/object_render_legacy.h"
+#include "main/object_render.h"
 #include "main/gamebits.h"
 #include "game/objects/object_setup.h"
 #include "main/mapEventTypes.h"
@@ -100,7 +100,7 @@ void DFP_seqpoint_free(void)
 {
 }
 
-void DFP_seqpoint_render(int obj, int p2, int p3, int p4, int p5, s8 visible)
+void DFP_seqpoint_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
     s32 v = visible;
     if (v != 0)
@@ -211,14 +211,19 @@ void DFP_seqpoint_update(GameObject* obj)
 void DFP_seqpoint_init(GameObject* obj, u8* init)
 {
     DfpSeqPointState* sub;
+    DfpSeqPointPlacement* placement = (DfpSeqPointPlacement*)init;
     sub = obj->extra;
     obj->animEventCallback = DFP_seqpoint_SeqFn;
-    obj->anim.rotX = (s16)(((DfpSeqPointPlacement*)init)->spawnRot << 8);
-    sub->triggerRadius = (f32)(s32)((DfpSeqPointPlacement*)init)->triggerRadius;
-    sub->sequenceId = ((DfpSeqPointPlacement*)init)->sequenceId;
-    sub->triggerMode = ((DfpSeqPointPlacement*)init)->triggerMode;
-    sub->conditionGameBit = ((DfpSeqPointPlacement*)init)->conditionGameBit;
-    sub->disableGameBit = ((DfpSeqPointPlacement*)init)->disableGameBit;
+    obj->anim.rotX = (s16)(placement->spawnRot << 8);
+    sub->triggerRadius = (f32)(s32)ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->triggerRadius);
+    sub->sequenceId = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->sequenceId);
+    sub->triggerMode = placement->triggerMode;
+    sub->conditionGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->conditionGameBit);
+    sub->disableGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->disableGameBit);
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     sub->flags0F.b80 = 0;
 }

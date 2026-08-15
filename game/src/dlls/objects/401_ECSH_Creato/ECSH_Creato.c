@@ -132,7 +132,7 @@ void ecshCreator_init(GameObject* obj, const ECSHCreatorPlacement* placement) {
     state->spawnTimerRate = 0;
     obj->anim.renderAlpha = ECSH_CREATOR_FULL_ALPHA;
     obj->anim.alpha = ECSH_CREATOR_FULL_ALPHA;
-    state->triggerGameBit = placement->triggerGameBit;
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit));
     state->sharpClawHitPoints = ECSH_CREATOR_SHARPCLAW_HIT_POINTS_BASE;
     state->sharpClawHitPoints += placement->hitPointsOffset;
 }

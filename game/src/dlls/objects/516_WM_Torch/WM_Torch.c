@@ -45,7 +45,7 @@ void wmtorch_free(GameObject* obj, int mode) {
         Obj_FreeObject(state->linkedObject);
     }
     (*gModgfxInterface)->detachSource(obj);
-    (*gExpgfxInterface)->freeSource((u32)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
 }
 
 void wmtorch_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -76,13 +76,13 @@ void wmtorch_init(GameObject* obj, const WMTorchPlacementView* placement) {
     f32 flameParams[5]; /* flame params; only [4] is set, the rest raw on purpose */
 
     state = obj->extra;
-    if (placement->motionRate != 0) {
-        state->motionRate = (f32)(s32)placement->motionRate;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->motionRate)) != 0) {
+        state->motionRate = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->motionRate));
     } else {
         state->motionRate = WM_TORCH_DEFAULT_MOTION_RATE;
     }
-    if (placement->colorIndex != 0) {
-        state->colorIndex = placement->colorIndex;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->colorIndex)) != 0) {
+        state->colorIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->colorIndex));
     } else {
         state->colorIndex = WM_TORCH_DEFAULT_COLOR_INDEX;
     }

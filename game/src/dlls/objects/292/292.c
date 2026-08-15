@@ -45,7 +45,7 @@ void DeathGas_update(GameObject* obj) {
     u8 isActive;
     int activeGameBit;
 
-    activeGameBit = placement->activeGameBit;
+    activeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
     if (activeGameBit == -1) {
         isActive = 1;
     } else {

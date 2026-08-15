@@ -87,7 +87,7 @@ void WM_Planets_init(GameObject* obj, WmPlanetsMapData* mapData)
     WmPlanetsState* inner = obj->extra;
     f32 a = 0.1f * obj->anim.modelInstance->rootMotionScaleBase;
     obj->anim.rootMotionScale = a * (1.0f + (f32)(s32)mapData->scaleByte);
-    if (*(s16*)mapData != 0)
+    if (mapData->base.objectId != 0)
     {
         inner->orbitRadius = -(f32)(s32)(mapData->radiusByte << 4);
     }
@@ -102,7 +102,7 @@ void WM_Planets_init(GameObject* obj, WmPlanetsMapData* mapData)
     inner->baseX = obj->anim.localPosX;
     inner->baseY = obj->anim.localPosY;
     inner->baseZ = obj->anim.localPosZ;
-    Obj_SetActiveModelIndex(obj, mapData->modelIndex);
+    Obj_SetActiveModelIndex(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->modelIndex)));
     obj->anim.localPosZ = mapData->base.posZ + inner->orbitRadius;
 }
 

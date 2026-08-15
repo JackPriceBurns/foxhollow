@@ -54,7 +54,7 @@ void wmspiritset_init(GameObject* obj, WmSpiritSetMapData* mapData)
     {
         obj->anim.rootMotionScale = 0.0085f;
     }
-    state->visibilityGameBit = mapData->visibilityGameBit;
+    state->visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->visibilityGameBit));
 }
 
 void wmspiritset_release(void)

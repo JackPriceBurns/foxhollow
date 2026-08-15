@@ -88,8 +88,8 @@ void DFPSpPl_init(GameObject* obj, LaserObjectMapData* mapData)
     u32 completionGameBitSet;
 
     state = obj->extra;
-    state->completionGameBit = mapData->completionGameBit;
-    state->activationGameBit = mapData->activationGameBit;
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->completionGameBit));
+    state->activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->activationGameBit));
     state->completionLatched = 0;
     obj->anim.rotX = (s16)(mapData->yawByte << LASEROBJ_YAW_BYTE_SHIFT);
     completionGameBitSet = mainGetBit((int)state->completionGameBit);

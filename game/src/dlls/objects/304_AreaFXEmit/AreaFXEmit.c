@@ -117,7 +117,7 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
     s16 i;
     s16 rotation[3];
     u8 type;
-    void* resource;
+    ObjectInterfaceHandle resource;
     PartFxSpawnParams args;
 
     state = obj->extra;
@@ -145,22 +145,22 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
         resource = Resource_Acquire((state->effectId + AREAFXEMIT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                (*(void (**)(GameObject*, int, int, int, int, int))(*(int*)resource + 4))(obj, 0, 0, 1, -1, 0);
+                ((void (*)(GameObject*, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1, 0);
             }
         } else {
-            (*(void (**)(GameObject*, int, int, int, int, int))(*(int*)resource + 4))(obj, 0, 0, 1, -1, 0);
+            ((void (*)(GameObject*, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1, 0);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_OBJECT_RESOURCE_ALT) {
         resource = Resource_Acquire((state->effectId + AREAFXEMIT_ALT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                (*(void (**)(GameObject*, int, int, int, int, int, int))(*(int*)resource + 4))(
+                ((void (*)(GameObject*, int, int, int, int, int, int))resource[0][1])(
                     obj, 0, 0, 1, -1, state->effectId & 0xFF, 0);
             }
         } else {
-            (*(void (**)(GameObject*, int, int, int, int, int, int))(*(int*)resource + 4))(obj, 0, 0, 1, -1,
-                                                                                           state->effectId & 0xFF, 0);
+            ((void (*)(GameObject*, int, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1,
+                                                                                  state->effectId & 0xFF, 0);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_LOCAL_OBJECT) {
@@ -232,7 +232,7 @@ int AreaFXEmit_getObjectTypeId(void) {
 }
 
 void AreaFXEmit_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void AreaFXEmit_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -298,10 +298,10 @@ void AreaFXEmit_init(GameObject* obj, AreaFXEmitPlacement* placement) {
 
     state->triggerRadius = (f32)((s32)placement->triggerRadius << AREAFXEMIT_EXTENT_SHIFT);
     state->emitType = placement->emitType;
-    state->effectId = placement->effectId;
-    state->emitCount = placement->emitCount;
-    state->enableGameBit = placement->enableGameBit;
-    state->stopGameBit = placement->stopGameBit;
+    state->effectId = ObjAnim_ReadPlacementU16(&obj->anim, &placement->effectId);
+    state->emitCount = ObjAnim_ReadPlacementS16(&obj->anim, &placement->emitCount);
+    state->enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    state->stopGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->stopGameBit);
     state->suppressed = 0;
     state->extentX = (u16)(placement->extentX << AREAFXEMIT_EXTENT_SHIFT);
     state->extentZ = (u16)(placement->extentZ << AREAFXEMIT_EXTENT_SHIFT);

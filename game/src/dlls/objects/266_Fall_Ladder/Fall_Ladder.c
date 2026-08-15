@@ -113,9 +113,9 @@ void Fall_Ladders_init(GameObject* obj, FallLadderPlacement* placement) {
     FallLadderState* state = obj->extra;
 
     obj->anim.rotX = (s16)((s32)placement->rotXByte << FALL_LADDER_ROTATION_SHIFT);
-    state->triggerGameBit = placement->triggerGameBit;
-    state->baseGameBit = placement->baseGameBit;
-    state->initialHeightOffset = (f32)(s32)placement->initialHeightOffset;
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit));
+    state->baseGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->baseGameBit));
+    state->initialHeightOffset = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialHeightOffset));
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
     obj->animEventCallback = Fall_Ladders_SeqFn;
     obj->anim.localPosY = placement->base.posY + state->initialHeightOffset;

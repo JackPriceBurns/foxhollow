@@ -111,7 +111,7 @@ void dim2icefloe_init(GameObject* obj, Dim2IceFloePlacementView* placement) {
     Dim2IceFloeState* state = obj->extra;
 
     state->targetObjectId = placement->base.ident;
-    state->pathStep = placement->pathStep / DIM2_ICE_FLOE_PATH_STEP_SCALE;
+    state->pathStep = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pathStep)) / DIM2_ICE_FLOE_PATH_STEP_SCALE;
     state->yawJitter = (f32)(s32)randomGetRange(-0x1e, 0x1e);
     placement->base.ident = -1;
     obj->anim.bankIndex = randomGetRange(0, obj->anim.modelInstance->modelCount - 1);

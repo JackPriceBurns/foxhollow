@@ -18,7 +18,7 @@ s32 Checkpoint_buildControlPoints(CheckpointRouteEntry* checkpoint, s32 linkInde
 void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte);
 int Checkpoint_func09_ret_1(void);
 void Checkpoint_onGameLoop(void);
-u32 Checkpoint_getRouteRankItems(s32* p);
+uintptr_t Checkpoint_getRouteRankItems(s32* p);
 void Checkpoint_rewindRoute(CheckpointRouteState* o);
 void Checkpoint_queueRouteRankItem(u32 v);
 void Checkpoint_Remove(CheckpointRouteEntry* obj);
@@ -491,10 +491,10 @@ void Checkpoint_onGameLoop(void)
     gCheckpointRankItemPendingCount = 0;
 }
 
-u32 Checkpoint_getRouteRankItems(s32* p)
+uintptr_t Checkpoint_getRouteRankItems(s32* p)
 {
     *p = gCheckpointRankItemCount;
-    return (u32)gCheckpointRankItems;
+    return (uintptr_t)gCheckpointRankItems;
 }
 
 /* Object cursor written back by Checkpoint_advanceRoute: the sampled heading/pitch

@@ -137,7 +137,7 @@ void gunpowderBarrel_launchAtTarget(GameObject* obj, u8 usePlayerStrength) {
     state->motionFlags = state->motionFlags | GUNPOWDER_BARREL_MOTION_FLAG_IN_FLIGHT;
     if (state->configFlags.returnHome != 0) {
         placement = (GunpowderBarrelPlacement*)obj->anim.placement;
-        generatorLinkId = fhReadBES16(&placement->generatorLinkId);
+        generatorLinkId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->generatorLinkId);
         generator = NULL;
         if (generatorLinkId != 0) {
             generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
@@ -308,7 +308,7 @@ void gunpowderBarrel_triggerExplosion(GameObject* obj) {
             GunpowderBarrelPlacement* placement;
             s16 generatorLinkId;
             placement = (GunpowderBarrelPlacement*)obj->anim.placement;
-            generatorLinkId = fhReadBES16(&placement->generatorLinkId);
+            generatorLinkId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->generatorLinkId);
             generator = NULL;
             if (generatorLinkId != 0) {
                 generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
@@ -724,7 +724,7 @@ void gunpowderBarrel_update(GameObject* obj) {
                 gunpowderBarrel_setPlayerHeldState(obj, 0);
             }
             generator = 0;
-            generatorLinkId = fhReadBES16(&placement->generatorLinkId);
+            generatorLinkId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->generatorLinkId);
             if (generatorLinkId != 0) {
                 int generatorCount;
                 generators = objGetAllOfType(BARREL_GENERATOR_OBJECT_GROUP, &generatorCount);
@@ -866,7 +866,7 @@ void gunpowderBarrel_init(GameObject* obj, GunpowderBarrelPlacement* placement) 
         u8 configFlag;
         configFlag = (placement->disableRespawn >= 1) ? 0 : 1;
         state->configFlags.respawns = configFlag;
-        configFlag = (placement->returnHome == 0) ? 0 : 1;
+        configFlag = (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->returnHome)) == 0) ? 0 : 1;
         state->configFlags.returnHome = configFlag;
     }
     ObjHits_EnableObject(obj);

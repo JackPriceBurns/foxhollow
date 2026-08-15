@@ -55,7 +55,7 @@ int Vortex_getObjectTypeId(void)
 
 void Vortex_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void Vortex_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -99,11 +99,11 @@ void Vortex_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
         if (texture != NULL)
         {
             u8 reverse;
-            if (setup->reverseTextureScroll != 0)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->reverseTextureScroll)) != 0)
                 reverse = 1;
             else
                 reverse = 0;
-            if (setup->invertGameBit != -1 && mainGetBit(setup->invertGameBit) != 0)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit)) != -1 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit))) != 0)
             {
                 reverse = !reverse;
             }
@@ -129,7 +129,7 @@ void Vortex_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
         if (state->particleTimer <= VORTEX_ZERO && hudHidden == 0)
         {
             state->particleTimer = VORTEX_PARTICLE_INTERVAL;
-            particleArgs.scale = ((f32)setup->radiusParam / VORTEX_RADIUS_PARAM_SCALE) *
+            particleArgs.scale = ((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->radiusParam)) / VORTEX_RADIUS_PARAM_SCALE) *
                               (obj->anim.rootMotionScale * state->alpha);
             particleArgs.posY = VORTEX_ZERO;
             (*gPartfxInterface)->spawnObject((void*)obj, VORTEX_PARTFX_A, &particleArgs, 2, -1, NULL);
@@ -145,7 +145,7 @@ void Vortex_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
             obj->anim.rotZ = gVortexRotZTable[i];
             obj->anim.rotX = state->angles[i];
             state->angles[i] = state->angles[i] + dt * gVortexAngleSpeed835[i];
-            obj->anim.rootMotionScale = ((f32)setup->radiusParam / VORTEX_RADIUS_PARAM_SCALE) *
+            obj->anim.rootMotionScale = ((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->radiusParam)) / VORTEX_RADIUS_PARAM_SCALE) *
                                         (state->alpha * (state->radiusScale[i] * objScale));
             obj->anim.renderAlpha = state->alpha * (state->alphaScale[i] * (f32)(u32)objAlpha);
             model->bufferFlags = (u16)(model->bufferFlags & ~8);
@@ -247,18 +247,18 @@ void Vortex_update(GameObject* obj)
     u32 active;
 
     state->flags.active = 0;
-    if (setup->activeGameBit != -1)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activeGameBit)) != -1)
     {
-        state->flags.active = mainGetBit(setup->activeGameBit);
+        state->flags.active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activeGameBit)));
     }
 
     if (obj->anim.romDefNo == VORTEX_OBJ_SKYVORTC || obj->anim.romDefNo == VORTEX_OBJ_SKYVORTS)
     {
         if (state->flags.active != 0)
         {
-            if (setup->invertGameBit != -1)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit)) != -1)
             {
-                state->flags.active = !mainGetBit(setup->invertGameBit);
+                state->flags.active = !mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit)));
             }
         }
     }
@@ -299,9 +299,9 @@ void Vortex_init(GameObject* obj, VortexSetup* setup)
     u8 i;
 
     state->flags.active = 0;
-    if (setup->activeGameBit != -1)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activeGameBit)) != -1)
     {
-        state->flags.active = mainGetBit(setup->activeGameBit);
+        state->flags.active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activeGameBit)));
     }
     if (o->anim.romDefNo == VORTEX_OBJ_WNDLIFTS)
     {
@@ -340,9 +340,9 @@ void Vortex_init(GameObject* obj, VortexSetup* setup)
         }
         if (state->flags.active != 0)
         {
-            if (setup->invertGameBit != -1)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit)) != -1)
             {
-                state->flags.active = !mainGetBit(setup->invertGameBit);
+                state->flags.active = !mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->invertGameBit)));
             }
         }
     }

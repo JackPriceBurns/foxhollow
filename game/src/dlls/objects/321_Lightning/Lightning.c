@@ -53,20 +53,23 @@ void lightning_update(GameObject* obj) {
     int spawnLightning;
     LightningEffect* effect;
     u16 lifetime;
+    s16 enableGameBit;
     f32* start;
 
     state = obj->extra;
     objectData = (u8*)obj->anim.placementData;
-    if (((LightningPlacement*)objectData)->enableGameBit != -1) {
+    enableGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &((LightningPlacement*)objectData)->enableGameBit);
+    if (enableGameBit != -1) {
         if (state->flags.enabled) {
-            if (mainGetBit(((LightningPlacement*)objectData)->enableGameBit) == 0) {
+            if (mainGetBit(enableGameBit) == 0) {
                 state->flags.enabled = 0;
                 if (state->effect != 0) {
                     mm_free((void*)state->effect);
                     state->effect = 0;
                 }
             }
-        } else if (mainGetBit(((LightningPlacement*)objectData)->enableGameBit) != 0) {
+        } else if (mainGetBit(enableGameBit) != 0) {
             state->flags.enabled = 1;
         }
     }
@@ -153,7 +156,7 @@ void lightning_init(GameObject* obj, LightningPlacement* placement) {
     state->radiusY = (f32)(u32)placement->radiusY;
     state->lifetimeBase = placement->lifetimeBase;
     state->width = placement->width;
-    state->linkedIdent = placement->linkedIdent;
+    state->linkedIdent = ObjAnim_ReadPlacementS32(&obj->anim, &placement->linkedIdent);
 
     state->flags.enabled = (placement->flags & LIGHTNING_PLACEMENT_ENABLED) ? 1 : 0;
     state->flags.alternateStyle = (placement->flags & LIGHTNING_PLACEMENT_ALTERNATE_STYLE) ? 1 : 0;

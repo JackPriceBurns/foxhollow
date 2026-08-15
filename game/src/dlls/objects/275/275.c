@@ -90,11 +90,11 @@ static int SeqObj2_animEventCallback(GameObject* obj, int* unused, ObjSeqState* 
 
         switch (eventId) {
         case SEQ_OBJ2_ANIM_EVENT_CLEAR_REQUIRED_BIT:
-            mainSetBits(placement->requiredGameBit, SEQ_OBJ2_GAME_BIT_CLEAR);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)), SEQ_OBJ2_GAME_BIT_CLEAR);
             OSReport(sSeqObjNeedBitClearDuringSequenceFormat, placement->base.ident);
             break;
         case SEQ_OBJ2_ANIM_EVENT_SET_USED_BIT:
-            mainSetBits(placement->usedGameBit, SEQ_OBJ2_GAME_BIT_SET);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)), SEQ_OBJ2_GAME_BIT_SET);
             OSReport(sSeqObjDiagnosticFormats, placement->base.ident);
             break;
         }
@@ -133,39 +133,39 @@ void SeqObj2_update(GameObject* obj) {
 
     if ((state->flags & SEQ_OBJ2_STATE_PREEMPT_SEQUENCE) != 0) {
         if ((placement->flags & SEQ_OBJ2_FLAG_CLEAR_REQUIRED_BEFORE_PREEMPT) != 0) {
-            mainSetBits(placement->requiredGameBit, SEQ_OBJ2_GAME_BIT_CLEAR);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)), SEQ_OBJ2_GAME_BIT_CLEAR);
             OSReport(data->needBitClearBeforePreempt, placement->base.ident);
         }
         if ((placement->flags & SEQ_OBJ2_FLAG_SET_USED_BEFORE_PREEMPT) != 0) {
-            mainSetBits(placement->usedGameBit, SEQ_OBJ2_GAME_BIT_SET);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)), SEQ_OBJ2_GAME_BIT_SET);
             OSReport(data->usedBitSetBeforePreempt, placement->base.ident);
         }
-        OSReport(data->aboutToPreemptSequence, placement->base.ident, placement->sequenceParam);
-        (*gObjectTriggerInterface)->preempt((int)obj, placement->preemptSequenceId);
-        sequenceParam = placement->sequenceParam;
+        OSReport(data->aboutToPreemptSequence, placement->base.ident, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->sequenceParam)));
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->preemptSequenceId)));
+        sequenceParam = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->sequenceParam));
         (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, sequenceParam);
         state->flags = (u8)(state->flags & ~SEQ_OBJ2_STATE_PREEMPT_SEQUENCE);
     } else if ((state->flags & SEQ_OBJ2_STATE_SEQUENCE_FINISHED) != 0) {
         if ((placement->flags & SEQ_OBJ2_FLAG_CLEAR_REQUIRED_AFTER_SEQUENCE) != 0) {
-            mainSetBits(placement->requiredGameBit, SEQ_OBJ2_GAME_BIT_CLEAR);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)), SEQ_OBJ2_GAME_BIT_CLEAR);
             OSReport(data->needBitClearAfterSequence, placement->base.ident);
         }
         if ((placement->flags & SEQ_OBJ2_FLAG_SET_USED_AFTER_SEQUENCE) != 0) {
-            mainSetBits(placement->usedGameBit, SEQ_OBJ2_GAME_BIT_SET);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)), SEQ_OBJ2_GAME_BIT_SET);
             OSReport(data->usedBitSetAfterSequence, placement->base.ident);
         }
         state->flags = (u8)(state->flags & ~SEQ_OBJ2_STATE_SEQUENCE_FINISHED);
     } else {
-        if ((placement->requiredGameBit == SEQ_OBJ2_GAME_BIT_NONE ||
-             mainGetBit(placement->requiredGameBit) != SEQ_OBJ2_GAME_BIT_CLEAR_UNSIGNED) &&
-            (placement->usedGameBit == SEQ_OBJ2_GAME_BIT_NONE ||
-             mainGetBit(placement->usedGameBit) == SEQ_OBJ2_GAME_BIT_CLEAR_UNSIGNED)) {
+        if ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)) == SEQ_OBJ2_GAME_BIT_NONE ||
+             mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit))) != SEQ_OBJ2_GAME_BIT_CLEAR_UNSIGNED) &&
+            (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)) == SEQ_OBJ2_GAME_BIT_NONE ||
+             mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit))) == SEQ_OBJ2_GAME_BIT_CLEAR_UNSIGNED)) {
             if ((placement->flags & SEQ_OBJ2_FLAG_CLEAR_REQUIRED_BEFORE_SEQUENCE) != 0) {
-                mainSetBits(placement->requiredGameBit, SEQ_OBJ2_GAME_BIT_CLEAR);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)), SEQ_OBJ2_GAME_BIT_CLEAR);
                 OSReport(data->needBitClearBeforeSequence, placement->base.ident);
             }
             if ((placement->flags & SEQ_OBJ2_FLAG_SET_USED_BEFORE_SEQUENCE) != 0) {
-                mainSetBits(placement->usedGameBit, SEQ_OBJ2_GAME_BIT_SET);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)), SEQ_OBJ2_GAME_BIT_SET);
                 OSReport(data->usedBitSetBeforeSequence, placement->base.ident);
             }
             OSReport(data->aboutToStartSequence, placement->base.ident);
@@ -178,11 +178,11 @@ void SeqObj2_init(GameObject* obj, SeqObjectPlacement* placement) {
     SeqObj2State* state;
 
     state = obj->extra;
-    OSReport(sSeqObjNeedAndUsedBitFormat, placement->base.ident, placement->requiredGameBit, placement->usedGameBit);
+    OSReport(sSeqObjNeedAndUsedBitFormat, placement->base.ident, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit)));
     obj->anim.rotX = (s16)((u32)placement->initialYaw << SEQ_OBJ2_ROTATION_SHIFT);
     obj->animEventCallback = SeqObj2_animEventCallback;
-    if (placement->preemptSequenceId > SEQ_OBJ2_PREEMPT_SEQUENCE_ID_NONE) {
-        s16 usedGameBit = placement->usedGameBit;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->preemptSequenceId)) > SEQ_OBJ2_PREEMPT_SEQUENCE_ID_NONE) {
+        s16 usedGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->usedGameBit));
 
         if (usedGameBit != SEQ_OBJ2_GAME_BIT_NONE && mainGetBit(usedGameBit) != SEQ_OBJ2_GAME_BIT_CLEAR_UNSIGNED) {
             state->flags = (u8)(state->flags | SEQ_OBJ2_STATE_PREEMPT_SEQUENCE);

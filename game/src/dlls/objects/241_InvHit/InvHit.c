@@ -132,7 +132,7 @@ void InvHit_update(GameObject* obj) {
         break;
     case INVHIT_MODE_LOCKON_GATE: {
         void* player = Obj_GetPlayerObject();
-        u32 targetAddress = Player_GetTargetObject((int)player);
+        uintptr_t targetAddress = Player_GetTargetObject((uintptr_t)player);
         if (player != NULL && targetAddress != 0) {
             gInvHitPublishedPos[0] = obj->anim.worldPosX;
             gInvHitPublishedPos[1] = obj->anim.worldPosY;
@@ -145,18 +145,14 @@ void InvHit_update(GameObject* obj) {
         break;
     case INVHIT_MODE_SELF_FREE: {
         ObjHitsPriorityState* hitState = *(ObjHitsPriorityState**)&obj->anim.hitReactState;
-        char* ownerHitSlot;
         ObjHitsPriorityState* ownerHitState = (ObjHitsPriorityState*)((GameObject*)obj->userData1)->anim.hitReactState;
         int ownerHitIndex;
 
-        ownerHitIndex = 0;
-        ownerHitSlot = (char*)ownerHitState;
-        for (; ownerHitIndex < ownerHitState->priorityHitCount; ownerHitIndex++) {
-            if (*(GameObject**)(ownerHitSlot + offsetof(ObjHitsPriorityState, hitObjects)) == obj) {
+        for (ownerHitIndex = 0; ownerHitIndex < ownerHitState->priorityHitCount; ownerHitIndex++) {
+            if ((GameObject*)ownerHitState->hitObjects[ownerHitIndex] == obj) {
                 hitState->flags = hitState->flags & ~OBJHITS_PRIORITY_STATE_ENABLED;
                 Obj_FreeObject(obj);
             }
-            ownerHitSlot += 4;
         }
         break;
     }

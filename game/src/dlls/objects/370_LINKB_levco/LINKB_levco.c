@@ -184,7 +184,7 @@ void linkbLevelControl_update(GameObject* obj) {
 }
 
 void linkbLevelControl_init(GameObject* obj) {
-    u8* envFxRampBase = (u8*)(int)&gLINKBLevelControlEnvFxRampTables;
+    u8* envFxRampBase = (u8*)&gLINKBLevelControlEnvFxRampTables;
     LINKBLevelControlState* state = obj->extra;
 
     obj->objectFlags = (u16)(obj->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
@@ -204,7 +204,7 @@ void linkbLevelControl_init(GameObject* obj) {
         state->stage = LINKB_LEVEL_CONTROL_STAGE_1;
     }
 
-    skySetEnvFxRampTables(envFxRampBase + 0x38, (u8*)(int)&gLINKBLevelControlEnvFxRampTables, envFxRampBase + 0x70,
+    skySetEnvFxRampTables(envFxRampBase + 0x38, (u8*)&gLINKBLevelControlEnvFxRampTables, envFxRampBase + 0x70,
                           envFxRampBase + 0xA8);
     if (getSaveGameLoadStatus() != 0) {
         if ((u8)(*gMapEventInterface)->getObjGroupStatus(obj->anim.mapEventSlot, 0) == 0) {

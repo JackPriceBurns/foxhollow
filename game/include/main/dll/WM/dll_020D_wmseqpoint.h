@@ -52,7 +52,7 @@ int wmseqpoint_SeqFn(GameObject* obj, int unused, ObjSeqState* actor);
 int wmseqpoint_getExtraSize(void);
 int wmseqpoint_getObjectTypeId(void);
 void wmseqpoint_free(void);
-void wmseqpoint_render(int p1, int p2, int p3, int p4, int p5, s8 visible);
+void wmseqpoint_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void wmseqpoint_hitDetect(void);
 void wmseqpoint_update(GameObject* obj);
 void wmseqpoint_init(GameObject* obj, WmSeqPointMapData* setup);

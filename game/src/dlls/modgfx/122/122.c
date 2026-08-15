@@ -35,7 +35,7 @@ u32 gDll7AEffectResourceData[sizeof(Dll7AEffectResourceView) / sizeof(u32)] = {
 
 s16 dll_7A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll7AEffectResourceData;
+    u8* resourceData = (u8*)gDll7AEffectResourceData;
     GfxCmd* commands;
     GfxCmd* commandCursor;
     s16 handle;
@@ -139,12 +139,12 @@ s16 dll_7A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
     if (variant == 0) {
         packet.modeByte = 0;
         handle = (*gModgfxInterface)
-                     ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll7AEffectResourceData, 8,
+                     ->spawnEffect(&packet, 0, 9, (u8*)gDll7AEffectResourceData, 8,
                                    &resourceData[offsetof(Dll7AEffectResourceView, triangles)], 0x156, 0);
     } else if (variant == 1) {
         packet.modeByte = 0;
         handle = (*gModgfxInterface)
-                     ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll7AEffectResourceData, 8,
+                     ->spawnEffect(&packet, 0, 9, (u8*)gDll7AEffectResourceData, 8,
                                    &resourceData[offsetof(Dll7AEffectResourceView, triangles)], 0xc0d, 0);
     }
     return handle;

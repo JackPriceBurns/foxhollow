@@ -154,7 +154,7 @@ void nwTreeBridge_update(GameObject* obj) {
     } else if (state->sequenceStarted == 0) {
         preemptSequenceId = state->preemptSequenceId;
         if (preemptSequenceId != 0) {
-            (*gObjectTriggerInterface)->preempt((int)obj, preemptSequenceId);
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptSequenceId);
             (*gObjectTriggerInterface)
                 ->runSequence((int)state->sequenceId, (void*)obj, NW_TREE_BRIDGE_PREEMPT_SEQUENCE_FLAGS);
             state->sequenceStarted = 1;
@@ -172,10 +172,10 @@ void nwTreeBridge_init(GameObject* obj, const NwTreeBridgePlacement* placement) 
     state = obj->extra;
     obj->animEventCallback = nwTreeBridge_processAnimEvents;
     obj->anim.rotX = (s16)(placement->initialRotX << 8);
-    obj->anim.rotY = placement->initialRotY;
-    obj->anim.rotZ = placement->initialRotZ;
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialRotY));
+    obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialRotZ));
     state->sequenceId = placement->sequenceId;
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     if (mainGetBit((int)state->gameBit) != 0) {
         state->preemptSequenceId = NW_TREE_BRIDGE_PREEMPT_SEQUENCE_ID;
     }

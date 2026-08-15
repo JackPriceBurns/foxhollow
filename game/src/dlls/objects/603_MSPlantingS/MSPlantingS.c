@@ -234,7 +234,7 @@ void MoonSeedPlantingSpot_update(GameObject* obj)
         break;
     case MSPLANTING_PHASE_GROWN:
     {
-        int tricky = (int)getTrickyObject();
+        uintptr_t tricky = (uintptr_t)getTrickyObject();
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         if (ex->flags & MSPLANTING_FLAG_VISIBLE)
         {

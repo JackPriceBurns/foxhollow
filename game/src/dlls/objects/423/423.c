@@ -294,7 +294,7 @@ void EdibleMushroom_updateBehavior(GameObject* obj, EdibleMushroomState* state, 
                         state->pickupMsgValue = 0;
                         state->pickupMsgDelay = 0.4f;
                         ObjMsg_SendToObject(player, EDIBLE_MUSHROOM_MESSAGE_IN_RANGE, obj, (u32)&state->pickupMsgBitId);
-                        bit = placement->gameBitId;
+                        bit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId));
                         if (bit != -1) {
                             mainSetBits(bit, 1);
                         }
@@ -547,7 +547,7 @@ void EdibleMushroom_init(GameObject* obj, EdibleMushroomPlacement* placement) {
     obj->animEventCallback = EdibleMushroom_animEventCallback;
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
 
-    if (mainGetBit(placement->gameBitId) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) != 0) {
         state->animState = 8;
         ObjHits_DisableObject(obj);
         obj->anim.flags = (short)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);

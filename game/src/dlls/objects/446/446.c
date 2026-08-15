@@ -253,8 +253,10 @@ void lavaball1be_init(GameObject* obj, DimLavaProjectilePlacement* placement) {
 
         obj->anim.rotX = (s16)((s32)placement->launchYaw << 8);
         state = obj->extra;
-        verticalVelocity = DIM_LAVA_VELOCITY_SCALE * (f32)placement->verticalSpeed;
-        horizontalVelocity = DIM_LAVA_VELOCITY_SCALE * (f32)placement->horizontalSpeed;
+        verticalVelocity = DIM_LAVA_VELOCITY_SCALE *
+                           (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->verticalSpeed);
+        horizontalVelocity = DIM_LAVA_VELOCITY_SCALE *
+                             (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->horizontalSpeed);
         state->floorY = obj->anim.localPosY;
         state->targetObjectId = placement->targetObjectId;
         placement->targetObjectId = -1;

@@ -30,14 +30,14 @@ void DIMBossIceSmash_initLaunchState(GameObject* obj, DimBossIceSmashState* stat
     obj->anim.localPosX = state->spawnScaleX * obj->anim.rootMotionScale + placement->base.posX;
     obj->anim.localPosY = state->spawnScaleY * obj->anim.rootMotionScale + placement->base.posY;
     obj->anim.localPosZ = state->spawnScaleZ * obj->anim.rootMotionScale + placement->base.posZ;
-    obj->anim.rotX = placement->spawnRotX;
-    obj->anim.rotY = placement->spawnRotY;
-    obj->anim.rotZ = placement->spawnRotZ;
+    obj->anim.rotX = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnRotX));
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnRotY));
+    obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnRotZ));
     if ((placement->flags & DIM_BOSS_ICE_SMASH_PLACEMENT_HOMING) != 0) {
-        spd = (f32)placement->velocityX / 100.0f;
-        vx = obj->anim.localPosX - (f32)placement->homingTargetX;
-        vy = obj->anim.localPosY - (f32)placement->homingTargetY;
-        vz = obj->anim.localPosZ - (f32)placement->homingTargetZ;
+        spd = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velocityX)) / 100.0f;
+        vx = obj->anim.localPosX - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->homingTargetX));
+        vy = obj->anim.localPosY - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->homingTargetY));
+        vz = obj->anim.localPosZ - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->homingTargetZ));
         len = sqrtf(vz * vz + (vx * vx + vy * vy));
         if (len != 0.0f) {
             vx = vx / len;
@@ -48,13 +48,13 @@ void DIMBossIceSmash_initLaunchState(GameObject* obj, DimBossIceSmashState* stat
         obj->anim.velocityY = spd * vy;
         obj->anim.velocityZ = spd * vz;
     } else {
-        obj->anim.velocityX = (f32)placement->velocityX / 100.0f;
-        obj->anim.velocityY = (f32)placement->velocityY / 100.0f;
-        obj->anim.velocityZ = (f32)placement->velocityZ / 100.0f;
+        obj->anim.velocityX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velocityX)) / 100.0f;
+        obj->anim.velocityY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velocityY)) / 100.0f;
+        obj->anim.velocityZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velocityZ)) / 100.0f;
     }
-    state->angVelX = (f32)placement->rotVelX;
-    state->angVelY = (f32)placement->rotVelY;
-    state->angVelZ = (f32)placement->rotVelZ;
+    state->angVelX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotVelX));
+    state->angVelY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotVelY));
+    state->angVelZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotVelZ));
     if (obj->anim.velocityX > 0.0f) {
         state->directionFlags |= DIM_BOSS_ICE_SMASH_POSITIVE_VELOCITY_X;
     }
@@ -70,12 +70,12 @@ void DIMBossIceSmash_initLaunchState(GameObject* obj, DimBossIceSmashState* stat
     if (state->angVelZ > 0.0f) {
         state->directionFlags |= DIM_BOSS_ICE_SMASH_POSITIVE_ANGULAR_VELOCITY_Z;
     }
-    state->angAccelX = (f32)placement->rotGravityX / 10.0f;
-    state->angAccelY = (f32)placement->rotGravityY / 10.0f;
-    state->angAccelZ = (f32)placement->rotGravityZ / 10.0f;
-    state->accelX = (f32)placement->gravityX / 1000.0f;
-    state->accelY = (f32)placement->gravityY / 1000.0f;
-    state->accelZ = (f32)placement->gravityZ / 1000.0f;
+    state->angAccelX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotGravityX)) / 10.0f;
+    state->angAccelY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotGravityY)) / 10.0f;
+    state->angAccelZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotGravityZ)) / 10.0f;
+    state->accelX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gravityX)) / 1000.0f;
+    state->accelY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gravityY)) / 1000.0f;
+    state->accelZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gravityZ)) / 1000.0f;
     state->timer = 0;
 }
 
@@ -130,10 +130,10 @@ void DIMBossIceSmash_update(GameObject* obj) {
         placement = (DimBossIceSmashPlacement*)obj->anim.placementData;
         if ((stateFlags & DIM_BOSS_ICE_SMASH_STATE_ACTIVE) == 0) {
             if (obj->anim.bankIndex == 0) {
-                triggerBit = mainGetBit(placement->triggerGameBit);
-                if (triggerBit != 0 || placement->triggerGameBit == -1) {
+                triggerBit = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
+                if (triggerBit != 0 || ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)) == -1) {
                     state->stateFlags |= DIM_BOSS_ICE_SMASH_STATE_ACTIVE;
-                    mainSetBits(placement->activateGameBit, 1);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activateGameBit)), 1);
                     gDIMBossIceSmashActivationStarted = 1;
                 }
             } else if (gDIMBossIceSmashActivationStarted != 0) {
@@ -143,13 +143,13 @@ void DIMBossIceSmash_update(GameObject* obj) {
         } else {
             obj->anim.alpha = 0xff;
             cnt = (state->timer += framesThisStep);
-            if (cnt >= placement->lifetime) {
+            if (cnt >= ObjAnim_ReadPlacementU16(&obj->anim, &(placement->lifetime))) {
                 state->stateFlags |= DIM_BOSS_ICE_SMASH_STATE_FINISHED;
             }
             frameCount = state->timer;
-            if (frameCount > placement->fadeStartFrame &&
-                (fadeDuration = placement->lifetime - placement->fadeStartFrame) != 0) {
-                alphaVal = (int)(255.0f * (1.0f - (f32)(frameCount - placement->fadeStartFrame) / (f32)fadeDuration));
+            if (frameCount > ObjAnim_ReadPlacementU16(&obj->anim, &(placement->fadeStartFrame)) &&
+                (fadeDuration = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->lifetime)) - ObjAnim_ReadPlacementU16(&obj->anim, &(placement->fadeStartFrame))) != 0) {
+                alphaVal = (int)(255.0f * (1.0f - (f32)(frameCount - ObjAnim_ReadPlacementU16(&obj->anim, &(placement->fadeStartFrame))) / (f32)fadeDuration));
                 if (alphaVal > 0xff) {
                     alphaVal = 0xff;
                 } else if (alphaVal < 0) {
@@ -271,7 +271,7 @@ void DIMBossIceSmash_init(GameObject* obj, DimBossIceSmashPlacement* placement) 
     state->spawnScaleY = fz;
     state->spawnScaleZ = fz;
     DIMBossIceSmash_initLaunchState(obj, state, placement);
-    initState = (mainGetBit(placement->activateGameBit) != 0) ? DIM_BOSS_ICE_SMASH_STATE_FINISHED : 0;
+    initState = (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activateGameBit))) != 0) ? DIM_BOSS_ICE_SMASH_STATE_FINISHED : 0;
     state->stateFlags = initState;
     gDIMBossIceSmashActivationStarted = 0;
     if ((placement->flags & DIM_BOSS_ICE_SMASH_PLACEMENT_PATH_CONTROL) != 0) {

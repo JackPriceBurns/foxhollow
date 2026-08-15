@@ -253,8 +253,8 @@ void rollingBarrel_init(GameObject* obj, RollingBarrelPlacement* placement) {
     obj->anim.localPosZ = placement->base.posZ;
     obj->anim.worldPosZ = placement->base.posZ;
 
-    state->verticalSpeed = placement->initialVerticalSpeed / 10.0f;
-    state->curveSpeed = placement->curveSpeed / 10.0f;
+    state->verticalSpeed = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialVerticalSpeed)) / 10.0f;
+    state->curveSpeed = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->curveSpeed)) / 10.0f;
     state->mode = ROLLING_BARREL_MODE_ROLLING;
     state->pitchRising = 1;
     state->timer = 0.0f;

@@ -395,8 +395,8 @@ void dll409_init(GameObject* obj, const Dll199Placement* placement) {
     state = obj->extra;
     obj->anim.rotX = 0;
     state->activationDistance = 10;
-    if (placement->activationDistancePacked > 0) {
-        state->activationDistance = placement->activationDistancePacked >> 8;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationDistancePacked)) > 0) {
+        state->activationDistance = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationDistancePacked)) >> 8;
     }
     state->phase = 0;
     state->sequenceEventState = 0;

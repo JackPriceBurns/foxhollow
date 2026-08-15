@@ -267,11 +267,10 @@ int ktrex_stateHandlerA10(GameObject* obj, GroundBaddieState* runtime)
     {
         (*gPlayerInterface)->setState(obj, runtime, 1);
         gKTRexState->laneIndex = 2;
-        {
-            u8* row = (u8*)p + 0x38;
-            runtime->baddie.animSpeedC =
-                *(f32*)(row + gKTRexState->laneIndex * 4) / 1000.0f;
-        }
+        runtime->baddie.animSpeedC =
+            ObjAnim_ReadPlacementF32(&obj->anim,
+                                     &((KtrexPlacement*)p)->laneSpeeds[gKTRexState->laneIndex]) /
+            1000.0f;
     }
     if (ktrex_updateArenaPathProgress(runtime) != 0)
     {
@@ -405,11 +404,9 @@ int ktrex_stateHandlerA08(GameObject* obj, GroundBaddieState* runtime)
     if ((s8)runtime->baddie.moveJustStartedB != 0)
     {
         (*gPlayerInterface)->setState(obj, runtime, 7);
-        {
-            u8* row = (u8*)p + 0x4a;
-            gKTRexState->stateTimer =
-                (f32)(u32) * (u16*)(row + (gKTRexState->phaseCounter & ~1));
-        }
+        gKTRexState->stateTimer =
+            (f32)(u32)ObjAnim_ReadPlacementU16(
+                &obj->anim, (u8*)p + 0x4a + (gKTRexState->phaseCounter & ~1));
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
     }
     else
@@ -484,8 +481,10 @@ int ktrex_stateHandlerA05(GameObject* obj, GroundBaddieState* runtime)
     {
         (*gPlayerInterface)->setState(obj, runtime, 1);
         gKTRexState->laneIndex = 1;
-        p = (char*)p + gKTRexState->laneIndex * 4;
-        runtime->baddie.animSpeedC = ((KtrexPlacement*)p)->laneSpeeds[0] / 1000.0f;
+        runtime->baddie.animSpeedC =
+            ObjAnim_ReadPlacementF32(&obj->anim,
+                                     &((KtrexPlacement*)p)->laneSpeeds[gKTRexState->laneIndex]) /
+            1000.0f;
     }
     if (RandomTimer_UpdateRangeTrigger(&gKTRexState->breathSfxTimer, 2.0f, 4.0f) != 0)
     {
@@ -529,7 +528,8 @@ int ktrex_stateHandlerA04(GameObject* obj, GroundBaddieState* runtime)
     {
         (*gPlayerInterface)->setState(obj, runtime, 4);
         gKTRexState->stateTimer =
-            (f32)(u32)((u16*)((char*)p + 0x44))[gKTRexState->moveVariant];
+            (f32)(u32)ObjAnim_ReadPlacementU16(
+                &obj->anim, (u8*)p + 0x44 + gKTRexState->moveVariant * sizeof(u16));
     }
     else
     {
@@ -607,11 +607,10 @@ int ktrex_stateHandlerA02(GameObject* obj, GroundBaddieState* runtime)
         (*gPlayerInterface)->setState(obj, runtime, 1);
         gKTRexState->laneIndex = 0;
         gKTRexState->timerFA &= ~0x20;
-        {
-            u8* row = (u8*)p + 0x38;
-            runtime->baddie.animSpeedC =
-                *(f32*)(row + gKTRexState->laneIndex * 4) / 1000.0f;
-        }
+        runtime->baddie.animSpeedC =
+            ObjAnim_ReadPlacementF32(&obj->anim,
+                                     &((KtrexPlacement*)p)->laneSpeeds[gKTRexState->laneIndex]) /
+            1000.0f;
     }
     if (ktrex_updateArenaPathProgress(runtime) != 0)
     {

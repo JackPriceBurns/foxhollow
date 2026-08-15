@@ -203,8 +203,8 @@ void WaveAnimator_init(GameObject* obj, WaveAnimatorPlacement* placement) {
     f32 initialScale;
 
     state->sinkDepthScale = placement->sinkDepthScale;
-    state->originX = placement->originX;
-    state->originY = placement->originY;
+    state->originX = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->originX));
+    state->originY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->originY));
     state->spanX = placement->spanX;
     state->spanY = placement->spanY;
     state->ampX = placement->ampX;

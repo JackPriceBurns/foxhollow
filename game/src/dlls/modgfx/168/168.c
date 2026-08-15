@@ -38,7 +38,7 @@ extern u8 gDllA8EffectResourceData[sizeof(DllA8EffectResourceView)];
 void dll_A8_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 flags, int unused,
                         void* alternateStyle) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDllA8EffectResourceData;
+    u8* resourceData = (u8*)gDllA8EffectResourceData;
     f32 scaleX;
     GfxCmd* commands;
     GfxCmd* commandCursor;
@@ -188,7 +188,7 @@ void dll_A8_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0xe, (u8*)(int)gDllA8EffectResourceData, 0xc,
+        ->spawnEffect(&packet, 0, 0xe, (u8*)gDllA8EffectResourceData, 0xc,
                       &resourceData[offsetof(DllA8EffectResourceView, triangles)], 0x586, 0);
 }
 

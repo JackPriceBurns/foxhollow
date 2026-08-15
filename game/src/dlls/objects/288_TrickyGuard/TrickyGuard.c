@@ -42,7 +42,7 @@ void TrickyGuardSpot_update(GameObject* obj) {
     stateFlags->trickyInRange = 0;
     if (tricky != NULL) {
         if (TRICKY_INTERFACE(tricky)->isGuarding(tricky) != 0) {
-            if (Vec_xzDistance(&obj->anim.worldPosX, &tricky->anim.worldPosX) < (f32)(s32)placement->triggerRadius) {
+            if (Vec_xzDistance(&obj->anim.worldPosX, &tricky->anim.worldPosX) < (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerRadius))) {
                 state->guardTimer = state->guardTimer - framesThisStep;
                 stateFlags->trickyInRange = 1;
             }
@@ -61,7 +61,7 @@ void TrickyGuardSpot_update(GameObject* obj) {
         TRICKY_INTERFACE(tricky)->requestRecall(tricky);
         state->guardTimer = placement->guardDurationSeconds * TRICKY_GUARD_SPOT_FRAMES_PER_SECOND;
     }
-    mainSetBits(placement->trickyInRangeGameBit, stateFlags->trickyInRange);
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->trickyInRangeGameBit)), stateFlags->trickyInRange);
 }
 
 void TrickyGuardSpot_init(GameObject* obj, TrickyGuardSpotPlacement* placement) {

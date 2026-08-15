@@ -81,7 +81,7 @@ void dll_1DB_update(GameObject* obj) {
             state->verticalVelocity = 0.0f;
         }
 
-        if (mainGetBit(placement->triggerGameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) {
             Sfx_PlayFromObject(obj, SFXTRIG_mv_wickpickup16);
             state->motionState = DLL1DB_MOTION_STATE_FALLING;
             state->verticalVelocity = 0.0f;
@@ -95,15 +95,15 @@ void dll_1DB_update(GameObject* obj) {
                 state->motionState = DLL1DB_MOTION_STATE_RISING;
                 state->verticalVelocity = 0.0f;
                 state->boarded = 0;
-                mainSetBits(placement->boardedGameBit, 0);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->boardedGameBit)), 0);
             }
         } else {
-            if (mainGetBit(placement->triggerGameBit) == 0) {
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
                 Sfx_PlayFromObject(obj, SFXTRIG_mv_wickpickup16);
                 state->motionState = DLL1DB_MOTION_STATE_RISING;
                 state->verticalVelocity = 0.0f;
                 state->boarded = 0;
-                mainSetBits(placement->boardedGameBit, 0);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->boardedGameBit)), 0);
             }
         }
         break;
@@ -144,13 +144,13 @@ void dll_1DB_update(GameObject* obj) {
             Sfx_PlayFromObject(obj, SFXTRIG_en_lflsh2_b);
             obj->anim.localPosY = placement->base.posY - 235.5f;
             state->motionState = DLL1DB_MOTION_STATE_BOTTOM;
-            mainSetBits(placement->boardedGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->boardedGameBit)), 1);
         }
 
         if (state->boarded == 0) {
-            if (mainGetBit(placement->triggerGameBit) == 0) {
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
                 state->motionState = DLL1DB_MOTION_STATE_RISING;
-                mainSetBits(placement->boardedGameBit, 0);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->boardedGameBit)), 0);
             }
         }
         break;
@@ -162,7 +162,7 @@ void dll_1DB_init(GameObject* obj, const Dll1DBPlacementView* placement) {
     s16 rotationX = (s16)((s32)placement->rotationXByte << 8);
 
     obj->anim.rotX = rotationX;
-    if (mainGetBit(placement->boardedGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->boardedGameBit))) != 0) {
         state->motionState = DLL1DB_MOTION_STATE_BOTTOM;
     } else {
         state->motionState = DLL1DB_MOTION_STATE_TOP;

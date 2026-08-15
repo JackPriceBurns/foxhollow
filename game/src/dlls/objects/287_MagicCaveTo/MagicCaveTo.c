@@ -128,7 +128,7 @@ void MagicCaveTop_update(GameObject* obj) {
         }
         mapDirIndex = mapGetDirIdx(placement->mapId);
         distanceSquared = vec3f_distanceSquared(&player->anim.worldPosX, &obj->anim.worldPosX);
-        isVisible = mainGetBit(placement->visibleGameBit);
+        isVisible = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibleGameBit)));
         switch (state->phase) {
         case MAGIC_CAVE_TOP_PHASE_IDLE:
             range = placement->innerRange * MAGIC_CAVE_TOP_RANGE_SCALE;
@@ -298,13 +298,13 @@ void MagicCaveTop_init(GameObject* obj, MagicCaveTopPlacement* placement) {
     ModelRenderOpTextureRefs* textureRefs;
 
     obj->objectFlags = (u16)((u32)obj->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
-    if (mainGetBit(placement->visibleGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibleGameBit))) != 0) {
         state->fadeTimer = MAGIC_CAVE_TOP_FADE_MAX;
     }
     obj->anim.rotX = (s16)((s32)placement->rotationX << 8);
     textureRefs = ObjModel_GetRenderOpTextureRefs(Obj_GetActiveModel(obj), 0);
-    if (placement->textureSwapGameBit > 0) {
-        if (mainGetBit(placement->textureSwapGameBit) != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->textureSwapGameBit)) > 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->textureSwapGameBit))) != 0) {
             state->flags = (u8)(state->flags | (MAGIC_CAVE_TOP_FLAG_RUMBLE_DISABLED | MAGIC_CAVE_TOP_FLAG_ALT_EFFECT));
             textureRefs->swapSelector = MAGIC_CAVE_TOP_TEXTURE_SWAP_ALT;
         } else {

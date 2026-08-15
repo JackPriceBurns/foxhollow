@@ -27,7 +27,7 @@
 #include "main/dll/savegame_load_api.h"
 #include "main/dll/FRONT/frontend_control.h"
 
-u32 pRestartPoint;
+void* pRestartPoint;
 u8* gSaveGameWorkBuffer;
 s8 gSaveGameMapActCacheIdx[2];
 int gSaveGameObjGroupCacheIdx[2];
@@ -305,7 +305,7 @@ void gplaySaveGame(int param)
         memcpy(gSaveGameWorkBuffer, gSaveGameData, 0x564);
         if (pRestartPoint != 0)
         {
-            memcpy((void*)pRestartPoint, gSaveGameData, 0x564);
+            memcpy(pRestartPoint, gSaveGameData, 0x564);
         }
     }
     if (gSaveGameCurrentSlot == -1)
@@ -338,7 +338,7 @@ void saveGame_save(void)
         memcpy(gSaveGameWorkBuffer, gSaveGameData, 0x564);
         if (pRestartPoint != 0)
         {
-            memcpy((void*)pRestartPoint, gSaveGameData, 0x564);
+            memcpy(pRestartPoint, gSaveGameData, 0x564);
         }
     }
     if (gSaveGameCurrentSlot == -1)
@@ -1060,20 +1060,20 @@ void SaveGame_gplayRestartPoint(f32* pos, s16 angle, int b691, int flag)
     int healed = 0;
     if (pRestartPoint == 0)
     {
-        pRestartPoint = (u32)mmAlloc(SAVEGAME_ACTIVE_SIZE, 0xffff00ff, 0);
+        pRestartPoint = mmAlloc(SAVEGAME_ACTIVE_SIZE, 0xffff00ff, 0);
         if (pRestartPoint == 0)
             return;
     }
     if (flag != 0)
     {
         mainSetBits(GAMEBIT_CF_DoStandUpAnim, 1);
-        if (Player_GetCurrentHealth((int)Obj_GetPlayerObject()) > 1)
+        if (Player_GetCurrentHealth((uintptr_t)Obj_GetPlayerObject()) > 1)
         {
             playerAddHealth(Obj_GetPlayerObject(), -1);
             healed = 1;
         }
     }
-    memcpy((void*)pRestartPoint, gSaveGameData, SAVEGAME_ACTIVE_SIZE);
+    memcpy(pRestartPoint, gSaveGameData, SAVEGAME_ACTIVE_SIZE);
     SAVEGAME_CHARACTER_POSITION((u8*)pRestartPoint)->x = pos[0];
     SAVEGAME_CHARACTER_POSITION((u8*)pRestartPoint)->y = pos[1];
     SAVEGAME_CHARACTER_POSITION((u8*)pRestartPoint)->z = pos[2];
@@ -1113,7 +1113,7 @@ void SaveGame_gplaySavePoint(f32* pos, s16 angle, int flags, int mapLayer)
             memcpy(gSaveGameWorkBuffer, base, 0x5d8);
             if (pRestartPoint != 0)
             {
-                memcpy((void*)pRestartPoint, gSaveGameData, 0x5d8);
+                memcpy(pRestartPoint, gSaveGameData, 0x5d8);
             }
         }
         else

@@ -735,7 +735,7 @@ int drakorhoverpad_handlePathPointEvent(GameObject* obj, u8 eventCode, u8 subCod
 
 int drakorhoverpad_getExtraSize(void)
 {
-    return 0x17c;
+    return sizeof(DrakorHoverpadState);
 }
 
 int drakorhoverpad_getObjectTypeId(void)
@@ -812,7 +812,7 @@ void drakorhoverpad_updateMain(GameObject* obj)
     }
     if (f->bit20 == 0)
     {
-        f->bit20 = mainGetBit(q->activateGameBit);
+        f->bit20 = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(q->activateGameBit)));
         p->targetSpeed = 0.0f;
         if (f->bit20 != 0)
         {

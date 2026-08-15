@@ -125,7 +125,8 @@ static void triggerEvalCurveLoop(GameObject* obj, GameObject* seqObj) {
     state = (MmpTriggerPlaneState*)obj->extra;
     curveHit = (*gRomCurveInterface)
                    ->find(state->ptB[0], state->ptB[1], state->ptB[2], &queryType, 1,
-                          *(s16*)((u8*)obj->anim.placementData + 0x38));
+                          ObjAnim_ReadPlacementS16(
+                              &obj->anim, &((TriggerPlacement*)obj->anim.placementData)->triggerId));
     frontBlocked =
         (*gRomCurveInterface)->isPointInsideLoop(curveHit, state->ptB[0], state->ptB[1], state->ptB[2], &hitDistance);
     rearBlocked =
@@ -447,6 +448,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
     int count;
     int first;
     int id;
+    s32 tableTextureId;
 
     for (; i < 8; i++, p += 4) {
         if (p[1] == 0) {
@@ -647,7 +649,9 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
                 case 0x50:
                 case 0x54:
                 case 0x230:
-                    if (((TriggerPlacement*)tbl)->triggerId == triggerId) {
+                    if (ObjAnim_ReadPlacementS16(
+                            &((GameObject*)t2)->anim,
+                            &((TriggerPlacement*)tbl)->triggerId) == triggerId) {
                         objInterpretSeq((GameObject*)t2, seqObj, legCode, range);
                     }
                     break;
@@ -721,9 +725,9 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
         case 0x15:
             t = (intptr_t)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
             if ((void*)t != NULL) {
-                for (tbl = (int*)t; *tbl != -1; tbl++) {
-                    if ((void*)getLoadedTexture(*tbl) == NULL) {
-                        crash(0x32, 3, 0, *tbl, 0, 0, 0, 0);
+                for (tbl = (int*)t; (tableTextureId = (s32)fhReadBE32(tbl)) != -1; tbl++) {
+                    if ((void*)getLoadedTexture(tableTextureId) == NULL) {
+                        crash(0x32, 3, 0, tableTextureId, 0, 0, 0, 0);
                     }
                 }
             }
@@ -731,8 +735,8 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
         case 0x16:
             t = (intptr_t)getTablesBinEntry((u16)((p[2] << 8) | p[3]) + 2);
             if ((void*)t != NULL) {
-                for (tbl = (int*)t; *tbl != -1; tbl++) {
-                    t2 = (intptr_t)getLoadedTexture(*tbl);
+                for (tbl = (int*)t; (tableTextureId = (s32)fhReadBE32(tbl)) != -1; tbl++) {
+                    t2 = (intptr_t)getLoadedTexture(tableTextureId);
                     if ((void*)t2 != NULL) {
                         textureFree((Texture*)((u8*)t2));
                     }
@@ -948,7 +952,9 @@ void Trigger_hitDetect(GameObject* obj) {
     GameObject* focusObject;
 
     dist[0] = 200.0f;
-    if (((TriggerPlacement*)def)->triggerId <= 0 || ((TriggerPlacement*)def)->typeId == 0xf4) {
+    if (ObjAnim_ReadPlacementS16(
+            &obj->anim, &((TriggerPlacement*)def)->triggerId) <= 0 ||
+        ((TriggerPlacement*)def)->typeId == 0xf4) {
         triggerObj = Obj_GetPlayerObject();
         if (triggerObj != NULL) {
             focusObject = playerGetFocusObject(triggerObj);
@@ -1055,7 +1061,10 @@ void Trigger_hitDetect(GameObject* obj) {
                     break;
                 case 0x4e:
                     ((TriggerState*)state)->timer = *(int*)&((TriggerState*)state)->timer + framesThisStep;
-                    if (((TriggerState*)state)->timer >= (u32)((TriggerPlacement*)def)->triggerDelayFrames) {
+                    if (((TriggerState*)state)->timer >=
+                        (u32)ObjAnim_ReadPlacementU16(
+                            &obj->anim,
+                            &((TriggerPlacement*)def)->triggerDelayFrames)) {
                         objInterpretSeq(obj, 0, 1, 0);
                     }
                     break;
@@ -1118,6 +1127,7 @@ void Trigger_update(void) {
 void Trigger_init(GameObject* obj, u8* params) {
     u8* state;
     f32 range;
+    TriggerPlacement* placement = (TriggerPlacement*)params;
 
     objSetSlot(obj, 0x28);
     state = obj->extra;
@@ -1131,7 +1141,8 @@ void Trigger_init(GameObject* obj, u8* params) {
         obj->anim.rootMotionScale = triggerRangeToModelScale(range);
         break;
     case 0x4c:
-        ((TriggerState*)state)->gateBits[0] = ((TriggerPlacement*)params)->gateBitSrc[0];
+        ((TriggerState*)state)->gateBits[0] = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->gateBitSrc[0]);
         MmpGyservent_setup(obj, (MMPTriggerGeyserPlacement*)params);
         break;
     case 0x230:
@@ -1144,10 +1155,14 @@ void Trigger_init(GameObject* obj, u8* params) {
         obj->anim.rotZ = 0;
         break;
     case 0x54:
-        ((TriggerState*)state)->gateBits[0] = ((TriggerPlacement*)params)->gateBitSrc[0];
-        ((TriggerState*)state)->gateBits[1] = ((TriggerPlacement*)params)->gateBitSrc[1];
-        ((TriggerState*)state)->gateBits[2] = ((TriggerPlacement*)params)->gateBitSrc[2];
-        ((TriggerState*)state)->gateBits[3] = ((TriggerPlacement*)params)->gateBitSrc[3];
+        ((TriggerState*)state)->gateBits[0] = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->gateBitSrc[0]);
+        ((TriggerState*)state)->gateBits[1] = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->gateBitSrc[1]);
+        ((TriggerState*)state)->gateBits[2] = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->gateBitSrc[2]);
+        ((TriggerState*)state)->gateBits[3] = ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->gateBitSrc[3]);
         ((TriggerState*)state)->flags8A.bit7 = 0;
         break;
     case 0x4e:
@@ -1159,7 +1174,8 @@ void Trigger_init(GameObject* obj, u8* params) {
     default:
         break;
     }
-    ((TriggerState*)state)->gameBit = ((TriggerPlacement*)params)->gameBitSrc;
+    ((TriggerState*)state)->gameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->gameBitSrc);
     if ((int)mainGetBit(((TriggerState*)state)->gameBit) == 1) {
         state[0] = (u8)(state[0] | TRIGGER_SFLAG_DISABLED);
     }

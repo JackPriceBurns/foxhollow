@@ -128,7 +128,7 @@ void crrockfall_update(GameObject* obj) {
                 (int)(((f32)(u32)obj->anim.renderAlpha / 255.0f) * ((f32)alphaScale * playerDistance));
         }
 
-        if (placement->gameBitId != -1 && mainGetBit(placement->gameBitId) == 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId)) != -1 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId))) == 0) {
             return;
         }
 
@@ -223,7 +223,7 @@ void crrockfall_init(GameObject* obj, const CrRockfallPlacement* placement) {
 
     state->mode = CR_ROCKFALL_MODE_ARMED;
     state->startY = obj->anim.localPosY;
-    state->fallDelay = placement->fallDelay;
+    state->fallDelay = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fallDelay));
     obj->anim.rootMotionScale = (f32)(u32)placement->scaleByte / 127.0f;
 
     hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;

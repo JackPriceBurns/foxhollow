@@ -17,7 +17,7 @@ typedef struct WindLiftPlacement {
 } WindLiftPlacement;
 
 typedef struct WindLiftSlot {
-    int riderObject;
+    GameObject* riderObject;
     f32 unknown04;
     f32 speedDelta;
     f32 riseSpeed;

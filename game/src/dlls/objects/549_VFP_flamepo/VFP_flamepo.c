@@ -103,7 +103,7 @@ void VFP_flamepoint_update(GameObject* obj)
 
         if (!(d->done = v))
         {
-            d->counter = (s8)((VfpFlamePointMapData*)obj->anim.placementData)->counterInit;
+            d->counter = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &((VfpFlamePointMapData*)obj->anim.placementData)->counterInit);
         }
     }
 }
@@ -113,10 +113,10 @@ void VFP_flamepoint_init(GameObject* obj, s8* def)
     VfpFlamePointData* d = (VfpFlamePointData*)obj->extra;
     VfpFlamePointMapData* mapData = (VfpFlamePointMapData*)def;
 
-    d->counter = (s8)mapData->counterInit;
-    d->noCheck = (u8)mapData->noCheck;
-    d->showGameBit = mapData->showGameBit;
-    d->checkGameBit = mapData->checkGameBit;
+    d->counter = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->counterInit));
+    d->noCheck = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->noCheck));
+    d->showGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->showGameBit));
+    d->checkGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->checkGameBit));
     obj->objectFlags |=
         (VFP_FLAMEPOINT_OBJFLAG_HIDDEN | VFP_FLAMEPOINT_OBJFLAG_HITDETECT_DISABLED);
 }

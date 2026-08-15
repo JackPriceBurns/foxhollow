@@ -1984,7 +1984,7 @@ u32 SnowBike_canMount(GameObject* obj)
 
 int SnowBike_getExtraSize(void)
 {
-    return 0x59c;
+    return sizeof(SnowBikeState);
 }
 
 int SnowBike_getObjectTypeId(void)
@@ -2476,8 +2476,8 @@ void SnowBike_init(GameObject* obj, SnowBikePlacement* params, int flag)
     s->homePosY = obj->anim.worldPosY;
     s->homePosZ = obj->anim.worldPosZ;
     s->pathProgress = 0.0f;
-    s->completionGameBit = params->completionGameBit;
-    s->gameBitId = params->gameBitId;
+    s->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(params->completionGameBit));
+    s->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(params->gameBitId));
     if (mainGetBit(s->gameBitId) != 0)
     {
         s->routeFlags.b04 = 1;

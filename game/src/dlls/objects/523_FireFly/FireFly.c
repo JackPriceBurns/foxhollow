@@ -173,7 +173,7 @@ void firefly_activeTick(GameObject* obj)
 {
     FireFlyState* state = (obj)->extra;
     ObjAnimComponent* objAnim = &(obj)->anim;
-    int player = (int)Obj_GetPlayerObject();
+    uintptr_t player = (uintptr_t)Obj_GetPlayerObject();
     if ((int)objAnim->alpha < FIREFLY_ALPHA_OPAQUE)
     {
         int newAlpha = (int)(2.0f * timeDelta + (f32)(int)objAnim->alpha);
@@ -302,7 +302,7 @@ void firefly_activeTick(GameObject* obj)
 
 int firefly_getExtraSize(void)
 {
-    return FIREFLY_EXTRA_SIZE;
+    return sizeof(FireFlyState);
 }
 
 int firefly_getObjectTypeId(void)
@@ -355,7 +355,8 @@ void firefly_update(GameObject* obj)
     if (state->activeFlags.active == 0)
     {
         isActive = 0;
-        if ((def->requiredGameBit == -1) || (mainGetBit(def->requiredGameBit) != 0))
+        if ((ObjAnim_ReadPlacementS16(&obj->anim, &(def->requiredGameBit)) == -1) ||
+            (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->requiredGameBit))) != 0))
         {
             isActive = 1;
         }
@@ -400,7 +401,7 @@ void firefly_init(GameObject* obj, FireFlyMapData* mapData)
     (obj)->animEventCallback = firefly_animEventCallback;
     ObjMsg_AllocQueue(obj, 1);
     storeZeroToFloatParam(&state->lifeTimer);
-    if (mapData->variantParam == 0x7f)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->variantParam)) == 0x7f)
     {
         s16toFloat(&state->lifeTimer, 0xe10);
     }

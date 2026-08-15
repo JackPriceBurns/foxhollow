@@ -182,10 +182,10 @@ void dbegg_processMessages(GameObject* obj)
                 ObjHits_EnableObject(obj);
                 break;
             case 19:
-                mainSetBits(config->secondaryGameBit, 1);
-                if ((int)config->counterGameBit > 0)
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(config->secondaryGameBit)), 1);
+                if ((int)ObjAnim_ReadPlacementS16(&obj->anim, &(config->counterGameBit)) > 0)
                 {
-                    gameBitIncrement((int)config->counterGameBit);
+                    gameBitIncrement((int)ObjAnim_ReadPlacementS16(&obj->anim, &(config->counterGameBit)));
                 }
                     Obj_RemoveFromUpdateList(obj);
                 (obj)->anim.flags = (s16)((obj)->anim.flags | OBJANIM_FLAG_HIDDEN);
@@ -208,7 +208,7 @@ void dbegg_setupFromDef(GameObject* obj, u8* state)
     (obj)->anim.rotZ = 0;
     (obj)->anim.rootMotionScale = (f32)(u32)config->speedScaleByte / 64.0f;
     (obj)->anim.rootMotionScale = (obj)->anim.rootMotionScale * (obj)->anim.modelInstance->rootMotionScaleBase;
-    ((DbEggState*)state)->mode = (u8)(mainGetBit(config->triggerGameBit) != 0 ? 3 : 1);
+    ((DbEggState*)state)->mode = (u8)(mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(config->triggerGameBit))) != 0 ? 3 : 1);
     if (((DbEggState*)state)->mode == 1)
     {
         if (dbegg_probeSurface(obj, &surfaceProbeOut, 0.0f, 0.0f, 1) == 0)
@@ -242,7 +242,7 @@ void dbegg_setupFromDef(GameObject* obj, u8* state)
         if (config->behaviorMode == 7)
             ((DbEggState*)state)->flags119 |= 32;
     }
-    ((DbEggState*)state)->mode = (u8)(mainGetBit(config->activateGameBit) != 0 ? 5 : 12);
+    ((DbEggState*)state)->mode = (u8)(mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(config->activateGameBit))) != 0 ? 5 : 12);
     if (((DbEggState*)state)->mode == 5)
     {
         objAddObjectType(obj, DBEGG_OBJGROUP);
@@ -443,7 +443,7 @@ void dbegg_computeFlocking(GameObject* obj, f32* vel)
 
 int dbegg_getExtraSize(void)
 {
-    return 0x124;
+    return sizeof(DbEggState);
 }
 int dbegg_getObjectTypeId(void)
 {
@@ -694,7 +694,7 @@ void dbegg_update(GameObject* obj)
                 mainSetBits(0x3c4, 1);
                 mainSetBits(0x86d, 1);
                 (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-                mainSetBits(placement->triggerGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 1);
                 pickupState->msg11C = -1;
                 pickupState->msg11E = 0;
                 pickupState->msg120 = 1.0f;
@@ -794,7 +794,7 @@ void dbegg_update(GameObject* obj)
             }
             break;
         case DBEGG_MODE_GATED_RESPAWN:
-            if (mainGetBit(data->activateGameBit) != 0)
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(data->activateGameBit))) != 0)
             {
                 objAddObjectType(obj, DBEGG_OBJGROUP);
                 egg->mode = DBEGG_MODE_FALLING;
@@ -840,7 +840,7 @@ void dbegg_update(GameObject* obj)
         {
             (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             ObjHits_DisableObject(obj);
-            if (mainGetBit(data->triggerGameBit) != 0)
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(data->triggerGameBit))) != 0)
             {
                 egg->flags119 &= ~9;
                 (obj)->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
@@ -865,7 +865,7 @@ void dbegg_update(GameObject* obj)
                         mainSetBits(0x3c4, 1);
                         mainSetBits(0x86d, 1);
                         (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-                        mainSetBits(placement->triggerGameBit, 1);
+                        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 1);
                         pickupState->msg11C = -1;
                         pickupState->msg11E = 0;
                         pickupState->msg120 = 1.0f;

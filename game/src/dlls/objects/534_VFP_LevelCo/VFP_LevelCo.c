@@ -210,9 +210,9 @@ void VFP_LevelControl_init(GameObject* obj, VfpLevelControlSetup* setup)
     state->unk02[4] = 0;
     state->unk02[5] = 0;
     state->areaMode = 1;
-    if (setup->areaMode != 0 && setup->areaMode <= 2)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->areaMode)) != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(setup->areaMode)) <= 2)
     {
-        state->areaMode = setup->areaMode;
+        state->areaMode = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->areaMode));
     }
     gVfpLevelControlTimer = VFP_TIMER_INIT;
     (*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot);

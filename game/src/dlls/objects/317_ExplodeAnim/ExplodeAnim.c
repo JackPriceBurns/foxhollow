@@ -39,19 +39,19 @@ void ExplodeAnimator_update(GameObject* obj) {
         return;
     }
     placement = (ExplodeAnimatorPlacement*)obj->anim.placementData;
-    if (mainGetBit(placement->triggerGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
         return;
     }
-    mainSetBits(placement->resultGameBit, 1);
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resultGameBit)), 1);
     state->flags = (u8)(state->flags | EXPLODE_ANIMATOR_STATE_FIRED);
     for (i = 0; i < placement->particleCount; i++) {
-        velocity[0] = 0.01f * (f32)(s32)randomGetRange(placement->velXMin, placement->velXMax);
-        velocity[1] = 0.01f * (f32)(s32)randomGetRange(placement->velYMin, placement->velYMax);
-        spawnParams.posX = (f32)(s32)randomGetRange(placement->posXMin, placement->posXMax);
-        spawnParams.posY = (f32)(s32)randomGetRange(placement->posYMin, placement->posYMax);
-        spawnParams.posZ = (f32)(s32)randomGetRange(placement->posZMin, placement->posZMax);
+        velocity[0] = 0.01f * (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velXMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velXMax)));
+        velocity[1] = 0.01f * (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velYMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velYMax)));
+        spawnParams.posX = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posXMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posXMax)));
+        spawnParams.posY = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posYMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posYMax)));
+        spawnParams.posZ = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posZMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posZMax)));
         (*gPartfxInterface)
-            ->spawnObject(obj, placement->effectId, &spawnParams, EXPLODE_ANIMATOR_PARTFX_SPAWN_FLAGS, -1, velocity);
+            ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->effectId)), &spawnParams, EXPLODE_ANIMATOR_PARTFX_SPAWN_FLAGS, -1, velocity);
     }
 }
 
@@ -59,7 +59,7 @@ void ExplodeAnimator_init(GameObject* obj, ExplodeAnimatorPlacement* placement) 
     ExplodeAnimatorState* state = obj->extra;
     int fired;
 
-    if (mainGetBit(placement->resultGameBit) != 0u) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resultGameBit))) != 0u) {
         fired = EXPLODE_ANIMATOR_STATE_FIRED;
     } else {
         fired = 0;

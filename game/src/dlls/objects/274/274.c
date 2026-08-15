@@ -80,7 +80,9 @@ static int SeqObject_animEventCallback(GameObject* obj, int* unused, ObjSeqState
 
             if ((flags & SEQ_OBJECT_FLAG_REARM_WHEN_OPEN_BIT_CLEARS) == 0 &&
                 (flags & SEQ_OBJECT_FLAG_SET_OPEN_BIT_ON_EVENT) != 0) {
-                mainSetBits(placement->openGameBit, SEQ_OBJECT_GAME_BIT_SET);
+                mainSetBits(ObjAnim_ReadPlacementS16(
+                                &obj->anim, &placement->openGameBit),
+                            SEQ_OBJECT_GAME_BIT_SET);
             }
             break;
         }
@@ -125,20 +127,29 @@ void SeqObject_update(GameObject* obj) {
     SeqObjectState* state;
     SeqObjectPlacement* placement;
     s32 triggerBitValue;
+    s16 openGameBit;
+    s16 triggerGameBit;
+    s16 preemptSequenceId;
+    u16 sequenceParam;
 
     state = obj->extra;
     placement = (SeqObjectPlacement*)obj->anim.placementData;
+    openGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->openGameBit);
+    triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit);
+    preemptSequenceId = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->preemptSequenceId);
+    sequenceParam = ObjAnim_ReadPlacementU16(&obj->anim, &placement->sequenceParam);
 
     if ((state->flags & SEQ_OBJECT_STATE_SEQUENCE_DONE) != 0) {
         u8 flags = placement->flags;
 
         if ((flags & SEQ_OBJECT_FLAG_REARM_WHEN_OPEN_BIT_CLEARS) != 0) {
             if ((flags & SEQ_OBJECT_FLAG_KEEP_TRIGGER_BIT_ON_DONE) == 0) {
-                mainSetBits(placement->triggerGameBit, SEQ_OBJECT_GAME_BIT_CLEAR);
+                mainSetBits(triggerGameBit, SEQ_OBJECT_GAME_BIT_CLEAR);
             }
         } else {
             if ((flags & SEQ_OBJECT_FLAG_SET_OPEN_BIT_ON_DONE) != 0) {
-                mainSetBits(placement->openGameBit, SEQ_OBJECT_GAME_BIT_SET);
+                mainSetBits(openGameBit, SEQ_OBJECT_GAME_BIT_SET);
             }
             state->flags = (u8)(state->flags | SEQ_OBJECT_STATE_OPEN);
         }
@@ -146,37 +157,37 @@ void SeqObject_update(GameObject* obj) {
     }
 
     if ((state->flags & SEQ_OBJECT_STATE_OPEN) == 0) {
-        if (mainGetBit(placement->openGameBit) != 0) {
+        if (mainGetBit(openGameBit) != 0) {
             state->flags = (u8)(state->flags | SEQ_OBJECT_STATE_OPEN);
         }
 
-        triggerBitValue = mainGetBit(placement->triggerGameBit);
+        triggerBitValue = mainGetBit(triggerGameBit);
         triggerBitValue = (s8)triggerBitValue;
         if (triggerBitValue != state->triggerBitState) {
             state->triggerBitState = triggerBitValue;
             if (triggerBitValue != SEQ_OBJECT_TRIGGER_BIT_CLEAR) {
                 if (placement->sequenceId != SEQ_OBJECT_SEQUENCE_ID_NONE) {
                     (*gObjectTriggerInterface)
-                        ->setRunSequenceWorldSpace((int)obj, SEQ_OBJECT_SEQUENCE_WORLD_SPACE_MODE);
+                        ->setRunSequenceWorldSpace((uintptr_t)obj, SEQ_OBJECT_SEQUENCE_WORLD_SPACE_MODE);
                     (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, SEQ_OBJECT_SEQUENCE_ARG_NONE);
                 }
                 if ((placement->flags & SEQ_OBJECT_FLAG_REARM_WHEN_OPEN_BIT_CLEARS) == 0 &&
                     (placement->flags &
                      (SEQ_OBJECT_FLAG_SET_OPEN_BIT_ON_EVENT | SEQ_OBJECT_FLAG_SET_OPEN_BIT_ON_DONE)) == 0) {
-                    mainSetBits(placement->openGameBit, SEQ_OBJECT_GAME_BIT_SET);
+                    mainSetBits(openGameBit, SEQ_OBJECT_GAME_BIT_SET);
                 }
             }
         }
     } else if ((state->flags & SEQ_OBJECT_STATE_RUN_OPEN_SEQUENCE) != 0) {
-        (*gObjectTriggerInterface)->preempt((int)obj, placement->preemptSequenceId);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptSequenceId);
         if ((placement->flags & SEQ_OBJECT_FLAG_USE_SEQUENCE_PARAM) != 0) {
-            (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, placement->sequenceParam);
+            (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, sequenceParam);
         } else {
             (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, SEQ_OBJECT_SEQUENCE_FLAGS_DEFAULT);
         }
         state->flags = (u8)(state->flags & ~SEQ_OBJECT_STATE_RUN_OPEN_SEQUENCE);
     } else if ((placement->flags & SEQ_OBJECT_FLAG_REARM_WHEN_OPEN_BIT_CLEARS) != 0 &&
-               mainGetBit(placement->openGameBit) == 0) {
+               mainGetBit(openGameBit) == 0) {
         state->flags = (u8)(state->flags & ~SEQ_OBJECT_STATE_OPEN);
     }
 }
@@ -184,16 +195,14 @@ void SeqObject_update(GameObject* obj) {
 void SeqObject_init(GameObject* obj, SeqObjectPlacement* placement) {
     ObjAnimComponent* objAnim;
     SeqObjectState* state;
+    s16 openGameBit;
+    s16 preemptSequenceId;
 
     objAnim = &obj->anim;
     state = obj->extra;
-    if (state->placementEndianConverted == 0) {
-        placement->openGameBit = (s16)fhSwap16((u16)placement->openGameBit);
-        placement->triggerGameBit = (s16)fhSwap16((u16)placement->triggerGameBit);
-        placement->preemptSequenceId = (s16)fhSwap16((u16)placement->preemptSequenceId);
-        placement->sequenceParam = fhSwap16(placement->sequenceParam);
-        state->placementEndianConverted = 1;
-    }
+    openGameBit = ObjAnim_ReadPlacementS16(objAnim, &placement->openGameBit);
+    preemptSequenceId = ObjAnim_ReadPlacementS16(
+        objAnim, &placement->preemptSequenceId);
     objAnim->rotX = (s16)(placement->initialYaw << SEQ_OBJECT_ROTATION_SHIFT);
     obj->animEventCallback = SeqObject_animEventCallback;
     *(u8*)&objAnim->bankIndex = placement->modelBankIndex;
@@ -202,10 +211,11 @@ void SeqObject_init(GameObject* obj, SeqObjectPlacement* placement) {
     }
     objAddObjectType(obj, SEQ_OBJECT_GROUP);
     state->flags = 0;
-    if (placement->openGameBit != SEQ_OBJECT_GAME_BIT_NONE &&
-        mainGetBit(placement->openGameBit) != SEQ_OBJECT_GAME_BIT_CLEAR) {
+    state->pad02 = 0;
+    if (openGameBit != SEQ_OBJECT_GAME_BIT_NONE &&
+        mainGetBit(openGameBit) != SEQ_OBJECT_GAME_BIT_CLEAR) {
         state->flags = (u8)(state->flags | SEQ_OBJECT_STATE_OPEN);
-        if (placement->preemptSequenceId != SEQ_OBJECT_PREEMPT_SEQUENCE_ID_NONE) {
+        if (preemptSequenceId != SEQ_OBJECT_PREEMPT_SEQUENCE_ID_NONE) {
             state->flags = (u8)(state->flags | SEQ_OBJECT_STATE_RUN_OPEN_SEQUENCE);
         }
     }

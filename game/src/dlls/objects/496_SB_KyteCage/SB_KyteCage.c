@@ -127,7 +127,7 @@ void SB_KyteCage_update(GameObject* obj) {
     if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
         if (mainGetBit(GAMEBIT_LearnedToSpeak) == 0) {
             buttonDisable(0, PAD_BUTTON_A);
-            (*gObjectTriggerInterface)->setRunSequenceWorldSpace((int)obj, 0);
+            (*gObjectTriggerInterface)->setRunSequenceWorldSpace((uintptr_t)obj, 0);
             (*gObjectTriggerInterface)->runSequence(SB_KYTECAGE_TRIGGER_OPEN, (void*)obj, -1);
             mainSetBits(GAMEBIT_LearnedToSpeak, 1);
             return;
@@ -135,7 +135,7 @@ void SB_KyteCage_update(GameObject* obj) {
     }
     if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) {
         buttonDisable(0, PAD_BUTTON_A);
-        (*gObjectTriggerInterface)->setRunSequenceWorldSpace((int)obj, 0);
+        (*gObjectTriggerInterface)->setRunSequenceWorldSpace((uintptr_t)obj, 0);
         if (state->releaseStage != 0) {
             (*gObjectTriggerInterface)->runSequence(SB_KYTECAGE_TRIGGER_RELEASE_B, (void*)obj, -1);
         } else {

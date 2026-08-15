@@ -466,8 +466,8 @@ void AppleOnTree_update(GameObject* obj) {
         switch (self->animState) {
         case APPLE_ON_TREE_STATE_GROWING:
             val = ObjHits_GetPriorityHit(obj, 0x0, 0x0, 0x0);
-            if ((val != 0) || ((placementData->despawnGameBit != APPLE_ON_TREE_GAME_BIT_NONE &&
-                                (gameBitValue = mainGetBit((int)placementData->despawnGameBit),
+            if ((val != 0) || ((ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit)) != APPLE_ON_TREE_GAME_BIT_NONE &&
+                                (gameBitValue = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit))),
                                  gameBitValue != 0)))) {
                 int burstIndex;
                 burstIndex = 0;
@@ -492,8 +492,8 @@ void AppleOnTree_update(GameObject* obj) {
             break;
         case APPLE_ON_TREE_STATE_RIPE:
             val = ObjHits_GetPriorityHit(obj, 0x0, 0x0, 0x0);
-            if ((val != 0) || ((placementData->despawnGameBit != APPLE_ON_TREE_GAME_BIT_NONE &&
-                                (gameBitValue = mainGetBit((int)placementData->despawnGameBit),
+            if ((val != 0) || ((ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit)) != APPLE_ON_TREE_GAME_BIT_NONE &&
+                                (gameBitValue = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit))),
                                  gameBitValue != 0)))) {
                 particleIndex = 0;
                 do {
@@ -545,8 +545,8 @@ void AppleOnTree_update(GameObject* obj) {
                 Obj_SetActiveModelIndex(obj, APPLE_ON_TREE_FALLEN_MODEL_INDEX);
             }
             state = ObjHits_GetPriorityHit(obj, 0x0, 0x0, 0x0);
-            if ((state != 0) || ((placementData->despawnGameBit != APPLE_ON_TREE_GAME_BIT_NONE &&
-                                  (gameBitValue = mainGetBit((int)placementData->despawnGameBit),
+            if ((state != 0) || ((ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit)) != APPLE_ON_TREE_GAME_BIT_NONE &&
+                                  (gameBitValue = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit))),
                                    gameBitValue != 0)))) {
                 appleontree_knockLoose(obj, APPLE_ON_TREE_KNOCK_WHILE_FALLING);
             }
@@ -558,8 +558,8 @@ void AppleOnTree_update(GameObject* obj) {
             } else {
                 state = ObjHits_GetPriorityHit(obj, 0x0, 0x0, 0x0);
                 if ((state != 0) ||
-                    ((placementData->despawnGameBit != APPLE_ON_TREE_GAME_BIT_NONE &&
-                      (gameBitValue = mainGetBit((int)placementData->despawnGameBit),
+                    ((ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit)) != APPLE_ON_TREE_GAME_BIT_NONE &&
+                      (gameBitValue = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placementData->despawnGameBit))),
                        gameBitValue != 0)))) {
                     appleontree_knockLoose(obj, APPLE_ON_TREE_KNOCK_WHILE_LANDED);
                 }
@@ -642,9 +642,9 @@ void AppleOnTree_init(GameObject* obj, AppleOnTreePlacement* placement) {
 
     state = obj->extra;
 
-    state->unk00 = placement->unk18;
-    state->phaseDuration = (f32)placement->phaseDuration;
-    state->elapsedTime = (f32)placement->initialElapsedTime;
+    state->unk00 = ObjAnim_ReadPlacementU32(&obj->anim, &(placement->unk18));
+    state->phaseDuration = (f32)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->phaseDuration));
+    state->elapsedTime = (f32)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->initialElapsedTime));
     {
         state->growthEnd = (f32)placement->growthEndFraction / 100.0f;
         progress = (f32)placement->ripeEndFraction / 100.0f;
@@ -673,7 +673,7 @@ void AppleOnTree_init(GameObject* obj, AppleOnTreePlacement* placement) {
         obj->anim.rootMotionScale = 0.001f;
         Obj_SetActiveModelIndex(obj, APPLE_ON_TREE_HANGING_MODEL_INDEX);
 
-        eventBit = placement->despawnGameBit;
+        eventBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->despawnGameBit));
         if ((eventBit != APPLE_ON_TREE_GAME_BIT_NONE) && (mainGetBit(eventBit) != 0)) {
             state->elapsedTime = 61.0f;
             state->animState = APPLE_ON_TREE_STATE_FADEOUT;

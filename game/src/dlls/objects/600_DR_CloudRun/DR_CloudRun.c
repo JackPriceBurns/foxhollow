@@ -263,7 +263,7 @@ void DR_CloudRunner_fireProjectile(GameObject* obj)
         dist = 200.0f;
     }
     newObj->userData1 = dist;
-    newObj->userData2 = (int)obj;
+    newObj->userData2 = (intptr_t)obj;
     newObj->anim.rotZ = 0;
     newObj->anim.rotY = 0;
     newObj->anim.rotX = 0;
@@ -346,7 +346,7 @@ int DR_CloudRunner_stateHandler06(GameObject* obj, CloudRunnerState* baddie)
             newObj->anim.velocityY = dir[1];
             newObj->anim.velocityZ = dir[2];
             newObj->userData1 = 0xb4;
-            newObj->userData2 = (int)obj;
+            newObj->userData2 = (intptr_t)obj;
             newObj->anim.rotZ = 0;
             newObj->anim.rotY = 0;
             newObj->anim.rotX = 0;
@@ -723,7 +723,8 @@ int DR_CloudRunner_stateHandler04(GameObject* obj, CloudRunnerState* baddie)
         placement = (DRCloudRunnerPlacement*)(obj)->anim.placementData;
         inner2->flagsBC0.b02 = 1;
         (*gGameUIInterface)
-            ->initAirMeter(placement->airMeterCapacity, DRCLOUDRUNNER_AIRMETER_BGTEXTURE);
+            ->initAirMeter(ObjAnim_ReadPlacementS16(&obj->anim, &placement->airMeterCapacity),
+                           DRCLOUDRUNNER_AIRMETER_BGTEXTURE);
         (*gGameUIInterface)->runAirMeter(inner2->airTimeRemaining);
         baddie->baddie.controlTimer = 0;
         baddie->baddie.moveSpeed = 0.005f;
@@ -896,7 +897,7 @@ int DR_CloudRunner_stateHandler01(GameObject* obj, CloudRunnerState* baddie)
     {
         Sfx_PlayFromObject(obj, SFXTRIG_lfoot_taunt);
     }
-    if (mainGetBit(placement->enableGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit)) != 0)
     {
         (obj)->userData1 = 0;
         ObjHits_EnableObject(obj);
@@ -1061,7 +1062,7 @@ int DR_CloudRunner_canMount(void)
 
 int DR_CloudRunner_getExtraSize(void)
 {
-    return 0xbc8;
+    return sizeof(CloudRunnerState);
 }
 
 int DR_CloudRunner_getObjectTypeId(void)
@@ -1281,9 +1282,9 @@ void DR_CloudRunner_init(GameObject* obj, DRCloudRunnerPlacement* def)
     inner = obj->extra;
     inner->spawnVariant = def->spawnVariant;
     inner->unkBAE = 5;
-    inner->airTimeRemaining = def->airMeterCapacity;
+    inner->airTimeRemaining = ObjAnim_ReadPlacementS16(&obj->anim, &def->airMeterCapacity);
     inner->sequenceIndex = -1;
-    inner->pathFollowSpeed = (f32)def->pathSpeedTenths / 10.0f;
+    inner->pathFollowSpeed = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &def->pathSpeedTenths) / 10.0f;
     if ((obj)->anim.modelState != NULL)
     {
         (obj)->anim.modelState->flags |= 0xa10;

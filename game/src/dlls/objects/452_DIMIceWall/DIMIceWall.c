@@ -81,8 +81,8 @@ void dimicewall_update(GameObject* obj) {
                 Sfx_PlayFromObject(obj, SFXTRIG_barrel_bounce1);
             }
             state->shattered = 1;
-            if (placement->shatterGameBit != -1) {
-                mainSetBits(placement->shatterGameBit, 1);
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->shatterGameBit)) != -1) {
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->shatterGameBit)), 1);
             }
         } else {
             GameObject* tricky = getTrickyObject();
@@ -101,9 +101,9 @@ void dimicewall_update(GameObject* obj) {
 void dimicewall_init(GameObject* obj, DimIceWallPlacement* placement) {
     DimIceWallState* state = obj->extra;
 
-    state->hitPoints = (s8)placement->hitPoints;
-    if (placement->shatterGameBit != -1) {
-        state->shattered = mainGetBit(placement->shatterGameBit);
+    state->hitPoints = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->hitPoints));
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->shatterGameBit)) != -1) {
+        state->shattered = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->shatterGameBit)));
     }
     obj->anim.rotX = (s16)((s32)placement->rotationXByte << 8);
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;

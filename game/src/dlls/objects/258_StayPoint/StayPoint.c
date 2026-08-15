@@ -36,14 +36,14 @@ void StayPoint_update(GameObject* obj) {
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     if (tricky != NULL) {
         isCurrentStayPoint = ((int)obj - (int)trickyGetStayPoint(tricky) == 0);
-        if (isCurrentStayPoint == 0 && placement->activeGameBit != STAYPOINT_GAMEBIT_NONE) {
-            mainSetBits(placement->activeGameBit, 0);
+        if (isCurrentStayPoint == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) != STAYPOINT_GAMEBIT_NONE) {
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)), 0);
         }
-        if (placement->requiredGameBit == STAYPOINT_GAMEBIT_NONE || mainGetBit(placement->requiredGameBit) != 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)) == STAYPOINT_GAMEBIT_NONE || mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit))) != 0) {
             if (isCurrentStayPoint != 0 &&
                 vec3f_distanceSquared(&obj->anim.worldPosX, &tricky->anim.worldPosX) < STAYPOINT_ENGAGE_RADIUS_SQ) {
-                if (placement->activeGameBit != STAYPOINT_GAMEBIT_NONE) {
-                    mainSetBits(placement->activeGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) != STAYPOINT_GAMEBIT_NONE) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)), 1);
                 }
                 return;
             }

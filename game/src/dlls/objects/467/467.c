@@ -155,7 +155,7 @@ void worldobj_free(GameObject* obj) {
         ModelLightStruct_free(state->light);
         state->light = NULL;
     }
-    (*gExpgfxInterface)->freeSource((int)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
 }
 
 void worldobj_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -286,11 +286,11 @@ void worldobj_update(GameObject* obj) {
         break;
     case WORLDOBJ_CLOUDL_OBJ:
         if (obj->userData1 == 0) {
-            obj->userData1 = (int)ObjList_FindObjectById(0x431dc);
+            obj->userData1 = (intptr_t)ObjList_FindObjectById(0x431dc);
             ObjLink_AttachChild(obj, (GameObject*)obj->userData1, 0);
         }
         if (obj->userData2 == 0) {
-            obj->userData2 = (int)ObjList_FindObjectById(0x4325b);
+            obj->userData2 = (intptr_t)ObjList_FindObjectById(0x4325b);
             ObjLink_AttachChild(obj, (GameObject*)obj->userData2, 0);
         }
         tex = objFindTexture(obj, 0, 0);

@@ -34,7 +34,7 @@ void attractor_getTarget(GameObject* obj, GameObject** outTarget) {
 int attractor_getScale(GameObject* obj) {
     AttractorPlacement* placement = (AttractorPlacement*)obj->anim.placementData;
     if (placement->mode != ATTRACTOR_MODE_NONE) {
-        return placement->unknown1A;
+        return ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unknown1A));
     }
     return 0;
 }

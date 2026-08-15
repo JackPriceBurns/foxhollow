@@ -28,6 +28,9 @@ int slidingDoor_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animU
     int result;
     GameObject* player;
     GameObject* tricky;
+    s16 gateGameBit;
+    s16 openGameBit;
+    s16 openedGameBit;
 
     player = Obj_GetPlayerObject();
     tricky = getTrickyObject();
@@ -46,19 +49,22 @@ int slidingDoor_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animU
 
     state = obj->extra;
     placement = (SlidingDoorPlacement*)obj->anim.placementData;
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
+    openGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->openGameBit);
+    openedGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->openedGameBit);
     mode = state->mode;
 
     if (mode == SLIDING_DOOR_MODE_CLOSED) {
-        if (mainGetBit(placement->openGameBit) != 0 &&
-            (placement->gateGameBit == SLIDING_DOOR_GATE_GAMEBIT_NONE || mainGetBit(placement->gateGameBit) != 0)) {
-            mainSetBits(placement->openedGameBit, TRUE);
+        if (mainGetBit(openGameBit) != 0 &&
+            (gateGameBit == SLIDING_DOOR_GATE_GAMEBIT_NONE || mainGetBit(gateGameBit) != 0)) {
+            mainSetBits(openedGameBit, TRUE);
             if (playerNear != 0 || trickyNear != 0) {
                 state->mode = SLIDING_DOOR_MODE_OPENING;
             }
         }
     } else if (mode == SLIDING_DOOR_MODE_OPEN) {
-        if ((mainGetBit(placement->openGameBit) != 0 ||
-             (placement->gateGameBit != SLIDING_DOOR_GATE_GAMEBIT_NONE && mainGetBit(placement->gateGameBit) != 0)) &&
+        if ((mainGetBit(openGameBit) != 0 ||
+             (gateGameBit != SLIDING_DOOR_GATE_GAMEBIT_NONE && mainGetBit(gateGameBit) != 0)) &&
             playerNear == 0 && trickyNear == 0) {
             state->mode = SLIDING_DOOR_MODE_CLOSING;
         }
@@ -117,10 +123,13 @@ void slidingDoor_update(GameObject* obj) {
     }
     state = obj->extra;
     placement = (SlidingDoorPlacement*)obj->anim.placementData;
-    if (placement->preemptTriggerId != SLIDING_DOOR_PREEMPT_TRIGGER_NONE) {
-        u32 mode = state->mode;
-        if (mode != SLIDING_DOOR_MODE_CLOSED) {
-            (*gObjectTriggerInterface)->preempt((int)obj, placement->preemptTriggerId);
+    {
+        s16 preemptTriggerId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->preemptTriggerId);
+        if (preemptTriggerId != SLIDING_DOOR_PREEMPT_TRIGGER_NONE) {
+            u32 mode = state->mode;
+            if (mode != SLIDING_DOOR_MODE_CLOSED) {
+                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptTriggerId);
+            }
         }
     }
     {

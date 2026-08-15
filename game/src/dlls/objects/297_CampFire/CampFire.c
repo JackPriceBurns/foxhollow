@@ -154,7 +154,7 @@ void CampFire_init(GameObject* obj, CampFirePlacement* placement) {
     if (mainGetBit(0x8C) != 0) {
         state->flags |= CAMPFIRE_STATE_FLAG_GAME_BIT_8C_SET;
     }
-    state->placementGameBit = placement->gameBit;
+    state->placementGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     placementGameBit = state->placementGameBit;
     if (placementGameBit != -1 && mainGetBit(placementGameBit) != 0) {
         state->flags |= CAMPFIRE_STATE_FLAG_PLACEMENT_GAME_BIT_SET;

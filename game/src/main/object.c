@@ -1263,6 +1263,21 @@ u8* loadObjectFile(int id)
                 et += 3;
             }
         }
+        if (buf->hitReactMoveTable != NULL)
+        {
+            ObjHitReactMoveEntry* hitReact = buf->hitReactMoveTable;
+            for (;;)
+            {
+                hitReact->moveId = fhReadBES16(&hitReact->moveId);
+                if (hitReact->moveId == OBJHITREACT_MOVE_ID_END)
+                {
+                    break;
+                }
+                hitReact->firstEntryByteOffset = fhReadBES16(&hitReact->firstEntryByteOffset);
+                hitReact->entryByteCount = fhReadBES16(&hitReact->entryByteCount);
+                hitReact++;
+            }
+        }
         if (buf->sequenceMap != NULL)
         {
             s16* sm = buf->sequenceMap;
@@ -1321,6 +1336,7 @@ void objGetWeaponDa(u8* obj, int objType, ObjWeaponDaTable* weaponDaTable, int k
             {
                 fileLoadToBufferOffset(MLDF_FILEID_WEAPONDA_BIN, weaponDaTable->entries, da2, weaponDaTable->byteCount);
             }
+            fhSwapU16Array(weaponDaTable->entries, (u32)weaponDaTable->byteCount / sizeof(s16));
             return;
         }
         i += 3;
@@ -1358,6 +1374,7 @@ void ObjAnim_LoadMoveEvents(u8* obj, int dummy, ObjAnimEventTable* eventTable, u
             {
                 fileLoadToBufferOffset(MLDF_FILEID_OBJEVENT_BIN, eventTable->entries, da2, eventTable->byteCount);
             }
+            fhSwapU16Array(eventTable->entries, (u32)eventTable->byteCount / sizeof(s16));
             return;
         }
         i += 3;

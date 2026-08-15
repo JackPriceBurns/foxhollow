@@ -43,7 +43,7 @@ static int lbl_803DC1B4[1] = {0};
 
 int drakord_thornbush_getExtraSize(void)
 {
-    return 0x7c;
+    return sizeof(DrakordThornbushState);
 }
 
 int drakord_thornbush_getObjectTypeId(void)
@@ -129,7 +129,7 @@ void drakord_thornbush_hitDetect(GameObject* obj)
             switch (obj->anim.romDefNo)
             {
             case THORNBUSH_SEQ_THORN:
-                spawnExplosion(obj, (f32)(s32)setup->baseRadius, 1, 0, 0,
+                spawnExplosion(obj, (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseRadius)), 1, 0, 0,
                                      0, 0, 1, 1);
                 break;
             case THORNBUSH_SEQ_LIGHTNING:
@@ -140,10 +140,10 @@ void drakord_thornbush_hitDetect(GameObject* obj)
                                            0.0f, &inner->light);
                 break;
             }
-            if (setup->regrowDelay != 0)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(setup->regrowDelay)) != 0)
             {
                 s16toFloat(&inner->growth,
-                           setup->regrowDelay);
+                           ObjAnim_ReadPlacementS16(&obj->anim, &(setup->regrowDelay)));
                 obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
                 ObjHits_DisableObject(obj);
             }
@@ -168,11 +168,11 @@ void drakord_thornbush_update(GameObject* obj)
     DrakordThornbushPlacement* setup2;
     if (timerIsActive(&inner->growth) != 0)
     {
-        if (inner->growth < (f32)(s32)setup->baseRadius)
+        if (inner->growth < (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseRadius)))
         {
             ObjHits_EnableObject(obj);
             ObjHitbox_SetSphereRadius(&obj->anim,
-                                      (int)(0.1f + (f32)(s32)setup->baseRadius -
+                                      (int)(0.1f + (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseRadius)) -
                                             inner->growth));
         }
         if (timerCountDown(&inner->growth) != 0)
@@ -207,7 +207,7 @@ void drakord_thornbush_update(GameObject* obj)
             break;
         case THORNBUSH_SEQ_LIGHTNING:
             if (Vec_distance(&((GameObject*)Obj_GetPlayerObject())->anim.worldPosX, &(obj)->anim.worldPosX) <
-                (f32)(s32)(setup->baseRadius << 1))
+                (f32)(s32)(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseRadius)) << 1))
             {
                 ObjHits_RecordObjectHit(Obj_GetPlayerObject(), obj, 5, 1, 0);
             }
@@ -228,7 +228,7 @@ void drakord_thornbush_update(GameObject* obj)
                     4.0f * (f32)(u32)framesThisStep + inner->lightScale;
                 (obj)->anim.rootMotionScale = inner->lightScale *
                                               ((obj)->anim.modelInstance->rootMotionScaleBase *
-                                               (f32)(s32)setup->baseRadius) /
+                                               (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseRadius))) /
                                               12000.0f;
             }
         }
@@ -238,9 +238,12 @@ void drakord_thornbush_update(GameObject* obj)
 void drakord_thornbush_init(GameObject* obj, u8* init)
 {
     DrakordThornbushState* inner = (DrakordThornbushState*)obj->extra;
+    DrakordThornbushPlacement* placement = (DrakordThornbushPlacement*)init;
+    s16 baseRadius = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->baseRadius);
     inner->health = 0;
         ObjHits_SetTargetMask(obj, 4);
-    (obj)->anim.rotY = (s16)(((DrakordThornbushPlacement*)init)->rotYByte << 8);
+    (obj)->anim.rotY = (s16)(placement->rotYByte << 8);
     if (*(u32*)&((ObjPlacement*)init)->ident == 0xffffffff)
     {
         inner->flags79.b80 = 1;
@@ -252,21 +255,20 @@ void drakord_thornbush_init(GameObject* obj, u8* init)
     {
     case THORNBUSH_SEQ_THORN:
         inner->hitTable = &gThornBushThornHitTable;
-        ObjHitbox_SetSphereRadius(&obj->anim, ((DrakordThornbushPlacement*)init)->baseRadius);
-        inner->radius = ((DrakordThornbushPlacement*)init)->baseRadius;
+        ObjHitbox_SetSphereRadius(&obj->anim, baseRadius);
+        inner->radius = baseRadius;
         inner->baseScale = 0.01f;
         (obj)->anim.rootMotionScale = (obj)->anim.modelInstance->rootMotionScaleBase *
-                                      (f32)(s32)((DrakordThornbushPlacement*)init)->baseRadius / 10.0f;
+                                      (f32)(s32)baseRadius / 10.0f;
         break;
     case THORNBUSH_SEQ_LIGHTNING:
         inner->hitTable = &gThornBushLightningHitTable;
         (obj)->anim.rootMotionScale = (obj)->anim.modelInstance->rootMotionScaleBase *
-                                      (f32)(s32)((DrakordThornbushPlacement*)init)->baseRadius / 60.0f;
-        ObjHitbox_SetSphereRadius(&obj->anim,
-                                  (s16)(((DrakordThornbushPlacement*)init)->baseRadius / 7));
+                                      (f32)(s32)baseRadius / 60.0f;
+        ObjHitbox_SetSphereRadius(&obj->anim, (s16)(baseRadius / 7));
         s16toFloat(&inner->regrowTimer, gThornBushLightningTimerInit);
         inner->baseScale = 0.04f;
-        inner->radius = ((DrakordThornbushPlacement*)init)->baseRadius / 5;
+        inner->radius = baseRadius / 5;
         inner->lightScale = 1.0f;
         break;
     }

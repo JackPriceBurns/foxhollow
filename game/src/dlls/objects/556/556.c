@@ -282,10 +282,10 @@ void dll_22C_init(GameObject* obj, char* def)
     obj->animEventCallback = dll_22C_SeqFn;
     obj->anim.rotX = (s16)(md->rotXByte << 8);
     state->mode = DLL22C_MODE_ARMED;
-    state->gameBit = md->gameBit;
-    state->gameBit2 = md->gameBit2;
-    state->raiseHeight = md->raiseHeight;
-    state->raiseMode = md->raiseMode;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(md->gameBit));
+    state->gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &(md->gameBit2));
+    state->raiseHeight = ObjAnim_ReadPlacementS16(&obj->anim, &(md->raiseHeight));
+    state->raiseMode = ObjAnim_ReadPlacementS16(&obj->anim, &(md->raiseMode));
     obj->anim.localPosY = obj->anim.localPosY - 1228.0f;
     obj->objectFlags = obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }

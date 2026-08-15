@@ -26,14 +26,14 @@ int DR_Creator_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
     DrcreatorState* state;
     DrcreatorSetup* setup;
     GameObject* projectile;
-    logPrintf(sDrCreatorTimeFormat, placement->behaviorMode, animUpdate->curFrame);
+    logPrintf(sDrCreatorTimeFormat, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorMode)), animUpdate->curFrame);
     if (Obj_IsLoadingLocked() == 0)
     {
         return 0;
     }
     for (i = 0; i < animUpdate->eventCount; i++)
     {
-        switch (placement->behaviorMode)
+        switch (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorMode)))
         {
         case DRCREATOR_BEHAVIOR_SEQUENCE_0:
         case DRCREATOR_BEHAVIOR_TIMED_PROJECTILES:
@@ -101,14 +101,14 @@ void DR_Creator_update(GameObject* obj)
     GameObject* projectile;
     if (Obj_IsLoadingLocked() != 0)
     {
-        switch (placement->behaviorMode)
+        switch (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorMode)))
         {
         case DRCREATOR_BEHAVIOR_SEQUENCE_0:
         case DRCREATOR_BEHAVIOR_SEQUENCE_4:
             if (mainGetBit(state->spawnGameBit) != 0)
             {
                 (*gObjectTriggerInterface)->runSequence(
-                    (placement->behaviorMode == DRCREATOR_BEHAVIOR_SEQUENCE_0) ? 0 : 4, (void*)obj, -1);
+                    (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorMode)) == DRCREATOR_BEHAVIOR_SEQUENCE_0) ? 0 : 4, (void*)obj, -1);
             }
             break;
         case DRCREATOR_BEHAVIOR_TIMED_PROJECTILES:
@@ -162,8 +162,8 @@ void DR_Creator_init(GameObject* obj, DrcreatorPlacement* placement)
 {
     DrcreatorState* state = obj->extra;
     obj->anim.rotX = (s16)(placement->rotX << 8);
-    state->spawnGameBit = placement->spawnGameBit;
-    state->spawnInterval = placement->spawnInterval;
+    state->spawnGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnGameBit));
+    state->spawnInterval = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnInterval));
     state->spawnTimer = randomGetRange(0, state->spawnInterval);
     state->timerVariance = placement->timerVariance;
     state->speedScale = placement->speedScale;

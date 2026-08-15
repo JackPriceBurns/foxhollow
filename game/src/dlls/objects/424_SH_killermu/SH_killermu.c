@@ -273,7 +273,7 @@ void EnemyMushroom_update(GameObject* obj) {
     case ENEMY_MUSHROOM_STATE_SETTLING:
         obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED;
         state->timer = state->timer + timeDelta;
-        if (state->timer > (f32)placement->regrowDelay) {
+        if (state->timer > (f32)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->regrowDelay))) {
             if (state->stateFlags & ENEMY_MUSHROOM_STATE_FLAG_ANIM_DONE) {
                 state->stateId = ENEMY_MUSHROOM_STATE_IDLE;
                 state->hitRadius = 0.0f;
@@ -364,8 +364,8 @@ void EnemyMushroom_update(GameObject* obj) {
                     Sfx_PlayFromObject(obj, SFXTRIG_mv_ladderslide16);
                 }
                 state->stateFlags = (u8)(state->stateFlags & ~ENEMY_MUSHROOM_STATE_FLAG_HIT_PLAYER);
-                if (placement->popGameBit != -1) {
-                    mainSetBits(placement->popGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->popGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->popGameBit)), 1);
                 }
                 state->stateId = ENEMY_MUSHROOM_STATE_STUNNED;
                 state->timer = 0.0f;
@@ -396,7 +396,7 @@ void EnemyMushroom_init(GameObject* obj, EnemyMushroomPlacement* placement, int 
     state->timer = zero;
     state->hitRadius = zero;
     state->baseScale = obj->anim.rootMotionScale;
-    state->respawnFrameLimit = placement->respawnFrameLimit;
+    state->respawnFrameLimit = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->respawnFrameLimit));
     if (state->respawnFrameLimit < ENEMY_MUSHROOM_MIN_RESPAWN_FRAME_LIMIT) {
         state->respawnFrameLimit = ENEMY_MUSHROOM_MIN_RESPAWN_FRAME_LIMIT;
     }

@@ -48,7 +48,7 @@ u32 gDll68EffectResourceData[sizeof(Dll68EffectResourceView) / sizeof(u32)] = {
 
 void dll_68_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll68EffectResourceData;
+    u8* resourceData = (u8*)gDll68EffectResourceData;
 
     packet.entries[0].layer = 0;
     packet.entries[0].flags = 0x15;
@@ -167,7 +167,7 @@ void dll_68_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDll68EffectResourceData, 0x18,
+        ->spawnEffect(&packet, 0, 0x15, (u8*)gDll68EffectResourceData, 0x18,
                       &resourceData[offsetof(Dll68EffectResourceView, colors)], 0x41, 0);
 }
 

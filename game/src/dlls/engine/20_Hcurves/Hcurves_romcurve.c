@@ -597,9 +597,9 @@ int RomCurve_goNextPointIndexed(RomCurveWalker* state, int pickIdx)
 
     state->node9C = state->nodeA0;
     state->nodeA0 = state->nodeA4;
-    memcpy(stateBytes + 0xa8, stateBytes + 0xb8, 0x10);
-    memcpy(stateBytes + 0xc8, stateBytes + 0xd8, 0x10);
-    memcpy(stateBytes + 0xe8, stateBytes + 0xf8, 0x10);
+    memcpy(state->hermX, state->hermX2, sizeof(state->hermX));
+    memcpy(state->hermY, state->hermY2, sizeof(state->hermY));
+    memcpy(state->hermZ, state->hermZ2, sizeof(state->hermZ));
 
     if (state->reverse != 0)
     {
@@ -755,9 +755,9 @@ u8 RomCurve_goNextPoint(RomCurveWalker* state)
 
     state->node9C = state->nodeA0;
     state->nodeA0 = state->nodeA4;
-    memcpy(stateBytes + 0xa8, stateBytes + 0xb8, 0x10);
-    memcpy(stateBytes + 0xc8, stateBytes + 0xd8, 0x10);
-    memcpy(stateBytes + 0xe8, stateBytes + 0xf8, 0x10);
+    memcpy(state->hermX, state->hermX2, sizeof(state->hermX));
+    memcpy(state->hermY, state->hermY2, sizeof(state->hermY));
+    memcpy(state->hermZ, state->hermZ2, sizeof(state->hermZ));
 
     if (state->reverse != 0)
     {
@@ -925,7 +925,7 @@ int curves_findNearObj(GameObject* obj, int* curveTypes, int typeCount, int acti
     s16 curveGrid[4];
     s16 objGrid[4];
     u8 traceHit;
-    int bboxHit[20];
+    TrackBBoxHit bboxHit;
     int typeIndex;
     u8 traceResult;
 
@@ -958,13 +958,15 @@ int curves_findNearObj(GameObject* obj, int* curveTypes, int typeCount, int acti
                     curvePos[2] = curve->z;
                     voxmaps_worldToGrid(curvePos, curveGrid);
                     traceResult = voxmaps_traceLine((VoxPos*)curveGrid, (VoxPos*)objGrid, NULL, &traceHit, 0);
-                    if (((traceHit == 1) || (traceResult != 0)) &&
-                        (((int (*)(f32*, f32*, f32, int, TrackBBoxHit*, GameObject*, s8, int, int, int))trackGetLineIntersect)(
-                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, (TrackBBoxHit*)bboxHit, obj,
-                             bboxMode, -1, 0, 0) == 0))
                     {
-                        bestDistance = distance;
-                        bestCurve = curve;
+                        int lix = ((int (*)(f32*, f32*, f32, int, TrackBBoxHit*, GameObject*, s8, int, int, int))trackGetLineIntersect)(
+                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit, obj,
+                             bboxMode, -1, 0, 0);
+                        if (((traceHit == 1) || (traceResult != 0)) && lix == 0)
+                        {
+                            bestDistance = distance;
+                            bestCurve = curve;
+                        }
                     }
                 }
                 if ((curve->action == action) && (distance < bestActionDistance))
@@ -976,7 +978,7 @@ int curves_findNearObj(GameObject* obj, int* curveTypes, int typeCount, int acti
                     traceResult = voxmaps_traceLine((VoxPos*)curveGrid, (VoxPos*)objGrid, NULL, &traceHit, 0);
                     if (((traceHit == 1) || (traceResult != 0)) &&
                         (((int (*)(f32*, f32*, f32, int, TrackBBoxHit*, GameObject*, s8, int, int, int))trackGetLineIntersect)(
-                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, (TrackBBoxHit*)bboxHit, obj,
+                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit, obj,
                              bboxMode, -1, 0, 0) == 0))
                     {
                         bestActionDistance = distance;
@@ -2919,6 +2921,12 @@ void RomCurve_add(RomCurveDef* curve)
     int sortedCurveCount;
     RomCurveDef** tailSlot;
     int insertIndex;
+    int linkSlot;
+
+    for (linkSlot = 0; linkSlot < ROMCURVE_LINK_COUNT; linkSlot++)
+    {
+        curve->linkIds[linkSlot] = (s32)fhSwap32((u32)curve->linkIds[linkSlot]);
+    }
 
     sortedCurveCount = nRomCurves;
     if (sortedCurveCount == ROMCURVE_MAX_CURVES)

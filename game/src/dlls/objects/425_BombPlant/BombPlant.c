@@ -84,7 +84,7 @@ int BombPlant_animEventCallback(GameObject* obj) {
 
             state->flags = (u8)(flags & ~BOMB_PLANT_STATE_FLAG_JUST_ENTERED);
             timerValue =
-                placement->timerBase + randomGetRange(BOMB_PLANT_RANDOM_TIMER_MIN, BOMB_PLANT_RANDOM_TIMER_MAX);
+                ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timerBase)) + randomGetRange(BOMB_PLANT_RANDOM_TIMER_MIN, BOMB_PLANT_RANDOM_TIMER_MAX);
             state->growTimer = timerValue;
         }
         if (obj->objectFlags & OBJECT_OBJFLAG_RENDERED) {
@@ -191,7 +191,7 @@ void BombPlant_explode(GameObject* obj, BombPlantStateConfig* unusedConfig, Bomb
     spawnExplosion(obj, 100.0f, 0, 1, 1, 1, 0, 1, 0);
     state->stateIndex = BOMB_PLANT_STATE_DORMANT;
     state->flags = (u8)(state->flags | BOMB_PLANT_STATE_FLAG_JUST_ENTERED);
-    gameBit = placement->gameBit;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     if (gameBit != -1) {
         mainSetBits(gameBit, 0);
     } else {
@@ -228,9 +228,9 @@ void BombPlant_update(GameObject* obj) {
         placement = (BombPlantPlacement*)obj->anim.placementData;
         if ((state->flags & BOMB_PLANT_STATE_FLAG_JUST_ENTERED) != 0) {
             state->flags &= ~BOMB_PLANT_STATE_FLAG_JUST_ENTERED;
-            state->growTimer = (f32)(int)placement->growTimer;
+            state->growTimer = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->growTimer));
         }
-        gameBit = placement->gameBit;
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
         if (gameBit != -1) {
             if (mainGetBit(gameBit) != 0) {
                 BombPlant_tryBeginGrow(obj, state);
@@ -294,7 +294,7 @@ void BombPlant_update(GameObject* obj) {
         placement = (BombPlantPlacement*)obj->anim.placementData;
         if ((state->flags & BOMB_PLANT_STATE_FLAG_JUST_ENTERED) != 0) {
             state->flags &= ~BOMB_PLANT_STATE_FLAG_JUST_ENTERED;
-            state->growTimer = (f32)(int)(placement->timerBase +
+            state->growTimer = (f32)(int)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timerBase)) +
                                           randomGetRange(BOMB_PLANT_RANDOM_TIMER_MIN, BOMB_PLANT_RANDOM_TIMER_MAX));
         }
         if ((obj->objectFlags & OBJECT_OBJFLAG_RENDERED) != 0) {
@@ -380,7 +380,7 @@ void BombPlant_init(GameObject* obj, BombPlantPlacement* placement, int isReload
         return;
     }
 
-    gameBit = placement->gameBit;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     if (gameBit != -1 && mainGetBit(gameBit) == 0) {
         spawnPlacement = (BombPlantPlacement*)obj->anim.placementData;
         obj->anim.alpha = 0xFF;

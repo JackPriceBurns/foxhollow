@@ -817,7 +817,7 @@ void snowclaw_init(GameObject* obj, SnowclawPlacement* placement)
     u8* table;
     SnowclawState* inner;
 
-    table = (u8*)(int)gSnowClawMoveTable;
+    table = (u8*)gSnowClawMoveTable;
     (obj)->animEventCallback = snowclaw_animEventCallback;
     if ((obj)->anim.modelState != NULL)
     {
@@ -853,7 +853,7 @@ void snowclaw_init(GameObject* obj, SnowclawPlacement* placement)
     inner->unk30 = 0.006f;
     storeZeroToFloatParam(&inner->attackTimer);
     s16toFloat(&inner->attackTimer, * (int*)(table + 0x3c));
-    seqPairTablePrepare((u8*)(int)gSnowClawMoveTable, 6);
+    seqPairTablePrepare((u8*)gSnowClawMoveTable, 6);
     gSnowClawDropBombAngle = 0x96;
     inner->b0 = 0;
 }

@@ -260,8 +260,9 @@ ExpgfxDllInterface expgfx_funcs = {
 s16 gObjFxCrystalSpinSpeed[4] = {-1024, -512, 512, 1024};
 
 const ObjFxColorTable gObjFxCrystalSparkleTbl = {
-    {0x0000, 0x00FF, 0x7FFF, 0x7FC0, 0xFFFF, 0x7FFF, 0x7FC0, 0xFFFF,
-     0xA000, 0xFFA0, 0x007F, 0x40FF, 0x0000, 0x0000, 0x0000}};
+    {0x00, 0x00, 0x00, 0xFF, 0x7F, 0xFF, 0x7F, 0xC0, 0xFF, 0xFF,
+     0x7F, 0xFF, 0x7F, 0xC0, 0xFF, 0xFF, 0xA0, 0x00, 0xFF, 0xA0,
+     0x00, 0x7F, 0x40, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 const ObjFxS32Table5 gObjFxPulseVariantTbl = {{0, 0, 0, 1, 2}};
 const ObjFxSparkleEffectTable gObjFxHitPulseTbl = {
     {{0, 2, 3, 3, 3}},
@@ -3786,11 +3787,11 @@ void drawGlow(uintptr_t slotPoolBase, int poolIndex)
                 angleToVec2((u16)angles.pitch, &cosB, &sinB);
                 if ((slot->renderFlags & EXPGFX_RENDER_PHASE_ROTATE_A) != 0)
                 {
-                    angleToVec2((u16)(gExpgfxPhaseAngleA + (((u32)slot << 8) & 0xFF00)), &sinC, &cosC);
+                    angleToVec2((u16)(gExpgfxPhaseAngleA + (((uintptr_t)slot << 8) & 0xFF00)), &sinC, &cosC);
                 }
                 else if ((slot->renderFlags & EXPGFX_RENDER_PHASE_ROTATE_B) != 0)
                 {
-                    angleToVec2((u16)(gExpgfxPhaseAngleB + (((u32)slot << 8) & 0xFF00)), &sinC, &cosC);
+                    angleToVec2((u16)(gExpgfxPhaseAngleB + (((uintptr_t)slot << 8) & 0xFF00)), &sinC, &cosC);
                 }
                 if (sourceObject != NULL && (slot->renderFlags & EXPGFX_RENDER_MODULATE_ALPHA_SOURCE) != 0)
                 {
@@ -4494,9 +4495,9 @@ int expgfx_addremove(ExpgfxSpawnConfig* config, int preferredPoolIndex, int slot
             gExpgfxSlotType1Average = gExpgfxSlotType1Sum / gExpgfxSlotType1Count;
         }
 
-        slot->colorByte0 = (u8)((int)*(u16*)&config->colorByte0 >> 8);
-        slot->colorByte1 = (u8)((int)*(u16*)&config->colorByte1 >> 8);
-        slot->colorByte2 = (u8)((int)*(u16*)&config->colorByte2 >> 8);
+        slot->colorByte0 = config->colorByte0.value;
+        slot->colorByte1 = config->colorByte1.value;
+        slot->colorByte2 = config->colorByte2.value;
 
         if ((config->renderFlags & EXPGFX_RENDER_OVERRIDE_COLORS) != 0)
         {
@@ -4685,7 +4686,7 @@ void expgfx_initialise(void)
     return;
 }
 
-u32 gExpgfxSlotPoolBases[0x50];
+uintptr_t gExpgfxSlotPoolBases[0x50];
 u32 gExpgfxSlotActiveMasks[0x50];
 u64 gExpgfxTrackedSourceFrameMasks[0xB0 / sizeof(u64)];
 ObjAnimComponent* gExpgfxTrackedPoolSourceIds[0x50];

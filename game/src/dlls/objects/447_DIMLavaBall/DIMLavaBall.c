@@ -87,9 +87,9 @@ void lavaball1bf_update(GameObject* obj) {
 
     state = obj->extra;
     placement = (const DimLavaBallPlacement*)obj->anim.placementData;
-    state->fireEnabled = mainGetBit(placement->stateGameBit);
+    state->fireEnabled = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stateGameBit)));
     if (state->awaitingTrigger != 0) {
-        if (mainGetBit(placement->triggerGameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) {
             state->fireEnabled = 1;
             state->awaitingTrigger = 0;
             state->fireTimer = 0.0f;
@@ -113,7 +113,7 @@ void lavaball1bf_update(GameObject* obj) {
         projectilePlacement->launchYaw = placement->rotXByte;
         projectilePlacement->verticalSpeed = placement->verticalSpeed;
         projectilePlacement->horizontalSpeed = placement->horizontalSpeed;
-        projectilePlacement->targetObjectId = placement->projectileTargetObjectId;
+        projectilePlacement->targetObjectId = ObjAnim_ReadPlacementS32(&obj->anim, &(placement->projectileTargetObjectId));
         state->projectile = objSetupObject((ObjPlacement*)setupHandle, DIM_LAVA_BALL_PROJECTILE_SETUP_FLAGS,
                                             obj->anim.mapEventSlot, -1, NULL);
     }
@@ -125,7 +125,7 @@ void lavaball1bf_update(GameObject* obj) {
         if (state->fireEnabled != 0) {
             int verticalSpeed;
 
-            if (mainGetBit(placement->triggerGameBit) != 0 && state->triggeredLaunchUsed == 0) {
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0 && state->triggeredLaunchUsed == 0) {
                 verticalSpeed = placement->triggeredVerticalSpeed;
                 state->triggeredLaunchUsed = 1;
             } else {
@@ -144,11 +144,11 @@ void lavaball1bf_init(GameObject* obj, const DimLavaBallPlacement* placement) {
 
     obj->anim.rotX = (s16)((s32)placement->rotXByte << 8);
     state = obj->extra;
-    state->firePeriod = placement->firePeriod;
+    state->firePeriod = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->firePeriod));
     state->fireTimer = 0.0f;
     state->pendingEnabled = placement->pendingEnabled;
-    state->triggeredLaunchUsed = mainGetBit(placement->triggeredLaunchGameBit);
-    if (placement->stateGameBit == -1 && state->triggeredLaunchUsed == 0) {
+    state->triggeredLaunchUsed = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggeredLaunchGameBit)));
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stateGameBit)) == -1 && state->triggeredLaunchUsed == 0) {
         state->awaitingTrigger = 1;
     }
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);

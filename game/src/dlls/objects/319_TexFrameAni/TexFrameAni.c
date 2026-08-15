@@ -61,7 +61,7 @@ void TexFrameAnimator_update(GameObject* obj) {
     state = obj->extra;
     placement = (TexFrameAnimatorPlacement*)obj->anim.placementData;
 
-    if ((state->active == 0) && (mainGetBit(placement->triggerGameBit) != 0) && (state->done == 0)) {
+    if ((state->active == 0) && (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) && (state->done == 0)) {
         state->active = 1;
         state->frame = 0;
     }
@@ -79,8 +79,8 @@ void TexFrameAnimator_update(GameObject* obj) {
             if (state->frame < 0) {
                 state->frame = 0;
             } else if (state->frame > state->endFrame) {
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                     state->active = 0;
                     state->done = 1;
                     state->frame = state->endFrame;
@@ -99,10 +99,10 @@ void TexFrameAnimator_init(GameObject* obj, TexFrameAnimatorPlacement* placement
 
     state = obj->extra;
     state->textureSlot = placement->textureSlot;
-    state->endFrame = placement->endFrame << 8;
-    state->speed = (u8)placement->speed;
+    state->endFrame = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->endFrame)) << 8;
+    state->speed = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->speed));
     state->wrapFrame = placement->wrapFrame << 8;
-    completionBitValue = mainGetBit(placement->completionGameBit);
+    completionBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)));
     if ((state->done = completionBitValue) != 0) {
         state->frame = state->endFrame;
         state->active = 1;

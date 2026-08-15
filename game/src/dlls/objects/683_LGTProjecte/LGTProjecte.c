@@ -60,8 +60,8 @@ void ProjectedLight_update(GameObject* obj)
 {
     ProjectedLightSetup* setup = (ProjectedLightSetup*)obj->anim.placementData;
 
-    obj->anim.rotX = (s16)((f32)setup->rotXSpeed * timeDelta + (f32)obj->anim.rotX);
-    obj->anim.rotY = (s16)((f32)setup->rotYSpeed * timeDelta + (f32)obj->anim.rotY);
+    obj->anim.rotX = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotXSpeed)) * timeDelta + (f32)obj->anim.rotX);
+    obj->anim.rotY = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotYSpeed)) * timeDelta + (f32)obj->anim.rotY);
     obj->anim.rotZ = (s16)((f32)(setup->rotZSpeed << 4) * timeDelta + (f32)obj->anim.rotZ);
 }
 
@@ -89,16 +89,16 @@ void ProjectedLight_init(GameObject* obj, ProjectedLightSetup* setup)
         modelLightStruct_setDirection(state->light, vec.x, vec.y, vec.z);
         modelLightStruct_setDiffuseColor(state->light, setupData->diffuseR, setupData->diffuseG, setupData->diffuseB,
                                          setupData->alpha);
-        modelLightStruct_setDistanceAttenuation(state->light, (f32)(u32)setupData->distanceNear,
-                                                (f32)(u32)setupData->distanceFar);
+        modelLightStruct_setDistanceAttenuation(state->light, (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->distanceNear)),
+                                                (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->distanceFar)));
         modelLightStruct_setProjectedLightChannelPreference(state->light, setupData->channelPreference);
         modelLightStruct_setEnabled(state->light, setupData->enabled, 0.0f);
 
         if (state->texture == NULL)
         {
-            if (setupData->textureAsset != 0)
+            if (ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->textureAsset)) != 0)
             {
-                state->texture = textureLoadAsset(setupData->textureAsset);
+                state->texture = textureLoadAsset(ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->textureAsset)));
             }
             else
             {
@@ -109,14 +109,14 @@ void ProjectedLight_init(GameObject* obj, ProjectedLightSetup* setup)
 
         if (setupData->projectionMode == PROJECTEDLIGHT_PROJECTION_ORTHO)
         {
-            f32 halfHeight = (f32)(u32)setupData->projectionHeight / 10.0f;
+            f32 halfHeight = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionHeight)) / 10.0f;
             f32 halfWidth;
             f32 nearDepth, farDepth;
             if (halfHeight < gProjectedLightOne[0])
             {
                 halfHeight = gProjectedLightOne[0];
             }
-            halfWidth = (f32)(u32)setupData->projectionWidth / 10.0f;
+            halfWidth = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionWidth)) / 10.0f;
             if (halfWidth < gProjectedLightOne[0])
             {
                 halfWidth = gProjectedLightOne[0];
@@ -137,13 +137,13 @@ void ProjectedLight_init(GameObject* obj, ProjectedLightSetup* setup)
         }
         else
         {
-            f32 height = (f32)(u32)setupData->projectionHeight / 10.0f;
+            f32 height = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionHeight)) / 10.0f;
             f32 width;
             if (height < gProjectedLightOne[0])
             {
                 height = gProjectedLightOne[0];
             }
-            width = (f32)(u32)setupData->projectionWidth / 10.0f;
+            width = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionWidth)) / 10.0f;
             if (width < gProjectedLightOne[0])
             {
                 width = gProjectedLightOne[0];
@@ -153,8 +153,8 @@ void ProjectedLight_init(GameObject* obj, ProjectedLightSetup* setup)
 
         modelLightStruct_setProjectionTevModes(state->light, setupData->tevModeA, setupData->tevModeB);
         modelLightStruct_setProjectionNearZ(state->light, (f32)(u32)setupData->nearZ);
-        modelLightStruct_setProjectionFarZ(state->light, (f32)(u32)setupData->farZ);
-        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, setupData->colorFadeFrames);
+        modelLightStruct_setProjectionFarZ(state->light, (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->farZ)));
+        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, ObjAnim_ReadPlacementS16(&obj->anim, &(setupData->colorFadeFrames)));
         modelLightStruct_setDiffuseTargetColor(state->light, setupData->targetR, setupData->targetG, setupData->targetB,
                                                setupData->targetAlpha);
     }

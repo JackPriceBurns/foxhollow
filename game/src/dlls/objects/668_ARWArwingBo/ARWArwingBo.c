@@ -103,9 +103,9 @@ int arwarwingbo_getObjectTypeId(void)
     return 0;
 }
 
-void arwarwingbo_free(int obj)
+void arwarwingbo_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource(obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
     objFreeObjectType((GameObject*)obj, ARWARWINGBO_OBJGROUP);
 }
 

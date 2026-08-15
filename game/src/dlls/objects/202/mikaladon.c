@@ -112,14 +112,14 @@ enum MikaladonVerticalPhase
 /* mikaladon_update: firefly hover update: circle drift, bob between heights,
  * periodically drop a spawned object, ambient sfx timers. */
 
-void mikaladon_updateWhileFrozen(int obj, u8* state, GameObject* attacker, int msg, int wpad0, int wpad1, Vec* wpad2,
+void mikaladon_updateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int msg, int wpad0, int wpad1, Vec* wpad2,
                                  int wpad3)
 {
     if (msg == 16 || msg == 17)
     {
         return;
     }
-    Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_dn_boar1_c_248);
+    Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_dn_boar1_c_248);
     ((EnemyState*)state)->current = 0;
     ((EnemyState*)state)->flags2E4 |= 0x20;
     ((EnemyState*)state)->flags2E8 |= 0x8;

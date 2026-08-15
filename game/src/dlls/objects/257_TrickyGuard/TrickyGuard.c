@@ -18,8 +18,8 @@ void TrickyGuard_update(GameObject* obj) {
     TrickyGuardPlacement* placement = (TrickyGuardPlacement*)obj->anim.placementData;
 
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    if (placement->armingGameBit != TRICKYGUARD_GAMEBIT_NONE) {
-        if (mainGetBit(placement->armingGameBit) == 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armingGameBit)) != TRICKYGUARD_GAMEBIT_NONE) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armingGameBit))) == 0) {
             return;
         }
     }

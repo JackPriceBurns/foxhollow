@@ -23,7 +23,7 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
 int saveGameReadSlotCb(u8 index, int unused, void* dst);
 
 int ObjSeq_StartPreparedStream(int slot);
-void ObjSeq_preempt(int key, int value);
+void ObjSeq_preempt(uintptr_t key, int value);
 u8 ObjSeq_getGlobal3(void);
 void ObjSeq_setGlobal3(s8 x);
 s16 ObjSeq_getGlobal1(void);
@@ -32,7 +32,7 @@ s16 ObjSeq_getGlobal2(void);
 void ObjSeq_setGlobal2(s16 x);
 int ObjSeq_SetObjs(int objs, GameObject* arg, int flags);
 int ObjSeq_setOverridePos(f32 x, f32 y, f32 z);
-int ObjSeq_SetCoordinateSpace(int unused, int space);
+int ObjSeq_SetCoordinateSpace(uintptr_t unused, int space);
 int ObjSeq_TurnToFacePlayer(GameObject* obj, struct ObjSeqState* state, s16 turnDegrees, s16 yawThreshold,
                             s16 maxAngle, s16 animRight, s16 animLeft);
 

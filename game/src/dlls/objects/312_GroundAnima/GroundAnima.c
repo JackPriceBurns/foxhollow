@@ -209,6 +209,8 @@ void GroundAnimator_update(GameObject* obj) {
     GroundAnimatorState* state = obj->extra;
     GroundAnimatorPlacement* placement = (GroundAnimatorPlacement*)obj->anim.placementData;
     s8 blockIndex;
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    s16 sunkGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->sunkGameBit);
 
     if (placement->animatorId == 0) {
         return;
@@ -312,7 +314,7 @@ void GroundAnimator_update(GameObject* obj) {
                         break;
                     }
                 }
-                mainSetBits(placement->sunkGameBit, 1);
+                mainSetBits(sunkGameBit, 1);
                 state->flags |= GROUND_ANIMATOR_STATE_COMPLETE;
                 Sfx_PlayFromObject(obj, gGroundAnimatorSfxIds[placement->sfxIndex]);
             }
@@ -345,7 +347,7 @@ void GroundAnimator_update(GameObject* obj) {
     }
 
     /* Offer Tricky's Find command while the dig spot is active. */
-    if (placement->enableGameBit == -1 || mainGetBit(placement->enableGameBit) != 0) {
+    if (enableGameBit == -1 || mainGetBit(enableGameBit) != 0) {
         findCommandEnabled = 1;
     } else {
         findCommandEnabled = 0;
@@ -370,14 +372,15 @@ void GroundAnimator_update(GameObject* obj) {
 
 void GroundAnimator_init(GameObject* obj, GroundAnimatorPlacement* placement) {
     GroundAnimatorState* state = obj->extra;
-    state->magicCaveId = placement->magicCaveId;
+    s16 sunkGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->sunkGameBit);
+    state->magicCaveId = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->magicCaveId);
     state->collectibleDepth = placement->collectibleDepth;
     state->previousSinkDepth = -1.0f;
     state->falloffRadius = placement->falloffRadius;
     if (placement->animatorId == 0) {
         return;
     }
-    if (mainGetBit(placement->sunkGameBit) != 0) {
+    if (mainGetBit(sunkGameBit) != 0) {
         state->sinkDepth = GROUND_ANIMATOR_SINK_DEPTH_SCALE * placement->maxSinkDepth;
         state->flags |= GROUND_ANIMATOR_STATE_COMPLETE;
     }

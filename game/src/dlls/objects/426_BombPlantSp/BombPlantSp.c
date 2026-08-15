@@ -70,11 +70,15 @@ void BombPlantSpore_free(GameObject* obj) {
 
 void BombPlantSpore_startDriftBurst(GameObject* obj, BombPlantSporeState* state) {
     s16 baseAngle;
+    s16 angleSpread;
     BombPlantSporePlacement* placement;
     s32 angleDelta;
 
     placement = (BombPlantSporePlacement*)obj->anim.placementData;
-    baseAngle = placement->behavior.baseAngle;
+    baseAngle = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->behavior.baseAngle);
+    angleSpread = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->behavior.angleSpread);
 
     state->spinTimer = (f32)randomGetRange(0x1E, 0x2D);
 
@@ -88,11 +92,11 @@ void BombPlantSpore_startDriftBurst(GameObject* obj, BombPlantSporeState* state)
     if (angleDelta < -0x8000) {
         angleDelta += 0xFFFF;
     }
-    if (angleDelta > placement->behavior.angleSpread) {
-        state->burstDriftAngle = (s16)(baseAngle + placement->behavior.angleSpread);
+    if (angleDelta > angleSpread) {
+        state->burstDriftAngle = (s16)(baseAngle + angleSpread);
     }
-    if (angleDelta < -(s32)placement->behavior.angleSpread) {
-        state->burstDriftAngle = (s16)(baseAngle - placement->behavior.angleSpread);
+    if (angleDelta < -(s32)angleSpread) {
+        state->burstDriftAngle = (s16)(baseAngle - angleSpread);
     }
 
     state->driftSpeedTarget = (f32)randomGetRange(900, 0x514) / 1000.0f;
@@ -104,11 +108,15 @@ void BombPlantSpore_startDriftBurst(GameObject* obj, BombPlantSporeState* state)
 
 void BombPlantSpore_updateDrift(GameObject* obj, BombPlantSporeState* state) {
     s16 baseAngle;
+    s16 angleSpread;
     BombPlantSporePlacement* placement;
     s32 angleDelta;
 
     placement = (BombPlantSporePlacement*)obj->anim.placementData;
-    baseAngle = placement->behavior.baseAngle;
+    baseAngle = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->behavior.baseAngle);
+    angleSpread = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->behavior.angleSpread);
 
     if (randomGetRange(0, 100) < 10 && state->spinChangeTimer <= 0.0f) {
         state->spinAngle = randomGetRange(2000, 4000);
@@ -123,11 +131,11 @@ void BombPlantSpore_updateDrift(GameObject* obj, BombPlantSporeState* state) {
         if (angleDelta < -0x8000) {
             angleDelta += 0xFFFF;
         }
-        if (angleDelta > placement->behavior.angleSpread) {
-            state->spinAngle = (s16)(baseAngle + placement->behavior.angleSpread);
+        if (angleDelta > angleSpread) {
+            state->spinAngle = (s16)(baseAngle + angleSpread);
         }
-        if (angleDelta < -(s32)placement->behavior.angleSpread) {
-            state->spinAngle = (s16)(baseAngle - placement->behavior.angleSpread);
+        if (angleDelta < -(s32)angleSpread) {
+            state->spinAngle = (s16)(baseAngle - angleSpread);
         }
         state->spinChangeTimer = 150.0f;
     }

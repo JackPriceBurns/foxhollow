@@ -32,7 +32,7 @@ extern u32 gDll98EffectResourceData[sizeof(Dll98EffectResourceView) / sizeof(u32
 void dll_98_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags, int unused,
                         int invertY) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll98EffectResourceData;
+    u8* resourceData = (u8*)gDll98EffectResourceData;
     Dll98EffectResourceView* resource = (Dll98EffectResourceView*)resourceData;
     GfxCmd* commands;
     int effectId;
@@ -168,7 +168,7 @@ void dll_98_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     (*gModgfxInterface)
         ->spawnEffect(&packet, 0, 0x12,
                       (u32)invertY != 0 ? &resourceData[offsetof(Dll98EffectResourceView, invertedVertices)]
-                                        : (u8*)(int)gDll98EffectResourceData,
+                                        : (u8*)gDll98EffectResourceData,
                       0x10, &resourceData[offsetof(Dll98EffectResourceView, triangles)], effectId, 0);
 }
 

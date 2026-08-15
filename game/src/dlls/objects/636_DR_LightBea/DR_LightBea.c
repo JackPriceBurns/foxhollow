@@ -27,7 +27,7 @@
 
 int DR_LightBea_getExtraSize(void)
 {
-    return 0xc;
+    return sizeof(DrLightBeaState);
 }
 
 int DR_LightBea_getObjectTypeId(void)
@@ -88,7 +88,7 @@ void DR_LightBea_render(GameObject* obj, int p2, int p3, int p4, int p5)
             mm_free(state->handle);
             state->handle = NULL;
         }
-        state->flags.bit80 = mainGetBit(setup->gameBit);
+        state->flags.bit80 = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->gameBit)));
         if (state->flags.bit80)
         {
             Sfx_PlayFromObject(obj, SFXTRIG_id_30f);

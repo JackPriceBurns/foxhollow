@@ -99,7 +99,7 @@ void drgenerator_hitDetect(GameObject* obj)
         }
     }
     state->flags.b0 = 1;
-    mainSetBits(placement->completionGameBit, 1);
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
     if ((obj)->anim.romDefNo == DRGENERATOR_OBJ &&
         (found = (void*)objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, NULL)) != NULL)
     {
@@ -122,7 +122,7 @@ void drgenerator_update(GameObject* obj)
     }
     if (state->flags.b4 == 0)
     {
-        if (state->flags.b3 == 0 && mainGetBit(placement->watchGameBit) == 0)
+        if (state->flags.b3 == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) == 0)
         {
             if ((obj)->anim.romDefNo != DRGENERATOR_WALL_OBJ)
             {
@@ -133,7 +133,7 @@ void drgenerator_update(GameObject* obj)
             ObjHits_DisableObject(obj);
             return;
         }
-        if (state->flags.b3 != 0 && mainGetBit(placement->watchGameBit) != 0)
+        if (state->flags.b3 != 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) != 0)
         {
             if ((obj)->anim.romDefNo != DRGENERATOR_WALL_OBJ)
             {
@@ -171,7 +171,7 @@ void drgenerator_init(GameObject* obj, DrgeneratorPlacement* placement)
     }
     state->hitsRemaining = 2;
     ObjHits_EnableObject(obj);
-    if (mainGetBit(placement->completionGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit))) != 0)
     {
         (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
         Obj_RemoveFromUpdateList(obj);
@@ -182,7 +182,7 @@ void drgenerator_init(GameObject* obj, DrgeneratorPlacement* placement)
     state->flags.b3 = 1;
     (obj)->anim.rotX = (s16)(placement->initialYaw << 8);
     {
-        int duration = placement->timerMinutes;
+        int duration = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timerMinutes));
         switch (duration)
         {
         case 0:

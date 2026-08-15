@@ -134,7 +134,7 @@ void landed_arwing_renderPathEffects(GameObject* obj) {
 }
 
 int landed_arwing_getExtraSize(void) {
-    return LANDED_ARWING_OBJECT_STATE_SIZE;
+    return sizeof(LandedArwingObjectState);
 }
 
 void landed_arwing_free(GameObject* obj) {
@@ -156,7 +156,9 @@ static void landed_arwing_runTargetSequence(GameObject* obj) {
     } else {
         (*gObjectTriggerInterface)->runSequence(1, nearest, -1);
     }
-    mainSetBits(placement->triggerGameBit, 0);
+    mainSetBits(ObjAnim_ReadPlacementS16(
+                    &obj->anim, &placement->triggerGameBit),
+                0);
 }
 
 void landed_arwing_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -425,7 +427,8 @@ void landed_arwing_init(GameObject* obj, LandedArwingPlacement* placement) {
     LandedArwingObjectState* state = obj->extra;
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->sequenceState = LANDED_ARWING_SEQUENCE_STATE_TRIGGER;
-    if (mainGetBit(placement->triggerGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(
+            &obj->anim, &placement->triggerGameBit)) == 0) {
         unlockLevel(0, 0, 1);
     }
     obj->animEventCallback = Landed_Arwing_SeqFn;
@@ -440,6 +443,7 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
     f32 range;
     f32 yOffset;
     ObjAnimEventList events;
+    s16 reactionCompleteGameBit;
 
     placement = (StaffActivatedPlacement*)obj->anim.placementData;
     if (!state->flags.damaged || (state->flags.impactHandled && state->hitStarted == 0u)) {
@@ -449,8 +453,10 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
         obj->anim.rotY = 0;
         obj->anim.rotZ = 0;
         if (obj->anim.currentMoveProgress >= lbl_803E3BBC && !state->flags.reactionDone) {
-            if (placement->reactionCompleteGameBit > 0) {
-                mainSetBits(placement->reactionCompleteGameBit, 1);
+            reactionCompleteGameBit = ObjAnim_ReadPlacementS16(
+                &obj->anim, &placement->reactionCompleteGameBit);
+            if (reactionCompleteGameBit > 0) {
+                mainSetBits(reactionCompleteGameBit, 1);
             }
 
             switch (placement->hitReactionType) {
@@ -474,9 +480,13 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
                 range = lbl_803E3BC0;
                 other = objGetNearestTypeTo(STAFF_ACTIVATED_OBJECT_GROUP, obj, &range);
                 if (other != NULL) {
+                    StaffActivatedPlacement* otherPlacement =
+                        (StaffActivatedPlacement*)other->anim.placementData;
+                    s16 siblingGameBit = ObjAnim_ReadPlacementS16(
+                        &other->anim, &otherPlacement->siblingGameBit);
                     otherState = other->extra;
-                    if (((StaffActivatedPlacement*)other->anim.placementData)->siblingGameBit > 0) {
-                        mainSetBits(((StaffActivatedPlacement*)other->anim.placementData)->siblingGameBit, 1);
+                    if (siblingGameBit > 0) {
+                        mainSetBits(siblingGameBit, 1);
                     }
                     otherState->flags.damaged = 1;
                 }
@@ -506,11 +516,20 @@ void landed_arwing_updateDamageTexture(GameObject* obj, LandedArwingHitReactionS
     ObjTextureRuntimeSlot* texture;
     u32 bit;
     LandedArwingHitFlags* flags;
+    s16 damageStateGameBit;
+    s16 damagedGameBit;
+    s16 activeGameBit;
 
     placement = (StaffActivatedPlacement*)obj->anim.placementData;
     flags = &state->flags;
-    if (placement->damageStateGameBit != LANDED_ARWING_GAME_BIT_NONE) {
-        bit = mainGetBit(placement->damageStateGameBit);
+    damageStateGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->damageStateGameBit);
+    damagedGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->damagedGameBit);
+    activeGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->activeGameBit);
+    if (damageStateGameBit != LANDED_ARWING_GAME_BIT_NONE) {
+        bit = mainGetBit(damageStateGameBit);
         flags->damageStateGameBitSet = bit;
         bit = flags->damageStateGameBitSet;
         if (bit != 0 && placement->mode == STAFF_ACTIVATED_MODE_DAMAGE_SECOND) {
@@ -521,11 +540,11 @@ void landed_arwing_updateDamageTexture(GameObject* obj, LandedArwingHitReactionS
     }
 
     if (flags->damaged == 0) {
-        if (placement->damagedGameBit != LANDED_ARWING_GAME_BIT_NONE && mainGetBit(placement->damagedGameBit) != 0) {
+        if (damagedGameBit != LANDED_ARWING_GAME_BIT_NONE && mainGetBit(damagedGameBit) != 0) {
             flags->damaged = 1;
         }
     } else {
-        if (placement->activeGameBit != LANDED_ARWING_GAME_BIT_NONE && mainGetBit(placement->activeGameBit) == 0) {
+        if (activeGameBit != LANDED_ARWING_GAME_BIT_NONE && mainGetBit(activeGameBit) == 0) {
             flags->damaged = 0;
         }
     }

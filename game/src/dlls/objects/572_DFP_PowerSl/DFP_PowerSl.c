@@ -75,7 +75,7 @@ void dfppowersl_update(GameObject* obj)
     if ((u32)powerSl != 0)
     {
         state = dfppowersl_getState(powerSl);
-        (*gObjectTriggerInterface)->preempt((int)powerSl, state->activateObjectId);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)powerSl, state->activateObjectId);
         (*gObjectTriggerInterface)->runSequence(0, powerSl, 0xffffffff);
     }
     return;
@@ -84,22 +84,28 @@ void dfppowersl_update(GameObject* obj)
 void dfppowersl_init(GameObject* obj, DfpPowerSlMapData* mapData)
 {
     DfpPowerSlState* state;
+    s16 activateObjectId;
+    s16 spawnObjectId;
 
     if (obj != 0)
     {
         state = dfppowersl_getState(obj);
-        if (mapData->activateObjectId <= 0)
+        activateObjectId = ObjAnim_ReadPlacementS16(
+            &obj->anim, &mapData->activateObjectId);
+        spawnObjectId = ObjAnim_ReadPlacementS16(
+            &obj->anim, &mapData->spawnObjectId);
+        if (activateObjectId <= 0)
         {
-            mapData->activateObjectId = DFPPOWERSL_DEFAULT_PARAM_OBJECT_ID;
+            activateObjectId = DFPPOWERSL_DEFAULT_PARAM_OBJECT_ID;
         }
-        if (mapData->spawnObjectId <= 0)
+        if (spawnObjectId <= 0)
         {
-            mapData->spawnObjectId = DFPPOWERSL_DEFAULT_PARAM_OBJECT_ID;
+            spawnObjectId = DFPPOWERSL_DEFAULT_PARAM_OBJECT_ID;
         }
         obj->animEventCallback = dfppowersl_spawnSeqObjectsOnHit;
-        state->activateObjectId = mapData->activateObjectId;
-        state->spawnObjectId = mapData->spawnObjectId;
-        state->eventId = mapData->eventId;
+        state->activateObjectId = activateObjectId;
+        state->spawnObjectId = spawnObjectId;
+        state->eventId = ObjAnim_ReadPlacementS16(&obj->anim, &mapData->eventId);
         obj->anim.rotX = mapData->mode << DFPPOWERSL_MODE_WORD_SHIFT;
         ObjHits_SetHitVolumeSlot(&obj->anim, DFPPOWERSL_HIT_VOLUME_SLOT, DFPPOWERSL_HIT_VOLUME_ENABLED, 0);
     }

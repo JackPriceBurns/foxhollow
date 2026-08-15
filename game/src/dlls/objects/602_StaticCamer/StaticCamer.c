@@ -49,9 +49,12 @@ void StaticCamera_init(GameObject* obj, StaticCameraPlacement* params, int defer
 {
     StaticCameraState* state;
 
-    obj->anim.rotX = -params->objectRotation.rotX;
-    obj->anim.rotY = -params->objectRotation.rotY;
-    obj->anim.rotZ = -params->objectRotation.rotZ;
+    obj->anim.rotX = -ObjAnim_ReadPlacementS16(
+        &obj->anim, &params->objectRotation.rotX);
+    obj->anim.rotY = -ObjAnim_ReadPlacementS16(
+        &obj->anim, &params->objectRotation.rotY);
+    obj->anim.rotZ = -ObjAnim_ReadPlacementS16(
+        &obj->anim, &params->objectRotation.rotZ);
     state = obj->extra;
     state->setupParam = params->setupParam;
     state->fov = (f32)(u32)params->fov;

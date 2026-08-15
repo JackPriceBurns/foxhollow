@@ -29,7 +29,7 @@ int chuka_getObjectTypeId(void)
     return 0x0;
 }
 
-void chuka_free(int obj)
+void chuka_free(GameObject* obj)
 {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
@@ -106,7 +106,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 0);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -117,7 +117,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 1);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -132,7 +132,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 2);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -147,7 +147,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 2);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -162,7 +162,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 1);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -177,7 +177,7 @@ void chuka_update(GameObject* obj)
         {
             Obj_SetActiveModelIndex(obj, 0);
         }
-        height = data->barHeight;
+        height = ObjAnim_ReadPlacementS16(&obj->anim, &(data->barHeight));
         if (height != 0)
         {
             (obj)->anim.rootMotionScale = 1.0f / ((f32)height / 1000.0f);
@@ -201,14 +201,14 @@ void chuka_init(GameObject* obj, ChukaPlacement* params)
     state->startY = obj->anim.localPosY;
     state->modeIndex = placement->modeIndex;
 
-    if (placement->barHeight != 0)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->barHeight)) != 0)
     {
-        obj->anim.rootMotionScale = 1.0f / ((f32)placement->barHeight / 1000.0f);
+        obj->anim.rootMotionScale = 1.0f / ((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->barHeight)) / 1000.0f);
     }
 
-    if (placement->rotZInit != 0)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotZInit)) != 0)
     {
-        obj->anim.rotZ = placement->rotZInit;
+        obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->rotZInit));
     }
 
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;

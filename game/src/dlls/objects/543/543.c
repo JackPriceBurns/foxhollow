@@ -5,7 +5,7 @@
 #include "main/dll/expgfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/object_render_legacy.h"
+#include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/audio/sfx_play_api.h"
 
@@ -34,7 +34,7 @@ STATIC_ASSERT(sizeof(VfpPlatformState) == 0x6);
 void VFP_Platform_updateLavaBlock(GameObject* obj);
 int VFP_Platform_getExtraSize(void);
 int VFP_Platform_getObjectTypeId(void);
-void VFP_Platform_free(int obj);
+void VFP_Platform_free(GameObject* obj);
 void VFP_Platform_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void VFP_Platform_hitDetect(void);
 void VFP_Platform_update(GameObject* obj);
@@ -162,9 +162,9 @@ int VFP_Platform_getObjectTypeId(void)
     return 0x0;
 }
 
-void VFP_Platform_free(int obj)
+void VFP_Platform_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2(obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void VFP_Platform_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -173,7 +173,7 @@ void VFP_Platform_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis
     s32 isVisible = visible;
     if (isVisible != 0 && state->axisMode != 0x63)
     {
-        ((void (*)(int, int, int, int, int, f32))objRenderModelAndHitVolumes)((int)obj, p2, p3, p4, p5, 1.0f);
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
     }
 }
 
@@ -366,7 +366,7 @@ void VFP_Platform_init(GameObject* obj, VfpPlatformPlacement* data)
     VfpPlatformPlacement* def = data;
     VfpPlatformState* state = obj->extra;
     obj->anim.rotX = (((s32)def->rotXByte) << 8);
-    state->gameBitId = def->gameBitId;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitId));
     state->state = 0;
     state->axisMode = def->axisMode;
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;

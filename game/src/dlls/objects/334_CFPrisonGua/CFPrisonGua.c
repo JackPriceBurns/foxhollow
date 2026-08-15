@@ -110,7 +110,7 @@ int cfPrisonGuard_sequenceCallback(GameObject* obj, int unused, ObjSeqState* ani
         characterCloseEyes(obj, &state->eyeAnimState);
         distance = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
         if (guardianFreed == 0) {
-            if (distance < (f32)placement->watchRadius ||
+            if (distance < (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchRadius)) ||
                 waterfx_consumePendingImpactNearPoint(&obj->anim.localPosX, 600.0f) != 0) {
                 if (objGetAnimState80A(player) != CFPRISONGUARD_PLAYER_CAUGHT_ANIM) {
                     shouldTransition = 1;
@@ -134,7 +134,7 @@ int cfPrisonGuard_sequenceCallback(GameObject* obj, int unused, ObjSeqState* ani
     case CFPRISONGUARD_STATE_WATCHING:
         distance = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
         if (guardianFreed == 0) {
-            if (distance < (f32)placement->watchRadius) {
+            if (distance < (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchRadius))) {
                 if (objGetAnimState80A(player) != CFPRISONGUARD_PLAYER_CAUGHT_ANIM) {
                     shouldTransition = 1;
                     state->stateId = CFPRISONGUARD_STATE_ALERT;
@@ -227,7 +227,7 @@ void cfPrisonGuard_update(GameObject* obj) {
     if (state->statusFlags.initialUpdate) {
         state->statusFlags.initialUpdate = 0;
     }
-    if (mainGetBit(placement->disableGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         ObjHits_DisableObject(obj);
@@ -243,7 +243,7 @@ void cfPrisonGuard_update(GameObject* obj) {
     }
     if (hasPrisonKey == 0) {
         if (state->stateId != CFPRISONGUARD_STATE_ALERT) {
-            if (!(distance < (f32)(s32)placement->watchRadius) &&
+            if (!(distance < (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchRadius))) &&
                 waterfx_consumePendingImpactNearPoint(&obj->anim.localPosX, 600.0f) == 0) {
                 return;
             }

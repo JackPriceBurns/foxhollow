@@ -32,7 +32,7 @@ s16 dll_69_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u3
     ModgfxSpawnPacket packet;
     GfxCmd* command;
     GfxCmd* entries;
-    u8* resourceData = (u8*)(int)gDll69EffectResourceData;
+    u8* resourceData = (u8*)gDll69EffectResourceData;
     int param1 = 0x30;
     int param2 = 0x31;
     int param0 = 1;
@@ -187,7 +187,7 @@ s16 dll_69_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u3
         }
     }
     return (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 8, (u8*)(int)gDll69EffectResourceData, 4,
+        ->spawnEffect(&packet, 0, 8, (u8*)gDll69EffectResourceData, 4,
                       &resourceData[offsetof(Dll69EffectResourceView, colors)], variant == 2 ? 0xc11 : 0x5e0, 0);
 }
 

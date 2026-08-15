@@ -156,7 +156,7 @@ void EffectBox_init(GameObject* obj, EffectBoxPlacement* placement) {
         Obj_RegisterEffectBox(obj);
     }
     obj->userData1 = 1;
-    gateGameBit = placement->gameBitIndex;
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitIndex));
     if (gateGameBit > EFFECTBOX_NO_GAME_BIT) {
         obj->userData2 = gateGameBit;
     } else {

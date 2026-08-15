@@ -11,22 +11,22 @@ int playerHasRevived(GameObject* playerObj);
 void playerSetIsDead(GameObject* playerObj, int isDead);
 void saveSetOverrideHealth(int health);
 
-static inline int Player_GetCurrentMagic(int playerObj)
+static inline int Player_GetCurrentMagic(uintptr_t playerObj)
 {
     return playerGetCurMagic((GameObject*)playerObj);
 }
 
-static inline int Player_GetMaxMagic(int playerObj)
+static inline int Player_GetMaxMagic(uintptr_t playerObj)
 {
     return playerGetMaxMagic((GameObject*)(playerObj));
 }
 
-static inline int Player_GetMaxHealth(int playerObj)
+static inline int Player_GetMaxHealth(uintptr_t playerObj)
 {
     return playerGetMaxHealth((GameObject*)(playerObj));
 }
 
-static inline int Player_GetCurrentHealth(int playerObj)
+static inline int Player_GetCurrentHealth(uintptr_t playerObj)
 {
     return playerGetCurHealth((GameObject*)(playerObj));
 }

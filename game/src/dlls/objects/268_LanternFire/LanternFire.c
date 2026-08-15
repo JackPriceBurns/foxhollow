@@ -74,7 +74,7 @@ void LanternFireFly_releaseFromLantern(GameObject* obj) {
     state->wanderRange = placement->wanderRange;
     state->stateId = placement->stateId;
     state->unk4C = gLanternFireFlyUnitValue;
-    state->driftRangeZ = (f32)(int)placement->driftRangeZ;
+    state->driftRangeZ = (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->driftRangeZ));
     state->unk6F = 0;
     Obj_SetParent(obj, NULL, 1);
     player = Obj_GetPlayerObject();
@@ -105,7 +105,7 @@ void LanternFireFly_releaseFromLantern(GameObject* obj) {
     LanternFireFly_advanceControlRing(obj);
     LanternFireFly_advanceControlRing(obj);
     state->modeFlags.motionMode = LANTERN_FIREFLY_PLAYER_FOLLOW_MOTION_MODE;
-    state->timer = placement->timer;
+    state->timer = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timer));
     gameBitIncrement(LANTERN_FIREFLY_ACTIVE_COUNT_GAMEBIT);
 }
 

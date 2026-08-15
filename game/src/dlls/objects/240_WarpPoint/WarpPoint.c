@@ -213,7 +213,7 @@ void WarpPoint_init(GameObject* obj, WarpPointPlacement* placement) {
     obj->anim.rotX = (s16)((u32)placement->yawByte << 8);
     state->warpDelay = WARPPOINT_INITIAL_WARP_DELAY;
     state->triggerRadius = (f32)((s32)placement->radius << WARPPOINT_RADIUS_SHIFT);
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     state->sequenceId = (s16)(s32)placement->sequenceId;
     if (placement->enabled != 0) {
         state->sequenceTriggered = 0;

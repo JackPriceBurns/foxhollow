@@ -106,20 +106,20 @@ void mmshScales_init(GameObject* obj, const MMSHScalesPlacement* placement) {
     MMSHScalesChildSetup* childSetup;
     int cachedAnimDataIndexPlusOne;
 
-    state->sequence.gameBit = placement->sequenceGameBit;
+    state->sequence.gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     state->sequence.flags = MMSH_SCALES_SEQUENCE_FLAGS;
     state->sequence.posOffsetDecay = 1.0f / (1.0f + (f32)(u32)placement->positionDamping);
     state->sequence.curveId = MMSH_SCALES_CURVE_NONE;
     cachedAnimDataIndexPlusOne = obj->userData1;
-    if (cachedAnimDataIndexPlusOne == 0 && placement->animDataIndex != MMSH_SCALES_DEFAULT_ANIM_DATA_INDEX) {
-        (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (cachedAnimDataIndexPlusOne != 0 && placement->animDataIndex != cachedAnimDataIndexPlusOne - 1) {
+    if (cachedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != MMSH_SCALES_DEFAULT_ANIM_DATA_INDEX) {
+        (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (cachedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != cachedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)state);
-        if (placement->animDataIndex != MMSH_SCALES_ANIM_DATA_NONE) {
-            (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != MMSH_SCALES_ANIM_DATA_NONE) {
+            (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     if (Obj_IsLoadingLocked() == 0) {
         return;

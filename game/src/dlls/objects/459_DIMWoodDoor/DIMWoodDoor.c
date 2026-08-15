@@ -94,7 +94,7 @@ void dimwooddoor2_update(GameObject* obj) {
             state->animationSpeed = DIM_WOOD_DOOR_OPEN_ANIMATION_SPEED;
             state->riseSpeed = DIM_WOOD_DOOR_OPEN_RISE_SPEED;
             state->doorState = DIM_WOOD_DOOR_STATE_OPEN;
-            mainSetBits(placement->openedGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)), 1);
             Sfx_PlayFromObject(obj, SFXTRIG_wp_dsmk2_c);
         }
     }
@@ -112,7 +112,7 @@ void dimwooddoor2_init(GameObject* obj, const DimWoodDoorPlacement* placement) {
     zero = DIM_WOOD_DOOR_REST_SPEED;
     state->animationSpeed = zero;
     state->riseSpeed = zero;
-    if (mainGetBit(placement->openedGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit))) != 0) {
         state->doorState = DIM_WOOD_DOOR_STATE_OPEN;
         hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
         hitState->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;

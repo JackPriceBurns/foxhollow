@@ -455,7 +455,7 @@ int DIMbossHitDetect_liftSlam(GameObject* obj, BaddieState* runtime) {
             runtime->moveDone = 0;
         }
         if (state->targetState == 1) {
-            *(f32*)((int)state->control + 0xa8) = 780.0f;
+            *(f32*)((u8*)state->control + 0xa8) = 780.0f;
         }
     }
     (*gPlayerInterface)->playSoundOnEvent0F(obj, runtime, 0, 1, lbl_803DBF30);
@@ -713,7 +713,7 @@ void DIMboss_spawnBlueWhiteEffect(DIMbossEffectMarker* source, f32* velocity) {
 }
 
 void DIMboss_createStateLight(GameObject* obj, u8 isGreen) {
-    ModelLightStruct** lightSlot = (ModelLightStruct**)(int)((GroundBaddieState*)(int)obj->extra)->control;
+    ModelLightStruct** lightSlot = (ModelLightStruct**)((GroundBaddieState*)obj->extra)->control;
 
     if (*(void**)lightSlot != NULL) {
         return;
@@ -1549,7 +1549,7 @@ int DIMboss_updateState(GameObject* obj, u32 state, ObjSeqState* animUpdate) {
             ((ObjAnimComponent*)obj->childObjs[0])->parent = obj->anim.parent;
         }
         if ((runtime->gameBitC != -1) && (statusFlags = mainGetBit((int)runtime->gameBitC), statusFlags != 0)) {
-            DIMboss_GetObjectTriggerInterface()->triggerEvent(animUpdate, config->eventId);
+            DIMboss_GetObjectTriggerInterface()->triggerEvent(animUpdate, ObjAnim_ReadPlacementS16(&obj->anim, &(config->eventId)));
             runtime->gameBitC = -1;
         }
         subMode = runtime->subMode;
@@ -1593,7 +1593,7 @@ int DIMboss_getControlMode(GameObject* obj) {
 }
 
 int DIMboss_getExtraSize(void) {
-    return DIMBOSS_RUNTIME_SIZE;
+    return sizeof(DIMbossRuntime) + sizeof(DIMbossTopState);
 }
 
 int DIMboss_getObjectTypeId(void) {

@@ -112,10 +112,10 @@ void staffactivated_setGameBitMirror(GameObject* obj, u8 enabled) {
     StaffActivatedPlacement* placement = (StaffActivatedPlacement*)obj->anim.placementData;
     StaffActivatedState* state = obj->extra;
     if (enabled != 0) {
-        mainSetBits(placement->lockGameBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)), 1);
         state->flags.gameBitMirror = 1;
     } else {
-        mainSetBits(placement->lockGameBit, 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)), 0);
         state->flags.gameBitMirror = 0;
     }
 }
@@ -331,7 +331,7 @@ void staffactivated_update(GameObject* obj) {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
         }
         isActive = 0;
-        gameBit = placement->activeGameBit;
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
         if (gameBit == STAFF_ACTIVATED_GAME_BIT_NONE || mainGetBit(gameBit) != 0) {
             isActive = 1;
         }
@@ -355,7 +355,7 @@ void staffactivated_update(GameObject* obj) {
         break;
     default:
         isActive = 0;
-        gameBit = placement->activeGameBit;
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
         if (gameBit == STAFF_ACTIVATED_GAME_BIT_NONE || mainGetBit(gameBit) != 0) {
             isActive = 1;
         }
@@ -434,15 +434,15 @@ void staffactivated_init(GameObject* obj, StaffActivatedPlacement* placement) {
     }
 
     flags = &state->flags;
-    if (placement->activeGameBit > 0) {
-        flags->active = mainGetBit(placement->activeGameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) > 0) {
+        flags->active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)));
     } else {
         flags->active = 1;
     }
     flags->unk4 = 0;
 
-    if (placement->lockGameBit > 0) {
-        if ((flags->locked = mainGetBit(placement->lockGameBit)) != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)) > 0) {
+        if ((flags->locked = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)))) != 0) {
             switch (placement->mode) {
             case STAFF_ACTIVATED_MODE_HIT_REACTION:
                 ObjAnim_SetMoveProgress(&obj->anim, lbl_803E3BBC);

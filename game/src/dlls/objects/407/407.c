@@ -262,26 +262,26 @@ void dll407_init(GameObject* obj, const Dll197Placement* placement) {
 
     state = obj->extra;
     obj->anim.rotX = (s16)((placement->rotationParam & 0x3Fu) << 10);
-    if (placement->scale > 0) {
-        obj->anim.rootMotionScale = placement->scale / 8192.0f;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scale)) > 0) {
+        obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scale)) / 8192.0f;
     } else {
         obj->anim.rootMotionScale = 0.1f;
     }
     state->mode = placement->mode;
     state->active = 0;
     state->stage = 0;
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     effectSpawnParams.scale = -2.0f;
     switch (state->mode) {
     case 0:
         state->active = 1;
         resource = Resource_Acquire(DLL197_EFFECT_RESOURCE_ID, 1);
-        if (placement->stage == 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stage)) == 0) {
             (*resource)->spawn(obj, 0, &effectSpawnParams, DLL197_EFFECT_SPAWN_FLAGS, -1, NULL);
         }
         break;
     case 1:
-        state->stage = (u8)placement->stage;
+        state->stage = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stage));
         state->sparkArmed = 0;
         state->hitCooldown = (s16)(state->stage * 0x28 + 0x398);
         state->previousActive = 0;

@@ -39,7 +39,7 @@ int lightsource_getObjectTypeId(void) {
 void lightsource_free(GameObject* obj) {
     LightSourceState* state = obj->extra;
 
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     if (state->light != NULL) {
         ModelLightStruct_free(state->light);
     }
@@ -83,7 +83,7 @@ void lightsource_update(GameObject* obj) {
                 }
                 Sfx_PlayFromObject(obj, SFXTRIG_cvdrip1c);
             } else {
-                (*gExpgfxInterface)->freeSource((u32)obj);
+                (*gExpgfxInterface)->freeSource((uintptr_t)obj);
                 if (state->gameBit != -1 && mainGetBit(state->gameBit) != 0) {
                     mainSetBits(state->gameBit, 0);
                 }
@@ -158,7 +158,7 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
     state = obj->extra;
     colorTable = *(const LightSourceColorTableView*)gLightSourceColorTable;
     obj->anim.rotX = (s16)(((int)placement->yaw & 0x3fU) << 10);
-    range = placement->range;
+    range = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->range));
     if (range > 0) {
         obj->anim.rootMotionScale = range / 8192.0f;
     } else {
@@ -166,9 +166,9 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
     }
 
     state->mode = placement->mode;
-    state->gameBit = placement->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
     state->fxType = 1;
-    if (placement->flags & LIGHTSOURCE_FLAG_FX_ARG_ZERO) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flags)) & LIGHTSOURCE_FLAG_FX_ARG_ZERO) {
         state->fxArg = 0;
     } else {
         state->fxArg = 3;
@@ -182,7 +182,7 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
     switch (state->mode) {
     case LIGHTSOURCE_MODE_STATIC:
         state->lit = 1;
-        flags = placement->flags;
+        flags = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flags));
         if (flags & LIGHTSOURCE_FLAG_FX_TYPE_4) {
             state->fxType = 4;
         } else if (flags & LIGHTSOURCE_FLAG_FX_TYPE_8) {
@@ -195,7 +195,7 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
         break;
     }
 
-    if (placement->flags & LIGHTSOURCE_FLAG_CREATE_LIGHT) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flags)) & LIGHTSOURCE_FLAG_CREATE_LIGHT) {
         if (state->light == NULL) {
             state->light = objCreateLight(obj, 1);
             if (state->light != NULL) {
@@ -225,7 +225,7 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
                                                    (int)(0.8f * (f32)(u32)colorTable.colors[colorBase + 2]), 0xff);
             lightSetField4D(state->light, 1);
 
-            if (placement->flags & LIGHTSOURCE_FLAG_CREATE_GLOW) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flags)) & LIGHTSOURCE_FLAG_CREATE_GLOW) {
                 if (obj->anim.romDefNo == LIGHTSOURCE_SEQID_ARWING_A || obj->anim.romDefNo == LIGHTSOURCE_SEQID_ARWING_B) {
                     colorBase = state->fxType * 3;
                     modelLightStruct_setupGlow(state->light, 0, colorTable.colors[colorBase],
@@ -244,7 +244,7 @@ void lightsource_init(GameObject* obj, const LightSourcePlacementView* placement
         state->light = NULL;
     }
 
-    if (placement->flags & LIGHTSOURCE_FLAG_DISABLE_FX_TYPE) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flags)) & LIGHTSOURCE_FLAG_DISABLE_FX_TYPE) {
         state->fxType = 0;
     }
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;

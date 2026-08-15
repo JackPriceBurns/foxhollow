@@ -89,7 +89,7 @@
 
 int gWbCurveInitData[2] = {2, 3};
 
-void wbUpdateWhileFrozen(int obj, u8* state, GameObject* attacker, int eventKind, int wpad0, int wpad1, Vec* wpad2,
+void wbUpdateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int eventKind, int wpad0, int wpad1, Vec* wpad2,
                          int wpad3)
 {
     if (eventKind != 0x11)
@@ -100,7 +100,7 @@ void wbUpdateWhileFrozen(int obj, u8* state, GameObject* attacker, int eventKind
         }
         else
         {
-            Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_baddie_mika_wingflap_260);
+            Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_baddie_mika_wingflap_260);
             ((EnemyState*)state)->current = 0;
             ((EnemyState*)state)->flags2E4 = ((EnemyState*)state)->flags2E4 | 0x20;
             ((EnemyState*)state)->flags2E8 = ((EnemyState*)state)->flags2E8 | 8;
@@ -130,7 +130,7 @@ static void wbTickDecoyTimer(GameObject* obj, EnemyState* state)
     }
 }
 
-void wbUpdateEngaged(GameObject* obj, int state)
+void wbUpdateEngaged(GameObject* obj, void* state)
 {
     GameObject* tracked;
     f32 moveSpeed;
@@ -208,7 +208,7 @@ void wbUpdateEngaged(GameObject* obj, int state)
     baddieTurnTowardLookDir((GameObject*)obj, (void*)state, 0x2d, 0.0f, 0.0f, 0);
 }
 
-void wbUpdateIdle(GameObject* obj, int state)
+void wbUpdateIdle(GameObject* obj, void* state)
 {
     RomCurveWalker* route;
     ObjPlacement* placement;
@@ -305,7 +305,7 @@ void wbUpdateIdle(GameObject* obj, int state)
     baddieTurnTowardLookDir((GameObject*)obj, (void*)state, 0x2d, 0.0f, 0.0f, 0);
 }
 
-void wbInit(u32 unused, int state)
+void wbInit(GameObject* unused, void* state)
 {
     float fa;
     u32 ua;

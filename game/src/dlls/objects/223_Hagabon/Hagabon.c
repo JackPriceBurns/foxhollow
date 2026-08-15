@@ -237,7 +237,7 @@ void Hagabon_update(GameObject* obj) {
     placement = (HagabonPlacement*)obj->anim.placementData;
 
     if (obj->userData1 != 0) {
-        if ((placement->armGameBit != HAGABON_GAME_BIT_NONE) && (mainGetBit(placement->armGameBit) != 0)) {
+        if ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit)) != HAGABON_GAME_BIT_NONE) && (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0)) {
             return;
         }
         if ((*gMapEventInterface)->shouldNotSaveTime(placement->base.ident) == 0) {
@@ -289,9 +289,9 @@ void Hagabon_update(GameObject* obj) {
             effectParams.posZ += playerMapOffsetZ;
             objDoHitParticleFx((void*)obj, 0.014f, &effectParams, 3, 0);
             (*gMapEventInterface)
-                ->addTime(placement->base.ident, (f32)(s32)(placement->timeReward * HAGABON_MAP_SECONDS_PER_MINUTE));
-            if (placement->armGameBit != HAGABON_GAME_BIT_NONE) {
-                mainSetBits(placement->armGameBit, 1);
+                ->addTime(placement->base.ident, (f32)(s32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timeReward)) * HAGABON_MAP_SECONDS_PER_MINUTE));
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit)) != HAGABON_GAME_BIT_NONE) {
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit)), 1);
             }
         }
         ObjHits_SetHitVolumeSlot(&obj->anim, HAGABON_HIT_VOLUME_SLOT, 1, 0);
@@ -321,7 +321,7 @@ void Hagabon_update(GameObject* obj) {
     if (((state->flags & HAGABON_FLAG_PATH_RETURN) != 0) && (state->pathDistance < HAGABON_PATH_RESUME_DISTANCE)) {
         state->flags &= ~HAGABON_FLAG_PATH_RETURN;
     }
-    if (((state->flags & (HAGABON_FLAG_CHASE | HAGABON_FLAG_PATH_RETURN)) == 0) && (placement->startInactive == 0) &&
+    if (((state->flags & (HAGABON_FLAG_CHASE | HAGABON_FLAG_PATH_RETURN)) == 0) && (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startInactive)) == 0) &&
         (state->player != NULL) && (state->playerDistance < state->chaseRadius)) {
         state->flags |= HAGABON_FLAG_CHASE;
     }
@@ -330,7 +330,7 @@ void Hagabon_update(GameObject* obj) {
 
 void Hagabon_init(GameObject* obj, HagabonPlacement* placement, int skipAlloc) {
     HagabonState* state = obj->extra;
-    state->curveStep = (f32)(s32)placement->curveStepRaw / HAGABON_CURVE_STEP_DIVISOR;
+    state->curveStep = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->curveStepRaw)) / HAGABON_CURVE_STEP_DIVISOR;
     state->animSpeed = HAGABON_ANIMATION_SPEED;
     state->chaseRadius = HAGABON_CHASE_RADIUS_SCALE * (f32)(s32)placement->chaseRadiusScale;
     if (skipAlloc == 0) {
@@ -343,8 +343,8 @@ void Hagabon_init(GameObject* obj, HagabonPlacement* placement, int skipAlloc) {
             state->flags |= HAGABON_FLAG_PATH_NEEDS_LINK;
         }
     }
-    if (placement->armGameBit != HAGABON_GAME_BIT_NONE) {
-        if (mainGetBit(placement->armGameBit) != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit)) != HAGABON_GAME_BIT_NONE) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0) {
             obj->userData1 = 1;
         }
     }

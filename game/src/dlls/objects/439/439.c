@@ -319,11 +319,11 @@ void sc_musictree_init(GameObject* obj, ScMusicTreePlacement* placement) {
     state->hearRadius = (u16)((u32)placement->hearRadiusHalf << 1);
     state->flags = placement->flags;
     state->proximityCooldown = zero;
-    state->effectScale = placement->scale;
+    state->effectScale = ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale));
     obj->anim.rotZ = (s16)((placement->rotZByte - 0x7F) << 7);
     obj->anim.rotY = (s16)((placement->rotYByte - 0x7F) << 7);
     obj->anim.rotX = (s16)((u32)placement->rotXByte << 8);
-    obj->anim.rootMotionScale = 3.6f * placement->scale;
+    obj->anim.rootMotionScale = 3.6f * ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale));
     obj->userData2 = 0;
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     ratio = (f32)(s32)randomGetRange(1, 99) / 100.0f;

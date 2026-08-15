@@ -40,10 +40,11 @@ void spiritDoorSpirit_hitDetect(void) {
 void spiritDoorSpirit_update(GameObject* obj) {
     SpiritDoorSpiritState* state = obj->extra;
     SpiritDoorSpiritPlacement* placement = (SpiritDoorSpiritPlacement*)obj->anim.placement;
+    s16 gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
     u8 active;
 
     if (state->active == 0) {
-        state->active = active = (u8)(mainGetBit(placement->gateGameBit) == 0);
+        state->active = active = (u8)(mainGetBit(gateGameBit) == 0);
         if (active != 0) {
             objAddObjectType(obj, SPIRIT_DOOR_SPIRIT_OBJECT_GROUP);
         }
@@ -52,7 +53,7 @@ void spiritDoorSpirit_update(GameObject* obj) {
         }
     } else {
         objfx_spawnPulseBurst(obj, gSpiritDoorSpiritPulseScale, SPIRIT_DOOR_SPIRIT_PULSE_TYPE, 0, 0, NULL);
-        state->active = active = (u8)(mainGetBit(placement->gateGameBit) == 0);
+        state->active = active = (u8)(mainGetBit(gateGameBit) == 0);
         if (active == 0) {
             objFreeObjectType(obj, SPIRIT_DOOR_SPIRIT_OBJECT_GROUP);
         }

@@ -164,7 +164,7 @@ void ring_onCollect(GameObject* obj, RingState* state, GameObject* arwing)
     else if (mode == 3 || mode == 4)
     {
         Sfx_PlayFromObject(arwing, SFXTRIG_ar_lsrhitobj16);
-        gameBitIncrement(setup->counterGameBit);
+        gameBitIncrement(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->counterGameBit)));
     }
     else
     {
@@ -299,7 +299,7 @@ void ring_update(GameObject* obj)
             obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
         }
         obj->anim.alpha = alpha;
-        bit = setup->activateBit;
+        bit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activateBit));
         if (bit > -1)
         {
             if (mainGetBit(bit) != 0u)
@@ -322,7 +322,7 @@ void ring_update(GameObject* obj)
         if (alpha > RING_ALPHA_OPAQUE)
             alpha = RING_ALPHA_OPAQUE;
         obj->anim.alpha = alpha;
-        bit = setup->activateBit;
+        bit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->activateBit));
         if (bit > -1)
         {
             if (mainGetBit(bit) == 0u)
@@ -525,8 +525,8 @@ void ring_init(GameObject* obj, RingPlacement* setup)
         f->bit80 = 1;
         ObjHits_DisableObject(obj);
     }
-    state->linkId = p->linkId;
-    state->pullHeight = p->pullHeight / 10.0f;
+    state->linkId = ObjAnim_ReadPlacementS16(&obj->anim, &(p->linkId));
+    state->pullHeight = ObjAnim_ReadPlacementS16(&obj->anim, &(p->pullHeight)) / 10.0f;
     state->origX = (obj)->anim.localPosX;
     state->origY = (obj)->anim.localPosY;
     if (p->modeFlag != 0)

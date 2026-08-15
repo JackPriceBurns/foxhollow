@@ -363,7 +363,7 @@ typedef u64 RenderPackedAddress;
 
 static inline u16 render_readPackedU16(RenderPackedAddress address)
 {
-    return *(u16*)(uintptr_t)address;
+    return fhReadBE16((const void*)(uintptr_t)address);
 }
 
 static inline void render_writePackedU16(RenderPackedAddress address, u16 value)
@@ -545,7 +545,7 @@ void modelRenderInterpolateRootTransform(ObjAnimState* anim, s16* outPosition, s
 static void render_copyPackedU64Tail(u64* dst, u64 packed) {
     /* Preserve the leading bytes of *dst; fill the tail from the aligned
        64-bit word shifted down. */
-    u64 src = *(u64*)(uintptr_t)(packed & ~7);
+    u64 src = fhSwap64(*(u64*)(uintptr_t)(packed & ~7));
 
     switch (packed & 7) {
     case 7:
@@ -578,7 +578,7 @@ static void render_copyPackedU64Tail(u64* dst, u64 packed) {
 static void render_copyPackedU64Head(u64* dst, u64 packed) {
     /* Fill the head from the aligned 64-bit word; preserve bytes after the
        unaligned source offset. */
-    u64 src = *(u64*)(uintptr_t)(packed & ~7);
+    u64 src = fhSwap64(*(u64*)(uintptr_t)(packed & ~7));
 
     switch (packed & 7) {
     case 0:

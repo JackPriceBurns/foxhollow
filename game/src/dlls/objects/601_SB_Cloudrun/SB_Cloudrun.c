@@ -30,7 +30,7 @@
 #include "main/track_dolphin_api.h"
 #include "main/objtype.h"
 #include "main/objprint_render_api.h"
-#include "main/object_render_legacy.h"
+#include "main/object_render.h"
 #include "main/dll/WC/dll_0259_sbcloudrunner.h"
 #include "main/dll/bwalphaanim.h"
 #include "main/objhits.h"
@@ -718,7 +718,7 @@ void SB_CloudRunner_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 v
     f32 mtx[16];
     if (visible == -1)
     {
-        objRenderModelAndHitVolumes((int)obj, p2, p3, p4, p5, 1.0f);
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
         ObjPath_GetPointWorldPosition(obj, 3, state, state + 1, state + 2, 0);
         if (obj->anim.parent != NULL)
         {
@@ -730,7 +730,7 @@ void SB_CloudRunner_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 v
     }
     else if (visible != 0)
     {
-        objRenderModelAndHitVolumes((int)obj, p2, p3, p4, p5, 1.0f);
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
         ObjPath_GetPointWorldPosition(obj, 3, state, state + 1, state + 2, 0);
         if (obj->anim.parent != NULL)
         {

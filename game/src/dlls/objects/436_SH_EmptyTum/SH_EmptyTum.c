@@ -39,7 +39,7 @@ void SH_EmptyTumbleW_init(GameObject* obj, ShEmptyTumbleweedPlacement* placement
     obj->anim.rotY =
         (placement->rotYByte - SH_EMPTY_TUMBLEWEED_ROTATION_BYTE_CENTER) * SH_EMPTY_TUMBLEWEED_ROTATION_BYTE_SCALE;
     obj->anim.rotX = placement->rotXByte << SH_EMPTY_TUMBLEWEED_ROTATION_BYTE_SHIFT;
-    obj->anim.rootMotionScale = placement->scale;
+    obj->anim.rootMotionScale = ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale));
     scale = obj->anim.rootMotionScale;
     ObjHitbox_SetCapsuleBounds((ObjAnimComponent*)obj, (int)(SH_EMPTY_TUMBLEWEED_HITBOX_RADIUS * scale),
                                (int)(SH_EMPTY_TUMBLEWEED_HITBOX_VERTICAL_MIN * scale),

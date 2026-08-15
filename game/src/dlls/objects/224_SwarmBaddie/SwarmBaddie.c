@@ -209,7 +209,7 @@ void SwarmBaddie_update(GameObject* obj) {
 
 void SwarmBaddie_init(GameObject* obj, SwarmBaddiePlacement* placement, int skipAlloc) {
     SwarmBaddieState* state = obj->extra;
-    state->curveStep = (f32)(s32)placement->curveStepParam / 50.0f;
+    state->curveStep = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->curveStepParam)) / 50.0f;
     state->chaseRadius = 4.0f * (f32)(s32)placement->chaseRadiusScale;
     state->hitVolumeEnvelope = 1.0f;
     if (skipAlloc == 0) {

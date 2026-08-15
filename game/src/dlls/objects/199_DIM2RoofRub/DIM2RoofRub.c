@@ -188,7 +188,7 @@ void dim2roofrub_update(GameObject* obj) {
     ObjSeqState* sequence = &((DIM2RoofRubState*)obj->extra)->sequence;
     DIM2RoofRubPlacement* placement = (DIM2RoofRubPlacement*)obj->anim.placementData;
 
-    if (placement != NULL && placement->animDataIndex != -1) {
+    if (placement != NULL && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
         PartFxSpawnParams dustParams;
         int objectCount;
         int result;
@@ -260,7 +260,7 @@ void dim2roofrub_init(GameObject* obj, DIM2RoofRubPlacement* placement) {
 
     objSetSlot(obj, 0x64);
     sequence = obj->extra;
-    sequence->gameBit = placement->sequenceGameBit;
+    sequence->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     sequence->flags = -1;
     {
         f32 one = 1.0f;
@@ -274,15 +274,15 @@ void dim2roofrub_init(GameObject* obj, DIM2RoofRubPlacement* placement) {
     sequence->baseRotY = 0;
     obj->userData2 = 0;
     loadedAnimDataIndexPlusOne = obj->userData1;
-    if (loadedAnimDataIndexPlusOne == 0 && placement->animDataIndex != 1) {
-        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (loadedAnimDataIndexPlusOne != 0 && placement->animDataIndex != loadedAnimDataIndexPlusOne - 1) {
+    if (loadedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != 1) {
+        (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (loadedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != loadedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)sequence);
-        if (placement->animDataIndex != -1) {
-            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
+            (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     {
         ObjModelState* modelState = obj->anim.modelState;

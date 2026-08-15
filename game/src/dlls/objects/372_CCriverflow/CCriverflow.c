@@ -30,9 +30,9 @@ void ccRiverFlow_update(GameObject* obj) {
     CCRiverFlowState* state;
 
     placement = (CCRiverFlowPlacement*)obj->anim.placementData;
-    if (placement->gameBit != -1) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) != -1) {
         state = obj->extra;
-        isGameBitSet = mainGetBit((int)placement->gameBit);
+        isGameBitSet = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)));
         if (isGameBitSet != 0) {
             if (state->active != 0) {
                 state->active = 0;
@@ -46,7 +46,7 @@ void ccRiverFlow_update(GameObject* obj) {
 }
 
 void ccRiverFlow_init(GameObject* obj, CCRiverFlowPlacement* placement) {
-    if (placement->gameBit == -1) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) == -1) {
         objAddObjectType(obj, CC_RIVER_FLOW_OBJECT_GROUP);
         ((CCRiverFlowState*)obj->extra)->active = 1;
     }

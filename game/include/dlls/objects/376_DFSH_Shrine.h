@@ -86,7 +86,7 @@ extern u8 gDFSHShrinePendingReward;
 extern u16 gDFSHShrineRewardTable[50];
 extern ObjectDescriptor gDFSHShrineObjDescriptor;
 
-void dfshShrine_updateHoverMotion(int objArg);
+void dfshShrine_updateHoverMotion(GameObject* obj);
 int dfshShrine_processAnimEvents(GameObject* obj, int unusedArg2, ObjSeqState* animUpdate);
 int dfshShrine_getExtraSize(void);
 int dfshShrine_getObjectTypeId(void);

@@ -40,7 +40,7 @@ u32 gDll60EffectResourceData[sizeof(Dll60EffectResourceView) / sizeof(u32)] = {
 
 void dll_60_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll60EffectResourceData;
+    u8* resourceData = (u8*)gDll60EffectResourceData;
     GfxCmd* commandCursor;
     GfxCmd* commands;
     f32 randomAngle;
@@ -177,7 +177,7 @@ void dll_60_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0xe, (u8*)(int)gDll60EffectResourceData, 0xc,
+        ->spawnEffect(&packet, 0, 0xe, (u8*)gDll60EffectResourceData, 0xc,
                       &resourceData[offsetof(Dll60EffectResourceView, colors)], 0x46, 0);
 }
 

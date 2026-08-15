@@ -236,7 +236,7 @@ int FXEmit_getObjectTypeId(void) {
 }
 
 void FXEmit_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     (*gModgfxInterface)->freeSourceEffects(obj);
 }
 
@@ -283,7 +283,7 @@ void FXEmit_update(GameObject* obj) {
 
                 state->disabled = 0;
                 state->intervalTimer = placement->interval * FXEMIT_INTERVAL_FRAME_SCALE;
-                sfxId = placement->intervalSfxId;
+                sfxId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->intervalSfxId));
                 if (sfxId != 0) {
                     Sfx_PlayFromObject(obj, (u16)sfxId);
                 }
@@ -355,11 +355,11 @@ void FXEmit_init(GameObject* obj, FXEmitPlacement* placement) {
 
     state->activationRange = (f32)((s32)placement->activationRange << FXEMIT_ACTIVATION_RANGE_SCALE_SHIFT);
     state->effectBank = placement->effectBank;
-    state->effectId = placement->effectId;
-    state->emitRate = placement->emitRate;
+    state->effectId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->effectId));
+    state->emitRate = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->emitRate));
     obj->anim.rootMotionScale = FXEMIT_INITIAL_SCALE;
-    state->toggleGameBit = placement->toggleGameBit;
-    state->disableGameBit = placement->disableGameBit;
+    state->toggleGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit));
+    state->disableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit));
     state->disabled = 0;
 
     if (state->emitRate < 1) {

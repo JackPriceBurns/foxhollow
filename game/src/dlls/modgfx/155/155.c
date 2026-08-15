@@ -32,7 +32,7 @@ extern u32 gDll9BEffectResourceData[sizeof(Dll9BEffectResourceView) / sizeof(u32
 
 void dll_9B_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll9BEffectResourceData;
+    u8* resourceData = (u8*)gDll9BEffectResourceData;
     GfxCmd* commands = packet.entries;
 
     commands[0].layer = 0;
@@ -172,7 +172,7 @@ void dll_9B_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDll9BEffectResourceData, 0x18,
+        ->spawnEffect(&packet, 0, 0x15, (u8*)gDll9BEffectResourceData, 0x18,
                       &resourceData[offsetof(Dll9BEffectResourceView, triangles)], 0x156, 0);
 }
 

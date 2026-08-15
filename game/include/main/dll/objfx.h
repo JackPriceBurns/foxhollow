@@ -84,7 +84,7 @@ typedef struct ObjFxCrystalBurstTable
 
 typedef struct ObjFxColorTable
 {
-    u16 values[15];
+    u8 values[30];
 } ObjFxColorTable;
 
 typedef struct ObjFxSparkleEffectTable

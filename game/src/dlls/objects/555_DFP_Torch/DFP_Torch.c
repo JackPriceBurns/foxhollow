@@ -256,7 +256,7 @@ void DFP_Torch_init(GameObject* obj, DfpTorchPlacement* def)
     } spawnArg;
     int motionRate;
     obj->anim.rotX = (s16)((place->rotPitch & 0x3f) << 10);
-    motionRate = place->motionRate;
+    motionRate = ObjAnim_ReadPlacementS16(&obj->anim, &(place->motionRate));
     if (motionRate > 0)
     {
         obj->anim.rootMotionScale = motionRate / 8192.0f;
@@ -266,20 +266,20 @@ void DFP_Torch_init(GameObject* obj, DfpTorchPlacement* def)
         obj->anim.rootMotionScale = 0.1f;
     }
     state->mode = place->mode;
-    state->gameBit = place->gameBit;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(place->gameBit));
     spawnArg.val = -2.0f;
     switch (state->mode)
     {
     case DFPTORCH_MODE_ALWAYS_LIT:
         state->lit = 1;
         res = Resource_Acquire(0x69, 1);
-        if (place->colorIdx == 0)
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(place->colorIdx)) == 0)
         {
             (*res)->spawn(obj, 0, &spawnArg, 0x10004, -1, NULL);
         }
         break;
     }
-    state->colorIdx = (u8)place->colorIdx;
+    state->colorIdx = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(place->colorIdx));
     obj->objectFlags = obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 

@@ -56,7 +56,7 @@ void arwgenerato_spawnSquadronShipA(GameObject* obj, ARWGeneratorState* state, A
         dir.y = setup->velocityY / 10.0f;
         dir.z = setup->velocityZ / 10.0f;
         dll_2A4_setVelocity((GameObject*)(newObj), &dir);
-        dll_2A4_setLifetime((GameObject*)(newObj), setup->projectileSpeed);
+        dll_2A4_setLifetime((GameObject*)(newObj), ObjAnim_ReadPlacementU16(&obj->anim, &(setup->projectileSpeed)));
     }
 }
 
@@ -87,7 +87,7 @@ void arwgenerato_spawnSquadronShipB(GameObject* obj, ARWGeneratorState* state, A
         dir.y = setup->velocityY / 10.0f;
         dir.z = setup->velocityZ / 10.0f;
         dll_2A3_setVelocity((GameObject*)(newObj), &dir);
-        dll_2A3_setLifetime((GameObject*)(newObj), setup->projectileSpeed);
+        dll_2A3_setLifetime((GameObject*)(newObj), ObjAnim_ReadPlacementU16(&obj->anim, &(setup->projectileSpeed)));
     }
 }
 
@@ -135,7 +135,7 @@ void arwgenerato_update(GameObject* obj)
                 arwgenerato_spawnSquadronShipA(obj, state, mapData);
                 break;
             }
-            state->spawnTimer = (f32)(u32)mapData->spawnInterval;
+            state->spawnTimer = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(mapData->spawnInterval));
         }
     }
 }
@@ -145,7 +145,7 @@ void arwgenerato_init(GameObject* obj, ARWGeneratorSetup* setup)
     ARWGeneratorState* state = obj->extra;
     ARWGeneratorSetup* mapData = setup;
 
-    state->spawnTimer = (f32)(u32)mapData->spawnInterval;
+    state->spawnTimer = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(mapData->spawnInterval));
 }
 
 void arwgenerato_release(void)

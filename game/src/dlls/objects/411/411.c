@@ -394,8 +394,8 @@ void dll411_init(GameObject* obj, const Dll19BPlacement* placement) {
     state = obj->extra;
     obj->anim.rotX = 0;
     state->activationDistance = DLL19B_DEFAULT_ACTIVATION_DISTANCE;
-    if (placement->activationDistancePacked > 0) {
-        state->activationDistance = (s16)(placement->activationDistancePacked >> 8);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationDistancePacked)) > 0) {
+        state->activationDistance = (s16)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationDistancePacked)) >> 8);
     }
     state->phase = DLL19B_PHASE_IDLE;
     state->pendingEvent = 0;

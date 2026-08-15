@@ -52,7 +52,7 @@ int DR_CageWith_toggleRopeStateCallback(GameObject* obj, int unused, ObjSeqState
 
 int DR_CageWith_getExtraSize(void)
 {
-    return 0x34;
+    return sizeof(DrcagewithState);
 }
 
 int DR_CageWith_getObjectTypeId(void)
@@ -209,7 +209,7 @@ void DR_CageWith_hitDetect(GameObject* obj)
             px = (obj)->anim.localPosX;
             if (px >= -16990.0f && px <= -16968.0f)
             {
-                mainSetBits(placement->openedGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)), 1);
             }
             else
             {
@@ -244,7 +244,7 @@ void DR_CageWith_init(GameObject* obj, DrcagewithPlacement* placement)
     else
     {
         ObjHits_EnableObject(obj);
-        if (mainGetBit(placement->openedGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit))) != 0)
         {
             ObjHits_DisableObject(obj);
             obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
@@ -255,8 +255,8 @@ void DR_CageWith_init(GameObject* obj, DrcagewithPlacement* placement)
             mainSetBits(0x7aa, 5);
         }
         obj->anim.rotX = (s16)(placement->initRotXByte << 8);
-        state->unk8 = placement->unk1C;
-        state->unk10 = (f32)placement->unk1A / 10.0f;
+        state->unk8 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unk1C));
+        state->unk10 = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->unk1A)) / 10.0f;
         state->linkedObject = NULL;
         fz = 0.0f;
         state->unk14 = fz;

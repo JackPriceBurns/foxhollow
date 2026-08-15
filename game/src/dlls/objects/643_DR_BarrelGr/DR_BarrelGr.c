@@ -49,7 +49,7 @@ enum DrbarrelgrMode
 
 int DR_BarrelGr_getExtraSize(void)
 {
-    return 0x12c;
+    return sizeof(DrbarrelgrState);
 }
 
 int DR_BarrelGr_getObjectTypeId(void)
@@ -132,6 +132,7 @@ void DR_BarrelGr_update(GameObject* obj)
     GameObject* nearest;
     int match;
     int gameBit;
+    s16 range;
     f32 traceTarget[3];
     f32 throwDir[3];
 
@@ -153,7 +154,12 @@ void DR_BarrelGr_update(GameObject* obj)
         }
     }
 
-    gameBit = setup->gameBit;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->gameBit);
+    range = ObjAnim_ReadPlacementS16(&obj->anim, &setup->range);
+    if (range <= 0)
+    {
+        range = 0x64;
+    }
     if (gameBit != -1 && mainGetBit(gameBit) == 0)
     {
         flags->bit40 = 0;
@@ -237,7 +243,7 @@ void DR_BarrelGr_update(GameObject* obj)
         {
             newMode = r - 1;
             storeZeroToFloatParam(&state->timer);
-            s16toFloat(&state->timer, setup->range);
+            s16toFloat(&state->timer, range);
             {
                 f32 z = 0.0f;
                 obj->anim.velocityX = z;
@@ -305,6 +311,7 @@ void DR_BarrelGr_init(GameObject* obj, DrbarrelgrPlacement* setup)
     int one;
     DrbarrelgrState* state;
     DrbarrelgrPlacement* placement = setup;
+    s16 range;
 
     one = 1;
     state = obj->extra;
@@ -312,9 +319,10 @@ void DR_BarrelGr_init(GameObject* obj, DrbarrelgrPlacement* setup)
     {
         placement->speed = 0xa;
     }
-    if (placement->range <= 0)
+    range = ObjAnim_ReadPlacementS16(&obj->anim, &placement->range);
+    if (range <= 0)
     {
-        placement->range = 0x64;
+        range = 0x64;
     }
     state->mode = DRBARRELGR_MODE_CARRY;
     state->heldBarrel = NULL;
@@ -324,7 +332,7 @@ void DR_BarrelGr_init(GameObject* obj, DrbarrelgrPlacement* setup)
     state->prevMode = -3;
     state->flags.bit40 = 0;
     storeZeroToFloatParam(&state->timer);
-    s16toFloat(&state->timer, placement->range);
+    s16toFloat(&state->timer, range);
     obj->anim.rotX = (s16)(placement->spawnYawByte << 8);
     (*gRomCurveInterface)->initCurve(&state->curve, (void*)obj, 500.0f, &one, 0);
     obj->anim.localPosX = state->curve.posX;

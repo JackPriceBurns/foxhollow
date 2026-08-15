@@ -210,7 +210,7 @@ void shopitem_onSeqFree(GameObject* obj)
 
 int shopitem_SeqFn(GameObject* obj, int unused, ObjSeqState* seq)
 {
-    int sub = (int)obj->extra;
+    uintptr_t sub = (uintptr_t)obj->extra;
     ObjAnimComponent* objAnim = &obj->anim;
     ShopItemState* s = (ShopItemState*)sub;
 
@@ -306,7 +306,7 @@ void shopitem_update(GameObject* obj)
 {
     ShopItemDef* def = (ShopItemDef*)(obj)->anim.placementData;
     void* player = Obj_GetPlayerObject();
-    int state = (int)obj->extra;
+    uintptr_t state = (uintptr_t)obj->extra;
     f32 range = 10000.0f;
     ShopItemState* s = (ShopItemState*)state;
     int money;
@@ -430,7 +430,7 @@ void shopitem_update(GameObject* obj)
 void shopitem_init(GameObject* obj, ShopItemDef* data)
 {
     ObjAnimComponent* objAnim;
-    int state = (int)obj->extra;
+    uintptr_t state = (uintptr_t)obj->extra;
     ShopItemState* s = (ShopItemState*)state;
 
     objAnim = &obj->anim;

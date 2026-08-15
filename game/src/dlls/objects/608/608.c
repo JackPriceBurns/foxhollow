@@ -395,7 +395,7 @@ void ProximityMine_init(GameObject* obj, ProximityMineDef* def)
     switch (mode)
     {
     case PROXIMITYMINE_SPAWN_TIMED:
-        s16toFloat(&state->resetTimer, def->parameter);
+        s16toFloat(&state->resetTimer, ObjAnim_ReadPlacementS16(&obj->anim, &(def->parameter)));
         state->mode = PROXIMITYMINE_MODE_ARMED;
         Obj_SetActiveModelIndex(obj, 1);
         obj->anim.rootMotionScale *= 0.25f;
@@ -403,7 +403,7 @@ void ProximityMine_init(GameObject* obj, ProximityMineDef* def)
     case PROXIMITYMINE_SPAWN_LAUNCHED:
         s16toFloat(&state->launchTimer, 800);
         s16toFloat(&state->resetTimer, 800);
-        obj->anim.rotX = def->parameter;
+        obj->anim.rotX = ObjAnim_ReadPlacementS16(&obj->anim, &(def->parameter));
         state->mode = PROXIMITYMINE_MODE_LAUNCHING;
         obj->anim.rootMotionScale *= 0.25f;
         break;
@@ -411,7 +411,7 @@ void ProximityMine_init(GameObject* obj, ProximityMineDef* def)
         storeZeroToFloatParam(&state->lifespanTimer);
         state->mode = PROXIMITYMINE_MODE_WAITING;
         ObjHits_EnableObject(obj);
-        state->triggerDistance = (f32)(s32)def->parameter;
+        state->triggerDistance = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(def->parameter));
         storeZeroToFloatParam(&state->bounceTimer);
         break;
     }

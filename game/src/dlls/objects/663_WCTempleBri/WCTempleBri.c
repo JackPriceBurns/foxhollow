@@ -77,13 +77,17 @@ static void wctemplebri_deformVertex(ObjModel* model, ModelFileHeader* modelBase
 {
     s16* curr = ObjModel_GetCurrentVertexCoords(model, i);
     s16* base = ObjModel_GetBaseVertexCoords(modelBase, i);
-    int wave = (u16)(int)(65535.0f * ((f32)curr[2] / state->minZ));
+    s16 currZ = fhReadBES16(curr + 2);
+    s16 baseX = fhReadBES16(base);
+    int wave = (u16)(int)(65535.0f * ((f32)currZ / state->minZ));
     int idx = wave + state->wavePhaseA;
+    s16 out;
 
-    if (base[0] > 0)
-        curr[0] = (s16)(256.0f * mathSinf(3.1415927f * idx / 32768.0f) + (f32)base[0]);
+    if (baseX > 0)
+        out = (s16)(256.0f * mathSinf(3.1415927f * idx / 32768.0f) + (f32)baseX);
     else
-        curr[0] = (s16)((f32)base[0] - 256.0f * mathSinf(3.1415927f * idx / 32768.0f));
+        out = (s16)((f32)baseX - 256.0f * mathSinf(3.1415927f * idx / 32768.0f));
+    *(u16*)curr = fhSwap16((u16)out);
 }
 
 int wctemplebri_SeqFn(GameObject* obj, int p2, ObjSeqState* animUpdate)
@@ -108,7 +112,7 @@ int wctemplebri_SeqFn(GameObject* obj, int p2, ObjSeqState* animUpdate)
         if ((state->flags & WCTEMPLEBRI_FLAG_SOLVED) == 0)
         {
             state->flags |= WCTEMPLEBRI_FLAG_SOLVED;
-            mainSetBits(setup->solvedBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
         }
         {
             int a = (int)((f32)(u32)objAnim->alpha + timeDelta);
@@ -186,7 +190,7 @@ void wctemplebri_update(GameObject* obj)
         {
             mainSetBits(WCTEMPLEBRI_GLOBAL_ACTIVE_BIT, 1);
             state->flags |= WCTEMPLEBRI_FLAG_SOLVED;
-            mainSetBits(setup->solvedBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
         }
         {
             int a = (int)((f32)(u32)objAnim->alpha + timeDelta);
@@ -235,7 +239,7 @@ void wctemplebri_init(GameObject* obj, WCTempleBriSetup* setup)
     modelData = model->file;
     for (i = 0; i < modelData->vertexCount; i++)
     {
-        int y = ObjModel_GetCurrentVertexCoords(model, i)[2];
+        int y = fhReadBES16(ObjModel_GetCurrentVertexCoords(model, i) + 2);
         if (y < minZ)
             minZ = y;
     }
@@ -257,7 +261,7 @@ void wctemplebri_init(GameObject* obj, WCTempleBriSetup* setup)
     }
     state->partCount = 0xa;
     state->minZ = minZ;
-    if (mainGetBit(setup->solvedBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) != 0)
     {
         state->active = 1;
         state->flags |= WCTEMPLEBRI_FLAG_SOLVED;

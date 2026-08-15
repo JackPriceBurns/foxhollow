@@ -132,12 +132,10 @@ void MagicPlant_updateActive(GameObject* obj, MagicPlantPlacement* unusedPlaceme
     PartFxSpawnParams lightParams;
     int hitKind;
     int particleCount;
-    int playerAddress;
     GameObject* player;
     f32 distance;
 
-    playerAddress = (int)Obj_GetPlayerObject();
-    player = (GameObject*)playerAddress;
+    player = Obj_GetPlayerObject();
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
 
     hitKind = ObjHits_GetPriorityHitWithPosition(obj, &hitObject, &hitSphereIndex, (u32*)&hitVolume, &lightParams.posX,
@@ -322,7 +320,7 @@ void MagicPlant_update(GameObject* obj) {
             state->idleTimer = randomGetRange(MAGICPLANT_IDLE_TIMER_MIN, MAGICPLANT_IDLE_TIMER_MAX);
         } else {
             progress = (*gMapEventInterface)->getTime(placement->eventId);
-            divisor = placement->eventDuration;
+            divisor = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->eventDuration));
             if (divisor < MAGICPLANT_EVENT_MIN_DURATION) {
                 divisor = MAGICPLANT_EVENT_MIN_DURATION;
             }
@@ -372,7 +370,7 @@ void MagicPlant_update(GameObject* obj) {
         if (alpha >= MAGICPLANT_MAX_ALPHA) {
             alpha = MAGICPLANT_MAX_ALPHA;
             state->mode = MAGICPLANT_MODE_WAIT_FOR_EVENT;
-            (*gMapEventInterface)->addTime(placement->eventId, placement->eventDuration);
+            (*gMapEventInterface)->addTime(placement->eventId, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->eventDuration)));
         }
         obj->anim.alpha = alpha;
         ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags |= OBJHITS_PRIORITY_STATE_ENABLED;
@@ -396,7 +394,7 @@ void MagicPlant_init(GameObject* obj, MagicPlantPlacement* placement) {
     noSaveTime = (*gMapEventInterface)->shouldNotSaveTime(placement->eventId);
     if (noSaveTime == 0) {
         progress = (*gMapEventInterface)->getTime(placement->eventId);
-        divisor = placement->eventDuration;
+        divisor = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->eventDuration));
         if (divisor < MAGICPLANT_EVENT_MIN_DURATION)
             divisor = MAGICPLANT_EVENT_MIN_DURATION;
         progress /= divisor;

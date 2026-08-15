@@ -108,7 +108,7 @@ void cnthitobjec_hitDetect(GameObject* obj)
     {
         CntHitObjectSetup* s = (CntHitObjectSetup*)(obj)->anim.placementData;
         state->remainingHealth = 0;
-        mainSetBits(s->doneGameBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(s->doneGameBit)), 1);
         if (s->mode != 0)
         {
             if (s->mode == CNTHIT_MODE_VISIBLE_OBJECT)
@@ -117,13 +117,13 @@ void cnthitobjec_hitDetect(GameObject* obj)
             }
             else
             {
-                amount = s->explosionSize;
+                amount = ObjAnim_ReadPlacementS16(&obj->anim, &(s->explosionSize));
             }
             model = ((CntHitObjectSetup*)(obj)->anim.placementData)->base.ident;
             if (model != CNTHIT_MODEL_NO_EXPLOSION_A && model != CNTHIT_MODEL_NO_EXPLOSION_B &&
                 model != CNTHIT_MODEL_NO_EXPLOSION_C && model != CNTHIT_MODEL_NO_EXPLOSION_D)
             {
-                spawnExplosion((GameObject*)(int)obj, amount, 1, 1, 1, 1, 0, 1, 0);
+                spawnExplosion((GameObject*)obj, amount, 1, 1, 1, 1, 0, 1, 0);
             }
             if (setup->mode == CNTHIT_MODE_VISIBLE_OBJECT)
             {
@@ -145,20 +145,20 @@ void cnthitobjec_update(GameObject* obj)
 
     if (state->flags.disabled == 0)
     {
-        if (mainGetBit(setup->doneGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->doneGameBit))) != 0)
         {
             state->flags.disabled = 1;
             ObjHits_DisableObject(obj);
         }
     }
 
-    if (state->flags.disabled == 0 && state->remainingHealth == 0 && mainGetBit(setup->startGameBit) != 0)
+    if (state->flags.disabled == 0 && state->remainingHealth == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit))) != 0)
     {
         ObjHits_EnableObject(obj);
-        state->remainingHealth = setup->startHealth;
+        state->remainingHealth = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startHealth));
         if (setup->mode != CNTHIT_MODE_VISIBLE_OBJECT)
         {
-            ObjHitbox_SetSphereRadius(&obj->anim, setup->explosionSize);
+            ObjHitbox_SetSphereRadius(&obj->anim, ObjAnim_ReadPlacementS16(&obj->anim, &(setup->explosionSize)));
         }
     }
 }
@@ -178,13 +178,13 @@ void cnthitobjec_init(GameObject* obj, CntHitObjectSetup* setup)
     }
     if (setupData->mode == CNTHIT_MODE_VISIBLE_OBJECT)
     {
-        (obj)->anim.rotX = setupData->explosionSize;
+        (obj)->anim.rotX = ObjAnim_ReadPlacementS16(&obj->anim, &(setupData->explosionSize));
     }
     else
     {
         (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
     }
-    if (mainGetBit(setupData->doneGameBit) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setupData->doneGameBit))) != 0)
     {
         state->flags.disabled = 1;
         ObjHits_DisableObject(obj);
@@ -204,7 +204,7 @@ int mcupgrade_SeqFn(GameObject* obj, int unused, CntHitObjectAnimEvent* event)
 {
     if (event->explosionCount != 0)
     {
-        (*gGameUIInterface)->showNpcDialogue(((CntHitObjectSetup*)obj->anim.placementData)->startHealth, 0x14, 0x8c, 0);
+        (*gGameUIInterface)->showNpcDialogue(ObjAnim_ReadPlacementS16(&obj->anim, &((CntHitObjectSetup*)obj->anim.placementData)->startHealth), 0x14, 0x8c, 0);
     }
     return 0;
 }

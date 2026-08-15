@@ -14,9 +14,9 @@
    "CRSnowBike" (DLL 0x255) */
 #define CRFUELTANK_TRIGGER_OBJ 0x38c
 
-static inline int crfueltank_animFrame(CrFuelTankDef* def)
+static inline int crfueltank_animFrame(GameObject* obj, CrFuelTankDef* def)
 {
-    return def->idleFrameCount / 10;
+    return ObjAnim_ReadPlacementS16(&obj->anim, &def->idleFrameCount) / 10;
 }
 
 int crfueltank_getExtraSize(void)
@@ -44,9 +44,11 @@ void crfueltank_hitDetect(GameObject* obj)
     CrFuelTankDef* def;
     ObjHitsPriorityState* hitState;
     GameObject* hitObj;
+    s16 hitEvent;
 
     hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     def = (CrFuelTankDef*)obj->anim.placementData;
+    hitEvent = ObjAnim_ReadPlacementS16(&obj->anim, &def->hitEvent);
     if ((hitState != NULL) && (hitState->lastHitObject != 0))
     {
         hitObj = (GameObject*)hitState->lastHitObject;
@@ -56,9 +58,9 @@ void crfueltank_hitDetect(GameObject* obj)
             Sfx_PlayFromObject(Obj_GetPlayerObject(), SFXTRIG_ar_barrel16);
             obj->anim.alpha = 0xfa;
             obj->userData2 = 1;
-            if (def->hitEvent != -1)
+            if (hitEvent != -1)
             {
-                mainSetBits(def->hitEvent, 1);
+                mainSetBits(hitEvent, 1);
             }
             obj->anim.velocityX = hitObj->anim.velocityX;
             obj->anim.velocityY = 0.07f + hitObj->anim.velocityY;
@@ -93,7 +95,7 @@ void crfueltank_update(GameObject* obj)
         }
         else
         {
-            ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(def), 0);
+            ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(obj, def), 0);
         }
     }
     return;
@@ -102,12 +104,14 @@ void crfueltank_update(GameObject* obj)
 void crfueltank_init(GameObject* obj, CrFuelTankDef* def)
 {
     CrFuelTankState* state;
+    s16 hitEvent;
 
     state = obj->extra;
+    hitEvent = ObjAnim_ReadPlacementS16(&obj->anim, &def->hitEvent);
     ObjHits_EnableObject(obj);
-    ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(def), 0);
+    ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(obj, def), 0);
     storeZeroToFloatParam(&state->timer);
-    if ((def->hitEvent != -1) && (mainGetBit(def->hitEvent) != 0))
+    if ((hitEvent != -1) && (mainGetBit(hitEvent) != 0))
     {
         s16toFloat(&state->timer, 0x708);
         ObjHits_DisableObject(obj);

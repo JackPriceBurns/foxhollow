@@ -47,7 +47,8 @@ STATIC_ASSERT(sizeof(DFSHShrineFlags) == 0x01);
 
 #define DFSH_SHRINE_REWARD_BIT(idx)    (rewardTableCursor[0][(idx)])
 #define DFSH_SHRINE_REWARD_DELAY(idx)  (rewardTableCursor[0][10 + (idx)])
-#define DFSH_SHRINE_TARGET_OBJECT(idx) (((int*)((u8*)rewardTableCursor[0] + 0x3C))[(idx)])
+#define DFSH_SHRINE_TARGET_OBJECT(idx) \
+    (((int)rewardTableCursor[0][30 + (idx) * 2] << 16) | (int)rewardTableCursor[0][31 + (idx) * 2])
 
 
 u8 gDFSHShrinePendingReward = 1;
@@ -58,11 +59,10 @@ u16 gDFSHShrineRewardTable[50] = {
     4,   37054, 4,   37083, 4,    37063, 4,    37065, 4,    37066, 4,    37067, 4,    37068, 4,     37070,
 };
 
-void dfshShrine_updateHoverMotion(int objArg) {
+void dfshShrine_updateHoverMotion(GameObject* obj) {
     ObjPlacement* placement;
     DFSHShrineHoverState* state;
     GameObject* player;
-    GameObject* obj = (GameObject*)objArg;
     f32 trigA;
     f32 trigB;
     f32 distance;
@@ -162,7 +162,7 @@ int dfshShrine_processAnimEvents(GameObject* obj, int unusedArg2, ObjSeqState* a
 }
 
 int dfshShrine_getExtraSize(void) {
-    return 0x20;
+    return sizeof(DFSHShrineState);
 }
 
 int dfshShrine_getObjectTypeId(void) {
@@ -248,7 +248,7 @@ void dfshShrine_update(GameObject* obj) {
             getEnvfxAct(obj, player, DFSH_SHRINE_ENVFX_C, 0);
         }
     }
-    dfshShrine_updateHoverMotion((int)obj);
+    dfshShrine_updateHoverMotion(obj);
     if (gDFSHShrinePendingReward != 0) {
         obj->anim.worldPosX = obj->anim.localPosX;
         obj->anim.worldPosY = obj->anim.localPosY;
@@ -388,8 +388,8 @@ void dfshShrine_init(GameObject* obj, const DFSHShrinePlacement* placement) {
     state = obj->extra;
     obj->anim.rotX = (s16)(placement->initialYaw << 8);
     state->startDelayFrames = 0xA;
-    if (placement->startDelay > 0) {
-        state->startDelayFrames = (s16)((s32)placement->startDelay >> 8);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startDelay)) > 0) {
+        state->startDelayFrames = (s16)((s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startDelay)) >> 8);
     }
     state->mode = DFSH_SHRINE_MODE_RESET;
     state->flags.openedBySequence = 0;

@@ -29,7 +29,7 @@ extern u8 gDll8DEffectResourceData[sizeof(Dll8DEffectResourceView)];
 
 s16 dll_8D_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll8DEffectResourceData;
+    u8* resourceData = (u8*)gDll8DEffectResourceData;
     GfxCmd* command;
     GfxCmd* commands;
     s16 ret = 0;
@@ -361,19 +361,19 @@ s16 dll_8D_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
     if (variant == 0) {
         packet.modeByte = 0;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0x156, 0);
     } else if (variant == 1) {
         packet.modeByte = 0;
         packet.flags |= 4;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0xC0D, 0);
     } else if (variant == 2) {
         packet.modeByte = 0;
         packet.flags |= 4;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)(int)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0x23B, 0);
     }
     return ret;

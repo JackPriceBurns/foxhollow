@@ -234,14 +234,22 @@ void ccLightfoot_update(GameObject* obj) {
             if (!(enemy_getHealthFraction((GameObject*)targetActorAHandle) > 0.0f)) {
                 targetValid = 0;
             } else {
-                targetValid = mainGetBit(targetActorAHandle->anim.placementData[0xC]) != 0 ? 0 : 1;
+                targetValid = mainGetBit(ObjAnim_ReadPlacementS16(
+                                  &targetActorAHandle->anim,
+                                  &targetActorAHandle->anim.placementData[0xC])) != 0
+                                  ? 0
+                                  : 1;
             }
             if (targetValid != 0) {
                 candidateTarget = state->targetActorB;
                 if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                     targetValid = 0;
                 } else {
-                    targetValid = mainGetBit(candidateTarget->anim.placementData[0xC]) != 0 ? 0 : 1;
+                    targetValid = mainGetBit(ObjAnim_ReadPlacementS16(
+                                      &candidateTarget->anim,
+                                      &candidateTarget->anim.placementData[0xC])) != 0
+                                      ? 0
+                                      : 1;
                 }
                 if (targetValid != 0) {
                     distanceSquared =
@@ -298,7 +306,11 @@ void ccLightfoot_update(GameObject* obj) {
             if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                 targetValid = 0;
             } else {
-                targetValid = mainGetBit(candidateTarget->anim.placementData[0xC]) != 0 ? 0 : 1;
+                targetValid = mainGetBit(ObjAnim_ReadPlacementS16(
+                                  &candidateTarget->anim,
+                                  &candidateTarget->anim.placementData[0xC])) != 0
+                                  ? 0
+                                  : 1;
             }
             if (targetValid != 0) {
                 singleTarget = (u32)state->targetActorA;
@@ -307,7 +319,11 @@ void ccLightfoot_update(GameObject* obj) {
             if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                 targetValid = 0;
             } else {
-                targetValid = mainGetBit(candidateTarget->anim.placementData[0xC]) != 0 ? 0 : 1;
+                targetValid = mainGetBit(ObjAnim_ReadPlacementS16(
+                                  &candidateTarget->anim,
+                                  &candidateTarget->anim.placementData[0xC])) != 0
+                                  ? 0
+                                  : 1;
             }
             if (targetValid != 0) {
                 singleTarget = (u32)state->targetActorB;

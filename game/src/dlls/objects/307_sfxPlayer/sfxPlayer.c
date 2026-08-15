@@ -35,23 +35,23 @@ void SfxPlayer_free(GameObject* obj) {
     }
     state->flags = (u8)(flags & ~SFXPLAYER_STATE_FLAG_ACTIVE);
     if (placement->mode == SFXPLAYER_MODE_LOOPED) {
-        u16 primarySfxId = placement->primarySfxId;
+        u16 primarySfxId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId));
         if (primarySfxId != 0) {
             Sfx_RemoveLoopedObjectSound(obj, primarySfxId);
         }
         {
-            u16 secondarySfxId = placement->secondarySfxId;
+            u16 secondarySfxId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId));
             if (secondarySfxId != 0) {
                 Sfx_RemoveLoopedObjectSound(obj, secondarySfxId);
             }
         }
     } else {
-        u16 primarySfxId = placement->primarySfxId;
+        u16 primarySfxId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId));
         if (primarySfxId != 0) {
             Sfx_StopFromObject(obj, primarySfxId);
         }
         {
-            u16 secondarySfxId = placement->secondarySfxId;
+            u16 secondarySfxId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId));
             if (secondarySfxId != 0) {
                 Sfx_StopFromObject(obj, secondarySfxId);
             }
@@ -85,20 +85,20 @@ static inline void SfxPlayer_startSound(GameObject* obj, SfxPlayerPlacement* pla
 #define SFXPLAYER_STOP_SOUND_PAIR()                                                                                    \
     do {                                                                                                               \
         if (placement->mode == SFXPLAYER_MODE_LOOPED) {                                                                \
-            soundId = placement->primarySfxId;                                                                         \
+            soundId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId));                                \
             if (soundId != 0) {                                                                                        \
                 Sfx_RemoveLoopedObjectSound(obj, soundId);                                                        \
             }                                                                                                          \
-            soundId = placement->secondarySfxId;                                                                       \
+            soundId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId));                              \
             if (soundId != 0) {                                                                                        \
                 Sfx_RemoveLoopedObjectSound(obj, soundId);                                                        \
             }                                                                                                          \
         } else {                                                                                                       \
-            soundId = placement->primarySfxId;                                                                         \
+            soundId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId));                                \
             if (soundId != 0) {                                                                                        \
                 Sfx_StopFromObject(obj, soundId);                                                                 \
             }                                                                                                          \
-            soundId = placement->secondarySfxId;                                                                       \
+            soundId = ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId));                              \
             if (soundId != 0) {                                                                                        \
                 Sfx_StopFromObject(obj, soundId);                                                                 \
             }                                                                                                          \
@@ -130,37 +130,37 @@ void SfxPlayer_update(GameObject* obj) {
         }
     }
 
-    if (placement->gameBit > 0) {
-        bitState = mainGetBit(placement->gameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) > 0) {
+        bitState = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)));
     }
 
     switch (placement->mode) {
     case SFXPLAYER_MODE_GAME_BIT:
-        if (placement->gameBit > 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) > 0) {
             if (state->gameBitState != 0) {
                 if (bitState == 0) {
                     state->gameBitState = 0;
                     if ((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_CLEAR) != 0) {
-                        SfxPlayer_startSound(obj, placement, state, placement->primarySfxId);
-                        SfxPlayer_startSound(obj, placement, state, placement->secondarySfxId);
+                        SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId)));
+                        SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId)));
                     }
                 }
             } else if (bitState != 0) {
                 state->gameBitState = 1;
                 if ((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_SET) != 0) {
-                    SfxPlayer_startSound(obj, placement, state, placement->primarySfxId);
-                    SfxPlayer_startSound(obj, placement, state, placement->secondarySfxId);
+                    SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId)));
+                    SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId)));
                 }
             }
         }
         break;
     case SFXPLAYER_MODE_LOOPED:
-        if ((placement->gameBit == SFXPLAYER_GAME_BIT_NONE) ||
+        if ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) == SFXPLAYER_GAME_BIT_NONE) ||
             (((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_SET) != 0) && (bitState != 0)) ||
             (((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_CLEAR) != 0) && (bitState == 0))) {
             if ((state->flags & SFXPLAYER_STATE_FLAG_ACTIVE) == 0) {
-                SfxPlayer_startSound(obj, placement, state, placement->primarySfxId);
-                SfxPlayer_startSound(obj, placement, state, placement->secondarySfxId);
+                SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId)));
+                SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId)));
             }
         } else if ((state->flags & SFXPLAYER_STATE_FLAG_ACTIVE) != 0) {
             state->flags = state->flags & ~SFXPLAYER_STATE_FLAG_ACTIVE;
@@ -168,15 +168,15 @@ void SfxPlayer_update(GameObject* obj) {
         }
         break;
     case SFXPLAYER_MODE_RANDOM_DELAY:
-        if ((placement->gameBit == SFXPLAYER_GAME_BIT_NONE) ||
+        if ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) == SFXPLAYER_GAME_BIT_NONE) ||
             (((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_SET) != 0) && (bitState != 0)) ||
             (((placement->flags & SFXPLAYER_FLAG_TRIGGER_ON_CLEAR) != 0) && (bitState == 0))) {
             state->delayTimer -= timeDelta;
             if (state->delayTimer <= 0.0f) {
                 state->delayTimer = (f32)(s32)randomGetRange(placement->randomDelayMin, placement->randomDelayMax) *
                                     SFXPLAYER_SECONDS_TO_FRAMES;
-                SfxPlayer_startSound(obj, placement, state, placement->primarySfxId);
-                SfxPlayer_startSound(obj, placement, state, placement->secondarySfxId);
+                SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->primarySfxId)));
+                SfxPlayer_startSound(obj, placement, state, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->secondarySfxId)));
             }
         } else if ((state->flags & SFXPLAYER_STATE_FLAG_ACTIVE) != 0) {
             state->flags = state->flags & ~SFXPLAYER_STATE_FLAG_ACTIVE;
@@ -194,7 +194,7 @@ void SfxPlayer_init(GameObject* obj, SfxPlayerPlacement* placement) {
     mode = placement->mode;
     switch (mode) {
     case SFXPLAYER_MODE_GAME_BIT: {
-        s16 bit = placement->gameBit;
+        s16 bit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
         if (bit > 0) {
             state->gameBitState = mainGetBit(bit);
         }

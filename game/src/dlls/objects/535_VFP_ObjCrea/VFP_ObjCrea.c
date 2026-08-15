@@ -63,7 +63,7 @@ void VFP_ObjCreator_update(GameObject* obj)
     {
         return;
     }
-    switch (placement->spawnMode)
+    switch (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnMode)))
     {
     case 0:
         break;
@@ -165,8 +165,8 @@ void VFP_ObjCreator_init(GameObject* obj, u8* init)
     VfpObjCreatorPlacement* placement = (VfpObjCreatorPlacement*)init;
     VfpObjCreatorState* state = obj->extra;
     obj->anim.rotX = (s16)(placement->rotXByte << 8);
-    state->gameBit = placement->gameBit;
-    state->spawnInterval = placement->spawnInterval;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
+    state->spawnInterval = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnInterval));
     state->spawnTimer = state->spawnInterval;
     state->spawnParam = placement->spawnParam;
     state->spawnRadius = placement->spawnRadius;

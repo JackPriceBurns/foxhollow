@@ -52,7 +52,7 @@ u32 gDllA3EffectResourceData[sizeof(DllA3EffectResourceView) / sizeof(u32)] = {
 void dll_A3_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
     GfxCmd* commands = packet.entries;
-    u8* resourceData = (u8*)(int)gDllA3EffectResourceData;
+    u8* resourceData = (u8*)gDllA3EffectResourceData;
     u32 variantByte = (u8)variant;
 
     commands[0].layer = 0;
@@ -197,7 +197,7 @@ void dll_A3_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDllA3EffectResourceData, 0x18,
+        ->spawnEffect(&packet, 0, 0x15, (u8*)gDllA3EffectResourceData, 0x18,
                       &resourceData[offsetof(DllA3EffectResourceView, colors)], 0x5e0, 0);
 }
 

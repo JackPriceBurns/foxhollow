@@ -29,7 +29,7 @@ void SB_ShipGunBroke_free(void) {
 void SB_ShipGunBroke_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5) {
     const SBShipGunBrokePlacementView* placement = (const SBShipGunBrokePlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(placement->destroyedGameBit) != 0u) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->destroyedGameBit))) != 0u) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
@@ -40,7 +40,7 @@ void SB_ShipGunBroke_hitDetect(void) {
 void SB_ShipGunBroke_update(GameObject* obj) {
     const SBShipGunBrokePlacementView* placement = (const SBShipGunBrokePlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(placement->destroyedGameBit) != 0u) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->destroyedGameBit))) != 0u) {
         Sfx_PlayFromObject(obj, SFXTRIG_en_trpopn_c);
     }
 }

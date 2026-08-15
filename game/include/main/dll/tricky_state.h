@@ -358,6 +358,7 @@ typedef struct TrickyState {
     f32 blendVelocity; /* blendWeight ramp rate: += 0.004f*timeDelta toward the target, damped by 0.7f near it, zeroed at the clamp (tricky) */
     f32 particleTimer; /* f32 countdown decremented by timeDelta; while > threshold the queued particle effect keeps emitting; reset to a float sentinel on state entry (tricky/skeetla/weapone6/tricky_substates/mmp_cratercritter/animobjd2) */
     u8 pad83C[0x840 - 0x83C];
+    f32 trackTargetPos[3];
 } TrickyState;
 
 STATIC_ASSERT(sizeof(TrickyState) == 0x840);

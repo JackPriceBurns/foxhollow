@@ -228,12 +228,12 @@ void directionallight_update(GameObject* obj)
         return;
     }
 
-    (obj)->anim.rotX = (s16)((f32)setup->rotXSpeed * timeDelta + (f32)(obj)->anim.rotX);
-    (obj)->anim.rotY = (s16)((f32)setup->rotYSpeed * timeDelta + (f32)(obj)->anim.rotY);
+    (obj)->anim.rotX = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotXSpeed)) * timeDelta + (f32)(obj)->anim.rotX);
+    (obj)->anim.rotY = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotYSpeed)) * timeDelta + (f32)(obj)->anim.rotY);
 
     if (state->enabled != 0)
     {
-        if (mainGetBit(setup->enableBit) == 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->enableBit))) == 0)
         {
             state->enabled = 0;
             modelLightStruct_setEnabled(state->light, 0, 1.0f);
@@ -246,7 +246,7 @@ void directionallight_update(GameObject* obj)
     }
     else
     {
-        if (mainGetBit(setup->enableBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->enableBit))) != 0)
         {
             state->enabled = 1;
             modelLightStruct_setEnabled(state->light, 1, 1.0f);
@@ -298,7 +298,7 @@ void directionallight_init(GameObject* obj, DirectionalLightSetup* setup)
             modelLightStruct_setEnabled(state->light, setupData->enabled, *initialFadeDuration);
         }
         state->enabled = setupData->enabled;
-        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, setupData->colorFadeFrames);
+        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, ObjAnim_ReadPlacementS16(&obj->anim, &(setupData->colorFadeFrames)));
 
         if (setupData->selectionPriority != 0)
         {

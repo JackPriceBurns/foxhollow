@@ -74,13 +74,14 @@ void blasted_update(GameObject* obj) {
     int hitIndex;
     BlastedTargetPlacement* placement = (BlastedTargetPlacement*)obj->anim.placement;
     BlastedTargetState* state = obj->extra;
-    s16 pieceCount = placement->pieceCount;
+    s16 pieceCount = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pieceCount));
 
     if (state->mapLayerActivated != 0) {
         return;
     }
-    if (mainGetBit(placement->completedGameBit) != 0) {
-        state->mapLayerActivated = blasted_activateMapLayer(obj, placement->mapLayerId);
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completedGameBit))) != 0) {
+        state->mapLayerActivated =
+            blasted_activateMapLayer(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->mapLayerId)));
         return;
     }
     {
@@ -96,7 +97,7 @@ void blasted_update(GameObject* obj) {
                 continue;
             }
             if (pieceCount == 0) {
-                mainSetBits(placement->completedGameBit, TRUE);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completedGameBit)), TRUE);
                 return;
             }
             if (hitPriority == BLASTED_DAMAGE_HIT_PRIORITY) {
@@ -113,8 +114,9 @@ void blasted_update(GameObject* obj) {
                 state->destroyedHitObjects[state->damageStage] = hitObject;
                 mainSetBits(state->damageStage + BLASTED_GAMEBIT_DAMAGE_BASE, FALSE);
                 mainSetBits(state->damageStage + (BLASTED_GAMEBIT_DAMAGE_BASE + 1), TRUE);
-                if (placement->progressGameBit != -1) {
-                    mainSetBits(placement->progressGameBit, state->damageStage + 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->progressGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->progressGameBit)),
+                                state->damageStage + 1);
                 }
                 gBlastedDamageTimer = BLASTED_DAMAGE_TIMER_FRAMES;
                 if (state->damageStage + 1 > pieceCount) {
@@ -122,8 +124,9 @@ void blasted_update(GameObject* obj) {
                     for (damageBitIndex = 0; damageBitIndex < pieceCount + 1; damageBitIndex++) {
                         mainSetBits(damageBitIndex + BLASTED_GAMEBIT_DAMAGE_BASE, FALSE);
                     }
-                    mainSetBits(placement->completedGameBit, TRUE);
-                    blasted_activateMapLayer(obj, placement->mapLayerId);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completedGameBit)), TRUE);
+                    blasted_activateMapLayer(obj,
+                                             ObjAnim_ReadPlacementS16(&obj->anim, &(placement->mapLayerId)));
                     Obj_SetActiveModelIndex(obj, BLASTED_DESTROYED_MODEL_INDEX);
                     state->mapLayerActivated = 1;
                 } else {
@@ -145,8 +148,8 @@ void blasted_init(GameObject* obj, BlastedTargetPlacement* placement) {
     objSetSlot(obj, BLASTED_MODEL_SLOT);
     hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     hitState->flags = (s16)(hitState->flags | OBJHITS_PRIORITY_STATE_ENABLED);
-    state->pieceCount = (u8)placement->pieceCount;
-    progressGameBit = placement->progressGameBit;
+    state->pieceCount = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pieceCount));
+    progressGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->progressGameBit));
     if (progressGameBit != -1) {
         progress = mainGetBit(progressGameBit);
         state->damageStage = progress;
@@ -156,8 +159,8 @@ void blasted_init(GameObject* obj, BlastedTargetPlacement* placement) {
     }
     mainSetBits(BLASTED_GAMEBIT_DAMAGE_BASE, TRUE);
     obj->anim.rotX = (s16)((s32)placement->rotXByte << 8);
-    if (mainGetBit(placement->completedGameBit) != 0) {
-        state->mapLayerActivated = blasted_activateMapLayer(obj, placement->mapLayerId);
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completedGameBit))) != 0) {
+        state->mapLayerActivated = blasted_activateMapLayer(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->mapLayerId)));
     }
 }
 

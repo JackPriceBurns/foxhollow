@@ -110,7 +110,7 @@ void dim2icicle_update(GameObject* obj) {
         }
         obj->anim.localPosY = obj->anim.velocityY * timeDelta + obj->anim.localPosY;
         if (obj->anim.localPosY < state->dropTargetY) {
-            mainSetBits(placement->impactGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->impactGameBit)), 1);
             state->mode = DIM2ICICLE_MODE_IMPACTED;
             (*gWaterfxInterface)
                 ->spawnSplashBurst((void*)obj, obj->anim.localPosX, state->dropTargetY, obj->anim.localPosZ, 10.0f);
@@ -145,7 +145,7 @@ void dim2icicle_update(GameObject* obj) {
 void dim2icicle_init(GameObject* obj, const Dim2IciclePlacementView* placement) {
     Dim2IcicleState* state = obj->extra;
 
-    if (mainGetBit(placement->impactGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->impactGameBit))) != 0) {
         state->mode = DIM2ICICLE_MODE_IMPACTED;
         obj->anim.alpha = 0;
     } else {

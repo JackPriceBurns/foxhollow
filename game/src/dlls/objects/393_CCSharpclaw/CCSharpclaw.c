@@ -48,7 +48,7 @@ void ccSharpClawPad_update(GameObject* obj) {
     CCSharpClawPadState* state;
     GameObject* player;
 
-    if (mainGetBit(((const CCSharpClawPadPlacement*)obj->anim.placement)->activationGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &((const CCSharpClawPadPlacement*)obj->anim.placement)->activationGameBit)) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         particleOrigin.posX = -CC_SHARPCLAW_PAD_PARTICLE_OFFSET_X;
         particleOrigin.posY = CC_SHARPCLAW_PAD_PARTICLE_OFFSET_Y;
@@ -88,7 +88,7 @@ void ccSharpClawPad_update(GameObject* obj) {
                 CC_SHARPCLAW_PAD_ACTIVATION_DISTANCE_SQUARED &&
             playerIsDisguised(player) != 0) {
             Sfx_PlayFromObject(obj, SFXTRIG_menuups16k);
-            mainSetBits(((const CCSharpClawPadPlacement*)obj->anim.placement)->activationGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &((const CCSharpClawPadPlacement*)obj->anim.placement)->activationGameBit), 1);
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         }
         particleOrigin.posX = -CC_SHARPCLAW_PAD_PARTICLE_OFFSET_X;

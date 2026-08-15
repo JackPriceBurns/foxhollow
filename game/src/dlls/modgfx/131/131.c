@@ -47,7 +47,7 @@ extern u8 gDll83EffectResourceData[sizeof(Dll83EffectResourceView)];
 s16 dll_83_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags, int owner,
                        void* unused) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll83EffectResourceData;
+    u8* resourceData = (u8*)gDll83EffectResourceData;
     int* resourceWords = (int*)resourceData;
     GfxCmd* commands = packet.entries;
 
@@ -229,7 +229,7 @@ s16 dll_83_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
         }
     }
     return (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x24, (u8*)(int)gDll83EffectResourceData, 0x10,
+        ->spawnEffect(&packet, 0, 0x24, (u8*)gDll83EffectResourceData, 0x10,
                       &resourceData[offsetof(Dll83EffectResourceView, triangles)],
                       resourceWords[variant + offsetof(Dll83EffectResourceView, textureAssetIds) / sizeof(s32)], 0);
 }

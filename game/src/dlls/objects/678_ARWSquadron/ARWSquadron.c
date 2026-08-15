@@ -319,7 +319,7 @@ void arwsquadron_handleDamage(GameObject* obj, ArwSquadronState* squad)
                 s16toFloat(&squad->deathTimer, 0x78);
                 if (squad->variant == ARW_SQUADRON_VARIANT_FIGHTER)
                 {
-                    spawnExplosion((GameObject*)(int)obj, 100.0f, 1, 0, 1, 1, 0, 0, 0);
+                    spawnExplosion((GameObject*)obj, 100.0f, 1, 0, 1, 1, 0, 0, 0);
                     (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
                     ObjHits_DisableObject(obj);
                     squad->phase = ARW_SQUADRON_STATE_DISABLED;
@@ -329,7 +329,7 @@ void arwsquadron_handleDamage(GameObject* obj, ArwSquadronState* squad)
                 }
                 else
                 {
-                    spawnExplosion((GameObject*)(int)obj, 100.0f, 1, 0, 0, 1, 0, 0, 3);
+                    spawnExplosion((GameObject*)obj, 100.0f, 1, 0, 0, 1, 0, 0, 3);
                     (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
                     ObjHits_DisableObject(obj);
                     squad->phase = ARW_SQUADRON_STATE_DEAD;
@@ -367,7 +367,7 @@ void arwsquadron_updateVolley(GameObject* obj, ArwSquadronState* state, ArwSquad
             storeZeroToFloatParam(&state->shotIntervalTimer);
             s16toFloat(&state->shotIntervalTimer, setup->shotInterval);
             state->volleyShotsRemaining = setup->shotsPerVolley;
-            state->volleyAngle = -setup->volleyAngleSpread;
+            state->volleyAngle = -ObjAnim_ReadPlacementU16(&obj->anim, &(setup->volleyAngleSpread));
         }
     }
     else if (timerCountDown(&state->shotIntervalTimer) != 0)
@@ -379,7 +379,7 @@ void arwsquadron_updateVolley(GameObject* obj, ArwSquadronState* state, ArwSquad
         state->volleyShotsRemaining--;
         storeZeroToFloatParam(&state->shotIntervalTimer);
         s16toFloat(&state->shotIntervalTimer, setup->shotInterval);
-        state->volleyAngle += setup->volleyAngleSpread * 2 / setup->shotsPerVolley;
+        state->volleyAngle += ObjAnim_ReadPlacementU16(&obj->anim, &(setup->volleyAngleSpread)) * 2 / setup->shotsPerVolley;
         if (state->volleyShotsRemaining <= 0)
         {
             flags->volleyInProgress = 0;
@@ -391,7 +391,7 @@ void arwsquadron_updateVolley(GameObject* obj, ArwSquadronState* state, ArwSquad
 
 int ARWSquadron_getExtraSize(void)
 {
-    return 0x164;
+    return sizeof(ArwSquadronState);
 }
 
 int ARWSquadron_getObjectTypeId(void)
@@ -451,15 +451,15 @@ void ARWSquadron_update(GameObject* obj)
         int activate;
         getArwing();
         leader = obj;
-        if (placement->leaderObjectId > 0)
+        if (ObjAnim_ReadPlacementS32(&obj->anim, &(placement->leaderObjectId)) > 0)
         {
             if (state->leaderObj == NULL)
-                state->leaderObj = ObjList_FindObjectById(placement->leaderObjectId);
+                state->leaderObj = ObjList_FindObjectById(ObjAnim_ReadPlacementS32(&obj->anim, &(placement->leaderObjectId)));
             leader = state->leaderObj;
         }
         if (leader != NULL && arwsquadron_isPlayerWithinRangeZ(leader, state->activationDistance) &&
-            ((placement->gameBit <= 0 && arwsquadron_isPlayerWithinRangeZ(leader, state->exitDistance)) ||
-             mainGetBit(placement->gameBit) != 0))
+            ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) <= 0 && arwsquadron_isPlayerWithinRangeZ(leader, state->exitDistance)) ||
+             mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0))
             activate = 1;
         else
             activate = 0;
@@ -492,8 +492,8 @@ void ARWSquadron_update(GameObject* obj)
         if (state->leaderObj != NULL)
             leader = state->leaderObj;
         if (leader != NULL && !arwsquadron_isPlayerWithinRangeZ(leader, state->activationDistance) &&
-            ((placement->gameBit <= 0 && !arwsquadron_isPlayerWithinRangeZ(leader, state->exitDistance)) ||
-             mainGetBit(placement->gameBit) == 0))
+            ((ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) <= 0 && !arwsquadron_isPlayerWithinRangeZ(leader, state->exitDistance)) ||
+             mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) == 0))
             deactivate = 1;
         else
             deactivate = 0;
@@ -647,7 +647,7 @@ void ARWSquadron_init(GameObject* obj, ArwSquadronSetup* setup)
         }
     }
 
-    state->exitDistance = (f32)(u32)setupData->exitDistance;
+    state->exitDistance = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->exitDistance));
     if (state->exitDistance > state->activationDistance)
     {
         state->exitDistance = state->activationDistance;

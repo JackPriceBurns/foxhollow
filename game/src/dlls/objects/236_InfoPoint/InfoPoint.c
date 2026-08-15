@@ -92,7 +92,7 @@ void InfoPoint_init(GameObject* obj, InfoPointPlacement* placement) {
         gInfoPointSharedResources.fontTexture = textureLoadAsset(INFOPOINT_FONT_TEXTURE_ASSET_ID);
     }
     state->renderBounds = &gInfoPointRenderBounds;
-    text = gameTextGet(placement->textId);
+    text = gameTextGet(ObjAnim_ReadPlacementU16(&obj->anim, &(placement->textId)));
     state->firstString = text->strings[0];
     state->displayTimer = INFOPOINT_INITIAL_DISPLAY_TIME;
     state->text = text;

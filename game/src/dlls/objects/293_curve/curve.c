@@ -38,7 +38,7 @@ void curve_init(GameObject* obj, RomCurveDef* placement) {
     obj->anim.rotY = (s16)(placement->pitch << 8);
     if (placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_8 ||
         placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_1A) {
-        obj->anim.rotZ = placement->roll;
+        obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->roll));
     }
     if (placement->type == ROMCURVE_TYPE_SCALE_OVERRIDE_15) {
         obj->anim.rootMotionScale = 1.25f;

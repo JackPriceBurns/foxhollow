@@ -72,7 +72,7 @@
 #include "main/objprint_dolphin_internal.h"
 
 u8 gCloudLayerOverlayColor[4] = {0x20, 0x20, 0x20, 0};
-int gTexShaderAmbColor = -1;
+GXColor gTexShaderAmbColor = {0xFF, 0xFF, 0xFF, 0xFF};
 GXColor gTexLightmapAmbColor = {0xff, 0xff, 0xff, 0xff};
 s8 gTexIndMtxScaleExp = -2;
 
@@ -922,7 +922,7 @@ Shader* mapBlockRender_setShader(u8 doSetup, MapBlockData* blockData, ModelRende
     }
     if ((SHADER_FLAGS(shader) & 1) != 0 || (SHADER_FLAGS(shader) & 0x40000) != 0 ||
         (SHADER_FLAGS(shader) & 0x800) != 0 || (SHADER_FLAGS(shader) & 0x1000) != 0) {
-        GXSetChanAmbColor(GX_COLOR0, *(GXColor*)&gTexShaderAmbColor);
+        GXSetChanAmbColor(GX_COLOR0, gTexShaderAmbColor);
         if ((SHADER_FLAGS(shader) & 0x40000) != 0) {
             GXSetChanCtrl(GX_COLOR0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
         } else {

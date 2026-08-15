@@ -352,7 +352,7 @@ void MagicDust_init(GameObject* obj, CollectibleSetup* placement) {
     obj->anim.velocityX = speed * mathSinf(angle);
     obj->anim.velocityZ = speed * mathCosf(angle);
     obj->anim.velocityY = (f32)randomGetRange(0x28, 0x32) / MAGICGEM_RANDOM_Y_SPEED_SCALE;
-    mode = placement->spawnMode;
+    mode = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnMode));
     if (mode == MAGICGEM_SPAWN_MODE_BURST) {
         state->flags |= MAGICGEM_FLAG_BURST1;
         obj->anim.alpha = MAGICGEM_MIN_ALPHA;

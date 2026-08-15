@@ -71,7 +71,7 @@ void dim2lavacontrol_tickCountdown(GameObject* obj) {
             state->countdown -= 1;
             if (state->countdown == 0) {
                 state->statusFlags |= DIM2_LAVA_CONTROL_STATE_FLAG_COUNTDOWN_COMPLETE;
-                mainSetBits(placement->completionGameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
             }
         }
     }
@@ -182,9 +182,9 @@ void dim2lavacontrol_init(GameObject* obj, const Dim2LavaControlPlacementView* p
     }
 
     state = obj->extra;
-    state->countdown = (s8)placement->countdownInitialValue;
+    state->countdown = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->countdownInitialValue));
     state->savedCountdown = state->countdown;
-    if (mainGetBit(placement->completionGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit))) != 0) {
         gameBitState = DIM2_LAVA_CONTROL_STATE_FLAG_COUNTDOWN_COMPLETE;
     } else {
         gameBitState = 0;

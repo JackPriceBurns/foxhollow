@@ -33,11 +33,11 @@ void imSpaceRing_update(GameObject* obj) {
     const IMSpaceRingPlacement* placement = (const IMSpaceRingPlacement*)obj->anim.placementData;
 
     if (IM_SPACE_RING_SPIN_AXIS(obj) != 0) {
-        obj->anim.rotX = (s16)(obj->anim.rotX + placement->spinSpeed * framesThisStep);
+        obj->anim.rotX = (s16)(obj->anim.rotX + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spinSpeed)) * framesThisStep);
     } else {
-        obj->anim.rotY = (s16)(obj->anim.rotY + placement->spinSpeed * framesThisStep);
+        obj->anim.rotY = (s16)(obj->anim.rotY + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spinSpeed)) * framesThisStep);
     }
-    obj->anim.rotZ = (s16)(obj->anim.rotZ + placement->tiltSpeed * framesThisStep);
+    obj->anim.rotZ = (s16)(obj->anim.rotZ + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->tiltSpeed)) * framesThisStep);
     if (gIMSpaceRingLeader != NULL) {
         obj->anim.alpha = gIMSpaceRingLeader->anim.alpha;
         objMove(obj, gIMSpaceRingLeader->anim.localPosX - obj->anim.localPosX,

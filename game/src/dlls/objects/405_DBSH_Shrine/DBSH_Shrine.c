@@ -136,7 +136,7 @@ void dbshShrine_updateHoverMotion(GameObject* obj) {
         angleDelta += DBSH_SHRINE_ANGLE_WRAP;
     }
     obj->anim.rotX =
-        (s16)(*(s16*)(int)&obj->anim.rotX + (s32)(((f32)angleDelta * timeDelta) / DBSH_SHRINE_TURN_RATE_DIVISOR));
+        (s16)(obj->anim.rotX + (s32)(((f32)angleDelta * timeDelta) / DBSH_SHRINE_TURN_RATE_DIVISOR));
 
     distance = Vec_xzDistance(&obj->anim.worldPosX, &player->anim.worldPosX);
     if (distance <= DBSH_SHRINE_FADE_DISTANCE) {

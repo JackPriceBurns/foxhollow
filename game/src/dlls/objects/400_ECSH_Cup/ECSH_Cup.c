@@ -243,7 +243,7 @@ void ecshCup_init(GameObject* obj, const ECSHCupPlacement* placement) {
         state->velocityZ = zero;
     }
     state->currentAnimState = ECSH_CUP_ANIM_STATE_STATIONARY;
-    state->cupIndex = placement->cupIndex;
+    state->cupIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cupIndex));
     state->bobTimer = randomGetRange(ECSH_CUP_BOB_TIMER_RANDOM_MIN, ECSH_CUP_BOB_TIMER_RANDOM_MAX);
     state->spinRate = randomGetRange(ECSH_CUP_SPIN_RATE_RANDOM_MIN, ECSH_CUP_SPIN_RATE_RANDOM_MAX);
     state->bobDirection = ECSH_CUP_INITIAL_BOB_DIRECTION;

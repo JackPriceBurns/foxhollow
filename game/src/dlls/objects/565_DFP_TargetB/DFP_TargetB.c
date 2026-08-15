@@ -411,8 +411,8 @@ void dfptargetblock_init(GameObject* obj, DfpTargetBlockPlacement* placement)
         }
         state->mode = DFPTARGETBLOCK_MODE_RAISING;
         obj->anim.localPosY = obj->anim.localPosY - (80.0f);
-        state->completionSfxId = placement->completionSfxId;
-        state->stateSfxId = placement->stateSfxId;
+        state->completionSfxId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionSfxId));
+        state->stateSfxId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stateSfxId));
         bitVal = mainGetBit((int)state->completionSfxId);
         state->completionSfxReady = bitVal;
         bitVal = mainGetBit((int)state->stateSfxId);

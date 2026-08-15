@@ -80,7 +80,7 @@ void spiritPrize_update(GameObject* obj) {
     if (placement == NULL) {
         return;
     }
-    if (placement->animDataIndex == -1) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) == -1) {
         return;
     }
     if (placement->base.ident == SPIRIT_PRIZE_DISABLED_MAP_ID) {
@@ -157,20 +157,20 @@ void spiritPrize_init(GameObject* obj, const SpiritPrizePlacement* placement) {
     if (placement->base.ident == SPIRIT_PRIZE_DISABLED_MAP_ID) {
         return;
     }
-    state->sequence.gameBit = placement->sequenceGameBit;
+    state->sequence.gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     state->sequence.flags = -1;
     state->sequence.posOffsetDecay = 1.0f / (1.0f + (f32)(u32)placement->positionDamping);
     state->sequence.curveId = -1;
     loadedAnimDataIndexPlusOne = obj->userData1;
-    if (loadedAnimDataIndexPlusOne == 0 && placement->animDataIndex != 1) {
-        (*gObjectTriggerInterface)->loadAnimData((u8*)&state->sequence, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (loadedAnimDataIndexPlusOne != 0 && placement->animDataIndex != loadedAnimDataIndexPlusOne - 1) {
+    if (loadedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != 1) {
+        (*gObjectTriggerInterface)->loadAnimData((u8*)&state->sequence, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (loadedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != loadedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)&state->sequence);
-        if (placement->animDataIndex != -1) {
-            (*gObjectTriggerInterface)->loadAnimData((u8*)&state->sequence, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
+            (*gObjectTriggerInterface)->loadAnimData((u8*)&state->sequence, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     if (obj->anim.romDefNo != SPIRIT_PRIZE_BOUND_LIGHT_SEQ_ID) {
         state->useDetachedLight = 1;

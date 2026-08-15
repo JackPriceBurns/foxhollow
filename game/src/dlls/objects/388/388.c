@@ -104,7 +104,7 @@ void dll_184_update(GameObject* obj) {
 
     state = obj->extra;
     placement = (const Dll184Placement*)obj->anim.placementData;
-    if (placement != NULL && placement->animDataIndex != -1) {
+    if (placement != NULL && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
         i = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStep);
         dll_184_handleAnimEvents(obj, &state->sequence);
         if (i != 0 && obj->seqIndex == -2) {
@@ -142,7 +142,7 @@ void dll_184_init(GameObject* obj, const Dll184Placement* placement) {
     objSetSlot(obj, DLL_184_OBJECT_SLOT);
     sequenceData = obj->extra;
     state = (Dll184State*)sequenceData;
-    state->sequence.gameBit = placement->sequenceGameBit;
+    state->sequence.gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
     state->sequence.flags = -1;
     state->sequence.posOffsetDecay = 1.0f / (1.0f + (f32)(u32)placement->positionDamping);
     state->sequence.curveId = -1;
@@ -150,15 +150,15 @@ void dll_184_init(GameObject* obj, const Dll184Placement* placement) {
     state->sequence.cmds = NULL;
     obj->userData2 = -1;
     cachedAnimDataIndexPlusOne = obj->userData1;
-    if (cachedAnimDataIndexPlusOne == 0 && placement->animDataIndex != 1) {
-        (*gObjectTriggerInterface)->loadAnimData(sequenceData, (u8*)placement);
-        obj->userData1 = placement->animDataIndex + 1;
-    } else if (cachedAnimDataIndexPlusOne != 0 && placement->animDataIndex != cachedAnimDataIndexPlusOne - 1) {
+    if (cachedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != 1) {
+        (*gObjectTriggerInterface)->loadAnimData(sequenceData, (u8*)placement, &obj->anim);
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+    } else if (cachedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != cachedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState(sequenceData);
-        if (placement->animDataIndex != -1) {
-            (*gObjectTriggerInterface)->loadAnimData(sequenceData, (u8*)placement);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != -1) {
+            (*gObjectTriggerInterface)->loadAnimData(sequenceData, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = placement->animDataIndex + 1;
+        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
     }
     if (obj->anim.modelState != NULL) {
         obj->anim.modelState->shadowTintA = DLL_184_SHADOW_TINT_A;

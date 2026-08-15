@@ -15,7 +15,7 @@
 
 int ktlazerlight_getExtraSize(void)
 {
-    return 0x14;
+    return sizeof(KtlazerlightState);
 }
 
 int ktlazerlight_getObjectTypeId(void)
@@ -46,8 +46,8 @@ void ktlazerlight_update(GameObject* obj)
     KtlazerlightState* state = obj->extra;
     s16 intensity;
     ModelLightStruct* light = state->light;
-    intensity = mainGetBit(placement->onIntensityBit);
-    if (intensity >= 1 || mainGetBit(placement->onStayLitBit) != 0)
+    intensity = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->onIntensityBit)));
+    if (intensity >= 1 || mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->onStayLitBit))) != 0)
     {
         if (intensity == 0)
         {

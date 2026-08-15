@@ -52,6 +52,7 @@ void VFP_lavapool_updateWave(GameObject* obj)
     ObjTextureRuntimeSlot* tex;
     f32 scrollT;
     f32 waveScale;
+    s16 amplitudeDivisor;
     struct
     {
         u8 pad[8];
@@ -65,8 +66,14 @@ void VFP_lavapool_updateWave(GameObject* obj)
     state->phase += timeDelta * ((100.0f * state->speedFactor) / 100.0f);
     if (state->phase > 32767.0f)
     {
+        amplitudeDivisor = ObjAnim_ReadPlacementS16(
+            &obj->anim, &mapData->amplitudeDivisor);
+        if (amplitudeDivisor == 0)
+        {
+            amplitudeDivisor = 500;
+        }
         state->speedFactor = (f32)randomGetRange(0x32, 100);
-        state->amplitude = 1.0f / ((f32)(int)mapData->amplitudeDivisor / (f32)randomGetRange(0x15e, 800));
+        state->amplitude = 1.0f / ((f32)(int)amplitudeDivisor / (f32)randomGetRange(0x15e, 800));
         state->phase = 0.0f;
         Sfx_PlayFromObject(obj, SFXTRIG_id_111);
         speed = 255.0f;
@@ -157,18 +164,21 @@ void VFP_lavapool_update(GameObject* obj)
 void VFP_lavapool_init(GameObject* obj, VfpLavaPoolMapData* mapData)
 {
     VfpLavaPoolState* state;
+    s16 amplitudeDivisor;
 
     state = obj->extra;
     obj->animEventCallback = VFP_lavapool_animEventCallback;
     state->timerA = 7000;
     state->timerB = 2000;
-    if (mapData->amplitudeDivisor == 0)
+    amplitudeDivisor = ObjAnim_ReadPlacementS16(
+        &obj->anim, &mapData->amplitudeDivisor);
+    if (amplitudeDivisor == 0)
     {
-        mapData->amplitudeDivisor = 500;
+        amplitudeDivisor = 500;
     }
     obj->anim.rootMotionScale =
         1.0f /
-        ((f32)(int)mapData->amplitudeDivisor / (f32)randomGetRange(600, 1000));
+        ((f32)(int)amplitudeDivisor / (f32)randomGetRange(600, 1000));
     state->amplitude = obj->anim.rootMotionScale;
     state->speedFactor = (f32)randomGetRange(0x32, 100);
 }

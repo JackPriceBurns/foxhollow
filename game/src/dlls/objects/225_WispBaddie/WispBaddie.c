@@ -228,7 +228,7 @@ void WispBaddie_init(GameObject* obj, WispBaddiePlacement* placement, int skipAl
     f32 value;
 
     state = obj->extra;
-    value = (f32)placement->maxHitRadiusParameter / 25.0f;
+    value = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->maxHitRadiusParameter)) / 25.0f;
     state->maxHitRadius = value;
     state->hitRadius = value;
     state->triggerDistance = 4.0f * (f32)placement->triggerDistanceScale;

@@ -51,7 +51,7 @@ u32 gDll73EffectResourceData[sizeof(Dll73EffectResourceView) / sizeof(u32)] = {
 
 void dll_73_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll73EffectResourceData;
+    u8* resourceData = (u8*)gDll73EffectResourceData;
     GfxCmd* commands;
     GfxCmd* entries;
     f32 originOffset = 0.0f;
@@ -215,7 +215,7 @@ void dll_73_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDll73EffectResourceData, 0x18,
+        ->spawnEffect(&packet, 0, 0x15, (u8*)gDll73EffectResourceData, 0x18,
                       &resourceData[offsetof(Dll73EffectResourceView, triangles)], 0xd9, 0);
 }
 

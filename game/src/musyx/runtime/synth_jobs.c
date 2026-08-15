@@ -245,7 +245,7 @@ void streamHandle(void)
                 if (si->state == SYNTH_JOB_STATE_PLAYING && !(si->flags & 0x20000) &&
                     si->format == SYNTH_JOB_FORMAT_ADPCM)
                 {
-                    hwSetStreamLoopPS(si->voice, *(u32*)((u32)si->buffer + 0x40000000) >> 24);
+                    hwSetStreamLoopPS(si->voice, *(u8*)((u32)si->buffer + 0x40000000));
                 }
             }
             break;

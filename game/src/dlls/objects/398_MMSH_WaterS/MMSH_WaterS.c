@@ -120,8 +120,8 @@ void mmshWaterSpike_init(GameObject* obj, const MMSHWaterSpikePlacement* placeme
 
     ObjHits_EnableObject(obj);
     MMSH_WATER_SPIKE_RIPPLE_TIMER(obj) = 0;
-    packedXyzAnimatorObjectId = (u32)(u16)placement->xyzAnimatorObjectIdHigh << 16;
-    lowXyzAnimatorObjectId = (u32)(u16)placement->xyzAnimatorObjectIdLow;
+    packedXyzAnimatorObjectId = (u32)(u16)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->xyzAnimatorObjectIdHigh)) << 16;
+    lowXyzAnimatorObjectId = (u32)(u16)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->xyzAnimatorObjectIdLow));
     packedXyzAnimatorObjectId |= lowXyzAnimatorObjectId;
     MMSH_WATER_SPIKE_XYZ_ANIMATOR_ID(obj) = packedXyzAnimatorObjectId;
 }

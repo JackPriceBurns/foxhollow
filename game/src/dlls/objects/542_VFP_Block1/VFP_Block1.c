@@ -34,9 +34,9 @@ int VFP_Block1_getObjectTypeId(void)
     return 0x0;
 }
 
-void VFP_Block1_free(int obj)
+void VFP_Block1_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2(obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void VFP_Block1_render(void)
@@ -72,7 +72,7 @@ void VFP_Block1_init(GameObject* obj, VfpBlock1Placement* data)
     VfpBlock1Placement* def = data;
     VfpBlock1State* state = obj->extra;
     obj->anim.rotX = (((s32)def->rotXByte) << 8);
-    state->gameBitId = def->gameBitId;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitId));
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
 }
 

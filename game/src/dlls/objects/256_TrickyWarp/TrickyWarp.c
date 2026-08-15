@@ -107,10 +107,10 @@ int TrickyWarp_isPlayerReachable(GameObject* obj, TrickyWarpState* state) {
             }
             curveNode = (RomCurveDef*)(*gRomCurveInterface)->getById(state->curveNodeIds[curveIndex]);
             if (curveNode != NULL) {
-                if (curveNode->requiredBit == TRICKYWARP_GAMEBIT_NONE ||
-                    mainGetBit(curveNode->requiredBit) != 0) {
-                    if (curveNode->forbiddenBit == TRICKYWARP_GAMEBIT_NONE ||
-                        mainGetBit(curveNode->forbiddenBit) == 0) {
+                if (fhReadBES16(&curveNode->requiredBit) == TRICKYWARP_GAMEBIT_NONE ||
+                    mainGetBit(fhReadBES16(&curveNode->requiredBit)) != 0) {
+                    if (fhReadBES16(&curveNode->forbiddenBit) == TRICKYWARP_GAMEBIT_NONE ||
+                        mainGetBit(fhReadBES16(&curveNode->forbiddenBit)) == 0) {
                         if (curveNode->linkWalkGroups[0] == playerPatchGroup) {
                             return 1;
                         }

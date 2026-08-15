@@ -43,20 +43,20 @@ void WM_LaserTarget_update(GameObject* obj) {
     state = obj->extra;
     if (ObjHits_GetPriorityHit(obj, NULL, NULL, NULL) != 0) {
         state->toggleQueued = 1;
-        state->cooldown = placement->cooldown;
+        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
     }
     if (state->cooldown <= 0 && state->toggleQueued != 0) {
-        if (mainGetBit(placement->toggleGameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit))) != 0) {
             Obj_SetActiveModelIndex(obj, 0);
-            mainSetBits(placement->toggleGameBit, 0);
-            mainSetBits(placement->pairedGameBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)), 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pairedGameBit)), 0);
         } else {
             Obj_SetActiveModelIndex(obj, 1);
-            mainSetBits(placement->toggleGameBit, 1);
-            mainSetBits(placement->pairedGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)), 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pairedGameBit)), 1);
         }
         state->toggleQueued = 0;
-        state->cooldown = placement->cooldown;
+        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
     } else if (state->cooldown > 0) {
         state->cooldown -= framesThisStep;
     }
@@ -64,8 +64,8 @@ void WM_LaserTarget_update(GameObject* obj) {
 
 void WM_LaserTarget_init(GameObject* obj, const WMLaserTargetPlacement* placement) {
     WMLaserTargetState* state = obj->extra;
-    obj->anim.bankIndex = mainGetBit(placement->toggleGameBit);
-    state->cooldown = placement->cooldown;
+    obj->anim.bankIndex = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)));
+    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
     state->toggleQueued = 0;
 }
 

@@ -82,7 +82,7 @@ int sidekickBall_isHeldOrMoving(GameObject* obj);
 void sidekickBall_setIdle(GameObject* obj, GameObject* source);
 void sidekickBall_launch(GameObject* obj, GameObject* source, f32 velocityX, f32 velocityY, f32 velocityZ);
 int SidekickBall_getExtraSize(void);
-void SidekickBall_free(int obj);
+void SidekickBall_free(GameObject* obj);
 void SidekickBall_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int fwdArg5, s8 visible);
 void SidekickBall_update(GameObject* obj);
 u8 trickyBallMove(GameObject* obj);

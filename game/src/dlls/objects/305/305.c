@@ -39,7 +39,9 @@ void CF_DoorLight_update(GameObject* obj) {
 
     state = obj->extra;
     placement = (CFDoorLightPlacement*)obj->anim.placement;
-    if (state->flags.active == 0 && mainGetBit(placement->triggerGameBit) != 0 && state->flags.done == 0) {
+    if (state->flags.active == 0 &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0 &&
+        state->flags.done == 0) {
         state->flags.active = 1;
         state->currentFrame = CFDOORLIGHT_MIN_FRAME;
     }
@@ -50,8 +52,9 @@ void CF_DoorLight_update(GameObject* obj) {
             if (state->currentFrame < CFDOORLIGHT_MIN_FRAME) {
                 state->currentFrame = CFDOORLIGHT_MIN_FRAME;
             } else if (state->currentFrame > state->maxFrame) {
-                if (placement->doneGameBit != CFDOORLIGHT_GAME_BIT_NONE) {
-                    mainSetBits(placement->doneGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit)) !=
+                    CFDOORLIGHT_GAME_BIT_NONE) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit)), 1);
                     state->flags.active = 0;
                     state->flags.done = 1;
                     state->currentFrame = state->maxFrame;
@@ -69,10 +72,10 @@ void CF_DoorLight_init(GameObject* obj, CFDoorLightPlacement* placement) {
 
     state->textureId = CFDOORLIGHT_DEFAULT_TEXTURE_ID;
     obj->anim.rotX = (s16)(placement->initialRotX << CFDOORLIGHT_ROTATION_SHIFT);
-    state->maxFrame = placement->maxFrame << CFDOORLIGHT_FRAME_SHIFT;
-    state->frameStep = placement->frameStep;
+    state->maxFrame = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->maxFrame)) << CFDOORLIGHT_FRAME_SHIFT;
+    state->frameStep = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->frameStep));
     state->resetFrame = placement->resetFrame << CFDOORLIGHT_FRAME_SHIFT;
-    if ((state->flags.done = mainGetBit(placement->doneGameBit))) {
+    if ((state->flags.done = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit))))) {
         state->currentFrame = state->maxFrame;
         state->flags.active = 1;
     }

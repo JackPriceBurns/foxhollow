@@ -126,7 +126,7 @@ int Lightfoot_UpdateCompletionInteraction(GameObject* obj, BaddieState* state)
     if (state->moveJustStartedB != 0 ||
         state->moveDone != 0)
     {
-        if (mainGetBit(data->eventGameBit) != 0)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(data->eventGameBit))) != 0)
         {
             inner->configFlags |= 1;
         }
@@ -142,8 +142,8 @@ int Lightfoot_UpdateCompletionInteraction(GameObject* obj, BaddieState* state)
                 control->completionCountdown -= 1;
                 if (control->completionCountdown == 0)
                 {
-                    mainSetBits(data->completionGameBit, 1);
-                    mainSetBits(data->activeGameBit, 0);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(data->completionGameBit)), 1);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(data->activeGameBit)), 0);
                     obj->anim.alpha = 0;
                     obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
                     control->completionTimer = 120.0f;
@@ -155,7 +155,7 @@ int Lightfoot_UpdateCompletionInteraction(GameObject* obj, BaddieState* state)
         {
             if (state->controlMode != 1)
             {
-                if (mainGetBit(data->activeGameBit) != 0)
+                if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(data->activeGameBit))) != 0)
                 {
                     (*gPlayerInterface)->setState(obj, state, 1);
                 }
@@ -486,8 +486,8 @@ int Lightfoot_UpdateButtonTimingChallenge(GameObject* obj, BaddieState* state, f
             challenge->animationIndex = 0;
             obj->anim.localPosX = placement->base.posX;
             obj->anim.localPosZ = placement->base.posZ;
-            mainSetBits(placement->completionGameBit, 1);
-            mainSetBits(placement->activeGameBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)), 0);
             return 3;
         }
         ObjAnim_SetCurrentMove(obj, controls->anims[challenge->animationIndex], 0.0f, 0);
@@ -756,7 +756,7 @@ int Lightfoot_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
         {
         case 1:
             inner->configFlags = inner->configFlags | 1;
-            mainSetBits(placement->eventGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->eventGameBit)), 1);
             arr[3] = 0.0f;
             arr[4] = gLightfootPulseSpawnOffsetY[0];
             arr[5] = 0.0f;
@@ -769,7 +769,7 @@ int Lightfoot_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
             break;
         }
     }
-    if (placement->behaviorId == DLL1B5_COMPLETION_GAMEBIT_SC_TOTEM_BOND)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorId)) == DLL1B5_COMPLETION_GAMEBIT_SC_TOTEM_BOND)
     {
         Lightfoot_UpdatePlayerInteraction(obj, inner, &inner->baddie);
         if ((inner->configFlags & 1) != 0 && (obj->objectFlags & OBJECT_OBJFLAG_RENDERED) != 0)
@@ -817,7 +817,7 @@ int Lightfoot_getObjectTypeId(void) {
 
 void Lightfoot_free(GameObject* obj, int preserveChildren) {
     void* child;
-    int inner = (int)obj->extra;
+    uintptr_t inner = (uintptr_t)obj->extra;
     int count;
     int i;
 
@@ -992,7 +992,7 @@ void Lightfoot_update(GameObject* obj) {
 
 void Lightfoot_init(GameObject* obj, const LightfootPlacement* placement, int isReload) {
     PlayerLightfootAnimTable* playerAnimTableBase = &gPlayerLightfootAnimTable;
-    int inner = (int)obj->extra;
+    uintptr_t inner = (uintptr_t)obj->extra;
     const LightfootPlacement* placementData = placement;
     LightfootControlState* control;
     u8 initFlags = 0x16;
@@ -1010,7 +1010,7 @@ void Lightfoot_init(GameObject* obj, const LightfootPlacement* placement, int is
     control->weaponDefNoSentinel = -1;
     control->weaponDefNo = control->weaponDefNoSentinel;
     obj->objectFlags = (u16)(obj->objectFlags | (placement->objectFlags & 0x7));
-    if (placement->completionGameBit == DLL1B5_COMPLETION_GAMEBIT_SC_TOTEM_BOND) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) == DLL1B5_COMPLETION_GAMEBIT_SC_TOTEM_BOND) {
         ((GroundBaddieState*)inner)->baddie.controlMode = 2;
         ((GroundBaddieState*)inner)->baddie.substate = 1;
         ObjHits_DisableObject(obj);

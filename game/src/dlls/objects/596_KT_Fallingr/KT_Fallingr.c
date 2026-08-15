@@ -51,7 +51,7 @@ void ktfallingrocks_update(GameObject* obj)
     MatrixTransform params;
     GameObject* player;
     int i;
-    if (mainGetBit(placement->triggerBit) == 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerBit))) == 0)
     {
         return;
     }
@@ -68,10 +68,10 @@ void ktfallingrocks_update(GameObject* obj)
         params.y = (obj)->anim.localPosY;
         params.z = (obj)->anim.localPosZ + (f32)randomGetRange(-200, 200);
         (*gPartfxInterface)
-            ->spawnObject((void*)obj, placement->effectId, &params, 0x200001, -1, NULL);
+            ->spawnObject((void*)obj, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->effectId)), &params, 0x200001, -1, NULL);
     }
     Sfx_PlayFromObject(obj, SFXTRIG_en_birdynight11);
-    mainSetBits(placement->triggerBit, 0);
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerBit)), 0);
 }
 
 void ktfallingrocks_init(GameObject* obj)

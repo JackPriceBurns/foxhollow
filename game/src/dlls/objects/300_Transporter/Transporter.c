@@ -170,7 +170,7 @@ void Transporter_updateInteraction(GameObject* obj) {
 
     placement = (TransporterPlacement*)obj->anim.placement;
     state = obj->extra;
-    gameBit = placement->enableGameBit;
+    gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
     if (gameBit != TRANSPORTER_GAME_BIT_NONE) {
         if (mainGetBit(gameBit) != 0) {
             state->flags &= ~TRANSPORTER_FLAG_ENABLE_GAMEBIT_OFF;
@@ -203,7 +203,7 @@ void Transporter_updateInteraction(GameObject* obj) {
             state->countdownActive = 1;
             gWarpArrivalTimer = 2;
         } else {
-            gameBit = placement->enableGameBit;
+            gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
             if (((gameBit == TRANSPORTER_GAME_BIT_NONE) ||
                  ((mainGetBit(gameBit) != 0) && ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0))) &&
                 (ObjTrigger_IsSet(obj) != 0)) {
@@ -470,10 +470,11 @@ int Transporter_getExtraSize(void) {
 void Transporter_render(void) {
 }
 
-void Transporter_hitDetect(int obj) {
-    register int self = obj;
+void Transporter_hitDetect(GameObject* obj) {
+    register uintptr_t self = (uintptr_t)obj;
     register TransporterPlacement* placement = (TransporterPlacement*)((GameObject*)self)->anim.placementData;
     register TransporterState* state = ((GameObject*)self)->extra;
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&((GameObject*)self)->anim, &placement->enableGameBit);
 
     if (gArrivedWarpIndex > -1) {
         ((GameObject*)self)->anim.resetHitboxFlags &= ~(INTERACT_FLAG_DISABLED | INTERACT_FLAG_PROMPT_SUPPRESSED);
@@ -488,7 +489,7 @@ void Transporter_hitDetect(int obj) {
         if (state->triggerMode != 0 || state->countdownActive != 0) {
             ((GameObject*)self)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->flags &= ~TRANSPORTER_FLAG_INTERACTIVE;
-        } else if (placement->enableGameBit != TRANSPORTER_GAME_BIT_NONE && mainGetBit(placement->enableGameBit) == 0) {
+        } else if (enableGameBit != TRANSPORTER_GAME_BIT_NONE && mainGetBit(enableGameBit) == 0) {
             ((GameObject*)self)->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
             ((GameObject*)self)->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
             state->flags &= ~TRANSPORTER_FLAG_INTERACTIVE;
@@ -512,7 +513,7 @@ void Transporter_hitDetect(int obj) {
 }
 
 void Transporter_update(GameObject* obj) {
-    register int self = (int)obj;
+    register uintptr_t self = (uintptr_t)obj;
     register TransporterPlacement* placement = (TransporterPlacement*)((GameObject*)self)->anim.placementData;
     if (placement->warpId != TRANSPORTER_WARP_ID_NONE) {
         Transporter_updateInteraction((GameObject*)self);
@@ -599,4 +600,3 @@ void Transporter_init(GameObject* obj, TransporterPlacement* placement) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
 }
-

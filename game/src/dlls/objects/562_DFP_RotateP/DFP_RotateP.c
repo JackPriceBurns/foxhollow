@@ -13,12 +13,6 @@
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
 
-typedef struct CmbSrcColorIndexPair
-{
-    u32 a;
-    u32 b;
-} CmbSrcColorIndexPair;
-
 #define DFP_ROTATEP_EFFECT_RING_COUNT       4
 #define DFP_ROTATEP_EFFECT_HANDLES_PER_RING 2
 #define DFP_ROTATEP_MODE_SEQUENCE           2
@@ -45,7 +39,7 @@ typedef struct CmbSrcColorIndexPair
 
 int gDFP_RotatePEffectHandles[8];
 
-static const CmbSrcColorIndexPair sDFPRotatePColorIndices = {0x00040005, 0x0006000B};
+static const s16 sDFPRotatePColorIndices[4] = {4, 5, 6, 11};
 
 #define DFP_ROTATEP_UPDATE_EFFECT_HANDLE_POS(handleExpr, obj, rot, angleStep)                                          \
     do                                                                                                                 \
@@ -114,14 +108,10 @@ void DFP_RotateP_updateEffectHandleRing(GameObject* obj)
 
 int DFP_RotateP_ensureEffectHandlePair(GameObject* obj, u8 ringIndex)
 {
-    u32 colorIndexWords[2];
     int* handles;
     int* pair;
     CmbSrcMapData* setup;
     int handleOffset;
-    s16* colorIndices;
-
-    *(CmbSrcColorIndexPair*)colorIndexWords = sDFPRotatePColorIndices;
 
     if (Obj_IsLoadingLocked() == 0)
     {
@@ -147,12 +137,11 @@ int DFP_RotateP_ensureEffectHandlePair(GameObject* obj, u8 ringIndex)
         setup->rotY = 0;
         if ((*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot) == DFP_ROTATEP_MODE_SEQUENCE)
         {
-            colorIndices = (s16*)colorIndexWords;
-            setup->colorIndex = colorIndices[ringIndex & 0xff];
+            setup->colorIndex = sDFPRotatePColorIndices[ringIndex & 0xff];
         }
         else
         {
-            setup->colorIndex = (u8) * (s16*)((char*)colorIndexWords + 6);
+            setup->colorIndex = (u8)sDFPRotatePColorIndices[3];
         }
         setup->effectMode = 0;
         setup->pulseSubMode = 0;
@@ -374,8 +363,8 @@ void DFP_RotateP_init(GameObject* obj, DFPRotatePPlacement* placement)
     obj->anim.rotX = (s16)(placement->rotXByte << 8);
     obj->animEventCallback = (void*)DFP_RotateP_activateEffectHandleRing;
     state->config19 = placement->unknown19;
-    state->eventId = placement->eventGameBit;
-    state->config20 = placement->activationGameBit;
+    state->eventId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->eventGameBit));
+    state->config20 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationGameBit));
     state->unk4 = 1;
     gDFP_RotatePEffectHandles[0] = 0;
     gDFP_RotatePEffectHandles[1] = 0;

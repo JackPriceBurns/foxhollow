@@ -207,7 +207,7 @@ void playerShadow_renderObject(GameObject* obj)
 {
     f32 radii[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     int* tileInfo;
-    int hitTable;
+    struct TrackTriangle* hitTable;
     int hitCount;
     PlayerShadowTriHit* hitTableValue;
     u32 mode;
@@ -216,7 +216,7 @@ void playerShadow_renderObject(GameObject* obj)
     f32 height;
     f32 radius;
 
-    hitTable = 0;
+    hitTable = NULL;
 
     if (gPlayerShadowMode == 0)
     {

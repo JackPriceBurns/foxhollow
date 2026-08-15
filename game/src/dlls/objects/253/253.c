@@ -54,23 +54,31 @@ void dll_FD_update(GameObject* obj) {
     DllFDPlacement* placement;
     DllFDState* state;
     f32 maxDistance;
+    s16 enableGameBit;
+    s16 eventId;
+    s16 preemptSequenceId;
+    s16 stateGameBit;
 
     maxDistance = DLL_FD_TARGET_SEARCH_RADIUS;
     placement = (DllFDPlacement*)obj->anim.placementData;
     state = obj->extra;
+    enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    eventId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->eventId);
+    preemptSequenceId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->preemptSequenceId);
+    stateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->stateGameBit);
     if (state->target == NULL) {
         target = objGetNearestTypeTo((u32)placement->targetGroup, obj, &maxDistance);
         state->target = target;
         if (state->target == NULL) {
             return;
         }
-        if (placement->stateGameBit == DLL_FD_NO_GAME_BIT) {
+        if (stateGameBit == DLL_FD_NO_GAME_BIT) {
             state->isActivated = 0;
         } else {
-            gameBitValue = mainGetBit(placement->stateGameBit);
+            gameBitValue = mainGetBit(stateGameBit);
             state->isActivated = gameBitValue;
         }
-        if ((state->isActivated != 0) && (placement->preemptSequenceId != DLL_FD_NO_SEQUENCE)) {
+        if ((state->isActivated != 0) && (preemptSequenceId != DLL_FD_NO_SEQUENCE)) {
             state->mode = DLL_FD_MODE_RUN_INITIAL_SEQUENCE;
         } else {
             state->mode = DLL_FD_MODE_INTERACTIVE;
@@ -87,7 +95,7 @@ void dll_FD_update(GameObject* obj) {
     case DLL_FD_MODE_RUN_INITIAL_SEQUENCE:
         state->target->anim.resetHitboxFlags &= ~DLL_FD_TARGET_INTERACT_FLAG;
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-        (*gObjectTriggerInterface)->preempt((int)obj, placement->preemptSequenceId);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptSequenceId);
         (*gObjectTriggerInterface)->runSequence(placement->sequenceId, obj, placement->sequenceArg);
         state->mode = DLL_FD_MODE_FINISHED;
         break;
@@ -96,19 +104,19 @@ void dll_FD_update(GameObject* obj) {
             state->target->anim.resetHitboxFlags &= ~DLL_FD_TARGET_INTERACT_FLAG;
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->mode = DLL_FD_MODE_FINISHED;
-        } else if ((placement->enableGameBit != DLL_FD_NO_GAME_BIT) &&
-                   (gameBitValue = mainGetBit(placement->enableGameBit), gameBitValue == 0)) {
+        } else if ((enableGameBit != DLL_FD_NO_GAME_BIT) &&
+                   (gameBitValue = mainGetBit(enableGameBit), gameBitValue == 0)) {
             state->target->anim.resetHitboxFlags &= ~DLL_FD_TARGET_INTERACT_FLAG;
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->mode = DLL_FD_MODE_WAIT_ENABLE;
         } else if (((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) &&
-                   ((placement->eventId == DLL_FD_NO_EVENT) ||
-                    (eventReady = (*gGameUIInterface)->isItemBeingUsed(placement->eventId), eventReady != 0))) {
+                   ((eventId == DLL_FD_NO_EVENT) ||
+                    (eventReady = (*gGameUIInterface)->isItemBeingUsed(eventId), eventReady != 0))) {
             if ((placement->flags & DLL_FD_FLAG_CLEAR_ENABLE_BIT) != 0) {
-                mainSetBits(placement->enableGameBit, 0);
+                mainSetBits(enableGameBit, 0);
             }
-            if (placement->stateGameBit != DLL_FD_NO_GAME_BIT) {
-                mainSetBits(placement->stateGameBit, 1);
+            if (stateGameBit != DLL_FD_NO_GAME_BIT) {
+                mainSetBits(stateGameBit, 1);
             }
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->isActivated = 1;
@@ -119,7 +127,7 @@ void dll_FD_update(GameObject* obj) {
         }
         break;
     case DLL_FD_MODE_WAIT_ENABLE:
-        gameBitValue = mainGetBit(placement->enableGameBit);
+        gameBitValue = mainGetBit(enableGameBit);
         if (gameBitValue != 0) {
             state->mode = DLL_FD_MODE_INTERACTIVE;
         }

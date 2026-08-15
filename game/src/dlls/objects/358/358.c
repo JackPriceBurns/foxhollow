@@ -38,7 +38,7 @@ void exploded_initDebrisState(GameObject* obj, ExplodedPlacement* placement, int
         center.sum[1] = zero;
         center.sum[2] = zero;
 
-        model = (ModelFileHeader*)*(int*)(*(int*)((int)obj->anim.banks + placement->modelBankIndex * 4));
+        model = (ModelFileHeader*)obj->anim.banks[placement->modelBankIndex];
         for (vertexIndex = 0; vertexIndex < model->vertexCount; vertexIndex++) {
             Model_GetVertexPosition(model, vertexIndex, center.vertex);
             center.sum[0] = center.vertex[0] + center.sum[0];
@@ -73,21 +73,22 @@ void exploded_initDebrisState(GameObject* obj, ExplodedPlacement* placement, int
 
 void exploded_seedDebrisMotion(GameObject* obj, ExplodedState* state, ExplodedPlacement* placement) {
     f32 groundHeight[2];
+    u16 lifetimeFrames;
 
     groundHeight[0] = 0.0f;
-    obj->anim.rotX = placement->initialRotation.x;
-    obj->anim.rotY = placement->initialRotation.y;
-    obj->anim.rotZ = placement->initialRotation.z;
+    obj->anim.rotX = ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialRotation.x);
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialRotation.y);
+    obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialRotation.z);
 
-    obj->anim.velocityX = (f32)(s32)placement->initialVelocity.x / 100.0f;
-    obj->anim.velocityY = (f32)(s32)placement->initialVelocity.y / 100.0f;
-    obj->anim.velocityZ = (f32)(s32)placement->initialVelocity.z / 100.0f;
-    state->spin.x = (f32)(s32)placement->spin.x;
-    state->spin.y = (f32)(s32)placement->spin.y;
-    state->spin.z = (f32)(s32)placement->spin.z;
+    obj->anim.velocityX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.x) / 100.0f;
+    obj->anim.velocityY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.y) / 100.0f;
+    obj->anim.velocityZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.z) / 100.0f;
+    state->spin.x = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spin.x);
+    state->spin.y = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spin.y);
+    state->spin.z = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spin.z);
 
     {
-        u16 floorOffsetRaw = placement->floorOffsetRaw;
+        u16 floorOffsetRaw = ObjAnim_ReadPlacementU16(&obj->anim, &placement->floorOffsetRaw);
         if (floorOffsetRaw == 0) {
             trackGetHeightAboveGround(obj, obj->anim.localPosX, obj->anim.localPosY - 10.0f,
                                       obj->anim.localPosZ, groundHeight, 0);
@@ -97,16 +98,17 @@ void exploded_seedDebrisMotion(GameObject* obj, ExplodedState* state, ExplodedPl
         }
     }
 
-    state->spinVelocity.x = (f32)(s32)placement->spinVelocity.x / 10.0f;
-    state->spinVelocity.y = (f32)(s32)placement->spinVelocity.y / 10.0f;
-    state->spinVelocity.z = (f32)(s32)placement->spinVelocity.z / 10.0f;
-    state->acceleration.x = (f32)(s32)placement->acceleration.x / 1000.0f;
-    state->acceleration.y = (f32)(s32)placement->acceleration.y / 1000.0f;
-    state->acceleration.z = (f32)(s32)placement->acceleration.z / 1000.0f;
+    state->spinVelocity.x = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinVelocity.x) / 10.0f;
+    state->spinVelocity.y = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinVelocity.y) / 10.0f;
+    state->spinVelocity.z = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinVelocity.z) / 10.0f;
+    state->acceleration.x = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.x) / 1000.0f;
+    state->acceleration.y = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.y) / 1000.0f;
+    state->acceleration.z = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.z) / 1000.0f;
 
     state->elapsedFrames = 0;
-    if (placement->lifetimeFrames != 0) {
-        state->durationFrames = placement->lifetimeFrames * ((int)randomGetRange(0, 100) + 100) / 200;
+    lifetimeFrames = ObjAnim_ReadPlacementU16(&obj->anim, &placement->lifetimeFrames);
+    if (lifetimeFrames != 0) {
+        state->durationFrames = lifetimeFrames * ((int)randomGetRange(0, 100) + 100) / 200;
     } else {
         state->durationFrames = -1;
     }
@@ -257,8 +259,12 @@ void exploded_init(GameObject* obj, ExplodedPlacement* placement, int usePresetC
     state = obj->extra;
     obj->anim.rootMotionScale = (obj->anim.modelInstance->rootMotionScaleBase * (f32)(s32)placement->scaleByte) / 20.0f;
     exploded_initDebrisState(obj, placement, usePresetCenter, state);
-    if (placement->initialVelocity.x != 0 || placement->initialVelocity.y != 0 || placement->initialVelocity.z != 0 ||
-        placement->acceleration.x != 0 || placement->acceleration.y != 0 || placement->acceleration.z != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.x) != 0 ||
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.y) != 0 ||
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->initialVelocity.z) != 0 ||
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.x) != 0 ||
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.y) != 0 ||
+        ObjAnim_ReadPlacementS16(&obj->anim, &placement->acceleration.z) != 0) {
         state->phase = EXPLODED_PHASE_ACTIVE;
     } else {
         state->phase = EXPLODED_PHASE_IDLE;

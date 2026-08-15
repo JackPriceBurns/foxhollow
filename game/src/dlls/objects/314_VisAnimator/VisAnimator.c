@@ -25,6 +25,7 @@ void VisAnimator_hitDetect(void) {
 void VisAnimator_update(GameObject* obj) {
     VisAnimatorPlacement* placement = (VisAnimatorPlacement*)obj->anim.placementData;
     VisAnimatorState* state = obj->extra;
+    s16 gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
     int blockIndex =
         objPosToMapBlockIdx((double)obj->anim.localPosX, (double)obj->anim.localPosY, (double)obj->anim.localPosZ);
     int gateValue;
@@ -33,7 +34,7 @@ void VisAnimator_update(GameObject* obj) {
         state->flags |= VIS_ANIMATOR_STATE_REFRESH_PENDING;
         return;
     }
-    gateValue = mainGetBit(placement->gateGameBit);
+    gateValue = mainGetBit(gateGameBit);
     state->currentGateState = (u8)(state->gateMask & gateValue);
     if (state->previousGateState != state->currentGateState) {
         state->visibilityBit = state->visibilityBit ^ 1;
@@ -47,22 +48,24 @@ void VisAnimator_update(GameObject* obj) {
 
 void VisAnimator_init(GameObject* obj, VisAnimatorPlacement* placement) {
     VisAnimatorState* state;
+    s16 gateGameBit;
     u32 gateValue;
     u8 gateState;
     int initialVisibility;
 
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     state = obj->extra;
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
     initialVisibility = placement->initialVisibilityBit;
     state->visibilityBit = initialVisibility;
     state->gateMask = (u8)(1 << placement->gateBitIndex);
-    gateValue = mainGetBit(placement->gateGameBit);
+    gateValue = mainGetBit(gateGameBit);
     if ((state->gateMask & gateValue) != 0) {
         state->visibilityBit = state->visibilityBit ^ 1;
     }
     mapGetBlock(
         objPosToMapBlockIdx((double)obj->anim.localPosX, (double)obj->anim.localPosY, (double)obj->anim.localPosZ));
-    gateValue = mainGetBit(placement->gateGameBit);
+    gateValue = mainGetBit(gateGameBit);
     gateState = (u8)(state->gateMask & gateValue);
     state->currentGateState = gateState;
     state->previousGateState = gateState;

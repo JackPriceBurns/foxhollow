@@ -82,7 +82,7 @@ void mmpTrenchFx_init(GameObject* obj, const MMPTrenchFxPlacement* placement) {
     MMPTrenchFxState* state = obj->extra;
     s16 angle;
 
-    state->enableGameBit = placement->enableGameBit;
+    state->enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
     state->extentX = (u16)(placement->extentX << 2);
     state->extentZ = (u16)(placement->extentZ << 2);
     state->extentY = (u16)(placement->extentY << 2);

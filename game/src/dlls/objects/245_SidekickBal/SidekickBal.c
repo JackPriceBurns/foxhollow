@@ -215,7 +215,7 @@ int SidekickBall_getExtraSize(void) {
     return sizeof(SidekickBallState);
 }
 
-void SidekickBall_free(int obj) {
+void SidekickBall_free(GameObject* obj) {
     mainSetBits(GAMEBIT_ITEM_TrickyBall_Usable, 1);
 }
 
@@ -233,7 +233,7 @@ void SidekickBall_update(GameObject* obj) {
     int trickyFlagsMask;
     int triggered;
 
-    state = (SidekickBallState*)(int)obj->extra;
+    state = (SidekickBallState*)obj->extra;
     obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
     state->onPathPoint = 0;
 

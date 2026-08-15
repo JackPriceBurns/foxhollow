@@ -146,7 +146,7 @@ void gpshShrine_updateHoverMotion(GameObject* obj) {
         }
 
         obj->anim.rotX =
-            (s16)(*(s16*)(int)&obj->anim.rotX + (s32)(((f32)angleDelta * timeDelta) / GPSH_SHRINE_TURN_RATE_DIVISOR));
+            (s16)(obj->anim.rotX + (s32)(((f32)angleDelta * timeDelta) / GPSH_SHRINE_TURN_RATE_DIVISOR));
         distance = Vec_xzDistance(&obj->anim.worldPosX, &player->anim.worldPosX);
         if (distance <= GPSH_SHRINE_FADE_DISTANCE) {
             obj->anim.alpha = (u8)(s32)(GPSH_SHRINE_FULL_ALPHA * (distance / GPSH_SHRINE_FADE_DISTANCE));

@@ -1254,6 +1254,7 @@ int* voxmaps_updateActiveMap(VoxPos* obj)
     }
 
     blockId = -1;
+    cell = NULL;
     if (mapGetBlockAtPos(gridX, gridZ, 0) != NULL)
     {
         cell = mapGetCellEntry(gridX, gridZ);
@@ -1352,6 +1353,14 @@ VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8)
         OSReport(msg + 0x174);
         return NULL;
     }
+    hdr->minY = (int)fhSwap32((u32)hdr->minY);
+    hdr->maxY = (int)fhSwap32((u32)hdr->maxY);
+    hdr->nodeBase = fhSwap32(hdr->nodeBase);
+    hdr->f18 = (int)fhSwap32((u32)hdr->f18);
+    hdr->rowCounts = fhSwap32(hdr->rowCounts);
+    hdr->f20 = (int)fhSwap32((u32)hdr->f20);
+    hdr->bitmap = fhSwap32(hdr->bitmap);
+    hdr->f28 = (int)fhSwap32((u32)hdr->f28);
     return hdr;
 }
 

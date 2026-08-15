@@ -28,7 +28,7 @@ int WM_Worm_getObjectTypeId(void) {
 }
 
 void WM_Worm_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void WM_Worm_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -102,8 +102,8 @@ void WM_Worm_init(GameObject* obj, const WMWormPlacementView* placement) {
     obj->anim.rotX = 0;
     state = obj->extra;
     state->effectScale = (f32)((s32)placement->effectScale << 2);
-    state->particleEffectId = placement->particleEffectId;
-    state->spawnCountOrInterval = placement->spawnCountOrInterval;
+    state->particleEffectId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->particleEffectId));
+    state->spawnCountOrInterval = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spawnCountOrInterval));
     state->unknown0C = 0;
     if (state->spawnCountOrInterval < 1) {
         obj->userData1 = state->spawnCountOrInterval;

@@ -29,7 +29,7 @@ int dll_177_updateTextureAnimation(GameObject* obj) {
     placement = (const Dll177Placement*)obj->anim.placementData;
     switch (state->textureState) {
     case DLL_177_TEXTURE_STATE_WAIT_FOR_GAME_BIT:
-        if (mainGetBit(placement->gameBit) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0) {
             state->textureState = DLL_177_TEXTURE_STATE_FADE_IN;
         }
         break;
@@ -88,7 +88,7 @@ void dll_177_init(GameObject* obj, const Dll177Placement* placement) {
 
     state = obj->extra;
     obj->animEventCallback = dll_177_updateTextureAnimation;
-    if (mainGetBit(placement->gameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0) {
         state->textureState = DLL_177_TEXTURE_STATE_PULSE;
     } else {
         state->textureState = DLL_177_TEXTURE_STATE_WAIT_FOR_GAME_BIT;

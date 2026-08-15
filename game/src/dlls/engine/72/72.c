@@ -68,20 +68,29 @@ void CameraModeStatic_update(CameraObject* camera) {
     f32 dx;
     f32 dy;
     f32 dz;
+    s16 placementYaw;
+    s16 placementPitch;
+    s16 placementRoll;
 
     if (gCameraModeStaticState->missingAnchor != 0) {
         (*gCameraInterface)->setMode(CAMCONTROL_ACTION_DEFAULT, 0, 1, 0, NULL, 0, 0xff);
     } else {
         target = (GameObject*)camera->anim.targetObj;
         placement = (StaticCameraPlacement*)gCameraModeStaticState->anchor->anim.placementData;
+        placementYaw = ObjAnim_ReadPlacementS16(
+            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.yaw);
+        placementPitch = ObjAnim_ReadPlacementS16(
+            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.pitch);
+        placementRoll = ObjAnim_ReadPlacementS16(
+            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.roll);
         if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_YAW) == 0) {
-            camera->anim.rotX = placement->cameraModeRotation.yaw + 0x8000;
+            camera->anim.rotX = placementYaw + 0x8000;
         }
         if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_PITCH) == 0) {
-            camera->anim.rotY = placement->cameraModeRotation.pitch;
+            camera->anim.rotY = placementPitch;
         }
         if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_ROLL) == 0) {
-            camera->anim.rotZ = placement->cameraModeRotation.roll;
+            camera->anim.rotZ = placementRoll;
         }
         camera->anim.worldPosX = gCameraModeStaticState->anchor->anim.worldPosX;
         camera->anim.worldPosY = gCameraModeStaticState->anchor->anim.worldPosY;
@@ -96,7 +105,7 @@ void CameraModeStatic_update(CameraObject* camera) {
         }
         if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_PITCH) != 0) {
             pitch = getAngle(dy, sqrtf(dx * dx + dz * dz)) & 0xffff;
-            angle = (pitch - (int)placement->cameraModeRotation.pitch) - (u32)(u16)camera->anim.rotY;
+            angle = (pitch - (int)placementPitch) - (u32)(u16)camera->anim.rotY;
             if (angle > 0x8000) {
                 angle = angle + -0xffff;
             }
@@ -132,6 +141,9 @@ void CameraModeStatic_init(CameraObject* camera, int unused, const int* anchorId
     f32 dx;
     f32 dy;
     f32 dz;
+    s16 placementYaw;
+    s16 placementPitch;
+    s16 placementRoll;
 
     target = (GameObject*)camera->anim.targetObj;
     if (gCameraModeStaticState == NULL) {
@@ -147,24 +159,30 @@ void CameraModeStatic_init(CameraObject* camera, int unused, const int* anchorId
     }
     gCameraModeStaticState->anchor = anchor;
     placement = (StaticCameraPlacement*)anchor->anim.placementData;
+    placementYaw = ObjAnim_ReadPlacementS16(
+        &anchor->anim, &placement->cameraModeRotation.yaw);
+    placementPitch = ObjAnim_ReadPlacementS16(
+        &anchor->anim, &placement->cameraModeRotation.pitch);
+    placementRoll = ObjAnim_ReadPlacementS16(
+        &anchor->anim, &placement->cameraModeRotation.roll);
     dx = anchor->anim.worldPosX - target->anim.worldPosX;
     dy = anchor->anim.worldPosY - target->anim.worldPosY;
     dz = anchor->anim.worldPosZ - target->anim.worldPosZ;
     if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_YAW) != 0) {
         yaw = 0x8000 - getAngle(dx, dz);
     } else {
-        yaw = placement->cameraModeRotation.yaw + 0x8000;
+        yaw = placementYaw + 0x8000;
     }
     if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_PITCH) != 0) {
         pitch = (s16)getAngle(dy, sqrtf(dx * dx + dz * dz));
-        pitch -= placement->cameraModeRotation.pitch;
+        pitch -= placementPitch;
     } else {
-        pitch = placement->cameraModeRotation.pitch;
+        pitch = placementPitch;
     }
     if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_ROLL) != 0) {
         roll = target->anim.rotZ;
     } else {
-        roll = placement->cameraModeRotation.roll;
+        roll = placementRoll;
     }
     {
         f32 fov = (f32)(u32)placement->fov;

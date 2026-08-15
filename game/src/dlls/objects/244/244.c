@@ -286,15 +286,15 @@ int DoorF4_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             case DOORF4_SEQUENCE_EVENT_OPEN:
                 view = Camera_GetCurrent();
                 if (state->planeOffset + (state->planeNormalX * view->x + state->planeNormalZ * view->z) < 0.0f) {
-                    if (placement->nearSideGameBit != -1) {
-                        sideGameBitValue = (u8)mainGetBit(placement->nearSideGameBit);
-                        sideGameBitValue ^= (u8)placement->toggleMask;
-                        mainSetBits(placement->nearSideGameBit, sideGameBitValue);
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)) != -1) {
+                        sideGameBitValue = (u8)mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)));
+                        sideGameBitValue ^= (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleMask));
+                        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)), sideGameBitValue);
                     }
-                } else if (placement->farSideGameBit != -1) {
-                    sideGameBitValue = (u8)mainGetBit(placement->farSideGameBit);
-                    sideGameBitValue ^= (u8)(placement->toggleMask >> 8);
-                    mainSetBits(placement->farSideGameBit, sideGameBitValue);
+                } else if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)) != -1) {
+                    sideGameBitValue = (u8)mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)));
+                    sideGameBitValue ^= (u8)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleMask)) >> 8);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)), sideGameBitValue);
                 }
                 if (signedDistance <= 0.0f) {
                     switch (obj->anim.romDefNo) {
@@ -351,15 +351,15 @@ int DoorF4_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             case DOORF4_SEQUENCE_EVENT_CLOSE:
                 view = Camera_GetCurrent();
                 if (state->planeOffset + (state->planeNormalX * view->x + state->planeNormalZ * view->z) < 0.0f) {
-                    if (placement->nearSideGameBit != -1) {
-                        sideGameBitValue = (u8)mainGetBit(placement->nearSideGameBit);
-                        sideGameBitValue ^= (u8)placement->toggleMask;
-                        mainSetBits(placement->nearSideGameBit, sideGameBitValue);
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)) != -1) {
+                        sideGameBitValue = (u8)mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)));
+                        sideGameBitValue ^= (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleMask));
+                        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit)), sideGameBitValue);
                     }
-                } else if (placement->farSideGameBit != -1) {
-                    sideGameBitValue = (u8)mainGetBit(placement->farSideGameBit);
-                    sideGameBitValue ^= (u8)(placement->toggleMask >> 8);
-                    mainSetBits(placement->farSideGameBit, sideGameBitValue);
+                } else if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)) != -1) {
+                    sideGameBitValue = (u8)mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)));
+                    sideGameBitValue ^= (u8)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleMask)) >> 8);
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->farSideGameBit)), sideGameBitValue);
                 }
                 switch (obj->anim.romDefNo) {
                 case 0x1a2:
@@ -447,13 +447,13 @@ void DoorF4_update(GameObject* obj) {
         sequenceId = obj->anim.romDefNo;
         if (sequenceId == DOORF4_WARP_DOOR_SEQUENCE_ID) {
             if (mainGetBit(state->openGameBit) != 0) {
-                (*gObjectTriggerInterface)->preempt((int)obj, 0x75);
+                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x75);
                 state->sequenceLatch = 1;
             }
             (*gObjectTriggerInterface)->runSequence(0, obj, -1);
         } else if (sequenceId == DOORF4_ALT_WARP_SEQUENCE_ID) {
             if (mainGetBit(state->openGameBit) != 0) {
-                (*gObjectTriggerInterface)->preempt((int)obj, 0x8a);
+                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x8a);
                 state->sequenceLatch = 1;
             }
             (*gObjectTriggerInterface)->runSequence(0, obj, -1);
@@ -473,8 +473,8 @@ void DoorF4_init(GameObject* obj, DoorF4Placement* placement) {
     obj->animEventCallback = DoorF4_SeqFn;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
-    state->openGameBit = placement->openGameBit;
-    state->nearSideGameBit = placement->nearSideGameBit;
+    state->openGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openGameBit));
+    state->nearSideGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->nearSideGameBit));
     state->openRange = DOORF4_DEFAULT_OPEN_RANGE;
 
     sequenceId = obj->anim.romDefNo;

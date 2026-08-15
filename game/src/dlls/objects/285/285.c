@@ -64,8 +64,8 @@ int TreasureChest_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
         eventId = animUpdate->eventIds[eventIndex];
         switch (eventId) {
         case TREASURE_CHEST_SEQUENCE_EVENT_DIALOGUE:
-            if (placement->dialogueId != 0) {
-                (*gGameUIInterface)->showNpcDialogue(placement->dialogueId, 0xC8, 0x8C, 0);
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->dialogueId)) != 0) {
+                (*gGameUIInterface)->showNpcDialogue(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->dialogueId)), 0xC8, 0x8C, 0);
             }
             break;
         case TREASURE_CHEST_SEQUENCE_EVENT_ENABLE_HIT_EFFECT:
@@ -143,11 +143,11 @@ void TreasureChest_update(GameObject* obj) {
                 (*gObjectTriggerInterface)
                     ->runSequence(TREASURE_CHEST_COLLECTIBLE_SEQUENCE, obj, TREASURE_CHEST_SEQUENCE_ARG_NONE);
             } else {
-                (*gObjectTriggerInterface)->setObjects(placement->triggerObjectId, 0, 0);
+                (*gObjectTriggerInterface)->setObjects(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerObjectId)), 0, 0);
                 (*gObjectTriggerInterface)
                     ->runSequence(TREASURE_CHEST_DEFAULT_SEQUENCE, obj, TREASURE_CHEST_SEQUENCE_ARG_NONE);
             }
-            mainSetBits(placement->openedGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)), 1);
             state->opened = 1;
             ObjHits_DisableObject(obj);
         }
@@ -183,8 +183,8 @@ void TreasureChest_init(GameObject* obj) {
     obj->animEventCallback = TreasureChest_SeqFn;
     obj->anim.rotX = (s16)((s32)placement->rotationX << 8);
 
-    if (placement->openedGameBit != TREASURE_CHEST_GAME_BIT_NONE) {
-        state->opened = mainGetBit(placement->openedGameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)) != TREASURE_CHEST_GAME_BIT_NONE) {
+        state->opened = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)));
     } else {
         state->opened = 0;
     }

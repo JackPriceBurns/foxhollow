@@ -4,7 +4,7 @@
 #include "game/objects/object.h"
 GameObject* playerGetTargetObject(GameObject* playerObj);
 
-static inline uintptr_t Player_GetTargetObject(int playerObj)
+static inline uintptr_t Player_GetTargetObject(uintptr_t playerObj)
 {
     return (uintptr_t)playerGetTargetObject((GameObject*)(playerObj));
 }

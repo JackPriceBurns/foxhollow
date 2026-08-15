@@ -17,11 +17,11 @@
 int DIMbosscrackpar_SeqFn(GameObject* obj) {
     DIMbosscrackparPlacementView* placement = (DIMbosscrackparPlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(placement->triggerGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
         return 0;
     }
     (*gPartfxInterface)
-        ->spawnObject(obj, placement->particleEffectOffset + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
+        ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->particleEffectOffset)) + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
     (*gPartfxInterface)->spawnObject(obj, DIMBOSSCRACKPAR_GLOW_PARTICLE_ID, NULL, 2, -1, NULL);
     return 0;
 }
@@ -51,9 +51,9 @@ void DIMbosscrackpar_hitDetect(void) {
 void DIMbosscrackpar_update(GameObject* obj) {
     DIMbosscrackparPlacementView* placement = (DIMbosscrackparPlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(placement->triggerGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) {
         (*gPartfxInterface)
-            ->spawnObject(obj, placement->particleEffectOffset + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
+            ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->particleEffectOffset)) + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
         (*gPartfxInterface)->spawnObject(obj, DIMBOSSCRACKPAR_GLOW_PARTICLE_ID, NULL, 2, -1, NULL);
     }
 }

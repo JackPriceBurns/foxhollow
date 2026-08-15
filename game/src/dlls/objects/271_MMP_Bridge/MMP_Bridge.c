@@ -42,8 +42,9 @@ void MMP_Bridge_update(GameObject* obj) {
     MMPBridgePlacement* placement = (MMPBridgePlacement*)obj->anim.placementData;
     ObjTextureRuntimeSlot* texture;
     int nextOffset;
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
 
-    if (mainGetBit(placement->enableGameBit) != 0) {
+    if (mainGetBit(enableGameBit) != 0) {
         texture = objFindTexture(obj, MMP_BRIDGE_TEXTURE_SLOT, MMP_BRIDGE_TEXTURE_INDEX);
         if (texture != NULL) {
             nextOffset = texture->offsetS + ((int)timeDelta << MMP_BRIDGE_TEXTURE_SCROLL_SHIFT);
@@ -61,6 +62,7 @@ void MMP_Bridge_update(GameObject* obj) {
 void MMP_Bridge_init(GameObject* obj) {
     MMPBridgePlacement* placement = (MMPBridgePlacement*)obj->anim.placementData;
     ObjTextureRuntimeSlot* texture = objFindTexture(obj, MMP_BRIDGE_TEXTURE_SLOT, MMP_BRIDGE_TEXTURE_INDEX);
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
 
     if (texture != NULL) {
         texture->offsetS = MMP_BRIDGE_TEXTURE_OFFSET_START;
@@ -68,7 +70,7 @@ void MMP_Bridge_init(GameObject* obj) {
     obj->anim.rotX = (s16)(placement->rotXByte << MMP_BRIDGE_ROTATION_SHIFT);
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     ObjHits_DisableObject(obj);
-    if (mainGetBit(placement->enableGameBit) != 0) {
+    if (mainGetBit(enableGameBit) != 0) {
         ObjHits_EnableObject(obj);
     }
 }

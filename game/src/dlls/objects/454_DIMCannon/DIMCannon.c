@@ -342,7 +342,7 @@ int DIMCannon_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             }
             if ((getButtonsHeld(0) & PAD_BUTTON_A) && state->launchDelay <= 0) {
                 buttonDisable(0, PAD_BUTTON_A);
-                if (Player_GetCurrentMagic((int)player) >= 1) {
+                if (Player_GetCurrentMagic((uintptr_t)player) >= 1) {
                     state->airMeterCharge += framesThisStep;
                     if (Sfx_IsPlayingFromObjectChannel(obj, 2) == 0) {
                         Sfx_PlayFromObject(obj, SFXTRIG_gal_sailflap1);
@@ -361,7 +361,7 @@ int DIMCannon_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             state->launchSpeed =
                 (f32)state->airMeterCharge * gDimCannonLaunchSpeedPerCharge + gDimCannonLaunchSpeedBase;
             if ((getButtonsJustPressedIfNotBusy(0) & PAD_BUTTON_A) || state->airMeterCharge == gDimCannonMaxCharge) {
-                if (state->launchDelay <= 0 && Player_GetCurrentMagic((int)player) >= 1) {
+                if (state->launchDelay <= 0 && Player_GetCurrentMagic((uintptr_t)player) >= 1) {
                     buttonDisable(0, PAD_BUTTON_A);
                     playerAddRemoveMagic(player, -1);
                     state->shouldSpawnProjectile = 1;
@@ -468,7 +468,8 @@ void DIMCannon_update(GameObject* obj) {
         return;
     }
 
-    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_DISABLED) && mainGetBit(placement->resetGameBit)) {
+    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_DISABLED) &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resetGameBit)))) {
         obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED;
     }
 
@@ -484,7 +485,7 @@ void DIMCannon_update(GameObject* obj) {
 
     switch (state->mode) {
     case DIM_CANNON_MODE_WAIT_FOR_ARM:
-        if (mainGetBit(placement->armGameBit)) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit)))) {
             state->mode = DIM_CANNON_MODE_ARMED;
         }
         break;
@@ -513,12 +514,14 @@ void DIMCannon_update(GameObject* obj) {
     case DIM_CANNON_MODE_ARMED:
         DIMCannon_updateAim(obj, state->aimTargetX, state->aimTargetY, state->aimTargetZ,
                             state->targetDistance);
-        if (mainGetBit(placement->resetGameBit)) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resetGameBit)))) {
             state->mode = DIM_CANNON_MODE_WAIT_FOR_RESET;
-        } else if (state->targetPlayer != 0 && !mainGetBit(placement->holdGameBit)) {
+        } else if (state->targetPlayer != 0 &&
+                   !mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->holdGameBit)))) {
             f32 playerDistance =
                 getXZDistanceSquared(&obj->anim.worldPosX, &((GameObject*)state->targetPlayer)->anim.worldPosX);
-            int triggerDistance = placement->triggerRange * lbl_803DBF10;
+            int triggerDistance =
+                ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerRange)) * lbl_803DBF10;
             if (playerDistance < triggerDistance / 100.0f) {
                 state->mode = DIM_CANNON_MODE_AUTO_FIRE;
             }
@@ -528,11 +531,11 @@ void DIMCannon_update(GameObject* obj) {
         state->shotCooldown = 0;
         break;
     case DIM_CANNON_MODE_AUTO_FIRE:
-        if (mainGetBit(placement->resetGameBit)) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resetGameBit)))) {
             state->mode = DIM_CANNON_MODE_WAIT_FOR_RESET;
             break;
         }
-        if (mainGetBit(placement->holdGameBit)) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->holdGameBit)))) {
             state->mode = DIM_CANNON_MODE_ARMED;
             break;
         }
@@ -568,7 +571,8 @@ void DIMCannon_update(GameObject* obj) {
             DIMCannon_spawnBall(obj, 0);
             {
                 f32 playerDistance = state->targetDistance;
-                int triggerDistance = placement->triggerRange * lbl_803DBF0C;
+                int triggerDistance =
+                    ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerRange)) * lbl_803DBF0C;
                 if (playerDistance > triggerDistance / 100.0f) {
                     state->mode = DIM_CANNON_MODE_ARMED;
                 }
@@ -643,7 +647,7 @@ void DIMCannon_init(GameObject* obj, DimCannonPlacement* placement) {
         obj->animEventCallback = DIMCannon_SeqFn;
         obj->anim.rotX = (s16)(placement->rotationXByte << 8);
         gDimCannonResource = Resource_Acquire(0x79, 1);
-        if (mainGetBit(placement->resetGameBit)) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resetGameBit)))) {
             *(u8*)&state->chargeTimer = 0x3c;
             state->mode = DIM_CANNON_MODE_WAIT_FOR_RESET;
         }

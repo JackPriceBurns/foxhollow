@@ -82,10 +82,10 @@ void dimbossfire_update(GameObject* obj) {
 
     state = obj->extra;
     placement = (DimBossFirePlacementView*)obj->anim.placementData;
-    if (placement->triggerGameBit != -1) {
-        triggerValue = mainGetBit(placement->triggerGameBit);
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)) != -1) {
+        triggerValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
         if (triggerValue != 0) {
-            mainSetBits(placement->triggerGameBit, 0);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)), 0);
             state->flags |= DIMBOSSFIRE_FLAG_START_BURST;
             state->activeTimer = gDimbossfireActiveDurations[state->durationIndex];
             state->initialActiveTimer = state->activeTimer;
@@ -116,7 +116,7 @@ void dimbossfire_update(GameObject* obj) {
             if ((obj->objectFlags & OBJECT_OBJFLAG_RENDERED) != 0) {
                 burstIndex = 0;
                 do {
-                    if (placement->flameColor != 0) {
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flameColor)) != 0) {
                         (*gPartfxInterface)->spawnObject(obj, DIMBOSSFIRE_PARTFX_BURST_ORANGE, NULL, 2, -1, NULL);
                     } else {
                         (*gPartfxInterface)->spawnObject(obj, DIMBOSSFIRE_PARTFX_BURST_GREEN, NULL, 2, -1, NULL);
@@ -139,7 +139,7 @@ void dimbossfire_update(GameObject* obj) {
                 if (state->light != NULL) {
                     modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
                     modelLightStruct_setFieldBC(state->light, 1);
-                    if (placement->flameColor != 0) {
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flameColor)) != 0) {
                         modelLightStruct_setDiffuseColor(state->light, 0xff, 0x7f, 0, 0);
                     } else {
                         modelLightStruct_setDiffuseColor(state->light, 0x7f, 0xff, 0, 0);
@@ -163,7 +163,7 @@ void dimbossfire_update(GameObject* obj) {
             ObjHits_DisableObject(obj);
         } else {
             (*gPartfxInterface)->spawnObject(obj, DIMBOSSFIRE_PARTFX_SUSTAINED, NULL, 2, -1, NULL);
-            if (placement->flameColor != 0) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->flameColor)) != 0) {
                 (*gPartfxInterface)->spawnObject(obj, DIMBOSSFIRE_PARTFX_SUSTAINED_ORANGE, NULL, 2, -1, NULL);
             } else {
                 (*gPartfxInterface)->spawnObject(obj, DIMBOSSFIRE_PARTFX_SUSTAINED_GREEN, NULL, 2, -1, NULL);

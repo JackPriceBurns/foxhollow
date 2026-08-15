@@ -5,7 +5,7 @@
 
 void crawler_rotateVectorYaw(struct ModelFileHeader* unused1, struct ObjModel* unused2, f32* vec, int unused3, int nodeIndex,
                              f32 phase);
-void hagabonMK2_stopLoopSfx(int obj, u8* state);
+void hagabonMK2_stopLoopSfx(GameObject* obj, u8* state);
 void hagabonMK2_updateB(GameObject* obj, u8* state);
 void hagabonMK2_update(GameObject* obj, u8* state);
 void hagabonMK2_init(GameObject* obj, struct EnemyState* st);

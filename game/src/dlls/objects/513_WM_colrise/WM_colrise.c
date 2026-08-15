@@ -114,7 +114,7 @@ void WM_colrise_init(GameObject* obj, const WMColrisePlacementView* placement) {
 
     obj->animEventCallback = WM_colrise_SeqFn;
     obj->anim.rotX = (s16)(placement->rotationXByte << WM_COLRISE_ROTATION_SHIFT);
-    state->riseGameBit = placement->riseGameBit;
+    state->riseGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->riseGameBit));
 }
 
 void WM_colrise_release(void) {

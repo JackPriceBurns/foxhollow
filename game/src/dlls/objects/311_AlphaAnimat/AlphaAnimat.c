@@ -70,14 +70,14 @@ void AlphaAnimator_update(GameObject* obj) {
             return;
         }
         state->fadeOffset = state->fadeProgress = 0.0f;
-        state->fadeLimit = (f32)(u32)placement->fadeLimit;
-        if (placement->triggerGameBit == -1) {
+        state->fadeLimit = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->fadeLimit));
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)) == -1) {
             state->gameBitValue = 1;
         } else {
-            state->gameBitValue = mainGetBit(placement->triggerGameBit);
+            state->gameBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
         }
         state->alphaLevel = placement->startAlpha;
-        if (placement->completionGameBit != -1 && mainGetBit(placement->completionGameBit) != 0) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit))) != 0) {
             state->alphaLevel = placement->targetAlpha;
             state->fadeProgress = 1.0f + state->fadeLimit;
             state->gameBitValue = 1;
@@ -93,10 +93,10 @@ void AlphaAnimator_update(GameObject* obj) {
         return;
     }
     if (mode == ALPHA_ANIMATOR_MODE_GATED) {
-        state->gameBitValue = mainGetBit(placement->triggerGameBit);
+        state->gameBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
         if (state->completedCycles > 2 && state->gameBitValue != state->previousGameBitValue) {
             if ((placement->modeFlags >> ALPHA_ANIMATOR_SFX_ENABLE_SHIFT) != 0) {
-                Sfx_PlayFromObject(obj, placement->sfxId);
+                Sfx_PlayFromObject(obj, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->sfxId)));
             }
             state->completedCycles = 0;
             state->previousGameBitValue = state->gameBitValue;
@@ -109,12 +109,12 @@ void AlphaAnimator_update(GameObject* obj) {
             return;
         }
         if (state->gameBitValue == 0) {
-            state->gameBitValue = mainGetBit(placement->triggerGameBit);
+            state->gameBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
             if (state->gameBitValue == 0) {
                 return;
             }
             if ((placement->modeFlags >> ALPHA_ANIMATOR_SFX_ENABLE_SHIFT) != 0) {
-                Sfx_PlayFromObject(obj, placement->sfxId);
+                Sfx_PlayFromObject(obj, ObjAnim_ReadPlacementU16(&obj->anim, &(placement->sfxId)));
             }
         }
     }
@@ -124,8 +124,8 @@ void AlphaAnimator_update(GameObject* obj) {
             state->alphaLevel = state->alphaLevel - placement->rate * framesThisStep;
             if (state->alphaLevel <= placement->targetAlpha) {
                 state->alphaLevel = placement->targetAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                 }
                 state->completedCycles += 1;
             }
@@ -133,8 +133,8 @@ void AlphaAnimator_update(GameObject* obj) {
             state->alphaLevel = state->alphaLevel + placement->rate * framesThisStep;
             if (state->alphaLevel >= placement->targetAlpha) {
                 state->alphaLevel = placement->targetAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                 }
                 state->completedCycles += 1;
             }
@@ -163,8 +163,8 @@ void AlphaAnimator_update(GameObject* obj) {
                     return;
                 }
                 state->alphaLevel = placement->targetAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                 }
                 state->completedCycles += 1;
             } else {
@@ -173,8 +173,8 @@ void AlphaAnimator_update(GameObject* obj) {
                     return;
                 }
                 state->alphaLevel = placement->targetAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                 }
                 state->completedCycles += 1;
             }
@@ -185,8 +185,8 @@ void AlphaAnimator_update(GameObject* obj) {
                     return;
                 }
                 state->alphaLevel = placement->startAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 0);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 0);
                 }
                 state->completedCycles += 1;
             } else {
@@ -195,8 +195,8 @@ void AlphaAnimator_update(GameObject* obj) {
                     return;
                 }
                 state->alphaLevel = placement->startAlpha;
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 0);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 0);
                 }
                 state->completedCycles += 1;
             }
@@ -211,7 +211,7 @@ void AlphaAnimator_update(GameObject* obj) {
         state->fadeProgress = absRate * timeDelta + state->fadeProgress;
         if (state->fadeProgress > state->fadeLimit) {
             state->fadeProgress = state->fadeLimit;
-            mainSetBits(placement->completionGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
             state->completedCycles += 1;
         }
         state->fadeOffset = state->fadeProgress - 50.0f;

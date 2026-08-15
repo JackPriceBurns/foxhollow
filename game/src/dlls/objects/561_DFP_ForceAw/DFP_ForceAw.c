@@ -549,16 +549,19 @@ void TrickyCurve_update(GameObject* obj)
 void TrickyCurve_init(GameObject* obj, u8* def)
 {
     TrickyCurveObjState* state = obj->extra;
-    state->variant = ((TrickyCurveObjectDef*)def)->variant;
-    state->rangeY = (s16)((s32)((TrickyCurveObjectDef*)def)->rangeYRaw << 2);
-    state->rangeX = ((TrickyCurveObjectDef*)def)->rangeX;
-    state->rangeZ = ((TrickyCurveObjectDef*)def)->rangeZ;
-    state->mode = ((TrickyCurveObjectDef*)def)->variant;
+    TrickyCurveObjectDef* placement = (TrickyCurveObjectDef*)def;
+    state->variant = placement->variant;
+    state->rangeY = (s16)((s32)placement->rangeYRaw << 2);
+    state->rangeX = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rangeX);
+    state->rangeZ = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rangeZ);
+    state->mode = placement->variant;
     state->xSide = 0;
     state->ySide = 0;
     state->zSide = 0;
-    state->gateGameBit = ((TrickyCurveObjectDef*)def)->gateGameBit;
-    state->triggerGameBit = ((TrickyCurveObjectDef*)def)->triggerGameBit;
+    state->gateGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->gateGameBit);
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(
+        &obj->anim, &placement->triggerGameBit);
     state->cooldown = 0;
     obj->objectFlags = (u16)(obj->objectFlags | DFPFORCEAW_OBJFLAG_HITDETECT_DISABLED);
 }

@@ -52,7 +52,7 @@ void vfplift23_updateState(GameObject* obj);
 void vfplift1_updateState(GameObject* obj);
 int VFPLift_getExtraSize(void);
 int VFPLift_getObjectTypeId(void);
-void VFPLift_free(int obj);
+void VFPLift_free(GameObject* obj);
 void VFPLift_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 vis);
 void VFPLift_hitDetect(GameObject* obj);
 void VFPLift_update(GameObject* obj);

@@ -100,8 +100,8 @@ void SpiritDoorLock_update(GameObject* obj) {
     }
 
     if (state->active == 0) {
-        if (mainGetBit(placement->doneGameBit) == 0) {
-            state->active = mainGetBit(placement->activeGameBit);
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit))) == 0) {
+            state->active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)));
             if (state->active != 0) {
                 f32 modelScale = obj->anim.modelInstance->rootMotionScaleBase * (f32)(s32)placement->scale;
                 obj->anim.rootMotionScale = modelScale * gSpiritDoorLockScaleFactor;
@@ -160,7 +160,7 @@ void SpiritDoorLock_update(GameObject* obj) {
         obj->anim.rotZ = 0;
         if (orbitCount == 0) {
             state->active = 0;
-            mainSetBits(placement->doneGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->doneGameBit)), 1);
             ObjHits_DisableObject(obj);
         }
         texture = objFindTexture(obj, 0, 0);
@@ -186,7 +186,7 @@ void SpiritDoorLock_init(GameObject* obj, const SpiritDoorLockPlacement* placeme
     int isDefaultScale;
 
     obj->anim.rotX = (s16)(placement->yaw << 8);
-    state->orbitCount = placement->orbitCount;
+    state->orbitCount = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->orbitCount));
     state->active = 0;
 
     scale = placement->scale * gSpiritDoorLockScaleFactor;

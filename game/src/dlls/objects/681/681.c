@@ -85,12 +85,14 @@ void PointLight_update(GameObject* obj)
         return;
     }
 
-    obj->anim.rotX = (s16)((f32)fhReadBES16(&setup->rotXSpeed) * timeDelta + (f32)obj->anim.rotX);
-    obj->anim.rotY = (s16)((f32)fhReadBES16(&setup->rotYSpeed) * timeDelta + (f32)obj->anim.rotY);
+    obj->anim.rotX =
+        (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &setup->rotXSpeed) * timeDelta + (f32)obj->anim.rotX);
+    obj->anim.rotY =
+        (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &setup->rotYSpeed) * timeDelta + (f32)obj->anim.rotY);
 
     if (state->enabled != 0)
     {
-        s16 bit = fhReadBES16(&setup->enableBit);
+        s16 bit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableBit);
         if (bit > 0 && mainGetBit(bit) == 0)
         {
             state->enabled = 0;
@@ -105,7 +107,7 @@ void PointLight_update(GameObject* obj)
     }
     else
     {
-        s16 bit = fhReadBES16(&setup->enableBit);
+        s16 bit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableBit);
         if (bit > 0 && mainGetBit(bit) != 0)
         {
             state->enabled = 1;
@@ -156,8 +158,9 @@ void PointLight_init(GameObject* obj, PointLightSetup* setup)
                                                    setupData->targetB, 0xff);
         }
 
-        modelLightStruct_setDistanceAttenuation(state->light, (f32)fhReadBE16(&setupData->distanceNear),
-                                                (f32)fhReadBE16(&setupData->distanceFar));
+        modelLightStruct_setDistanceAttenuation(
+            state->light, (f32)ObjAnim_ReadPlacementU16(&obj->anim, &setupData->distanceNear),
+            (f32)ObjAnim_ReadPlacementU16(&obj->anim, &setupData->distanceFar));
 
         {
             int brightness = (u32)setupData->brightness < POINTLIGHT_MAX_SPOT_BRIGHTNESS
@@ -168,8 +171,9 @@ void PointLight_init(GameObject* obj, PointLightSetup* setup)
 
         modelLightStruct_setEnabled(state->light, setupData->enabled, 0.0f);
         state->enabled = setupData->enabled;
-        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed,
-                                        fhReadBES16(&setupData->colorFadeFrames));
+        modelLightStruct_startColorFade(
+            state->light, setupData->colorFadeSpeed,
+            ObjAnim_ReadPlacementS16(&obj->anim, &setupData->colorFadeFrames));
         modelLightStruct_setDirection(state->light, vec.x, vec.y, vec.z);
 
         if (setupData->spotMode != 0)
@@ -183,9 +187,10 @@ void PointLight_init(GameObject* obj, PointLightSetup* setup)
 
         if (setupData->glowEnabled != 0)
         {
-            modelLightStruct_setupGlow(state->light, fhReadBE16(&setupData->glowTexture), setupData->glowR,
-                                       setupData->glowG, setupData->glowB, setupData->glowAlpha,
-                                       (f32)fhReadBE16(&setupData->glowScale));
+            modelLightStruct_setupGlow(
+                state->light, ObjAnim_ReadPlacementU16(&obj->anim, &setupData->glowTexture), setupData->glowR,
+                setupData->glowG, setupData->glowB, setupData->glowAlpha,
+                (f32)ObjAnim_ReadPlacementU16(&obj->anim, &setupData->glowScale));
             modelLightStruct_setGlowProjectionRadius(state->light, 12.0f);
         }
 

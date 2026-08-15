@@ -163,7 +163,7 @@ void wcfloortile_update(GameObject* obj)
         {
             if (trackIntersectRebuildPending() == 0)
             {
-                trackSetLinesEnabledByParam(setup->eventId, (GameObject*)obj->anim.parent, state->flags & 1);
+                trackSetLinesEnabledByParam(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->eventId)), (GameObject*)obj->anim.parent, state->flags & 1);
                 state->flags &= ~2;
             }
         }

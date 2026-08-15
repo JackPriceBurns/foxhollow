@@ -356,7 +356,7 @@ int DIMbosstonsil_SeqFn(GameObject* obj, u32 unused, ObjSeqState* animUpdate) {
             return 1;
         }
         if ((state->gameBitC != -1) && (mainGetBit(state->gameBitC) != 0)) {
-            (*gObjectTriggerInterface)->yield(animUpdate, config->eventId);
+            (*gObjectTriggerInterface)->yield(animUpdate, ObjAnim_ReadPlacementS16(&obj->anim, &(config->eventId)));
             state->gameBitC = -1;
         }
 

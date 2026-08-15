@@ -114,9 +114,9 @@ void dll_1CE_update(GameObject* obj) {
             return;
         }
     }
-    mainSetBits(placement->openedGameBit, 1);
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit)), 1);
     state->opened = 1;
-    if ((u32)placement->contentsSpawnBitValue != mainGetBit(DLL1CE_CONTENTS_GATE_GAMEBIT)) {
+    if ((u32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->contentsSpawnBitValue)) != mainGetBit(DLL1CE_CONTENTS_GATE_GAMEBIT)) {
         return;
     }
     if (Obj_IsLoadingLocked() == 0) {
@@ -150,7 +150,7 @@ void dll_1CE_init(GameObject* obj, const Dll1CEPlacementView* placement) {
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     state = obj->extra;
     state->unlockCountdown = 1;
-    if (mainGetBit(placement->openedGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openedGameBit))) != 0) {
         state->unlockCountdown = 0;
         hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
         hitState->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;

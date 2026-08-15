@@ -36,7 +36,7 @@ void cfmagicwall_update(GameObject* obj) {
     GameObject* player = Obj_GetPlayerObject();
     u8 alpha = 0xFF;
 
-    if (mainGetBit(placement->visibleGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibleGameBit))) != 0) {
         int yaw = (s16)Obj_GetYawDeltaToObject(obj, player, NULL);
 
         yaw = (yaw >= 0) ? yaw : -yaw;
@@ -50,7 +50,7 @@ void cfmagicwall_update(GameObject* obj) {
             f32 playerDistance;
             f32 range;
             f32 fadeDistance;
-            range = (f32)(s32)placement->fadeRange;
+            range = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fadeRange));
             playerDistance = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
             fadeDistance =
                 Camera_DistanceToCurrentViewPosition(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);

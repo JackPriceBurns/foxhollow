@@ -33,14 +33,20 @@ void FogControl_hitDetect(void) {
 void FogControl_update(GameObject* obj) {
     FogControlPlacement* placement = (FogControlPlacement*)obj->anim.placementData;
     FogControlState* state = obj->extra;
+    s16 depthOffset = ObjAnim_ReadPlacementS16(&obj->anim, &placement->depthOffset);
+    s16 depthScale = ObjAnim_ReadPlacementS16(&obj->anim, &placement->depthScale);
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    s16 fogBase = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogBase);
+    s16 fogBottom = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogBottom);
+    s16 fogTop = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogTop);
     u8 gateValue;
     u8 isTransitioning;
     f32 fogTopY;
 
-    if (placement->enableGameBit == -1) {
+    if (enableGameBit == -1) {
         gateValue = 1;
     } else {
-        gateValue = mainGetBit(placement->enableGameBit);
+        gateValue = mainGetBit(enableGameBit);
     }
     if ((gateValue != 0 && state->fullyBlended == 0) || (gateValue == 0 && state->enabled != 0)) {
         isTransitioning = 1;
@@ -73,10 +79,10 @@ void FogControl_update(GameObject* obj) {
                 state->blend = 1.0f;
                 state->fullyBlended = 1;
             }
-            fogTopY = state->blend * ((f32)placement->fogTop - (f32)placement->fogBase) + (f32)placement->fogBase;
+            fogTopY = state->blend * ((f32)fogTop - (f32)fogBase) + (f32)fogBase;
             fogTopY = obj->anim.localPosY + fogTopY;
-            enableHeavyFog(fogTopY, ((f32)placement->fogBottom + fogTopY) - (f32)placement->fogTop,
-                           (f32)placement->depthScale, (f32)placement->depthOffset / FOG_CONTROL_DEPTH_DENOMINATOR,
+            enableHeavyFog(fogTopY, ((f32)fogBottom + fogTopY) - (f32)fogTop,
+                           (f32)depthScale, (f32)depthOffset / FOG_CONTROL_DEPTH_DENOMINATOR,
                            FOG_CONTROL_WORLD_SCALE, placement->flags & FOG_CONTROL_PLACEMENT_MODE);
         }
     }
@@ -84,28 +90,40 @@ void FogControl_update(GameObject* obj) {
 
 void FogControl_init(GameObject* obj, FogControlPlacement* placement) {
     FogControlState* state;
+    s16 depthOffset;
+    s16 depthScale;
+    s16 enableGameBit;
+    s16 fogBase;
+    s16 fogBottom;
+    s16 fogTop;
     u8 gateValue;
     f32 fogTopY;
 
     state = obj->extra;
+    depthOffset = ObjAnim_ReadPlacementS16(&obj->anim, &placement->depthOffset);
+    depthScale = ObjAnim_ReadPlacementS16(&obj->anim, &placement->depthScale);
+    enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
+    fogBase = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogBase);
+    fogBottom = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogBottom);
+    fogTop = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fogTop);
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
     state->enabled = 0;
     state->fullyBlended = 0;
     state->blend = 0.0f;
     if ((placement->flags & FOG_CONTROL_PLACEMENT_ENABLED) != 0) {
-        if (placement->enableGameBit == -1) {
+        if (enableGameBit == -1) {
             gateValue = 1;
         } else {
-            gateValue = mainGetBit(placement->enableGameBit);
+            gateValue = mainGetBit(enableGameBit);
         }
         if (gateValue != 0) {
             state->fullyBlended = 1;
             state->enabled = 1;
             state->blend = 1.0f;
-            fogTopY = state->blend * ((f32)placement->fogTop - placement->fogBase) + placement->fogBase;
+            fogTopY = state->blend * ((f32)fogTop - (f32)fogBase) + (f32)fogBase;
             fogTopY = obj->anim.localPosY + fogTopY;
-            enableHeavyFog(fogTopY, ((f32)placement->fogBottom + fogTopY) - placement->fogTop, placement->depthScale,
-                           placement->depthOffset / FOG_CONTROL_DEPTH_DENOMINATOR, FOG_CONTROL_WORLD_SCALE,
+            enableHeavyFog(fogTopY, ((f32)fogBottom + fogTopY) - (f32)fogTop, (f32)depthScale,
+                           (f32)depthOffset / FOG_CONTROL_DEPTH_DENOMINATOR, FOG_CONTROL_WORLD_SCALE,
                            placement->flags & FOG_CONTROL_PLACEMENT_MODE);
         }
     }

@@ -63,7 +63,7 @@ void dimgate_update(GameObject* obj) {
             }
         }
         if (triggerFound) {
-            mainSetBits(placement->openGameBit, 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openGameBit)), 1);
             if (*(s8*)&((ObjHitsPriorityState*)obj->anim.hitReactState)->stateIndex != DIM_GATE_MODE_OPEN) {
                 ObjHitbox_SetStateIndex(obj, obj->anim.hitReactState, DIM_GATE_MODE_OPEN);
             }
@@ -90,7 +90,7 @@ void dimgate_init(GameObject* obj, DimGatePlacement* unusedPlacement) {
 
     placement = (DimGatePlacement*)obj->anim.placementData;
     state = obj->extra;
-    if (mainGetBit(placement->openGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->openGameBit))) != 0) {
         state->mode = DIM_GATE_MODE_OPEN;
         obj->anim.currentMoveProgress = 1.0f;
     } else {

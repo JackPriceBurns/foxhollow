@@ -219,7 +219,7 @@ void duster_update(GameObject* obj) {
         if (mainGetBit(GAMEBIT_SawBafomdad) == 0) {
             state->heldObjectId = DUSTER_HELD_OBJECT_NONE;
             ObjHits_DisableObject(obj);
-            ObjMsg_SendToObject(player, DUSTER_MESSAGE_IN_RANGE, obj, (u32)&state->heldObjectId);
+            ObjMsg_SendToObject(player, DUSTER_MESSAGE_IN_RANGE, obj, (uintptr_t)&state->heldObjectId);
             mainSetBits(GAMEBIT_SawBafomdad, 1);
         } else {
             characterState = (DusterCharacterState*)(*gMapEventInterface)->getCurCharacterState();
@@ -253,7 +253,7 @@ void duster_init(GameObject* obj, DusterPlacement* placement) {
     state = obj->extra;
     state->settleTimer = randomGetRange(0, DUSTER_SETTLE_TIMER_MAX);
     state->moveStepScale = DUSTER_MOVE_STEP_SCALE;
-    state->activeGameBit = placement->activeGameBit;
+    state->activeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
     if (state->activeGameBit >= DUSTER_GAME_BIT_COMPLETE_THRESHOLD) {
         state->active = 1;
         state->completeGameBit = state->activeGameBit;

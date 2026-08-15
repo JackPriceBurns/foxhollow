@@ -492,8 +492,8 @@ void mmshShrine_init(GameObject* obj, const MMSHShrinePlacement* placement) {
     obj->animEventCallback = mmshShrine_processAnimEvents;
     state->unknown1C = MMSH_SHRINE_DEFAULT_INITIAL_VALUE;
     state->phase = MMSH_SHRINE_PHASE_IDLE;
-    if (placement->initialValue > 0) {
-        state->unknown1C = placement->initialValue >> MMSH_SHRINE_INITIAL_VALUE_SHIFT;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialValue)) > 0) {
+        state->unknown1C = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialValue)) >> MMSH_SHRINE_INITIAL_VALUE_SHIFT;
     }
     mainSetBits(MMSH_SHRINE_GAMEBIT_012B, 0);
     mainSetBits(MMSH_SHRINE_GAMEBIT_012D, 0);

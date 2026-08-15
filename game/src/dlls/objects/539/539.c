@@ -36,7 +36,7 @@ int dll_21B_getObjectTypeId(void)
     return 0x0;
 }
 
-void dll_21B_free(int obj)
+void dll_21B_free(GameObject* obj)
 {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
@@ -144,7 +144,7 @@ void dll_21B_init(GameObject* obj, Dll21BPlacement* init)
 {
     Dll21BState* state = obj->extra;
     obj->anim.rotX = (s16)(init->initRotByte << 8);
-    state->driveGameBit = init->driveGameBit;
+    state->driveGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(init->driveGameBit));
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
 }
 

@@ -75,7 +75,7 @@ int gFirePipeEmitTimerReset = 0x0A;
 #define FIREPIPE_EFFECT_TYPE_STEAM_HOLE_DE 0xe
 #define FIREPIPE_EFFECT_TYPE_FLAME         9
 
-typedef void (*FirePipeEffectInitFn)(int obj, void* spawnDef, int p3);
+typedef void (*FirePipeEffectInitFn)(GameObject* obj, void* spawnDef, int p3);
 
 /* Spawn-setup buffer seeded by firepipe_updateState for the emitted flame
  * effect (defNo 0x1b5). Reuses ObjPlacement's color/pos head and adds the
@@ -88,7 +88,7 @@ typedef struct FirePipeEffectSetup
     s16 scale;         /* 0x1a */
 } FirePipeEffectSetup;
 
-int firepipe_spawnEffectObject(FirePipeExtra* extra, GameObject* obj, ObjPlacement* spawnDef)
+GameObject* firepipe_spawnEffectObject(FirePipeExtra* extra, GameObject* obj, ObjPlacement* spawnDef)
 {
     int i;
     GameObject* effectObj;
@@ -109,13 +109,13 @@ int firepipe_spawnEffectObject(FirePipeExtra* extra, GameObject* obj, ObjPlaceme
             effectObj->anim.localPosX = spawnDef->posX;
             effectObj->anim.localPosY = spawnDef->posY;
             effectObj->anim.localPosZ = spawnDef->posZ;
-            (*(FirePipeEffectInitFn*)(*(int*)effectObj->anim.dll + 4))((int)effectObj, spawnDef, 0);
+            ((FirePipeEffectInitFn)effectObj->anim.dll[0][1])(effectObj, spawnDef, 0);
             freeDelay = mmSetFreeDelay(0);
             mm_free(spawnDef);
             mmSetFreeDelay(freeDelay);
             Obj_InsertIntoUpdateList(effectObj);
             effectObj->objectFlags &= ~OBJECT_OBJFLAG_UPDATE_DISABLED;
-            return (int)effectObj;
+            return effectObj;
         }
     }
     effectObj = loadObjectAtObject(obj, spawnDef);
@@ -125,7 +125,7 @@ int firepipe_spawnEffectObject(FirePipeExtra* extra, GameObject* obj, ObjPlaceme
         i = extra->effectCount++;
         extra->effectObjs[i] = effectObj;
     }
-    return (int)effectObj;
+    return effectObj;
 }
 
 void firepipe_releaseEffectObject(GameObject* obj)
@@ -208,18 +208,18 @@ void firepipe_updateState(GameObject* obj)
             {
                 FirePipeMapData* md0 = (FirePipeMapData*)obj->anim.placementData;
                 Obj_StartModelFadeIn(obj, 0x12c);
-                mainSetBits(md0->gameBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(md0->gameBit)), 1);
                 flags->restartPending = 1;
             }
             break;
         }
     }
 
-    if ((flags->restartPending == 0) && (mapData->gameBit != -1))
+    if ((flags->restartPending == 0) && (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)) != -1))
     {
-        if (flags->lastGameBitState != mainGetBit(mapData->gameBit))
+        if (flags->lastGameBitState != mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit))))
         {
-            if ((flags->emitting = !mainGetBit(mapData->gameBit)) != 0)
+            if ((flags->emitting = !mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)))) != 0)
             {
                 FirePipeExtra* ex2;
                 FirePipeMapData* md2;
@@ -227,19 +227,19 @@ void firepipe_updateState(GameObject* obj)
                 md2 = (FirePipeMapData*)obj->anim.placementData;
                 ex2 = obj->extra;
                 storeZeroToFloatParam(&ex2->cycleTimer);
-                cycleTime = md2->cycleTime;
+                cycleTime = ObjAnim_ReadPlacementS16(&obj->anim, &(md2->cycleTime));
                 if (cycleTime != 0)
                 {
-                    if (md2->startOffset != 0)
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(md2->startOffset)) != 0)
                     {
-                        if (md2->startOffset < 0)
+                        if (ObjAnim_ReadPlacementS16(&obj->anim, &(md2->startOffset)) < 0)
                         {
                             s16toFloat(&ex2->cycleTimer, randomGetRange(1, cycleTime * 0x3c));
                         }
                         else
                         {
-                            s16toFloat(&ex2->cycleTimer, (md2->startOffset * 0x3c));
-                            if (md2->startOffset >= md2->cycleTime)
+                            s16toFloat(&ex2->cycleTimer, (ObjAnim_ReadPlacementS16(&obj->anim, &(md2->startOffset)) * 0x3c));
+                            if (ObjAnim_ReadPlacementS16(&obj->anim, &(md2->startOffset)) >= ObjAnim_ReadPlacementS16(&obj->anim, &(md2->cycleTime)))
                             {
                                 ex2->flags.emitting = 0;
                             }
@@ -256,14 +256,14 @@ void firepipe_updateState(GameObject* obj)
                 storeZeroToFloatParam(&extra->cycleTimer);
             }
         }
-        flags->lastGameBitState = mainGetBit(mapData->gameBit);
+        flags->lastGameBitState = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)));
     }
 
     if (flags->emitting != 0)
     {
         if (((obj->objectFlags & OBJECT_OBJFLAG_RENDERED) != 0) || (obj->ownerObj != NULL))
         {
-            objfx_spawnPulseBurst(obj, 0.2f * mapData->scale, (u8)extra->effectType, 0, 0, NULL);
+            objfx_spawnPulseBurst(obj, 0.2f * ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->scale)), (u8)extra->effectType, 0, 0, NULL);
         }
     }
 
@@ -278,7 +278,7 @@ void firepipe_updateState(GameObject* obj)
         {
             flags->emitting = 1;
             flags->restartPending = 0;
-            mainSetBits(mapData->gameBit, flags->lastGameBitState);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)), flags->lastGameBitState);
         }
 
         if ((timerIsActive(&extra->cycleTimer) != 0) && (flags->emitting == 0))
@@ -331,9 +331,9 @@ void firepipe_updateState(GameObject* obj)
 
         if (timerCountDown(&extra->cycleTimer) != 0)
         {
-            if (mapData->cycleTime != 0)
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->cycleTime)) != 0)
             {
-                s16toFloat(&extra->cycleTimer, (mapData->cycleTime * 0x3c));
+                s16toFloat(&extra->cycleTimer, (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->cycleTime)) * 0x3c));
             }
             flags->emitting = (flags->emitting == 0);
         }
@@ -348,7 +348,7 @@ void firepipe_updateState(GameObject* obj)
         spawnDef = (FirePipeEffectSetup*)Obj_AllocObjectSetup(0x24, FIREPIPE_CHILD_OBJ_FLAMETHROWER);
         spawnDef->head.color[0] = 2;
         spawnDef->effectMode = ex3->effectMode;
-        spawnDef->scale = md3->scale;
+        spawnDef->scale = ObjAnim_ReadPlacementS16(&obj->anim, &(md3->scale));
         spawnDef->head.posX = obj->anim.localPosX;
         spawnDef->head.posY = obj->anim.localPosY;
         spawnDef->head.posZ = obj->anim.localPosZ;
@@ -358,7 +358,7 @@ void firepipe_updateState(GameObject* obj)
         }
         else
         {
-            effectObj = (GameObject*)firepipe_spawnEffectObject(extra, obj, &spawnDef->head);
+            effectObj = firepipe_spawnEffectObject(extra, obj, &spawnDef->head);
         }
         if (effectObj != 0)
         {
@@ -421,7 +421,7 @@ void firepipe_free(GameObject* obj)
         iter++;
         i++;
     }
-    if ((u32)extra->glowLight != 0)
+    if (extra->glowLight != NULL)
     {
         modelLightStruct_freeSlot(&extra->glowLight);
     }
@@ -461,14 +461,14 @@ void firepipe_init(GameObject* obj, FirePipeMapData* mapData)
     u32 flagValue;
 
     extra = obj->extra;
-    if ((int)mapData->scale != 0)
+    if ((int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->scale)) != 0)
     {
-        f32 scale = 0.1f * (f32)(s32)mapData->scale;
+        f32 scale = 0.1f * (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->scale));
         obj->anim.rootMotionScale = scale * obj->anim.modelInstance->rootMotionScaleBase;
     }
-    if (mapData->gameBit != -1)
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)) != -1)
     {
-        bitVal = mainGetBit((int)mapData->gameBit);
+        bitVal = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)));
         extra->flags.emitting = bitVal;
     }
     else
@@ -480,10 +480,10 @@ void firepipe_init(GameObject* obj, FirePipeMapData* mapData)
         def = (FirePipeMapData*)obj->anim.placementData;
         extra2 = obj->extra;
         storeZeroToFloatParam(&extra2->cycleTimer);
-        cycleTime = def->cycleTime;
+        cycleTime = ObjAnim_ReadPlacementS16(&obj->anim, &(def->cycleTime));
         if (cycleTime != 0)
         {
-            startTime = def->startOffset;
+            startTime = ObjAnim_ReadPlacementS16(&obj->anim, &(def->startOffset));
             if (startTime != 0)
             {
                 if (startTime < 0)
@@ -494,7 +494,7 @@ void firepipe_init(GameObject* obj, FirePipeMapData* mapData)
                 else
                 {
                     s16toFloat(&extra2->cycleTimer, (int)(short)(startTime * 0x3c));
-                    if (def->startOffset >= def->cycleTime)
+                    if (ObjAnim_ReadPlacementS16(&obj->anim, &(def->startOffset)) >= ObjAnim_ReadPlacementS16(&obj->anim, &(def->cycleTime)))
                     {
                         extra2->flags.emitting = 0;
                     }
@@ -554,7 +554,7 @@ void firepipe_init(GameObject* obj, FirePipeMapData* mapData)
         ObjHits_EnableObject(obj);
         extra->flags.restartPending = 0;
         extra->activeSpawn = 0;
-        bitVal = mainGetBit((int)mapData->gameBit);
+        bitVal = mainGetBit((int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit)));
         {
             u32 clz = __cntlzw(bitVal);
             extra->flags.lastGameBitState = (u8)(clz >> 5);

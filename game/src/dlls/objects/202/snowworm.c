@@ -176,7 +176,7 @@ void snowworm_spawnProjectile(GameObject* obj)
     }
 }
 
-void snowworm_updateWhileFrozen(int obj, u8* st, GameObject* attacker, int cmd, int p5, int sub, Vec* wpad0, int wpad1)
+void snowworm_updateWhileFrozen(GameObject* obj, u8* st, GameObject* attacker, int cmd, int p5, int sub, Vec* wpad0, int wpad1)
 {
     u8* base;
     u32 r;
@@ -201,11 +201,11 @@ void snowworm_updateWhileFrozen(int obj, u8* st, GameObject* attacker, int cmd, 
     }
     if (((EnemyState*)st)->turnOctant > 3)
     {
-        baddieSetMove((GameObject*)obj, (int)st, 6, 0.5f, 0, 0);
+        baddieSetMove((GameObject*)obj, st, 6, 0.5f, 0, 0);
     }
     else
     {
-        baddieSetMove((GameObject*)obj, (int)st, 5, 0.5f, 0, 0);
+        baddieSetMove((GameObject*)obj, st, 5, 0.5f, 0, 0);
     }
     r = randomGetRange(0, 3);
     ((EnemyState*)st)->userData1 = base[r];
@@ -220,11 +220,11 @@ void snowworm_updateWhileFrozen(int obj, u8* st, GameObject* attacker, int cmd, 
     }
     if (((EnemyState*)st)->current == 0)
     {
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_baddie_eggsnatch_carry2);
+        Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_baddie_eggsnatch_carry2);
     }
     if (cmd == 0x1a)
         return;
-    Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_stftest);
+    Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_stftest);
 }
 
 void crawler_playReactionEffects(GameObject* obj, int* st)
@@ -341,12 +341,12 @@ void snowworm_update(GameObject* obj, u8* state)
         if (((EnemyState*)state)->turnOctant < 4)
         {
             i = ((EnemyState*)state)->userData1 * 0xc;
-            baddieSetMove(obj, (int)state, (tbl + i)[8], *(f32*)((int)tbl + i), 0, 0);
+            baddieSetMove(obj, state, (tbl + i)[8], *(f32*)(tbl + i), 0, 0);
         }
         else
         {
             i = ((EnemyState*)state)->userData1 * 0xc;
-            baddieSetMove(obj, (int)state, (tbl + i)[9], *(f32*)((int)tbl + i), 0, 0);
+            baddieSetMove(obj, state, (tbl + i)[9], *(f32*)(tbl + i), 0, 0);
         }
         if (obj->anim.currentMove == 9)
         {
@@ -361,12 +361,12 @@ void snowworm_update(GameObject* obj, u8* state)
                 r * mathSinf(angle) + ((ObjPlacement*)obj->anim.placementData)->posX;
             obj->anim.localPosZ =
                 r * mathCosf(angle) + ((ObjPlacement*)obj->anim.placementData)->posZ;
-            baddieTurnTowardPoint(obj, (int)state, ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosX,
+            baddieTurnTowardPoint(obj, state, ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosX,
                         ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosZ, 1, 0);
         }
     }
 
-    baddieTurnTowardPoint(obj, (int)state, ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosX,
+    baddieTurnTowardPoint(obj, state, ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosX,
                 ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosZ,
                 gSnowwormTurnRates[((EnemyState*)state)->phaseAngle], 0);
     crawler_playReactionEffects(obj, (int*)state);
@@ -392,7 +392,7 @@ void snowworm_applyReactionState(GameObject* obj, int* st)
             f32* fbase = (f32*)t1;
             u32 idx2 = ((EnemyState*)st)->userData1;
             u32 off = idx2 * 0xc;
-            baddieSetMove(obj, (int)st, bbase[off + 8], *(f32*)((char*)fbase + off), 0, 0);
+            baddieSetMove(obj, st, bbase[off + 8], *(f32*)((char*)fbase + off), 0, 0);
         }
     }
     crawler_playReactionEffects(obj, st);

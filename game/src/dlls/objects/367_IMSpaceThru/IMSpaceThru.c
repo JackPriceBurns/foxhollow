@@ -131,8 +131,8 @@ void imSpaceThruster_init(GameObject* obj, const IMSpaceThrusterPlacement* place
     ObjModel* model;
 
     obj->anim.rotX = (s16)(placement->initialRotX << 8);
-    obj->anim.rotY = placement->initialRotY;
-    obj->anim.bankIndex = (s8)placement->bankIndex;
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->initialRotY));
+    obj->anim.bankIndex = (s8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->bankIndex));
     state->kind = placement->kind;
 
     switch (state->kind) {

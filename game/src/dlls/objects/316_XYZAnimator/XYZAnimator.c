@@ -243,19 +243,19 @@ void XyzAnimator_update(GameObject* obj) {
             return;
         }
         state->vertexCount *= 3;
-        if (placement->triggerGameBit == -1) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)) == -1) {
             state->triggerBitValue = 1;
         } else {
-            state->triggerBitValue = mainGetBit(placement->triggerGameBit);
+            state->triggerBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
         }
         state->displayListCount = blockAddress->displayListCount;
-        state->offsetX = (f32)placement->startX;
-        state->offsetY = (f32)placement->startY;
-        state->offsetZ = (f32)placement->startZ;
-        if (placement->completionGameBit != -1 && mainGetBit(placement->completionGameBit) != 0) {
-            state->offsetX = (f32)placement->targetX;
-            state->offsetY = (f32)placement->targetY;
-            state->offsetZ = (f32)placement->targetZ;
+        state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX));
+        state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY));
+        state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ));
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit))) != 0) {
+            state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX));
+            state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY));
+            state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ));
             state->triggerBitValue = 1;
         }
         value = state->vertexCount * 6 + state->polygonGroupCount * 0xc;
@@ -297,12 +297,12 @@ void XyzAnimator_update(GameObject* obj) {
         }
     }
     if (placement->mode == XYZ_ANIMATOR_MODE_GATED) {
-        value = mainGetBit(placement->triggerGameBit);
+        value = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
         if (state->triggerBitValue != value) {
             state->triggerBitValue = value;
             if (value == 0) {
-                if (placement->completionGameBit > -1) {
-                    mainSetBits(placement->completionGameBit, 0);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) > -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 0);
                 }
             }
             if (state->passCount > 2) {
@@ -320,7 +320,7 @@ void XyzAnimator_update(GameObject* obj) {
             return;
         }
         if (state->triggerBitValue == 0) {
-            state->triggerBitValue = mainGetBit(placement->triggerGameBit);
+            state->triggerBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit)));
             if (state->triggerBitValue == 0) {
                 return;
             }
@@ -330,173 +330,173 @@ void XyzAnimator_update(GameObject* obj) {
     case XYZ_ANIMATOR_MODE_ONESHOT:
     case XYZ_ANIMATOR_MODE_DEFERRED_ONESHOT:
         completedAxes = 0;
-        if (placement->startX > placement->targetX) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
             state->offsetX = -(0.1f * ((f32)(int)placement->speedX * timeDelta) - state->offsetX);
-            if (state->offsetX <= (f32)placement->targetX) {
-                state->offsetX = (f32)placement->targetX;
+            if (state->offsetX <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
+                state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX));
                 completedAxes = 1;
             }
         } else {
             state->offsetX = 0.1f * ((f32)(int)placement->speedX * timeDelta) + state->offsetX;
-            if (state->offsetX >= (f32)placement->targetX) {
-                state->offsetX = (f32)placement->targetX;
+            if (state->offsetX >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
+                state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX));
                 completedAxes = 1;
             }
         }
-        if (placement->startY > placement->targetY) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
             state->offsetY = -(0.1f * ((f32)(int)placement->speedY * timeDelta) - state->offsetY);
-            if (state->offsetY <= (f32)placement->targetY) {
-                state->offsetY = (f32)placement->targetY;
+            if (state->offsetY <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
+                state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY));
                 completedAxes += 1;
             }
         } else {
             state->offsetY = 0.1f * ((f32)(int)placement->speedY * timeDelta) + state->offsetY;
-            if (state->offsetY >= (f32)placement->targetY) {
-                state->offsetY = (f32)placement->targetY;
+            if (state->offsetY >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
+                state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY));
                 completedAxes += 1;
             }
         }
-        if (placement->startZ > placement->targetZ) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
             state->offsetZ = -(0.1f * ((f32)(int)placement->speedZ * timeDelta) - state->offsetZ);
-            if (state->offsetZ <= (f32)placement->targetZ) {
-                state->offsetZ = (f32)placement->targetZ;
+            if (state->offsetZ <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
+                state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ));
                 completedAxes += 1;
             }
         } else {
             state->offsetZ = 0.1f * ((f32)(int)placement->speedZ * timeDelta) + state->offsetZ;
-            if (state->offsetZ >= (f32)placement->targetZ) {
-                state->offsetZ = (f32)placement->targetZ;
+            if (state->offsetZ >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
+                state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ));
                 completedAxes += 1;
             }
         }
         if (completedAxes == 3) {
-            if (placement->completionGameBit != -1) {
-                mainSetBits(placement->completionGameBit, 1);
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
             }
             state->passCount += 1;
         }
         break;
     case XYZ_ANIMATOR_MODE_LOOP:
-        if (placement->startX > placement->targetX) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
             state->offsetX = -(0.1f * ((f32)(int)placement->speedX * timeDelta) - state->offsetX);
-            if (state->offsetX < (f32)placement->targetX) {
-                state->offsetX = (f32)(placement->startX - (int)((f32)placement->targetX - state->offsetX));
+            if (state->offsetX < (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
+                state->offsetX = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX)) - (int)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX)) - state->offsetX));
             }
         } else {
             state->offsetX = 0.1f * ((f32)(int)placement->speedX * timeDelta) + state->offsetX;
-            if (state->offsetX > (f32)placement->startX) {
-                state->offsetX = (f32)(placement->targetX + (int)(state->offsetX - (f32)placement->targetX));
+            if (state->offsetX > (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX))) {
+                state->offsetX = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX)) + (int)(state->offsetX - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))));
             }
         }
-        if (placement->startY > placement->targetY) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
             state->offsetY = -(0.1f * ((f32)(int)placement->speedY * timeDelta) - state->offsetY);
-            if (state->offsetY < (f32)placement->targetY) {
+            if (state->offsetY < (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
                 state->offsetY =
-                    -(0.1f * (f32)(int)((f32)placement->targetY - state->offsetY) - (f32)placement->startY);
+                    -(0.1f * (f32)(int)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY)) - state->offsetY) - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY)));
             }
         } else {
             state->offsetY = 0.1f * ((f32)(int)placement->speedY * timeDelta) + state->offsetY;
-            if (state->offsetY > (f32)placement->startY) {
-                state->offsetY = (f32)(placement->targetY + (int)(state->offsetY - (f32)placement->targetY));
+            if (state->offsetY > (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY))) {
+                state->offsetY = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY)) + (int)(state->offsetY - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))));
             }
         }
-        if (placement->startZ > placement->targetZ) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
             state->offsetZ = -(0.1f * ((f32)(int)placement->speedZ * timeDelta) - state->offsetZ);
-            if (state->offsetZ < (f32)placement->targetZ) {
-                state->offsetZ = (f32)(placement->startZ - (int)((f32)placement->targetZ - state->offsetZ));
+            if (state->offsetZ < (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
+                state->offsetZ = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ)) - (int)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ)) - state->offsetZ));
             }
         } else {
             state->offsetZ = 0.1f * ((f32)(int)placement->speedZ * timeDelta) + state->offsetZ;
-            if (state->offsetZ > (f32)placement->startZ) {
-                state->offsetZ = (f32)(placement->targetZ + (int)(state->offsetZ - (f32)placement->targetZ));
+            if (state->offsetZ > (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ))) {
+                state->offsetZ = (f32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ)) + (int)(state->offsetZ - (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))));
             }
         }
         break;
     case XYZ_ANIMATOR_MODE_GATED:
         completedAxes = 0;
         if (state->triggerBitValue != 0) {
-            if (placement->startX > placement->targetX) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
                 state->offsetX = -(0.1f * ((f32)(int)placement->speedX * timeDelta) - state->offsetX);
-                if (state->offsetX <= (f32)placement->targetX) {
-                    state->offsetX = (f32)placement->targetX;
+                if (state->offsetX <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
+                    state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX));
                     completedAxes = 1;
                 }
             } else {
                 state->offsetX = 0.1f * ((f32)(int)placement->speedX * timeDelta) + state->offsetX;
-                if (state->offsetX >= (f32)placement->targetX) {
-                    state->offsetX = (f32)placement->targetX;
+                if (state->offsetX >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
+                    state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX));
                     completedAxes = 1;
                 }
             }
-            if (placement->startY > placement->targetY) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
                 state->offsetY = -(0.1f * ((f32)(int)placement->speedY * timeDelta) - state->offsetY);
-                if (state->offsetY <= (f32)placement->targetY) {
-                    state->offsetY = (f32)placement->targetY;
+                if (state->offsetY <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
+                    state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY));
                     completedAxes += 1;
                 }
             } else {
                 state->offsetY = 0.1f * ((f32)(int)placement->speedY * timeDelta) + state->offsetY;
-                if (state->offsetY >= (f32)placement->targetY) {
-                    state->offsetY = (f32)placement->targetY;
+                if (state->offsetY >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
+                    state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY));
                     completedAxes += 1;
                 }
             }
-            if (placement->startZ > placement->targetZ) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
                 state->offsetZ = -(0.1f * ((f32)(int)placement->speedZ * timeDelta) - state->offsetZ);
-                if (state->offsetZ <= (f32)placement->targetZ) {
-                    state->offsetZ = (f32)placement->targetZ;
+                if (state->offsetZ <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
+                    state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ));
                     completedAxes += 1;
                 }
             } else {
                 state->offsetZ = 0.1f * ((f32)(int)placement->speedZ * timeDelta) + state->offsetZ;
-                if (state->offsetZ >= (f32)placement->targetZ) {
-                    state->offsetZ = (f32)placement->targetZ;
+                if (state->offsetZ >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
+                    state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ));
                     completedAxes += 1;
                 }
             }
             if (completedAxes == 3) {
-                if (placement->completionGameBit != -1) {
-                    mainSetBits(placement->completionGameBit, 1);
+                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
+                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
                 }
                 state->passCount += 1;
             }
         } else {
-            if (placement->startX > placement->targetX) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetX))) {
                 state->offsetX = 0.1f * ((f32)(int)placement->speedX * timeDelta) + state->offsetX;
-                if (state->offsetX >= (f32)placement->startX) {
-                    state->offsetX = (f32)placement->startX;
+                if (state->offsetX >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX))) {
+                    state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX));
                     completedAxes = 1;
                 }
             } else {
                 state->offsetX = -(0.1f * ((f32)(int)placement->speedX * timeDelta) - state->offsetX);
-                if (state->offsetX <= (f32)placement->startX) {
-                    state->offsetX = (f32)placement->startX;
+                if (state->offsetX <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX))) {
+                    state->offsetX = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startX));
                     completedAxes = 1;
                 }
             }
-            if (placement->startY > placement->targetY) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetY))) {
                 state->offsetY = 0.1f * ((f32)(int)placement->speedY * timeDelta) + state->offsetY;
-                if (state->offsetY >= (f32)placement->startY) {
-                    state->offsetY = (f32)placement->startY;
+                if (state->offsetY >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY))) {
+                    state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY));
                     completedAxes += 1;
                 }
             } else {
                 state->offsetY = -(0.1f * ((f32)(int)placement->speedY * timeDelta) - state->offsetY);
-                if (state->offsetY <= (f32)placement->startY) {
-                    state->offsetY = (f32)placement->startY;
+                if (state->offsetY <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY))) {
+                    state->offsetY = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startY));
                     completedAxes += 1;
                 }
             }
-            if (placement->startZ > placement->targetZ) {
+            if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ)) > ObjAnim_ReadPlacementS16(&obj->anim, &(placement->targetZ))) {
                 state->offsetZ = 0.1f * ((f32)(int)placement->speedZ * timeDelta) + state->offsetZ;
-                if (state->offsetZ >= (f32)placement->startZ) {
-                    state->offsetZ = (f32)placement->startZ;
+                if (state->offsetZ >= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ))) {
+                    state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ));
                     completedAxes += 1;
                 }
             } else {
                 state->offsetZ = -(0.1f * ((f32)(int)placement->speedZ * timeDelta) - state->offsetZ);
-                if (state->offsetZ <= (f32)placement->startZ) {
-                    state->offsetZ = (f32)placement->startZ;
+                if (state->offsetZ <= (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ))) {
+                    state->offsetZ = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->startZ));
                     completedAxes += 1;
                 }
             }

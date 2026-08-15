@@ -71,7 +71,7 @@ void cannonclaw_update(GameObject* obj) {
         return;
     }
     gatePlacement = (CannonClawGatePlacement*)trickyObj->anim.placementData;
-    if (mainGetBit(gatePlacement->activationGameBit) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&trickyObj->anim, &(gatePlacement->activationGameBit))) == 0) {
         return;
     }
     obj->userData1 = CANNON_CLAW_STATUS_DISABLED;

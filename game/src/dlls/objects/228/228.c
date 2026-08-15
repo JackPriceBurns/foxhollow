@@ -140,7 +140,7 @@ void FlameThrowerspe_init(GameObject* obj, FlameThrowerspePlacement* placement) 
 
     storeZeroToFloatParam(&state->lifeTimer);
     {
-        f32 scale = (f32)placement->scaleParam / FLAMETHROWERSPE_SCALE_DIVISOR;
+        f32 scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scaleParam)) / FLAMETHROWERSPE_SCALE_DIVISOR;
         state->sizeScale = scale * gFlameThrowerspeScaleMultiplier;
     }
     obj->anim.velocityY = 0.0f;

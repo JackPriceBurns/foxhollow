@@ -827,21 +827,58 @@ static inline s16 ObjAnim_ReadPackedS16(const void *value) {
   return fhReadBES16(value);
 }
 
+static inline u16 ObjAnim_ReadPlacementU16(const ObjAnimComponent *objAnim,
+                                           const void *value) {
+  if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+    u16 nativeValue;
+    memcpy(&nativeValue, value, sizeof(nativeValue));
+    return nativeValue;
+  }
+  return fhReadBE16(value);
+}
+
 static inline s16 ObjAnim_ReadPlacementS16(const ObjAnimComponent *objAnim,
                                            const void *value) {
   if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
-    return *(const s16 *)value;
+    s16 nativeValue;
+    memcpy(&nativeValue, value, sizeof(nativeValue));
+    return nativeValue;
   }
   return fhReadBES16(value);
 }
 
+static inline s32 ObjAnim_ReadPlacementS32(const ObjAnimComponent *objAnim,
+                                           const void *value) {
+  if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+    s32 nativeValue;
+    memcpy(&nativeValue, value, sizeof(nativeValue));
+    return nativeValue;
+  }
+  return (s32)fhReadBE32(value);
+}
+
+static inline u32 ObjAnim_ReadPlacementU32(const ObjAnimComponent *objAnim,
+                                           const void *value) {
+  if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+    u32 nativeValue;
+    memcpy(&nativeValue, value, sizeof(nativeValue));
+    return nativeValue;
+  }
+  return fhReadBE32(value);
+}
+
+static inline f32 ObjAnim_ReadPlacementF32(const ObjAnimComponent *objAnim,
+                                           const void *value) {
+  if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+    f32 nativeValue;
+    memcpy(&nativeValue, value, sizeof(nativeValue));
+    return nativeValue;
+  }
+  return fhReadBEF32(value);
+}
+
 static inline f32 ObjAnim_ReadPackedF32(const void *value) {
-  union {
-    u32 bits;
-    f32 value;
-  } packed;
-  packed.bits = fhSwap32(*(const u32 *)value);
-  return packed.value;
+  return fhReadBEF32(value);
 }
 
 static inline s16 ObjAnim_GetMoveDataRootCurveOffset(ObjAnimMoveData *moveData) {

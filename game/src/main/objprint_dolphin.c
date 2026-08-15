@@ -72,7 +72,7 @@
 extern s32 gModelMtxCacheState;
 extern s32 gObjFuzzLayerIndex;
 extern u8 gObjFuzzPassActive;
-extern u32 lbl_803DB468;
+extern GXColor lbl_803DB468;
 
 static const GXColor sObjFuzzSavedEnvColor = {0xD8, 0xE0, 0xFF, 0xFF};
 static const GXColorS10 sObjFuzzWhiteColorS10 = {0xFF, 0xFF, 0xFF, 0xFF};
@@ -297,7 +297,7 @@ const IndTexMtx23 sObjFuzzShellIndMtxB = {{{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.5f
 
 extern u8 gObjFuzzPhaseLatched;
 
-extern u32 lbl_803DB470;
+extern GXColor lbl_803DB470;
 extern int lbl_803DB498;
 extern int lbl_803DB49C;
 
@@ -766,9 +766,9 @@ u8 gObjOverrideColorPending;
 MtxPtr curObjMtx;
 u8 lbl_803DCC20;
 
-u32 lbl_803DB468 = 0xFFFFFFFF;
-u32 gObjGxDefaultChanColor = 0xFF000000;
-u32 lbl_803DB470 = 0;
+GXColor lbl_803DB468 = {0xFF, 0xFF, 0xFF, 0xFF};
+GXColor gObjGxDefaultChanColor = {0, 0, 0, 0xFF};
+GXColor lbl_803DB470 = {0, 0, 0, 0};
 u32 gObjGxVtxDescCache = 0xFFFFFFFF;
 u8 gObjGxBlendModeCache = 0xFF;
 u8 gObjGxZCompLocCache = 0xFF;

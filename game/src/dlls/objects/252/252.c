@@ -53,20 +53,24 @@ void dll_FC_update(GameObject* obj) {
     u32 rememberedGameBitValue;
     u32 triggerId;
     f32 maxDistance;
+    s16 gateGameBit;
+    s16 rememberedGameBit;
 
     maxDistance = DLL_FC_TARGET_SEARCH_RADIUS;
     placement = (DllFCPlacement*)obj->anim.placementData;
     state = obj->extra;
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
+    rememberedGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rememberedGameBit);
 
     if (state->target == NULL) {
         state->target = objGetNearestTypeTo(placement->targetGroup, obj, &maxDistance);
         if (state->target == NULL) {
             return;
         }
-        if ((int)placement->rememberedGameBit == DLL_FC_NO_GAME_BIT) {
+        if ((int)rememberedGameBit == DLL_FC_NO_GAME_BIT) {
             state->rememberedGameBitValue = 0;
         } else {
-            rememberedGameBitValue = mainGetBit((int)placement->rememberedGameBit);
+            rememberedGameBitValue = mainGetBit((int)rememberedGameBit);
             state->rememberedGameBitValue = rememberedGameBitValue;
         }
         state->mode = DLL_FC_MODE_LATCHED;
@@ -87,17 +91,16 @@ void dll_FC_update(GameObject* obj) {
             state->target->anim.resetHitboxFlags &= ~DLL_FC_TARGET_INTERACT_FLAG;
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->mode = DLL_FC_MODE_FINISHED;
-        } else if (((int)placement->gateGameBit != DLL_FC_NO_GAME_BIT) &&
-                   (mainGetBit((int)placement->gateGameBit) == 0)) {
+        } else if (((int)gateGameBit != DLL_FC_NO_GAME_BIT) && (mainGetBit((int)gateGameBit) == 0)) {
             state->target->anim.resetHitboxFlags &= ~DLL_FC_TARGET_INTERACT_FLAG;
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             state->mode = DLL_FC_MODE_WAIT_GATE;
         } else if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) {
             if ((placement->flags & DLL_FC_FLAG_CLEAR_GATE_BIT) != 0) {
-                mainSetBits((int)placement->gateGameBit, 0);
+                mainSetBits((int)gateGameBit, 0);
             }
-            if ((int)placement->rememberedGameBit != DLL_FC_NO_GAME_BIT) {
-                mainSetBits((int)placement->rememberedGameBit, 1);
+            if ((int)rememberedGameBit != DLL_FC_NO_GAME_BIT) {
+                mainSetBits((int)rememberedGameBit, 1);
             }
             if ((placement->flags & DLL_FC_FLAG_RANDOM_TRIGGER) != 0) {
                 triggerId = randomGetRange((int)placement->triggerIdMin, placement->triggerIdMax);
@@ -117,7 +120,7 @@ void dll_FC_update(GameObject* obj) {
         }
         break;
     case DLL_FC_MODE_WAIT_GATE:
-        if (mainGetBit((int)placement->gateGameBit) != 0) {
+        if (mainGetBit((int)gateGameBit) != 0) {
             state->mode = DLL_FC_MODE_LATCHED;
         }
         break;

@@ -36,7 +36,7 @@ int IMMultiSeq_animEventCallback(GameObject* obj, int* unused, ObjSeqState* anim
         int nextStep = step + 1;
 
         if ((s32)nextStep < IM_MULTI_SEQ_STEP_COUNT) {
-            s16 gameBit = placement->activeGameBits[nextStep];
+            s16 gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBits[nextStep]);
 
             if (gameBit != IM_MULTI_SEQ_GAME_BIT_NONE) {
                 int bitValue = mainGetBit(gameBit);
@@ -85,7 +85,7 @@ void IMMultiSeq_update(GameObject* obj) {
 
     if ((state->flags & IM_MULTI_SEQ_STATE_ADVANCE_PENDING) != 0) {
         step = state->step;
-        gameBit = placement->completionGameBits[step];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[step]);
         mainSetBits(gameBit, !((placement->polarityMask >> (step + IM_MULTI_SEQ_COMPLETION_POLARITY_SHIFT)) & 1));
         state->flags = (u8)(state->flags & ~IM_MULTI_SEQ_STATE_ADVANCE_PENDING);
         state->step++;
@@ -94,7 +94,7 @@ void IMMultiSeq_update(GameObject* obj) {
     if ((int)state->step != IM_MULTI_SEQ_STEP_COUNT) {
         u8 activeStep = state->step;
 
-        gameBit = placement->activeGameBits[activeStep];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBits[activeStep]);
         if (gameBit == IM_MULTI_SEQ_GAME_BIT_NONE) {
             state->step = IM_MULTI_SEQ_STEP_COUNT;
         } else if ((u32)(!((placement->polarityMask >> state->step) & 1)) == mainGetBit(gameBit)) {
@@ -108,7 +108,7 @@ void IMMultiSeq_update(GameObject* obj) {
 
     previousStep = state->step - 1;
     while (previousStep >= 0) {
-        gameBit = placement->completionGameBits[previousStep];
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[previousStep]);
         if (gameBit == IM_MULTI_SEQ_GAME_BIT_NONE) {
             break;
         }
@@ -139,7 +139,7 @@ void IMMultiSeq_init(GameObject* obj, IMMultiSeqPlacement* placement) {
     step = 0;
     while (step < IM_MULTI_SEQ_STEP_COUNT) {
         if ((u32)((placement->polarityMask >> (step + IM_MULTI_SEQ_COMPLETION_POLARITY_SHIFT)) & 1) ==
-            mainGetBit(placement->completionGameBits[step])) {
+            mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBits[step]))) {
             break;
         }
         step++;

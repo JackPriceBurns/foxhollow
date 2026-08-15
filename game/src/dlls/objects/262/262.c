@@ -57,14 +57,16 @@ f32 gScarabSweptHitInfo[4];
 const Vec3f sScarabStartInit = {0.0f, 0.0f, 0.0f};
 const Vec3f sScarabEndInit = {0.0f, 0.0f, 0.0f};
 
-typedef struct ScarabCollisionResults {
-    f32 hitInfo[4][4]; /* 0x00 */
-    f32 radii[4];      /* 0x40 */
-    union {
-        u8 hitAxes[12];
-        s8 signedHitAxes[12];
-    }; /* 0x50 */
-    u32 solidFlags[4]; /* 0x5C */
+typedef union ScarabCollisionResults {
+    TrackHitResults record;
+    struct {
+        f32 hitInfo[4][4];
+        f32 radii[4];
+        union {
+            u8 hitAxes[12];
+            s8 signedHitAxes[12];
+        };
+    };
 } ScarabCollisionResults;
 
 typedef union ScarabMoneyValues {
@@ -83,17 +85,21 @@ typedef struct ScarabSweepSphere {
 } ScarabSweepSphere;
 
 typedef struct ScarabCollisionScratch {
-    TrackBBoxHit bboxHit;     /* 0x00 */
-    u8 hitResults[0x40];      /* 0x54 */
-    ScarabSweepSphere sphere; /* 0x94 */
+    TrackBBoxHit bboxHit;
+    union {
+        TrackHitResults record;
+        struct {
+            u8 hitResults[0x40];
+            ScarabSweepSphere sphere;
+        };
+    };
 } ScarabCollisionScratch;
 
 STATIC_ASSERT(offsetof(ScarabCollisionResults, hitInfo) == 0x0);
 STATIC_ASSERT(offsetof(ScarabCollisionResults, radii) == 0x40);
 STATIC_ASSERT(offsetof(ScarabCollisionResults, hitAxes) == 0x50);
 STATIC_ASSERT(offsetof(ScarabCollisionResults, signedHitAxes) == 0x50);
-STATIC_ASSERT(offsetof(ScarabCollisionResults, solidFlags) == 0x5C);
-STATIC_ASSERT(sizeof(ScarabCollisionResults) == 0x6C);
+STATIC_ASSERT(sizeof(ScarabCollisionResults) == sizeof(TrackHitResults));
 STATIC_ASSERT(offsetof(ScarabMoneyValues, packed) == 0x0);
 STATIC_ASSERT(offsetof(ScarabMoneyValues, values) == 0x0);
 STATIC_ASSERT(sizeof(ScarabMoneyValues) == 0x4);
@@ -104,9 +110,8 @@ STATIC_ASSERT(offsetof(ScarabSweepSphere, flags) == 0x14);
 STATIC_ASSERT(offsetof(ScarabSweepSphere, pad15) == 0x15);
 STATIC_ASSERT(sizeof(ScarabSweepSphere) == 0x30);
 STATIC_ASSERT(offsetof(ScarabCollisionScratch, bboxHit) == 0x0);
-STATIC_ASSERT(offsetof(ScarabCollisionScratch, hitResults) == 0x54);
-STATIC_ASSERT(offsetof(ScarabCollisionScratch, sphere) == 0x94);
-STATIC_ASSERT(sizeof(ScarabCollisionScratch) == 0xC4);
+STATIC_ASSERT(offsetof(ScarabCollisionScratch, sphere) ==
+              offsetof(ScarabCollisionScratch, hitResults) + 0x40);
 
 static int Scarab_resolveCollision(GameObject* obj) {
     ObjHitsPriorityState* hitState;
@@ -155,7 +160,7 @@ static int Scarab_resolveCollision(GameObject* obj) {
         gScarabSweptHitInfo[2] = results.hitInfo[hitIndex][2];
         gScarabSweptHitInfo[3] = results.hitInfo[hitIndex][3];
 
-        if (results.solidFlags[hitIndex] != 0) {
+        if (results.record.objects[hitIndex] != 0) {
             hitState->contactFlags = *(u8*)&hitState->contactFlags | OBJHITS_CONTACT_FLAG_KIND_NONZERO;
             obj->anim.localPosX = hitState->contactPosX;
             obj->anim.localPosY = hitState->contactPosY;
@@ -656,7 +661,7 @@ void Scarab_init(GameObject* obj, const ScarabPlacement* placement) {
     ScarabState* state = obj->extra;
     ObjModel* model;
     state->behaviorState = SCARAB_STATE_TUMBLING;
-    state->lifetime = placement->activeTimer;
+    state->lifetime = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeTimer));
     state->rollSpeed = randomGetRange(0x3E8, 0xFA0);
     state->goldClimbDuration = randomGetRange(0x32, 0x64);
     state->initialY = placement->base.posY;

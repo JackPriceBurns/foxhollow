@@ -70,7 +70,7 @@ void cfforcefield_update(GameObject* obj) {
     obj->anim.velocityY = zero;
     obj->anim.velocityX = zero;
 
-    if (mainGetBit(placement->activeGameBit) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit))) != 0) {
         if (!state->statusFlags.disabled) {
             emitterIndex = placement->effectStyle % CFFORCEFIELD_EMITTER_COUNT;
             collapseTimeRemaining = state->collapseTimer;
@@ -118,7 +118,7 @@ void cfforcefield_update(GameObject* obj) {
                     state->statusFlags.disabled = 1;
                     obj->anim.rotY = 0;
                 }
-            } else if (mainGetBit(placement->collapseGameBit) != 0) {
+            } else if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->collapseGameBit))) != 0) {
                 s16toFloat(&state->collapseTimer, CFFORCEFIELD_COLLAPSE_FRAMES);
                 Sfx_PlayFromObject(obj, SFXTRIG_en_littletink22);
                 if (((CfForceFieldPlacement*)obj->anim.placement)->base.ident != CFFORCEFIELD_SILENT_COLLAPSE_MAP_ID) {
@@ -126,7 +126,8 @@ void cfforcefield_update(GameObject* obj) {
                 }
             }
         } else {
-            state->statusFlags.disabled = mainGetBit(placement->collapseGameBit);
+            state->statusFlags.disabled =
+                mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->collapseGameBit)));
         }
     }
 }
@@ -138,7 +139,7 @@ void cfforcefield_init(GameObject* obj, CfForceFieldPlacement* placement) {
         s16 rotX = rotXByte << 8;
         obj->anim.rotX = rotX;
     }
-    state->statusFlags.disabled = mainGetBit(placement->collapseGameBit);
+    state->statusFlags.disabled = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->collapseGameBit)));
     storeZeroToFloatParam(&state->collapseTimer);
 }
 

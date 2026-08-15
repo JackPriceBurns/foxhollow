@@ -88,8 +88,8 @@ void VFP_SpellPlace_init(GameObject* spellPlace, s8* def)
 
     mapData = (LaserObjectMapData*)def;
     state = spellPlace->extra;
-    state->completionGameBit = mapData->completionGameBit;
-    state->activationGameBit = mapData->activationGameBit;
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&spellPlace->anim, &(mapData->completionGameBit));
+    state->activationGameBit = ObjAnim_ReadPlacementS16(&spellPlace->anim, &(mapData->activationGameBit));
     state->completionLatched = 0;
     spellPlace->anim.rotX = (s16)(mapData->yawByte << LASEROBJ_YAW_BYTE_SHIFT);
     if (mainGetBit(state->completionGameBit) != 0)

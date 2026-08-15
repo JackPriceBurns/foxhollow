@@ -182,15 +182,15 @@ void FuelCell_update(GameObject* obj) {
         while (ObjMsg_Pop(obj, (u32*)&msgId, (u32*)&msgParam, 0) != 0) {
             if (msgId == FUEL_CELL_MESSAGE_RELEASE) {
                 state->flags.pickupPending = 0;
-                mainSetBits(placement->offBit, 1);
+                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->offBit)), 1);
                 gameBitIncrement(GAMEBIT_ITEM_FuelCell_Count);
                 mainSetBits(GAMEBIT_ITEM_FuelCell_CantGet, 0);
             }
         }
     } else {
-        int gameBit = placement->offBit;
+        int gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->offBit));
         if (gameBit != -1 && mainGetBit(gameBit) == 0) {
-            gameBit = placement->onBit;
+            gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->onBit));
             if (gameBit == -1 || mainGetBit(gameBit) != 0) {
                 f32 dy;
                 if (!state->flags.active) {

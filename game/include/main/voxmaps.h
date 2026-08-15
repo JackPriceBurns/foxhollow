@@ -112,7 +112,7 @@ extern Texture* gVoxMapsLargeTextures[2];
 extern Texture* gVoxMapsSmallTextures[2];
 extern int gMapBlockOriginWorldX;
 extern int gMapBlockOriginWorldZ;
-extern VoxState gVoxMapsRouteState;
+#define gVoxMapsRouteState (*(VoxState*)&gVoxMaps.blockOriginWorld[0])
 extern char sVoxmapsRouteNodesListOverflow[];
 extern char sVoxMapsDebugStrings[];
 

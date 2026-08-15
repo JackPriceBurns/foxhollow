@@ -60,7 +60,7 @@ s16 dll_7D_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
                        f32* scaleOverride) {
     s16 handle;
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll7DEffectResourceData;
+    u8* resourceData = (u8*)gDll7DEffectResourceData;
     f32 scale = 1.0f;
     GfxCmd* commands;
     if (scaleOverride != NULL) {
@@ -174,7 +174,7 @@ s16 dll_7D_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
         }
     }
     handle = (*gModgfxInterface)
-                 ->spawnEffect(&packet, 0, 0x15, (u8*)(int)gDll7DEffectResourceData, 0x18,
+                 ->spawnEffect(&packet, 0, 0x15, (u8*)gDll7DEffectResourceData, 0x18,
                                &resourceData[offsetof(Dll7DEffectResourceView, triangles)], 0x89, 0);
     gDll7DSpawnCounter += 1;
     if (gDll7DSpawnCounter == 5) {

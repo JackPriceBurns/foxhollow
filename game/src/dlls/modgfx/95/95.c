@@ -37,7 +37,7 @@ u32 gDll5FEffectResourceData[sizeof(Dll5FEffectResourceView) / sizeof(u32)] = {
 
 void dll_5F_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)(int)gDll5FEffectResourceData;
+    u8* resourceData = (u8*)gDll5FEffectResourceData;
     GameObject* sourceContext;
     f32 originOffset = 0.0f;
     packet.entries[0].layer = 0;
@@ -170,7 +170,7 @@ void dll_5F_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0xe, (u8*)(int)gDll5FEffectResourceData, 0xc,
+        ->spawnEffect(&packet, 0, 0xe, (u8*)gDll5FEffectResourceData, 0xc,
                       &resourceData[offsetof(Dll5FEffectResourceView, colors)], 0x48, 0);
 }
 

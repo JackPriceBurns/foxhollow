@@ -158,7 +158,8 @@ int babyCloudRunner_tryCapture(void* object) {
     player = Obj_GetPlayerObject();
     rangePlacement = (BabyCloudRunnerPlacement*)obj->anim.placement;
     shouldCapture = 0;
-    if (Vec_distance(&player->anim.worldPosX, &obj->anim.worldPosX) < (f32)(s16)rangePlacement->innerRadius) {
+    if (Vec_distance(&player->anim.worldPosX, &obj->anim.worldPosX) <
+        (f32)(s16)ObjAnim_ReadPlacementS16(&obj->anim, &rangePlacement->innerRadius)) {
         if (state->runnerState == BABYCLOUDRUNNER_STATE_FREED) {
             if ((obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) == 0) {
                 shouldCapture = 1;
@@ -173,7 +174,7 @@ int babyCloudRunner_tryCapture(void* object) {
         state->captureTimer = 3.0f;
         gameBitIncrement(BABYCLOUDRUNNER_CAPTURE_COUNT_GAME_BIT);
         state->behaviourState = BABYCLOUDRUNNER_CAPTURE_BEHAVIOUR;
-        mainSetBits(gameBitPlacement->enableGameBit, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &gameBitPlacement->enableGameBit), 1);
         obj->userData1 = 0;
         return 1;
     }
@@ -219,6 +220,8 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
     f32 dz;
     f32 distanceSquared;
     BabyCloudRunnerState* state = obj->extra;
+    s16 innerRadius = ObjAnim_ReadPlacementS16(&obj->anim, &placement->innerRadius);
+    s16 outerRadius = ObjAnim_ReadPlacementS16(&obj->anim, &placement->outerRadius);
     if (obj->seqIndex == BABYCLOUDRUNNER_SEQUENCE_CAPTURED) {
         return 0;
     }
@@ -227,7 +230,7 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
     dx = player->anim.localPosX - placement->base.posX;
     dz = player->anim.localPosZ - placement->base.posZ;
     distanceSquared = dx * dx + dz * dz;
-    if (distanceSquared < (f32)((halfInner = placement->innerRadius / 2) * halfInner)) {
+    if (distanceSquared < (f32)((halfInner = innerRadius / 2) * halfInner)) {
         inRange = 1;
     } else {
         inRange = 0;
@@ -235,13 +238,11 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
     {
         int found;
-        BabyCloudRunnerPlacement* interactionPlacement;
         BabyCloudRunnerState* interactionState = obj->extra;
         GameObject* interactionPlayer = Obj_GetPlayerObject();
-        interactionPlacement = (BabyCloudRunnerPlacement*)obj->anim.placement;
         found = 0;
         if (Vec_distance(&interactionPlayer->anim.worldPosX, &obj->anim.worldPosX) <
-                (f32)interactionPlacement->innerRadius &&
+                (f32)innerRadius &&
             interactionState->runnerState == BABYCLOUDRUNNER_STATE_FREED &&
             (obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) == 0) {
             found = 1;
@@ -253,7 +254,7 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
         }
     }
     if (inRange == 0 && state->runnerState == BABYCLOUDRUNNER_STATE_CHASED) {
-        f32 radius = (f32)placement->outerRadius;
+        f32 radius = (f32)outerRadius;
         if (objGetNearestTypeTo(BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP, obj, &radius) != NULL) {
             inRange = 1;
         }
@@ -275,7 +276,7 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
             state->linkedObject->anim.rootMotionScale = state->scale;
         }
         state->behaviourState = 0xb;
-        if (Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < (f32)placement->innerRadius &&
+        if (Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < (f32)innerRadius &&
             (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) {
             state->behaviourState = 7;
             return BABYCLOUDRUNNER_SEQUENCE_CAPTURED;
@@ -332,18 +333,23 @@ void babyCloudRunner_update(GameObject* obj) {
     BabyCloudRunnerState* state;
     BabyCloudRunnerPlacement* placement;
     int found;
-    BabyCloudRunnerPlacement* interactionPlacement;
     BabyCloudRunnerState* interactionState;
     GameObject* nearbyObject;
     int inRange;
     MoveLibTarget target;
     int curveMode;
     f32 radius;
+    s16 innerRadius;
+    s16 outerRadius;
+    s16 runnerGameBit;
     placement = (BabyCloudRunnerPlacement*)obj->anim.placement;
     state = obj->extra;
+    innerRadius = ObjAnim_ReadPlacementS16(&obj->anim, &placement->innerRadius);
+    outerRadius = ObjAnim_ReadPlacementS16(&obj->anim, &placement->outerRadius);
+    runnerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->runnerGameBit);
     player = Obj_GetPlayerObject();
     getTrickyObject();
-    if (mainGetBit(placement->runnerGameBit) != 0) {
+    if (mainGetBit(runnerGameBit) != 0) {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         state->captureFlags &= ~BABYCLOUDRUNNER_CAPTURE_ACTIVE;
         Obj_RemoveFromUpdateList(obj);
@@ -357,8 +363,8 @@ void babyCloudRunner_update(GameObject* obj) {
         state->captureFlags |= BABYCLOUDRUNNER_CAPTURE_ACTIVE;
         state->behaviourState = 0;
         if (obj->userData1 < 0) {
-            if (placement->runnerGameBit != -1) {
-                mainSetBits(placement->runnerGameBit, 1);
+            if (runnerGameBit != -1) {
+                mainSetBits(runnerGameBit, 1);
             }
             ObjHits_DisableObject(obj);
             obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
@@ -426,9 +432,9 @@ void babyCloudRunner_update(GameObject* obj) {
                     babyCloudRunner_updateBurrowAnimation(obj);
                 }
             }
-            inRange = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < (f32)(placement->innerRadius / 2);
+            inRange = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < (f32)(innerRadius / 2);
             if (state->runnerState == BABYCLOUDRUNNER_STATE_CHASED) {
-                radius = (f32)placement->outerRadius;
+                radius = (f32)outerRadius;
                 if (timerIsActive(&state->countdownTimer) != 0) {
                     if ((Obj_GetPlayerObject()->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) == 0 &&
                         timerCountDown(&state->countdownTimer) != 0) {
@@ -453,10 +459,9 @@ void babyCloudRunner_update(GameObject* obj) {
                 interactionState = obj->extra;
                 {
                     GameObject* interactionPlayer = Obj_GetPlayerObject();
-                    interactionPlacement = (BabyCloudRunnerPlacement*)obj->anim.placement;
                     found = 0;
                     if (Vec_distance(&interactionPlayer->anim.worldPosX, &obj->anim.worldPosX) <
-                            (f32)interactionPlacement->innerRadius &&
+                            (f32)innerRadius &&
                         interactionState->runnerState == BABYCLOUDRUNNER_STATE_FREED &&
                         (obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) == 0) {
                         found = 1;
@@ -505,6 +510,7 @@ void babyCloudRunner_update(GameObject* obj) {
 
 void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement) {
     BabyCloudRunnerState* state;
+    s16 runnerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->runnerGameBit);
 
     ObjHits_EnableObject(obj);
     ObjMsg_AllocQueue(obj, BABYCLOUDRUNNER_MESSAGE_QUEUE_CAPACITY);
@@ -525,14 +531,14 @@ void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement) 
     state->captureFlags = 0;
     state->animSpeed = 0.01f;
     state->runnerState = BABYCLOUDRUNNER_STATE_FIND_CURVE;
-    if (mainGetBit(placement->runnerGameBit) != 0) {
+    if (mainGetBit(runnerGameBit) != 0) {
         ObjHits_DisableObject(obj);
         obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
         state->captureFlags = state->captureFlags & ~BABYCLOUDRUNNER_CAPTURE_ACTIVE;
         Obj_RemoveFromUpdateList(obj);
         objFreeObjectType(obj, BABYCLOUDRUNNER_PRIMARY_OBJECT_GROUP);
     } else {
-        state->runnerIndex = placement->runnerGameBit - GAMEBIT_CFRelated02FC;
+        state->runnerIndex = runnerGameBit - GAMEBIT_CFRelated02FC;
         if (obj->anim.romDefNo == BABYCLOUDRUNNER_AMBIENT_OBJECT_ID) {
             state->runnerIndex = -1;
             state->curveSpeed = 3.0f;

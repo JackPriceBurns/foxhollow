@@ -23,16 +23,10 @@
 #include "main/dll/dll_02B2_dustmotesou.h"
 #include "main/gamebits.h"
 #include "main/objfx.h"
-#include "string.h"
-
-/* Placement data is raw big-endian map data; only the multi-byte fields need
- * swapping (the u8 rot/effect/spread bytes are already correct). */
-static f32 dustmotesou_getScale(const DustMoteSouMapData* mapData)
+static f32 dustmotesou_getScale(const GameObject* source,
+                                const DustMoteSouMapData* mapData)
 {
-    u32 bits = fhSwap32(*(const u32*)&mapData->scale);
-    f32 out;
-    memcpy(&out, &bits, sizeof(out));
-    return out;
+    return ObjAnim_ReadPlacementF32(&source->anim, &mapData->scale);
 }
 
 int dustmotesou_getExtraSize(void)
@@ -47,7 +41,7 @@ int dustmotesou_getObjectTypeId(void)
 
 void dustmotesou_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void dustmotesou_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -65,7 +59,7 @@ void dustmotesou_hitDetect(void)
 void dustmotesou_update(GameObject* source)
 {
     DustMoteSouMapData* mapData = (DustMoteSouMapData*)source->anim.placementData;
-    f32 scale = dustmotesou_getScale(mapData);
+    f32 scale = dustmotesou_getScale(source, mapData);
     s16 gameBit = ObjAnim_ReadPlacementS16(&source->anim, &mapData->gameBit);
 
     if (gameBit != -1 && mainGetBit(gameBit) == 0)

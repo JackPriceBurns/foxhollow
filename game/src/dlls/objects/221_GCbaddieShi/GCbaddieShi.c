@@ -79,7 +79,7 @@ void GCbaddieShield_update(GameObject* obj) {
 }
 
 void GCbaddieShield_init(GameObject* obj, GCbaddieShieldPlacement* placement) {
-    int lifetime = placement->lifetime;
+    int lifetime = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lifetime));
     GCbaddieShieldState* state = obj->extra;
     state->remainingLifetime = lifetime;
 }

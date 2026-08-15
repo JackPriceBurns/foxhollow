@@ -109,7 +109,7 @@ void DoorLock_update(GameObject* obj) {
     unlockedGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->unlockedGameBit);
     if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0 && mainGetBit(GAMEBIT_SawCMenuExplanation) == 0) {
         buttonDisable(DOOR_LOCK_INPUT_PORT, PAD_BUTTON_A);
-        (*gObjectTriggerInterface)->setRunSequenceWorldSpace((int)obj, DOOR_LOCK_SEQUENCE_WORLD_SPACE_MODE);
+        (*gObjectTriggerInterface)->setRunSequenceWorldSpace((uintptr_t)obj, DOOR_LOCK_SEQUENCE_WORLD_SPACE_MODE);
         (*gObjectTriggerInterface)->runSequence(DOOR_LOCK_CMENU_EXPLANATION_SEQUENCE, obj, DOOR_LOCK_SEQUENCE_ARG_NONE);
         mainSetBits(GAMEBIT_SawCMenuExplanation, 1);
     } else {
@@ -159,7 +159,7 @@ void DoorLock_update(GameObject* obj) {
             if (obj->userData1 == DOOR_LOCK_SEQUENCE_NOT_STARTED) {
                 if (placement->unlockSequenceId != DOOR_LOCK_SEQUENCE_ID_NONE &&
                     queuedSequenceId != DOOR_LOCK_QUEUED_SEQUENCE_ID_NONE) {
-                    (*gObjectTriggerInterface)->preempt((int)obj, queuedSequenceId);
+                    (*gObjectTriggerInterface)->preempt((uintptr_t)obj, queuedSequenceId);
                     sequenceFlags = DOOR_LOCK_SEQUENCE_FLAGS_BASE;
                     placementFlags = placement->flags;
                     if ((placementFlags & DOOR_LOCK_FLAG_SEQUENCE_OPTION_2) != 0) {

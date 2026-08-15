@@ -2353,10 +2353,24 @@ void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, i
                 if (async == 0) {
                     getTabEntry(hitState->entries, OBJHITREACT_ENTRY_TAB_FILE_ID, entryByteOffset,
                                 hitState->activeEntryByteCount);
-                    return;
+                } else {
+                    fileLoadToBufferOffset(OBJHITREACT_ENTRY_TAB_FILE_ID, hitState->entries, entryByteOffset,
+                                           hitState->activeEntryByteCount);
                 }
-                fileLoadToBufferOffset(OBJHITREACT_ENTRY_TAB_FILE_ID, hitState->entries, entryByteOffset,
-                                       hitState->activeEntryByteCount);
+                {
+                    int entryIndex;
+                    int entryCount = hitState->activeEntryByteCount / sizeof(*hitState->entries);
+
+                    for (entryIndex = 0; entryIndex < entryCount; entryIndex++) {
+                        ObjHitReactEntry* entry = &hitState->entries[entryIndex];
+
+                        entry->primaryHitSfxId = fhReadBES16(&entry->primaryHitSfxId);
+                        entry->secondaryHitSfxId = fhReadBES16(&entry->secondaryHitSfxId);
+                        entry->reactionMoveId = fhReadBES16(&entry->reactionMoveId);
+                        entry->unk06 = fhReadBES16(&entry->unk06);
+                        entry->reactionStepScale = fhReadBEF32(&entry->reactionStepScale);
+                    }
+                }
                 return;
             }
         }

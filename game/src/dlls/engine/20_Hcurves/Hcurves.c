@@ -53,7 +53,7 @@ u8 gObjfsaWalkGroupActive[0xB8];
     (P).planeOffsets[K] = -((f32)(P).planes[K].normalX * (XA) + (f32)(P).planes[K].normalZ * (ZA))
 #define OBJFSA_NEWPATCH (patchBase[0][gObjfsaPatchCount])
 #define OBJFSA_NEWPATCH_S16(F)                                                                                        \
-    (*(s16*)((gObjfsaPatchCount * sizeof(ObjfsaPatch) + offsetof(ObjfsaPatch, F)) + (int)patchBase[0]))
+    (*(s16*)((gObjfsaPatchCount * sizeof(ObjfsaPatch) + offsetof(ObjfsaPatch, F)) + (uintptr_t)patchBase[0]))
 #define OBJFSA_SET_NEWPATCH_PLANE(K, DXE, DZE, XA, ZA)                                                                 \
     pl = &OBJFSA_NEWPATCH.planes[K];                                                                                   \
     po = &OBJFSA_NEWPATCH.planeOffsets[K];                                                                             \
@@ -162,7 +162,7 @@ void RomCurve_swapEndpointNodes(RomCurveWalker* p)
     }
 }
 
-static inline int Objfsa_FindRomCurveById(int curveId)
+static inline RomCurveDef* Objfsa_FindRomCurveById(int curveId)
 {
     int hi;
     int lo;
@@ -171,7 +171,7 @@ static inline int Objfsa_FindRomCurveById(int curveId)
 
     if (curveId < 0)
     {
-        return 0;
+        return NULL;
     }
 
     hi = nRomCurves - 1;
@@ -190,11 +190,11 @@ static inline int Objfsa_FindRomCurveById(int curveId)
         }
         else
         {
-            return (int)romCurves[mid];
+            return romCurves[mid];
         }
     }
 
-    return 0;
+    return NULL;
 }
 
 static inline u32 RomCurve_GetId(RomCurveDef* curve)
@@ -400,9 +400,9 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
         state->nodeA0 = state->nodeA4;
         state->nodeA4 = targetCurve;
 
-        memcpy(stateBytes + 0xb8, stateBytes + 0xa8, 0x10);
-        memcpy(stateBytes + 0xd8, stateBytes + 0xc8, 0x10);
-        memcpy(stateBytes + 0xf8, stateBytes + 0xe8, 0x10);
+        memcpy(state->hermX2, state->hermX, sizeof(state->hermX2));
+        memcpy(state->hermY2, state->hermY, sizeof(state->hermY2));
+        memcpy(state->hermZ2, state->hermZ, sizeof(state->hermZ2));
 
         state->hermX[0] = ((RomCurveDef*)state->nodeA4)->x;
         state->hermX[1] = ((RomCurveDef*)state->nodeA0)->x;
@@ -434,9 +434,9 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
         state->nodeA0 = state->nodeA4;
         state->nodeA4 = targetCurve;
 
-        memcpy(stateBytes + 0xa8, stateBytes + 0xb8, 0x10);
-        memcpy(stateBytes + 0xc8, stateBytes + 0xd8, 0x10);
-        memcpy(stateBytes + 0xe8, stateBytes + 0xf8, 0x10);
+        memcpy(state->hermX, state->hermX2, sizeof(state->hermX));
+        memcpy(state->hermY, state->hermY2, sizeof(state->hermY));
+        memcpy(state->hermZ, state->hermZ2, sizeof(state->hermZ));
 
         state->hermX2[0] = ((RomCurveDef*)state->nodeA0)->x;
         state->hermX2[1] = ((RomCurveDef*)state->nodeA4)->x;
@@ -593,10 +593,10 @@ void* Objfsa_FindNearestEnabledCurveType24(f32* pos, int p4_filter, int p5_filte
             (p4_filter == -1 || hit->walkGroup == p4_filter) &&
             (p5_filter == -1 || hit->unk1A == p5_filter))
         {
-            gbId = hit->requiredBit;
+            gbId = fhReadBES16(&hit->requiredBit);
             if (gbId == -1 || mainGetBit(gbId) != 0)
             {
-                gbId = hit->forbiddenBit;
+                gbId = fhReadBES16(&hit->forbiddenBit);
                 if (gbId == -1 || mainGetBit(gbId) == 0)
                 {
                     f32 dx = pos[0] - hit->x;
@@ -1314,7 +1314,7 @@ void Objfsa_UpdateWalkGroupPatches(void)
             {
                 gi = curve->walkGroup;
                 wg = &((ObjfsaWalkGroup*)(patchBase[0] + 256))[gi];
-                *(u8*)((gi + OBJFSA_ACTIVE_WALKGROUPS_OFFSET) + (int)patchBase[0]) = 1;
+                *(u8*)((gi + OBJFSA_ACTIVE_WALKGROUPS_OFFSET) + (uintptr_t)patchBase[0]) = 1;
 
                 x0 = objfsaCorner(curve->firstEdge[0], scale, &curve->x);
                 z0 = objfsaCorner(curve->firstEdge[1], scale, &curve->z);

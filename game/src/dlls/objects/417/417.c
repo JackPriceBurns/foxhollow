@@ -286,7 +286,7 @@ void NW_mammoth_updateGatekeeper(GameObject* obj, NwMammothState* state, NwMammo
             Sfx_PlayFromObject(obj, SFXTRIG_skeep_mumb);
             state->sfxTimer -= 900.0f;
         }
-        if (state->playerDistanceSq < (f32)(s32)(placement->triggerDistance * placement->triggerDistance)) {
+        if (state->playerDistanceSq < (f32)(s32)(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerDistance)) * ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerDistance)))) {
             state->stateIndex = 0xa;
         }
         break;
@@ -310,7 +310,7 @@ void NW_mammoth_updateGatekeeper(GameObject* obj, NwMammothState* state, NwMammo
         }
         break;
     case 0xc:
-        (*gObjectTriggerInterface)->preempt((int)nearestObj, 0x5aa);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)nearestObj, 0x5aa);
         (*gObjectTriggerInterface)->runSequence(3, (void*)nearestObj, 0x30);
         state->stateIndex = 0xd;
         break;
@@ -330,7 +330,7 @@ void NW_mammoth_updateGatekeeper(GameObject* obj, NwMammothState* state, NwMammo
                 }
                 {
                     int* o2 = (int*)ObjList_FindObjectById(gNwMammothBushObjectIds[i]);
-                    if ((int*)playerGetTargetObject((GameObject*)(int)state->playerObject) == o2) {
+                    if ((int*)playerGetTargetObject((GameObject*)state->playerObject) == o2) {
                         enemy_setTrackedObj((GameObject*)o2, state->playerObject);
                     } else {
                         tw = tumbleweedbush_findNearestActive(&((GameObject*)o2)->anim.worldPosX);
@@ -360,7 +360,7 @@ void NW_mammoth_updateGatekeeper(GameObject* obj, NwMammothState* state, NwMammo
                 NwMammothPlacement* setup = (NwMammothPlacement*)obj->anim.placementData;
                 if (tw2 != NULL && tw2->anim.romDefNo == 0x3fb) {
                     if (getXZDistanceSquared(&obj->anim.worldPosX, &tw2->anim.worldPosX) <
-                        (f32)(s32)(setup->triggerDistance * setup->triggerDistance)) {
+                        (f32)(s32)(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->triggerDistance)) * ObjAnim_ReadPlacementS16(&obj->anim, &(setup->triggerDistance)))) {
                         if (Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
                             Sfx_PlayFromObject(obj, SFXTRIG_mammoth_snowstep);
                         }
@@ -406,7 +406,7 @@ void NW_mammoth_updateGatekeeper(GameObject* obj, NwMammothState* state, NwMammo
         }
         break;
     case 0x10:
-        (*gObjectTriggerInterface)->preempt((int)nearestObj, 0x157c);
+        (*gObjectTriggerInterface)->preempt((uintptr_t)nearestObj, 0x157c);
         (*gObjectTriggerInterface)->runSequence(1, (void*)nearestObj, 2);
         state->stateIndex = 0x13;
         break;

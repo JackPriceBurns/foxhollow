@@ -282,7 +282,7 @@ void TumbleWeedBush_init(GameObject* obj, TumbleweedBushPlacement* placement, in
     obj->anim.rotY =
         (s16)((placement->rotYByte - TUMBLEWEED_BUSH_ROTATION_CENTER) << TUMBLEWEED_BUSH_ROTATION_YZ_SHIFT);
     obj->anim.rotX = (s16)(placement->rotXByte << TUMBLEWEED_BUSH_ROTATION_X_SHIFT);
-    obj->anim.rootMotionScale = placement->scale;
+    obj->anim.rootMotionScale = ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale));
     scale = obj->anim.rootMotionScale;
     ObjHitbox_SetCapsuleBounds((ObjAnimComponent*)obj, (s32)(gTumbleweedBushHitRadius[0] * scale),
                                (s32)(TUMBLEWEED_BUSH_HIT_Y_MIN * scale), (s32)(TUMBLEWEED_BUSH_HIT_Y_MAX * scale));
@@ -937,7 +937,7 @@ void tumbleweed_init(GameObject* obj, TumbleweedPlacement* placement) {
 
     state->anchorPosX = obj->anim.localPosX;
     state->anchorPosZ = obj->anim.localPosZ;
-    state->triggerRange = (u16)(2.0f * placement->scale);
+    state->triggerRange = (u16)(2.0f * ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale)));
     state->variant = placement->variant;
     state->targetScale = obj->anim.rootMotionScale;
     state->growRate = state->targetScale / (f32)(s32)randomGetRange(0xc8, 0x1f4);
