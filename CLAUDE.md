@@ -132,6 +132,34 @@ gamebit id like `0x04E2` reads as `0xE204` → `mainGetBit(-7676)`, and **every 
 evaluates as "never passable"**. `-1` is byte-symmetric, which is why the "none" sentinel kept
 working and hid this.
 
+### A fourth class: decomp-faithful C that is undefined behaviour
+
+MWERKS had one evaluation order; clang has another. Code the decomp reproduces faithfully can
+still be UB, and then it works on PowerPC and silently produces garbage here. `grep` will not
+find these — **the compiler will**: `-Wunsequenced -Wuninitialized` over
+`build/compile_commands.json` (strip ` -w ` first) currently reports ~52 sites.
+
+Real, and it cost a long hunt: `atanf` (`game/src/main/acosf.c`) had
+```c
+squared = reduced * (reduced = 1.0 / absoluteValue);   /* reads and writes `reduced` unsequenced */
+```
+Clang evaluated the left operand first, reading `reduced` **uninitialised**, so `atanf` returned
+**NaN** for every `|value| > 1`. NaN then poisoned frustum planes 1-3 in
+`updateVisibleGeometry`, and since every comparison against NaN is false, `mapBlockIsInViewFrustum`
+returned "outside" for *every* map block — the entire map vanished while objects, which cull
+elsewhere, kept drawing. It presented as "see through the world into a blue void".
+
+The tell was a **hard FOV threshold**: the broken branch is entered when
+`sqrt(2.7778) * |tan(scale)| > 1`, i.e. **FovY > 61.93°** normally, or **> 46.45°** with
+`RENDERFLAG_WIDESCREEN`/`RENDERFLAG_DRAW_DISTANCE` (which use `FovY/1.5` instead of `FovY*0.5`).
+Normal gameplay sits under it; anything that widens the FOV — cutscene cameras, explosion punches —
+crosses it and blanks the map until the FOV animates back down. Observed exactly: culled at
+`FovY=74.5`, restored at `FovY=61.8`.
+
+Fix is `reduced = 1.0 / absoluteValue;` on its own line. When a value is NaN rather than merely
+wrong, suspect UB or a math shim before suspecting the data — this is the one bug class where the
+"file-backed data is misread" instinct actively misleads.
+
 Also endian-dependent: a native `u16[]` table whose entries are *reinterpreted* as `int` to
 compose a 32-bit id (`DFSH_SHRINE_TARGET_OBJECT` read pairs at `+0x3C` as `int`; retail composes
 `0x00049054`, the port composed `0x90540004`). Compose with explicit shifts instead.

@@ -109,7 +109,8 @@ float atanf(float value) {
                            + 0.9999999999994954));
     }
 
-    squared = reduced * (reduced = 1.0 / absoluteValue);
+    reduced = 1.0 / absoluteValue;
+    squared = reduced * reduced;
     result = (float)(1.5707963267948966
                      - reduced * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (squared * (-0.00009545564651489258 * squared + 0.0008865618705749518) + -0.0038832764327526095)
                                         + 0.010781633704900742) + -0.021653463803231715) + 0.034329998614266506)
