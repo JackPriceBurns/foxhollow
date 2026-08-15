@@ -2027,7 +2027,7 @@ int surfaceSfxSelectTrigger(u8 a, u8 b)
         base += 0x28;
         break;
     }
-    return *(u16*)(base + v * 2);
+    return fhReadBE16(base + v * 2);
 }
 
 void objAudioDispatchEventMask(GameObject* obj, int eventMask, u8 type, void* points, void* state, f32 unused,

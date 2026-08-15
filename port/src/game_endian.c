@@ -16,15 +16,19 @@ static TabSwapRecord sSwappedTabs[96];
 static int sSwappedTabCount;
 
 static u32 fingerprintOf(void* p, u32 words) {
-  u32* w = (u32*)p;
+  const u32* w = (const u32*)p;
+  u32 h = 2166136261u ^ words;
+  u32 step = words > 512 ? words / 512 : 1;
   u32 i;
-  u32 n = words < 8 ? words : 8;
-  for (i = 0; i < n; i++) {
-    if (w[i] != 0 && w[i] != 0xffffffff) {
-      return w[i];
-    }
+  for (i = 0; i < words; i += step) {
+    h ^= w[i];
+    h *= 16777619u;
   }
-  return 0;
+  if (words) {
+    h ^= w[words - 1];
+    h *= 16777619u;
+  }
+  return h ? h : 1u;
 }
 
 static TabSwapRecord* findRecord(void* p) {

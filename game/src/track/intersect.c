@@ -192,11 +192,11 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
             {
                 Sfx_PlayFromObject(0, SFXTRIG_foot_ice_scuff);
             }
-            Sfx_PlayFromObject(0, sfxTab[sfx]);
+            Sfx_PlayFromObject(0, fhReadBE16(&sfxTab[sfx]));
         }
         else
         {
-            Sfx_PlayAtPositionFromObject(obj, vec[0], vec[1], vec[2], sfxTab[sfx]);
+            Sfx_PlayAtPositionFromObject(obj, vec[0], vec[1], vec[2], fhReadBE16(&sfxTab[sfx]));
         }
     }
     if (i == 5)
