@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "global.h"
 #include "main/fileio.h"
 #include "main/frame_timing.h"
@@ -307,6 +309,24 @@ void padUpdate(void)
     if (PADRead(readPad) == PAD_ERR_TRANSFER)
     {
         return;
+    }
+    {
+        static int fhAutoInit, fhAutoOn, fhAutoTick;
+        if (fhAutoInit == 0)
+        {
+            const char* e = getenv("FOXHOLLOW_AUTO_A");
+            fhAutoOn = (e != NULL && e[0] != '0');
+            fhAutoInit = 1;
+            if (fhAutoOn)
+                fprintf(stderr, "[FH] AUTO_A enabled\n");
+        }
+        if (fhAutoOn)
+        {
+            fhAutoTick++;
+            readPad[0].err = PAD_ERR_NONE;
+            if ((fhAutoTick % 45) < 6)
+                readPad[0].button |= PAD_BUTTON_A;
+        }
     }
     PADClamp(readPad);
     if (rumbleEnabled != 0)

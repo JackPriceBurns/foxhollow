@@ -23,7 +23,7 @@ static u32 sDmaRunning;
 static u32 sStreamSampleCount;
 static u32 sStreamTrigger;
 #if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
-static u32 sMuted;
+static u32 sMuted = 1;
 static u32 sMuteKeyWasDown;
 #endif
 static SDL_AudioStream* sOutputStream;
