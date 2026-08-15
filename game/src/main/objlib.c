@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #define OBJHITS_SETTERS_S16
 #define OBJHITS_STATE_INDEX_S8
 #include <string.h>
@@ -312,6 +314,51 @@ GameObject** objGetAllOfType(int group, int* countOut) {
     }
     *countOut = gObjectTypeIndices.offsets[group + 1] - gObjectTypeIndices.offsets[group];
     return (GameObject**)(gObjectTypeList + gObjectTypeIndices.offsets[group]);
+}
+
+void fhDumpNearbyObjects(void) {
+    static int init, enabled, tick;
+    int g, i, count;
+    GameObject* player;
+    if (init == 0) {
+        const char* e = getenv("FOXHOLLOW_DUMP_NEAR");
+        enabled = (e != NULL && e[0] != '0');
+        init = 1;
+    }
+    if (enabled == 0) {
+        return;
+    }
+    if ((tick++ % 120) != 0) {
+        return;
+    }
+    player = Obj_GetPlayerObject();
+    if (player == NULL) {
+        return;
+    }
+    fprintf(stderr, "[NEAR] === player (%.0f,%.0f,%.0f) ===\n",
+            player->anim.worldPosX, player->anim.worldPosY, player->anim.worldPosZ);
+    for (g = 0; g < OBJTYPE_COUNT; g++) {
+        GameObject** objs = objGetAllOfType(g, &count);
+        if (objs == NULL) {
+            continue;
+        }
+        for (i = 0; i < count; i++) {
+            GameObject* o = objs[i];
+            f32 dx, dy, dz, d2;
+            if (o == NULL || o == player) {
+                continue;
+            }
+            dx = o->anim.worldPosX - player->anim.worldPosX;
+            dy = o->anim.worldPosY - player->anim.worldPosY;
+            dz = o->anim.worldPosZ - player->anim.worldPosZ;
+            d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 < 1200.0f * 1200.0f) {
+                fprintf(stderr, "[NEAR] grp=%d romDefNo=0x%03x d=%.0f pos=(%.0f,%.0f,%.0f)\n",
+                        g, (unsigned)o->anim.romDefNo, sqrtf(d2),
+                        o->anim.worldPosX, o->anim.worldPosY, o->anim.worldPosZ);
+            }
+        }
+    }
 }
 
 void objFreeObjectType(GameObject* obj, int group) {

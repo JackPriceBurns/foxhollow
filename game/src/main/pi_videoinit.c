@@ -374,6 +374,7 @@ void waitNextFrame(void)
     {
         timeDelta = 6.0f;
     }
+    { extern void fhDumpNearbyObjects(void); fhDumpNearbyObjects(); }
     dt = timeDelta;
     if (dt > 0.1f)
     {
