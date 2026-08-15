@@ -4,7 +4,11 @@
 #include "main/fileio.h"
 #include "main/frame_timing.h"
 #include "main/gameloop_api.h"
+#include <stdlib.h>
 #include "main/pad.h"
+
+int gFhAutoA;
+int gFhAutoAFrames;
 #include "dolphin/pad.h"
 #include "string.h"
 
@@ -311,21 +315,31 @@ void padUpdate(void)
         return;
     }
     {
-        static int fhAutoInit, fhAutoOn, fhAutoTick;
+        static int fhAutoInit, fhAutoTick;
         if (fhAutoInit == 0)
         {
             const char* e = getenv("FOXHOLLOW_AUTO_A");
-            fhAutoOn = (e != NULL && e[0] != '0');
+            const char* f = getenv("FOXHOLLOW_AUTO_A_FRAMES");
+            gFhAutoA = (e != NULL && e[0] != '0');
+            gFhAutoAFrames = (f != NULL) ? atoi(f) : 0;
             fhAutoInit = 1;
-            if (fhAutoOn)
-                fprintf(stderr, "[FH] AUTO_A enabled\n");
+            if (gFhAutoA)
+                fprintf(stderr, "[FH] AUTO_A enabled (frame cap %d)\n", gFhAutoAFrames);
         }
-        if (fhAutoOn)
+        if (gFhAutoA)
         {
             fhAutoTick++;
-            readPad[0].err = PAD_ERR_NONE;
-            if ((fhAutoTick % 45) < 6)
-                readPad[0].button |= PAD_BUTTON_A;
+            if (gFhAutoAFrames > 0 && fhAutoTick > gFhAutoAFrames)
+            {
+                gFhAutoA = 0;
+                fprintf(stderr, "[FH] AUTO_A stopped after %d frames\n", fhAutoTick);
+            }
+            else
+            {
+                readPad[0].err = PAD_ERR_NONE;
+                if ((fhAutoTick % 45) < 6)
+                    readPad[0].button |= PAD_BUTTON_A;
+            }
         }
     }
     PADClamp(readPad);
