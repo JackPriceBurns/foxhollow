@@ -580,9 +580,9 @@ void AppleOnTree_update(GameObject* obj) {
                     fc = t * fb +
                          (self->bounceVelocity * t + self->positionY);
                     if (self->waterAcceleration > fd) {
-                        placement = appleontree_bounceWaterStep(obj, (AppleOnTreeState*)state, fc);
+                        placement = appleontree_bounceWaterStep(obj, self, fc);
                     } else {
-                        placement = appleontree_bounceGroundStep(obj, (AppleOnTreeState*)state, fc);
+                        placement = appleontree_bounceGroundStep(obj, self, fc);
                     }
                     iteration = iteration + 1;
                     if (!((iteration == 100) || (iteration != 0x66)))

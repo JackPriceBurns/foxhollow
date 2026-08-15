@@ -137,7 +137,14 @@ working and hid this.
 MWERKS had one evaluation order; clang has another. Code the decomp reproduces faithfully can
 still be UB, and then it works on PowerPC and silently produces garbage here. `grep` will not
 find these — **the compiler will**: `-Wunsequenced -Wuninitialized` over
-`build/compile_commands.json` (strip ` -w ` first) currently reports ~52 sites.
+`build/compile_commands.json` (strip ` -w ` first).
+
+That sweep is **done**: all 11 hard sites are fixed (6 `-Wunsequenced`, 5 unconditional
+"is uninitialized when used here"). Only `-Wsometimes-uninitialized` remains (~41), and those are
+a *different* class — no evaluation-order dependence, so they behave identically under MWERKS and
+clang, and the ones spot-checked are false positives where clang cannot prove the control flow.
+Treat a **new** hit in the first two categories as a real bug; treat the third as noise until
+proven otherwise.
 
 Real, and it cost a long hunt: `atanf` (`game/src/main/acosf.c`) had
 ```c
@@ -159,6 +166,29 @@ crosses it and blanks the map until the FOV animates back down. Observed exactly
 Fix is `reduced = 1.0 / absoluteValue;` on its own line. When a value is NaN rather than merely
 wrong, suspect UB or a math shim before suspecting the data — this is the one bug class where the
 "file-backed data is misread" instinct actively misleads.
+
+Four siblings of the same class, all fixed: `626/626.c` and `652_WCBouncyCra` (both
+`iface->method(..., (iface = ...))` — an **uninitialised pointer dereferenced to load a function
+pointer, then called**; this shape SIGBUSes rather than returning garbage), `332/332.c`
+(`(halfInner = r/2) * halfInner`, harmless today only because clang happens to evaluate the
+assignment first), `279_AppleOnTree` (an `int state` local cast to `AppleOnTreeState*` — both
+uninitialised *and* a pointer truncation) and `196_Tricky` ×2 (`i = i - i;` as a decomp idiom for
+`i = 0`; clang treats the operands as `undef`, and `undef - undef` is **not** 0).
+
+**Clang deletes code that follows UB, which hides other bugs.** Fixing the `652` site turned a
+clean link into `Undefined symbols: _WCBLOCK_PLAYER_CELL_MARGIN` — clang had proved the
+uninitialised call unreachable and dropped the rest of the function, so the missing symbol never
+reached the linker. A *new* link error after a UB fix is progress, not regression. That constant
+is `.sdata2:0x803E6D50` in `symbols.txt`; its retail value is `56.0f`, read out of
+`orig/GSAE01/sys/main.dol` by mapping the vaddr through the DOL section table. Decomp headers
+`extern` such constants and get them from the DOL at link time — the port compiles only C, so it
+must define them, and the value must be read from retail, never guessed.
+
+Upstreaming these is mostly **not possible**: the decomp is byte-matching, and for `atanf` twelve
+defined-behaviour spellings were tested and every one breaks the match (identical 95 instructions,
+but `absoluteValue`/`reduced` swap between f30/f29). The same is true of the `626`/`652`/`332`
+sites. Only `squared = (reduced = 1.0 / absoluteValue) * reduced;` both matches and works under
+clang — and that is still UB, just a luckier accident. Expect to carry these as port-local fixes.
 
 Also endian-dependent: a native `u16[]` table whose entries are *reinterpreted* as `int` to
 compose a 32-bit id (`DFSH_SHRINE_TARGET_OBJECT` read pairs at `+0x3C` as `int`; retail composes
@@ -298,6 +328,16 @@ frame can plausibly produce before theorising about it.
 - Transient objects vanish between attaches — freeze first, or retry-loop the attach.
 - Aurora is largely fine. Its `RGB5A3`/`CMPR`/`I8` decoders, indirect-TEV, blend and EFB-copy
   paths were all verified correct during hunts that turned out to be data bugs.
+- **You cannot put MEM1 in the low 4 GB on Apple Silicon**, so the pointer-truncation class cannot
+  be neutralised systemically. Tested and settled: macOS/arm64 SIGKILLs any binary whose
+  `__PAGEZERO` is smaller than 4 GB (`-Wl,-pagezero_size,0x4000` → exit 137, signing irrelevant),
+  and `mmap(MAP_FIXED)` low fails with `ENOMEM` while the default 4 GB `__PAGEZERO` stands. Were it
+  possible, every 32-bit truncation would round-trip exactly and the whole class would go away;
+  it isn't, so those sites must be triaged individually. Current counts from the compiler
+  (`-Wpointer-to-int-cast -Wint-to-pointer-cast -Wint-conversion`): **481** pointer→smaller-int and
+  **676** int→pointer. Most are benign (ids, indices, values that were never pointers); the fatal
+  ones are round trips through 32-bit storage. There are **zero** implicit int/pointer conversions —
+  the decomp always casts explicitly — so the compiler sees every one of them.
 
 ## References
 - `extern/aurora` — the compatibility layer (see docs/ and examples/simple.c)

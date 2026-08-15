@@ -230,7 +230,8 @@ int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* a
     dx = player->anim.localPosX - placement->base.posX;
     dz = player->anim.localPosZ - placement->base.posZ;
     distanceSquared = dx * dx + dz * dz;
-    if (distanceSquared < (f32)((halfInner = innerRadius / 2) * halfInner)) {
+    halfInner = innerRadius / 2;
+    if (distanceSquared < (f32)(halfInner * halfInner)) {
         inRange = 1;
     } else {
         inRange = 0;

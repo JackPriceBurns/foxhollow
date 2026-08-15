@@ -359,7 +359,7 @@ GameObject* trickyFindNearestUsableBaddie(GameObject* origin, f32 maxRadius, int
     closest = 0;
     tmpList = objGetAllOfType(3, &count);
     bestDistSq = bestDistSq * bestDistSq;
-    i = i - i;
+    i = 0;
     objs = tmpList;
 
     for (; i < count; objs++, i++) {
@@ -1124,7 +1124,7 @@ void* trickyFindNearestLinkedRouteEntry(TrickyState* context, u8* routeDef, int 
     s16 requiredBit;
     s16 forbiddenBit;
 
-    i = i - i;
+    i = 0;
     count = 0;
     mask = 1;
     while (i < 4) {

@@ -15,6 +15,8 @@
 #define WBOUNCY_RESET_COOLDOWN     0x28
 #define WBOUNCY_MAX_BOUNCES        0xa
 
+f32 WCBLOCK_PLAYER_CELL_MARGIN = 56.0f;
+
 int WCBouncyCra_getExtraSize(void)
 {
     return WBOUNCY_EXTRA_SIZE;
@@ -130,17 +132,16 @@ int wcblock_isPlayerAwayFromStoredCell(GameObject* obj, WCBlockState* state, Gam
     WCBlockGridInterface* iface;
 
     objAnim = &obj->anim;
+    iface = WCBLOCK_GRID_IFACE(state);
     if (objAnim->bankIndex == WCBLOCK_VARIANT_A)
     {
-        iface->getCellXYA(state->tileIndex, &state->cellX, &state->cellZ, (iface = WCBLOCK_GRID_IFACE(state)));
-        iface->getCellWorldA((int)obj, state->cellX, state->cellZ, &cellX, &cellZ,
-                             (iface = WCBLOCK_GRID_IFACE(state)));
+        iface->getCellXYA(state->tileIndex, &state->cellX, &state->cellZ, iface);
+        iface->getCellWorldA((int)obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
     }
     else
     {
-        iface->getCellXYB(state->tileIndex, &state->cellX, &state->cellZ, (iface = WCBLOCK_GRID_IFACE(state)));
-        iface->getCellWorldB((int)obj, state->cellX, state->cellZ, &cellX, &cellZ,
-                             (iface = WCBLOCK_GRID_IFACE(state)));
+        iface->getCellXYB(state->tileIndex, &state->cellX, &state->cellZ, iface);
+        iface->getCellWorldB((int)obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
     }
 
     min = cellX - WCBLOCK_PLAYER_CELL_MARGIN;
