@@ -330,6 +330,35 @@ the floating-point value immediately before packed conversion and compare the po
 retail instruction's range behavior. A useful regression must fail under the old shim and pass under
 the fix; bounded final poses alone can miss a one-instruction packing mismatch.
 
+**Diff against retail live with the Dolphin GDB stub.** This is the strongest tool available and
+ends arguments that source reading cannot. `~/Code/dolphin-debugger-mcp` talks to Dolphin's GDB
+stub over RSP (pure stdlib Python; `rsp.py` has `add_breakpoint`/`read_gprs`/`read_memory`/
+`read_u32`/`resume`/`wait_stop`). Enable it with `GDBPort = 2159` under **`[General]`** in
+`~/Library/Application Support/Dolphin/Config/Dolphin.ini` — edit only while Dolphin is fully
+quit, it rewrites the file on exit. Because the decomp byte-matches, `config/GSAE01/symbols.txt`
+addresses are live RAM addresses, so you can breakpoint any DOL function by name and read the
+same globals the port has.
+
+Worked example that settled a long hunt: the flame's reflection overlay. Breaking on
+`drawGlow` gave `r3` = the slot pool base, and walking `0x50` pools x `0x19` slots x `0xA0`
+found the effect's slots in retail. Every field matched the port exactly — `renderFlags`
+`0x04088000`, `initialAlpha` 127, `lifetimeFrameLimit` 5, `behaviorFlags` `0x80201`,
+`scaleCurrent` 629. **Identical game state proves the divergence is in Aurora's GX emulation,
+not game code**, which retires every game-side theory at once. Do this *early* on a rendering
+bug rather than after hours of source reading.
+
+Caveats, both of which cost time: the stub accepts **one connection per boot** (a stray
+`nc -z` probe burns it — do all work in a single script), and **Dolphin does not write EFB
+copies back to RAM** by default (EFB Copies: Texture Only), so a copy destination reads as all
+zeros even though the copy happened. Do not conclude "retail's texture is black" from that.
+
+**Screenshot the two builds and look at them yourself.** `screencapture -x -o -R x,y,w,h out.png`
+grabs a region in logical points, `sips -Z N` scales it, and the Read tool displays it. Bring a
+window forward with `osascript -e 'tell application "System Events" to set frontmost of (first
+process whose unix id is PID) to true'`. This removes the human from the reproduce-measure loop
+for visual bugs and lets you compare port vs Dolphin frame to frame instead of trading
+descriptions.
+
 **Extract frames from screen recordings** with AVFoundation via `swiftc`, then crop/zoom, to
 inspect an artifact frame by frame instead of relying on description.
 
