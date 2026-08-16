@@ -324,7 +324,8 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
                 v1 = randomGetRange(0x80, 0xff);
                 v2 = v1 - randomGetRange(0, 0x40);
                 v3 = v1 - randomGetRange(0x40, 0x80);
-                *(u16*)(dst + sizeof(Texture)) = ((v1 & 0xf8) >> 3) | ((v2 & 0xf8) << 8 | (v3 & 0xfc) << 3);
+                *(u16*)(dst + sizeof(Texture)) =
+                    fhSwap16(((v1 & 0xf8) >> 3) | ((v2 & 0xf8) << 8 | (v3 & 0xfc) << 3));
             }
         }
         DCFlushRange(sWarpNoiseTexture + sizeof(Texture), ((Texture*)sWarpNoiseTexture)->dataSize);

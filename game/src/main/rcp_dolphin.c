@@ -30,6 +30,7 @@
 #include "main/gx_scissor_api.h"
 #include "dolphin/gx/GXCull.h"
 #include "track/intersect_depth_state_api.h"
+#include "track/intersect_hud_color_api.h"
 #include "main/shader_init_api.h"
 
 u8 gRcpDistortSlotIndex;
@@ -326,6 +327,13 @@ void Rcp_UpdateDistortionTextures(void)
     Camera_ApplyFullViewport();
     gRcpDistortGroup = 0;
 }
+
+void Rcp_DebugDrawDistortionTexture(void)
+{
+    u32 color = 0xffffffff;
+    hudDrawColored((Texture*)gRcpDistortSlots[2].texture, 8, 8, &color, 0x800, 0);
+}
+
 void ShaderDef_free(void** def)
 {
     Texture* s;

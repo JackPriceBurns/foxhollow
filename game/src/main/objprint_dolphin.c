@@ -939,7 +939,7 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
     u8 ch;
     u16 f;
     u8 b;
-    ModelLightStruct* larr[6];
+    ModelLightStruct* larr[8];
     s32 count;
     GXColor c;
 
