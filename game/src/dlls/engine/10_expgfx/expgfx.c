@@ -475,10 +475,10 @@ void objfx_spawnDirectionalBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode,
                                  int flags)
 {
     ObjFxParticleParams params;
-    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)((char*)&gObjFxCrystalSparkleTbl + 0xd0);
-    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0xe4);
-    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0xf4);
-    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0x104);
+    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)&gObjFxHitPulseTbl.records[2][0];
+    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[2][10];
+    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[2][18];
+    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[2][26];
     u16 rvec[3];
     int i;
     f32 radialT;
@@ -558,10 +558,10 @@ void objfx_spawnDirectionalBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode,
 void objfx_spawnArcedBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, int chance, f32 angBase, f32 lo, f32 hi,
                            void* origin, int flags) {
     ObjFxParticleParams params;
-    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)((char*)&gObjFxCrystalSparkleTbl + 0x8c);
-    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0xa0);
-    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0xb0);
-    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0xc0);
+    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)&gObjFxHitPulseTbl.records[1][0];
+    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[1][10];
+    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[1][18];
+    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[1][26];
     u16 rvec[3];
     int i;
     f32 range;
@@ -637,10 +637,10 @@ void objfx_spawnBoxBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chan
                          void* origin, int flags)
 {
     ObjFxParticleParams params;
-    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)((char*)&gObjFxCrystalSparkleTbl + 0x48);
-    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0x5c);
-    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0x6c);
-    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)((char*)&gObjFxCrystalSparkleTbl + 0x7c);
+    ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)&gObjFxHitPulseTbl.records[0][0];
+    ObjFxU16Table8 spawnIds = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[0][10];
+    ObjFxU16Table8 paramC = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[0][18];
+    ObjFxU16Table8 paramD = *(ObjFxU16Table8*)&gObjFxHitPulseTbl.records[0][26];
     int i;
 
     params.scale = scale;
@@ -4495,9 +4495,9 @@ int expgfx_addremove(ExpgfxSpawnConfig* config, int preferredPoolIndex, int slot
             gExpgfxSlotType1Average = gExpgfxSlotType1Sum / gExpgfxSlotType1Count;
         }
 
-        slot->colorByte0 = config->colorByte0.value;
-        slot->colorByte1 = config->colorByte1.value;
-        slot->colorByte2 = config->colorByte2.value;
+        slot->colorByte0 = config->colorByte0.word >> 8;
+        slot->colorByte1 = config->colorByte1.word >> 8;
+        slot->colorByte2 = config->colorByte2.word >> 8;
 
         if ((config->renderFlags & EXPGFX_RENDER_OVERRIDE_COLORS) != 0)
         {

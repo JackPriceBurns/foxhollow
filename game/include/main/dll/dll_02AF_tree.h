@@ -39,7 +39,7 @@ typedef struct TreeAmbientEffectSetup
 
 typedef struct TreeState
 {
-    int ambientEffectHandles[TREE_AMBIENT_EFFECT_COUNT];
+    GameObject* ambientEffectHandles[TREE_AMBIENT_EFFECT_COUNT];
     f32 ambientEffectPos[TREE_AMBIENT_EFFECT_COUNT][3];
     f32 ambientSpawnTimers[TREE_AMBIENT_EFFECT_COUNT];
     f32 playerBurstCooldown;

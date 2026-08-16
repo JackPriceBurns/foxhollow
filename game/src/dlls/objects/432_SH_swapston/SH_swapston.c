@@ -227,11 +227,11 @@ u32 warpstone_advanceAnimEvents(GameObject* lantern, f32 moveStepScale) {
 int lbl_803DDBF4;
 
 u32 warpstoneProbePlayerAnimState(void) {
-    u32 playerObj;
+    GameObject* playerObj;
 
     (*gMapEventInterface)->getCurChar();
-    playerObj = (u32)Obj_GetPlayerObject();
-    objGetAnimStateFlags((GameObject*)playerObj, 0xff);
+    playerObj = Obj_GetPlayerObject();
+    objGetAnimStateFlags(playerObj, 0xff);
     return 2;
 }
 

@@ -181,10 +181,10 @@ GameObject* gECSHShrineActiveObject;
 int lbl_803DDBC0;
 extern u32 lbl_803E8470;
 
-ECSHShrineCupPosition gECSHShrineCupPositions[ECSH_SHRINE_CUP_COUNT] = {0};
-
-s16 gECSHShrineCupSlotMap[ECSH_SHRINE_CUP_COUNT * 2] = {
-    0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5,
+ECSHShrinePuzzleScratch gECSHShrinePuzzleScratch = {
+    {0},
+    {0, 1, 2, 3, 4, 5},
+    {0, 1, 2, 3, 4, 5},
 };
 
 ObjectDescriptor15 gECSHShrineObjDescriptor = {
@@ -343,9 +343,9 @@ void ecshShrine_setCupPosition(u8 cupIndex, f32 x, f32 z) {
     if (gECSHShrineActiveObject == NULL) {
         return;
     }
-    slot = gECSHShrineCupSlotMap[cupIndex];
-    gECSHShrineCupPositions[slot].x = x;
-    gECSHShrineCupPositions[slot].z = z;
+    slot = gECSHShrinePuzzleScratch.cupSlotMap[cupIndex];
+    gECSHShrinePuzzleScratch.cupPositions[slot * 2] = x;
+    gECSHShrinePuzzleScratch.cupPositions[slot * 2 + 1] = z;
 }
 
 void ecshShrine_getPhaseAndSpiritCup(int* outAnimState, u8* outSpiritCup) {
@@ -366,10 +366,10 @@ void ecshShrine_getCupPosition(u8 cupIndex, f32* outX, f32* outZ) {
     if (gECSHShrineActiveObject == NULL) {
         return;
     }
-    slot = gECSHShrineCupSlotMap[cupIndex];
-    *outX = gECSHShrineCupPositions[slot].x;
-    slot = gECSHShrineCupSlotMap[cupIndex];
-    *outZ = gECSHShrineCupPositions[slot].z;
+    slot = gECSHShrinePuzzleScratch.cupSlotMap[cupIndex];
+    *outX = gECSHShrinePuzzleScratch.cupPositions[slot * 2];
+    slot = gECSHShrinePuzzleScratch.cupSlotMap[cupIndex];
+    *outZ = gECSHShrinePuzzleScratch.cupPositions[slot * 2 + 1];
 }
 
 void ecshShrine_func0A(s16* out) {
@@ -463,7 +463,7 @@ void ecshShrine_update(GameObject* obj) {
     f32 zero;
     f32 timerValue;
 
-    puzzle = (ECSHShrinePuzzleScratch*)gECSHShrineCupPositions;
+    puzzle = &gECSHShrinePuzzleScratch;
     state = obj->extra;
     player = Obj_GetPlayerObject();
     *(ECSHShrineWordPair*)&cupPositionSwap[0] = *(ECSHShrineWordPair*)(void*)&lbl_803E8470;
@@ -539,8 +539,7 @@ void ecshShrine_update(GameObject* obj) {
                 puzzle->cupSlotMap[3] = puzzle->nextCupSlotMap[3];
                 puzzle->cupSlotMap[4] = puzzle->nextCupSlotMap[4];
                 puzzle->cupSlotMap[5] = puzzle->nextCupSlotMap[5];
-                /* Reads the first halfword of the adjacent descriptor at 0x48. */
-                puzzle->nextCupSlotMap[0] = *(s16*)((u8*)puzzle + sizeof(ECSHShrinePuzzleScratch));
+                puzzle->nextCupSlotMap[0] = 0;
             }
             break;
         case ECSH_SHRINE_PHASE_INTRO_TRANSITION:

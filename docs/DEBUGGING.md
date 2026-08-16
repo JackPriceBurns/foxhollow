@@ -116,6 +116,32 @@ If retail collision or movement is known to be solid, investigate the data, obje
 layout before modifying collision response or animation constants. A gameplay workaround often
 hides the corrupted input and creates a second bug.
 
+### First-use geometry gaps and Aurora's pipeline caches
+
+If map geometry disappears briefly the first time an area or material is rendered, then remains
+correct even after restarting Foxhollow, check GPU pipeline compilation before investigating disc
+streaming. Aurora compiles newly encountered GX pipeline configurations asynchronously. A draw is
+skipped while its pipeline is unavailable, then succeeds once compilation finishes.
+
+Aurora persists two caches under the platform application-support directory:
+
+- `pipeline_cache.db` is the transferable cache. It contains pipeline hashes, versions, first-use
+  ordering, and GX rendering-state configurations such as vertex formats, TEV stages, fog,
+  lighting, alpha, blend, depth, culling, and MSAA state.
+- `dawn_cache.db` is Dawn's device and driver cache. It is opaque and may depend on the GPU, OS,
+  and driver, so it should not be treated as a distributable cache.
+
+The transferable pipeline cache contains no textures, palettes, models, vertices, maps,
+animations, audio, scripts, ROM bytes, or file paths. GameCube software supplies fixed-function GX
+state rather than programmable shaders; Aurora generates its own host shaders from that state.
+
+Aurora can merge a bundled `initial_pipeline_cache.db` into each user's persistent cache. A
+representative release seed can be assembled from thoroughly exercised playthrough caches, but it
+only covers configurations that were actually encountered. To prevent first-run draw gaps on a
+new machine, pair the seed with a prewarm stage that pumps the window and waits for
+`aurora_get_stats()->queuedPipelines` to reach zero. Alternatively, make first-use GX pipeline
+creation blocking; that trades missing geometry for a possible compilation hitch.
+
 ## Shared endian and native-width helpers
 
 The game target force-includes `port/include/foxhollow_compat.h`, where the global endian helpers
@@ -192,7 +218,7 @@ fix simpler.
 ## Development shortcuts
 
 Development-only behaviour is controlled by the CMake option `FOXHOLLOW_DEBUG_SHORTCUTS`. It is
-currently enabled by default and defines the same macro for the game and port-shim targets.
+currently enabled by default for the port-shim target.
 
 Configure a normal debugging build with shortcuts enabled:
 
@@ -201,7 +227,7 @@ cmake -S . -B build -G Ninja -DFOXHOLLOW_DEBUG_SHORTCUTS=ON
 cmake --build build --target foxhollow
 ```
 
-Configure a progression-faithful build with every shortcut disabled:
+Configure a build with the audio toggle disabled:
 
 ```sh
 cmake -S . -B build -G Ninja -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF
@@ -211,27 +237,6 @@ cmake --build build --target foxhollow
 CMake caches this value in the build directory, so check the configure command rather than
 assuming the default is active.
 
-### Galleon sequence fast-forward
-
-With shortcuts enabled, the Ship Battle test loop automatically skips three long phases:
-
-1. `SB_Galleon_SeqFn` ends the opening intro sequence after setting the intro game bit expected by
-   the normal state machine.
-2. `SB_CloudRunner_update` calls `SB_Galleon_skipBattle` once it has resolved its linked Galleon.
-   The helper advances the existing Galleon phase/stage fields to the normal battle-exit state and
-   grants the Galleon gold-key and C-menu game bits, removing the need to collect the key manually.
-3. `SB_Galleon_SeqFn` also ends the post-battle flight/landing sequence when its camera state
-   reaches that transition.
-
-The shortcut is automatic; there is no key to press. Its implementation is confined to
-`game/src/dlls/objects/488_SB_Galleon/SB_Galleon.c`,
-`game/src/dlls/objects/601_SB_Cloudrun/SB_Cloudrun.c`, and the corresponding Galleon header.
-
-The skip advances authoritative state and game bits rather than teleporting or deleting actors.
-That keeps the destination area useful for rapid testing, but it is still not proof that the
-skipped sequences work. Reproduce sequence, transition, asset-bank, audio, and progression bugs
-with `FOXHOLLOW_DEBUG_SHORTCUTS=OFF` before considering them fixed.
-
 ### Audio mute toggle
 
 The same option enables the `M` key audio toggle in `port/src/ai_shim.c`. It changes the gain on
@@ -239,19 +244,6 @@ both the MusyX DMA stream and streamed audio, so movie/dialogue audio and normal
 muted together. The terminal logs `[foxhollow] audio muted` or `unmuted` on each edge-triggered
 toggle.
 
-### Adding another shortcut
-
-Keep shortcuts separate from port correctness fixes:
-
-- Guard them with `FOXHOLLOW_DEBUG_SHORTCUTS`, not `TARGET_PC`.
-- Make them idempotent so an update loop cannot repeatedly restart a transition.
-- Advance the existing state machine, latches, and game bits instead of inventing parallel state.
-- Use the game's normal exit/cleanup path wherever possible.
-- Document whether the shortcut is automatic or input-triggered.
-- Validate the affected path once with shortcuts disabled.
-
-Normal port fixes should remain unconditional. Foxhollow is its own port rather than a second
-platform branch inside every game function.
 
 ## Crash investigation checklist
 

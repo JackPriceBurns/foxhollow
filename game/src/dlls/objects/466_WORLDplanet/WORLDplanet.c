@@ -443,7 +443,6 @@ void worldplanet_update(GameObject* obj) {
                 pstate->effectState = 1;
             }
         }
-        objId = (int)ObjList_FindObjectById(tbl->orbitObjectIds[gWorldPlanetSelectionToIndex[state->selectedPlanet]]);
         if (getLoadedFileFlags(WORLDPLANET_SAVE_FILE_SLOT) == 0 && gWorldPlanetInputLockTimer == 0) {
             switch (state->selectionLocked) {
             case 0:
@@ -461,7 +460,10 @@ void worldplanet_update(GameObject* obj) {
                     if (gWorldPlanetSelectConfirmTimer <= 1) {
                         gWorldPlanetSelectConfirmTimer = 0;
                         Sfx_PlayFromObject(0, SFXTRIG_wmap_swoosh);
-                        (*gCameraInterface)->setFocus((void*)objId, WORLDPLANET_CAMERA_FOCUS_FRAMES);
+                        (*gCameraInterface)
+                            ->setFocus(ObjList_FindObjectById(
+                                           tbl->orbitObjectIds[gWorldPlanetSelectionToIndex[state->selectedPlanet]]),
+                                       WORLDPLANET_CAMERA_FOCUS_FRAMES);
                         state->selectionLocked = 1;
                         (*gCameraInterface)
                             ->releaseAction(&state->selectionLocked, CAMERA_MODE_WORLD_MAP_ACTION_SET_MODE);

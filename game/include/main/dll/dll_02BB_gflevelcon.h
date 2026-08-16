@@ -23,14 +23,6 @@ typedef struct GfProjectileSetup
  * the sequence handler accesses the scroll handles as pointers and the
  * final word as the prompt countdown.
  */
-typedef struct GfLevelconFindLinkedObjectsState
-{
-    s32 light;
-    s32 scrollA;
-    s32 scrollB;
-    u8 padC[0x10 - 0xC];
-} GfLevelconFindLinkedObjectsState;
-
 typedef struct GfLevelconHandleScriptEventsState
 {
     void* light;
@@ -38,6 +30,8 @@ typedef struct GfLevelconHandleScriptEventsState
     void* scrollB;
     f32 promptTimer;
 } GfLevelconHandleScriptEventsState;
+
+typedef GfLevelconHandleScriptEventsState GfLevelconFindLinkedObjectsState;
 
 typedef struct GfHitState
 {

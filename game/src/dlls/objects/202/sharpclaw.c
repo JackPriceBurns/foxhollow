@@ -177,15 +177,6 @@ static inline u32 sharpClaw_readPackedU32(const void* address)
     return fhReadBE32(address);
 }
 
-typedef struct
-{
-    u8 pad00[0x14];
-    u8* hitEntries;
-    u8 pad18[4];
-    u8* sequenceEntries;
-    u8 pad20[8];
-} GroundBaddieSequenceTable;
-
 /* Routines live in sibling baddie/seq TUs (fn_8014*, getAngle, math*,
    player*, hud, ObjModelChain). DAT_/lbl_/PTR_ are shared .data/.sdata
    tables and FP constants. */
@@ -475,7 +466,6 @@ u32 gGroundBaddieModelChainIds[4] = {6, 7, 8, 9};
 u32 wispBaddieProcessAnimEvent(GameObject* obj, u8* state, u32 allowNewEvent)
 {
     u8* base = gBaddieMoveProgressTable;
-    u8* sequenceBase;
     WispEventRow* eventRows;
     u8 eventIndex;
     int ei;
@@ -490,8 +480,7 @@ u32 wispBaddieProcessAnimEvent(GameObject* obj, u8* state, u32 allowNewEvent)
     u32 sf2;
 
     sequenceIndex = ((EnemyState*)state)->userData2;
-    sequenceBase = base + sequenceIndex * 0x28;
-    eventRows = *(WispEventRow**)(sequenceBase + 0x1444);
+    eventRows = (WispEventRow*)gBaddieFamilyTables[sequenceIndex].tbl8;
     stateFlags = ((EnemyState*)state)->controlFlags;
     if ((stateFlags & 0x4000) != 0)
     {
@@ -1041,9 +1030,9 @@ void sharpClawUpdateApproach(GameObject* obj, void* state)
 {
     u8* table = gBaddieMoveProgressTable;
     u8 idx = ((EnemyState*)state)->userData2;
-    void* animCtrl = *(void**)(table + idx * 0x28 + 0x143c);
-    IdleRow* idleSrc = (IdleRow*)(*(void**)(table + idx * 0x28 + 0x1454));
-    u8* seqRows = *(u8**)(table + idx * 0x28 + 0x1458);
+    void* animCtrl = gBaddieFamilyTables[idx].tbl0;
+    IdleRow* idleSrc = (IdleRow*)gBaddieFamilyTables[idx].tbl18;
+    u8* seqRows = gBaddieFamilyTables[idx].tbl1c;
 
     if (idx == 5 && (((EnemyState*)state)->controlFlags & 0x800000) != 0)
     {
@@ -1162,11 +1151,7 @@ void groundBaddiePickIdleMove(GameObject* obj, u8* state)
     SeqEntry* entry;
     u32 idx;
     u8 wrapIdx;
-    char* base;
-
-    base = (char*)gBaddieFamilyTables;
-    base += ((EnemyState*)state)->userData2 * 40;
-    entry = *(SeqEntry**)(base + 12);
+    entry = (SeqEntry*)gBaddieFamilyTables[((EnemyState*)state)->userData2].tblC;
     if ((f32)((EnemyState*)state)->targetDist > 0.6f * ((EnemyState*)state)->sightRange)
     {
         if ((f32)((EnemyState*)state)->targetDist > 0.8f * ((EnemyState*)state)->sightRange)
@@ -1208,11 +1193,7 @@ void groundBaddiePickNextMove(GameObject* obj, u8* state)
     SeqEntry* entry;
     u32 idx;
     s16 d;
-    char* base;
-
-    base = (char*)gBaddieFamilyTables;
-    base += ((EnemyState*)state)->userData2 * 40;
-    entry = *(SeqEntry**)(base + 12);
+    entry = (SeqEntry*)gBaddieFamilyTables[((EnemyState*)state)->userData2].tblC;
     if (enemy_findNearbyEnemies(obj, 100.0f, 1, 16, gGroundBaddieTargetSearchResult) >= 1)
     {
         if (gGroundBaddieTargetSearchResult[0].dist <= 40 && ((EnemyState*)state)->turnOctant != 3 &&
@@ -1280,12 +1261,9 @@ void sharpClawUpdateAttack(GameObject* obj, u8* state)
     u8 tableIdx;
     f32 tv;
     f32 fz;
-    GroundBaddieSequenceTable* table;
-
-    table = (GroundBaddieSequenceTable*)gBaddieFamilyTables;
     tableIdx = ((EnemyState*)state)->userData2;
-    p20 = table[tableIdx].hitEntries;
-    p28 = table[tableIdx].sequenceEntries;
+    p20 = gBaddieFamilyTables[tableIdx].tbl14;
+    p28 = gBaddieFamilyTables[tableIdx].tbl1c;
     if (tableIdx == 5 && (((EnemyState*)state)->controlFlags & 0x800000) != 0)
     {
         mainSetBits(GAMEBIT_BaddieRelated1C8, 1);

@@ -1,78 +1,6 @@
 #include <dolphin/types.h>
 #include "foxhollow_compat.h"
 #include <string.h>
-#include <stdio.h>
-
-extern uintptr_t gResourceFileBuffers[];
-extern u32 gResourceFileSizes[];
-extern char* sResourceFileNameTable[];
-
-typedef struct {
-  void* buf;
-  u32 fingerprint;
-} TabSwapRecord;
-
-static TabSwapRecord sSwappedTabs[96];
-static int sSwappedTabCount;
-
-static u32 fingerprintOf(void* p, u32 words) {
-  const u32* w = (const u32*)p;
-  u32 h = 2166136261u ^ words;
-  u32 step = words > 512 ? words / 512 : 1;
-  u32 i;
-  for (i = 0; i < words; i += step) {
-    h ^= w[i];
-    h *= 16777619u;
-  }
-  if (words) {
-    h ^= w[words - 1];
-    h *= 16777619u;
-  }
-  return h ? h : 1u;
-}
-
-static TabSwapRecord* findRecord(void* p) {
-  int i;
-  for (i = 0; i < sSwappedTabCount; i++) {
-    if (sSwappedTabs[i].buf == p) {
-      return &sSwappedTabs[i];
-    }
-  }
-  return 0;
-}
-
-void fhSwapTabTableInPlace(void* table) {
-  u32* q = (u32*)table;
-  if (!q) {
-    return;
-  }
-  if ((q[0] >> 24) != 0 || q[0] == 0xffffffff) {
-    return;
-  }
-  while (*q != 0xffffffff) {
-    *q = fhSwap32(*q);
-    q++;
-  }
-}
-
-void fhSwapTabBufferOnce(void* buf, unsigned int words) {
-  TabSwapRecord* rec;
-  if (!buf || !words) {
-    return;
-  }
-  rec = findRecord(buf);
-  if (rec && rec->fingerprint == fingerprintOf(buf, words)) {
-    return;
-  }
-  fhSwapU32Array(buf, words);
-  if (!rec && sSwappedTabCount < 96) {
-    rec = &sSwappedTabs[sSwappedTabCount++];
-    rec->buf = buf;
-  }
-  if (rec) {
-    rec->fingerprint = fingerprintOf(buf, words);
-  }
-}
 
 int fhTabIs16Bit(const char* name) {
   int len = name ? (int)strlen(name) : 0;
@@ -128,39 +56,16 @@ void fhSwapRomListSection(void* buf, unsigned int size) {
   }
 }
 
-void fhSwapTab16BufferOnce(void* buf, unsigned int halves) {
-  TabSwapRecord* rec;
-  if (!buf || !halves) {
+void fhSwapLoadedTabFile(void* buf, unsigned int size, const char* name) {
+  int len = name ? (int)strlen(name) : 0;
+  if (!buf || len <= 4 ||
+      (strcmp(name + len - 4, ".tab") != 0 && strcmp(name + len - 4, ".TAB") != 0) ||
+      strncmp((char*)buf, "DIR", 3) == 0 || strncmp((char*)buf, "ZLB", 3) == 0) {
     return;
   }
-  rec = findRecord(buf);
-  if (rec && rec->fingerprint == fingerprintOf(buf, halves / 2)) {
-    return;
-  }
-  fhSwapU16Array(buf, halves);
-  if (!rec && sSwappedTabCount < 96) {
-    rec = &sSwappedTabs[sSwappedTabCount++];
-    rec->buf = buf;
-  }
-  if (rec) {
-    rec->fingerprint = fingerprintOf(buf, halves / 2);
-  }
-}
-
-void fhSwapResidentTabs(void) {
-  int i;
-  for (i = 0; i < 0x58; i++) {
-    char* name = sResourceFileNameTable[i];
-    void* buf = (void*)gResourceFileBuffers[i];
-    int len = name ? (int)strlen(name) : 0;
-    if (buf && len > 4 &&
-        (strcmp(name + len - 4, ".tab") == 0 || strcmp(name + len - 4, ".TAB") == 0) &&
-        strncmp((char*)buf, "DIR", 3) != 0 && strncmp((char*)buf, "ZLB", 3) != 0) {
-      if (fhTabIs16Bit(name)) {
-        fhSwapTab16BufferOnce(buf, gResourceFileSizes[i] / 2);
-      } else {
-        fhSwapTabBufferOnce(buf, gResourceFileSizes[i] / 4);
-      }
-    }
+  if (fhTabIs16Bit(name)) {
+    fhSwapU16Array(buf, size / 2);
+  } else {
+    fhSwapU32Array(buf, size / 4);
   }
 }

@@ -5,6 +5,7 @@
 #include "types.h"
 #include "global.h"
 #include "main/dll/duster_api.h"
+#include "main/dll/curves_collision_state.h"
 #include "main/objprint_character_api.h"
 #include "main/objseq.h"
 
@@ -19,19 +20,27 @@ struct ObjModelChain;
  */
 typedef struct EnemyState {
     void* pathWalker;
-    u32 flags; /* head word of the embedded gPathControlInterface record at +4 */
-    u8 unk8[0x19C - 0x8 + 16];
-    s16 spawnRotY; /* engine-maintained pitch pair; the family handlers restore anim.rotY/rotZ from it after a move change */
-    s16 spawnRotZ;
-    u8 unk1A0[0x1B8 - 0x1A0];
-    f32 nearestSpecialDeltaY; /* signed dy to the nearest type-0xe special-surface floor hit */
-    u8 unk1BC[0x25F - 0x1BC];
-    s8 physicsActive; /* floor-response pass enables the per-frame ground snap / footstep audio */
-    u8 unk260;
-    u8 bboxTraceFlags; /* bbox trace filter handed to trackGetLineIntersect */
-    u8 unk262[0x264 - 0x262];
-    s8 surfaceFlags; /* ENEMY_SURFACE_FLAG_* */
-    u8 unk265[0x26C - 0x265];
+    union {
+        CurvesCollisionState pathControl;
+        struct {
+            u32 flags;
+            u8 unkToSpawnRotY[offsetof(CurvesCollisionState, tiltPitch) - sizeof(u32)];
+            s16 spawnRotY;
+            s16 spawnRotZ;
+            u8 unkToNearestSpecialDeltaY[offsetof(CurvesCollisionState, resultWaterDepth) -
+                                         (offsetof(CurvesCollisionState, tiltPitch) + 4)];
+            f32 nearestSpecialDeltaY;
+            u8 unkToPhysicsActive[offsetof(CurvesCollisionState, subtype) -
+                                  (offsetof(CurvesCollisionState, resultWaterDepth) + sizeof(f32))];
+            s8 physicsActive;
+            u8 unk260;
+            u8 bboxTraceFlags;
+            u8 unk262[2];
+            s8 surfaceFlags;
+            u8 unkToPathControlEnd[sizeof(CurvesCollisionState) -
+                                   (offsetof(CurvesCollisionState, surfaceFlags) + sizeof(u8))];
+        };
+    };
     CharacterEyeAnimState eyeAnimState;
     u8 unk294[0x29C - 0x294];
     GameObject* trackedObj; /* current engagement target */

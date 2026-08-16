@@ -783,12 +783,6 @@ void SB_CloudRunner_update(GameObject* obj)
             }
         }
     }
-#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
-    if (state->targetObj != NULL)
-    {
-        SB_Galleon_skipBattle(state->targetObj, obj);
-    }
-#endif
     obj->userData1 = 0;
     prevSubState = state->rideSubState;
     state->burstCooldown = (s8)(state->burstCooldown - framesThisStep);

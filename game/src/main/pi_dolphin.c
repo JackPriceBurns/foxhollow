@@ -540,6 +540,19 @@ s16 sMapFileNameAdjacencyTable[] = {
     -1, 20, 30, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, 14, -1, 12, 7,  12, 21, 47, -1, -1, -1, 0,
 };
 
+static void swapLoadedTabRead(DVDFileInfo* fileInfo)
+{
+    int i;
+    for (i = 0; i < 0x58; i++)
+    {
+        if ((void*)gResourceFileBuffers[i] == fileInfo->cb.addr)
+        {
+            fhSwapLoadedTabFile(fileInfo->cb.addr, fileInfo->cb.transferredSize, sResourceFileNameTable[i]);
+            return;
+        }
+    }
+}
+
 
 void initLoadFileReadCb(s32 result, DVDFileInfo* fileInfo)
 {
@@ -550,6 +563,7 @@ void initLoadFileReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         gPendingDvdReadCount--;
@@ -840,6 +854,7 @@ void animCurvTabReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x20000000)
@@ -890,6 +905,7 @@ void voxMapTabReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x2000000)
@@ -915,6 +931,7 @@ void blocksTabReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x20000)
@@ -986,6 +1003,7 @@ void tex1tab2readCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x8000)
@@ -1013,6 +1031,7 @@ void tex1tab1readCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x4000)
@@ -1064,6 +1083,7 @@ void tex0tab2readCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x800)
@@ -1090,6 +1110,7 @@ void tex0tab1readCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x400)
@@ -1181,6 +1202,7 @@ void animTabReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x40)
@@ -1205,6 +1227,7 @@ void modelsTabReadCb(s32 result, DVDFileInfo* fileInfo)
     }
     else
     {
+        swapLoadedTabRead(fileInfo);
         DVDClose(fileInfo);
         AtomicSList_Push(gDvdFileInfoPool, fileInfo);
         if (gAssetLoadInFlightFlags & 0x4)
@@ -1307,7 +1330,6 @@ int getLoadedFileFlags(int slot)
 
 u32 loadTableFiles(void)
 {
-    fhSwapResidentTabs();
     int s = OSDisableInterrupts();
     int flags = loadedFileFlags();
     int loadedFlags = gAssetLoadInFlightFlags;
@@ -1682,7 +1704,6 @@ int mergeTableFiles(void* table, int id, int idx, int count_)
     int* p2;
     int* src1;
 
-    fhSwapResidentTabs();
     src1 = MAPTBLP(id);
     if (src1 == NULL || MAPTBLP(idx) == NULL)
     {
@@ -2187,6 +2208,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                     if (sync != 0)
                     {
                         DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                        swapLoadedTabRead(fi);
                         DVDClose(fi);
                         AtomicSList_Push(gDvdFileInfoPool, fi);
                         if (((gAssetLoadInFlightFlags & 0x20000000) == 0) && ((gAssetLoadInFlightFlags & 0x80000000) == 0))
@@ -2357,6 +2379,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                     if (sync != 0)
                     {
                         DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                        swapLoadedTabRead(fi);
                         DVDClose(fi);
                         AtomicSList_Push(gDvdFileInfoPool, fi);
                         if (((gAssetLoadInFlightFlags & 0x2000000) == 0) && ((gAssetLoadInFlightFlags & 0x8000000) == 0))
@@ -2556,6 +2579,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                 if (sync != 0)
                 {
                     DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                    swapLoadedTabRead(fi);
                     DVDClose(fi);
                     AtomicSList_Push(gDvdFileInfoPool, fi);
                     if (((gAssetLoadInFlightFlags & 0x20000) == 0) && ((gAssetLoadInFlightFlags & 0x80000) == 0))
@@ -2733,6 +2757,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                 if (sync != 0)
                 {
                     DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                    swapLoadedTabRead(fi);
                     DVDClose(fi);
                     AtomicSList_Push(gDvdFileInfoPool, fi);
                     if (((gAssetLoadInFlightFlags & 4) == 0) && ((gAssetLoadInFlightFlags & 8) == 0))
@@ -2907,6 +2932,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                 if (sync != 0)
                 {
                     DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                    swapLoadedTabRead(fi);
                     DVDClose(fi);
                     AtomicSList_Push(gDvdFileInfoPool, fi);
                     if (((gAssetLoadInFlightFlags & 0x40) == 0) && ((gAssetLoadInFlightFlags & 0x80) == 0))
@@ -3081,6 +3107,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                 if (sync != 0)
                 {
                     DVDRead(fi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                    swapLoadedTabRead(fi);
                     DVDClose(fi);
                     AtomicSList_Push(gDvdFileInfoPool, fi);
                     if (((gAssetLoadInFlightFlags & 0x400) == 0) && ((gAssetLoadInFlightFlags & 0x800) == 0))
@@ -3251,6 +3278,7 @@ void* mapLoadDataFile(int mapId, int fileId)
                 if (sync != 0)
                 {
                     DVDRead(tabFi, (void*)MLDF_SP_PTR(x), MLDF_SP_SIZE(x), 0);
+                    swapLoadedTabRead(tabFi);
                     DVDClose(tabFi);
                     AtomicSList_Push(gDvdFileInfoPool, tabFi);
                     if (((gAssetLoadInFlightFlags & 0x4000) == 0) && ((gAssetLoadInFlightFlags & 0x8000) == 0))
@@ -5084,6 +5112,7 @@ void* fileLoad(int id, int wpad0)
     gResourceFileBuffers[id] = (uintptr_t)mmAlloc(gResourceFileSizes[id] + 0x20, 0x7d7d7d7d, 0);
     DCInvalidateRange((void*)gResourceFileBuffers[id], gResourceFileSizes[id]);
     DVDRead(&fileInfo, (void*)gResourceFileBuffers[id], gResourceFileSizes[id], 0);
+    swapLoadedTabRead(&fileInfo);
     DVDClose(&fileInfo);
     return (void*)gResourceFileBuffers[id];
 }
@@ -5180,7 +5209,6 @@ u8 initLoadFiles(void)
     }
     if (gPendingDvdReadCount == 0)
     {
-        fhSwapResidentTabs();
         if (((gAssetLoadInFlightFlags & 0x100) == 0 || (gAssetLoadInFlightFlags & 0x400) == 0) &&
             ((gAssetLoadCompletedFlags & 0x100) == 0 || (gAssetLoadCompletedFlags & 0x400) == 0))
         {

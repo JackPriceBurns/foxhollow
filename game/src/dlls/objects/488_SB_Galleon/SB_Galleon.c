@@ -1064,15 +1064,6 @@ int SB_Galleon_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     state->posZ = obj->anim.localPosZ;
     animUpdate->flags = animUpdate->savedFlags;
     animUpdate->movementState = 0;
-#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
-    if (state->cameraState == SBGALLEON_CAM_APPROACH && mainGetBit(SBGALLEON_GAMEBIT_INTRO) == 0) {
-        mainSetBits(SBGALLEON_GAMEBIT_INTRO, 1);
-        return 2;
-    }
-    if (state->cameraState == SBGALLEON_CAM_START_INTRO) {
-        return 2;
-    }
-#endif
     return 0;
 }
 
@@ -1143,25 +1134,6 @@ int SB_Galleon_onPartDestroyed(GameObject* obj) {
     }
     return 0;
 }
-
-#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
-void SB_Galleon_skipBattle(GameObject* obj, GameObject* cloudRunner) {
-    SBGalleonState* state = (SBGalleonState*)obj->extra;
-    if (state->cameraState != SBGALLEON_CAM_APPROACH || state->stage >= 7) {
-        return;
-    }
-    state->targetObj = cloudRunner;
-    state->refZ = cloudRunner->anim.localPosZ;
-    state->phase = 2;
-    state->cycleKind = 3;
-    state->stage = 7;
-    state->headingLatch = 200;
-    state->fadeTimer = 0;
-    mainSetBits(GAMEBIT_ITEM_WMGoldKey_Got, 1);
-    mainSetBits(GAMEBIT_EnableCMenu, 1);
-}
-
-#endif
 
 int SB_Galleon_getExtraSize(void) {
     return sizeof(SBGalleonState);

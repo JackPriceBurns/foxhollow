@@ -4147,7 +4147,7 @@ void headDisplayDraw(void)
             {
                 gHeadDisplayPanelWidth = HEADPANEL_WIDTH_MAX;
                 gHeadDisplayActive = 0;
-                if (((HeadDisplayEntry*)gHeadDisplayEntryTable)[gHeadDisplayEntryIdx].streamId != -1)
+                if ((s32)fhReadBE32(&((HeadDisplayEntry*)gHeadDisplayEntryTable)[gHeadDisplayEntryIdx].streamId) != -1)
                 {
                     AudioStream_StopCurrent();
                     AudioStream_Nop(0);
@@ -4284,19 +4284,19 @@ void headDisplayOpen(int idx)
             int off = idx * HEADREC_STRIDE;
             u8* base = gHeadDisplayEntryTable;
             HeadDisplayEntry* entry;
-            if (((HeadDisplayEntry*)base)[idx].streamId != -1 && AudioStream_IsPreparing() == 0)
+            if ((s32)fhReadBE32(&((HeadDisplayEntry*)base)[idx].streamId) != -1 && AudioStream_IsPreparing() == 0)
             {
-                AudioStream_Play(((HeadDisplayEntry*)base)[idx].streamId, AudioStream_StartPrepared);
+                AudioStream_Play((s32)fhReadBE32(&((HeadDisplayEntry*)base)[idx].streamId), AudioStream_StartPrepared);
             }
             entry = (HeadDisplayEntry*)(gHeadDisplayEntryTable + off);
             if (entry->npcDialogue != 0)
             {
-                (*gGameUIInterface)->showNpcDialogue(entry->textId, 0, 0, 0);
+                (*gGameUIInterface)->showNpcDialogue(fhReadBE16(&entry->textId), 0, 0, 0);
             }
             else
             {
-                boxId = entry->boxId;
-                textId = entry->textId;
+                boxId = fhReadBE16(&entry->boxId);
+                textId = fhReadBE16(&entry->textId);
                 if (textId != -1 && curGameText == 0xffff)
                 {
                     gameTextGetBox(0x7c);

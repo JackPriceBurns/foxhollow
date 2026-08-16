@@ -17597,7 +17597,7 @@ void playerRender(GameObject* obj, int a, int b, int c, int d, int flag)
         }
         else if (gPlayerHeldObject != NULL)
         {
-            *(u32*)((char*)gPlayerHeldObject + 0x3c) = *(u32*)((char*)gPlayerHeldObject + 0x3c) & ~0x100000LL;
+            gPlayerHeldObject->flags &= ~SHADER_FLAG_DECAL_LAYER;
             gPlayerHeldObject = NULL;
         }
         {

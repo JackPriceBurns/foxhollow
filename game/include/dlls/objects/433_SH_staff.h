@@ -22,7 +22,7 @@ typedef struct ShStaffState {
     u8 pickupMapLoaded;
     f32 hazeFadeTimer;
     f32 carryMatrix[12];
-    int hazeChildren[SHSTAFF_HAZE_CHILD_COUNT]; /* GameObject pointers kept in their exact integer storage shape */
+    GameObject* hazeChildren[SHSTAFF_HAZE_CHILD_COUNT];
     u8 hazeSpawnPending[SHSTAFF_HAZE_CHILD_COUNT];
     u8 unknown6A[2];
     f32 hazeClimbT;

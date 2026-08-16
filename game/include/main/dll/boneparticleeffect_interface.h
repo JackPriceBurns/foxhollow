@@ -8,7 +8,7 @@ typedef void (*BoneParticleEffectSpawnFn)(void* obj, int effectId, void* extraAr
 
 typedef struct BoneParticleEffectInterface
 {
-    u8 pad00[0x0C];
+    void (*pad00_slots[3])(void);
     BoneParticleEffectSpawnFn spawnEffect;
 } BoneParticleEffectInterface;
 

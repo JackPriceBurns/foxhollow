@@ -1722,7 +1722,7 @@ int Effect20_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawn
             cfg.lifetimeFrames = randomGetRange(0x1e, 0x28);
             cfg.initialAlpha = randomGetRange(0x40, 0x7f);
             cfg.textureId = 0x605;
-            cfg.behaviorFlags = (u32)randomChanceOneIn;
+            cfg.behaviorFlags = 0x80080100;
             cfg.renderFlags = 0x28a0;
             cfg.colorWord0 = 0;
             cfg.colorWord1 = 0x7fff;

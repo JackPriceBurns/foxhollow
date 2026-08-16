@@ -78,7 +78,7 @@ void tree_spawnAmbientEffect(GameObject* obj, TreeState* state, s8 index)
         effectSetup->modelId = -1;
         effectSetup->sourceObject = 0;
         ts->ambientEffectHandles[idx] =
-            (int)objSetupObject(&effectSetup->base, 5, (obj)->anim.mapEventSlot, -1, (obj)->anim.parent);
+            objSetupObject(&effectSetup->base, 5, (obj)->anim.mapEventSlot, -1, (obj)->anim.parent);
     }
 }
 
@@ -92,7 +92,7 @@ void tree_updateAmbientEffects(GameObject* obj, TreeState* state)
         ts = state;
         for (i = 0; i < TREE_AMBIENT_EFFECT_COUNT; i++)
         {
-            if ((void*)state->ambientEffectHandles[i] == NULL)
+            if (state->ambientEffectHandles[i] == NULL)
             {
                 state->ambientSpawnTimers[i] -= timeDelta;
                 if (state->ambientSpawnTimers[i] <= 0.0f)
@@ -104,14 +104,14 @@ void tree_updateAmbientEffects(GameObject* obj, TreeState* state)
             else
             {
                 if (APPLE_ON_TREE_INTERFACE(state->ambientEffectHandles[i])
-                        ->getAnimState((GameObject*)state->ambientEffectHandles[i]) > 3)
+                        ->getAnimState(state->ambientEffectHandles[i]) > 3)
                 {
                     state->ambientEffectHandles[i] = 0;
                 }
                 else
                 {
                     APPLE_ON_TREE_INTERFACE(state->ambientEffectHandles[i])
-                        ->setPosition((GameObject*)state->ambientEffectHandles[i],
+                        ->setPosition(state->ambientEffectHandles[i],
                                       &ts->ambientEffectPos[i][0]);
                 }
             }
@@ -221,12 +221,12 @@ void tree_update(GameObject* obj)
                     {
                         for (i = 0; i < TREE_AMBIENT_EFFECT_COUNT; i++)
                         {
-                            if ((void*)state->ambientEffectHandles[i] != NULL)
+                            if (state->ambientEffectHandles[i] != NULL)
                             {
                                 if (APPLE_ON_TREE_INTERFACE(state->ambientEffectHandles[i])
-                                        ->getAnimState((GameObject*)state->ambientEffectHandles[i]) > 1)
+                                        ->getAnimState(state->ambientEffectHandles[i]) > 1)
                                 {
-                                    ObjHits_RecordObjectHit((GameObject*)state->ambientEffectHandles[i], obj, 0xe, 1, 0);
+                                    ObjHits_RecordObjectHit(state->ambientEffectHandles[i], obj, 0xe, 1, 0);
                                     break;
                                 }
                             }

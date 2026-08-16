@@ -85,7 +85,6 @@ static void modelNormalizePackHeader(int offsetFlags)
 
 static void modelSyncResourceTables(void)
 {
-    fhSwapResidentTabs();
     mergeTableFiles(getCurrentDataFile(MLDF_FILEID_MODELS_TAB_A), MLDF_FILEID_MODELS_TAB_A,
                     MLDF_FILEID_MODELS_TAB_B, 0x800);
     mergeTableFiles(getCurrentDataFile(MLDF_FILEID_ANIM_TAB_A), MLDF_FILEID_ANIM_TAB_A,

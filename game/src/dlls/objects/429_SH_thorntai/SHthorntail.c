@@ -259,13 +259,14 @@ void SHthorntail_updateTailSwing(GameObject* objectId, SHthorntailState* state) 
 u32 SHthorntail_chooseNextState(GameObject* object, SHthorntailState* state, SHthorntailPlacement* placement) {
     short angleDelta;
     int value;
+    GameObject* player;
     u32 nextState;
     s8 behaviorState;
     f32 dist;
 
     if (placement->leashRadius != '\0') {
-        value = (int)Obj_GetPlayerObject();
-        dist = getXZDistanceSquared(&object->anim.worldPosX, (f32*)(value + PLAYER_POS_OFFSET));
+        player = Obj_GetPlayerObject();
+        dist = getXZDistanceSquared(&object->anim.worldPosX, &player->anim.worldPosX);
         if (dist < SHTHORNTAIL_CLOSE_ATTACK_DISTANCE) {
             behaviorState = state->behaviorState;
             if ((SHTHORNTAIL_STATE_MOVE_2 <= behaviorState) && (behaviorState <= SHTHORNTAIL_STATE_MOVE_5)) {
@@ -946,7 +947,7 @@ void SHthorntail_render(GameObject* obj, int renderArg2, int renderArg3, int ren
     do {
         ObjPath_GetPointWorldPosition(obj, pointIndex, &runtime->renderPathPoints[0].x, &runtime->renderPathPoints[0].y,
                                       &runtime->renderPathPoints[0].z, 0);
-        runtime = (SHthorntailState*)((int)runtime + sizeof(Vec));
+        runtime = (SHthorntailState*)((u8*)runtime + sizeof(Vec));
         pointIndex = pointIndex + 1;
     } while (pointIndex < SHTHORNTAIL_RENDER_PATH_POINT_COUNT);
 }
@@ -1064,12 +1065,12 @@ void SHthorntail_update(GameObject* obj) {
         for (i = 0, eventId = (s8*)&animEvents; i < animEvents.triggerCount; i = i + 1) {
             if (eventId[0x13] == '\0') {
                 if (SHTHORNTAIL_STATE_TRIGGER0_SFX(stateTables)[runtime->behaviorState] != 0) {
-                    Sfx_PlayFromObject((GameObject*)(u32)obj,
+                    Sfx_PlayFromObject(obj,
                                        SHTHORNTAIL_STATE_TRIGGER0_SFX(stateTables)[runtime->behaviorState]);
                 }
             } else if ((eventId[0x13] == '\a') &&
                        (SHTHORNTAIL_STATE_TRIGGER7_SFX(stateTables)[runtime->behaviorState] != 0)) {
-                Sfx_PlayFromObject((GameObject*)(u32)obj,
+                Sfx_PlayFromObject(obj,
                                    SHTHORNTAIL_STATE_TRIGGER7_SFX(stateTables)[runtime->behaviorState]);
             }
             eventId++;

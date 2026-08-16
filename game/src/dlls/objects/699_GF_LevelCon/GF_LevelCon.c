@@ -100,13 +100,13 @@ void gf_levelcon_findLinkedObjects(GameObject* obj)
             switch (linkedObj->anim.placement->ident)
             {
             case GFLEVELCON_LINK_LIGHT:
-                state->light = (int)linkedObj;
+                state->light = linkedObj;
                 break;
             case GFLEVELCON_LINK_SCROLL_A:
-                state->scrollA = (int)linkedObj;
+                state->scrollA = linkedObj;
                 break;
             case GFLEVELCON_LINK_SCROLL_B:
-                state->scrollB = (int)linkedObj;
+                state->scrollB = linkedObj;
                 break;
             }
         }
@@ -227,7 +227,7 @@ int gf_levelcon_SeqFn(GameObject* obj, int eventId, ObjSeqState* animUpdate)
 
 int gf_levelcon_getExtraSize(void)
 {
-    return 0x10;
+    return sizeof(GfLevelconHandleScriptEventsState);
 }
 
 int gf_levelcon_getObjectTypeId(void)

@@ -26,7 +26,6 @@ static size_t sCompressedFrameSize;
 
 typedef struct THPRGBTexture
 {
-    const void* yTexture;
     u8* rgba;
     size_t size;
 } THPRGBTexture;
@@ -57,7 +56,7 @@ void* fhTHPVideoGetRGB(const void* yTexture)
 
     for (i = 0; i < 3; i++)
     {
-        if (sRGBTextures[i].yTexture == yTexture)
+        if (gAttractMoviePlayer.textureSet[i].yTexture == yTexture)
         {
             return sRGBTextures[i].rgba;
         }
@@ -72,14 +71,10 @@ static THPRGBTexture* thpGetRGBTexture(const void* yTexture, size_t size)
 
     for (i = 0; i < 3; i++)
     {
-        if (sRGBTextures[i].yTexture == yTexture)
+        if (gAttractMoviePlayer.textureSet[i].yTexture == yTexture)
         {
             texture = &sRGBTextures[i];
             break;
-        }
-        if (texture == NULL && sRGBTextures[i].yTexture == NULL)
-        {
-            texture = &sRGBTextures[i];
         }
     }
     if (texture == NULL)
@@ -96,7 +91,6 @@ static THPRGBTexture* thpGetRGBTexture(const void* yTexture, size_t size)
         texture->rgba = resized;
         texture->size = size;
     }
-    texture->yTexture = yTexture;
     return texture;
 }
 

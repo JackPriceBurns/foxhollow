@@ -224,9 +224,9 @@ typedef union ExpgfxSpawnTextureWord {
   } parts;
 } ExpgfxSpawnTextureWord;
 
-typedef struct ExpgfxSpawnColorPair {
-  u8 value;
-  u8 lowByte;
+typedef union ExpgfxSpawnColorPair {
+  u16 word;
+  u8 bytes[2];
 } ExpgfxSpawnColorPair;
 
 /*

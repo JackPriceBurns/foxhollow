@@ -440,10 +440,10 @@ int insertHighScore(u8 slot, u8 flag, u32 score, u8* initials)
 
             ((SaveScoreFile*)(saveData + off))->entries[rank].score = score;
             ((SaveScoreFile*)(saveData + off))->entries[rank].flag = flag;
-            ((SaveScoreFile*)((int)saveData + off))->entries[rank].initials[0] = initials[0];
-            ((SaveScoreFile*)((int)saveData + off))->entries[rank].initials[1] = initials[1];
-            ((SaveScoreFile*)((int)saveData + off))->entries[rank].initials[2] = initials[2];
-            ((SaveScoreFile*)((int)saveData + off))->entries[rank].initials[3] = initials[3];
+            ((SaveScoreFile*)(saveData + off))->entries[rank].initials[0] = initials[0];
+            ((SaveScoreFile*)(saveData + off))->entries[rank].initials[1] = initials[1];
+            ((SaveScoreFile*)(saveData + off))->entries[rank].initials[2] = initials[2];
+            ((SaveScoreFile*)(saveData + off))->entries[rank].initials[3] = initials[3];
             return rank;
         }
     }
