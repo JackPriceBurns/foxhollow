@@ -58,11 +58,10 @@ char* gSaveCardIoBuffer;
 void* gSaveCardWorkArea;
 void loadReflectionTexMtxs(void)
 {
-    f32* base = (f32*)&gCameraModelViewMatrix;
     Mtx tmp;
-    PSMTXConcat((void*)(base + 36), (void*)base, tmp);
+    PSMTXConcat((MtxPtr)gCameraLightPerspectiveScaledMatrix, (MtxPtr)gCameraModelViewMatrix, tmp);
     GXLoadTexMtxImm(tmp, GX_TEXMTX0, GX_MTX3x4);
-    PSMTXConcat((void*)(base + 24), (void*)base, tmp);
+    PSMTXConcat((MtxPtr)gCameraLightPerspectiveFlipYMatrix, (MtxPtr)gCameraModelViewMatrix, tmp);
     GXLoadTexMtxImm(tmp, GX_TEXMTX2, GX_MTX3x4);
 }
 
