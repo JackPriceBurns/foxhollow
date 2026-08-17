@@ -202,6 +202,7 @@ typedef struct SnowBikeState {
     f32 haloDriftAmpB;      /* 0x590: halo drift channel-B amplitude (decays via powfBitEstimate) */
     f32 haloPitchDrift;             /* 0x594: halo-light yaw drift */
     f32 haloDriftB;         /* 0x598: halo drift channel-B output (haloDriftAmpB * sin(phaseB)); added to anim.rotZ */
+    GameObject* linkedObject;
 } SnowBikeState; /* extends to at least 0x59C (DRhightop/DRhalolight tail) */
 STATIC_ASSERT(offsetof(SnowBikeState, trails) == 0x4C8);
 STATIC_ASSERT(offsetof(SnowBikeState, activeTrails) == 0x510);
@@ -218,13 +219,13 @@ extern f32 gSnowBikeRouteDistGate;
 
 void SnowBike_update(GameObject* obj);
 void SnowBike_resetToRomListPosition(GameObject* obj);
-void SnowBike_ResetDynamics(int obj, int state);
+void SnowBike_ResetDynamics(uintptr_t obj, uintptr_t state);
 s32 SnowBike_getRouteRank(GameObject* obj);
 s32 SnowBike_isAtRankGate(GameObject* obj);
 int SnowBike_SeqFn(GameObject* obj, int unused, ObjSeqState* seq);
 void SnowBike_onSeqFree(GameObject* obj);
-void SnowBike_buildOrientationMatrices(GameObject* obj, int state);
-void SnowBike_InitTuning(GameObject* obj, int state);
+void SnowBike_buildOrientationMatrices(GameObject* obj, uintptr_t state);
+void SnowBike_InitTuning(GameObject* obj, uintptr_t state);
 f32 SnowBike_func13(GameObject* obj, f32* out);
 void SnowBike_getPlayerAnim(GameObject* obj, f32* outFloat, s32* outBool);
 void SnowBike_setMountState(GameObject* obj, int type);
@@ -239,9 +240,9 @@ void SnowBike_initialise(void);
 
 int SnowBike_UpdateSwingBlend(GameObject* obj, SnowBikeState* state);
 int SnowBike_UpdateAttachedPosition(GameObject* obj, SnowBikeState* state);
-void SnowBike_UpdateTrails(GameObject* obj, int state);
+void SnowBike_UpdateTrails(GameObject* obj, uintptr_t state);
 void SnowBike_UpdateEngineFx(GameObject* obj, void* state, f32 distanceScale, int intensity, u8* unused,
                              u8 channelFlags);
-f32 SnowBike_GetRouteIntensity(GameObject* obj, int state);
+f32 SnowBike_GetRouteIntensity(GameObject* obj, uintptr_t state);
 
 #endif /* MAIN_DLL_DLL_0255_SNOWBIKE_H_ */

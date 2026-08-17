@@ -166,7 +166,7 @@ void collectible_applyPickup(GameObject* obj) {
     if (counterGameBit > 0) {
         gameBitIncrement(counterGameBit);
     }
-    switch (modelSetup->pickupCategory) {
+    switch (ObjAnim_ReadPackedS16(&modelSetup->pickupCategory)) {
     case COLLECTIBLE_PICKUP_CATEGORY_ITEM:
         switch (obj->anim.romDefNo) {
         case 0x5A:

@@ -199,13 +199,13 @@ void mutatedEbaUpdateEngaged(GameObject* obj, void* state)
         {
             tblOff = (u32)((EnemyState*)state)->userData1 * 0xc;
             baddieSetMove((GameObject*)obj, state, gDusterEbaMoveTable[tblOff + 8],
-                        *(float*)(gDusterEbaMoveTable + tblOff), 0, 0);
+                        fhReadBEF32(gDusterEbaMoveTable + tblOff), 0, 0);
         }
         else
         {
             tblOff = (u32)((EnemyState*)state)->userData1 * 0xc;
             baddieSetMove((GameObject*)obj, state, gDusterEbaMoveTable[tblOff + 9],
-                        *(float*)(gDusterEbaMoveTable + tblOff), 0, 0);
+                        fhReadBEF32(gDusterEbaMoveTable + tblOff), 0, 0);
         }
     }
     mutatedEbaPlayMoveSfx(obj, (EnemyState*)state);
@@ -230,7 +230,7 @@ void mutatedEbaUpdateIdle(GameObject* obj, void* state)
         }
         tblOff = (u32)((EnemyState*)state)->userData1 * 0xc;
         baddieSetMove((GameObject*)obj, state, gDusterEbaMoveTable[tblOff + 8],
-                    *(float*)(gDusterEbaMoveTable + tblOff), 0, 0);
+                    fhReadBEF32(gDusterEbaMoveTable + tblOff), 0, 0);
     }
     mutatedEbaPlayMoveSfx(obj, (EnemyState*)state);
     return;

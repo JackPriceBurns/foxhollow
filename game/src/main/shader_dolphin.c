@@ -1980,7 +1980,7 @@ int addEnvMapBumpStages(void* p1, int p2, u8 p3, void* p4)
         Texture* texptr;
         u32 div;
         int p2v = (p3 & 0xf) * 4 + 1;
-        texptr = (Texture*)p4;
+        texptr = textureIdxToPtr((uintptr_t)p4);
         div = (u32) texptr->width / (u32)(((Texture*)p1)->width * p2v);
         if (div != 0)
         {

@@ -341,12 +341,12 @@ void snowworm_update(GameObject* obj, u8* state)
         if (((EnemyState*)state)->turnOctant < 4)
         {
             i = ((EnemyState*)state)->userData1 * 0xc;
-            baddieSetMove(obj, state, (tbl + i)[8], *(f32*)(tbl + i), 0, 0);
+            baddieSetMove(obj, state, (tbl + i)[8], fhReadBEF32(tbl + i), 0, 0);
         }
         else
         {
             i = ((EnemyState*)state)->userData1 * 0xc;
-            baddieSetMove(obj, state, (tbl + i)[9], *(f32*)(tbl + i), 0, 0);
+            baddieSetMove(obj, state, (tbl + i)[9], fhReadBEF32(tbl + i), 0, 0);
         }
         if (obj->anim.currentMove == 9)
         {
@@ -389,10 +389,9 @@ void snowworm_applyReactionState(GameObject* obj, int* st)
         }
         {
             u8* bbase = t1;
-            f32* fbase = (f32*)t1;
             u32 idx2 = ((EnemyState*)st)->userData1;
             u32 off = idx2 * 0xc;
-            baddieSetMove(obj, st, bbase[off + 8], *(f32*)((char*)fbase + off), 0, 0);
+            baddieSetMove(obj, st, bbase[off + 8], fhReadBEF32(t1 + off), 0, 0);
         }
     }
     crawler_playReactionEffects(obj, st);

@@ -4,6 +4,7 @@
 #include "game/objects/object.h"
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_setup.h"
+#include "main/objseq.h"
 
 #define CNTHIT_MODE_VISIBLE_OBJECT 2
 #define CNTHIT_PROFILE_COUNT 3
@@ -37,12 +38,6 @@ typedef struct CntHitObjectSetup {
     s16 startGameBit;
 } CntHitObjectSetup;
 
-typedef struct CntHitObjectAnimEvent {
-    u8 pad0[0x81];
-    u8 explosionIds[10];
-    u8 explosionCount;
-} CntHitObjectAnimEvent;
-
 STATIC_ASSERT(offsetof(CntHitObjectState, allowedHitSources) == 0x04);
 STATIC_ASSERT(offsetof(CntHitObjectState, allowedHitSourceCount) == 0x08);
 STATIC_ASSERT(offsetof(CntHitObjectState, flags) == 0x09);
@@ -54,9 +49,6 @@ STATIC_ASSERT(offsetof(CntHitObjectSetup, explosionSize) == 0x1C);
 STATIC_ASSERT(offsetof(CntHitObjectSetup, doneGameBit) == 0x1E);
 STATIC_ASSERT(offsetof(CntHitObjectSetup, startGameBit) == 0x20);
 STATIC_ASSERT(sizeof(CntHitObjectSetup) == 0x24);
-STATIC_ASSERT(offsetof(CntHitObjectAnimEvent, explosionIds) == 0x81);
-STATIC_ASSERT(offsetof(CntHitObjectAnimEvent, explosionCount) == 0x8B);
-
 extern ObjectDescriptor11ExtraSize gCNThitObjecObjDescriptor;
 
 int cnthitobjec_getExtraSize(void);
@@ -65,10 +57,10 @@ void cnthitobjec_free(void);
 void cnthitobjec_release(void);
 void cnthitobjec_initialise(void);
 void cnthitobjec_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale);
-int cnthitobjec_SeqFn(GameObject* obj, int unused, CntHitObjectAnimEvent* event);
+int cnthitobjec_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate);
 void cnthitobjec_hitDetect(GameObject* obj);
 void cnthitobjec_init(GameObject* obj, CntHitObjectSetup* setup);
 void cnthitobjec_update(GameObject* obj);
-int mcupgrade_SeqFn(GameObject* obj, int unused, CntHitObjectAnimEvent* event);
+int mcupgrade_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate);
 
 #endif

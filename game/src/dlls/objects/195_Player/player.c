@@ -4873,8 +4873,7 @@ int playerStateAttack(GameObject* obj, PlayerState* state, f32 fv) {
         if (((GameObject*)path)->anim.classId == 0x2d) {
             objSetAnimField48to0((GameObject*)path);
             STAFF_INTERFACE(path)->func10((GameObject*)path, slot->unk5C);
-            ((void (*)(GameObject*, f32, f32))STAFF_INTERFACE(path)->startSwipe)((GameObject*)path, slot->unk48,
-                                                                                 slot->unk4C);
+            STAFF_INTERFACE(path)->startSwipe((GameObject*)path, slot->unk48, slot->unk4C);
         }
         {
             f32 z = 0.0f;

@@ -327,17 +327,16 @@ void shopitem_update(GameObject* obj)
     }
     else
     {
-        if (*(u32*)&s->vendorObj == 0)
+        if (s->vendorObj == NULL)
         {
-            int item;
-            s->vendorObj = (int)objGetNearestTypeTo(SHOPITEM_TARGET_OBJGROUP, obj, &range);
+            GameObject* item;
+            s->vendorObj = objGetNearestTypeTo(SHOPITEM_TARGET_OBJGROUP, obj, &range);
             item = s->vendorObj;
-            if ((u32)item != 0)
+            if (item != NULL)
             {
-                if (SHOP_INTERFACE(item)->isItemAvailable((GameObject*)item,
-                                                          def->itemSlot) == 0 ||
+                if (SHOP_INTERFACE(item)->isItemAvailable(item, def->itemSlot) == 0 ||
                     SHOP_INTERFACE(s->vendorObj)
-                            ->isItemBought((GameObject*)s->vendorObj, def->itemSlot) != 0)
+                            ->isItemBought(s->vendorObj, def->itemSlot) != 0)
                 {
                     s->flags97.flag_40 = 1;
                     (obj)->anim.flags = (s16)((obj)->anim.flags | OBJANIM_FLAG_HIDDEN);
@@ -345,7 +344,7 @@ void shopitem_update(GameObject* obj)
                     (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
                 }
                 s->helpTextId = (s16)SHOP_INTERFACE(s->vendorObj)
-                                    ->getItemTextId((GameObject*)s->vendorObj, def->itemSlot);
+                                    ->getItemTextId(s->vendorObj, def->itemSlot);
             }
         }
         else
@@ -359,9 +358,9 @@ void shopitem_update(GameObject* obj)
             {
                 money = playerGetMoney(player);
                 price = SHOP_INTERFACE(s->vendorObj)
-                            ->getItemPrice((GameObject*)s->vendorObj, def->itemSlot);
+                            ->getItemPrice(s->vendorObj, def->itemSlot);
                 SHOP_INTERFACE(s->vendorObj)
-                    ->setItemIndex((GameObject*)s->vendorObj, def->itemSlot);
+                    ->setItemIndex(s->vendorObj, def->itemSlot);
                 switch ((obj)->anim.romDefNo)
                 {
                 case SHOPITEM_SEQ_BSPLINE:

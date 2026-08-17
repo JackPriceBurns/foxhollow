@@ -139,7 +139,7 @@ int LandedArwing_UpdateBounceFade(GameObject* obj, BaddieState* baddie)
     }
     if (obj->anim.currentMoveProgress == 1.0f)
     {
-        ObjMsg_SendToObjects(0, 3, obj, 0xe0000, (u32)obj);
+        ObjMsg_SendToObjects(0, 3, obj, 0xe0000, (uintptr_t)obj);
         Obj_FreeObject(obj);
         return 0;
     }

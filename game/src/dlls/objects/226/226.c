@@ -90,48 +90,6 @@ s16 sStaffSwipeTextureIdTable[4] = {0xC7F, 0x3EC, 0, 0};
 /* swipe/attack lingering trail: single follow-up spawn after the burst cluster */
 #define STAFF_PARTFX_SWIPE_TRAIL 0x7b3
 
-/* per-swipe trail record (stride 0x18, 3 records) */
-typedef struct StaffSwipeSlot {
-    u8* vertexData;
-    f32 unk4;
-    f32 lengthScale;
-    u16 startIndex;
-    u16 endIndex;
-    s16 idx;
-    s16 vertexCount;
-    u8 flags;
-    u8 pad15[0x18 - 0x15];
-} StaffSwipeSlot;
-
-typedef struct StaffState {
-    StaffSwipeSlot slots[3];
-    StaffSwipeSlot* activeSlot; /* 0x48: active swipe slot pointer */
-    u8 pad4C[4];
-    f32 moveSpeed; /* 0x50: current-move advance speed */
-    f32 geometryPointAX[2];
-    f32 geometryPointAY[2];
-    f32 geometryPointAZ[2];
-    f32 geometryPointBX[2];
-    f32 geometryPointBY[2];
-    f32 geometryPointBZ[2];
-    u8 pad84[4];
-    s16 hitReactValue;
-    u8 pad8A[2];
-    f32 anchorX;
-    f32 anchorY;
-    f32 anchorZ;
-    f32 progress;
-    u8 pad9C[0xAA - 0x9C];
-    u8 unkAA;
-    u8 padAB[0xB0 - 0xAB];
-    s16 unkB0;
-    s16 fieldB2;
-    u8 padB4[5];
-    s8 swipeTextureIndex; /* 0xB9 */
-    u8 glowEnable;        /* 0xBA */
-    u8 glowAttackType;    /* 0xBB */
-    u8 hudSuppressed;     /* 0xBC */
-} StaffState;
 typedef struct StaffQuakeSpellState {
     f32 posX;        /* 0x00 */
     f32 posY;        /* 0x04 */
@@ -518,7 +476,7 @@ void staffDrawSwipe(GameObject* obj, StaffState* swipe) {
         swp++;
     }
 }
-void staff_setupSwipe(GameObject* unused1, StaffState* swipe, int unused3, GameObject* obj) {
+void staff_setupSwipe(GameObject* unused1, StaffState* swipe, void* unused3, GameObject* obj) {
     ObjWeaponDaTable* weaponDaTable;
     StaffSwipeSlot* slot;
     ObjAnimState* model2;
@@ -785,7 +743,7 @@ void objSetAnimField48to0(GameObject* obj) {
     state->activeSlot = NULL;
 }
 
-void staff_startSwipe(GameObject* obj, s16 idx, f32 arg2, f32 lengthScale) {
+void staff_startSwipe(GameObject* obj, f32 arg2, f32 lengthScale) {
     StaffSwipeSlot* slot;
     int n;
     StaffSwipeSlot* slots = (StaffSwipeSlot*)obj->extra;
@@ -801,7 +759,7 @@ void staff_startSwipe(GameObject* obj, s16 idx, f32 arg2, f32 lengthScale) {
     slot->startIndex = 0;
     slot->endIndex = 0;
     slot->vertexCount = 0;
-    slot->idx = idx;
+    slot->idx = -1;
     ((StaffState*)slots)->activeSlot = slot;
 }
 
@@ -872,7 +830,7 @@ void staff_hitDetectGeometry(GameObject* obj) {
     }
 }
 
-void staff_updateSwipe(GameObject* obj, GameObject* p4, int p5) {
+void staff_updateSwipe(GameObject* obj, GameObject* p4, void* p5) {
     StaffState* inner = obj->extra;
     staff_setupSwipe(obj, inner, p5, p4);
     if (getHudHiddenFrameCount() != 0) {

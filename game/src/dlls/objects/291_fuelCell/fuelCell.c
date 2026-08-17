@@ -175,11 +175,11 @@ void FuelCell_update(GameObject* obj) {
     FuelCellState* state = obj->extra;
     GameObject* player;
     int msgId;
-    int msgParam;
+    uintptr_t msgSender;
 
     player = Obj_GetPlayerObject();
     if (state->flags.pickupPending) {
-        while (ObjMsg_Pop(obj, (u32*)&msgId, (u32*)&msgParam, 0) != 0) {
+        while (ObjMsg_Pop(obj, (u32*)&msgId, &msgSender, 0) != 0) {
             if (msgId == FUEL_CELL_MESSAGE_RELEASE) {
                 state->flags.pickupPending = 0;
                 mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->offBit)), 1);
@@ -208,7 +208,8 @@ void FuelCell_update(GameObject* obj) {
                 if (dy > -5.0f && dy < 40.0f && mainGetBit(GAMEBIT_ITEM_FuelCell_CantGet) == 0 &&
                     getXZDistanceSquared(&obj->anim.worldPosX, &player->anim.worldPosX) < 81.0f) {
                     state->triggerGameBit = GAMEBIT_SawFuelCell;
-                    ObjMsg_SendToObject(player, FUEL_CELL_MESSAGE_IN_RANGE, obj, (u32)&state->triggerGameBit);
+                    ObjMsg_SendToObject(player, FUEL_CELL_MESSAGE_IN_RANGE, obj,
+                                        (uintptr_t)&state->triggerGameBit);
                     state->flags.pickupPending = 1;
                     mainSetBits(GAMEBIT_ITEM_FuelCell_CantGet, 1);
                     Sfx_PlayFromObject(obj, SFXTRIG_lockoff22);

@@ -23,7 +23,7 @@ typedef struct SpdrapeState
     f32 planeNormalX; /* 0x04: drape-plane normal X */
     f32 planeNormalZ; /* 0x08: drape-plane normal Z */
     f32 planeD;       /* 0x0C: drape-plane offset */
-    s32 moveTable;    /* 0x10: &u8[] move-id table for the current swing dir */
+    const u8* moveTable; /* &u8[] move-id table for the current swing dir */
     s16 sfxTimer;     /* 0x14: countdown to the next idle rustle sfx */
     u8 moveActive;    /* 0x16: ObjAnim_AdvanceCurrentMove result */
     u8 pad17[0x18 - 0x17];

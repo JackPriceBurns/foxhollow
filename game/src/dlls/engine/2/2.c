@@ -5139,7 +5139,7 @@ static inline int ObjSeq_CheckConditionOpcode(ObjSeqState* state, GameObject* ob
         cb = state->conditionCallback;
         if (cb != NULL)
         {
-            return cb(state->callbackContext, (u8*)obj);
+            return cb(state->callbackContext, (u8*)obj, conditionOpcode);
         }
         break;
     case 0x1a:
@@ -5226,17 +5226,15 @@ int ObjSeq_update(GameObject* obj, f32 t)
         state->curFrame = gObjSeqSlotStreamTimeTable[slot];
     }
 
-    i = 3;
-    p = (u8*)seq + 6;
-    while (p -= 2, i-- != 0)
+    for (i = 0; i < 3; i++)
     {
-        if (*(s16*)(p + 0x30) > 0)
+        if (state->sfxTimer[i] > 0)
         {
-            *(s16*)(p + 0x30) -= framesThisStep;
-            if (*(s16*)(p + 0x30) <= 0)
+            state->sfxTimer[i] -= framesThisStep;
+            if (state->sfxTimer[i] <= 0)
             {
-                *(s16*)(p + 0x30) = 0;
-                Sfx_RemoveLoopedObjectSound(obj, *(s16*)(p + 0x38));
+                state->sfxTimer[i] = 0;
+                Sfx_RemoveLoopedObjectSound(obj, state->sfxId[i]);
             }
         }
     }

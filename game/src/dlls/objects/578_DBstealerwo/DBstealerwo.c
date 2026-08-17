@@ -63,13 +63,6 @@ extern f32 gDbStealerwormWaitAvoidWeights[];
 extern int gDbStealerwormKillAvoidGroups[];
 extern f32 gDbStealerwormKillAvoidWeights[];
 
-typedef struct
-{
-    int* msgs; /* 0x00 */
-    s16 count; /* 0x04 */
-    u8 pad06[0x08 - 0x06];
-} DbWormMsgGroup;
-
 /*
  * DbStealerwormControl - the per-family control record hung off
  * GroundBaddieState.control (state+0x40C) for dbstealerworm
@@ -2256,7 +2249,6 @@ void dbstealerworm_update(GameObject* obj)
     GroundBaddieState* blob;
     GroundBaddiePlacement* data;
     DbStealerwormControl* sub;
-    DbWormMsgGroup* grp;
     DbStealerwormControl* sub3;
     int n;
     DbStealerwormControl* sub2;
@@ -2277,13 +2269,11 @@ void dbstealerworm_update(GameObject* obj)
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     if (sub->flags44.flag10)
     {
-        grp = &((DbWormMsgGroup*)(tbl + 0x15c))[
-            ObjAnim_ReadPlacementS16(&obj->anim, &data->unk24)];
         sub->msgStack = Queue_Alloc(0x14, 0xc);
-        n = grp->count;
+        n = sub->cfg->stepCount;
         for (; n != 0;)
         {
-            Stack_Push(sub->msgStack, (int*)((int)grp->msgs + --n * 12));
+            Stack_Push(sub->msgStack, (void*)&sub->cfg->steps[--n]);
         }
         sub->msgAdvance = 1;
         sub->flags44.flag10 = 0;

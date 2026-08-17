@@ -94,7 +94,6 @@ void GM_MazeWell_render(void* obj, int p2, int p3, int p4, int p5, s8 visible)
 
 void GM_MazeWell_update(GameObject* obj)
 {
-    GameObject* objId;
     s16* questBits = gGmMazeWellQuestBits;
     s32* questBits32 = (s32*)questBits;
     GmmazewellState* state = obj->extra;
@@ -141,8 +140,7 @@ void GM_MazeWell_update(GameObject* obj)
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
     }
 
-    objId = (GameObject*)((int)obj);
-    if ((objId->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
     {
         int found;
         for (i = 0, questBitPtr = questBits;;)
@@ -200,7 +198,7 @@ void GM_MazeWell_update(GameObject* obj)
         }
     }
 
-    ((void (*)(int))objUpdateHitVolumeTransforms)((int)obj);
+    objUpdateHitVolumeTransforms(obj);
 }
 
 void GM_MazeWell_init(GameObject* obj)

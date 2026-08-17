@@ -229,7 +229,7 @@ int dll_CE_checkDeathState(GameObject* obj, GroundBaddieState* state) {
         ObjHits_DisableObject(obj);
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     } else if (state->baddie.moveDone != '\0') {
-        ObjMsg_SendToObjects(0, 3, obj, 0xe0000, (u32)obj);
+        ObjMsg_SendToObjects(0, 3, obj, 0xe0000, (uintptr_t)obj);
         if (obj->anim.placementData == NULL) {
             Obj_FreeObject(obj);
             return 0;

@@ -729,9 +729,8 @@ int ShopKeeper_SeqFn(GameObject* obj, int unused, ObjSeqState* seq, s8 advance)
     f32 range;
     f32 speed;
 
-    state = (ShopkeeperState*)*(int*)&(obj)->extra;
-    /* second copy of the extra pointer */
-    state2 = (ShopkeeperState*)(long)*(int*)&(obj)->extra;
+    state = obj->extra;
+    state2 = state;
     player = Obj_GetPlayerObject();
     range = 1.0f;
     state->flags9D4 &= ~SHOPKEEPER_FLAG_TICK;
@@ -1075,4 +1074,3 @@ void ShopKeeper_initialise(void)
     gShopKeeperStateHandlers[7] = ShopKeeper_state7Handler;
     gShopKeeperDefaultStateHandler = ShopKeeper_defaultStateHandler;
 }
-

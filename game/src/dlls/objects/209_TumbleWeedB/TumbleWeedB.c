@@ -706,7 +706,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
                 state->triggerGameBit = 0x195;
                 state->pickupMsgValue = 0;
                 state->unk29C = 0.5f;
-                ObjMsg_SendToObject(player, TUMBLEWEED_MESSAGE_IN_RANGE, obj, (u32)&state->triggerGameBit);
+                ObjMsg_SendToObject(player, TUMBLEWEED_MESSAGE_IN_RANGE, obj, (uintptr_t)&state->triggerGameBit);
                 state->phase = TUMBLEWEED_PHASE_PICKUP_WAIT;
             } else {
                 state->growRate -= timeDelta;

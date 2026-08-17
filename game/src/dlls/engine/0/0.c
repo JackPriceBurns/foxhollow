@@ -973,7 +973,7 @@ int pauseMenuHoloRenderFn(GameObject* obj, ObjModel* model, int renderOpIndex)
     indmtx = sGameUiZeroIndTexMtx;
     op = ObjModel_GetRenderOp(model->file, renderOpIndex);
     layer = Shader_getLayer(op, 0);
-    tex0 = ((ShaderLayer*)layer)->texture;
+    tex0 = textureIdxToPtr((uintptr_t)((ShaderLayer*)layer)->texture);
 
     PSMTXCopy(matrices->object, m1);
     m1[0][3] = 0.0f;
@@ -3747,7 +3747,7 @@ int cMenuRingModelRenderFn(GameObject* obj, ObjModel* model, int idx)
     renderOp = ObjModel_GetRenderOp(model->file, idx);
     Rcp_ResetTextureStageState();
     cfg.a = obj->anim.renderAlpha;
-    addTexLayerStageSwizzled(renderOp->layers[0].texture, NULL, 0, &cfg, 0, 1);
+    addTexLayerStageSwizzled(textureIdxToPtr((uintptr_t)renderOp->layers[0].texture), NULL, 0, &cfg, 0, 1);
     Rcp_ApplyTextureStageCounts();
     GXSetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
     gxSetZMode_(0, GX_ALWAYS, 0);

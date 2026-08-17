@@ -609,7 +609,7 @@ void Scarab_update(GameObject* obj) {
                         state->messageParamA = -1;
                         state->messageParamB = 0;
                         state->messageParamC = 1.0f;
-                        ObjMsg_SendToObject(player, SCARAB_MSG_IN_RANGE, obj, (u32)&state->messageParamA);
+                        ObjMsg_SendToObject(player, SCARAB_MSG_IN_RANGE, obj, (uintptr_t)&state->messageParamA);
                         mainSetBits(GAMEBIT_SawScarab, 1);
                         state->pickupFlags |= SCARAB_PICKUP_PENDING;
                     } else {

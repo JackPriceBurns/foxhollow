@@ -37,12 +37,12 @@ static int* sCntHitSourcesByProfile[3] = {
     sCntHitSourcesProfile0,
 };
 
-int cnthitobjec_SeqFn(GameObject* obj, int unused, CntHitObjectAnimEvent* event)
+int cnthitobjec_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 {
     int i;
-    for (i = 0; i < event->explosionCount; i++)
+    for (i = 0; i < animUpdate->eventCount; i++)
     {
-        spawnExplosion(obj, (f32)(u32)event->explosionIds[i], 1, 1, 1, 1, 0, 1, 0);
+        spawnExplosion(obj, (f32)(u32)animUpdate->eventIds[i], 1, 1, 1, 1, 0, 1, 0);
     }
     return 0;
 }
@@ -200,9 +200,9 @@ void cnthitobjec_initialise(void)
 {
 }
 
-int mcupgrade_SeqFn(GameObject* obj, int unused, CntHitObjectAnimEvent* event)
+int mcupgrade_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 {
-    if (event->explosionCount != 0)
+    if (animUpdate->eventCount != 0)
     {
         (*gGameUIInterface)->showNpcDialogue(ObjAnim_ReadPlacementS16(&obj->anim, &((CntHitObjectSetup*)obj->anim.placementData)->startHealth), 0x14, 0x8c, 0);
     }

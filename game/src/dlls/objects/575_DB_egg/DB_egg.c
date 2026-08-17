@@ -698,7 +698,7 @@ void dbegg_update(GameObject* obj)
                 pickupState->msg11C = -1;
                 pickupState->msg11E = 0;
                 pickupState->msg120 = 1.0f;
-                ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (int)pickupState + 0x11c);
+                ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)pickupState + 0x11c);
                 (obj)->userData2 = 0;
             }
             else if (getButtonsJustPressed(0) & PAD_BUTTON_A)
@@ -869,7 +869,7 @@ void dbegg_update(GameObject* obj)
                         pickupState->msg11C = -1;
                         pickupState->msg11E = 0;
                         pickupState->msg120 = 1.0f;
-                        ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (int)pickupState + 0x11c);
+                        ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)pickupState + 0x11c);
                     }
                     else
                     {

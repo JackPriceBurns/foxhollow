@@ -282,7 +282,8 @@ void firefly_activeTick(GameObject* obj)
                     if (mainGetBit(FIREFLY_FIRST_TOUCH_BIT) == 0)
                     {
                         state->messageParam = -1;
-                        ObjMsg_SendToObject((void*)player, FIREFLY_MESSAGE_TALK, obj, (u32)&state->messageParam);
+                        ObjMsg_SendToObject((void*)player, FIREFLY_MESSAGE_TALK, obj,
+                                            (uintptr_t)&state->messageParam);
                         mainSetBits(FIREFLY_FIRST_TOUCH_BIT, 1);
                     }
                     else

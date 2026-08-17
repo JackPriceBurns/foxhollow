@@ -89,7 +89,7 @@ void* cloudGetLayerTexture(f32* out1, f32* out2)
             *out1 = d;
             *out2 = d;
         }
-        return layer->texture;
+        return textureIdxToPtr((uintptr_t)layer->texture);
     }
     {
         f32 d = 0.0f;

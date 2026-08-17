@@ -69,6 +69,6 @@ STATIC_ASSERT(offsetof(DRPickupState, flags458) == 0x458);
 STATIC_ASSERT(offsetof(DRPickupState, accumX) == 0x494);
 STATIC_ASSERT(offsetof(DRPickupState, spinVel) == 0x584);
 
-void SnowBike_UpdateLiftSway(int obj,int state);
+void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state);
 
 #endif /* MAIN_DLL_DR_DRPICKUP_H_ */

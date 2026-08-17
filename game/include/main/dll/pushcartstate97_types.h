@@ -4,6 +4,8 @@
 #include "types.h"
 #include "main/lightningeffect.h"
 
+struct GameObject;
+
 typedef struct PushcartState97
 {
     u8 flag_80 : 1;
@@ -25,7 +27,7 @@ typedef struct ShopItemState
     u8 pad69[0x1F];
     s16 msgParam; /* 0x88: ObjMsg payload (address-used, raw) */
     u8 pad8A[6];
-    int vendorObj; /* 0x90: nearest group-9 shop manager */
+    struct GameObject* vendorObj; /* nearest group-9 shop manager */
     s16 helpTextId; /* 0x94 */
     u8 pad96;
     PushcartState97 flags97; /* 0x97 */

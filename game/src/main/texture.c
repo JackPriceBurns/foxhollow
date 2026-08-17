@@ -114,12 +114,12 @@ static void textureUnpackGCHeader(Texture* tex, const u8* gc)
     tex->imageOffset = (s32)fhSwap32(*(const u32*)(gc + 0x50));
 }
 
-void* textureIdxToPtr(int idx)
+void* textureIdxToPtr(uintptr_t idx)
 {
     int i;
-    if ((u32)idx & 0x80000000)
-        return (void*)(uintptr_t)idx;
-    i = idx - 1;
+    if (idx > INT32_MAX)
+        return (void*)idx;
+    i = (int)idx - 1;
     if (i < 0 || i >= gLoadedTextureCount)
         return NULL;
     return gLoadedTextures[i].texture;

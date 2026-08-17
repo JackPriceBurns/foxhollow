@@ -20,6 +20,7 @@
 #include "main/objfx.h"
 #include "main/objHitReact_types.h"
 #include "main/dll/dll_005A_staffcollision.h"
+#include "main/dll/dll_00E2_staff_api.h"
 #include "main/resource.h"
 #include "dolphin/mtx.h"
 #include "main/dll/objpathtransform_struct.h"
@@ -1274,11 +1275,10 @@ void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjM
     f32 va[3];
     Vec vb;
     int k;
-    char* q;
     Vec* vp;
     Vec* vp0;
     int i;
-    char* base;
+    StaffState* state;
     ObjModel* model;
     GameObject* obj;
     GameObject* staff;
@@ -1286,18 +1286,17 @@ void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjM
     staff = staffArg;
     obj = objArg;
     model = modelArg;
+    state = staff->extra;
 
     if (OBJPRINT_MODEL_INSTANCE(staff)->attachPointCount >= 2 && staff->anim.classId == 0x2d) {
         int off;
-        base = (char*)staff->extra;
         i = 0;
         k = 1;
         off = 0x18;
-        q = base;
         vp0 = (Vec*)va;
         vp = vp0;
 
-        while (i < *(s16*)(base + 0xb0)) {
+        while (i < state->unkB0) {
             if (k < OBJPRINT_MODEL_INSTANCE(staff)->attachPointCount) {
                 MtxPtr jm;
                 int joint;
@@ -1309,9 +1308,9 @@ void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjM
                 PSMTXMultVec(jm, vp, vp);
                 vp->x = vp->x + playerMapOffsetX;
                 va[2] = va[2] + playerMapOffsetZ;
-                *(f32*)(q + 0x6c) = vp->x;
-                *(f32*)(q + 0x74) = va[1];
-                *(f32*)(q + 0x7c) = va[2];
+                state->geometryPointBX[i] = vp->x;
+                state->geometryPointBY[i] = va[1];
+                state->geometryPointBZ[i] = va[2];
             }
             if (k < OBJPRINT_MODEL_INSTANCE(staff)->attachPointCount) {
                 ObjAttachPoint* row = (ObjAttachPoint*)(OBJPRINT_ATTACH_POINTS(staff) + off);
@@ -1324,23 +1323,22 @@ void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjM
                 PSMTXMultVec(mtx2, &vb, &vb);
                 vb.x = vb.x + playerMapOffsetX;
                 vb.z = vb.z + playerMapOffsetZ;
-                *(f32*)(q + 0x54) = vb.x;
-                *(f32*)(q + 0x5c) = vb.y;
-                *(f32*)(q + 0x64) = vb.z;
+                state->geometryPointAX[i] = vb.x;
+                state->geometryPointAY[i] = vb.y;
+                state->geometryPointAZ[i] = vb.z;
             }
             k += 2;
             off += 0x30;
-            q += 4;
             i++;
             vp = vp0;
         }
 
-        if (*(s16*)(base + 0xb0) != 0) {
-            char* r = base + *(s16*)(base + 0xb2) * 4;
-            va[0] = *(f32*)(r + 0x6c);
-            va[1] = *(f32*)(r + 0x74);
-            va[2] = *(f32*)(r + 0x7c);
-            ((void (*)(GameObject*, GameObject*, Vec*))(*staff->anim.dll)[10])(staff, obj, &vb);
+        if (state->unkB0 != 0) {
+            int segment = state->fieldB2;
+            va[0] = state->geometryPointBX[segment];
+            va[1] = state->geometryPointBY[segment];
+            va[2] = state->geometryPointBZ[segment];
+            STAFF_INTERFACE(staff)->updateSwipe(staff, obj, &vb);
             va[0] = va[0] - vb.x;
             va[1] = va[1] - vb.y;
             va[2] = va[2] - vb.z;

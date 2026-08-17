@@ -1316,7 +1316,7 @@ void DIMSnowHorn1_update(GameObject* obj)
     {
     case 0:
     case 5:
-        statePtr = (DIMSnowHorn1State*)((int)obj->extra);
+        statePtr = obj->extra;
         playerObj = Obj_GetPlayerObject();
         if (playerObj != NULL &&
             Vec_distance(&playerObj->anim.worldPosX, &(obj)->anim.worldPosX) < 300.0f &&

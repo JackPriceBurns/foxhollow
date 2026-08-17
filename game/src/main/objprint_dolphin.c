@@ -343,7 +343,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     fz = (f32)gObjFuzzLayerIndex / (f32)(s32)noiseFrameCount;
     fz = fz * fz;
     fz = fz / 2.0f;
-    selectTexture(((ShaderLayer*)Shader_getLayer(rop, 0))->texture, 0);
+    selectTexture(textureIdxToPtr((uintptr_t)((ShaderLayer*)Shader_getLayer(rop, 0))->texture), 0);
     GXSetTexCoordGen2(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     GXSetTevDirect(GX_TEVSTAGE0);
     GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD2, GX_TEXMAP0, GX_COLOR_NULL);
@@ -393,7 +393,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
     GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    selectTexture(rop->indTexture, 2);
+    selectTexture(textureIdxToPtr((uintptr_t)rop->indTexture), 2);
     GXSetTexCoordGen2(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     GXSetIndTexOrder(GX_INDTEXSTAGE1, GX_TEXCOORD3, GX_TEXMAP2);
     GXSetIndTexCoordScale(GX_INDTEXSTAGE1, GX_ITS_1, GX_ITS_1);
@@ -529,7 +529,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         fz = (f32)gObjFuzzLayerIndex / (f32)(s32)noiseFrameCount;
         fz = fz / 2.0f;
     }
-    selectTexture(((ShaderLayer*)Shader_getLayer(rop, 0))->texture, 0);
+    selectTexture(textureIdxToPtr((uintptr_t)((ShaderLayer*)Shader_getLayer(rop, 0))->texture), 0);
     GXSetTexCoordGen2(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
     if (lbl_803DCC36 == 0)
     {
@@ -675,7 +675,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     GXSetTevAlphaOp(stage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVPREV);
     if (rop->indTexture != NULL)
     {
-        selectTexture(rop->indTexture, 2);
+        selectTexture(textureIdxToPtr((uintptr_t)rop->indTexture), 2);
         GXSetTexCoordGen2(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
         GXSetIndTexOrder(GX_INDTEXSTAGE1, GX_TEXCOORD3, GX_TEXMAP2);
         GXSetIndTexCoordScale(GX_INDTEXSTAGE1, GX_ITS_1, GX_ITS_1);
@@ -1579,7 +1579,7 @@ static u8 addShaderLayerStages(GameObject* obj, Shader* shader, ModelRenderOpTex
                 {
                     f32 (*mtxp)[4];
                     u8 fl;
-                    tex = layer->texture;
+                    tex = textureIdxToPtr((uintptr_t)layer->texture);
                     {
                         u32 jid = layer->materialId;
                         if (jid != 0)
@@ -1745,7 +1745,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
     envtex = 0;
     if ((refs->texture0 != NULL || refs->texture1 != NULL) && op->auxTexture != NULL)
     {
-        void* t = op->auxTexture;
+        void* t = textureIdxToPtr((uintptr_t)op->auxTexture);
         int nl = gObjSelectedLightCount + 1;
         if (refs->texture0 != NULL)
         {
@@ -1890,7 +1890,7 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
                 texSlotGetScroll(obj, l1->materialId, &tx, &ty);
                 PSMTXTrans((MtxPtr)m2, tx, ty, 0.0f);
             }
-            addWarpedNoiseTevStages(l1->texture, m2);
+            addWarpedNoiseTevStages(textureIdxToPtr((uintptr_t)l1->texture), m2);
         }
         addShaderLayerStages(obj, op, refs, 0, hl, nlay);
     }
@@ -2211,7 +2211,7 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
         {
             _gxSetFogParams();
             Rcp_ResetTextureStageState();
-            addTexLayerStageSwizzled(((ModelFileHeader*)m)->renderOps->layers[0].texture, NULL,
+            addTexLayerStageSwizzled(textureIdxToPtr((uintptr_t)((ModelFileHeader*)m)->renderOps->layers[0].texture), NULL,
                           0, (GXColor*)color, 0, 0);
             if (isHeavyFogEnabled() != 0)
             {
@@ -2229,7 +2229,7 @@ static void modelDoAltRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, int
     }
     else
     {
-        void* tex = ((ModelFileHeader*)m)->renderOps->layers[0].texture;
+        void* tex = textureIdxToPtr((uintptr_t)((ModelFileHeader*)m)->renderOps->layers[0].texture);
         if (gObjCachedTexture != (uintptr_t)tex)
         {
             gObjCachedTexture = (uintptr_t)tex;

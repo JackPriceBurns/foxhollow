@@ -2209,7 +2209,7 @@ void ObjModel_CopyJointTranslation(u8* modelBytes, int jointIndex, f32* out)
 
 Texture* ObjModel_GetTexture(ModelFileHeader* model, int textureIndex)
 {
-    return (Texture*)model->textureIds[textureIndex];
+    return textureIdxToPtr(model->textureIds[textureIndex]);
 }
 
 s16* ObjModel_GetBaseVertexCoords(ModelFileHeader* modelFile, int vertexIndex)
@@ -3001,7 +3001,7 @@ void ObjModel_Release(u8* model)
         z[0] = 0;
         for (z[1] = z[0]; z[0] < ((ModelFileHeader*)header)->textureCount; z[1] += 4, z[0]++)
         {
-            textureFree((Texture*)((ModelFileHeader*)header)->textureIds[z[0]]);
+            textureFree(textureIdxToPtr(((ModelFileHeader*)header)->textureIds[z[0]]));
         }
         if (((ModelFileHeader*)header)->animationModelPtrs != NULL && ((ModelFileHeader*)header)->animationCount != 0)
         {
@@ -3072,10 +3072,6 @@ void* ObjModel_Load(int id, int loadFlag, int* outSize)
         {
             intptr_t texId = (intptr_t)ids[i[0]];
             tex = textureLoad((int)-(texId | 0x8000), 1);
-            if ((uintptr_t)tex <= INT32_MAX)
-            {
-                tex = textureIdxToPtr((int)(uintptr_t)tex);
-            }
             ids[i[0]] = (uintptr_t)tex;
         }
         ObjModel_ResolveRenderOpTextures(header);

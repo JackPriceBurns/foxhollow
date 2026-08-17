@@ -60,7 +60,7 @@ void BombPlantSpore_free(GameObject* obj) {
     ModelLightStruct* light;
 
     state = obj->extra;
-    (*gExpgfxInterface)->freeSource((u32)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
     light = state->light;
     if (light != NULL) {
         ModelLightStruct_free(light);
@@ -177,7 +177,7 @@ void BombPlantSpore_update(GameObject* obj) {
     s16 hitId;
     GameObject* contactObj;
     int poppedMessage;
-    u32 poppedSender;
+    uintptr_t poppedSender;
     GameObject* hitObject;
     GameObject* player;
     int i;
@@ -190,7 +190,7 @@ void BombPlantSpore_update(GameObject* obj) {
             case BOMB_PLANT_SPORE_MESSAGE_DETONATE:
                 gameBitIncrement(GAMEBIT_ITEM_BombSpore_Count);
                 Sfx_PlayFromObject(obj, SFXTRIG_sc_gemrun0122);
-                (*gExpgfxInterface)->freeSource((u32)obj);
+                (*gExpgfxInterface)->freeSource((uintptr_t)obj);
                 for (i = 0; i < BOMB_PLANT_SPORE_EXPLOSION_PARTICLE_COUNT; i++) {
                     objfx_spawnDirectionalBurst(obj, 5, 1.0f, 7, 1, 0x3C,
                                                 1.5f, NULL, 0);
@@ -296,14 +296,14 @@ void BombPlantSpore_update(GameObject* obj) {
     player = Obj_GetPlayerObject();
     if (contactObj == player) {
         state->pickupMsgBitId = GAMEBIT_SawBombSpore;
-        ObjMsg_SendToObject(contactObj, BOMB_PLANT_SPORE_MESSAGE_IN_RANGE, obj, (u32)state);
+        ObjMsg_SendToObject(contactObj, BOMB_PLANT_SPORE_MESSAGE_IN_RANGE, obj, (uintptr_t)state);
         state->flags.waitingForDetonateAck = 1;
     } else {
         f32 fuse = state->fuseTimer - timeDelta;
         state->fuseTimer = fuse;
         if (fuse <= 0.0f) {
             Sfx_PlayFromObject(obj, SFXTRIG_en_majring2);
-            (*gExpgfxInterface)->freeSource((u32)obj);
+            (*gExpgfxInterface)->freeSource((uintptr_t)obj);
             for (j = 0; j < BOMB_PLANT_SPORE_EXPLOSION_PARTICLE_COUNT; j++) {
                 objfx_spawnDirectionalBurst(obj, 5, 1.0f, 7, 1, 0x3C,
                                             1.5f, NULL, 0);

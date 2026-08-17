@@ -2220,14 +2220,14 @@ void ObjHits_Update(int objectCount) {
                 listState->flags = listState->flags & ~OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED;
                 listState->contactFlags = 0;
                 listState->contactHitVolume = -1;
-                *(int*)listState = 0;
+                listState->activeHit = 0;
                 attachedObj = listObj->childObjs[0];
                 if ((attachedObj != 0) && (attachedObj->anim.classId == 0x2d)) {
                     listState = ObjAnim_GetPriorityHitState(&attachedObj->anim);
                     listState->flags = listState->flags & ~OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED;
                     listState->contactFlags = 0;
                     listState->contactHitVolume = -1;
-                    *(int*)listState = 0;
+                    listState->activeHit = 0;
                 }
             }
             objectList++;
