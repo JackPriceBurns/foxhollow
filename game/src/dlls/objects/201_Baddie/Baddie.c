@@ -110,12 +110,6 @@ typedef struct
     s8 eventCount;
 } TrickyMoveResult;
 
-struct TrickyCommandSpawnPair
-{
-    u32 a;
-    u32 b;
-};
-
 typedef struct
 {
     s16 rot[3];
@@ -727,14 +721,7 @@ void baddie_decodePlayerAttackFlags(EnemyState* state, u32 flags, f32 f, u16 hit
 
 uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u32 useAltMode, u32 mode)
 {
-    u32 commandSpawnIds[2];
-    struct TrickyRewardSpawnTail
-    {
-        u32 pair;
-        u16 single;
-    } rewardTail;
     f32 nearestDistance;
-    u32 rewardSpawnIds0;
     GameObject* nearest;
     ObjPlacement* parentSetup;
     ObjPlacement* setup;
@@ -746,10 +733,6 @@ uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u
 
     (void)state;
     parentSetup = (ObjPlacement*)obj->anim.placementData;
-    *(struct TrickyCommandSpawnPair*)commandSpawnIds = *(struct TrickyCommandSpawnPair*)lbl_803E2558;
-    rewardSpawnIds0 = *(u32*)lbl_803E2560;
-    rewardTail.pair = *(u32*)lbl_803E2564;
-    rewardTail.single = lbl_803E2568[0];
     if (spawnBits == 0)
     {
         return 0;
@@ -766,7 +749,7 @@ uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u
         {
             index = 3;
         }
-        setup = Obj_AllocObjectSetup(0x30, ((u16*)commandSpawnIds)[index]);
+        setup = Obj_AllocObjectSetup(0x30, lbl_803E2558[index]);
     }
     else if (mode == 2)
     {
@@ -775,7 +758,7 @@ uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u
         {
             index = 1;
         }
-        setup = Obj_AllocObjectSetup(0x30, ((u16*)&rewardSpawnIds0)[index]);
+        setup = Obj_AllocObjectSetup(0x30, lbl_803E2560[index]);
     }
     else if (mode == 3)
     {
@@ -834,7 +817,14 @@ uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u
         {
             return 0;
         }
-        setup = Obj_AllocObjectSetup(0x30, ((u16*)((u8*)&rewardTail.pair - 2))[index]);
+        if (index == 3)
+        {
+            setup = Obj_AllocObjectSetup(0x30, lbl_803E2568[0]);
+        }
+        else
+        {
+            setup = Obj_AllocObjectSetup(0x30, lbl_803E2564[index - 1]);
+        }
     }
     ((CollectibleSetup*)setup)->unk1A = 0x14;
     ((CollectibleSetup*)setup)->counterGameBit = -1;

@@ -15,9 +15,9 @@ typedef struct PlayerModelChainEntry
     int count;
 } PlayerModelChainEntry;
 
-extern void* gPlayerPathObject;
+extern GameObject* gPlayerPathObject;
 extern u8 gPlayerModelChainStyle;
-extern void* gPlayerSpawnedObjects[];
+extern GameObject* gPlayerSpawnedObjects[];
 extern StaffCollisionInterface** gPlayerResource;
 extern int gPlayerPendingHealth;
 extern GameObject* gPlayerStaffObject;
@@ -44,7 +44,7 @@ extern int gPlayerStepSfxTimer;
 extern s16 gPlayerSelectedItem;
 extern PlayerStateFn gPlayerStateHandlers[];
 extern PlayerSubstateFn gPlayerDefaultStateHandler;
-extern void* gPlayerChildObject;
+extern GameObject* gPlayerChildObject;
 extern PlayerModelChainEntry* gPlayerModelChainConfig;
 extern Shader* gPlayerHeldObject;
 extern PartFxSpawnParams gPlayerPartFxParams;

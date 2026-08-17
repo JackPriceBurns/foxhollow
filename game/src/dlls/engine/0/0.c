@@ -1554,7 +1554,6 @@ extern NpcDialoguePhraseState gNpcDialoguePhraseState;
 extern int gHudTimedElementTexSlot[6];
 extern GameObject* gHeadDisplayModelObjs[6];
 extern HudItemInfoPopup gHudItemInfoPopup;
-extern int lbl_803A9364[13];
 
 void GameUI_airMeterRun(int v)
 {
@@ -2123,9 +2122,10 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
 char lbl_803A87F0[sizeof(CMenuHud)] __attribute__((aligned(8)));
 void hudDrawMagicBar(u8 alpha, int elemAlpha, u8 flags)
 {
-    int total = lbl_803A9364[8];
+    TrickyHud* hud = (TrickyHud*)lbl_803A87F0;
+    int total = hud->statusValue[HUD_STATUS_MAX_MAGIC];
     int middleCapacity = total - 0xd;
-    int current = lbl_803A9364[2];
+    int current = hud->statusValue[HUD_STATUS_MAGIC];
     int seg1;
     int seg4;
     int rem4;
@@ -4865,6 +4865,7 @@ static inline void pauseMenuSetSpellStoneIcons(GridEntry* entries, u8 count)
 
 void pauseMenuDrawStatusPage(GameObject* player)
 {
+    TrickyHud* hud = (TrickyHud*)lbl_803A87F0;
     s8 i8;
     s32 ty1;
     s32 alpha;
@@ -4970,7 +4971,7 @@ void pauseMenuDrawStatusPage(GameObject* player)
         gameTextShowStr(buf, 0x93, 0x14a, 0xdc);
         if (gPauseMenuScarabCapacity != 0)
         {
-            sprintf(buf, lbl_803DBB78, lbl_803A9364[3]);
+            sprintf(buf, lbl_803DBB78, hud->statusValue[HUD_STATUS_SCARABS]);
             gameTextShowStr(buf, 0x93, 0x140, 0x10e);
         }
         sprintf(buf, lbl_803DBB80, hintCount);
@@ -5002,9 +5003,9 @@ void pauseMenuDrawStatusPage(GameObject* player)
         }
         {
             u16 jj;
-            for (jj = 0; (s32)(u16)jj < (lbl_803A9364[7] >> 2); jj++)
+            for (jj = 0; (s32)(u16)jj < (hud->statusValue[HUD_STATUS_MAX_HEALTH] >> 2); jj++)
             {
-                s32 v = lbl_803A9364[0];
+                s32 v = hud->statusValue[HUD_STATUS_HEALTH];
                 u8 tex;
                 f32 fyj;
                 if ((s32)(u16)jj < (v >> 2))
@@ -9110,7 +9111,6 @@ GameObject* gHeadDisplayModelObjs[6];
 GameObject* gCMenuRingObjs[3];
 GameObject* gCMenuRingFrontObjs[3];
 HudItemInfoPopup gHudItemInfoPopup;
-int lbl_803A9364[13];
 int lbl_803A9320[0x11];
 s16 lbl_803A8B48[0x98];
 Texture** hudTextures = ((GameUiHud*)lbl_803A87F0)->hudTextures;

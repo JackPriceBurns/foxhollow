@@ -74,6 +74,7 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
     int contactSfxMuted;
     int isPlayer;
     GameObject* desc;
+    CurvesCollisionState* collision;
 
     tbl = gSurfaceSfxTable;
     switch (type)
@@ -137,23 +138,12 @@ void objAudioDispatchAnimEvents(GameObject* obj, ObjAnimEventList* events, u8 ty
         return;
     }
     isPlayer = obj == Obj_GetPlayerObject();
-    if (isPlayer)
-    {
-        CurvesCollisionState* collision = (CurvesCollisionState*)state;
-        contactSfxFlags = collision->surfaceFlags;
-        contactSfxMuted = collision->subtype;
-        n = (s8)collision->segmentHits.surfaceTypes[0];
-        desc = (GameObject*)collision->segmentHits.objects[0];
-        waterDepth = collision->resultWaterDepth;
-    }
-    else
-    {
-        contactSfxFlags = ((BaddieState*)state)->contactSfxFlags;
-        contactSfxMuted = ((BaddieState*)state)->contactSfxMuted;
-        n = ((BaddieState*)state)->surfaceSoundIndex;
-        desc = (GameObject*)(((BaddieState*)state)->contactObj);
-        waterDepth = ((BaddieState*)state)->waterDepth;
-    }
+    collision = (CurvesCollisionState*)state;
+    contactSfxFlags = collision->surfaceFlags;
+    contactSfxMuted = collision->subtype;
+    n = (s8)collision->segmentHits.surfaceTypes[0];
+    desc = (GameObject*)collision->segmentHits.objects[0];
+    waterDepth = collision->resultWaterDepth;
     if (!(contactSfxFlags & 0x10) && contactSfxMuted != 0)
     {
         return;

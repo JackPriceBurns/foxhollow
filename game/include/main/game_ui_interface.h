@@ -12,7 +12,8 @@ typedef struct GameUIInterface {
     int (*isAnyItemBeingUsed)(void);
     int (*isItemBeingUsed)(int itemId);
     int (*isOneOfItemsBeingUsed)(s32 *items, int count);
-    void (*pad28_slots[4])(void);
+    void (*pad28_slots[3])(void);
+    void (*showMinimapInfoText)(s32 textId, s32 posY, s32 posX);
     void (*showNpcDialogue)(s32 id, s32 unusedA, s32 unusedB, s32 disableInput);
     void (*pad3C_slots[1])(void);
     void (*setCMenuShouldClose)(u8 shouldClose);
@@ -33,6 +34,7 @@ STATIC_ASSERT(offsetof(GameUIInterface, render) == 0x0C);
 STATIC_ASSERT(offsetof(GameUIInterface, isAnyItemBeingUsed) == 0x1C);
 STATIC_ASSERT(offsetof(GameUIInterface, isItemBeingUsed) == 0x20);
 STATIC_ASSERT(offsetof(GameUIInterface, isOneOfItemsBeingUsed) == 0x24);
+STATIC_ASSERT(offsetof(GameUIInterface, showMinimapInfoText) == 0x34);
 STATIC_ASSERT(offsetof(GameUIInterface, showNpcDialogue) == 0x38);
 STATIC_ASSERT(offsetof(GameUIInterface, setCMenuShouldClose) == 0x40);
 STATIC_ASSERT(offsetof(GameUIInterface, setInputOverride) == 0x44);

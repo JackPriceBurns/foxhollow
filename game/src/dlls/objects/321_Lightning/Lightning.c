@@ -45,9 +45,10 @@ void lightning_render(GameObject* obj) {
 
 void lightning_update(GameObject* obj) {
     LightningState* state;
-    u8* objectData;
-    u32* objects;
-    u32* targetSlot;
+    LightningPlacement* placement;
+    GameObject** objects;
+    GameObject* target;
+    LightningState* targetState;
     int objectCount;
     int objectIndex;
     int spawnLightning;
@@ -57,9 +58,8 @@ void lightning_update(GameObject* obj) {
     f32* start;
 
     state = obj->extra;
-    objectData = (u8*)obj->anim.placementData;
-    enableGameBit = ObjAnim_ReadPlacementS16(
-        &obj->anim, &((LightningPlacement*)objectData)->enableGameBit);
+    placement = (LightningPlacement*)obj->anim.placementData;
+    enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->enableGameBit);
     if (enableGameBit != -1) {
         if (state->flags.enabled) {
             if (mainGetBit(enableGameBit) == 0) {
@@ -79,14 +79,14 @@ void lightning_update(GameObject* obj) {
         state->countdown -= timeDelta;
         if (state->countdown <= 0.0f) {
             state->countdown +=
-                (f32)(s32)((u32)((LightningPlacement*)objectData)->repeatDelay * LIGHTNING_DELAY_FRAME_SCALE);
+                (f32)(s32)((u32)placement->repeatDelay * LIGHTNING_DELAY_FRAME_SCALE);
             spawnLightning = 1;
         }
         if (spawnLightning != 0) {
-            objects = (u32*)objGetAllOfType(LIGHTNING_OBJECT_GROUP, &objectCount);
+            objects = objGetAllOfType(LIGHTNING_OBJECT_GROUP, &objectCount);
             objectIndex = 0;
             while (objectIndex < objectCount) {
-                u32 linkedIdent = ((GameObject*)objects[objectIndex])->anim.placement->ident;
+                u32 linkedIdent = objects[objectIndex]->anim.placement->ident;
                 if (linkedIdent == state->linkedIdent) {
                     break;
                 }
@@ -100,9 +100,8 @@ void lightning_update(GameObject* obj) {
             lifetime = (u16)(state->lifetimeBase + randomGetRange(LIGHTNING_LIFETIME_RANDOM_OFFSET_MIN,
                                                                   LIGHTNING_LIFETIME_RANDOM_OFFSET_MAX));
             start = (f32*)((u8*)obj + offsetof(GameObject, anim.localPosX));
-            targetSlot = &objects[objectIndex];
-            effect = lightningCreate((const Vec3f*)start,
-                                     (const Vec3f*)&((GameObject*)*targetSlot)->anim.localPos, state->radiusX,
+            target = objects[objectIndex];
+            effect = lightningCreate((const Vec3f*)start, (const Vec3f*)&target->anim.localPos, state->radiusX,
                                      state->radiusY, lifetime, state->width, (state->flags.alternateStyle ? 1 : 0));
             state->effect = effect;
             state->ageTimer = 0.0f;
@@ -110,10 +109,9 @@ void lightning_update(GameObject* obj) {
                 objfx_spawnHitEffectBurst(obj, state->hitRadius, LIGHTNING_HIT_EFFECT_ID, LIGHTNING_HIT_EFFECT_VARIANT,
                                           LIGHTNING_HIT_EFFECT_COUNT, NULL);
             }
-            objectData = ((GameObject*)*targetSlot)->extra;
-            if ((((LightningState*)objectData)->modeBits.mode & LIGHTNING_MODE_HIT_EFFECT) != 0) {
-                objfx_spawnHitEffectBurst((GameObject*)*targetSlot, ((LightningState*)objectData)->hitRadius,
-                                          LIGHTNING_HIT_EFFECT_ID, LIGHTNING_HIT_EFFECT_VARIANT,
+            targetState = target->extra;
+            if ((targetState->modeBits.mode & LIGHTNING_MODE_HIT_EFFECT) != 0) {
+                objfx_spawnHitEffectBurst(target, targetState->hitRadius, LIGHTNING_HIT_EFFECT_ID, LIGHTNING_HIT_EFFECT_VARIANT,
                                           LIGHTNING_HIT_EFFECT_COUNT, NULL);
             }
             if ((state->modeBits.mode & LIGHTNING_MODE_DIRECTIONAL_BURST) != 0) {
@@ -121,9 +119,8 @@ void lightning_update(GameObject* obj) {
                                             LIGHTNING_BURST_MODE, LIGHTNING_BURST_CHANCE, LIGHTNING_BURST_MULTIPLIER,
                                             NULL, 0);
             }
-            if ((((LightningState*)objectData)->modeBits.mode & LIGHTNING_MODE_DIRECTIONAL_BURST) != 0) {
-                objfx_spawnDirectionalBurst((GameObject*)*targetSlot, LIGHTNING_BURST_INDEX,
-                                            ((LightningState*)objectData)->burstRadius, LIGHTNING_BURST_KIND,
+            if ((targetState->modeBits.mode & LIGHTNING_MODE_DIRECTIONAL_BURST) != 0) {
+                objfx_spawnDirectionalBurst(target, LIGHTNING_BURST_INDEX, targetState->burstRadius, LIGHTNING_BURST_KIND,
                                             LIGHTNING_BURST_MODE, LIGHTNING_BURST_CHANCE, LIGHTNING_BURST_MULTIPLIER,
                                             NULL, 0);
             }

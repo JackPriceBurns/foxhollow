@@ -4128,26 +4128,26 @@ void setupWaterReflectionTev(Texture* handle1, Texture* handle2)
     }
 
     k0 = gWaterReflectionKColorR;
-    ((void (*)(int, GXColor*))GXSetTevKColor)(0, &k0);
+    GXSetTevKColor(GX_KCOLOR0, k0);
     GXSetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K0);
     k1 = gWaterReflectionKColorG;
-    ((void (*)(int, GXColor*))GXSetTevKColor)(1, &k1);
+    GXSetTevKColor(GX_KCOLOR1, k1);
     GXSetTevKColorSel(GX_TEVSTAGE1, GX_TEV_KCSEL_K1);
     k2 = gWaterReflectionKColorB;
-    ((void (*)(int, GXColor*))GXSetTevKColor)(2, &k2);
+    GXSetTevKColor(GX_KCOLOR2, k2);
     GXSetTevKColorSel(GX_TEVSTAGE2, GX_TEV_KCSEL_K2);
 
     temp.r = (u8)((int)temp.r >> 2);
     temp.g = (u8)((int)temp.g >> 2);
     temp.b = (u8)((int)temp.b >> 2);
     tev1 = temp;
-    ((void (*)(int, GXColor*))GXSetTevColor)(1, &tev1);
+    GXSetTevColor(GX_TEVREG1, tev1);
 
     temp2.r = (u8)(temp.r + 0xC0);
     temp2.g = (u8)(temp.g + 0xC0);
     temp2.b = (u8)(temp.b + 0xC0);
     tev2 = temp2;
-    ((void (*)(int, GXColor*))GXSetTevColor)(2, &tev2);
+    GXSetTevColor(GX_TEVREG2, tev2);
 
     GXSetIndTexOrder(GX_INDTEXSTAGE0, GX_TEXCOORD1, GX_TEXMAP1);
     GXSetIndTexCoordScale(GX_INDTEXSTAGE0, GX_ITS_1, GX_ITS_1);

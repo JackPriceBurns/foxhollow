@@ -916,7 +916,7 @@ u32 SHthorntail_updateLevelControlState(GameObject* obj, int unused, ObjSeqState
     }
     runtime->activeMoveValid = 0;
     objAudioDispatchAnimEvents(obj, &animUpdate->animEvents, 8, runtime->renderPathPoints,
-                               runtime->moveScratch, 1.0f, 1.0f);
+                               &runtime->pathState, 1.0f, 1.0f);
     return 0;
 }
 
@@ -1076,7 +1076,7 @@ void SHthorntail_update(GameObject* obj) {
             eventId++;
         }
         objAudioDispatchAnimEvents(obj, &animEvents, 8, runtime->renderPathPoints,
-                                   runtime->moveScratch, 1.0f, 1.0f);
+                                   &runtime->pathState, 1.0f, 1.0f);
         if ((SHTHORNTAIL_STATE_FLAGS(stateTables)[runtime->behaviorState] &
              SHTHORNTAIL_STATE_FLAG_DISABLE_MOVE_CONTROL) != 0) {
             runtime->movementControlFlags = runtime->movementControlFlags & ~1;
@@ -1113,9 +1113,9 @@ void SHthorntail_update(GameObject* obj) {
             gSHthorntailActiveConfigToken =
                 ((SHthorntailPlacement*)(obj)->anim.placementData)->configToken;
             obj->anim.velocityY = -(0.17f * timeDelta - obj->anim.velocityY);
-            (*gPathControlInterface)->update((void*)obj, runtime->moveScratch, timeDelta);
-            (*gPathControlInterface)->apply((void*)obj, runtime->moveScratch);
-            (*gPathControlInterface)->advance((void*)obj, runtime->moveScratch, timeDelta);
+            (*gPathControlInterface)->update((void*)obj, &runtime->pathState, timeDelta);
+            (*gPathControlInterface)->apply((void*)obj, &runtime->pathState);
+            (*gPathControlInterface)->advance((void*)obj, &runtime->pathState, timeDelta);
             obj->anim.rotY = runtime->moveControlPitch;
             obj->anim.rotZ = runtime->moveControlRoll;
         } else {
@@ -1125,13 +1125,13 @@ void SHthorntail_update(GameObject* obj) {
             }
             if (('\x02' <= runtime->behaviorState) && (runtime->behaviorState <= '\x06')) {
                 obj->anim.velocityY = -(0.17f * timeDelta - obj->anim.velocityY);
-                (*gPathControlInterface)->update((void*)obj, runtime->moveScratch, timeDelta);
-                (*gPathControlInterface)->apply((void*)obj, runtime->moveScratch);
-                (*gPathControlInterface)->advance((void*)obj, runtime->moveScratch, timeDelta);
+                (*gPathControlInterface)->update((void*)obj, &runtime->pathState, timeDelta);
+                (*gPathControlInterface)->apply((void*)obj, &runtime->pathState);
+                (*gPathControlInterface)->advance((void*)obj, &runtime->pathState, timeDelta);
                 obj->anim.rotY = runtime->moveControlPitch;
                 obj->anim.rotZ = runtime->moveControlRoll;
             } else {
-                (*gPathControlInterface)->attachObject((void*)obj, runtime->moveScratch);
+                (*gPathControlInterface)->attachObject((void*)obj, &runtime->pathState);
             }
         }
     }
@@ -1142,7 +1142,7 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
     SHthorntailState* runtime;
     ObjModel* model;
     u32 randomTime;
-    u8* moveScratch;
+    CurvesCollisionState* pathState;
     SHthorntailPathParams pathParam;
 
     SHthorntail_normalizePackedTables();
@@ -1173,11 +1173,11 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
     obj->anim.rootMotionScale = obj->anim.modelInstance->rootMotionScaleBase * ((float)ObjAnim_ReadPlacementU16(&obj->anim, &(placement->scale)) / 1000.0f);
     model = Obj_GetActiveModel(obj);
     modelInitBones(obj->anim.rootMotionScale, model);
-    moveScratch = runtime->moveScratch;
-    (*gPathControlInterface)->init(moveScratch, SHTHORNTAIL_PATH_CONTROL_MODE, SHTHORNTAIL_PATH_CONTROL_FLAGS, 0);
+    pathState = &runtime->pathState;
+    (*gPathControlInterface)->init(pathState, SHTHORNTAIL_PATH_CONTROL_MODE, SHTHORNTAIL_PATH_CONTROL_FLAGS, 0);
     (*gPathControlInterface)
-        ->setup(moveScratch, SHTHORNTAIL_PATH_CHANNEL, gSHthorntailPathHeaders, gSHthorntailPathData, &pathParam);
-    (*gPathControlInterface)->attachObject(obj, moveScratch);
+        ->setup(pathState, SHTHORNTAIL_PATH_CHANNEL, gSHthorntailPathHeaders, gSHthorntailPathData, &pathParam);
+    (*gPathControlInterface)->attachObject(obj, pathState);
     obj->animEventCallback = SHthorntail_updateLevelControlState;
     dll_2E_initState(obj, (MoveLibState*)runtime, 0xffffdc72, 0x2aaa, 3);
     dll_2E_setReattackDelay((MoveLibState*)runtime, 400, 0x78);

@@ -264,7 +264,8 @@ void duster_init(GameObject* obj, DusterPlacement* placement) {
     state->complete = mainGetBit(state->completeGameBit);
     hitReactState = obj->anim.hitReactState;
     if (hitReactState != NULL && state->active == 0) {
-        hitReactState->flags = (s16)(hitReactState->flags | 1);
+        ((ObjHitsPriorityState*)hitReactState)->flags =
+            (s16)(((ObjHitsPriorityState*)hitReactState)->flags | 1);
     }
     if ((state->complete != 0 || state->active == 0) && obj->anim.hitReactState != NULL) {
         ObjHits_DisableObject(obj);

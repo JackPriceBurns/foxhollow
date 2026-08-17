@@ -61,7 +61,8 @@ typedef struct BaddieState {
     u8 padB9[0xBC - 0xB9];
     u8 paletteSlot; /* indexes the palette table (paletteIndex = gIceBaddiePaletteIndexTable[slot]) */
     u8 unkBD[0xC4 - 0xBD];
-    u8 padC4[0x118 - 0xC4 + 12];
+    u8 sphereMapFadeFlags;
+    u8 padC5[0x118 - 0xC5 + 12];
     f32 unk118; /* a local-space point carried through a reparent exactly like
         anim.localPos: player.c playerReparentPreservingWorldTransform pushes it to world space through the old
         parent and pulls it back through the new one. No other reader in the tree. */

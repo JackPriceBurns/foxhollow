@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "main/pi_dolphin.h"
+#include "main/objhits_types.h"
 
 typedef struct ObjHitReactEntry ObjHitReactEntry;
 typedef struct ObjAnimBank ObjAnimBank;
@@ -47,6 +48,7 @@ extern ObjAnimComponent **gObjHitReactResetObjects;
 #define OBJHITREACT_MOVE_ID_END -1
 #define OBJHITREACT_MOVE_ENTRY_SHORT_COUNT 3
 
+#ifdef __MWERKS__
 typedef struct ObjHitReactState {
   int activeHit;
   s16 activeEntryByteCount;
@@ -54,13 +56,19 @@ typedef struct ObjHitReactState {
   ObjHitReactEntry *entries;
   u8 pad0C[0x58 - 0x0C];
   s16 resetFrameCount;
-  u8 pad5A[0x60 - 0x5A];
+  s16 unk5A;
+  u8 pad5C[0x60 - 0x5C];
   s16 flags;
   u8 shapeFlags;
   u8 pad63[0xAE - 0x63];
   u8 activeHitboxMode;
   u8 resetHitboxMode;
 } ObjHitReactState;
+#else
+typedef struct ObjHitReactState {
+  ObjHitsPriorityState priority;
+} ObjHitReactState;
+#endif
 
 struct ObjHitReactEntry {
   s16 primaryHitSfxId;
@@ -72,6 +80,54 @@ struct ObjHitReactEntry {
   f32 reactionStepScale;
   u8 pad10[4];
 };
+
+static inline s16 ObjHitReact_GetActiveEntryByteCount(ObjHitReactState *state) {
+#ifdef __MWERKS__
+  return state->activeEntryByteCount;
+#else
+  return state->priority.hitReactActiveEntryByteCount;
+#endif
+}
+
+static inline void ObjHitReact_SetActiveEntryByteCount(ObjHitReactState *state, s16 byteCount) {
+#ifdef __MWERKS__
+  state->activeEntryByteCount = byteCount;
+#else
+  state->priority.hitReactActiveEntryByteCount = byteCount;
+#endif
+}
+
+static inline s16 ObjHitReact_GetEntryBufferByteCapacity(ObjHitReactState *state) {
+#ifdef __MWERKS__
+  return state->entryBufferByteCapacity;
+#else
+  return state->priority.hitReactEntryBufferByteCapacity;
+#endif
+}
+
+static inline void ObjHitReact_SetEntryBufferByteCapacity(ObjHitReactState *state, s16 byteCapacity) {
+#ifdef __MWERKS__
+  state->entryBufferByteCapacity = byteCapacity;
+#else
+  state->priority.hitReactEntryBufferByteCapacity = byteCapacity;
+#endif
+}
+
+static inline ObjHitReactEntry *ObjHitReact_GetEntries(ObjHitReactState *state) {
+#ifdef __MWERKS__
+  return state->entries;
+#else
+  return state->priority.hitReactEntries;
+#endif
+}
+
+static inline void ObjHitReact_SetEntries(ObjHitReactState *state, ObjHitReactEntry *entries) {
+#ifdef __MWERKS__
+  state->entries = entries;
+#else
+  state->priority.hitReactEntries = entries;
+#endif
+}
 
 STATIC_ASSERT(sizeof(ObjHitReactMoveEntry) == 0x06);
 STATIC_ASSERT(offsetof(ObjHitReactMoveEntry, moveId) == 0x00);

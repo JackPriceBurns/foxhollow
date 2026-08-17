@@ -1073,7 +1073,7 @@ int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8
     state->eventState = 0;
     state->lastBlendMoveIndex = OBJANIM_BLEND_MOVE_INDEX_INVALID;
     hitState = objAnim->hitReactState;
-    if ((hitState != NULL) && (hitState->entries != NULL))
+    if ((hitState != NULL) && (ObjHitReact_GetEntries(hitState) != NULL))
     {
         ObjHitReact_LoadMoveEntries((ObjAnimComponent*)objAnimHandle, bank, objAnim->romDefNo, hitState, requestedMoveId,
                                     0);

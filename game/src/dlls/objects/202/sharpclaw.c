@@ -530,10 +530,10 @@ u32 wispBaddieProcessAnimEvent(GameObject* obj, u8* state, u32 allowNewEvent)
             }
             else
             {
-                eventTableIndex = sequenceIndex * 2;
                 ((EnemyState*)state)->sharpClaw.eventDelayTimer =
                     ((EnemyState*)state)->intervalTimer +
-                    (f32)(int)randomGetRange(base[eventTableIndex + 0x152c], base[eventTableIndex + 0x152d]);
+                    (f32)(int)randomGetRange(gBaddieEventDelayRanges[sequenceIndex][0],
+                                             gBaddieEventDelayRanges[sequenceIndex][1]);
                 ((EnemyState*)state)->intervalTimer = 0.0f;
                 return 0;
             }
@@ -700,18 +700,24 @@ u8 sharpClawHandleHitMessage(GameObject* obj, u8* state, GameObject* attacker, i
             ((EnemyState*)state)->flags2E8 |= 0x10;
             {
                 IdleRow* rows = (IdleRow*)rowsC;
-                Baddie_SetMove(obj, state, rows[state[0x33c]].anim,
-                               sharpClaw_readPackedF32(rowsC + state[0x33c] * 12), 0,
-                               (u8)sharpClaw_readPackedU32(&rows[state[0x33c]].flags));
+                Baddie_SetMove(obj, state,
+                               rows[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex].anim,
+                               sharpClaw_readPackedF32(
+                                   rowsC + ((EnemyState*)state)->familyData.sharpClaw.activeEventIndex * 12), 0,
+                               (u8)sharpClaw_readPackedU32(
+                                   &rows[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex].flags));
             }
             ObjAnim_SetMoveProgress(&obj->anim,
                                     sharpClaw_readPackedF32(
-                                        gBaddieMoveProgressTable + rowsC[state[0x33c] * 12 + 8] * 4));
-            if (rowsC[state[0x33c] * 12 + 0xa] != 0)
+                                        gBaddieMoveProgressTable +
+                                        rowsC[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex * 12 + 8] *
+                                            4));
+            if (rowsC[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex * 12 + 0xa] != 0)
             {
-                state[0x33a] = rowsC[state[0x33c] * 12 + 0xa];
+                ((EnemyState*)state)->userData1 =
+                    rowsC[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex * 12 + 0xa];
             }
-            ret = rowsC[state[0x33c] * 12 + 9];
+            ret = rowsC[((EnemyState*)state)->familyData.sharpClaw.activeEventIndex * 12 + 9];
             ((EnemyState*)state)->sharpClaw.moveHoldTimer = ((EnemyState*)state)->sharpClaw.moveHoldDuration;
             z = 0.0f;
             ((EnemyState*)state)->sharpClaw.eventDelayTimer = z;
@@ -729,17 +735,17 @@ u8 sharpClawHandleHitMessage(GameObject* obj, u8* state, GameObject* attacker, i
         }
         else
         {
-            amount = state[0x2f1] & 0x1f;
-            if ((u32)(state[0x2f1] & 0x1f) > 0x18)
+            amount = ((EnemyState*)state)->flags2F1 & 0x1f;
+            if ((u32)(((EnemyState*)state)->flags2F1 & 0x1f) > 0x18)
             {
                 amount = 0;
             }
         }
         z = 0.0f;
         ((EnemyState*)state)->sharpClaw.eventDelayTimer = z;
-        if (state[0x2f1] & 0x18)
+        if (((EnemyState*)state)->flags2F1 & 0x18)
         {
-            if (state[0x2f1] & 1)
+            if (((EnemyState*)state)->flags2F1 & 1)
             {
                 ((EnemyState*)state)->intervalTimer = 50.0f;
             }
@@ -795,13 +801,13 @@ u8 sharpClawHandleHitMessage(GameObject* obj, u8* state, GameObject* attacker, i
                 return 0;
             }
         }
-        if (state[0x2f1] & 0x10)
+        if (((EnemyState*)state)->flags2F1 & 0x10)
         {
             damage = 0x14;
         }
         else
         {
-            state[0x2f5] = 0;
+            ((EnemyState*)state)->spawnBits = 0;
         }
         if (damage > ((EnemyState*)state)->current)
         {

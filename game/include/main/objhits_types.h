@@ -8,6 +8,8 @@
 
 #define OBJHITBOX_CONTACT_OBJECT_COUNT 3
 
+struct ObjHitReactEntry;
+
 /*
  * ObjHitboxTransformState - the per-hitbox runtime record at
  * ObjAnimComponent+0x58 (also reached as ObjHitbox.transformState).
@@ -56,7 +58,8 @@ STATIC_ASSERT(sizeof(ObjHitboxTransformState) == 0x110);
 #define OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED 0x2000
 
 typedef struct ObjHitsPriorityState {
-  u8 pad00[0x0C];
+  uintptr_t activeHit;
+  u8 padActiveHit[0x0C - sizeof(uintptr_t)];
   f32 primaryRadiusSquared;
   f32 localPosX;
   f32 localPosY;
@@ -116,6 +119,11 @@ typedef struct ObjHitsPriorityState {
   u8 sourceMask;
   u8 targetMask;
   u8 secondaryShapeFlags;
+#ifndef __MWERKS__
+  s16 hitReactActiveEntryByteCount;
+  s16 hitReactEntryBufferByteCapacity;
+  struct ObjHitReactEntry *hitReactEntries;
+#endif
 } ObjHitsPriorityState;
 
 STATIC_ASSERT(offsetof(ObjHitsPriorityState, activeHitboxMode) == 0xAE);

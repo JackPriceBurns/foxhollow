@@ -12,6 +12,7 @@
 #include "main/mm.h"
 #include "game/objects/object.h"
 #include "main/object_transform.h"
+#include "main/objHitReact_types.h"
 #include "main/texture.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/PPCArch.h"
@@ -1908,7 +1909,7 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
     u8* prevSphere;
     int i;
     u8* mtx;
-    u8* hitReact;
+    ObjHitReactState* hitReact;
     u8* samples;
     Vec vec;
     f32 zero;
@@ -1916,33 +1917,32 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
     u32 bufSel;
     int idx;
     int sampleCount;
-    void* hitSample;
+    u32 hitSample;
     u32 cnt;
     int lim;
     u8* cur;
 
-    hitSample = NULL;
-    hitReact = (u8*)((GameObject*)obj)->anim.hitReactState;
+    hitSample = 0;
+    hitReact = ((GameObject*)obj)->anim.hitReactState;
     if (hitReact != NULL)
     {
         if (((GameObject*)obj)->anim.modelInstance->hitReactStateCount != 0)
         {
-            sampleCount = (int)*(s16*)(hitReact + 4) >> 2;
+            sampleCount = (int)ObjHitReact_GetActiveEntryByteCount(hitReact) >> 2;
             if (sampleCount > 0)
             {
-                samples = *(u8**)(hitReact + 8);
+                samples = (u8*)ObjHitReact_GetEntries(hitReact);
                 idx = (int)(((GameObject*)obj)->anim.currentMoveProgress * sampleCount);
                 if (idx >= sampleCount)
                 {
                     idx = sampleCount - 1;
                 }
-                samples = *(u8**)(samples + idx * 4);
-                hitSample = samples;
+                hitSample = fhReadBE32(samples + idx * sizeof(u32));
             }
         }
         else
         {
-            hitSample = *(void**)(hitReact + 0x48);
+            hitSample = ((ObjHitsPriorityState*)hitReact)->objectHitMask;
         }
     }
 
@@ -1956,7 +1956,7 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
             priorityState->resetHitboxMode = 0;
         }
         *(u32*)((u8*)((GameObject*)prevObj)->anim.hitReactState + 0x4c) = *(u32*)((u8*)((GameObject*)prevObj)->anim.hitReactState + 0x48);
-        *(void**)((u8*)((GameObject*)prevObj)->anim.hitReactState + 0x48) = hitSample;
+        *(u32*)((u8*)((GameObject*)prevObj)->anim.hitReactState + 0x48) = hitSample;
     }
 
     ((ObjModel*)hitState)->bufferFlags ^= 4;

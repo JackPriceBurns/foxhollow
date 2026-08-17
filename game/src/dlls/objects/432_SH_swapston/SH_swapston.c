@@ -86,7 +86,6 @@ typedef struct WarpStoneDustEffectParams {
 #define DUST_CLOUD_EFFECT_ID            0x7d2
 #define DUST_PUFF_PARAM_TYPE            0xc0e
 #define DUST_SPAWN_CHANCE_RANGE         0x1e0
-#define DUST_BURST_PUFF_COUNT           0xf
 #define WARPSTONE_DUST_FLAG_BURST_READY 0x02
 #define WARPSTONE_DUST_FLAG_ACTIVE      0x04
 
@@ -108,60 +107,70 @@ ObjectDescriptor gWarpStoneObjDescriptor = {
 };
 
 void warpstone_updateDustEffects(GameObject* obj) {
-    void* playerObj;
-    WarpStoneState* state;
-    int burstCount;
-    WarpStoneDustEffectParams effectParams;
+    GameObject* player = Obj_GetPlayerObject();
+    WarpStoneState* state = obj->extra;
 
-    playerObj = Obj_GetPlayerObject();
-    state = obj->extra;
+    WarpStoneDustEffectParams effectParams;
     effectParams.position.x = 0.0f;
     effectParams.position.y = 55.0f;
     effectParams.position.z = 0.0f;
     effectParams.effectType = DUST_PUFF_PARAM_TYPE;
     effectParams.count = 1;
-    if ((state->dustEffectFlags & WARPSTONE_DUST_FLAG_ACTIVE) != 0) {
-        if (state->dustEffectTimer < 120.0f) {
-            if ((f32)(s32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 2.0f) {
-                (*gPartfxInterface)->spawnObject(playerObj, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
-            }
-        } else if (state->dustEffectTimer < 360.0f) {
-            if ((f32)(s32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 3.0f) {
-                (*gPartfxInterface)->spawnObject(playerObj, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
-            }
-            effectParams.radius = 0x28;
-            effectParams.flags = 0;
-            effectParams.scale = 0.0009f * ((state->dustEffectTimer - 120.0f) / 240.0f);
-            (*gPartfxInterface)->spawnObject(playerObj, DUST_CLOUD_EFFECT_ID, &effectParams, 2, -1, NULL);
-            state->dustEffectFlags = state->dustEffectFlags | WARPSTONE_DUST_FLAG_BURST_READY;
-        } else if (state->dustEffectTimer < 420.0f) {
-            if ((f32)(s32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 2.0f) {
-                (*gPartfxInterface)->spawnObject(playerObj, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
-            }
-            if ((state->dustEffectFlags & WARPSTONE_DUST_FLAG_BURST_READY) != 0) {
-                state->dustEffectFlags = state->dustEffectFlags & ~WARPSTONE_DUST_FLAG_BURST_READY;
-                effectParams.radius = 0x46;
-                effectParams.scale = 0.00036f;
-                for (burstCount = DUST_BURST_PUFF_COUNT; (u8)burstCount != 0; burstCount--) {
-                    (*gPartfxInterface)->spawnObject(playerObj, DUST_CLOUD_EFFECT_ID, &effectParams, 2, -1, NULL);
-                }
-            }
-        } else if (!(state->dustEffectTimer < 480.0f)) {
-            state->dustEffectTimer = 0.0f;
-            state->dustEffectFlags = state->dustEffectFlags & ~WARPSTONE_DUST_FLAG_ACTIVE;
-        }
-        state->dustEffectTimer = state->dustEffectTimer + timeDelta;
-    }
-}
 
-/*
- * sclantern - hanging lantern objects used in SharpClaw-themed areas.
- * warpstone_advanceAnimEvents drives the animation each frame: it fires
- * spark particle SFX at left/right attachment points (path points 0 and 1)
- * on events 1-4, and plays a swing SFX on event 9. Sparks are suppressed
- * during the early frames of move WARPSTONE_SPARK_SUPPRESS_MOVE (0x1b).
- * warpstoneProbePlayerAnimState probes the current player's anim-state flags.
- */
+    if ((state->dustEffectFlags & WARPSTONE_DUST_FLAG_ACTIVE) == 0) {
+        return;
+    }
+
+    if (state->dustEffectTimer < 120.0f) {
+        if ((f32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 2.0f) {
+            (*gPartfxInterface)->spawnObject(player, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
+        }
+
+        state->dustEffectTimer += timeDelta;
+        return;
+    }
+
+    if (state->dustEffectTimer < 360.0f) {
+        if ((f32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 3.0f) {
+            (*gPartfxInterface)->spawnObject(player, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
+        }
+
+        effectParams.radius = 0x28;
+        effectParams.flags = 0;
+        effectParams.scale = 0.0009f * ((state->dustEffectTimer - 120.0f) / 240.0f);
+        (*gPartfxInterface)->spawnObject(player, DUST_CLOUD_EFFECT_ID, &effectParams, 2, -1, NULL);
+        state->dustEffectFlags |= WARPSTONE_DUST_FLAG_BURST_READY;
+        state->dustEffectTimer += timeDelta;
+        return;
+    }
+
+    if (state->dustEffectTimer < 420.0f) {
+        if ((f32)randomGetRange(0, DUST_SPAWN_CHANCE_RANGE) < state->dustEffectTimer / 2.0f) {
+            (*gPartfxInterface)->spawnObject(player, DUST_PUFF_EFFECT_ID, &effectParams, 2, -1, NULL);
+        }
+
+        if ((state->dustEffectFlags & WARPSTONE_DUST_FLAG_BURST_READY) != 0) {
+            state->dustEffectFlags &= ~WARPSTONE_DUST_FLAG_BURST_READY;
+            effectParams.radius = 0x46;
+            effectParams.scale = 0.00036f;
+            for (int i = 0; i < 16; i++) {
+                (*gPartfxInterface)->spawnObject(player, DUST_CLOUD_EFFECT_ID, &effectParams, 2, -1, NULL);
+            }
+        }
+
+        state->dustEffectTimer += timeDelta;
+        return;
+    }
+
+    if (!(state->dustEffectTimer < 480.0f)) {
+        state->dustEffectTimer = 0.0f;
+        state->dustEffectFlags &= ~WARPSTONE_DUST_FLAG_ACTIVE;
+        state->dustEffectTimer += timeDelta;
+        return;
+    }
+
+    state->dustEffectTimer += timeDelta;
+}
 
 #define WARPSTONE_EVENT_LEFT_SPARK_A  1
 #define WARPSTONE_EVENT_RIGHT_SPARK_A 2
@@ -172,22 +181,15 @@ void warpstone_updateDustEffects(GameObject* obj) {
 #define WARPSTONE_SPARK_SUPPRESS_MOVE 0x1b
 
 u32 warpstone_advanceAnimEvents(GameObject* lantern, f32 moveStepScale) {
-    u32 advanceResult;
-    int pointIndex;
-    int i;
-    float posZ;
-    float posY;
-    float posX;
-
-    pointIndex = 0;
+    u32 advanceResult = ObjAnim_AdvanceCurrentMove(lantern, moveStepScale, timeDelta, &gWarpStoneObjAnimEvents.list);
+    int pointIndex = 0;
     gWarpStoneObjAnimEvents.list.triggerCount = 0;
     gWarpStoneObjAnimEvents.list.rootCurveValid = 0;
-    advanceResult = ObjAnim_AdvanceCurrentMove(lantern, moveStepScale, timeDelta, &gWarpStoneObjAnimEvents.list);
     if (gWarpStoneObjAnimEvents.list.rootCurveValid != 0) {
         lantern->anim.rotX += gWarpStoneObjAnimEvents.list.rootPitch;
     }
-    i = 0;
-    while (i < gWarpStoneObjAnimEvents.list.triggerCount) {
+
+    for (int i = 0; i < gWarpStoneObjAnimEvents.list.triggerCount; i++) {
         switch (gWarpStoneObjAnimEvents.list.triggeredIds[i]) {
         case WARPSTONE_EVENT_LEFT_SPARK_A:
             pointIndex = 1;
@@ -212,25 +214,24 @@ u32 warpstone_advanceAnimEvents(GameObject* lantern, f32 moveStepScale) {
         default:
             break;
         }
-        i++;
     }
+
     if (pointIndex != 0) {
+        f32 posX, posY, posZ;
         ObjPath_GetPointWorldPosition(lantern, pointIndex - 1, &posX, &posY, &posZ, 0);
-        if (!((lantern->anim.currentMove == WARPSTONE_SPARK_SUPPRESS_MOVE) &&
-              (lantern->anim.currentMoveProgress < 0.8f))) {
+        if (!(lantern->anim.currentMove == WARPSTONE_SPARK_SUPPRESS_MOVE && lantern->anim.currentMoveProgress < 0.8f)) {
             Sfx_PlayAtPositionFromObject(lantern, posX, posY, posZ, WARPSTONE_SPARK_SFX_ID);
         }
     }
+
     return advanceResult;
 }
 
 int lbl_803DDBF4;
 
 u32 warpstoneProbePlayerAnimState(void) {
-    GameObject* playerObj;
-
     (*gMapEventInterface)->getCurChar();
-    playerObj = Obj_GetPlayerObject();
+    GameObject* playerObj = Obj_GetPlayerObject();
     objGetAnimStateFlags(playerObj, 0xff);
     return 2;
 }
@@ -321,9 +322,6 @@ void warpstone_loadBaseUi(void) {
 
 int warpstone_SeqFn(GameObject* obj, u32 unused, ObjSeqState* animObj) {
     WarpStoneState* state = obj->extra;
-    int i;
-    GameObject* child;
-    u8 command;
     ObjSeqState* animUpdate = animObj;
 
     if (animatedObjGetSeqId(animUpdate) == 0x35f) {
@@ -333,37 +331,35 @@ int warpstone_SeqFn(GameObject* obj, u32 unused, ObjSeqState* animObj) {
         }
     }
 
-    child = state->child;
-    if ((void*)child != NULL) {
-        ObjAnim_AdvanceCurrentMove(
-            child, obj->anim.currentMoveProgress - child->anim.currentMoveProgress, timeDelta, NULL);
+    GameObject* child = state->child;
+    if (child != NULL) {
+        ObjAnim_AdvanceCurrentMove(child, obj->anim.currentMoveProgress - child->anim.currentMoveProgress, timeDelta,
+                                   NULL);
     }
 
     animUpdate->conditionCallback = (ObjAnimSequenceConditionCallback)warpstone_testEvent;
     animUpdate->freeCallback = (ObjAnimSequenceFreeCallback)warpstone_loadBaseUi;
 
-    if ((s8)animUpdate->movementState != 0) {
-        state->sequenceFlags = state->sequenceFlags & ~3;
+    if (animUpdate->movementState != 0) {
+        state->sequenceFlags &= ~3;
         if ((s32)warpstoneProbePlayerAnimState() != 0) {
-            state->sequenceFlags = state->sequenceFlags | 1;
+            state->sequenceFlags |= 1;
         }
-        {
-            int hit;
-            if (mainGetBit(GAMEBIT_ITEM_WaterSpellStone1_Got) != 0) {
-                hit = 1;
-            } else if (mainGetBit(GAMEBIT_ITEM_FireSpellStone1_Got) != 0) {
-                hit = 1;
-            } else {
-                hit = 0;
-            }
-            if (hit) {
-                state->sequenceFlags = state->sequenceFlags | 2;
-            }
+
+        int hit;
+        if (mainGetBit(GAMEBIT_ITEM_WaterSpellStone1_Got) != 0) {
+            hit = 1;
+        } else if (mainGetBit(GAMEBIT_ITEM_FireSpellStone1_Got) != 0) {
+            hit = 1;
+        } else {
+            hit = 0;
+        }
+        if (hit) {
+            state->sequenceFlags |= 2;
         }
         animUpdate->movementState = 0;
 
-        if (mainGetBit(state->sequenceGameBit) != 0 &&
-            animatedObjGetSeqId(animObj) == 0x35f) {
+        if (mainGetBit(state->sequenceGameBit) != 0 && animatedObjGetSeqId(animObj) == 0x35f) {
             AudioStream_CancelPrepared();
             seqClearTaskTexts();
             AudioStream_Nop(0);
@@ -371,9 +367,8 @@ int warpstone_SeqFn(GameObject* obj, u32 unused, ObjSeqState* animObj) {
         }
     }
 
-    for (i = 0; i < animUpdate->eventCount; i++) {
-        command = animUpdate->eventIds[i];
-        switch (command) {
+    for (int i = 0; i < animUpdate->eventCount; i++) {
+        switch (animUpdate->eventIds[i]) {
         case 0x17:
             state->dustEffectFlags = state->dustEffectFlags | 4;
             Sfx_PlayFromObject(0, SFXTRIG_id_420);
@@ -472,23 +467,21 @@ void warpstone_free(GameObject* obj, int mode) {
 }
 
 void warpstone_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    GameObject* player;
+    if (visible == 0) {
+        return;
+    }
+
     WarpStoneState* state = obj->extra;
-    ObjModel* model;
-    f32 z;
-    f32 y;
-    f32 x;
-    s32 visibleValue = visible;
-    if (visibleValue != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
-        player = Obj_GetPlayerObject();
-        if (player != NULL && playerIsSequenceRenderSuppressed(player) != 0) {
-            model = Obj_GetActiveModel(player);
-            model->bufferFlags = (u16)(model->bufferFlags & ~0x8);
-            ObjPath_GetPointWorldPosition(obj, state->pathPointIndex, &x, &y, &z, 0);
-            objSetPos(player, x, y, z);
-            playerRender(player, renderArg2, renderArg3, renderArg4, renderArg5, -1);
-        }
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    GameObject* player = Obj_GetPlayerObject();
+    if (player != NULL && playerIsSequenceRenderSuppressed(player) != 0) {
+        ObjModel* model = Obj_GetActiveModel(player);
+        model->bufferFlags &= ~0x8;
+
+        f32 x, y, z;
+        ObjPath_GetPointWorldPosition(obj, state->pathPointIndex, &x, &y, &z, 0);
+        objSetPos(player, x, y, z);
+        playerRender(player, renderArg2, renderArg3, renderArg4, renderArg5, -1);
     }
 }
 
@@ -496,7 +489,8 @@ void warpstone_hitDetect(GameObject* obj) {
     int* state = obj->extra;
     PartFxSpawnParams lightParams;
 
-    if (ObjHits_GetPriorityHitWithPosition(obj, 0, 0, 0, &lightParams.posX, &lightParams.posY, &lightParams.posZ) != 0) {
+    if (ObjHits_GetPriorityHitWithPosition(obj, 0, 0, 0, &lightParams.posX, &lightParams.posY, &lightParams.posZ) !=
+        0) {
         lightParams.posX += playerMapOffsetX;
         lightParams.posZ += playerMapOffsetZ;
         objDoHitParticleFx((void*)obj, 0.01f, &lightParams, 1, 0);
@@ -542,19 +536,18 @@ void warpstone_update(GameObject* obj) {
     advanceResult = warpstone_advanceAnimEvents(obj, 0.0055555557f);
     if (obj->anim.currentMove == 0) {
         if (randomChanceOneIn(100) != 0) {
-            objSoundStartTimed(obj, (ObjSoundState*)((u8*)state + offsetof(WarpStoneState, soundState)), 0xab,
-                               -0x100, -1, 0);
+            objSoundStartTimed(obj, (ObjSoundState*)((u8*)state + offsetof(WarpStoneState, soundState)), 0xab, -0x100,
+                               -1, 0);
         }
         if (randomChanceOneIn(500) != 0) {
-            objSoundStartTimed(obj, (ObjSoundState*)((u8*)state + offsetof(WarpStoneState, soundState)), 0x417,
-                               -0x500, -1, 0);
+            objSoundStartTimed(obj, (ObjSoundState*)((u8*)state + offsetof(WarpStoneState, soundState)), 0x417, -0x500,
+                               -1, 0);
         }
     }
 
     if (mainGetBit(GAMEBIT_ITEM_RockCandy_Used) != 0) {
         if (randomChanceOneIn(gWarpStoneLookToggleChance) != 0) {
-            state->behaviorFlags.lookAtPlayer =
-                (state->behaviorFlags.lookAtPlayer == 0);
+            state->behaviorFlags.lookAtPlayer = (state->behaviorFlags.lookAtPlayer == 0);
         }
         if (state->behaviorFlags.lookAtPlayer == 0) {
             state->behaviorFlags.lookAtPlayer = mainGetBit(0xa45);
@@ -568,8 +561,9 @@ void warpstone_update(GameObject* obj) {
     }
 
     obj->anim.localPosY += gWarpStoneHeadAimHeightOffset;
-    characterAimHeadAtTarget((GameObject*)(obj), (void*)target, (void*)((u8*)state + offsetof(WarpStoneState, headAimState)),
-                             0x23, 1, gWarpStoneHeadAimMode);
+    characterAimHeadAtTarget((GameObject*)(obj), (void*)target,
+                             (void*)((u8*)state + offsetof(WarpStoneState, headAimState)), 0x23, 1,
+                             gWarpStoneHeadAimMode);
     modelVec = objFindJointPoseVector((GameObject*)(obj), 0);
     obj->anim.localPosY -= gWarpStoneHeadAimHeightOffset;
 

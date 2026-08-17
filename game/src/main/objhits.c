@@ -80,6 +80,172 @@ static inline ObjHitsModelBank* ObjHits_GetActiveModel(GameObject* obj) {
     return (ObjHitsModelBank*)objAnim->banks[objAnim->bankIndex];
 }
 
+#define SHARPCLAW_HIT_TRACE_CAPACITY 64
+
+typedef struct SharpClawHitTrace {
+    u32 sequence;
+    GameObject* attacker;
+    GameObject* target;
+    s16 move;
+    s16 attackerRomDefNo;
+    f32 moveProgress;
+    f32 attackerX;
+    f32 attackerY;
+    f32 attackerZ;
+    f32 targetX;
+    f32 targetY;
+    f32 targetZ;
+    u32 mask;
+    u32 previousMask;
+    s8 priority;
+    u8 hitVolumeId;
+    u8 result;
+    u8 pad43;
+    f32 closestCurrentGapSq;
+    f32 closestPreviousGapSq;
+    s16 closestAttackerSphere;
+    s16 closestTargetSphere;
+    f32 attackerSphereX;
+    f32 attackerSphereY;
+    f32 attackerSphereZ;
+    f32 attackerSphereRadius;
+    f32 targetSphereX;
+    f32 targetSphereY;
+    f32 targetSphereZ;
+    f32 targetSphereRadius;
+} SharpClawHitTrace;
+
+SharpClawHitTrace gSharpClawHitTrace[SHARPCLAW_HIT_TRACE_CAPACITY];
+u32 gSharpClawHitTraceWriteIndex;
+
+static int ObjHits_IsSharpClaw(GameObject* obj) {
+    switch (obj->anim.romDefNo) {
+    case 0x11:
+    case 0x13A:
+    case 0x5B7:
+    case 0x5B8:
+    case 0x5B9:
+    case 0x5E1:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static void ObjHits_TraceSharpClawAttack(GameObject* attacker, GameObject* target, u32 mask, u32 previousMask,
+                                         int result) {
+    ObjHitsPriorityState* attackerState;
+    ObjHitsModelBank* attackerModel;
+    ObjHitsModelBank* targetModel;
+    ObjHitsModelHitVolume* attackerVolumes;
+    ObjHitsModelHitVolume* targetVolumes;
+    ObjModelHitSphere* attackerSpheres;
+    ObjModelHitSphere* previousSpheres;
+    ObjModelHitSphere* targetSpheres;
+    SharpClawHitTrace* trace;
+    f32 bestCurrent;
+    f32 bestPrevious;
+    int attackerCount;
+    int targetCount;
+    int i;
+    int j;
+
+    if (!ObjHits_IsSharpClaw(attacker) || target != Obj_GetPlayerObject()) {
+        return;
+    }
+
+    attackerState = (ObjHitsPriorityState*)attacker->anim.hitReactState;
+    trace = &gSharpClawHitTrace[gSharpClawHitTraceWriteIndex % SHARPCLAW_HIT_TRACE_CAPACITY];
+    memset(trace, 0, sizeof(*trace));
+    trace->sequence = ++gSharpClawHitTraceWriteIndex;
+    trace->attacker = attacker;
+    trace->target = target;
+    trace->move = attacker->anim.currentMove;
+    trace->attackerRomDefNo = attacker->anim.romDefNo;
+    trace->moveProgress = attacker->anim.currentMoveProgress;
+    trace->attackerX = attacker->anim.worldPosX;
+    trace->attackerY = attacker->anim.worldPosY;
+    trace->attackerZ = attacker->anim.worldPosZ;
+    trace->targetX = target->anim.worldPosX;
+    trace->targetY = target->anim.worldPosY;
+    trace->targetZ = target->anim.worldPosZ;
+    trace->mask = mask;
+    trace->previousMask = previousMask;
+    trace->priority = attackerState->hitVolumePriority;
+    trace->hitVolumeId = attackerState->hitVolumeId;
+    trace->result = result != 0;
+    trace->closestCurrentGapSq = 1.0e30f;
+    trace->closestPreviousGapSq = 1.0e30f;
+    trace->closestAttackerSphere = -1;
+    trace->closestTargetSphere = -1;
+
+    if ((attackerState->secondaryShapeFlags & OBJHITS_SHAPE_MODEL_HIT_VOLUMES) == 0 ||
+        (((ObjHitsPriorityState*)target->anim.hitReactState)->secondaryShapeFlags &
+         OBJHITS_SHAPE_MODEL_HIT_VOLUMES) == 0) {
+        return;
+    }
+
+    attackerModel = ObjHits_GetActiveModel(attacker);
+    targetModel = ObjHits_GetActiveModel(target);
+    attackerVolumes = (ObjHitsModelHitVolume*)attackerModel->modelFile->hitVolumes;
+    targetVolumes = (ObjHitsModelHitVolume*)targetModel->modelFile->hitVolumes;
+    attackerSpheres = (ObjModelHitSphere*)attackerModel->activeHitVolumeSpheres;
+    previousSpheres = (ObjModelHitSphere*)attackerModel
+                          ->hitVolumeSphereBuffers[((attackerModel->hitBufferFlags >> 2) & 1) ^ 1];
+    targetSpheres = (ObjModelHitSphere*)targetModel->activeHitVolumeSpheres;
+    attackerCount = attackerModel->modelFile->hitVolumeCount;
+    targetCount = targetModel->modelFile->hitVolumeCount;
+    bestCurrent = 1.0e30f;
+    bestPrevious = 1.0e30f;
+
+    for (i = 0; i < attackerCount; i++) {
+        f32 radiusSum;
+        f32 dx;
+        f32 dy;
+        f32 dz;
+        f32 gapSq;
+
+        if (i != attackerVolumes[i].sphereIndex ||
+            (mask & (1U << (u8)attackerVolumes[i].maskBit)) == 0) {
+            continue;
+        }
+        for (j = 0; j < targetCount; j++) {
+            if (j != targetVolumes[j].sphereIndex) {
+                continue;
+            }
+            radiusSum = attackerSpheres[i].radius + targetSpheres[j].radius;
+            dx = attackerSpheres[i].pos[0] - targetSpheres[j].pos[0];
+            dy = attackerSpheres[i].pos[1] - targetSpheres[j].pos[1];
+            dz = attackerSpheres[i].pos[2] - targetSpheres[j].pos[2];
+            gapSq = dx * dx + dy * dy + dz * dz - radiusSum * radiusSum;
+            if (gapSq < bestCurrent) {
+                bestCurrent = gapSq;
+                trace->closestCurrentGapSq = gapSq;
+                trace->closestAttackerSphere = i;
+                trace->closestTargetSphere = j;
+                trace->attackerSphereX = attackerSpheres[i].pos[0];
+                trace->attackerSphereY = attackerSpheres[i].pos[1];
+                trace->attackerSphereZ = attackerSpheres[i].pos[2];
+                trace->attackerSphereRadius = attackerSpheres[i].radius;
+                trace->targetSphereX = targetSpheres[j].pos[0];
+                trace->targetSphereY = targetSpheres[j].pos[1];
+                trace->targetSphereZ = targetSpheres[j].pos[2];
+                trace->targetSphereRadius = targetSpheres[j].radius;
+            }
+            if ((previousMask & (1U << (u8)attackerVolumes[i].maskBit)) != 0) {
+                dx = previousSpheres[i].pos[0] - targetSpheres[j].pos[0];
+                dy = previousSpheres[i].pos[1] - targetSpheres[j].pos[1];
+                dz = previousSpheres[i].pos[2] - targetSpheres[j].pos[2];
+                gapSq = dx * dx + dy * dy + dz * dz - radiusSum * radiusSum;
+                if (gapSq < bestPrevious) {
+                    bestPrevious = gapSq;
+                    trace->closestPreviousGapSq = gapSq;
+                }
+            }
+        }
+    }
+}
+
 int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointData* jointData, ObjHitsModelBank* model,
                                   ObjHitsSkeletonHit* hits, ObjHitsSkeletonHit** outBest, f32 yMax, f32 yMin,
                                   f32* outAccum) {
@@ -1410,6 +1576,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
         mask = stateA->objectHitMask >> 4;
         if (mask != 0) {
             result = ObjHits_CheckHitVolumes(objA, objB, objA, 1, 0, mask, stateA->skeletonHitMask >> 4);
+            ObjHits_TraceSharpClawAttack(objA, objB, mask, stateA->skeletonHitMask >> 4, result);
         }
         if (((attA != NULL) && (result == 0)) && (mask = stateA->objectHitMask & 0xf, mask != 0)) {
             result = ObjHits_CheckHitVolumes(attA, objB, objA, 1, 0, mask, stateA->skeletonHitMask & 0xf);
@@ -1454,6 +1621,7 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
         mask = stateB->objectHitMask >> 4;
         if (mask != 0) {
             result = ObjHits_CheckHitVolumes(objB, objA, objB, 1, 0, mask, stateB->skeletonHitMask >> 4);
+            ObjHits_TraceSharpClawAttack(objB, objA, mask, stateB->skeletonHitMask >> 4, result);
         }
         if (((attB != NULL) && (result == 0)) && (mask = stateB->objectHitMask & 0xf, mask != 0)) {
             result = ObjHits_CheckHitVolumes(attB, objA, objB, 1, 0, mask, stateB->skeletonHitMask & 0xf);
@@ -1507,8 +1675,8 @@ void ObjHits_ApplyPairResponse(GameObject* objA, GameObject* objB, f32 x, f32 y,
     stateB = (ObjHitsPriorityState*)animB->hitReactState;
     stateA->flags = stateA->flags | 8;
     stateB->flags = stateB->flags | 8;
-    *(GameObject**)stateA = objB;
-    *(GameObject**)stateB = objA;
+    stateA->activeHit = (uintptr_t)objB;
+    stateB->activeHit = (uintptr_t)objA;
     if (animA->parent != NULL) {
         Obj_TransformWorldVectorToLocal(x, y, z, &localAx, &localAy, &localAz, animA->parent);
     } else {
@@ -2159,7 +2327,8 @@ void ObjHits_Update(int objectCount) {
     }
     for (slotIndex = 1, entrySlot = entrySlotBase; slotIndex < slotCount; entrySlot++, slotIndex++) {
         obj = (*entrySlot)->obj;
-        if (((obj->anim.hitReactState)->flags & OBJHITS_PRIORITY_STATE_TRACK_CONTACT) != 0) {
+        if ((((ObjHitsPriorityState*)obj->anim.hitReactState)->flags &
+             OBJHITS_PRIORITY_STATE_TRACK_CONTACT) != 0) {
             ObjHits_CheckTrackContact(obj, obj);
             attachedObj = obj->childObjs[0];
             if (attachedObj != 0) {
@@ -2281,6 +2450,7 @@ u32 ObjHitReact_Update(GameObject* obj, ObjHitReactEntry* reactionEntryTable, u3
 
 void ObjHitReact_ResetActiveObjects(int objectCount) {
     ObjHitReactState* hitState;
+    ObjHitsPriorityState* priorityState;
     ObjAnimComponent* objAnim;
     ObjAnimComponent** objectListCursor;
     int stateActive;
@@ -2294,16 +2464,18 @@ void ObjHitReact_ResetActiveObjects(int objectCount) {
         objAnim = *objectListCursor;
         hitState = objAnim->hitReactState;
         if (hitState != NULL) {
-            stateActive = hitState->flags & OBJHITS_PRIORITY_STATE_ENABLED;
+            priorityState = (ObjHitsPriorityState*)hitState;
+            stateActive = priorityState->flags & OBJHITS_PRIORITY_STATE_ENABLED;
             if (stateActive != 0) {
-                resetPending = hitState->shapeFlags & OBJHITREACT_SHAPE_RESET_UPDATE;
+                resetPending = priorityState->shapeFlags & OBJHITREACT_SHAPE_RESET_UPDATE;
                 if (resetPending != 0) {
                     if (gObjHitReactResetObjectCount < OBJHITREACT_MAX_RESET_OBJECTS) {
                         gObjHitReactResetObjects[gObjHitReactResetObjectCount++] = objAnim;
                     }
-                    hitState->activeHit = 0;
-                    hitState->flags = (s16)(hitState->flags & ~OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED);
-                    hitState->resetFrameCount = OBJHITREACT_RESET_FRAME_COUNT;
+                    priorityState->activeHit = 0;
+                    priorityState->flags =
+                        (s16)(priorityState->flags & ~OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED);
+                    priorityState->capsuleScale = OBJHITREACT_RESET_FRAME_COUNT;
                 }
             }
         }
@@ -2337,7 +2509,7 @@ void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, i
     s16 entryByteOffset;
 
     moveEntryTable = (s16*)objAnim->modelInstance->hitReactMoveTable;
-    hitState->activeEntryByteCount = 0;
+    ObjHitReact_SetActiveEntryByteCount(hitState, 0);
     if (moveEntryTable != NULL) {
         for (moveEntryWordIndex = 0, moveEntry = moveEntryTable;
              ((ObjHitReactMoveEntry*)moveEntry)->moveId != OBJHITREACT_MOVE_ID_END;
@@ -2346,30 +2518,18 @@ void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, i
             if (moveId == ((ObjHitReactMoveEntry*)moveEntry)->moveId) {
                 moveEntry = &moveEntryTable[moveEntryWordIndex];
                 entryByteOffset = ((ObjHitReactMoveEntry*)moveEntry)->firstEntryByteOffset;
-                hitState->activeEntryByteCount = ((ObjHitReactMoveEntry*)moveEntry)->entryByteCount;
-                if (hitState->activeEntryByteCount > hitState->entryBufferByteCapacity) {
-                    hitState->activeEntryByteCount = hitState->entryBufferByteCapacity;
+                ObjHitReact_SetActiveEntryByteCount(hitState, ((ObjHitReactMoveEntry*)moveEntry)->entryByteCount);
+                if (ObjHitReact_GetActiveEntryByteCount(hitState) >
+                    ObjHitReact_GetEntryBufferByteCapacity(hitState)) {
+                    ObjHitReact_SetActiveEntryByteCount(hitState,
+                                                        ObjHitReact_GetEntryBufferByteCapacity(hitState));
                 }
                 if (async == 0) {
-                    getTabEntry(hitState->entries, OBJHITREACT_ENTRY_TAB_FILE_ID, entryByteOffset,
-                                hitState->activeEntryByteCount);
+                    getTabEntry(ObjHitReact_GetEntries(hitState), OBJHITREACT_ENTRY_TAB_FILE_ID, entryByteOffset,
+                                ObjHitReact_GetActiveEntryByteCount(hitState));
                 } else {
-                    fileLoadToBufferOffset(OBJHITREACT_ENTRY_TAB_FILE_ID, hitState->entries, entryByteOffset,
-                                           hitState->activeEntryByteCount);
-                }
-                {
-                    int entryIndex;
-                    int entryCount = hitState->activeEntryByteCount / sizeof(*hitState->entries);
-
-                    for (entryIndex = 0; entryIndex < entryCount; entryIndex++) {
-                        ObjHitReactEntry* entry = &hitState->entries[entryIndex];
-
-                        entry->primaryHitSfxId = fhReadBES16(&entry->primaryHitSfxId);
-                        entry->secondaryHitSfxId = fhReadBES16(&entry->secondaryHitSfxId);
-                        entry->reactionMoveId = fhReadBES16(&entry->reactionMoveId);
-                        entry->unk06 = fhReadBES16(&entry->unk06);
-                        entry->reactionStepScale = fhReadBEF32(&entry->reactionStepScale);
-                    }
+                    fileLoadToBufferOffset(OBJHITREACT_ENTRY_TAB_FILE_ID, ObjHitReact_GetEntries(hitState),
+                                           entryByteOffset, ObjHitReact_GetActiveEntryByteCount(hitState));
                 }
                 return;
             }
@@ -2385,13 +2545,13 @@ uintptr_t ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState
     if (bank == NULL) {
         return entryArena;
     }
-    hitState->entryBufferByteCapacity = OBJHITREACT_ENTRY_ARENA_BYTES;
+    ObjHitReact_SetEntryBufferByteCapacity(hitState, OBJHITREACT_ENTRY_ARENA_BYTES);
     entries = (ObjHitReactEntry*)((entryArena + 7) & ~(uintptr_t)7);
-    hitState->entries = entries;
-    entryArena = (uintptr_t)entries + hitState->entryBufferByteCapacity;
-    hitState->activeHitboxMode = OBJHITREACT_ACTIVE_HITBOX_MODE;
-    if ((hitState->shapeFlags & OBJHITS_SHAPE_RESET_MODE_MASK) != 0) {
-        hitState->resetHitboxMode = OBJHITREACT_RESET_HITBOX_MODE;
+    ObjHitReact_SetEntries(hitState, entries);
+    entryArena = (uintptr_t)entries + ObjHitReact_GetEntryBufferByteCapacity(hitState);
+    ((ObjHitsPriorityState*)hitState)->activeHitboxMode = OBJHITREACT_ACTIVE_HITBOX_MODE;
+    if ((((ObjHitsPriorityState*)hitState)->shapeFlags & OBJHITS_SHAPE_RESET_MODE_MASK) != 0) {
+        ((ObjHitsPriorityState*)hitState)->resetHitboxMode = OBJHITREACT_RESET_HITBOX_MODE;
     }
     ObjHitReact_LoadMoveEntries(objAnim, bank, objType, hitState, 0, 1);
     return entryArena;

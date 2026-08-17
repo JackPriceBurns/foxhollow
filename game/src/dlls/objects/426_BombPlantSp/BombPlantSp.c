@@ -233,7 +233,7 @@ void BombPlantSpore_update(GameObject* obj) {
         }
     }
     ObjHits_GetPriorityHit(obj, &hitObject, 0, 0);
-    contactObj = *(GameObject**)obj->anim.hitReactState;
+    contactObj = (GameObject*)((ObjHitsPriorityState*)obj->anim.hitReactState)->activeHit;
     if (state->flags.hitSurface == 0) {
         state->driftTimer -= timeDelta;
         if (state->driftTimer < 0.0f) {

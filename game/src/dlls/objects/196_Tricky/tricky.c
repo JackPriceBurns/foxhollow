@@ -272,31 +272,34 @@ void Tricky_updateBlendChannelWeight(GameObject* obj, TrickyState* state) {
 void tricky_updateModelVariantFade(GameObject* obj, TrickyState* state) {
     u8 ratio = state->progressPtr[2] / 10;
 
-    if (state->modelVariant != ratio) {
-        f32 t;
-        if (mainGetBit(1005) == 0) {
-            mainSetBits(1005, 1);
-            (*gObjectTriggerInterface)->runSequence(5, obj, -1);
-            state->stateFlags |= 0x4000;
-            state->variantFadeTimer += 20.0f;
+    if (state->modelVariant == ratio) {
+        return;
+    }
+
+    if (mainGetBit(1005) == 0) {
+        mainSetBits(1005, 1);
+        (*gObjectTriggerInterface)->runSequence(5, obj, -1);
+        state->stateFlags |= 0x4000;
+        state->variantFadeTimer += 20.0f;
+    }
+
+    state->variantFadeTimer -= timeDelta;
+    if (state->variantFadeTimer > 20.0f) {
+        return;
+    }
+
+    if (state->variantFadeTimer > 0.0f) {
+        f32 alpha;
+        if (state->variantFadeTimer > 10.0f) {
+            alpha = 1.0f - (state->variantFadeTimer - 10.0f) / 10.0f;
+        } else {
+            Obj_GetActiveModel(obj)->textureRefs->swapSelector = ratio;
+            alpha = state->variantFadeTimer / 10.0f;
         }
-        state->variantFadeTimer -= timeDelta;
-        t = state->variantFadeTimer;
-        if (!(t > 20.0f)) {
-            if (t > 0.0f) {
-                f32 alpha;
-                if (t > 10.0f) {
-                    alpha = 1.0f - (t - 10.0f) / 10.0f;
-                } else {
-                    Obj_GetActiveModel(obj)->textureRefs->swapSelector = ratio;
-                    alpha = state->variantFadeTimer / 10.0f;
-                }
-                Obj_SetModelColorOverrideRecursive(obj, 255, 255, 255, 196.0f * alpha, 1);
-            } else {
-                state->modelVariant = ratio;
-                Obj_SetModelColorOverrideRecursive(obj, 0, 0, 0, 0, 0);
-            }
-        }
+        Obj_SetModelColorOverrideRecursive(obj, 255, 255, 255, 196.0f * alpha, 1);
+    } else {
+        state->modelVariant = ratio;
+        Obj_SetModelColorOverrideRecursive(obj, 0, 0, 0, 0, 0);
     }
 }
 
@@ -673,8 +676,9 @@ void trickyUpdateCollisionAndPathState(u8* obj) {
         ((GameObject*)obj)->anim.velocityY = 0.0f;
     }
 
-    lastContactObj = (GameObject*)((GameObject*)obj)->anim.hitReactState->activeHit;
-    if ((((GameObject*)obj)->anim.hitReactState->flags & OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED) == 0 ||
+    lastContactObj = (GameObject*)((ObjHitsPriorityState*)((GameObject*)obj)->anim.hitReactState)->activeHit;
+    if ((((ObjHitsPriorityState*)((GameObject*)obj)->anim.hitReactState)->flags &
+         OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED) == 0 ||
         (lastContactObj->anim.romDefNo == 0x1f)) {
         lastContactObj = NULL;
     }
