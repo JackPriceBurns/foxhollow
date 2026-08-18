@@ -127,22 +127,7 @@ void earthwalker_hitDetect(GameObject* obj)
     }
 }
 ObjHitReactEntry gEarthWalkerHitReactEntries[1] = {{575, 706, -1, -1, 0, {0, 0, 0}, 0.01f, {0, 0, 0, 0}}};
-ObjectDescriptor gEarthWalkerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)earthwalker_initialise,
-    (ObjectDescriptorCallback)earthwalker_release,
-    0,
-    (ObjectDescriptorCallback)earthwalker_init,
-    (ObjectDescriptorCallback)earthwalker_update,
-    (ObjectDescriptorCallback)earthwalker_hitDetect,
-    (ObjectDescriptorCallback)earthwalker_render,
-    (ObjectDescriptorCallback)earthwalker_free,
-    (ObjectDescriptorCallback)earthwalker_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)earthwalker_getExtraSize,
-};
+
 
 
 
@@ -615,3 +600,20 @@ int dll_28B_stateHandler0(void)
 {
     return 0x2;
 }
+
+ObjectDescriptor gEarthWalkerObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)earthwalker_initialise,
+    (ObjectDescriptorCallback)earthwalker_release,
+    0,
+    (ObjectDescriptorCallback)earthwalker_init,
+    (ObjectDescriptorCallback)earthwalker_update,
+    (ObjectDescriptorCallback)earthwalker_hitDetect,
+    (ObjectDescriptorCallback)earthwalker_render,
+    (ObjectDescriptorCallback)earthwalker_free,
+    (ObjectDescriptorCallback)earthwalker_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)earthwalker_getExtraSize,
+};

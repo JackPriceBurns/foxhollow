@@ -67,22 +67,7 @@
 #include "main/audio/sfx_stop_object_api.h"
 #include "main/map_load.h"
 
-ObjectDescriptor gTriggerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Trigger_initialise,
-    (ObjectDescriptorCallback)Trigger_release,
-    0,
-    (ObjectDescriptorCallback)Trigger_init,
-    (ObjectDescriptorCallback)Trigger_update,
-    (ObjectDescriptorCallback)Trigger_hitDetect,
-    (ObjectDescriptorCallback)Trigger_render,
-    (ObjectDescriptorCallback)Trigger_free,
-    (ObjectDescriptorCallback)Trigger_getObjectTypeId,
-    Trigger_getExtraSize,
-};
+
 
 char sMoonrockTriggerIdentFormat[] = "!!!!!!!!!!! TRIGGER %d  ident %d\n";
 char sTriggerDebugTextBlock[] = "initialise\n\0"
@@ -1187,3 +1172,20 @@ void Trigger_release(void) {
 
 void Trigger_initialise(void) {
 }
+
+ObjectDescriptor gTriggerObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)Trigger_initialise,
+    (ObjectDescriptorCallback)Trigger_release,
+    0,
+    (ObjectDescriptorCallback)Trigger_init,
+    (ObjectDescriptorCallback)Trigger_update,
+    (ObjectDescriptorCallback)Trigger_hitDetect,
+    (ObjectDescriptorCallback)Trigger_render,
+    (ObjectDescriptorCallback)Trigger_free,
+    (ObjectDescriptorCallback)Trigger_getObjectTypeId,
+    Trigger_getExtraSize,
+};

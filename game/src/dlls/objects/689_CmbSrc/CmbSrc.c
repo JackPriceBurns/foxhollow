@@ -155,7 +155,7 @@ void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
     int subMode = 0;
     Camera* viewSlot;
     f32 dist;
-    f32 vec[3];
+    Vec vec;
     PartFxSpawnParams param;
 
     viewSlot = Camera_GetCurrent();
@@ -256,31 +256,31 @@ void cmbsrc_updateVisuals(GameObject* cmbsrc, CmbSrcState* sourceState)
                     sourceState->pulseTimer += 1.0f;
                 }
             }
-            vec[0] = 0.0f;
+            vec.x = 0.0f;
             if (cmbsrc->anim.romDefNo == CMBSRC_SEQ_TWALL)
             {
                 if (sourceState->active == 0)
                 {
-                    vec[1] = -5.0f;
+                    vec.y = -5.0f;
                 }
                 else
                 {
-                    vec[1] = 3.5f;
+                    vec.y = 3.5f;
                 }
             }
             else
             {
                 if (sourceState->active == 0)
                 {
-                    vec[1] = -5.0f;
+                    vec.y = -5.0f;
                 }
                 else
                 {
-                    vec[1] = 0.0f;
+                    vec.y = 0.0f;
                 }
             }
-            vec[2] = 0.0f;
-            objfx_spawnPulseBurst(cmbsrc, sourceState->radius, colorIdx, effectMode, subMode, vec);
+            vec.z = 0.0f;
+            objfx_spawnPulseBurst(cmbsrc, sourceState->radius, colorIdx, effectMode, subMode, &vec);
             break;
         }
     }

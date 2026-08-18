@@ -155,22 +155,7 @@ CCLightfootAnimTable gCCLightfootAnimTable = {
     {0.01f, 0.015f, 0.02f, 0.02f, 0.02f, 0.02f, 0.01f, -0.02f, 0.05f, 0.01f, -0.02f, 0.01f, 0.01f, 0.015f, 0.02f},
 };
 
-ObjectDescriptor gCCLightfootObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccLightfoot_init,
-    (ObjectDescriptorCallback)ccLightfoot_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccLightfoot_free,
-    0,
-    ccLightfoot_getExtraSize,
-};
+
 
 void ccLightfoot_selectCombatPhase(CCLightfootState* state, GameObject* targetObject, f32 distanceSquared) {
     s16 move;
@@ -563,3 +548,20 @@ void ccLightfoot_init(GameObject* obj, const CCLightfootPlacement* placement) {
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
     obj->animEventCallback = ccLightfoot_animationEventCallback;
 }
+
+ObjectDescriptor gCCLightfootObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)ccLightfoot_init,
+    (ObjectDescriptorCallback)ccLightfoot_update,
+    0,
+    0,
+    (ObjectDescriptorCallback)ccLightfoot_free,
+    0,
+    ccLightfoot_getExtraSize,
+};

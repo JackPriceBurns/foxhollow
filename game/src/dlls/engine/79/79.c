@@ -20,31 +20,26 @@ void CameraMode4F_free(void) {
 }
 
 void CameraMode4F_update(CameraObject* camera) {
-    GameObject* target;
     f32 blendCurve[4];
-    f32 blendValue;
-    f32 cosValue;
-    f32 sinValue;
-    s16 yaw;
-
     blendCurve[0] = 0.0f;
     blendCurve[1] = 1.0f;
     blendCurve[2] = 0.0f;
     blendCurve[3] = 0.0f;
-    blendValue = Curve_EvalHermite(blendCurve, gCameraMode4FState->blendProgress, NULL);
-    yaw = (s16)(0x8000 - ((GameObject*)camera->anim.targetObj)->anim.rotX);
-    yaw += (s32)(14560.0f * blendValue);
-    target = (GameObject*)camera->anim.targetObj;
-    {
-        f32 radians = (3.1415927f * (f32)(s32)yaw) / 32768.0f;
-        cosValue = mathCosf(radians);
-        sinValue = mathSinf(radians);
-    }
+
+    f32 blendValue = Curve_EvalHermite(blendCurve, gCameraMode4FState->blendProgress, NULL);
+    s16 yaw = 0x8000 - ((GameObject*)camera->anim.targetObj)->anim.rotX;
+    yaw += 14560.0f * blendValue;
+    GameObject* target = camera->anim.targetObj;
+
+    f32 radians = 3.1415927f * yaw / 32768.0f;
+    f32 cosValue = mathCosf(radians);
+    f32 sinValue = mathSinf(radians);
+
     camera->anim.localPosX = target->anim.worldPosX + (20.0f * cosValue - -10.0f * sinValue);
     camera->anim.localPosZ = target->anim.worldPosZ + (20.0f * sinValue + -10.0f * cosValue);
-    camera->anim.localPosY = (35.0f + target->anim.worldPosY) - 15.0f * blendValue;
-    camera->anim.rotY = (s16)(0x11c6 - (s32)(35.0f * (182.0f * blendValue)));
-    camera->anim.rotX = (s16)(yaw + 0x1ffe);
+    camera->anim.localPosY = 35.0f + target->anim.worldPosY - 15.0f * blendValue;
+    camera->anim.rotY = 0x11c6 - 35.0f * (182.0f * blendValue);
+    camera->anim.rotX = yaw + 0x1ffe;
     camera->anim.rotZ = 0;
     camera->letterboxTargetOffset = 0;
     camera->fov = 60.0f;

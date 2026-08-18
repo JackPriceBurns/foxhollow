@@ -181,23 +181,7 @@ int gCfGuardianIdleMoveTable[CFGUARDIAN_IDLE_MOVE_COUNT] = {
     -1, 0, 26, 0, 0, -1, -1, 26, 14, 14, 26, 26, 0, 0, -1, 10, 11, 12, 13, 14,
 };
 
-ObjectDescriptor11ExtraSize gCFGuardianObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    (ObjectDescriptorCallback)cfguardian_initialise,
-    (ObjectDescriptorCallback)cfguardian_release,
-    0,
-    (ObjectDescriptorCallback)cfguardian_init,
-    (ObjectDescriptorCallback)cfguardian_update,
-    (ObjectDescriptorCallback)cfguardian_hitDetect,
-    (ObjectDescriptorCallback)cfguardian_render,
-    (ObjectDescriptorCallback)cfguardian_free,
-    (ObjectDescriptorCallback)cfguardian_getObjectTypeId,
-    cfguardian_getExtraSize,
-    (ObjectDescriptorCallback)cfguardian_isNotPathFlying,
-};
+
 
 /* cfguardian_playEventSfx: walk this step's triggered anim events and play the
  * matching per-event sfx. sfxIds is a 3-entry table: [0] the move sfx,
@@ -900,3 +884,21 @@ void cfguardian_release(void) {
 
 void cfguardian_initialise(void) {
 }
+
+ObjectDescriptor11ExtraSize gCFGuardianObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+    (ObjectDescriptorCallback)cfguardian_initialise,
+    (ObjectDescriptorCallback)cfguardian_release,
+    0,
+    (ObjectDescriptorCallback)cfguardian_init,
+    (ObjectDescriptorCallback)cfguardian_update,
+    (ObjectDescriptorCallback)cfguardian_hitDetect,
+    (ObjectDescriptorCallback)cfguardian_render,
+    (ObjectDescriptorCallback)cfguardian_free,
+    (ObjectDescriptorCallback)cfguardian_getObjectTypeId,
+    cfguardian_getExtraSize,
+    (ObjectDescriptorCallback)cfguardian_isNotPathFlying,
+};

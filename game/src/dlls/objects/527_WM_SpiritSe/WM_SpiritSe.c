@@ -12,57 +12,47 @@
 /* Object variant handled by this DLL. */
 #define WMSPIRITSET_SEQID_SPIRITSET 0x264
 
-int wmspiritset_getExtraSize(void)
-{
+int wmspiritset_getExtraSize(void) {
     return sizeof(WmSpiritSetState);
 }
 
-int wmspiritset_getObjectTypeId(void)
-{
+int wmspiritset_getObjectTypeId(void) {
     return 0x0;
 }
 
-void wmspiritset_free(void)
-{
+void wmspiritset_free(void) {
 }
 
-void wmspiritset_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
-{
-    WmSpiritSetState* state = (obj)->extra;
-    s16 visibilityGameBit = state->visibilityGameBit;
+void wmspiritset_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible == 0) {
+        return;
+    }
 
-    if ((visibilityGameBit == -1 || mainGetBit(visibilityGameBit) != 0) && vis != 0)
-    {
+    WmSpiritSetState* state = obj->extra;
+    if (state->visibilityGameBit == -1 || mainGetBit(state->visibilityGameBit) != 0) {
         objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
     }
 }
 
-void wmspiritset_hitDetect(void)
-{
+void wmspiritset_hitDetect(void) {
 }
 
-void wmspiritset_update(void)
-{
+void wmspiritset_update(void) {
 }
 
-void wmspiritset_init(GameObject* obj, WmSpiritSetMapData* mapData)
-{
+void wmspiritset_init(GameObject* obj, WmSpiritSetMapData* mapData) {
     WmSpiritSetState* state = obj->extra;
-
-    obj->anim.rotX = (s16)(mapData->rotXByte << 8);
-    if (obj->anim.romDefNo == WMSPIRITSET_SEQID_SPIRITSET)
-    {
+    obj->anim.rotX = mapData->rotXByte << 8;
+    if (obj->anim.romDefNo == WMSPIRITSET_SEQID_SPIRITSET) {
         obj->anim.rootMotionScale = 0.0085f;
     }
     state->visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->visibilityGameBit));
 }
 
-void wmspiritset_release(void)
-{
+void wmspiritset_release(void) {
 }
 
-void wmspiritset_initialise(void)
-{
+void wmspiritset_initialise(void) {
 }
 
 ObjectDescriptor gWM_SpiritSetObjDescriptor = {

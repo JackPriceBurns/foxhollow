@@ -91,22 +91,7 @@ enum {
 s32 gWMObjCreatorWallCrawlerSpawnCount;
 
 /* Retail data order places this descriptor before WM_ObjCreator_update's jump table. */
-ObjectDescriptor gWM_ObjCreatorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_ObjCreator_initialise,
-    WM_ObjCreator_release,
-    0,
-    (ObjectDescriptorCallback)WM_ObjCreator_init,
-    (ObjectDescriptorCallback)WM_ObjCreator_update,
-    WM_ObjCreator_hitDetect,
-    (ObjectDescriptorCallback)WM_ObjCreator_render,
-    WM_ObjCreator_free,
-    (ObjectDescriptorCallback)WM_ObjCreator_getObjectTypeId,
-    WM_ObjCreator_getExtraSize,
-};
+
 
 int WM_ObjCreator_getExtraSize(void) {
     return sizeof(WMObjCreatorState);
@@ -367,3 +352,20 @@ void WM_ObjCreator_release(void) {
 
 void WM_ObjCreator_initialise(void) {
 }
+
+ObjectDescriptor gWM_ObjCreatorObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    WM_ObjCreator_initialise,
+    WM_ObjCreator_release,
+    0,
+    (ObjectDescriptorCallback)WM_ObjCreator_init,
+    (ObjectDescriptorCallback)WM_ObjCreator_update,
+    WM_ObjCreator_hitDetect,
+    (ObjectDescriptorCallback)WM_ObjCreator_render,
+    WM_ObjCreator_free,
+    (ObjectDescriptorCallback)WM_ObjCreator_getObjectTypeId,
+    WM_ObjCreator_getExtraSize,
+};

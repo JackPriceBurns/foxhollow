@@ -8,10 +8,8 @@
 #include "main/dll/dll_00C0_projcore2.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjcore2DoNoLongerSupported[];
-
 int projcore2_doUnsupported(void) {
-    OSReport(sProjcore2DoNoLongerSupported);
+    OSReport("<projcore2 Do>No Longer supported \n");
     return -1;
 }
 
@@ -28,5 +26,3 @@ Projcore2ResourceDescriptor gProjcore2ResourceDescriptor = {
     NULL,
     projcore2_doUnsupported,
 };
-
-char sProjcore2DoNoLongerSupported[] = "<projcore2 Do>No Longer supported \n";

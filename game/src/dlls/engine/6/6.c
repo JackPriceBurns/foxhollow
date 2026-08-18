@@ -27,7 +27,8 @@
 
 u32 lbl_803DD18C;
 u32 lbl_803DD188;
-u8* gSky2State;
+u8* gSky2States[2];
+#define gSky2State gSky2States[0]
 s8 gSky2DrawMode;
 
 s8 gSky2TintDisabled = 1;

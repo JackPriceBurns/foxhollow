@@ -1823,22 +1823,7 @@ static void enemy_initFromDescriptor(GameObject* obj, u8* setup)
     enemy_init(obj, setup, 0);
 }
 
-ObjectDescriptor gBaddieObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)enemy_initialise,
-    (ObjectDescriptorCallback)enemy_release,
-    0,
-    (ObjectDescriptorCallback)enemy_initFromDescriptor,
-    (ObjectDescriptorCallback)enemy_update,
-    (ObjectDescriptorCallback)enemy_hitDetect,
-    (ObjectDescriptorCallback)enemy_render,
-    (ObjectDescriptorCallback)enemy_free,
-    (ObjectDescriptorCallback)enemy_getObjectTypeId,
-    enemy_getExtraSize,
-};
+
 
 int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
 {
@@ -3113,3 +3098,20 @@ void enemy_initialise(void)
 }
 
 const f32 lbl_803E2604 = 0.0f;
+
+ObjectDescriptor gBaddieObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)enemy_initialise,
+    (ObjectDescriptorCallback)enemy_release,
+    0,
+    (ObjectDescriptorCallback)enemy_initFromDescriptor,
+    (ObjectDescriptorCallback)enemy_update,
+    (ObjectDescriptorCallback)enemy_hitDetect,
+    (ObjectDescriptorCallback)enemy_render,
+    (ObjectDescriptorCallback)enemy_free,
+    (ObjectDescriptorCallback)enemy_getObjectTypeId,
+    enemy_getExtraSize,
+};

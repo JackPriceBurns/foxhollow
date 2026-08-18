@@ -1,10 +1,8 @@
 #ifndef MAIN_DLL_DF_DLL_0234_DFPERCHWITCH_H_
 #define MAIN_DLL_DF_DLL_0234_DFPERCHWITCH_H_
 
-#include "types.h"
 #include "dlls/object_descriptor.h"
 
-extern char sDfperchwitchInitNoLongerSupported[];
 extern ObjectDescriptor gDfperchwitchObjDescriptor;
 
 int dfperchwitch_getExtraSize(void);

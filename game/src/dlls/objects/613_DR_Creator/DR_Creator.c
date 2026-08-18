@@ -180,6 +180,10 @@ void DR_Creator_initialise(void)
 {
 }
 
+
+
+char sDrCreatorTimeFormat[15] = " Time %i : %i \000";
+
 ObjectDescriptor gDrCreatorObjDescriptor = {
     0,
     0,
@@ -196,5 +200,3 @@ ObjectDescriptor gDrCreatorObjDescriptor = {
     (ObjectDescriptorCallback)DR_Creator_getObjectTypeId,
     DR_Creator_getExtraSize,
 };
-
-char sDrCreatorTimeFormat[15] = " Time %i : %i \000";

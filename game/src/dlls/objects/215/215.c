@@ -42,22 +42,7 @@
 #define KALDACHOMPSPIT_GRAVITY                    0.07f
 #define KALDACHOMPSPIT_ALPHA_FADE_RATE            4.0f
 
-ObjectDescriptor gKaldachomSpObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KaldachomSpit_initialise,
-    (ObjectDescriptorCallback)KaldachomSpit_release,
-    0,
-    (ObjectDescriptorCallback)KaldachomSpit_init,
-    (ObjectDescriptorCallback)KaldachomSpit_update,
-    (ObjectDescriptorCallback)KaldachomSpit_hitDetect,
-    (ObjectDescriptorCallback)KaldachomSpit_render,
-    (ObjectDescriptorCallback)KaldachomSpit_free,
-    (ObjectDescriptorCallback)KaldachomSpit_getObjectTypeId,
-    KaldachomSpit_getExtraSize,
-};
+
 
 
 void kaldachomspit_burst(GameObject* obj) {
@@ -247,3 +232,20 @@ void KaldachomSpit_release(void) {
 
 void KaldachomSpit_initialise(void) {
 }
+
+ObjectDescriptor gKaldachomSpObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)KaldachomSpit_initialise,
+    (ObjectDescriptorCallback)KaldachomSpit_release,
+    0,
+    (ObjectDescriptorCallback)KaldachomSpit_init,
+    (ObjectDescriptorCallback)KaldachomSpit_update,
+    (ObjectDescriptorCallback)KaldachomSpit_hitDetect,
+    (ObjectDescriptorCallback)KaldachomSpit_render,
+    (ObjectDescriptorCallback)KaldachomSpit_free,
+    (ObjectDescriptorCallback)KaldachomSpit_getObjectTypeId,
+    KaldachomSpit_getExtraSize,
+};

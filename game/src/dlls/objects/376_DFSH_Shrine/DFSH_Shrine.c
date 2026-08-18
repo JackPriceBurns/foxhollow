@@ -208,22 +208,7 @@ void dfshShrine_render(GameObject* obj, int renderArg2, int renderArg3, int rend
     }
 }
 
-ObjectDescriptor gDFSHShrineObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dfshShrine_initialise,
-    (ObjectDescriptorCallback)dfshShrine_release,
-    0,
-    (ObjectDescriptorCallback)dfshShrine_init,
-    (ObjectDescriptorCallback)dfshShrine_update,
-    (ObjectDescriptorCallback)dfshShrine_hitDetect,
-    (ObjectDescriptorCallback)dfshShrine_render,
-    (ObjectDescriptorCallback)dfshShrine_free,
-    (ObjectDescriptorCallback)dfshShrine_getObjectTypeId,
-    dfshShrine_getExtraSize,
-};
+
 
 void dfshShrine_hitDetect(void) {
 }
@@ -413,3 +398,20 @@ void dfshShrine_release(void) {
 
 void dfshShrine_initialise(void) {
 }
+
+ObjectDescriptor gDFSHShrineObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dfshShrine_initialise,
+    (ObjectDescriptorCallback)dfshShrine_release,
+    0,
+    (ObjectDescriptorCallback)dfshShrine_init,
+    (ObjectDescriptorCallback)dfshShrine_update,
+    (ObjectDescriptorCallback)dfshShrine_hitDetect,
+    (ObjectDescriptorCallback)dfshShrine_render,
+    (ObjectDescriptorCallback)dfshShrine_free,
+    (ObjectDescriptorCallback)dfshShrine_getObjectTypeId,
+    dfshShrine_getExtraSize,
+};

@@ -11,40 +11,36 @@
 #include "main/objprint_render_api.h"
 #include "sys/objects/lifecycle.h"
 
-#define TRICKYGUARD_GAMEBIT_NONE   -1
-
 void TrickyGuard_update(GameObject* obj) {
-    GameObject* tricky;
-    TrickyGuardPlacement* placement = (TrickyGuardPlacement*)obj->anim.placementData;
-
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armingGameBit)) != TRICKYGUARD_GAMEBIT_NONE) {
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armingGameBit))) == 0) {
-            return;
-        }
+
+    TrickyGuardPlacement* placement = (TrickyGuardPlacement*)obj->anim.placementData;
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->armingGameBit) != -1 &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->armingGameBit)) == 0) {
+        return;
     }
-    tricky = getTrickyObject();
+
+    GameObject* tricky = getTrickyObject();
     if (tricky == NULL) {
         return;
     }
+
     if (TRICKY_INTERFACE(tricky)->isGuarding(tricky) != 0) {
         return;
     }
+
     if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
-        TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, TRICKY_GUARD_COMMAND_KIND,
-                                                      TRICKY_GUARD_COMMAND_TYPE);
+        TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, TRICKY_GUARD_COMMAND_KIND, TRICKY_GUARD_COMMAND_TYPE);
     }
-    obj->anim.resetHitboxFlags = (u8)(obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
+
+    obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
     objUpdateHitVolumeTransforms(obj);
 }
 
 void TrickyGuard_init(GameObject* obj, TrickyGuardPlacement* placement) {
-    u32 flags;
 
-    obj->anim.rotX = (s16)((u32)placement->rotXByte << 8);
-    flags = obj->objectFlags;
-    flags |= OBJECT_OBJFLAG_HIDDEN;
-    obj->objectFlags = flags;
+    obj->anim.rotX = placement->rotXByte << 8;
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
 ObjectDescriptor gTrickyGuardObjDescriptor = {

@@ -8,6 +8,35 @@
 #include "main/dll/dll_029E_dummy.h"
 #include "dlls/object_descriptor.h"
 
+int Dummy29E_getExtraSize(void) {
+    return 0x0;
+}
+
+int Dummy29E_getObjectTypeId(void) {
+    return 0x0;
+}
+
+void Dummy29E_free(void) {
+}
+
+void Dummy29E_render(void) {
+}
+
+void Dummy29E_hitDetect(void) {
+}
+
+void Dummy29E_update(void) {
+}
+
+void Dummy29E_init(void) {
+}
+
+void Dummy29E_release(void) {
+}
+
+void Dummy29E_initialise(void) {
+}
+
 ObjectDescriptor gDll29EObjDescriptor = {
     0,
     0,
@@ -24,41 +53,3 @@ ObjectDescriptor gDll29EObjDescriptor = {
     (ObjectDescriptorCallback)Dummy29E_getObjectTypeId,
     (ObjectDescriptorExtraSizeCallback)Dummy29E_getExtraSize,
 };
-
-int Dummy29E_getExtraSize(void)
-{
-    return 0x0;
-}
-
-int Dummy29E_getObjectTypeId(void)
-{
-    return 0x0;
-}
-
-void Dummy29E_free(void)
-{
-}
-
-void Dummy29E_render(void)
-{
-}
-
-void Dummy29E_hitDetect(void)
-{
-}
-
-void Dummy29E_update(void)
-{
-}
-
-void Dummy29E_init(void)
-{
-}
-
-void Dummy29E_release(void)
-{
-}
-
-void Dummy29E_initialise(void)
-{
-}

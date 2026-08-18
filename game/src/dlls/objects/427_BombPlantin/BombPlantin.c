@@ -3,7 +3,6 @@
  * bomb spore. Placement game bits gate the prompt and record the planted spot.
  */
 #include "dlls/objects/427_BombPlantin.h"
-
 #include "game/objects/object.h"
 #include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
@@ -13,12 +12,10 @@
 #include "main/objseq.h"
 
 void BombPlantingSpot_update(GameObject* obj) {
-    const BombPlantingSpotPlacement* placement = (const BombPlantingSpotPlacement*)obj->anim.placementData;
-    s32 requiredGameBit;
+    BombPlantingSpotPlacement* placement = (BombPlantingSpotPlacement*)obj->anim.placementData;
+    obj->anim.rotX = placement->rotXByte << 8;
 
-    obj->anim.rotX = (s16)(placement->rotXByte << 8);
-
-    requiredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit));
+    s32 requiredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit));
     if (requiredGameBit != -1 && mainGetBit(requiredGameBit) == 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         return;
@@ -32,7 +29,7 @@ void BombPlantingSpot_update(GameObject* obj) {
 
     if (ObjTrigger_IsSetById(obj, GAMEBIT_ITEM_BombSpore_Count) != 0) {
         gameBitDecrement(GAMEBIT_ITEM_BombSpore_Count);
-        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit)), 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->plantedGameBit), 1);
         (*gObjectTriggerInterface)->runSequence(1, obj, -1);
     } else if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0 &&
                mainGetBit(GAMEBIT_SawBombPlantPatch) == 0) {
@@ -40,7 +37,7 @@ void BombPlantingSpot_update(GameObject* obj) {
         mainSetBits(GAMEBIT_SawBombPlantPatch, 1);
     }
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->plantedGameBit))) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->plantedGameBit)) == 0) {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
         objUpdateHitVolumeTransforms(obj);
     } else {
@@ -50,7 +47,7 @@ void BombPlantingSpot_update(GameObject* obj) {
 
 void BombPlantingSpot_init(GameObject* obj, const BombPlantingSpotPlacement* placement) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
-    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->anim.rotX = placement->rotXByte << 8;
 }
 
 ObjectDescriptor gBombPlantingSpotObjDescriptor = {

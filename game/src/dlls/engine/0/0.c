@@ -2412,8 +2412,14 @@ u8 gHeadDisplayEntryTable[] = {
     0x00, 0x00, 0x00, 0x00, 0x51, 0xB4, 0x00, 0x45, 0x02, 0x00, 0x00, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x51, 0xB5, 0x00,
     0x46, 0x02, 0x00, 0x00, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x51, 0xB6, 0x00, 0x47, 0x02, 0x00, 0x00, 0x5A, 0x00, 0x00,
     0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x98, 0x03, 0x00, 0x01, 0x40, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x99, 0x02,
-    0x00, 0x01, 0x90, 0x00, 0x00, 0x0A, 0x64, 0x03, 0xF9, 0x05, 0x00, 0x04, 0x3C, 0x0A, 0x65, 0x03, 0xFA, 0x0A, 0x00,
-    0x04, 0x3D, 0x0A, 0x66, 0x03, 0xFB, 0x0C, 0x00, 0x04, 0x3E, 0x0A, 0x67, 0x03, 0xFC, 0x0F, 0x00, 0x04, 0x3F,
+    0x00, 0x01, 0x90, 0x00, 0x00,
+};
+
+PauseMenuTokenEntry gPauseMenuTokens[] = {
+    {GAMEBIT_WORLDMAP_NAME_DARKICE_MINES, GAMEBIT_WORLDMAP_UNLOCK_DARKICE_MINES, 5, 0, 0x43C},
+    {GAMEBIT_WORLDMAP_NAME_CLOUDRUNNER, GAMEBIT_WORLDMAP_UNLOCK_CLOUDRUNNER, 10, 0, 0x43D},
+    {GAMEBIT_WORLDMAP_NAME_WALLED_CITY, GAMEBIT_WORLDMAP_UNLOCK_WALLED_CITY, 12, 0, 0x43E},
+    {GAMEBIT_WORLDMAP_NAME_DRAGON_ROCK, GAMEBIT_WORLDMAP_UNLOCK_DRAGON_ROCK, 15, 0, 0x43F},
 };
 
 u8 lbl_8031B050[36] = {
@@ -4023,16 +4029,16 @@ void cMenuUpdateRingRotation(void)
 void drawTrickyHudOverlay(int obj, int unused1, int unused2)
 {
     GameObject* player;
-    int tricky;
+    GameObject* tricky;
     int iconIndex;
     player = Obj_GetPlayerObject();
-    tricky = (int)getTrickyObject();
+    tricky = getTrickyObject();
     GXSetScissor(0, 0, 0x280, 0x1e0);
     hudDrawTimedElement(obj, &gHudItemInfoPopup);
-    if ((void*)tricky != 0)
+    if (tricky != NULL)
     {
-        gTrickyHudItemMask = HUD_TRICKY_INTERFACE(tricky)->updateSideCommandPrompts((GameObject*)tricky);
-        gTrickyHudActionMask = HUD_TRICKY_INTERFACE(tricky)->getAvailableCommands((GameObject*)tricky);
+        gTrickyHudItemMask = HUD_TRICKY_INTERFACE(tricky)->updateSideCommandPrompts(tricky);
+        gTrickyHudActionMask = HUD_TRICKY_INTERFACE(tricky)->getAvailableCommands(tricky);
     }
     else
     {
@@ -4042,9 +4048,9 @@ void drawTrickyHudOverlay(int obj, int unused1, int unused2)
     drawViewFinderHud();
     if ((*gCameraInterface)->getMode() != CAMERA_MODE_VIEWFINDER_RESOURCE_ID &&
         (player->objectFlags & CMENU_OBJFLAG_PARENT_SLACK) == 0 && pauseMenuState == 0 &&
-        (void*)tricky != 0 && getHudHiddenFrameCount() == 0)
+        tricky != NULL && getHudHiddenFrameCount() == 0)
     {
-        HUD_TRICKY_INTERFACE(tricky)->getCurrentCommandType((GameObject*)tricky, &iconIndex);
+        HUD_TRICKY_INTERFACE(tricky)->getCurrentCommandType(tricky, &iconIndex);
         if (gTrickyHudCachedIconTexture != 0)
         {
             if (gTrickyHudCachedIconIndex != iconIndex)
@@ -4466,7 +4472,6 @@ void drawArwingHud(int unused1, int unused2, int unused3)
 void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
 {
     s32 alpha;
-    PauseTbl* statusTable;
     GameObject* player;
     ObjModel* model;
     s32 x;
@@ -4486,7 +4491,6 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
     char tokenCountText[12];
     f32 zero = 0.0f;
 
-    statusTable = (PauseTbl*)lbl_8031AE20;
     player = Obj_GetPlayerObject();
     GXSetScissor(0, 0, 0x280, 0x1e0);
     if (pauseMenuState != 0)
@@ -4795,8 +4799,7 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
             gameTextMeasureById(0x440, 0, 0, &tokenLeft, &tokenRight, &tokenTop, &tokenBottom);
             textX = (tokenBottom - tokenTop) + 5;
             {
-                u8* thresholds = &statusTable->tokens[0].thresh;
-                sprintf(tokenCountText, lbl_803DBB58, thresholds[gPauseMenuTokenIndex * 8]);
+                sprintf(tokenCountText, lbl_803DBB58, gPauseMenuTokens[gPauseMenuTokenIndex].thresh);
             }
             gameTextShowStr(tokenCountText, 0x79, 0, textX + 0x78);
             gameTextMeasureStringBoundsAt(tokenCountText, 0x79, 0, 0, &tokenLeft, &tokenRight, &tokenTop,
@@ -4809,7 +4812,7 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
             gameTextShowAt(0x441, 0, textX + 0x78);
             gameTextMeasureById(0x441, 0, 0, &tokenLeft, &tokenRight, &tokenTop, &tokenBottom);
             textX += tokenBottom - tokenTop;
-            taskTextIds = &statusTable->tokens[0].alt;
+            taskTextIds = &gPauseMenuTokens[0].alt;
             gameTextShowAt(taskTextIds[gPauseMenuTokenIndex * 4], 0, textX + 0x78);
             gameTextMeasureById(taskTextIds[gPauseMenuTokenIndex * 4], 0, 0, &tokenLeft, &tokenRight, &tokenTop,
                                 &tokenBottom);
@@ -4831,7 +4834,7 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
             gameTextShowAt(0x443, 0, 0xa0);
             gameTextMeasureById(0x443, 0, 0, &tokenLeft, &tokenRight, &tokenTop, &tokenBottom);
             textX = (tokenBottom - tokenTop) + 5;
-            taskTextIds = &statusTable->tokens[0].alt;
+            taskTextIds = &gPauseMenuTokens[0].alt;
             gameTextShowAt(taskTextIds[gPauseMenuTokenIndex * 4], 0, textX + 0xa0);
             gameTextMeasureById(taskTextIds[gPauseMenuTokenIndex * 4], 0, 0, &tokenLeft, &tokenRight, &tokenTop,
                                 &tokenBottom);
@@ -6011,7 +6014,7 @@ void pauseMenuUpdate(void)
             pauseMenuSetupTitle(0x2b1, gPauseMenuPageIndex, 1, 3);
             if ((s8)gPauseMenuCloseAnimIndex != 0 && AudioStream_GetCurrentId() == 0 && AudioStream_IsPreparing() == 0)
             {
-                ObjAnim_SetCurrentMove(hud->anims[(s8)gPauseMenuCloseAnimIndex], 0, 0.0f, 0);
+                ObjAnim_SetCurrentMove(gGameUiHudAnimObjects[(s8)gPauseMenuCloseAnimIndex], 0, 0.0f, 0);
                 gPauseMenuCloseAnimIndex = 0;
             }
             if ((s8)analogX != 0 || gPauseMenuPodiumRamp == 0 || gPauseMenuPageIndex < menuMin || gPauseMenuPageIndex > menuMax)
@@ -6022,7 +6025,7 @@ void pauseMenuUpdate(void)
                 case 2:
                 case 3:
                 {
-                    GameObject* anim = hud->anims[gPauseMenuPageIndex];
+                    GameObject* anim = gGameUiHudAnimObjects[gPauseMenuPageIndex];
                     if (fhAboveRetailMem1Watermark(anim->anim.placementData))
                     {
                         anim->anim.placementData = NULL;
@@ -6051,7 +6054,7 @@ void pauseMenuUpdate(void)
                 case 2:
                 case 3:
                 {
-                    GameObject* anim = hud->anims[gPauseMenuPageIndex];
+                    GameObject* anim = gGameUiHudAnimObjects[gPauseMenuPageIndex];
                     if (fhAboveRetailMem1Watermark(anim->anim.placementData))
                     {
                         anim->anim.placementData = NULL;
@@ -6162,7 +6165,7 @@ void pauseMenuUpdate(void)
                 {
                     AudioStream_StopCurrent();
                 }
-                gameUiFreeHudAnims(&hud->anims[0]);
+                gameUiFreeHudAnims(gGameUiHudAnimObjects);
                 Music_Trigger(MUSICTRIG_cldrnr_tune1, 0);
                 pauseMenuSetupTitle(0x2b1, gPauseMenuPageIndex, 4, 3);
             }
@@ -6479,15 +6482,15 @@ void pauseMenuUpdate(void)
                         coordsToMapCell(player->anim.localPosX, player->anim.localPosZ);
                     if (gPauseMenuPlayerMapCell == 7)
                     {
-                        for (gPauseMenuTokenIndex = 0; gPauseMenuTokenIndex < 4;)
+                        for (gPauseMenuTokenIndex = 0; gPauseMenuTokenIndex < ARRAY_COUNT(gPauseMenuTokens);)
                         {
-                            if (!mainGetBit(*(s16*)((u8*)&tbl->tokens[0].bitA + gPauseMenuTokenIndex * 8)))
+                            if (!mainGetBit(gPauseMenuTokens[gPauseMenuTokenIndex].bitA))
                             {
                                 break;
                             }
-                            if (mainGetBit(*(s16*)((u8*)&tbl->tokens[0].bitB + gPauseMenuTokenIndex * 8)) == 0)
+                            if (mainGetBit(gPauseMenuTokens[gPauseMenuTokenIndex].bitB) == 0)
                             {
-                                if (have >= tbl->tokens[gPauseMenuTokenIndex].thresh)
+                                if (have >= gPauseMenuTokens[gPauseMenuTokenIndex].thresh)
                                 {
                                     gPauseMenuTokenPromptState = 2;
                                 }
@@ -6505,9 +6508,9 @@ void pauseMenuUpdate(void)
                 {
                     if (gPauseMenuTokenPromptState == 2)
                     {
-                        have -= tbl->tokens[gPauseMenuTokenIndex].thresh;
+                        have -= gPauseMenuTokens[gPauseMenuTokenIndex].thresh;
                         mainSetBits(GAMEBIT_ITEM_FuelCell_Count, have);
-                        mainSetBits(tbl->tokens[gPauseMenuTokenIndex].bitB, 1);
+                        mainSetBits(gPauseMenuTokens[gPauseMenuTokenIndex].bitB, 1);
                     }
                     gPauseMenuTokenConfirmFlag = 1;
                     buttonDisable(0, PAD_BUTTON_A);

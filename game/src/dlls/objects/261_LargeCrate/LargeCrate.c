@@ -100,22 +100,7 @@ STATIC_ASSERT(sizeof(LargeCrateResource) == 0x8);
 
 LargeCrateResource** gLargeCrateResource;
 
-ObjectDescriptor gLargeCrateObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)LargeCrate_initialise,
-    (ObjectDescriptorCallback)LargeCrate_release,
-    0,
-    (ObjectDescriptorCallback)LargeCrate_init,
-    (ObjectDescriptorCallback)LargeCrate_update,
-    (ObjectDescriptorCallback)LargeCrate_hitDetect,
-    (ObjectDescriptorCallback)LargeCrate_render,
-    (ObjectDescriptorCallback)LargeCrate_free,
-    (ObjectDescriptorCallback)LargeCrate_getObjectTypeId,
-    LargeCrate_getExtraSize,
-};
+
 
 /* Superset of the 0x24- and 0x30-byte placement records used by crate drops. */
 typedef struct LargeCratePickupPlacement {
@@ -616,3 +601,20 @@ void LargeCrate_release(void) {
 
 void LargeCrate_initialise(void) {
 }
+
+ObjectDescriptor gLargeCrateObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)LargeCrate_initialise,
+    (ObjectDescriptorCallback)LargeCrate_release,
+    0,
+    (ObjectDescriptorCallback)LargeCrate_init,
+    (ObjectDescriptorCallback)LargeCrate_update,
+    (ObjectDescriptorCallback)LargeCrate_hitDetect,
+    (ObjectDescriptorCallback)LargeCrate_render,
+    (ObjectDescriptorCallback)LargeCrate_free,
+    (ObjectDescriptorCallback)LargeCrate_getObjectTypeId,
+    LargeCrate_getExtraSize,
+};

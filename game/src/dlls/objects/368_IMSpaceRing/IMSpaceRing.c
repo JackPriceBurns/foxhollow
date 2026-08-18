@@ -21,9 +21,11 @@ void imSpaceRing_free(void) {
 }
 
 void imSpaceRing_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    if (visible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void imSpaceRing_hitDetect(void) {
@@ -33,21 +35,25 @@ void imSpaceRing_update(GameObject* obj) {
     const IMSpaceRingPlacement* placement = (const IMSpaceRingPlacement*)obj->anim.placementData;
 
     if (IM_SPACE_RING_SPIN_AXIS(obj) != 0) {
-        obj->anim.rotX = (s16)(obj->anim.rotX + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spinSpeed)) * framesThisStep);
+        obj->anim.rotX += ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinSpeed) * framesThisStep;
     } else {
-        obj->anim.rotY = (s16)(obj->anim.rotY + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->spinSpeed)) * framesThisStep);
+        obj->anim.rotY += ObjAnim_ReadPlacementS16(&obj->anim, &placement->spinSpeed) * framesThisStep;
     }
-    obj->anim.rotZ = (s16)(obj->anim.rotZ + ObjAnim_ReadPlacementS16(&obj->anim, &(placement->tiltSpeed)) * framesThisStep);
-    if (gIMSpaceRingLeader != NULL) {
-        obj->anim.alpha = gIMSpaceRingLeader->anim.alpha;
-        objMove(obj, gIMSpaceRingLeader->anim.localPosX - obj->anim.localPosX,
-                gIMSpaceRingLeader->anim.localPosY - obj->anim.localPosY,
-                gIMSpaceRingLeader->anim.localPosZ - obj->anim.localPosZ);
+
+    obj->anim.rotZ += ObjAnim_ReadPlacementS16(&obj->anim, &placement->tiltSpeed) * framesThisStep;
+
+    if (gIMSpaceRingLeader == NULL) {
+        return;
     }
+
+    obj->anim.alpha = gIMSpaceRingLeader->anim.alpha;
+    objMove(obj, gIMSpaceRingLeader->anim.localPosX - obj->anim.localPosX,
+            gIMSpaceRingLeader->anim.localPosY - obj->anim.localPosY,
+            gIMSpaceRingLeader->anim.localPosZ - obj->anim.localPosZ);
 }
 
 void imSpaceRing_init(GameObject* obj, const IMSpaceRingPlacement* placement) {
-    obj->anim.rotX = (s16)((s32)placement->initialRotX << 8);
+    obj->anim.rotX = placement->initialRotX << 8;
     IM_SPACE_RING_SPIN_AXIS(obj) = randomGetRange(0, 1);
 }
 

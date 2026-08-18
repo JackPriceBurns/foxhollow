@@ -1277,24 +1277,7 @@ Dim2BossMoveChoices gDim2LiftFarMoveChoices = {
     {4, 5, 4, 5, 4, 5, 6, 0},
 };
 
-ObjectDescriptor12 gDIM_BossObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    DIMboss_initialise,
-    DIMboss_release,
-    0,
-    (ObjectDescriptorCallback)DIMboss_init,
-    (ObjectDescriptorCallback)DIMboss_update,
-    (ObjectDescriptorCallback)DIMboss_hitDetect,
-    (ObjectDescriptorCallback)DIMboss_render,
-    (ObjectDescriptorCallback)DIMboss_free,
-    (ObjectDescriptorCallback)DIMboss_getObjectTypeId,
-    DIMboss_getExtraSize,
-    (ObjectDescriptorCallback)DIMboss_getControlMode,
-    DIMboss_func0B,
-};
+
 
 #define DIMBOSS_OBJGROUP 3
 
@@ -1861,3 +1844,22 @@ f32 gDIMbossRenderMtx[12];
 DIMbossEffectMarker gDIMbossHitFxBuffer;
 PartFxSpawnParams gDIMbossDustFxSource;
 f32 gDIMbossAnimScratchBase[3];
+
+ObjectDescriptor12 gDIM_BossObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    DIMboss_initialise,
+    DIMboss_release,
+    0,
+    (ObjectDescriptorCallback)DIMboss_init,
+    (ObjectDescriptorCallback)DIMboss_update,
+    (ObjectDescriptorCallback)DIMboss_hitDetect,
+    (ObjectDescriptorCallback)DIMboss_render,
+    (ObjectDescriptorCallback)DIMboss_free,
+    (ObjectDescriptorCallback)DIMboss_getObjectTypeId,
+    DIMboss_getExtraSize,
+    (ObjectDescriptorCallback)DIMboss_getControlMode,
+    DIMboss_func0B,
+};

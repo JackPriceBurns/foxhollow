@@ -7,6 +7,11 @@
 #include "dlls/objects/230_ReStartMark.h"
 #include "game/objects/object.h"
 
+void ReStartMark_init(GameObject* obj, ReStartMarkPlacement* placement) {
+    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
+}
+
 ObjectDescriptor gReStartMarkObjDescriptor = {
     0,                                          /* reserved0 */
     0,                                          /* reserved1 */
@@ -23,8 +28,3 @@ ObjectDescriptor gReStartMarkObjDescriptor = {
     0,                                          /* getObjectTypeId */
     0,                                          /* getExtraSize */
 };
-
-void ReStartMark_init(GameObject* obj, ReStartMarkPlacement* placement) {
-    obj->anim.rotX = (s16)(placement->rotXByte << 8);
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
-}

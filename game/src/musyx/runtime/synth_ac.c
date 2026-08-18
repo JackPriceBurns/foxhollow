@@ -1,41 +1,29 @@
 #include "musyx/synth_config.h"
-#include "PowerPC_EABI_Support/Runtime/runtime.h"
 #include "musyx/voice_conv.h"
 
 extern f32 voicePitchUpTable[];
 extern f32 voicePitchDownTable[];
 
-int voiceScaleSampleRate(u16 value)
-{
+int voiceScaleSampleRate(u16 value) {
     return (int)(1.0594631f * (f32)(u32)value);
 }
 
-u32 voiceGetPitchRatio(u8 key, u32 sampleInfo)
-{
-    u8 originalKey;
+u32 voiceGetPitchRatio(u8 key, u32 sampleInfo) {
     f32 frequency;
 
-    if (sampleInfo == 0xffffffffU)
-    {
+    if (sampleInfo == 0xffffffffU) {
         sampleInfo = 0x40005622;
     }
-    originalKey = (u8)(sampleInfo >> 24);
-    if (key != originalKey)
-    {
-        if (originalKey < key)
-        {
+    u8 originalKey = (u8)(sampleInfo >> 24);
+    if (key != originalKey) {
+        if (originalKey < key) {
             frequency = voicePitchUpTable[key - originalKey];
-        }
-        else
-        {
+        } else {
             frequency = voicePitchDownTable[originalKey - key];
         }
-        frequency = (f32)(u32)(sampleInfo & 0xffffff) * frequency;
+        frequency = (f32)(sampleInfo & 0xffffff) * frequency;
+    } else {
+        frequency = (f32)(sampleInfo & 0xffffff);
     }
-    else
-    {
-        frequency = (f32)(u32)(sampleInfo & 0xffffff);
-    }
-    return __cvt_fp2unsigned((4096.0f * frequency) /
-                             (f32)SYNTH_CONFIGURATION->sampleRate);
+    return __cvt_fp2unsigned(4096.0f * frequency / (f32)SYNTH_CONFIGURATION->sampleRate);
 }

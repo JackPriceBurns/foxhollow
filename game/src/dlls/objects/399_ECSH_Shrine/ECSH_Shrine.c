@@ -187,27 +187,7 @@ ECSHShrinePuzzleScratch gECSHShrinePuzzleScratch = {
     {0, 1, 2, 3, 4, 5},
 };
 
-ObjectDescriptor15 gECSHShrineObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
-    (ObjectDescriptorCallback)ecshShrine_initialise,
-    (ObjectDescriptorCallback)ecshShrine_release,
-    0,
-    (ObjectDescriptorCallback)ecshShrine_init,
-    (ObjectDescriptorCallback)ecshShrine_update,
-    (ObjectDescriptorCallback)ecshShrine_hitDetect,
-    (ObjectDescriptorCallback)ecshShrine_render,
-    (ObjectDescriptorCallback)ecshShrine_free,
-    (ObjectDescriptorCallback)ecshShrine_getObjectTypeId,
-    ecshShrine_getExtraSize,
-    (ObjectDescriptorCallback)ecshShrine_func0A,
-    (ObjectDescriptorCallback)ecshShrine_getCupPosition,
-    (ObjectDescriptorCallback)ecshShrine_getPhaseAndSpiritCup,
-    (ObjectDescriptorCallback)ecshShrine_setCupPosition,
-    (ObjectDescriptorCallback)ecshShrine_checkCupPick,
-};
+
 
 void ecshShrine_updateHoverMotion(GameObject* obj) {
     const ObjPlacement* placement;
@@ -839,3 +819,25 @@ void ecshShrine_release(void) {
 
 void ecshShrine_initialise(void) {
 }
+
+ObjectDescriptor15 gECSHShrineObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
+    (ObjectDescriptorCallback)ecshShrine_initialise,
+    (ObjectDescriptorCallback)ecshShrine_release,
+    0,
+    (ObjectDescriptorCallback)ecshShrine_init,
+    (ObjectDescriptorCallback)ecshShrine_update,
+    (ObjectDescriptorCallback)ecshShrine_hitDetect,
+    (ObjectDescriptorCallback)ecshShrine_render,
+    (ObjectDescriptorCallback)ecshShrine_free,
+    (ObjectDescriptorCallback)ecshShrine_getObjectTypeId,
+    ecshShrine_getExtraSize,
+    (ObjectDescriptorCallback)ecshShrine_func0A,
+    (ObjectDescriptorCallback)ecshShrine_getCupPosition,
+    (ObjectDescriptorCallback)ecshShrine_getPhaseAndSpiritCup,
+    (ObjectDescriptorCallback)ecshShrine_setCupPosition,
+    (ObjectDescriptorCallback)ecshShrine_checkCupPick,
+};

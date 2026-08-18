@@ -77,24 +77,7 @@ u8 gDllCEHitReactionDamage[32] = {
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,   0,
 };
 
-ObjectDescriptor12 gDllCEObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dll_CE_initialise,
-    (ObjectDescriptorCallback)dll_CE_release,
-    0,
-    (ObjectDescriptorCallback)dll_CE_init,
-    (ObjectDescriptorCallback)dll_CE_update,
-    (ObjectDescriptorCallback)dll_CE_hitDetect,
-    (ObjectDescriptorCallback)dll_CE_render,
-    (ObjectDescriptorCallback)dll_CE_free,
-    (ObjectDescriptorCallback)dll_CE_getObjectTypeId,
-    dll_CE_getExtraSize,
-    (ObjectDescriptorCallback)dll_CE_getControlMode,
-    (ObjectDescriptorCallback)dll_CE_handleMessage,
-};
+
 
 void iceBaddie_installStateHandlers(void) {
     gIceBaddieStateHandlersA[0] = iceBaddie_updateOpenHitState;
@@ -810,3 +793,22 @@ void dll_CE_initialise(void) {
     gDllCECheckHandlers[4] = dll_CE_checkSubmergeState;
     gDllCECheckHandlers[5] = dll_CE_checkChooseAttackState;
 }
+
+ObjectDescriptor12 gDllCEObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    (ObjectDescriptorCallback)dll_CE_initialise,
+    (ObjectDescriptorCallback)dll_CE_release,
+    0,
+    (ObjectDescriptorCallback)dll_CE_init,
+    (ObjectDescriptorCallback)dll_CE_update,
+    (ObjectDescriptorCallback)dll_CE_hitDetect,
+    (ObjectDescriptorCallback)dll_CE_render,
+    (ObjectDescriptorCallback)dll_CE_free,
+    (ObjectDescriptorCallback)dll_CE_getObjectTypeId,
+    dll_CE_getExtraSize,
+    (ObjectDescriptorCallback)dll_CE_getControlMode,
+    (ObjectDescriptorCallback)dll_CE_handleMessage,
+};

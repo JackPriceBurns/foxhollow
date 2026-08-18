@@ -57,22 +57,7 @@ u8 gWmLevelControlBlendedLightIntensity; /* Blended light-intensity byte. */
 f32 gWmLevelControlBlendFactor;          /* Current blend factor. */
 f32 gWmLevelControlBlendHold;            /* Restore-blend hold value. */
 
-ObjectDescriptor gWM_LevelControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_LevelControl_initialise,
-    WM_LevelControl_release,
-    0,
-    (ObjectDescriptorCallback)WM_LevelControl_init,
-    (ObjectDescriptorCallback)WM_LevelControl_update,
-    WM_LevelControl_hitDetect,
-    (ObjectDescriptorCallback)WM_LevelControl_render,
-    (ObjectDescriptorCallback)WM_LevelControl_free,
-    (ObjectDescriptorCallback)WM_LevelControl_getObjectTypeId,
-    WM_LevelControl_getExtraSize,
-};
+
 
 static void WmLevelControl_holdBlendWhileRestoring(void) {
     if (lightningGetRemainingFraction() > 0.0f) {
@@ -309,3 +294,20 @@ void WM_LevelControl_release(void) {
 
 void WM_LevelControl_initialise(void) {
 }
+
+ObjectDescriptor gWM_LevelControlObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    WM_LevelControl_initialise,
+    WM_LevelControl_release,
+    0,
+    (ObjectDescriptorCallback)WM_LevelControl_init,
+    (ObjectDescriptorCallback)WM_LevelControl_update,
+    WM_LevelControl_hitDetect,
+    (ObjectDescriptorCallback)WM_LevelControl_render,
+    (ObjectDescriptorCallback)WM_LevelControl_free,
+    (ObjectDescriptorCallback)WM_LevelControl_getObjectTypeId,
+    WM_LevelControl_getExtraSize,
+};

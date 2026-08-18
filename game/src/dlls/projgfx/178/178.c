@@ -7,10 +7,8 @@
 #include "main/dll/dll_00B2_projrobotfire.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjrobotfireDoNoLongerSupported[];
-
 int projrobotfire_doUnsupported(void) {
-    OSReport(sProjrobotfireDoNoLongerSupported);
+    OSReport("<projrobotfire Do>No Longer supported \n");
     return -1;
 }
 
@@ -27,5 +25,3 @@ ProjrobotfireResourceDescriptor gProjrobotfireResourceDescriptor = {
     NULL,
     projrobotfire_doUnsupported,
 };
-
-char sProjrobotfireDoNoLongerSupported[] = "<projrobotfire Do>No Longer supported \n";

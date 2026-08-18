@@ -952,7 +952,7 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
     f32* sourcePoint;
     int parentMatrixOffset;
     int pointIndices[2];
-    ObjAnimComponent* linkedAnim;
+    ObjHitsPriorityState* hitState;
     f32 invStep;
     f32 zero;
     f32 one;
@@ -1143,11 +1143,11 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
         }
         if ((s32)(state->flags & 0x40000) == 0)
         {
-            linkedAnim = curveObj->anim.linkedAnim;
-            if ((linkedAnim != NULL) && ((*(s16*)&linkedAnim->eventTable & 1) != 0))
+            hitState = (ObjHitsPriorityState*)curveObj->anim.hitReactState;
+            if ((hitState != NULL) && ((hitState->flags & OBJHITS_PRIORITY_STATE_ENABLED) != 0))
             {
-                curveObj->anim.velocityY = invStep * (curveObj->anim.worldPosY - linkedAnim->worldPosZ);
-                if (curveObj->anim.worldPosY > curveObj->anim.linkedAnim->worldPosZ)
+                curveObj->anim.velocityY = invStep * (curveObj->anim.worldPosY - hitState->worldPosY);
+                if (curveObj->anim.worldPosY > hitState->worldPosY)
                 {
                     curveObj->anim.velocityY = 0.0f;
                 }

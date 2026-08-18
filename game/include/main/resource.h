@@ -11,6 +11,9 @@ typedef struct ResourceDescriptor {
     u8 data[0];
 } ResourceDescriptor;
 
+#define RESOURCE_DESCRIPTOR_REF(descriptor) \
+    _Generic(&(descriptor), ResourceDescriptor*: &(descriptor), default: (void*)&(descriptor))
+
 typedef void (*ResourceDescriptorCallback)(void);
 
 typedef struct ResourceDescriptorCallbacks7 {

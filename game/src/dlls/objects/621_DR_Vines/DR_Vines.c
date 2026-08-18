@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDR_VinesNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll26DObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

@@ -9,22 +9,7 @@
 #include "main/shader_api.h"
 #include "main/shader_map_api.h"
 
-ObjectDescriptor gTexFrameAnimatorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)TexFrameAnimator_initialise,
-    (ObjectDescriptorCallback)TexFrameAnimator_release,
-    0,
-    (ObjectDescriptorCallback)TexFrameAnimator_init,
-    (ObjectDescriptorCallback)TexFrameAnimator_update,
-    (ObjectDescriptorCallback)TexFrameAnimator_hitDetect,
-    (ObjectDescriptorCallback)TexFrameAnimator_render,
-    (ObjectDescriptorCallback)TexFrameAnimator_free,
-    (ObjectDescriptorCallback)TexFrameAnimator_getObjectTypeId,
-    TexFrameAnimator_getExtraSize,
-};
+
 
 char sTexFrameAnimDebugFormat[] = " TEXFRAMEANIM %i ";
 
@@ -116,3 +101,20 @@ void TexFrameAnimator_release(void) {
 
 void TexFrameAnimator_initialise(void) {
 }
+
+ObjectDescriptor gTexFrameAnimatorObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)TexFrameAnimator_initialise,
+    (ObjectDescriptorCallback)TexFrameAnimator_release,
+    0,
+    (ObjectDescriptorCallback)TexFrameAnimator_init,
+    (ObjectDescriptorCallback)TexFrameAnimator_update,
+    (ObjectDescriptorCallback)TexFrameAnimator_hitDetect,
+    (ObjectDescriptorCallback)TexFrameAnimator_render,
+    (ObjectDescriptorCallback)TexFrameAnimator_free,
+    (ObjectDescriptorCallback)TexFrameAnimator_getObjectTypeId,
+    TexFrameAnimator_getExtraSize,
+};

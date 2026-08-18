@@ -16,22 +16,7 @@ const f32 gMikaBombGravityAccel = 0.01f;
 const f32 gMikaBombMinFallVelocity = -2.5f;
 const f32 gMikaBombInitialVelocityY = -1.0f;
 
-ObjectDescriptor gMikaBombShadowObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MikaBombShadow_initialise,
-    (ObjectDescriptorCallback)MikaBombShadow_release,
-    0,
-    (ObjectDescriptorCallback)MikaBombShadow_init,
-    (ObjectDescriptorCallback)MikaBombShadow_update,
-    (ObjectDescriptorCallback)MikaBombShadow_hitDetect,
-    (ObjectDescriptorCallback)MikaBombShadow_render,
-    (ObjectDescriptorCallback)MikaBombShadow_free,
-    (ObjectDescriptorCallback)MikaBombShadow_getObjectTypeId,
-    MikaBombShadow_getExtraSize,
-};
+
 
 int MikaBombShadow_getExtraSize(void) {
     return sizeof(MikaBombShadowState);
@@ -105,3 +90,20 @@ void MikaBombShadow_release(void) {
 
 void MikaBombShadow_initialise(void) {
 }
+
+ObjectDescriptor gMikaBombShadowObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)MikaBombShadow_initialise,
+    (ObjectDescriptorCallback)MikaBombShadow_release,
+    0,
+    (ObjectDescriptorCallback)MikaBombShadow_init,
+    (ObjectDescriptorCallback)MikaBombShadow_update,
+    (ObjectDescriptorCallback)MikaBombShadow_hitDetect,
+    (ObjectDescriptorCallback)MikaBombShadow_render,
+    (ObjectDescriptorCallback)MikaBombShadow_free,
+    (ObjectDescriptorCallback)MikaBombShadow_getObjectTypeId,
+    MikaBombShadow_getExtraSize,
+};

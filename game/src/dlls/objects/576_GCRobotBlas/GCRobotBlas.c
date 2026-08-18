@@ -21,68 +21,55 @@ STATIC_ASSERT(offsetof(GCRobotBlastState, mode) == 0x0);
 STATIC_ASSERT(offsetof(GCRobotBlastState, flags04) == 0x4);
 STATIC_ASSERT(offsetof(GCRobotBlastPlacement, mode) == 0x19);
 
-int GCRobotBlast_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
-{
+int GCRobotBlast_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     GCRobotBlastState* state = obj->extra;
-    int i;
-
-    for (i = 0; i < animUpdate->eventCount; i++)
-    {
+    for (int i = 0; i < animUpdate->eventCount; i++) {
         state->flags04.b80 = animUpdate->eventIds[i];
     }
-    if (state->flags04.b80 != 0)
-    {
-        switch (state->mode)
-        {
-        case 0:
-        case 1:
-            objfx_spawnDirectionalBurst(obj, 7, 1.0f, 5, 6, 0x64, 8.0f, NULL, 0x200000);
-            objfx_spawnDirectionalBurst(obj, 6, 1.0f, 1, 6, 0x64, 8.0f, NULL, 0x200000);
-            break;
-        }
+
+    if (state->flags04.b80 == 0) {
+        return 0;
     }
-    return 0;
+
+    switch (state->mode) {
+    case 0:
+    case 1:
+        objfx_spawnDirectionalBurst(obj, 7, 1.0f, 5, 6, 0x64, 8.0f, NULL, 0x200000);
+        objfx_spawnDirectionalBurst(obj, 6, 1.0f, 1, 6, 0x64, 8.0f, NULL, 0x200000);
+        break;
+    }
 }
 
-int GCRobotBlast_getExtraSize(void)
-{
+int GCRobotBlast_getExtraSize(void) {
     return sizeof(GCRobotBlastState);
 }
-int GCRobotBlast_getObjectTypeId(void)
-{
+int GCRobotBlast_getObjectTypeId(void) {
     return 0x0;
 }
 
-void GCRobotBlast_free(void)
-{
+void GCRobotBlast_free(void) {
 }
 
-void GCRobotBlast_render(void)
-{
+void GCRobotBlast_render(void) {
 }
 
-void GCRobotBlast_hitDetect(void)
-{
+void GCRobotBlast_hitDetect(void) {
 }
 
-void GCRobotBlast_update(void)
-{
+void GCRobotBlast_update(void) {
 }
 
-void GCRobotBlast_init(GameObject* obj, GCRobotBlastPlacement* placement)
-{
+void GCRobotBlast_init(GameObject* obj, GCRobotBlastPlacement* placement) {
     GCRobotBlastState* state = obj->extra;
     state->mode = placement->mode;
     state->flags04.b80 = 0;
     obj->animEventCallback = GCRobotBlast_SeqFn;
 }
 
-void GCRobotBlast_release(void)
-{
+void GCRobotBlast_release(void) {
 }
 
-void GCRobotBlast_initialise(void)
-{
+void GCRobotBlast_initialise(void) {
 }
 
 ObjectDescriptor gGCRobotBlastObjDescriptor = {

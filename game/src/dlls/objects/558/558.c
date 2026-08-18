@@ -7,43 +7,34 @@
 #include "main/dll/DF/dll_022E_dfpdoorswitch.h"
 #include "dolphin/os/OSReport.h"
 
-int doorswitch_getExtraSize(void)
-{
+int doorswitch_getExtraSize(void) {
     return 0x0;
 }
-int doorswitch_getObjectTypeId(void)
-{
+int doorswitch_getObjectTypeId(void) {
     return 0x0;
 }
 
-void doorswitch_free(void)
-{
-    OSReport(sDoorswitchInitNoLongerSupported);
+void doorswitch_free(void) {
+    OSReport("<doorswitch Init>No Longer supported \n");
 }
 
-void doorswitch_render(void)
-{
+void doorswitch_render(void) {
 }
 
-void doorswitch_hitDetect(void)
-{
+void doorswitch_hitDetect(void) {
 }
 
-void doorswitch_update(void)
-{
-    OSReport(sDoorswitchInitNoLongerSupported);
+void doorswitch_update(void) {
+    OSReport("<doorswitch Init>No Longer supported \n");
 }
-void doorswitch_init(void)
-{
-    OSReport(sDoorswitchInitNoLongerSupported);
+void doorswitch_init(void) {
+    OSReport("<doorswitch Init>No Longer supported \n");
 }
 
-void doorswitch_release(void)
-{
+void doorswitch_release(void) {
 }
 
-void doorswitch_initialise(void)
-{
+void doorswitch_initialise(void) {
 }
 
 ObjectDescriptor gDoorswitchObjDescriptor = {
@@ -62,5 +53,3 @@ ObjectDescriptor gDoorswitchObjDescriptor = {
     (ObjectDescriptorCallback)doorswitch_getObjectTypeId,
     doorswitch_getExtraSize,
 };
-
-char sDoorswitchInitNoLongerSupported[] = "<doorswitch Init>No Longer supported \n";

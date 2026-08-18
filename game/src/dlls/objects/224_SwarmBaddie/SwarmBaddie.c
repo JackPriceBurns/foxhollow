@@ -36,22 +36,7 @@
 int gSwarmBaddieCurveInitData[2] = {2, 3};
 int gSwarmBaddieLastCurvePoint;
 
-ObjectDescriptor gSwarmBaddieObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SwarmBaddie_initialise,
-    (ObjectDescriptorCallback)SwarmBaddie_release,
-    0,
-    (ObjectDescriptorCallback)SwarmBaddie_init,
-    (ObjectDescriptorCallback)SwarmBaddie_update,
-    (ObjectDescriptorCallback)SwarmBaddie_hitDetect,
-    (ObjectDescriptorCallback)SwarmBaddie_render,
-    (ObjectDescriptorCallback)SwarmBaddie_free,
-    (ObjectDescriptorCallback)SwarmBaddie_getObjectTypeId,
-    SwarmBaddie_getExtraSize,
-};
+
 
 void SwarmBaddie_updateMovement(GameObject* obj, SwarmBaddieState* state) {
     RomCurveWalker* curve;
@@ -231,3 +216,20 @@ void SwarmBaddie_release(void) {
 
 void SwarmBaddie_initialise(void) {
 }
+
+ObjectDescriptor gSwarmBaddieObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)SwarmBaddie_initialise,
+    (ObjectDescriptorCallback)SwarmBaddie_release,
+    0,
+    (ObjectDescriptorCallback)SwarmBaddie_init,
+    (ObjectDescriptorCallback)SwarmBaddie_update,
+    (ObjectDescriptorCallback)SwarmBaddie_hitDetect,
+    (ObjectDescriptorCallback)SwarmBaddie_render,
+    (ObjectDescriptorCallback)SwarmBaddie_free,
+    (ObjectDescriptorCallback)SwarmBaddie_getObjectTypeId,
+    SwarmBaddie_getExtraSize,
+};

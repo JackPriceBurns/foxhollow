@@ -9,85 +9,72 @@
 #include "main/gamebits.h"
 #include "main/model_engine.h"
 
-int CntCounter_getExtraSize(void)
-{
+int CntCounter_getExtraSize(void) {
     return 8;
 }
 
-int CntCounter_getObjectTypeId(void)
-{
+int CntCounter_getObjectTypeId(void) {
     return 0;
 }
 
-void CntCounter_free(GameObject* obj)
-{
+void CntCounter_free(GameObject* obj) {
     CntCounterState* state = obj->extra;
-    if (state->displayHud != 0)
-    {
+    if (state->displayHud != 0) {
         hudNumberSet(-1);
     }
 }
 
-void CntCounter_render(void)
-{
+void CntCounter_render(void) {
 }
 
-void CntCounter_hitDetect(void)
-{
+void CntCounter_hitDetect(void) {
 }
 
-void CntCounter_update(GameObject* obj)
-{
+void CntCounter_update(GameObject* obj) {
     CntCounterState* state = obj->extra;
     CntCounterSetup* setup = (CntCounterSetup*)obj->anim.placementData;
 
-    if (state->remainingCount != 0)
-    {
-        int bit;
-        if (state->displayHud != 0)
-        {
-            hudNumberSet(state->remainingCount);
-        }
-        bit = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit)));
-        if (bit != 0)
-        {
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit)), 0);
-            state->remainingCount -= bit;
-            if (state->remainingCount <= 0)
-            {
-                state->remainingCount = 0;
-                mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->doneGameBit)), 1);
-                if (state->displayHud != 0)
-                {
-                    hudNumberSet(-1);
-                }
-                state->displayHud = 0;
-            }
-        }
-    }
-    else
-    {
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit))) != 0)
-        {
+    if (state->remainingCount == 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->decrementGameBit))) != 0) {
             state->displayHud = setup->displayHud;
             state->remainingCount = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->initialCount));
         }
+        return;
     }
+
+    if (state->displayHud != 0) {
+        hudNumberSet(state->remainingCount);
+    }
+
+    int bit = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &setup->decrementGameBit));
+    if (bit == 0) {
+        return;
+    }
+
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &setup->decrementGameBit), 0);
+    state->remainingCount -= bit;
+    if (state->remainingCount > 0) {
+        return;
+    }
+
+    state->remainingCount = 0;
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &setup->doneGameBit), 1);
+    if (state->displayHud != 0) {
+        hudNumberSet(-1);
+    }
+    state->displayHud = 0;
 }
 
-void CntCounter_init(GameObject* obj)
-{
+void CntCounter_init(GameObject* obj) {
     CntCounterState* state = obj->extra;
     state->displayHud = 0;
     state->remainingCount = 0;
 }
 
-void CntCounter_release(void)
-{
+void CntCounter_release(void) {
 }
 
-void CntCounter_initialise(void)
-{
+void CntCounter_initialise(void) {
 }
 
 ObjectDescriptor gCNTcounterObjDescriptor = {

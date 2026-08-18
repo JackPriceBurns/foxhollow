@@ -403,13 +403,7 @@ void ARWSquadron_free(void)
 {
 }
 
-ObjectDescriptor gARWSquadronObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS, 0, 0, 0,
-    (ObjectDescriptorCallback)ARWSquadron_init, (ObjectDescriptorCallback)ARWSquadron_update,
-    (ObjectDescriptorCallback)ARWSquadron_hitDetect, (ObjectDescriptorCallback)ARWSquadron_render,
-    (ObjectDescriptorCallback)ARWSquadron_free, (ObjectDescriptorCallback)ARWSquadron_getObjectTypeId,
-    ARWSquadron_getExtraSize,
-};
+
 
 void ARWSquadron_render(GameObject* obj, int p2, int p3, int p4, int p5)
 {
@@ -683,3 +677,11 @@ void ARWSquadron_init(GameObject* obj, ArwSquadronSetup* setup)
     state->rollAmplitude = (f32)randomGetRange(0x3e8, 0x7d0);
     state->dialogueVariant = setupData->dialogueVariant;
 }
+
+ObjectDescriptor gARWSquadronObjDescriptor = {
+    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS, 0, 0, 0,
+    (ObjectDescriptorCallback)ARWSquadron_init, (ObjectDescriptorCallback)ARWSquadron_update,
+    (ObjectDescriptorCallback)ARWSquadron_hitDetect, (ObjectDescriptorCallback)ARWSquadron_render,
+    (ObjectDescriptorCallback)ARWSquadron_free, (ObjectDescriptorCallback)ARWSquadron_getObjectTypeId,
+    ARWSquadron_getExtraSize,
+};

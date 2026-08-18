@@ -47,25 +47,7 @@ u8 gFireballLightColors[4][3] = {
     {0xFF, 0x20, 0x20}, {0x20, 0xFF, 0x20}, {0x20, 0x20, 0xFF}, {0x00, 0x00, 0x00},
 };
 
-ObjectDescriptor10WithPadding gFireballObjDescriptor = {
-    {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)Fireball_initialise,
-        (ObjectDescriptorCallback)Fireball_release,
-        0,
-        (ObjectDescriptorCallback)Fireball_init,
-        (ObjectDescriptorCallback)Fireball_update,
-        (ObjectDescriptorCallback)Fireball_hitDetect,
-        (ObjectDescriptorCallback)Fireball_render,
-        (ObjectDescriptorCallback)Fireball_free,
-        (ObjectDescriptorCallback)Fireball_getObjectTypeId,
-        Fireball_getExtraSize,
-    },
-    0,
-};
+
 
 u8 Fireball_getColorIndex(GameObject* obj) {
     return ((FireballState*)obj->extra)->colorIndex;
@@ -462,3 +444,23 @@ void Fireball_release(void) {
 
 void Fireball_initialise(void) {
 }
+
+ObjectDescriptor10WithPadding gFireballObjDescriptor = {
+    {
+        0,
+        0,
+        0,
+        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        (ObjectDescriptorCallback)Fireball_initialise,
+        (ObjectDescriptorCallback)Fireball_release,
+        0,
+        (ObjectDescriptorCallback)Fireball_init,
+        (ObjectDescriptorCallback)Fireball_update,
+        (ObjectDescriptorCallback)Fireball_hitDetect,
+        (ObjectDescriptorCallback)Fireball_render,
+        (ObjectDescriptorCallback)Fireball_free,
+        (ObjectDescriptorCallback)Fireball_getObjectTypeId,
+        Fireball_getExtraSize,
+    },
+    0,
+};

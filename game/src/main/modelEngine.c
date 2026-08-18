@@ -1,3 +1,4 @@
+#include "dlls/object_descriptor.h"
 #include "dlls/objects/198_AnimatedObj.h"
 #include "dlls/objects/199_DIM2RoofRub.h"
 #include "dlls/objects/200_DepthOfFieldPoint.h"
@@ -298,7 +299,6 @@
 #include "dlls/objects/521_WM_LevelCon.h"
 #include "dlls/objects/522_WM_GeneralS.h"
 #include "dlls/objects/599_DR_EarthWar.h"
-#include "main/audio/sfx_ids.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/audio/sfx.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
@@ -467,11 +467,8 @@
 #include "main/frame_timing.h"
 #include "main/game_timer_control_api.h"
 #include "main/gametext_box_api.h"
-#include "main/gametext_internal.h"
 #include "main/gametext_show_str_api.h"
-#include "main/textrender_api.h"
 #include "main/gametext_color_api.h"
-#include "main/gameloop_api.h"
 #include "main/minimap_api.h"
 #include "main/model_engine.h"
 #include "main/mm.h"
@@ -484,7 +481,6 @@
 #include "main/hud_visibility_api.h"
 
 s32 gModelEngineHudNumber = -1;
-
 f32 gModelEngineTimerValue;
 f32 gModelEngineTimerDuration;
 s8 gModelEngineTimerFlags;
@@ -512,8 +508,7 @@ char sModelEngineTimerDotText[] = ".";
 #define MODELENGINE_TIMER_RUNNING   4
 
 extern ResourceDescriptor Carryable_funcs, boneParticleEffect_funcs, dll_19;
-extern ResourceDescriptor dll_219, dll_21B, dll_224, dll_28B, dll_2A3;
-extern ResourceDescriptor dll_2A4, dll_2E, dll_D3, expgfx_funcs;
+extern ResourceDescriptor dll_2E, expgfx_funcs;
 extern ResourceDescriptor gARWBlockerObjDescriptor, gARWBombCollObjDescriptor, gARWGeneratoObjDescriptor,
     gARWProximitObjDescriptor;
 extern ResourceDescriptor gARWSpeedStrObjDescriptor, gARWSquadronObjDescriptor;
@@ -559,12 +554,11 @@ extern ResourceDescriptor gTitleScreenObjDescriptor, gTrickyCurveObjDescriptor;
 extern ResourceDescriptor gTrickyObjDescriptor, gTriggerObjDescriptor, gVFPDragHeadObjDescriptor, gVFPLiftObjDescriptor,
     gVFP_Block1ObjDescriptor;
 extern ResourceDescriptor gVFP_DoorSwitchObjDescriptor, gVFP_LaddersObjDescriptor, gVFP_LevelControlObjDescriptor,
-    gVFP_MiniFireObjDescriptor, gVFP_ObjCreatorObjDescriptor, gVFP_PlatformObjDescriptor,
-    gVFP_SpellPlaceObjDescriptor, gVFP_coreplatObjDescriptor, gVFP_flamepointObjDescriptor;
+    gVFP_MiniFireObjDescriptor, gVFP_ObjCreatorObjDescriptor, gVFP_PlatformObjDescriptor, gVFP_SpellPlaceObjDescriptor,
+    gVFP_coreplatObjDescriptor, gVFP_flamepointObjDescriptor;
 extern ResourceDescriptor gVFP_lavapoolObjDescriptor, gVFP_lavastarObjDescriptor, gVFP_statueballObjDescriptor,
     gVortexObjDescriptor, gWCBouncyCraObjDescriptor;
-extern ResourceDescriptor gWCLevelContObjDescriptor,
-    gWCPushBlockObjDescriptor, gWCTempleBriObjDescriptor,
+extern ResourceDescriptor gWCLevelContObjDescriptor, gWCPushBlockObjDescriptor, gWCTempleBriObjDescriptor,
     gWCTileObjDescriptor;
 extern ResourceDescriptor gWM_PlanetsObjDescriptor;
 extern ResourceDescriptor gWM_SpiritSetObjDescriptor, gWM_WallCrawlerObjDescriptor, gWM_newcrystalObjDescriptor,
@@ -577,43 +571,39 @@ extern ResourceDescriptor Effect1_funcs, Effect2_funcs, Effect3_funcs, Effect4_f
     Effect7_funcs, Effect8_funcs;
 extern ResourceDescriptor Effect9_funcs, Effect10_funcs, Effect11_funcs, Effect12_funcs, Effect14_funcs, Effect16_funcs,
     Effect15_funcs, Effect13_funcs;
-extern ResourceDescriptor Effect17_funcs, Effect18_funcs, Effect19_funcs, Effect20_funcs, Checkpoint_funcs, screenTransition_funcs,
-    Dummy04_funcs, player_funcs;
-extern ResourceDescriptor UIController_funcs, Dummy12_funcs, RomCurve_funcs, dll_15_funcs, SaveGame_funcs, screens_funcs;
+extern ResourceDescriptor Effect17_funcs, Effect18_funcs, Effect19_funcs, Effect20_funcs, Checkpoint_funcs,
+    screenTransition_funcs, Dummy04_funcs, player_funcs;
+extern ResourceDescriptor UIController_funcs, Dummy12_funcs, RomCurve_funcs, dll_15_funcs, SaveGame_funcs,
+    screens_funcs;
 extern ResourceDescriptor Dummy30_funcs;
-extern ResourceDescriptor TitleScreenInit_funcs, n_rareware_funcs, n_attractmode_funcs, SaveSelectScreen_funcs, EnterSaveNameScreen_funcs, OptionsScreen_funcs,
-    WeirdUnusedMenu_funcs, Dummy39_funcs;
+extern ResourceDescriptor TitleScreenInit_funcs, n_rareware_funcs, n_attractmode_funcs, SaveSelectScreen_funcs,
+    EnterSaveNameScreen_funcs, OptionsScreen_funcs, WeirdUnusedMenu_funcs, Dummy39_funcs;
 extern ResourceDescriptor Dummy3A_funcs, GameUI_funcs, Menu_funcs, Link_funcs, TitleMenuItem_funcs, Dummy3E_funcs,
     Minimap_funcs, dll_3F_funcs;
 extern ResourceDescriptor gCreditsDescriptor, gWarpStoneUiDescriptor;
-extern ResourceDescriptor gWM_VConsoleNullResourceDescriptor, gGCRobotBlastObjDescriptor;
-extern ResourceDescriptor gDll22CObjDescriptor, Dummy245, Dummy246, Dummy244, Dummy247, Dummy248, Dummy24A, Dummy24B;
-extern ResourceDescriptor Dummy24C_funcs, gDll27BNullResourceDescriptor, gDll27DNullResourceDescriptor,
-    gDll29EObjDescriptor;
-extern ResourceDescriptor gDll212NullResourceDescriptor, gWM_TransTopNullResourceDescriptor,
-    gDBPointMumNullResourceDescriptor;
-extern ResourceDescriptor gDll23ENullResourceDescriptor, gDll264NullResourceDescriptor, gDll267NullResourceDescriptor,
-    gDR_GeezerNullResourceDescriptor, gDR_VinesNullResourceDescriptor, gDR_RockNullResourceDescriptor,
-    gDR_cradleNullResourceDescriptor, gDR_pulleyNullResourceDescriptor;
-extern ResourceDescriptor gDll276NullResourceDescriptor, gCFWindLiftLNullResourceDescriptor,
-    gDll278NullResourceDescriptor, gDR_CollapseNullResourceDescriptor, gDll27FNullResourceDescriptor,
-    gDll249NullResourceDescriptor, playerShadow_funcs, projgfx_funcs;
-extern ResourceDescriptor gDllC5NullResourceDescriptor, gCloudShipControlNullResourceDescriptor,
-    gDll147NullResourceDescriptor, gLaserBeamNullResourceDescriptor, gCFScalesGalNullResourceDescriptor,
-    gCFObjCreatNullResourceDescriptor, gDll155NullResourceDescriptor, gDll156NullResourceDescriptor;
-extern ResourceDescriptor gCFForceField15CNullResourceDescriptor, gDll15ENullResourceDescriptor,
-    gDll160NullResourceDescriptor, gCFTreasRoboNullResourceDescriptor, gDll163NullResourceDescriptor,
-    gCFRemovalShNullResourceDescriptor, gHoloPointNullResourceDescriptor;
-extern ResourceDescriptor gDFSH_Door1SNullResourceDescriptor, gGCRobotPatrNullResourceDescriptor,
-    gDll202NullResourceDescriptor, gDll203NullResourceDescriptor, gWMVeinNullResourceDescriptor,
-    gWM_WallpoweNullResourceDescriptor;
+extern ResourceDescriptor gGCRobotBlastObjDescriptor, gDll22CObjDescriptor, gDll29EObjDescriptor;
+extern ResourceDescriptor playerShadow_funcs, projgfx_funcs;
+extern ObjectDescriptor gPlayerObjDescriptor, gDllC5ObjDescriptor, gDllD3ObjDescriptor, gDllF7ObjDescriptor;
+extern ObjectDescriptor gDll146ObjDescriptor, gDll147ObjDescriptor, gDll14DObjDescriptor, gDll151ObjDescriptor;
+extern ObjectDescriptor gDll152ObjDescriptor, gDll155ObjDescriptor, gDll156ObjDescriptor, gDll15CObjDescriptor;
+extern ObjectDescriptor gDll15EObjDescriptor, gDll160ObjDescriptor, gDll161ObjDescriptor, gDll163ObjDescriptor;
+extern ObjectDescriptor gDll165ObjDescriptor, gDll168ObjDescriptor, gDll176ObjDescriptor, gDll17CObjDescriptor;
+extern ObjectDescriptor gDll202ObjDescriptor, gDll203ObjDescriptor, gDll205ObjDescriptor, gDll208ObjDescriptor;
+extern ObjectDescriptor gDll212ObjDescriptor, gDll213ObjDescriptor, gDll214ObjDescriptor, gDll219ObjDescriptor;
+extern ObjectDescriptor gDll21BObjDescriptor, gDll224ObjDescriptor, gDll23DObjDescriptor, gDll23EObjDescriptor;
+extern ObjectDescriptor gDll244ObjDescriptor, gDll245ObjDescriptor, gDll246ObjDescriptor, gDll247ObjDescriptor;
+extern ObjectDescriptor gDll248ObjDescriptor, gDll249ObjDescriptor, gDll24AObjDescriptor, gDll24BObjDescriptor;
+extern ObjectDescriptor gDll24CObjDescriptor, gDll264ObjDescriptor, gDll267ObjDescriptor, gDll26AObjDescriptor;
+extern ObjectDescriptor gDll26DObjDescriptor, gDll270ObjDescriptor, gDll274ObjDescriptor, gDll275ObjDescriptor;
+extern ObjectDescriptor gDll276ObjDescriptor, gDll277ObjDescriptor, gDll278ObjDescriptor, gDll27AObjDescriptor;
+extern ObjectDescriptor gDll27BObjDescriptor, gDll27DObjDescriptor, gDll27FObjDescriptor, gDll28BObjDescriptor;
+extern ObjectDescriptor gDll299ObjDescriptor, gDll2A3ObjDescriptor, gDll2A4ObjDescriptor;
 
 void* gResourceLoadedHandles[0x2C1];
 u16 gResourceRefCounts[0x2C2];
 char gModelEngineTextBuf[0x10];
 
-RingBufferQueue* Queue_Alloc(int capacity, int elemSize)
-{
+RingBufferQueue* Queue_Alloc(int capacity, int elemSize) {
     RingBufferQueue* queue = mmAlloc(elemSize * capacity + sizeof(RingBufferQueue), 0x1a, 0);
     queue->data = (u8*)queue + sizeof(RingBufferQueue);
     queue->count = 0;
@@ -623,21 +613,17 @@ RingBufferQueue* Queue_Alloc(int capacity, int elemSize)
     return queue;
 }
 
-s32 modelRenderInstrsState_getBit(ModelRenderInstrsState* state)
-{
+s32 modelRenderInstrsState_getBit(ModelRenderInstrsState* state) {
     return state->bit;
 }
 
-void modelRenderInstrsState_setBit(ModelRenderInstrsState* state, s32 bit)
-{
+void modelRenderInstrsState_setBit(ModelRenderInstrsState* state, s32 bit) {
     state->bit = bit;
 }
 
-void modelRenderInstrsState_init(ModelRenderInstrsState* state, void* instrs, int bitCount, int fieldC)
-{
+void modelRenderInstrsState_init(ModelRenderInstrsState* state, void* instrs, int bitCount, int fieldC) {
     state->byteCount = bitCount >> 3;
-    if ((bitCount & 7) != 0)
-    {
+    if ((bitCount & 7) != 0) {
         state->byteCount++;
     }
     state->bitCount = bitCount;
@@ -646,63 +632,44 @@ void modelRenderInstrsState_init(ModelRenderInstrsState* state, void* instrs, in
     state->bit = 0;
 }
 
-void objList_remove(ObjLinkedList* list, uintptr_t item)
-{
-    uintptr_t head;
-    uintptr_t prev;
-    uintptr_t current;
-    uintptr_t next;
-
-    head = list->head;
-    if (head == item)
-    {
+void objList_remove(ObjLinkedList* list, uintptr_t item) {
+    uintptr_t head = list->head;
+    if (head == item) {
         list->head = *(uintptr_t*)(head + list->nextOffset);
         list->count--;
         return;
     }
 
-    current = head;
-    prev = head;
-    while (current != 0 && current != item)
-    {
+    uintptr_t current = head;
+    uintptr_t prev = head;
+    while (current != 0 && current != item) {
         prev = current;
         current = *(uintptr_t*)(current + list->nextOffset);
     }
 
-    if (current == 0)
-    {
+    if (current == 0) {
         return;
     }
 
-    next = *(uintptr_t*)(current + list->nextOffset);
-    if (current == head)
-    {
+    uintptr_t next = *(uintptr_t*)(current + list->nextOffset);
+    if (current == head) {
         list->head = next;
-    }
-    else
-    {
+    } else {
         *(uintptr_t*)(prev + list->nextOffset) = next;
     }
     list->count--;
 }
 
-void objListAdd(ObjLinkedList* list, uintptr_t prev, uintptr_t item)
-{
-    uintptr_t next;
+void objListAdd(ObjLinkedList* list, uintptr_t prev, uintptr_t item) {
 
-    if (list->head == 0)
-    {
+    if (list->head == 0) {
         list->head = item;
-    }
-    else
-    {
-        if (prev == 0)
-        {
+    } else {
+        uintptr_t next;
+        if (prev == 0) {
             next = list->head;
             list->head = item;
-        }
-        else
-        {
+        } else {
             next = *(uintptr_t*)(prev + list->nextOffset);
             *(uintptr_t*)(prev + list->nextOffset) = item;
         }
@@ -711,21 +678,15 @@ void objListAdd(ObjLinkedList* list, uintptr_t prev, uintptr_t item)
     list->count++;
 }
 
-void objListInit(ObjLinkedList* list, s16 nextOffset)
-{
+void objListInit(ObjLinkedList* list, s16 nextOffset) {
     list->head = 0;
     list->nextOffset = nextOffset;
 }
 
-BOOL model_findIdxInModelList(ModelList* list, void* header, int* outIndex)
-{
-    s16* entry;
-
-    entry = list->entries;
-    while (entry < list->end)
-    {
-        if (memcmp(entry + 1, header, list->dataSize) == 0)
-        {
+BOOL model_findIdxInModelList(ModelList* list, void* header, int* outIndex) {
+    s16* entry = list->entries;
+    while (entry < list->end) {
+        if (memcmp(entry + 1, header, list->dataSize) == 0) {
             *outIndex = *entry;
             return TRUE;
         }
@@ -734,15 +695,10 @@ BOOL model_findIdxInModelList(ModelList* list, void* header, int* outIndex)
     return FALSE;
 }
 
-BOOL ModelList_getHeader(ModelList* list, int index, void* outHeader)
-{
-    s16* entry;
-
-    entry = list->entries;
-    while (entry < list->end)
-    {
-        if (*entry == index)
-        {
+BOOL ModelList_getHeader(ModelList* list, int index, void* outHeader) {
+    s16* entry = list->entries;
+    while (entry < list->end) {
+        if (*entry == index) {
             memcpy(outHeader, entry + 1, list->dataSize);
             return TRUE;
         }
@@ -751,54 +707,40 @@ BOOL ModelList_getHeader(ModelList* list, int index, void* outHeader)
     return FALSE;
 }
 
-void model_adjustModelList(ModelList* list, int index)
-{
-    s16* entry;
-
-    entry = list->entries;
-    while (entry < list->end)
-    {
-        if (*entry == index)
-        {
+void model_adjustModelList(ModelList* list, int index) {
+    s16* entry = list->entries;
+    while (entry < list->end) {
+        if (*entry == index) {
             *entry = -1;
             break;
         }
         entry += list->strideShorts;
     }
 
-    while (list->end > list->entries && list->end[-1] == -1)
-    {
+    while (list->end > list->entries && list->end[-1] == -1) {
         list->end -= list->strideShorts;
     }
 }
 
-void modelInitModelList(ModelList* list, s16 index, void* header)
-{
+void modelInitModelList(ModelList* list, s16 index, void* header) {
     s16* entry;
 
-    for (entry = list->entries; entry < list->end; entry += list->strideShorts)
-    {
-        if (*entry == -1)
-        {
+    for (entry = list->entries; entry < list->end; entry += list->strideShorts) {
+        if (*entry == -1) {
             break;
         }
     }
 
     *entry = index;
     memcpy(entry + 1, header, list->dataSize);
-    if (entry == list->end)
-    {
+    if (entry == list->end) {
         list->end += list->strideShorts;
     }
 }
 
-ModelList* allocModelStruct(int capacity, int dataSize)
-{
-    int entryBytes;
-    ModelList* list;
-
-    entryBytes = dataSize + 2;
-    list = mmAlloc(capacity * entryBytes + sizeof(ModelList), 0x1a, 0);
+ModelList* allocModelStruct(int capacity, int dataSize) {
+    int entryBytes = dataSize + 2;
+    ModelList* list = mmAlloc(capacity * entryBytes + sizeof(ModelList), 0x1a, 0);
     list->entries = (s16*)((u8*)list + sizeof(ModelList));
     list->dataSize = dataSize;
     list->strideShorts = (u32)entryBytes >> 1;
@@ -808,17 +750,11 @@ ModelList* allocModelStruct(int capacity, int dataSize)
     return list;
 }
 
-BOOL Resource_Release(void* handleSlot)
-{
-    s32 i;
-    ResourceDescriptor* descriptor;
-
-    i = 0;
-    descriptor = (ResourceDescriptor*)handleSlot;
-    while (i < RESOURCE_DESCRIPTOR_COUNT)
-    {
-        if ((void*)&gResourceLoadedHandles[i] == handleSlot)
-        {
+BOOL Resource_Release(void* handleSlot) {
+    s32 i = 0;
+    ResourceDescriptor* descriptor = handleSlot;
+    while (i < RESOURCE_DESCRIPTOR_COUNT) {
+        if ((void*)&gResourceLoadedHandles[i] == handleSlot) {
             descriptor = gResourceDescriptors[i];
             break;
         }
@@ -826,10 +762,8 @@ BOOL Resource_Release(void* handleSlot)
     }
 
     gResourceRefCounts[i]--;
-    if (gResourceRefCounts[i] == 0)
-    {
-        if (descriptor->release != NULL)
-        {
+    if (gResourceRefCounts[i] == 0) {
+        if (descriptor->release != NULL) {
             descriptor->release();
         }
         return TRUE;
@@ -837,150 +771,110 @@ BOOL Resource_Release(void* handleSlot)
     return FALSE;
 }
 
-void* Resource_Acquire(u16 id, int unused)
-{
-    u32 index;
-    ResourceDescriptor* descriptor;
-
-    index = id;
-    descriptor = gResourceDescriptors[index];
-    if (gResourceRefCounts[index] == 0 && descriptor->acquire != NULL)
-    {
+void* Resource_Acquire(u16 id, int unused) {
+    ResourceDescriptor* descriptor = gResourceDescriptors[id];
+    if (gResourceRefCounts[id] == 0 && descriptor->acquire != NULL) {
         descriptor->acquire(descriptor);
     }
-    gResourceRefCounts[index]++;
-    gResourceLoadedHandles[index] = descriptor->data;
-    return &gResourceLoadedHandles[index];
+    gResourceRefCounts[id]++;
+    gResourceLoadedHandles[id] = descriptor->data;
+    return &gResourceLoadedHandles[id];
 }
 
-void Resource_ResetRefCounts(void)
-{
-    u32 i;
-
-    for (i = 0; i < RESOURCE_DESCRIPTOR_COUNT; i++)
-    {
+void Resource_ResetRefCounts(void) {
+    for (u32 i = 0; i < RESOURCE_DESCRIPTOR_COUNT; i++) {
         gResourceRefCounts[i] = 0;
     }
 }
 
-void menuSetState(s32 value)
-{
+void menuSetState(s32 value) {
     gMenuState = value;
 }
 
-u8 gameTimerIsRunning(void)
-{
+u8 gameTimerIsRunning(void) {
     return gModelEngineTimerState & MODELENGINE_TIMER_RUNNING;
 }
 
-void hudNumberRender(void* context)
-{
-    if (gModelEngineHudNumber != -1)
-    {
+void hudNumberRender(void* context) {
+    if (gModelEngineHudNumber != -1) {
         sprintf(gModelEngineTextBuf, sModelEngineHudNumberFormat, gModelEngineHudNumber);
         gameTextShowStr(gModelEngineTextBuf, 13, 0, 0);
     }
 }
 
-void hudNumberSet(s32 value)
-{
+void hudNumberSet(s32 value) {
     gModelEngineHudNumber = value;
 }
 
-void gameTimerRun(void* context)
-{
+void gameTimerRun(void* context) {
     f32 dt = timeDelta;
     u8 colorFlag = 0;
     TextSlot* box = gameTextGetBox(0xD);
-    int hours;
-    int minutes;
-    int hundredths;
     u16 boxY;
-    char clamped;
-    int totalSecs;
-    int mins;
 
-    if ((gModelEngineTimerState & MODELENGINE_TIMER_COUNTDOWN) || getHudHiddenFrameCount() != 0)
-    {
+    if ((gModelEngineTimerState & MODELENGINE_TIMER_COUNTDOWN) || getHudHiddenFrameCount() != 0) {
         dt = 0.0f;
     }
 
-    clamped = 0;
-    if ((gModelEngineTimerFlags & 1) != 0)
-    {
+    char clamped = 0;
+    if ((gModelEngineTimerFlags & 1) != 0) {
         gModelEngineTimerValue -= dt;
-        if (gModelEngineTimerValue <= 0.0f)
-        {
+        if (gModelEngineTimerValue <= 0.0f) {
             clamped = 1;
             gModelEngineTimerValue = 0.0f;
         }
-        if (gModelEngineTimerValue < 600.0f)
-        {
+        if (gModelEngineTimerValue < 600.0f) {
             colorFlag = 1;
         }
-    }
-    else
-    {
+    } else {
         gModelEngineTimerValue += dt;
-        if (gModelEngineTimerValue > gModelEngineTimerDuration)
-        {
+        if (gModelEngineTimerValue > gModelEngineTimerDuration) {
             clamped = 1;
             gModelEngineTimerValue = gModelEngineTimerDuration;
         }
-        if (gModelEngineTimerValue > gModelEngineTimerDuration - 600.0f)
-        {
+        if (gModelEngineTimerValue > gModelEngineTimerDuration - 600.0f) {
             colorFlag = 1;
         }
     }
 
-    if (clamped)
-    {
-        if ((gModelEngineTimerFlags & 8) != 0)
-        {
+    if (clamped) {
+        if ((gModelEngineTimerFlags & 8) != 0) {
             Sfx_PlayFromObject(0, SFXTRIG_sc_lockon22);
         }
         gModelEngineTimerState &= ~MODELENGINE_TIMER_RUNNING;
         gModelEngineTimerState |= MODELENGINE_TIMER_DISABLED;
     }
 
-    if ((gModelEngineTimerFlags & 4) != 0)
-    {
+    if ((gModelEngineTimerFlags & 4) != 0) {
         f32 panByte;
         f32 volume;
         Sfx_KeepAliveLoopedObjectSound(0, SFXTRIG_sc_commsbleep_28c);
-        if ((gModelEngineTimerFlags & 1) != 0)
-        {
+        if ((gModelEngineTimerFlags & 1) != 0) {
             panByte = (f32)(0x7F - ((int)(80.0f * (gModelEngineTimerValue / gModelEngineTimerDuration)) & 0xFF));
             volume = 1.3f - 0.6f * (gModelEngineTimerValue / gModelEngineTimerDuration);
-        }
-        else
-        {
+        } else {
             panByte = (f32)(((int)(80.0f * (gModelEngineTimerValue / gModelEngineTimerDuration)) & 0xFF) + 0x2F);
             volume = 0.6f * (gModelEngineTimerValue / gModelEngineTimerDuration) + 0.7f;
         }
         Sfx_SetObjectSfxVolume(0, SFXTRIG_sc_commsbleep_28c, panByte, volume);
     }
 
-    if ((gModelEngineTimerFlags & 0x10) != 0 && pauseMenuState == 0 && getHudHiddenFrameCount() == 0)
-    {
-        totalSecs = gModelEngineTimerValue;
-        mins = totalSecs / 60;
-        hours = mins / 60;
-        minutes = mins - hours * 60;
-        hundredths = (int)(100.0f * (gModelEngineTimerValue / 60.0f));
+    if ((gModelEngineTimerFlags & 0x10) != 0 && pauseMenuState == 0 && getHudHiddenFrameCount() == 0) {
+        int totalSecs = gModelEngineTimerValue;
+        int mins = totalSecs / 60;
+        int hours = mins / 60;
+        int minutes = mins - hours * 60;
+        int hundredths = (int)(100.0f * (gModelEngineTimerValue / 60.0f));
         hundredths = hundredths - hundredths / 100 * 100;
 
         boxY = getMinimapY() - 0x28;
         drawHudBox(0x32, (s16)(boxY - 4), 0x78, 0x28, 0xFF, 1);
         box->y = boxY;
 
-        if (colorFlag && hundredths < 0x32)
-        {
-        gameTextSetColor(0xFF, 0x40, 0x40, 0xFF);
-        }
-        else
-        {
-        gameTextSetColor(0xFF, 0xFF, 0xFF, 0xFF);
+        if (colorFlag && hundredths < 0x32) {
+            gameTextSetColor(0xFF, 0x40, 0x40, 0xFF);
+        } else {
+            gameTextSetColor(0xFF, 0xFF, 0xFF, 0xFF);
         }
 
         sprintf(gModelEngineTextBuf, sModelEngineTimerDigitFormat, hours / 10);
@@ -990,115 +884,88 @@ void gameTimerRun(void* context)
         sprintf(gModelEngineTextBuf, sModelEngineTimerDigitFormat, minutes / 10);
         gameTextShowStr(gModelEngineTextBuf, 0xD, gModelEngineTimerFieldXStride + 5, 3);
         sprintf(gModelEngineTextBuf, sModelEngineTimerDigitFormat, minutes % 10);
-        gameTextShowStr(gModelEngineTextBuf, 0xD, 5 + gModelEngineTimerFieldXStride + gModelEngineTimerDigitPairXOffset, 3);
+        gameTextShowStr(gModelEngineTextBuf, 0xD, 5 + gModelEngineTimerFieldXStride + gModelEngineTimerDigitPairXOffset,
+                        3);
         sprintf(gModelEngineTextBuf, sModelEngineTimerDigitFormat, hundredths / 10);
         gameTextShowStr(gModelEngineTextBuf, 0xD, gModelEngineTimerFieldXStride * 2 + 5, 3);
         sprintf(gModelEngineTextBuf, sModelEngineTimerDigitFormat, hundredths % 10);
-        gameTextShowStr(gModelEngineTextBuf, 0xD, 5 + gModelEngineTimerFieldXStride * 2 + gModelEngineTimerDigitPairXOffset, 3);
-        if (minutes & 1)
-        {
+        gameTextShowStr(gModelEngineTextBuf, 0xD,
+                        5 + gModelEngineTimerFieldXStride * 2 + gModelEngineTimerDigitPairXOffset, 3);
+        if (minutes & 1) {
             gameTextShowStr(sModelEngineTimerColonText, 0xD, gModelEngineTimerColonX, 3);
             gameTextShowStr(sModelEngineTimerDotText, 0xD, gModelEngineTimerDotX, 3);
         }
     }
 }
 
-f32 gameTimerGetElapsedMilliseconds(void)
-{
-    if (((s8)gModelEngineTimerFlags & 1) != 0)
-    {
+f32 gameTimerGetElapsedMilliseconds(void) {
+    if ((gModelEngineTimerFlags & 1) != 0) {
         return 1000.0f * ((gModelEngineTimerDuration - gModelEngineTimerValue) / 60.0f);
     }
     return 1000.0f * (gModelEngineTimerValue / 60.0f);
 }
 
-f32 gameTimerGetValue(void)
-{
+f32 gameTimerGetValue(void) {
     return gModelEngineTimerValue;
 }
 
-int isGameTimerDisabled(void)
-{
+int isGameTimerDisabled(void) {
     return gModelEngineTimerState & MODELENGINE_TIMER_DISABLED;
 }
 
-void gameTimerStop(void)
-{
+void gameTimerStop(void) {
     gModelEngineTimerState &= ~MODELENGINE_TIMER_RUNNING;
     gModelEngineTimerState |= MODELENGINE_TIMER_DISABLED;
 }
 
-void timerSetToCountUp(void)
-{
-    if ((gModelEngineTimerState & MODELENGINE_TIMER_COUNTDOWN) != 0)
-    {
+void timerSetToCountUp(void) {
+    if ((gModelEngineTimerState & MODELENGINE_TIMER_COUNTDOWN) != 0) {
         gModelEngineTimerState &= ~MODELENGINE_TIMER_COUNTDOWN;
     }
 }
 
-void gameTimerInit(s8 flags, int minutes)
-{
+void gameTimerInit(s8 flags, int minutes) {
     gModelEngineTimerFlags = flags;
-    if ((flags & 1) != 0)
-    {
+    if ((flags & 1) != 0) {
         gModelEngineTimerValue = minutes * 60;
-    }
-    else
-    {
+    } else {
         gModelEngineTimerValue = 0.0f;
     }
     gModelEngineTimerDuration = minutes * 60;
     gModelEngineTimerState |= MODELENGINE_TIMER_COUNTDOWN;
     gModelEngineTimerState &= ~MODELENGINE_TIMER_DISABLED;
-    if ((flags & 3) != 0)
-    {
+    if ((flags & 3) != 0) {
         gModelEngineTimerState |= MODELENGINE_TIMER_RUNNING;
-    }
-    else
-    {
+    } else {
         gModelEngineTimerState &= ~MODELENGINE_TIMER_RUNNING;
     }
 }
 
-void curUiDllDraw(int a, int b, int c, int d)
-{
-    UiDllVTable* callbacks;
-
-    if (gModelEngineCurUiDllRes != NULL)
-    {
-        callbacks = *gModelEngineCurUiDllRes;
+void curUiDllDraw(int a, int b, int c, int d) {
+    if (gModelEngineCurUiDllRes != NULL) {
+        UiDllVTable* callbacks = *gModelEngineCurUiDllRes;
         callbacks->draw(a, b, c);
     }
 }
 
-void uiDll_runFrameEndAndLoadNext(void)
-{
-    UiDllVTable* callbacks;
-    s32 resourceId;
-
-    if (gModelEngineCurUiDllRes != NULL)
-    {
-        callbacks = *gModelEngineCurUiDllRes;
+void uiDll_runFrameEndAndLoadNext(void) {
+    if (gModelEngineCurUiDllRes != NULL) {
+        UiDllVTable* callbacks = *gModelEngineCurUiDllRes;
         callbacks->frameEnd();
     }
 
-    if (gModelEnginePendingUiDll != 0)
-    {
+    if (gModelEnginePendingUiDll != 0) {
         gModelEnginePendingUiDll--;
         gModelEnginePrevUiDll = curUiDll;
-        if (gModelEngineCurUiDllRes != NULL)
-        {
+        if (gModelEngineCurUiDllRes != NULL) {
             Resource_Release(gModelEngineCurUiDllRes);
             gModelEngineCurUiDllRes = NULL;
         }
 
-        resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
-        if (resourceId != -1)
-        {
+        s32 resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
+        if (resourceId != -1) {
             gModelEngineCurUiDllRes = Resource_Acquire((u16)resourceId, 1);
-        }
-        else
-        {
+        } else {
             gModelEngineCurUiDllRes = NULL;
             gModelEnginePendingUiDll = 0;
         }
@@ -1107,36 +974,26 @@ void uiDll_runFrameEndAndLoadNext(void)
     }
 }
 
-int uiDll_runFrameStartAndLoadNext(void)
-{
-    UiDllVTable* callbacks;
-    int result;
-    s32 resourceId;
+int uiDll_runFrameStartAndLoadNext(void) {
 
-    result = 0;
-    if (gModelEngineCurUiDllRes != NULL)
-    {
-        callbacks = *gModelEngineCurUiDllRes;
+    int result = 0;
+    if (gModelEngineCurUiDllRes != NULL) {
+        UiDllVTable* callbacks = *gModelEngineCurUiDllRes;
         result = callbacks->frameStart();
     }
 
-    if (gModelEnginePendingUiDll != 0)
-    {
+    if (gModelEnginePendingUiDll != 0) {
         gModelEnginePendingUiDll--;
         gModelEnginePrevUiDll = curUiDll;
-        if (gModelEngineCurUiDllRes != NULL)
-        {
+        if (gModelEngineCurUiDllRes != NULL) {
             Resource_Release(gModelEngineCurUiDllRes);
             gModelEngineCurUiDllRes = NULL;
         }
 
-        resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
-        if (resourceId != -1)
-        {
+        s32 resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
+        if (resourceId != -1) {
             gModelEngineCurUiDllRes = Resource_Acquire((u16)resourceId, 1);
-        }
-        else
-        {
+        } else {
             gModelEngineCurUiDllRes = NULL;
             gModelEnginePendingUiDll = 0;
         }
@@ -1146,65 +1003,51 @@ int uiDll_runFrameStartAndLoadNext(void)
     return result;
 }
 
-void setCurUiDll(int idx)
-{
+void setCurUiDll(int idx) {
     curUiDll = idx;
 }
 
-int getPrevUiDll(void)
-{
+int getPrevUiDll(void) {
     return gModelEnginePrevUiDll;
 }
 
-UiDllVTable** getCurUiDllInterface(void)
-{
+UiDllVTable** getCurUiDllInterface(void) {
     return gModelEngineCurUiDllRes;
 }
 
-int getCurUiDll(void)
-{
+int getCurUiDll(void) {
     return curUiDll;
 }
 
-void loadUiDll(int index)
-{
-    s32 next;
-    s32 current;
-    s32 resourceId;
+void loadUiDll(int index) {
+    s32 current = curUiDll;
+    if (index == current) {
+        return;
+    }
 
-    current = curUiDll;
-    if (index != current)
-    {
-        next = index + 1;
-        gModelEnginePendingUiDll = next;
-        if (gModelEngineCurUiDllRes == NULL && next != 0)
-        {
-            gModelEnginePendingUiDll = next - 1;
-            gModelEnginePrevUiDll = current;
-            if (gModelEngineCurUiDllRes != NULL)
-            {
-                Resource_Release(gModelEngineCurUiDllRes);
-                gModelEngineCurUiDllRes = NULL;
-            }
+    s32 next = index + 1;
+    gModelEnginePendingUiDll = next;
+    if (gModelEngineCurUiDllRes == NULL && next != 0) {
+        gModelEnginePendingUiDll = next - 1;
+        gModelEnginePrevUiDll = current;
+        if (gModelEngineCurUiDllRes != NULL) {
+            Resource_Release(gModelEngineCurUiDllRes);
+            gModelEngineCurUiDllRes = NULL;
+        }
 
-            resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
-            if (resourceId != -1)
-            {
-                gModelEngineCurUiDllRes = Resource_Acquire((u16)resourceId, 1);
-            }
-            else
-            {
-                gModelEngineCurUiDllRes = NULL;
-                gModelEnginePendingUiDll = 0;
-            }
-            curUiDll = gModelEnginePendingUiDll;
+        s32 resourceId = gModelEngineUiDllResourceIds[gModelEnginePendingUiDll];
+        if (resourceId != -1) {
+            gModelEngineCurUiDllRes = Resource_Acquire((u16)resourceId, 1);
+        } else {
+            gModelEngineCurUiDllRes = NULL;
             gModelEnginePendingUiDll = 0;
         }
+        curUiDll = gModelEnginePendingUiDll;
+        gModelEnginePendingUiDll = 0;
     }
 }
 
-void initGameTimer(void)
-{
+void initGameTimer(void) {
     gModelEngineCurUiDllRes = NULL;
     gModelEnginePendingUiDll = 0;
     gModelEnginePrevUiDll = 0;
@@ -1216,711 +1059,711 @@ void initGameTimer(void)
 }
 
 ResourceDescriptor* gResourceDescriptors[] = {
-    &GameUI_funcs,
-    (ResourceDescriptor*)&gCamcontrolResourceDescriptor,
-    &ObjSeq_funcs,
-    &Checkpoint_funcs,
-    &Dummy04_funcs,
-    &sky_funcs,
-    &sky2_funcs,
-    &newclouds_funcs,
-    &Dummy08_funcs,
-    &cloudaction_funcs,
-    &expgfx_funcs,
-    &dll_0B_funcs,
-    &projgfx_funcs,
-    &playerShadow_funcs,
-    &partfx_funcs,
-    &player_funcs,
-    &UIController_funcs,
-    &screens_funcs,
-    &Dummy12_funcs,
-    &waterfx_funcs,
-    &RomCurve_funcs,
-    &dll_15_funcs,
-    &screenTransition_funcs,
-    &SaveGame_funcs,
-    &boneParticleEffect_funcs,
-    &dll_19,
-    &Effect1_funcs,
-    &Effect2_funcs,
-    &Effect3_funcs,
-    &Effect4_funcs,
-    &Effect5_funcs,
-    &Effect6_funcs,
-    &Effect7_funcs,
-    &Effect8_funcs,
-    &Effect9_funcs,
-    &Effect10_funcs,
-    &Effect11_funcs,
-    &Effect12_funcs,
-    &Effect13_funcs,
-    &Effect14_funcs,
-    &Effect15_funcs,
-    &Effect16_funcs,
-    &Effect17_funcs,
-    &Effect18_funcs,
-    &Effect19_funcs,
-    &Effect20_funcs,
-    &dll_2E,
-    &Carryable_funcs,
-    &Dummy30_funcs,
-    &Minimap_funcs,
-    &TitleScreenInit_funcs,
-    &n_rareware_funcs,
-    &n_attractmode_funcs,
-    &SaveSelectScreen_funcs,
-    &EnterSaveNameScreen_funcs,
-    &OptionsScreen_funcs,
-    &WeirdUnusedMenu_funcs,
-    &Dummy39_funcs,
-    &Dummy3A_funcs,
-    &Menu_funcs,
-    &Link_funcs,
-    &TitleMenuItem_funcs,
-    &Dummy3E_funcs,
-    &dll_3F_funcs,
-    &gCreditsDescriptor,
-    &gWarpStoneUiDescriptor,
-    (ResourceDescriptor*)&gCameraModeNormalDescriptor,
-    (ResourceDescriptor*)&gCameraModeStaffAnimDescriptor,
-    (ResourceDescriptor*)&gCameraModeViewfinderDescriptor,
-    (ResourceDescriptor*)&gCameraModeTalkDescriptor,
-    (ResourceDescriptor*)&gCameraModeDebugDescriptor,
-    (ResourceDescriptor*)&gCameraModePathDescriptor,
-    (ResourceDescriptor*)&gCameraModeStaticDescriptor,
-    (ResourceDescriptor*)&gCameraModeCombatDescriptor,
-    (ResourceDescriptor*)&gCameraModeShipBattleDescriptor,
-    (ResourceDescriptor*)&gCameraModeClimbDescriptor,
-    (ResourceDescriptor*)&gCameraModeFixedDescriptor,
-    (ResourceDescriptor*)&gCameraModeNpcSpeakDescriptor,
-    (ResourceDescriptor*)&gCameraModeWorldMapDescriptor,
-    (ResourceDescriptor*)&gCameraMode4FDescriptor,
-    (ResourceDescriptor*)&gCameraModeCrawlDescriptor,
-    (ResourceDescriptor*)&gCameraModeCannonDescriptor,
-    (ResourceDescriptor*)&gCameraModeForceBehindDescriptor,
-    (ResourceDescriptor*)&gCameraModeCloudRunnerDescriptor,
-    (ResourceDescriptor*)&gCameraMode54Descriptor,
-    (ResourceDescriptor*)&gCameraMode55Descriptor,
-    (ResourceDescriptor*)&gCameraModeArwingDescriptor,
-    (ResourceDescriptor*)&gCameraModeTitleDescriptor,
-    (ResourceDescriptor*)&gDummy58Descriptor,
-    (ResourceDescriptor*)&gDll59ResourceDescriptor,
-    (ResourceDescriptor*)&gStaffCollisionResourceDescriptor,
-    (ResourceDescriptor*)&gDll5BResourceDescriptor,
-    (ResourceDescriptor*)&gDll5CResourceDescriptor,
-    (ResourceDescriptor*)&gDll5DResourceDescriptor,
-    (ResourceDescriptor*)&gDll5EResourceDescriptor,
-    (ResourceDescriptor*)&gDll5FResourceDescriptor,
-    (ResourceDescriptor*)&gDll60ResourceDescriptor,
-    (ResourceDescriptor*)&gDll61ResourceDescriptor,
-    (ResourceDescriptor*)&gDll62ResourceDescriptor,
-    (ResourceDescriptor*)&gDll63ResourceDescriptor,
-    (ResourceDescriptor*)&gDll64ResourceDescriptor,
-    (ResourceDescriptor*)&gDll65ResourceDescriptor,
-    (ResourceDescriptor*)&gDll66ResourceDescriptor,
-    (ResourceDescriptor*)&gDll67ResourceDescriptor,
-    (ResourceDescriptor*)&gDll68ResourceDescriptor,
-    (ResourceDescriptor*)&gDll69ResourceDescriptor,
-    (ResourceDescriptor*)&gDll6AResourceDescriptor,
-    (ResourceDescriptor*)&gDll6BResourceDescriptor,
-    (ResourceDescriptor*)&gDummy6CDescriptor,
-    (ResourceDescriptor*)&gDll6DResourceDescriptor,
-    (ResourceDescriptor*)&gDll6EResourceDescriptor,
-    (ResourceDescriptor*)&gDll6FResourceDescriptor,
-    (ResourceDescriptor*)&gDll70ResourceDescriptor,
-    (ResourceDescriptor*)&gDll71ResourceDescriptor,
-    (ResourceDescriptor*)&gDll72ResourceDescriptor,
-    (ResourceDescriptor*)&gDll73ResourceDescriptor,
-    (ResourceDescriptor*)&gDll74ResourceDescriptor,
-    (ResourceDescriptor*)&gDll75ResourceDescriptor,
-    (ResourceDescriptor*)&gDll76ResourceDescriptor,
-    (ResourceDescriptor*)&gDll77ResourceDescriptor,
-    (ResourceDescriptor*)&gDll78ResourceDescriptor,
-    (ResourceDescriptor*)&gDll79ResourceDescriptor,
-    (ResourceDescriptor*)&gDll7AResourceDescriptor,
-    (ResourceDescriptor*)&gDll7BResourceDescriptor,
-    (ResourceDescriptor*)&gDll7CResourceDescriptor,
-    (ResourceDescriptor*)&gDll7DResourceDescriptor,
-    (ResourceDescriptor*)&gDll7EResourceDescriptor,
-    (ResourceDescriptor*)&gDll7FResourceDescriptor,
-    (ResourceDescriptor*)&gDll80ResourceDescriptor,
-    (ResourceDescriptor*)&gDll81ResourceDescriptor,
-    (ResourceDescriptor*)&gDll82ResourceDescriptor,
-    (ResourceDescriptor*)&gDll83ResourceDescriptor,
-    (ResourceDescriptor*)&gDll84ResourceDescriptor,
-    (ResourceDescriptor*)&gDll85ResourceDescriptor,
-    (ResourceDescriptor*)&gDll86ResourceDescriptor,
-    (ResourceDescriptor*)&gDll87ResourceDescriptor,
-    (ResourceDescriptor*)&gDll88ResourceDescriptor,
-    (ResourceDescriptor*)&gDll89ResourceDescriptor,
-    (ResourceDescriptor*)&gDll8AResourceDescriptor,
-    (ResourceDescriptor*)&gDll8BResourceDescriptor,
-    (ResourceDescriptor*)&gDll8CResourceDescriptor,
-    (ResourceDescriptor*)&gDll8DResourceDescriptor,
-    (ResourceDescriptor*)&gDll8EResourceDescriptor,
-    (ResourceDescriptor*)&gDll8FResourceDescriptor,
-    (ResourceDescriptor*)&gDll90ResourceDescriptor,
-    (ResourceDescriptor*)&gDll91ResourceDescriptor,
-    (ResourceDescriptor*)&gDll92ResourceDescriptor,
-    (ResourceDescriptor*)&gDll93ResourceDescriptor,
-    (ResourceDescriptor*)&gDll94ResourceDescriptor,
-    (ResourceDescriptor*)&gDll95ResourceDescriptor,
-    (ResourceDescriptor*)&gDll96ResourceDescriptor,
-    (ResourceDescriptor*)&gDll97ResourceDescriptor,
-    (ResourceDescriptor*)&gDll98ResourceDescriptor,
-    (ResourceDescriptor*)&gDll99ResourceDescriptor,
-    (ResourceDescriptor*)&gDll9AResourceDescriptor,
-    (ResourceDescriptor*)&gDll9BResourceDescriptor,
-    (ResourceDescriptor*)&gDll9CResourceDescriptor,
-    (ResourceDescriptor*)&gDll9DResourceDescriptor,
-    (ResourceDescriptor*)&gDll9EResourceDescriptor,
-    (ResourceDescriptor*)&gDll9FResourceDescriptor,
-    (ResourceDescriptor*)&gDllA0ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA1ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA2ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA3ResourceDescriptor,
-    (ResourceDescriptor*)&gDummyA4ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA5ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA6ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA7ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA8ResourceDescriptor,
-    (ResourceDescriptor*)&gDllA9ResourceDescriptor,
-    (ResourceDescriptor*)&gDllAAResourceDescriptor,
-    (ResourceDescriptor*)&gProjdummyResourceDescriptor,
-    (ResourceDescriptor*)&gProjmagicstreamResourceDescriptor,
-    (ResourceDescriptor*)&gProjmagicemmit1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjroombeamResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning2ResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning3ResourceDescriptor,
-    (ResourceDescriptor*)&gProjrobotfireResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning4ResourceDescriptor,
-    (ResourceDescriptor*)&gProjenergise1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjenergise2ResourceDescriptor,
-    (ResourceDescriptor*)&gProjsquirt1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjship1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning5ResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning7ResourceDescriptor,
-    (ResourceDescriptor*)&gProjlightning6ResourceDescriptor,
-    (ResourceDescriptor*)&gProjwallpowerResourceDescriptor,
-    (ResourceDescriptor*)&gProjquakeshockResourceDescriptor,
-    (ResourceDescriptor*)&gProjsunshockResourceDescriptor,
-    (ResourceDescriptor*)&gProjteslaResourceDescriptor,
-    (ResourceDescriptor*)&gProjcore1ResourceDescriptor,
-    (ResourceDescriptor*)&gProjcore2ResourceDescriptor,
-    (ResourceDescriptor*)&gProjcore3ResourceDescriptor,
-    (ResourceDescriptor*)&gProjdfp1rResourceDescriptor,
-    NULL,
-    &gTrickyObjDescriptor,
-    &gDllC5NullResourceDescriptor,
-    (ResourceDescriptor*)&gAnimatedObjDescriptor,
-    (ResourceDescriptor*)&gDIM2RoofRubObjDescriptor,
-    (ResourceDescriptor*)&gDepthOfFieldPointObjDescriptor,
-    &gBaddieObjDescriptor,
-    (ResourceDescriptor*)&gIceBaddieObjDescriptor,
-    (ResourceDescriptor*)&gDllCBObjDescriptor,
-    (ResourceDescriptor*)&gChukChukObjDescriptor,
-    (ResourceDescriptor*)&gIceBallObjDescriptor,
-    (ResourceDescriptor*)&gDllCEObjDescriptor,
-    (ResourceDescriptor*)&gCannonClawObjDescriptor,
-    (ResourceDescriptor*)&gGrimbleObjDescriptor,
-    (ResourceDescriptor*)&gTumbleWeedBushObjDescriptor,
-    (ResourceDescriptor*)&gTumbleweedObjDescriptor,
-    &dll_D3,
-    (ResourceDescriptor*)&gSkeetlaWallObjDescriptor,
-    (ResourceDescriptor*)&gKaldachomObjDescriptor,
-    (ResourceDescriptor*)&gKaldachomMeObjDescriptor,
-    (ResourceDescriptor*)&gKaldachomSpObjDescriptor,
-    (ResourceDescriptor*)&gPinPonSpikeObjDescriptor,
-    (ResourceDescriptor*)&gPollenObjDescriptor,
-    (ResourceDescriptor*)&gPollenFragmentObjDescriptor,
-    (ResourceDescriptor*)&gMikaBombObjDescriptor,
-    (ResourceDescriptor*)&gMikaBombShadowObjDescriptor,
-    (ResourceDescriptor*)&gGCbaddieShieldObjDescriptor,
-    (ResourceDescriptor*)&gBaddieInterestPObjDescriptor,
-    (ResourceDescriptor*)&gHagabonObjDescriptor,
-    (ResourceDescriptor*)&gSwarmBaddieObjDescriptor,
-    (ResourceDescriptor*)&gWispBaddieObjDescriptor,
-    &gStaffObjDescriptor,
-    (ResourceDescriptor*)&gFireballObjDescriptor,
-    (ResourceDescriptor*)&gFlameThrowerspeObjDescriptor,
-    (ResourceDescriptor*)&gShieldObjDescriptor,
-    (ResourceDescriptor*)&gReStartMarkObjDescriptor,
-    (ResourceDescriptor*)&gFlammableVineObjDescriptor,
-    (ResourceDescriptor*)&gCheckpoint4ObjDescriptor,
-    (ResourceDescriptor*)&gSetuppointObjDescriptor,
-    (ResourceDescriptor*)&gSideloadObjDescriptor,
-    (ResourceDescriptor*)&gSiderepelObjDescriptor,
-    (ResourceDescriptor*)&gInfoPointObjDescriptor,
-    (ResourceDescriptor*)&gCollectibleObjDescriptor,
-    (ResourceDescriptor*)&gEffectBoxObjDescriptor,
-    (ResourceDescriptor*)&gPushableObjDescriptor,
-    (ResourceDescriptor*)&gWarpPointObjDescriptor,
-    (ResourceDescriptor*)&gInvHitObjDescriptor,
-    (ResourceDescriptor*)&gIceblastObjDescriptor,
-    (ResourceDescriptor*)&gFlameblastObjDescriptor,
-    (ResourceDescriptor*)&gDoorF4ObjDescriptor,
-    (ResourceDescriptor*)&gSidekickBallObjDescriptor,
-    (ResourceDescriptor*)&gAreaObjDescriptor,
-    (ResourceDescriptor*)&dll_F7,
-    (ResourceDescriptor*)&gLevelNameObjDescriptor,
-    (ResourceDescriptor*)&gProjectileSwitchObjDescriptor,
-    (ResourceDescriptor*)&gInvisibleHitSwitchObjDescriptor,
-    (ResourceDescriptor*)&gPressureSwitchFBObjDescriptor,
-    (ResourceDescriptor*)&gDllFCObjDescriptor,
-    (ResourceDescriptor*)&gDllFDObjDescriptor,
-    (ResourceDescriptor*)&gMagicPlantObjDescriptor,
-    (ResourceDescriptor*)&gMagicGemObjDescriptor,
-    (ResourceDescriptor*)&gTrickyWarpObjDescriptor,
-    (ResourceDescriptor*)&gTrickyGuardObjDescriptor,
-    (ResourceDescriptor*)&gStayPointObjDescriptor,
-    (ResourceDescriptor*)&gCurveFishObjDescriptor,
-    (ResourceDescriptor*)&gSmallBasketObjDescriptor,
-    (ResourceDescriptor*)&gLargeCrateObjDescriptor,
-    (ResourceDescriptor*)&gScarabObjDescriptor,
-    (ResourceDescriptor*)&gWindLift107ObjDescriptor,
-    (ResourceDescriptor*)&gEndObjectObjDescriptor,
-    (ResourceDescriptor*)&gBreakableCarryableObjDescriptor,
-    (ResourceDescriptor*)&gFall_LaddersObjDescriptor,
-    (ResourceDescriptor*)&gFireFlyLanternObjDescriptor,
-    (ResourceDescriptor*)&gLanternFireFlyObjDescriptor,
-    (ResourceDescriptor*)&gPortalSpellDoorObjDescriptor,
-    (ResourceDescriptor*)&gDeathSeqObjDescriptor,
-    (ResourceDescriptor*)&gMMP_BridgeObjDescriptor,
-    (ResourceDescriptor*)&gDoorObjDescriptor,
-    (ResourceDescriptor*)&gDoorLockObjDescriptor,
-    (ResourceDescriptor*)&gSeqObjectObjDescriptor,
-    (ResourceDescriptor*)&gSeqObj2ObjDescriptor,
-    (ResourceDescriptor*)&gIMMultiSeqObjDescriptor,
-    (ResourceDescriptor*)&gDll115ObjDescriptor,
-    (ResourceDescriptor*)&gWM_ColumnObjDescriptor,
-    (ResourceDescriptor*)&gAppleOnTreeObjDescriptor,
-    (ResourceDescriptor*)&gDusterObjDescriptor,
-    (ResourceDescriptor*)&gColdWaterControlObjDescriptor,
-    (ResourceDescriptor*)&gDecoration11AObjDescriptor,
-    (ResourceDescriptor*)&gLanded_ArwingObjDescriptor,
-    (ResourceDescriptor*)&gStaffActivatedObjDescriptor,
-    (ResourceDescriptor*)&gTreasureChestObjDescriptor,
-    (ResourceDescriptor*)&gMagicCaveBottomObjDescriptor,
-    (ResourceDescriptor*)&gMagicCaveTopObjDescriptor,
-    (ResourceDescriptor*)&gTrickyGuardSpotObjDescriptor,
-    (ResourceDescriptor*)&gInfoTextObjDescriptor,
-    (ResourceDescriptor*)&gCCTestInfotObjDescriptor,
-    (ResourceDescriptor*)&gFuelCellObjDescriptor,
-    (ResourceDescriptor*)&gDeathGasObjDescriptor,
-    (ResourceDescriptor*)&gCurveObjDescriptor,
-    &gTriggerObjDescriptor,
-    (ResourceDescriptor*)&gDll127ObjDescriptor,
-    (ResourceDescriptor*)&gKT_TorchObjDescriptor,
-    (ResourceDescriptor*)&gCampFireObjDescriptor,
-    (ResourceDescriptor*)&gCFCrateObjDescriptor,
-    (ResourceDescriptor*)&gFXEmitObjDescriptor,
-    (ResourceDescriptor*)&gTransporterObjDescriptor,
-    (ResourceDescriptor*)&gLFXEmitterObjDescriptor,
-    (ResourceDescriptor*)&gCFLightWallObjDescriptor,
-    (ResourceDescriptor*)&gBarrelPadObjDescriptor,
-    (ResourceDescriptor*)&gAreaFXEmitObjDescriptor,
-    (ResourceDescriptor*)&gCF_DoorLightObjDescriptor,
-    (ResourceDescriptor*)&gWaterFallSprayObjDescriptor,
-    (ResourceDescriptor*)&gSfxPlayerObjDescriptor,
-    (ResourceDescriptor*)&gTexscroll2ObjDescriptor,
-    (ResourceDescriptor*)&gTexscrollObjDescriptor,
-    (ResourceDescriptor*)&gWaveAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gAlphaAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gGroundAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gHitAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gVisAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gWallAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gXYZAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gExplodeAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gDIMBossIceSmashObjDescriptor,
-    (ResourceDescriptor*)&gTexFrameAnimatorObjDescriptor,
-    (ResourceDescriptor*)&gFogControlObjDescriptor,
-    (ResourceDescriptor*)&gLightningObjDescriptor,
-    (ResourceDescriptor*)&gFElevControlObjDescriptor,
-    (ResourceDescriptor*)&gFEseqobjectObjDescriptor,
-    (ResourceDescriptor*)&gDll144ObjDescriptor,
-    (ResourceDescriptor*)&gCloudPrisonControlObjDescriptor,
-    &gCloudShipControlNullResourceDescriptor,
-    &gDll147NullResourceDescriptor,
-    (ResourceDescriptor*)&gCFGuardianObjDescriptor,
-    (ResourceDescriptor*)&gWindLiftObjDescriptor,
-    (ResourceDescriptor*)&gCFPowerBaseObjDescriptor,
-    (ResourceDescriptor*)&gCFMainCrystalObjDescriptor,
-    (ResourceDescriptor*)&gBabyCloudRunnerObjDescriptor,
-    &gLaserBeamNullResourceDescriptor,
-    (ResourceDescriptor*)&gCFPrisonGuardObjDescriptor,
-    (ResourceDescriptor*)&gCFPrisonUncleObjDescriptor,
-    (ResourceDescriptor*)&gGCRobotLightBeamObjDescriptor,
-    &gCFScalesGalNullResourceDescriptor,
-    &gCFObjCreatNullResourceDescriptor,
-    (ResourceDescriptor*)&gCFPerchObjDescriptor,
-    (ResourceDescriptor*)&gCFPrisonCageObjDescriptor,
-    &gDll155NullResourceDescriptor,
-    &gDll156NullResourceDescriptor,
-    (ResourceDescriptor*)&gSpiritDoorSpiritObjDescriptor,
-    (ResourceDescriptor*)&gGunpowderBarrelObjDescriptor,
-    (ResourceDescriptor*)&gBlastedObjDescriptor,
-    (ResourceDescriptor*)&gExplodableObjDescriptor,
-    (ResourceDescriptor*)&gCFForceFieldObjDescriptor,
-    &gCFForceField15CNullResourceDescriptor,
-    (ResourceDescriptor*)&gSlidingDoorObjDescriptor,
-    &gDll15ENullResourceDescriptor,
-    (ResourceDescriptor*)&gAttractorObjDescriptor,
-    &gDll160NullResourceDescriptor,
-    &gCFTreasRoboNullResourceDescriptor,
-    (ResourceDescriptor*)&gCFMagicWallObjDescriptor,
-    &gDll163NullResourceDescriptor,
-    (ResourceDescriptor*)&gCFLevelControlObjDescriptor,
-    &gCFRemovalShNullResourceDescriptor,
-    (ResourceDescriptor*)&gExplodedObjDescriptor,
-    (ResourceDescriptor*)&gSpiritDoorLockObjDescriptor,
-    &gHoloPointNullResourceDescriptor,
-    (ResourceDescriptor*)&gIMIceMountainObjDescriptor,
-    (ResourceDescriptor*)&gCRrockfallObjDescriptor,
-    (ResourceDescriptor*)&gMagicLightObjDescriptor,
-    (ResourceDescriptor*)&gIMSnowClawObjDescriptor,
-    (ResourceDescriptor*)&gIMIcePillarObjDescriptor,
-    (ResourceDescriptor*)&gIMAnimSpaceObjDescriptor,
-    (ResourceDescriptor*)&gIMSpaceThrusterObjDescriptor,
-    (ResourceDescriptor*)&gIMSpaceRingObjDescriptor,
-    (ResourceDescriptor*)&gIMSpaceRingGeneratorObjDescriptor,
-    (ResourceDescriptor*)&gLINKBLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gLINKLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gCCRiverFlowObjDescriptor,
-    (ResourceDescriptor*)&gDFropenodeObjDescriptor,
-    &gDFSH_Door1SNullResourceDescriptor,
-    (ResourceDescriptor*)&gDll177ObjDescriptor,
-    (ResourceDescriptor*)&gDFSHShrineObjDescriptor,
-    (ResourceDescriptor*)&gDFSHObjCreatorObjDescriptor,
-    (ResourceDescriptor*)&gSpiritPrizeObjDescriptor,
-    (ResourceDescriptor*)&gDFSHLaserBeamObjDescriptor,
-    &gGCRobotPatrNullResourceDescriptor,
-    (ResourceDescriptor*)&gRollingBarrelObjDescriptor,
-    (ResourceDescriptor*)&gMMPLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gMoonSeedBushObjDescriptor,
-    (ResourceDescriptor*)&gMMPAsteroidReObjDescriptor,
-    (ResourceDescriptor*)&gMMPTrenchFxObjDescriptor,
-    (ResourceDescriptor*)&gMMPMoonRockObjDescriptor,
-    (ResourceDescriptor*)&gMMPGeyserVentObjDescriptor,
-    (ResourceDescriptor*)&gDll184ObjDescriptor,
-    (ResourceDescriptor*)&gCCGasVentObjDescriptor,
-    (ResourceDescriptor*)&gCCGasVentControlObjDescriptor,
-    (ResourceDescriptor*)&gCCQueenObjDescriptor,
-    (ResourceDescriptor*)&gCCLightfootObjDescriptor,
-    (ResourceDescriptor*)&gCCSharpClawPadObjDescriptor,
-    (ResourceDescriptor*)&gCCPedestalObjDescriptor,
-    (ResourceDescriptor*)&gCCLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gMMSHShrineObjDescriptor,
-    (ResourceDescriptor*)&gMMSHScalesObjDescriptor,
-    (ResourceDescriptor*)&gMMSHWaterSpikeObjDescriptor,
-    (ResourceDescriptor*)&gECSHShrineObjDescriptor,
-    (ResourceDescriptor*)&gECSHCupObjDescriptor,
-    (ResourceDescriptor*)&gECSHCreatorObjDescriptor,
-    (ResourceDescriptor*)&gGPSHShrineObjDescriptor,
-    (ResourceDescriptor*)&gGPSHObjCreatorObjDescriptor,
-    (ResourceDescriptor*)&gGPSHSceneObjDescriptor,
-    (ResourceDescriptor*)&gDBSHShrineObjDescriptor,
-    (ResourceDescriptor*)&gDBSHSymbolObjDescriptor,
-    (ResourceDescriptor*)&gDll197ObjDescriptor,
-    (ResourceDescriptor*)&gNWSHLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gDll199ObjDescriptor,
-    (ResourceDescriptor*)&gDll19AObjDescriptor,
-    (ResourceDescriptor*)&gDll19BObjDescriptor,
-    (ResourceDescriptor*)&gDll19CObjDescriptor,
-    (ResourceDescriptor*)&gDll19DObjDescriptor,
-    (ResourceDescriptor*)&gDll19EObjDescriptor,
-    (ResourceDescriptor*)&gNWTreeBridgeObjDescriptor,
-    (ResourceDescriptor*)&gNWGeyserObjDescriptor,
-    (ResourceDescriptor*)&gNW_mammothObjDescriptor,
-    (ResourceDescriptor*)&gNWTrickyObjDescriptor,
-    (ResourceDescriptor*)&gDll1A3ObjDescriptor,
-    (ResourceDescriptor*)&gNW_iceObjDescriptor,
-    (ResourceDescriptor*)&gNWLevelControlObjDescriptor,
-    (ResourceDescriptor*)&gSHTrickyObjDescriptor,
-    (ResourceDescriptor*)&gEdibleMushroomObjDescriptor,
-    (ResourceDescriptor*)&gEnemyMushroomObjDescriptor,
-    (ResourceDescriptor*)&gBombPlantObjDescriptor,
-    (ResourceDescriptor*)&gBombPlantSporeObjDescriptor,
-    (ResourceDescriptor*)&gBombPlantingSpotObjDescriptor,
-    (ResourceDescriptor*)&gSH_queenearthwalkerObjDescriptor,
-    (ResourceDescriptor*)&gSH_thorntailObjDescriptor,
-    (ResourceDescriptor*)&gSH_LevelControlObjDescriptor,
-    (ResourceDescriptor*)&gWarpStoneLiftObjDescriptor,
-    (ResourceDescriptor*)&gWarpStoneObjDescriptor,
-    (ResourceDescriptor*)&gSH_staffObjDescriptor,
-    (ResourceDescriptor*)&gSH_staffHazeObjDescriptor,
-    (ResourceDescriptor*)&gSH_BeaconObjDescriptor,
-    (ResourceDescriptor*)&gSH_EmptyTumbleWObjDescriptor,
-    (ResourceDescriptor*)&gLightfootObjDescriptor,
-    (ResourceDescriptor*)&gSC_levelcontrolObjDescriptor,
-    (ResourceDescriptor*)&gSC_MusicTreeObjDescriptor,
-    (ResourceDescriptor*)&gSC_totempoleObjDescriptor,
-    (ResourceDescriptor*)&gSC_CloudrunnerAObjDescriptor,
-    (ResourceDescriptor*)&gSC_totempuzzleObjDescriptor,
-    (ResourceDescriptor*)&gSC_totembondObjDescriptor,
-    (ResourceDescriptor*)&gSC_totemstrengthObjDescriptor,
-    (ResourceDescriptor*)&gPaymentKioskObjDescriptor,
-    (ResourceDescriptor*)&gLavaBall1BEObjDescriptor,
-    (ResourceDescriptor*)&gLavaBall1BFObjDescriptor,
-    (ResourceDescriptor*)&gDIMLogFireObjDescriptor,
-    (ResourceDescriptor*)&gDIMSnowBallObjDescriptor,
-    (ResourceDescriptor*)&gDIMSnowBall1C2ObjDescriptor,
-    (ResourceDescriptor*)&gDIMGateObjDescriptor,
-    (ResourceDescriptor*)&gDIMIceWallObjDescriptor,
-    (ResourceDescriptor*)&gDIMBarrierObjDescriptor,
-    (ResourceDescriptor*)&gDIMCannonObjDescriptor,
-    (ResourceDescriptor*)&gDIMLavaSmashObjDescriptor,
-    (ResourceDescriptor*)&gDIMBridgeCogMaiObjDescriptor,
-    (ResourceDescriptor*)&gDIMDismountPointObjDescriptor,
-    (ResourceDescriptor*)&gExplosionObjDescriptor,
-    (ResourceDescriptor*)&gDIMWoodDoor2ObjDescriptor,
-    (ResourceDescriptor*)&gDIMMagicBridgeObjDescriptor,
-    (ResourceDescriptor*)&gDIM_LevelControlObjDescriptor,
-    (ResourceDescriptor*)&gDll1CEObjDescriptor,
-    (ResourceDescriptor*)&gDll1CFObjDescriptor,
-    &gDIM_trickyObjDescriptor,
-    (ResourceDescriptor*)&gDIMTruthHornIceObjDescriptor,
-    (ResourceDescriptor*)&gWorldPlanetObjDescriptor,
-    (ResourceDescriptor*)&gWorldObjObjDescriptor,
-    (ResourceDescriptor*)&gWorldAsteroidsObjDescriptor,
-    (ResourceDescriptor*)&gDIM2ConveyorObjDescriptor,
-    (ResourceDescriptor*)&gDll1D6ObjDescriptor,
-    (ResourceDescriptor*)&gDIM2SnowBallObjDescriptor,
-    (ResourceDescriptor*)&gDIM2PathGeneratorObjDescriptor,
-    (ResourceDescriptor*)&gDIM2PrisonMammothObjDescriptor,
-    (ResourceDescriptor*)&gDll1DAObjDescriptor,
-    (ResourceDescriptor*)&gDll1DBObjDescriptor,
-    (ResourceDescriptor*)&gDIM2IceFloeObjDescriptor,
-    (ResourceDescriptor*)&gDIM2IcicleObjDescriptor,
-    (ResourceDescriptor*)&gDIM2LavaControlObjDescriptor,
-    (ResourceDescriptor*)&gDll1DFObjDescriptor,
-    (ResourceDescriptor*)&gDIM_BossObjDescriptor,
-    (ResourceDescriptor*)&gDIM_BossGutObjDescriptor,
-    (ResourceDescriptor*)&gDIM_BossTonsilObjDescriptor,
-    (ResourceDescriptor*)&gDIM_BossGut2ObjDescriptor,
-    (ResourceDescriptor*)&gMAGICMakerObjDescriptor,
-    (ResourceDescriptor*)&gDIM_BossSpitObjDescriptor,
-    (ResourceDescriptor*)&gDIMbosscrackparObjDescriptor,
-    (ResourceDescriptor*)&gDIMbossfireObjDescriptor,
-    (ResourceDescriptor*)&gSB_GalleonObjDescriptor,
-    (ResourceDescriptor*)&gSB_PropellerObjDescriptor,
-    (ResourceDescriptor*)&gSB_ShipHeadObjDescriptor,
-    (ResourceDescriptor*)&gSB_ShipMastObjDescriptor,
-    (ResourceDescriptor*)&gSB_ShipGunObjDescriptor,
-    (ResourceDescriptor*)&gSB_FireBallObjDescriptor,
-    (ResourceDescriptor*)&gSB_CannonBallObjDescriptor,
-    (ResourceDescriptor*)&gSB_CloudBallObjDescriptor,
-    (ResourceDescriptor*)&gSB_KyteCageObjDescriptor,
-    (ResourceDescriptor*)&gSB_SeqDoorObjDescriptor,
-    (ResourceDescriptor*)&gSB_CageKyteObjDescriptor,
-    (ResourceDescriptor*)&gSB_MiniFireObjDescriptor,
-    (ResourceDescriptor*)&gDll1F4ObjDescriptor,
-    (ResourceDescriptor*)&gDll1F5ObjDescriptor,
-    (ResourceDescriptor*)&gDll1F6ObjDescriptor,
-    (ResourceDescriptor*)&gSB_ShipGunBrokeObjDescriptor,
-    (ResourceDescriptor*)&gWM_GalleonObjDescriptor,
-    (ResourceDescriptor*)&gWM_ObjCreatorObjDescriptor,
-    (ResourceDescriptor*)&gWM_seqobjectObjDescriptor,
-    (ResourceDescriptor*)&gDll1FBObjDescriptor,
-    (ResourceDescriptor*)&gLaserBeamObjDescriptor,
-    (ResourceDescriptor*)&gWM_LaserTargetObjDescriptor,
-    (ResourceDescriptor*)&gPressureSwitchObjDescriptor,
-    (ResourceDescriptor*)&gDll1FFObjDescriptor,
-    (ResourceDescriptor*)&gDll200ObjDescriptor,
-    (ResourceDescriptor*)&gWM_colriseObjDescriptor,
-    &gDll202NullResourceDescriptor,
-    &gDll203NullResourceDescriptor,
-    (ResourceDescriptor*)&gWM_TorchObjDescriptor,
-    &gWMVeinNullResourceDescriptor,
-    (ResourceDescriptor*)&gLightSourceObjDescriptor,
-    (ResourceDescriptor*)&gWM_WormObjDescriptor,
-    &gWM_WallpoweNullResourceDescriptor,
-    (ResourceDescriptor*)&gWM_LevelControlObjDescriptor,
-    (ResourceDescriptor*)&gWM_GeneralScalesObjDescriptor,
-    &gFireFlyObjDescriptor,
-    &gWM_spiritplaceObjDescriptor,
-    &gWM_seqpointObjDescriptor,
-    &gWM_sunObjDescriptor,
-    &gWM_SpiritSetObjDescriptor,
-    &gWM_PlanetsObjDescriptor,
-    &gWM_WallCrawlerObjDescriptor,
-    &gDll212NullResourceDescriptor,
-    &gWM_VConsoleNullResourceDescriptor,
-    &gWM_TransTopNullResourceDescriptor,
-    &gWM_newcrystalObjDescriptor,
-    &gVFP_LevelControlObjDescriptor,
-    &gVFP_ObjCreatorObjDescriptor,
-    &gVFP_MiniFireObjDescriptor,
-    &dll_219,
-    &gVFP_statueballObjDescriptor,
-    &dll_21B,
-    &gVFP_LaddersObjDescriptor,
-    &gVFPLiftObjDescriptor,
-    &gVFP_Block1ObjDescriptor,
-    &gVFP_PlatformObjDescriptor,
-    &gVFP_DoorSwitchObjDescriptor,
-    &gSeqPointObjDescriptor,
-    &gVFPDragHeadObjDescriptor,
-    &gVFP_coreplatObjDescriptor,
-    &dll_224,
-    &gVFP_flamepointObjDescriptor,
-    &gVFP_lavapoolObjDescriptor,
-    &gVFP_lavastarObjDescriptor,
-    &gVFP_SpellPlaceObjDescriptor,
-    &gDFP_LevelControlObjDescriptor,
-    &gDFP_ObjCreatorObjDescriptor,
-    &gDFP_TorchObjDescriptor,
-    &gDll22CObjDescriptor,
-    &gDFP_seqpointObjDescriptor,
-    &gDoorswitchObjDescriptor,
-    &gDfpfloorbarObjDescriptor,
-    &gChukaObjDescriptor,
-    &gTrickyCurveObjDescriptor,
-    &gDFP_RotatePObjDescriptor,
-    &gDfpstatue1ObjDescriptor,
-    &gDfperchwitchObjDescriptor,
-    &gDfptargetblockObjDescriptor,
-    &gLaserUnsupportedObjDescriptor,
-    &gLaserObjDescriptor,
-    &gFireObjDescriptor,
-    &gTextBlockObjDescriptor,
-    &gPlatform1ObjDescriptor,
-    &gDfplightniObjDescriptor,
-    &gDfppowerslObjDescriptor,
-    &gDBPointMumNullResourceDescriptor,
-    &gDll23ENullResourceDescriptor,
-    &gDB_eggObjDescriptor,
-    &gGCRobotBlastObjDescriptor,
-    &gDrakorEnergyObjDescriptor,
-    &gDBstealerwormObjDescriptor,
-    &gDBHoleControl1ObjDescriptor,
-    &Dummy244,
-    &Dummy245,
-    &Dummy246,
-    &Dummy247,
-    &Dummy248,
-    &gDll249NullResourceDescriptor,
-    &Dummy24A,
-    &Dummy24B,
-    &Dummy24C_funcs,
-    &gBossDrakorObjDescriptor,
-    &gDrakorDThornBushObjDescriptor,
-    &gKtRexLevelObjDescriptor,
-    &gKtRexObjDescriptor,
-    &gKtRexFloorSwitchObjDescriptor,
-    &gKtLazerwallObjDescriptor,
-    &gKtLazerlightObjDescriptor,
-    &gKtFallingrocksObjDescriptor,
-    &gSnowBikeObjDescriptor,
-    &gDIMSnowHorn1ObjDescriptor,
-    (ResourceDescriptor*)&gDR_EarthWarriorObjDescriptor,
-    &gDR_CloudRunnerObjDescriptor,
-    &gSB_CloudRunnerObjDescriptor,
-    &gStaticCameraObjDescriptor,
-    &gMoonSeedPlantingSpotObjDescriptor,
-    &gSnowClawObjDescriptor,
-    &gCrCloudRaceObjDescriptor,
-    &gSpellStoneObjDescriptor,
-    &gCrFuelTankObjDescriptor,
-    &gProximityMineObjDescriptor,
-    &gDrLaserCannonObjDescriptor,
-    &gDrakorMissileObjDescriptor,
-    &gGmMazeWellObjDescriptor,
-    &gDll264NullResourceDescriptor,
-    &gDrCreatorObjDescriptor,
-    &gKytesMumObjDescriptor,
-    &gDll267NullResourceDescriptor,
-    &gDrCageControlObjDescriptor,
-    &gExplodePlanObjDescriptor,
-    &gDR_GeezerNullResourceDescriptor,
-    &gDrChimmeyObjDescriptor,
-    &gDrCageWithObjDescriptor,
-    &gDR_VinesNullResourceDescriptor,
-    &gDrShackleObjDescriptor,
-    &gDrGeneratorObjDescriptor,
-    &gDR_RockNullResourceDescriptor,
-    &gDrakorHoverPadObjDescriptor,
-    &gHighTopObjDescriptor,
-    &gFirePipeObjDescriptor,
-    &gDR_pulleyNullResourceDescriptor,
-    &gDR_cradleNullResourceDescriptor,
-    &gDll276NullResourceDescriptor,
-    &gCFWindLiftLNullResourceDescriptor,
-    &gDll278NullResourceDescriptor,
-    &gDrEnergyDiscObjDescriptor,
-    &gDR_CollapseNullResourceDescriptor,
-    &gDll27BNullResourceDescriptor,
-    &gDrLightBeaObjDescriptor,
-    &gDll27DNullResourceDescriptor,
-    &gDrMusicContObjDescriptor,
-    &gDll27FNullResourceDescriptor,
-    &gDrCloudPerObjDescriptor,
-    (ResourceDescriptor*)&gDrEarthCalObjDescriptor,
-    (ResourceDescriptor*)&gBarrelGenerObjDescriptor,
-    &gDrBarrelGrObjDescriptor,
-    &gShopItemObjDescriptor,
-    &gShopObjDescriptor,
-    &gShopKeeperObjDescriptor,
-    &gSPScarabObjDescriptor,
-    &gSPDrapeObjDescriptor,
-    &gSPitembeamObjDescriptor,
-    &gEarthWalkerObjDescriptor,
-    &dll_28B,
-    &gWCBouncyCraObjDescriptor,
-    &gWCLevelContObjDescriptor,
-    (ResourceDescriptor*)&gWCBeaconObjDescriptor,
-    (ResourceDescriptor*)&gWCPressureSObjDescriptor,
-    &gWCPushBlockObjDescriptor,
-    &gWCTileObjDescriptor,
-    (ResourceDescriptor*)&gWCTrexStatuObjDescriptor,
-    (ResourceDescriptor*)&gSunTempleObjDescriptor,
-    (ResourceDescriptor*)&gWCTempleObjDescriptor,
-    (ResourceDescriptor*)&gWCApertureSObjDescriptor,
-    (ResourceDescriptor*)&gWCTempleDiaObjDescriptor,
-    &gWCTempleBriObjDescriptor,
-    (ResourceDescriptor*)&gWCFloorTileObjDescriptor,
-    (ResourceDescriptor*)&dll_299,
-    (ResourceDescriptor*)&gARWArwingObjDescriptor,
-    (ResourceDescriptor*)&gArwingAndrossStuffObjDescriptor,
-    (ResourceDescriptor*)&gARWArwingBoObjDescriptor,
-    (ResourceDescriptor*)&gARWArwingGuObjDescriptor,
-    &gDll29EObjDescriptor,
-    &gARWBombCollObjDescriptor,
-    &gRingObjDescriptor,
-    (ResourceDescriptor*)&gARWLevelConObjDescriptor,
-    &gARWSpeedStrObjDescriptor,
-    &dll_2A3,
-    &dll_2A4,
-    &gARWGeneratoObjDescriptor,
-    &gARWSquadronObjDescriptor,
-    &gARWProximitObjDescriptor,
-    &gARWBlockerObjDescriptor,
-    &gPointLightObjDescriptor,
-    &gDirectionalLightObjDescriptor,
-    &gProjectedLightObjDescriptor,
-    &gControlLightObjDescriptor,
-    &gSoftBodyObjDescriptor,
-    &gWaterFlowWeObjDescriptor,
-    (ResourceDescriptor*)&gTreeObjDescriptor,
-    (ResourceDescriptor*)&gBrokenPipeObjDescriptor,
-    (ResourceDescriptor*)&gCmbSrcObjDescriptor,
-    (ResourceDescriptor*)&gDustMoteSouObjDescriptor,
-    &gVortexObjDescriptor,
-    (ResourceDescriptor*)&gCNTcounterObjDescriptor,
-    &gTimerObjDescriptor,
-    (ResourceDescriptor*)&gCNThitObjecObjDescriptor,
-    (ResourceDescriptor*)&gMCUpgradeObjDescriptor,
-    (ResourceDescriptor*)&gMCUpgradeMaObjDescriptor,
-    (ResourceDescriptor*)&gMCStaffEffeObjDescriptor,
-    (ResourceDescriptor*)&gMCLightningObjDescriptor,
-    (ResourceDescriptor*)&gGF_LevelConObjDescriptor,
-    (ResourceDescriptor*)&gAndrossObjDescriptor,
-    (ResourceDescriptor*)&gAndrossHandObjDescriptor,
-    (ResourceDescriptor*)&gAndrossBrainObjDescriptor,
-    (ResourceDescriptor*)&gAndrossLighObjDescriptor,
-    &gTitleScreenObjDescriptor,
+    RESOURCE_DESCRIPTOR_REF(GameUI_funcs),
+    RESOURCE_DESCRIPTOR_REF(gCamcontrolResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(ObjSeq_funcs),
+    RESOURCE_DESCRIPTOR_REF(Checkpoint_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy04_funcs),
+    RESOURCE_DESCRIPTOR_REF(sky_funcs),
+    RESOURCE_DESCRIPTOR_REF(sky2_funcs),
+    RESOURCE_DESCRIPTOR_REF(newclouds_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy08_funcs),
+    RESOURCE_DESCRIPTOR_REF(cloudaction_funcs),
+    RESOURCE_DESCRIPTOR_REF(expgfx_funcs),
+    RESOURCE_DESCRIPTOR_REF(dll_0B_funcs),
+    RESOURCE_DESCRIPTOR_REF(projgfx_funcs),
+    RESOURCE_DESCRIPTOR_REF(playerShadow_funcs),
+    RESOURCE_DESCRIPTOR_REF(partfx_funcs),
+    RESOURCE_DESCRIPTOR_REF(player_funcs),
+    RESOURCE_DESCRIPTOR_REF(UIController_funcs),
+    RESOURCE_DESCRIPTOR_REF(screens_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy12_funcs),
+    RESOURCE_DESCRIPTOR_REF(waterfx_funcs),
+    RESOURCE_DESCRIPTOR_REF(RomCurve_funcs),
+    RESOURCE_DESCRIPTOR_REF(dll_15_funcs),
+    RESOURCE_DESCRIPTOR_REF(screenTransition_funcs),
+    RESOURCE_DESCRIPTOR_REF(SaveGame_funcs),
+    RESOURCE_DESCRIPTOR_REF(boneParticleEffect_funcs),
+    RESOURCE_DESCRIPTOR_REF(dll_19),
+    RESOURCE_DESCRIPTOR_REF(Effect1_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect2_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect3_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect4_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect5_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect6_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect7_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect8_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect9_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect10_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect11_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect12_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect13_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect14_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect15_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect16_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect17_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect18_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect19_funcs),
+    RESOURCE_DESCRIPTOR_REF(Effect20_funcs),
+    RESOURCE_DESCRIPTOR_REF(dll_2E),
+    RESOURCE_DESCRIPTOR_REF(Carryable_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy30_funcs),
+    RESOURCE_DESCRIPTOR_REF(Minimap_funcs),
+    RESOURCE_DESCRIPTOR_REF(TitleScreenInit_funcs),
+    RESOURCE_DESCRIPTOR_REF(n_rareware_funcs),
+    RESOURCE_DESCRIPTOR_REF(n_attractmode_funcs),
+    RESOURCE_DESCRIPTOR_REF(SaveSelectScreen_funcs),
+    RESOURCE_DESCRIPTOR_REF(EnterSaveNameScreen_funcs),
+    RESOURCE_DESCRIPTOR_REF(OptionsScreen_funcs),
+    RESOURCE_DESCRIPTOR_REF(WeirdUnusedMenu_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy39_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy3A_funcs),
+    RESOURCE_DESCRIPTOR_REF(Menu_funcs),
+    RESOURCE_DESCRIPTOR_REF(Link_funcs),
+    RESOURCE_DESCRIPTOR_REF(TitleMenuItem_funcs),
+    RESOURCE_DESCRIPTOR_REF(Dummy3E_funcs),
+    RESOURCE_DESCRIPTOR_REF(dll_3F_funcs),
+    RESOURCE_DESCRIPTOR_REF(gCreditsDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWarpStoneUiDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeNormalDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeStaffAnimDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeViewfinderDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeTalkDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeDebugDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModePathDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeStaticDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeCombatDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeShipBattleDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeClimbDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeFixedDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeNpcSpeakDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeWorldMapDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraMode4FDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeCrawlDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeCannonDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeForceBehindDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeCloudRunnerDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraMode54Descriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraMode55Descriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeArwingDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCameraModeTitleDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDummy58Descriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll59ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gStaffCollisionResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll5BResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll5CResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll5DResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll5EResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll5FResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll60ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll61ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll62ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll63ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll64ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll65ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll66ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll67ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll68ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll69ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll6AResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll6BResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDummy6CDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll6DResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll6EResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll6FResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll70ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll71ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll72ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll73ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll74ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll75ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll76ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll77ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll78ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll79ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7AResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7BResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7CResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7DResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7EResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll7FResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll80ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll81ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll82ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll83ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll84ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll85ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll86ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll87ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll88ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll89ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8AResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8BResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8CResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8DResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8EResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll8FResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll90ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll91ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll92ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll93ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll94ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll95ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll96ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll97ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll98ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll99ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9AResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9BResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9CResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9DResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9EResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll9FResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA0ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA2ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA3ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDummyA4ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA5ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA6ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA7ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA8ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllA9ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllAAResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjdummyResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjmagicstreamResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjmagicemmit1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjroombeamResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning2ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning3ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjrobotfireResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning4ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjenergise1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjenergise2ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjsquirt1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjship1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning5ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning7ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjlightning6ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjwallpowerResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjquakeshockResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjsunshockResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjteslaResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjcore1ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjcore2ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjcore3ResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjdfp1rResourceDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPlayerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTrickyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllC5ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAnimatedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2RoofRubObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDepthOfFieldPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBaddieObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIceBaddieObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllCBObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gChukChukObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIceBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllCEObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCannonClawObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGrimbleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTumbleWeedBushObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTumbleweedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllD3ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSkeetlaWallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKaldachomObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKaldachomMeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKaldachomSpObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPinPonSpikeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPollenObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPollenFragmentObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMikaBombObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMikaBombShadowObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGCbaddieShieldObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBaddieInterestPObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gHagabonObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSwarmBaddieObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWispBaddieObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gStaffObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFireballObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFlameThrowerspeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gShieldObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gReStartMarkObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFlammableVineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCheckpoint4ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSetuppointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSideloadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSiderepelObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gInfoPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCollectibleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gEffectBoxObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPushableObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWarpPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gInvHitObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIceblastObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFlameblastObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDoorF4ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSidekickBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAreaObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllF7ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLevelNameObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjectileSwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gInvisibleHitSwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPressureSwitchFBObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllFCObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDllFDObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMagicPlantObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMagicGemObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTrickyWarpObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTrickyGuardObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gStayPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCurveFishObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSmallBasketObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLargeCrateObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gScarabObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWindLift107ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gEndObjectObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBreakableCarryableObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFall_LaddersObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFireFlyLanternObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLanternFireFlyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPortalSpellDoorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDeathSeqObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMP_BridgeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDoorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDoorLockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSeqObjectObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSeqObj2ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMMultiSeqObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll115ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_ColumnObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAppleOnTreeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDusterObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gColdWaterControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDecoration11AObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLanded_ArwingObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gStaffActivatedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTreasureChestObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMagicCaveBottomObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMagicCaveTopObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTrickyGuardSpotObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gInfoTextObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCTestInfotObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFuelCellObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDeathGasObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCurveObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTriggerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll127ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKT_TorchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCampFireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFCrateObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFXEmitObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTransporterObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLFXEmitterObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFLightWallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBarrelPadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAreaFXEmitObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCF_DoorLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWaterFallSprayObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSfxPlayerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTexscroll2ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTexscrollObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWaveAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAlphaAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGroundAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gHitAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVisAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWallAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gXYZAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gExplodeAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMBossIceSmashObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTexFrameAnimatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFogControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLightningObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFElevControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFEseqobjectObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll144ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCloudPrisonControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll146ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll147ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFGuardianObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWindLiftObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFPowerBaseObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFMainCrystalObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBabyCloudRunnerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll14DObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFPrisonGuardObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFPrisonUncleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGCRobotLightBeamObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll151ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll152ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFPerchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFPrisonCageObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll155ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll156ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSpiritDoorSpiritObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGunpowderBarrelObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBlastedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gExplodableObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFForceFieldObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll15CObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSlidingDoorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll15EObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAttractorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll160ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll161ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFMagicWallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll163ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCFLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll165ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gExplodedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSpiritDoorLockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll168ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMIceMountainObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCRrockfallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMagicLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMSnowClawObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMIcePillarObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMAnimSpaceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMSpaceThrusterObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMSpaceRingObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gIMSpaceRingGeneratorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLINKBLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLINKLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCRiverFlowObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFropenodeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll176ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll177ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFSHShrineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFSHObjCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSpiritPrizeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFSHLaserBeamObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll17CObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gRollingBarrelObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMPLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMoonSeedBushObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMPAsteroidReObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMPTrenchFxObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMPMoonRockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMPGeyserVentObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll184ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCGasVentObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCGasVentControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCQueenObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCLightfootObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCSharpClawPadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCPedestalObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCCLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMSHShrineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMSHScalesObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMMSHWaterSpikeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gECSHShrineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gECSHCupObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gECSHCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGPSHShrineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGPSHObjCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGPSHSceneObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDBSHShrineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDBSHSymbolObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll197ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNWSHLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll199ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll19AObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll19BObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll19CObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll19DObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll19EObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNWTreeBridgeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNWGeyserObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNW_mammothObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNWTrickyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1A3ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNW_iceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gNWLevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSHTrickyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gEdibleMushroomObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gEnemyMushroomObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBombPlantObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBombPlantSporeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBombPlantingSpotObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_queenearthwalkerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_thorntailObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_LevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWarpStoneLiftObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWarpStoneObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_staffObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_staffHazeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_BeaconObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSH_EmptyTumbleWObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLightfootObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_levelcontrolObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_MusicTreeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_totempoleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_CloudrunnerAObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_totempuzzleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_totembondObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSC_totemstrengthObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPaymentKioskObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLavaBall1BEObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLavaBall1BFObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMLogFireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMSnowBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMSnowBall1C2ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMGateObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMIceWallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMBarrierObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMCannonObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMLavaSmashObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMBridgeCogMaiObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMDismountPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gExplosionObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMWoodDoor2ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMMagicBridgeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_LevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1CEObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1CFObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_trickyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMTruthHornIceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWorldPlanetObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWorldObjObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWorldAsteroidsObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2ConveyorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1D6ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2SnowBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2PathGeneratorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2PrisonMammothObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1DAObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1DBObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2IceFloeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2IcicleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM2LavaControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1DFObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_BossObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_BossGutObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_BossTonsilObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_BossGut2ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMAGICMakerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIM_BossSpitObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMbosscrackparObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMbossfireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_GalleonObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_PropellerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_ShipHeadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_ShipMastObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_ShipGunObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_FireBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_CannonBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_CloudBallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_KyteCageObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_SeqDoorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_CageKyteObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_MiniFireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1F4ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1F5ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1F6ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_ShipGunBrokeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_GalleonObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_ObjCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_seqobjectObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1FBObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLaserBeamObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_LaserTargetObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPressureSwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll1FFObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll200ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_colriseObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll202ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll203ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_TorchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll205ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLightSourceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_WormObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll208ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_LevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_GeneralScalesObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFireFlyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_spiritplaceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_seqpointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_sunObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_SpiritSetObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_PlanetsObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_WallCrawlerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll212ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll213ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll214ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWM_newcrystalObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_LevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_ObjCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_MiniFireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll219ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_statueballObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll21BObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_LaddersObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFPLiftObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_Block1ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_PlatformObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_DoorSwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSeqPointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFPDragHeadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_coreplatObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll224ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_flamepointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_lavapoolObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_lavastarObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVFP_SpellPlaceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFP_LevelControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFP_ObjCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFP_TorchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll22CObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFP_seqpointObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDoorswitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfpfloorbarObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gChukaObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTrickyCurveObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDFP_RotatePObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfpstatue1ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfperchwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfptargetblockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLaserUnsupportedObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gLaserObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFireObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTextBlockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPlatform1ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfplightniObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfppowerslObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll23DObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll23EObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDB_eggObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGCRobotBlastObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrakorEnergyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDBstealerwormObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDBHoleControl1ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll244ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll245ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll246ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll247ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll248ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll249ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll24AObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll24BObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll24CObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBossDrakorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrakorDThornBushObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtRexLevelObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtRexObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtRexFloorSwitchObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtLazerwallObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtLazerlightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKtFallingrocksObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSnowBikeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDIMSnowHorn1ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDR_EarthWarriorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDR_CloudRunnerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSB_CloudRunnerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gStaticCameraObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMoonSeedPlantingSpotObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSnowClawObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCrCloudRaceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSpellStoneObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCrFuelTankObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProximityMineObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrLaserCannonObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrakorMissileObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGmMazeWellObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll264ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrCreatorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gKytesMumObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll267ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrCageControlObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gExplodePlanObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll26AObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrChimmeyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrCageWithObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll26DObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrShackleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrGeneratorObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll270ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrakorHoverPadObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gHighTopObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gFirePipeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll274ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll275ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll276ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll277ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll278ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrEnergyDiscObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll27AObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll27BObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrLightBeaObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll27DObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrMusicContObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll27FObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrCloudPerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrEarthCalObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBarrelGenerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDrBarrelGrObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gShopItemObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gShopObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gShopKeeperObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSPScarabObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSPDrapeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSPitembeamObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gEarthWalkerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll28BObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCBouncyCraObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCLevelContObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCBeaconObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCPressureSObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCPushBlockObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCTileObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCTrexStatuObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSunTempleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCTempleObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCApertureSObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCTempleDiaObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCTempleBriObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWCFloorTileObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll299ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWArwingObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gArwingAndrossStuffObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWArwingBoObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWArwingGuObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll29EObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWBombCollObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gRingObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWLevelConObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWSpeedStrObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll2A3ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDll2A4ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWGeneratoObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWSquadronObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWProximitObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gARWBlockerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gPointLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDirectionalLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gProjectedLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gControlLightObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSoftBodyObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gWaterFlowWeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTreeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gBrokenPipeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCmbSrcObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDustMoteSouObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVortexObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCNTcounterObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTimerObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gCNThitObjecObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMCUpgradeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMCUpgradeMaObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMCStaffEffeObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gMCLightningObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gGF_LevelConObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAndrossObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAndrossHandObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAndrossBrainObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gAndrossLighObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gTitleScreenObjDescriptor),
     NULL,
 };
 

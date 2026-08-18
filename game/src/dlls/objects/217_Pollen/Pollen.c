@@ -33,22 +33,7 @@
 #define POLLEN_PARTFX_MOTE                 0x4ba
 #define POLLEN_MODEL_FLAGS                 0x810
 
-ObjectDescriptor gPollenObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Pollen_initialise,
-    (ObjectDescriptorCallback)Pollen_release,
-    0,
-    (ObjectDescriptorCallback)Pollen_init,
-    (ObjectDescriptorCallback)Pollen_update,
-    (ObjectDescriptorCallback)Pollen_hitDetect,
-    (ObjectDescriptorCallback)Pollen_render,
-    (ObjectDescriptorCallback)Pollen_free,
-    (ObjectDescriptorCallback)Pollen_getObjectTypeId,
-    Pollen_getExtraSize,
-};
+
 
 int Pollen_getExtraSize(void) {
     return sizeof(PollenState);
@@ -191,3 +176,20 @@ void Pollen_release(void) {
 
 void Pollen_initialise(void) {
 }
+
+ObjectDescriptor gPollenObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)Pollen_initialise,
+    (ObjectDescriptorCallback)Pollen_release,
+    0,
+    (ObjectDescriptorCallback)Pollen_init,
+    (ObjectDescriptorCallback)Pollen_update,
+    (ObjectDescriptorCallback)Pollen_hitDetect,
+    (ObjectDescriptorCallback)Pollen_render,
+    (ObjectDescriptorCallback)Pollen_free,
+    (ObjectDescriptorCallback)Pollen_getObjectTypeId,
+    Pollen_getExtraSize,
+};

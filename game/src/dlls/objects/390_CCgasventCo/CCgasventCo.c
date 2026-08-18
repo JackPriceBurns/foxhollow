@@ -136,22 +136,7 @@ void ccGasVentControl_render(GameObject* obj, int renderArg2, int renderArg3, in
     }
 }
 
-ObjectDescriptor gCCGasVentControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccGasVentControl_init,
-    (ObjectDescriptorCallback)ccGasVentControl_update,
-    0,
-    (ObjectDescriptorCallback)ccGasVentControl_render,
-    (ObjectDescriptorCallback)ccGasVentControl_free,
-    0,
-    ccGasVentControl_getExtraSize,
-};
+
 
 void ccGasVentControl_update(GameObject* obj) {
     CCGasVentControlState* state = obj->extra;
@@ -253,3 +238,20 @@ void ccGasVentControl_init(GameObject* obj, const CCGasVentControlPlacement* pla
         state->phase = CC_GAS_VENT_CONTROL_PHASE_COMPLETE;
     }
 }
+
+ObjectDescriptor gCCGasVentControlObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)ccGasVentControl_init,
+    (ObjectDescriptorCallback)ccGasVentControl_update,
+    0,
+    (ObjectDescriptorCallback)ccGasVentControl_render,
+    (ObjectDescriptorCallback)ccGasVentControl_free,
+    0,
+    ccGasVentControl_getExtraSize,
+};

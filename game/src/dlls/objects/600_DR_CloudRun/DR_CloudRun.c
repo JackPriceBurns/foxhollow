@@ -1343,6 +1343,10 @@ DRCloudRunnerMoveParams gDRCloudRunnerMoveParamTable = {
     { 0.02f, 0.02f, 0.04f, 0.01f },
 };
 
+
+
+char sOnCloudFormat[] = "ON CLOUD=%d\n";
+
 ObjectDescriptor24 gDR_CloudRunnerObjDescriptor = {
     0,
     0,
@@ -1373,5 +1377,3 @@ ObjectDescriptor24 gDR_CloudRunnerObjDescriptor = {
     (ObjectDescriptorCallback)DR_CloudRunner_handleRiderScale,
     (ObjectDescriptorCallback)DR_CloudRunner_func23,
 };
-
-char sOnCloudFormat[] = "ON CLOUD=%d\n";

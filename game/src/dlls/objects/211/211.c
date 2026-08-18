@@ -220,22 +220,7 @@ u8 gStaffActionHitReactionDamage[32] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
 };
 
-ObjectDescriptor dll_D3 = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_D3_initialise,
-    (ObjectDescriptorCallback)dll_D3_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_D3_init,
-    (ObjectDescriptorCallback)dll_D3_update,
-    (ObjectDescriptorCallback)dll_D3_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_D3_render,
-    (ObjectDescriptorCallback)dll_D3_free,
-    (ObjectDescriptorCallback)dll_D3_getObjectTypeId,
-    dll_D3_getExtraSize_ret_1188,
-};
+
 
 #define LANDED_ARWING_OBJECT_PAIR_PRIORITY 9
 #define LANDED_ARWING_OBJECT_PAIR_HIT_VOLUME 1
@@ -1414,3 +1399,20 @@ void dll_D3_initialise(void)
     gLandedArwingStateHandlers[4] = LandedArwing_TriggerLaunchTarget;
     gLandedArwingDefaultStateHandler = LandedArwing_ReturnZero;
 }
+
+ObjectDescriptor gDllD3ObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dll_D3_initialise,
+    (ObjectDescriptorCallback)dll_D3_release_nop,
+    0,
+    (ObjectDescriptorCallback)dll_D3_init,
+    (ObjectDescriptorCallback)dll_D3_update,
+    (ObjectDescriptorCallback)dll_D3_hitDetect_nop,
+    (ObjectDescriptorCallback)dll_D3_render,
+    (ObjectDescriptorCallback)dll_D3_free,
+    (ObjectDescriptorCallback)dll_D3_getObjectTypeId,
+    dll_D3_getExtraSize_ret_1188,
+};

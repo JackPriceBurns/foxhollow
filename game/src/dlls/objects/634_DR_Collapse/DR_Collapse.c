@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDR_CollapseNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll27AObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

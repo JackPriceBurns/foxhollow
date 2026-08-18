@@ -9,10 +9,8 @@
 #include "main/dll/dll_00AD_projmagicemmit1.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjmagicemmit1DoNoLongerSupported[];
-
 int projmagicemmit1_doUnsupported(void) {
-    OSReport(sProjmagicemmit1DoNoLongerSupported);
+    OSReport("<projmagicemmit1 Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,5 +27,3 @@ Projmagicemmit1ResourceDescriptor gProjmagicemmit1ResourceDescriptor = {
     NULL,
     projmagicemmit1_doUnsupported,
 };
-
-char sProjmagicemmit1DoNoLongerSupported[] = "<projmagicemmit1 Do>No Longer supported \n";

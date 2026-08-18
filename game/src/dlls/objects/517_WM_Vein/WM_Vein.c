@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gWMVeinNullResourceDescriptor[12] = {0};
+ObjectDescriptor gDll205ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

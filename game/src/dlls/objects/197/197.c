@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDllC5NullResourceDescriptor[12] = {0xFFFFFFFF};
+ObjectDescriptor gDllC5ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0xFFFFFFFF);

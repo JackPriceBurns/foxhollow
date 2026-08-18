@@ -403,22 +403,7 @@ u8 gSHthorntailRootControlMode2Locomotion8ImpactSfxTable[] = {
     0x01, 0x31, 0x01, 0x30, 0x01, 0x30, 0x01, 0x32, 0x01, 0x31, 0x00, 0x00,
 };
 
-ObjectDescriptor gSH_thorntailObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SHthorntail_init,
-    (ObjectDescriptorCallback)SHthorntail_update,
-    0,
-    (ObjectDescriptorCallback)SHthorntail_render,
-    (ObjectDescriptorCallback)SHthorntail_free,
-    0,
-    SHthorntail_getExtraSize,
-};
+
 
 char sSHthorntailAngleYawDebug[] = "angle %d, obj-yaw %d\n";
 char sSHthorntailSourceFile[] = "SHthorntail.c";
@@ -1183,3 +1168,20 @@ void SHthorntail_init(GameObject* obj, const SHthorntailPlacement* placement) {
     dll_2E_setReattackDelay((MoveLibState*)runtime, 400, 0x78);
     objAddObjectType(obj, SHTHORNTAIL_OBJECT_GROUP);
 }
+
+ObjectDescriptor gSH_thorntailObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)SHthorntail_init,
+    (ObjectDescriptorCallback)SHthorntail_update,
+    0,
+    (ObjectDescriptorCallback)SHthorntail_render,
+    (ObjectDescriptorCallback)SHthorntail_free,
+    0,
+    SHthorntail_getExtraSize,
+};

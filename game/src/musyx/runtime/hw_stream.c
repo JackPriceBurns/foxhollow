@@ -1,44 +1,28 @@
 #include "musyx/hw_stream.h"
-
 #include "musyx/dsp_voice_state.h"
 #include "musyx/hw_dspctrl.h"
 #include "musyx/aram.h"
 #include "musyx/aram_queue.h"
 #include "dolphin/os/OSCache.h"
 
-
-u32 hwRemoveInput(u8 studio, SND_STUDIO_INPUT* input)
-{
+u32 hwRemoveInput(u8 studio, SND_STUDIO_INPUT* input) {
     return salRemoveStudioInput(&dspStudio[studio], input);
 }
 
-u32 hwChangeStudio(u32 slot)
-{
-    int mode;
-    u32 pos;
-    u32 lowBits;
-    int samplePos;
-    DSPvoice* voice;
-    DSPvoice* curVoice;
-
-    voice = &dspVoice[slot];
-    if (voice->state != DSP_VOICE_STATE_ACTIVE)
-    {
+u32 hwChangeStudio(u32 slot) {
+    DSPvoice* voice = &dspVoice[slot];
+    if (voice->state != DSP_VOICE_STATE_ACTIVE) {
         return 0;
     }
-    mode = voice->smp_info.compType;
-    switch (mode)
-    {
+
+    switch (voice->smp_info.compType) {
     case SAMPLE_TYPE_ADPCM:
     case SAMPLE_TYPE_ADPCM_PLUS:
     case SAMPLE_TYPE_STREAM_ADPCM:
     case SAMPLE_TYPE_VIRTUAL_ADPCM:
-        curVoice = (DSPvoice*)((u8*)dspVoice + slot * sizeof(DSPvoice));
-        pos = curVoice->currentAddr;
-        samplePos = ((pos - 2 * (u32)curVoice->smp_info.addr) >> 4) * 0xe;
-        lowBits = pos & 0xf;
-        if (lowBits < 2)
-        {
+        int samplePos = ((voice->currentAddr - 2 * (u32)voice->smp_info.addr) >> 4) * 0xe;
+        u32 lowBits = voice->currentAddr & 0xf;
+        if (lowBits < 2) {
             return samplePos;
         }
         samplePos = lowBits + samplePos;
@@ -52,28 +36,22 @@ u32 hwChangeStudio(u32 slot)
     }
 }
 
-void hwGetPos(void* buffer, u32 streamPos, u32 byteCount, u8 streamHandle, void (*callback)(u32), u32 callbackArg)
-{
-    u32 offset;
-    u8* addr;
+void hwGetPos(void* buffer, u32 streamPos, u32 byteCount, u8 streamHandle, void (*callback)(u32), u32 callbackArg) {
     u32 streamLength;
-
-    addr = buffer;
-    offset = aramGetStreamBufferAddress(streamHandle, &streamLength);
+    u8* addr = buffer;
+    u32 offset = aramGetStreamBufferAddress(streamHandle, &streamLength);
     byteCount += streamPos & 0x1f;
     streamPos &= 0xffffffe0;
-    byteCount = (byteCount + 0x1f) & ~0x1f;
+    byteCount = byteCount + 0x1f & ~0x1f;
     addr += streamPos;
     DCStoreRange(addr, byteCount);
     aramUploadData(addr, offset + streamPos, byteCount, 1, callback, callbackArg);
 }
 
-void* hwFlushStream(u8 streamHandle)
-{
+void* hwFlushStream(u8 streamHandle) {
     return (void*)aramGetStreamBufferAddress(streamHandle, 0);
 }
 
-void* hwTransAddr(void* samples)
-{
+void* hwTransAddr(void* samples) {
     return samples;
 }

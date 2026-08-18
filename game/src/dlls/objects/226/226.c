@@ -687,35 +687,7 @@ void staff_getHitGeometryPoints(GameObject* obj, f32* outA, f32* outB) {
     outB[1] = state->geometryPointBY[0];
     outB[2] = state->geometryPointBZ[0];
 }
-ObjectDescriptor23 gStaffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_23_SLOTS,
-    (ObjectDescriptorCallback)staff_initialise,
-    (ObjectDescriptorCallback)staff_release,
-    0,
-    (ObjectDescriptorCallback)staff_init,
-    (ObjectDescriptorCallback)staff_update,
-    (ObjectDescriptorCallback)staff_hitDetect,
-    (ObjectDescriptorCallback)staff_render,
-    (ObjectDescriptorCallback)staff_free,
-    (ObjectDescriptorCallback)staff_getObjectTypeId,
-    staff_getExtraSize,
-    (ObjectDescriptorCallback)staff_func0A,
-    (ObjectDescriptorCallback)staff_func0B,
-    (ObjectDescriptorCallback)staff_updateSwipe,
-    (ObjectDescriptorCallback)staff_hitDetectGeometry,
-    (ObjectDescriptorCallback)staff_func0E,
-    (ObjectDescriptorCallback)staff_func0F,
-    (ObjectDescriptorCallback)staff_func10,
-    (ObjectDescriptorCallback)staff_setHitReactValue,
-    (ObjectDescriptorCallback)staff_addHitReactValue,
-    (ObjectDescriptorCallback)staff_getHitReactValue,
-    (ObjectDescriptorCallback)staff_getHitGeometryPoints,
-    (ObjectDescriptorCallback)staff_startSwipe,
-    (ObjectDescriptorCallback)staff_getSwipeTextureIndex,
-};
+
 
 s32 staff_getSwipeTextureIndex(GameObject* obj) {
     return ((StaffState*)obj->extra)->swipeTextureIndex;
@@ -1008,3 +980,33 @@ void staff_initialise(void) {
     i = 0;
     staff_initialiseBody(sStaffContactSfxIds, i);
 }
+
+ObjectDescriptor23 gStaffObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_23_SLOTS,
+    (ObjectDescriptorCallback)staff_initialise,
+    (ObjectDescriptorCallback)staff_release,
+    0,
+    (ObjectDescriptorCallback)staff_init,
+    (ObjectDescriptorCallback)staff_update,
+    (ObjectDescriptorCallback)staff_hitDetect,
+    (ObjectDescriptorCallback)staff_render,
+    (ObjectDescriptorCallback)staff_free,
+    (ObjectDescriptorCallback)staff_getObjectTypeId,
+    staff_getExtraSize,
+    (ObjectDescriptorCallback)staff_func0A,
+    (ObjectDescriptorCallback)staff_func0B,
+    (ObjectDescriptorCallback)staff_updateSwipe,
+    (ObjectDescriptorCallback)staff_hitDetectGeometry,
+    (ObjectDescriptorCallback)staff_func0E,
+    (ObjectDescriptorCallback)staff_func0F,
+    (ObjectDescriptorCallback)staff_func10,
+    (ObjectDescriptorCallback)staff_setHitReactValue,
+    (ObjectDescriptorCallback)staff_addHitReactValue,
+    (ObjectDescriptorCallback)staff_getHitReactValue,
+    (ObjectDescriptorCallback)staff_getHitGeometryPoints,
+    (ObjectDescriptorCallback)staff_startSwipe,
+    (ObjectDescriptorCallback)staff_getSwipeTextureIndex,
+};

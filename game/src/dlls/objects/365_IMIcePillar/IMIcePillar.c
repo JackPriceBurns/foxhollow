@@ -1,5 +1,4 @@
 #include "dlls/objects/365_IMIcePillar.h"
-
 #include "main/object_render.h"
 
 int imIcePillar_getExtraSize(void) {
@@ -14,9 +13,11 @@ void imIcePillar_free(void) {
 }
 
 void imIcePillar_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    if (visible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void imIcePillar_hitDetect(void) {

@@ -34,25 +34,7 @@ FlameThrowerspeHitProfile gFlameThrowerspeHitProfiles[FLAMETHROWERSPE_HIT_PROFIL
     {0x4F, 0x00C4FF00, 0x1E},
 };
 
-ObjectDescriptor13 gFlameThrowerspeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    (ObjectDescriptorCallback)FlameThrowerspe_initialise,
-    (ObjectDescriptorCallback)FlameThrowerspe_release,
-    0,
-    (ObjectDescriptorCallback)FlameThrowerspe_init,
-    (ObjectDescriptorCallback)FlameThrowerspe_update,
-    (ObjectDescriptorCallback)FlameThrowerspe_hitDetect,
-    (ObjectDescriptorCallback)FlameThrowerspe_render,
-    (ObjectDescriptorCallback)FlameThrowerspe_free,
-    (ObjectDescriptorCallback)FlameThrowerspe_getObjectTypeId,
-    FlameThrowerspe_getExtraSize,
-    (ObjectDescriptorCallback)FlameThrowerspe_setTransform,
-    (ObjectDescriptorCallback)FlameThrowerspe_launch,
-    (ObjectDescriptorCallback)FlameThrowerspe_modelMtxFn,
-};
+
 
 void FlameThrowerspe_modelMtxFn(void) {
 }
@@ -154,3 +136,23 @@ void FlameThrowerspe_release(void) {
 
 void FlameThrowerspe_initialise(void) {
 }
+
+ObjectDescriptor13 gFlameThrowerspeObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+    (ObjectDescriptorCallback)FlameThrowerspe_initialise,
+    (ObjectDescriptorCallback)FlameThrowerspe_release,
+    0,
+    (ObjectDescriptorCallback)FlameThrowerspe_init,
+    (ObjectDescriptorCallback)FlameThrowerspe_update,
+    (ObjectDescriptorCallback)FlameThrowerspe_hitDetect,
+    (ObjectDescriptorCallback)FlameThrowerspe_render,
+    (ObjectDescriptorCallback)FlameThrowerspe_free,
+    (ObjectDescriptorCallback)FlameThrowerspe_getObjectTypeId,
+    FlameThrowerspe_getExtraSize,
+    (ObjectDescriptorCallback)FlameThrowerspe_setTransform,
+    (ObjectDescriptorCallback)FlameThrowerspe_launch,
+    (ObjectDescriptorCallback)FlameThrowerspe_modelMtxFn,
+};

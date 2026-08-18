@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDFSH_Door1SNullResourceDescriptor[12] = {0xFFFFFFFF};
+ObjectDescriptor gDll176ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0xFFFFFFFF);

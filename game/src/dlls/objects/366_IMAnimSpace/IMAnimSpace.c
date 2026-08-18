@@ -37,25 +37,7 @@ int imAnimSpace_isSubmodelEnabled(GameObject* obj, int bitIndex) {
     }
 }
 
-ObjectDescriptor13 gIMAnimSpaceObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    (ObjectDescriptorCallback)imAnimSpace_initialise,
-    (ObjectDescriptorCallback)imAnimSpace_release,
-    0,
-    (ObjectDescriptorCallback)imAnimSpace_init,
-    (ObjectDescriptorCallback)imAnimSpace_update,
-    (ObjectDescriptorCallback)imAnimSpace_hitDetect,
-    (ObjectDescriptorCallback)imAnimSpace_render,
-    (ObjectDescriptorCallback)imAnimSpace_free,
-    (ObjectDescriptorCallback)imAnimSpace_getObjectTypeId,
-    imAnimSpace_getExtraSize,
-    (ObjectDescriptorCallback)imAnimSpace_isSubmodelEnabled,
-    (ObjectDescriptorCallback)imAnimSpace_getEventFlag,
-    (ObjectDescriptorCallback)imAnimSpace_modelMtxCallback,
-};
+
 
 int imAnimSpace_sequenceCallback(GameObject* obj, int unusedArg2, ObjSeqState* animUpdate) {
     IMAnimSpaceState* state;
@@ -164,3 +146,23 @@ void imAnimSpace_release(void) {
 
 void imAnimSpace_initialise(void) {
 }
+
+ObjectDescriptor13 gIMAnimSpaceObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+    (ObjectDescriptorCallback)imAnimSpace_initialise,
+    (ObjectDescriptorCallback)imAnimSpace_release,
+    0,
+    (ObjectDescriptorCallback)imAnimSpace_init,
+    (ObjectDescriptorCallback)imAnimSpace_update,
+    (ObjectDescriptorCallback)imAnimSpace_hitDetect,
+    (ObjectDescriptorCallback)imAnimSpace_render,
+    (ObjectDescriptorCallback)imAnimSpace_free,
+    (ObjectDescriptorCallback)imAnimSpace_getObjectTypeId,
+    imAnimSpace_getExtraSize,
+    (ObjectDescriptorCallback)imAnimSpace_isSubmodelEnabled,
+    (ObjectDescriptorCallback)imAnimSpace_getEventFlag,
+    (ObjectDescriptorCallback)imAnimSpace_modelMtxCallback,
+};

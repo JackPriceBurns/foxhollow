@@ -13,10 +13,8 @@
 #include "main/dll/dll_00BB_projwallpower.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjwallpowerDoNoLongerSupported[];
-
 int projwallpower_doUnsupported(void) {
-    OSReport(sProjwallpowerDoNoLongerSupported);
+    OSReport("<projwallpower Do>No Longer supported \n");
     return 0;
 }
 
@@ -33,5 +31,3 @@ ProjwallpowerResourceDescriptor gProjwallpowerResourceDescriptor = {
     NULL,
     projwallpower_doUnsupported,
 };
-
-char sProjwallpowerDoNoLongerSupported[] = "<projwallpower Do>No Longer supported \n";

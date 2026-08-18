@@ -34,22 +34,7 @@
 #define ARWARWINGBO_PARTFX          0x79e
 #define ARWARWINGBO_HIT_VOLUME_SLOT 5
 
-ObjectDescriptor gARWArwingBoObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwarwingbo_initialise,
-    (ObjectDescriptorCallback)arwarwingbo_release,
-    NULL,
-    (ObjectDescriptorCallback)arwarwingbo_init,
-    (ObjectDescriptorCallback)arwarwingbo_update,
-    (ObjectDescriptorCallback)arwarwingbo_hitDetect,
-    (ObjectDescriptorCallback)arwarwingbo_render,
-    (ObjectDescriptorCallback)arwarwingbo_free,
-    (ObjectDescriptorCallback)arwarwingbo_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwarwingbo_getExtraSize,
-};
+
 
 static void arwarwingbo_detonate(GameObject* obj)
 {
@@ -196,3 +181,20 @@ void arwarwingbo_setActiveVisible(GameObject* obj, u8 active, u8 visible)
         (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
     }
 }
+
+ObjectDescriptor gARWArwingBoObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)arwarwingbo_initialise,
+    (ObjectDescriptorCallback)arwarwingbo_release,
+    NULL,
+    (ObjectDescriptorCallback)arwarwingbo_init,
+    (ObjectDescriptorCallback)arwarwingbo_update,
+    (ObjectDescriptorCallback)arwarwingbo_hitDetect,
+    (ObjectDescriptorCallback)arwarwingbo_render,
+    (ObjectDescriptorCallback)arwarwingbo_free,
+    (ObjectDescriptorCallback)arwarwingbo_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)arwarwingbo_getExtraSize,
+};

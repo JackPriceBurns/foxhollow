@@ -20,11 +20,11 @@ void dll_1CF_free(void) {
 }
 
 void dll_1CF_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 isVisible = visible;
-
-    if (isVisible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void dll_1CF_hitDetect(void) {
@@ -36,12 +36,11 @@ void dll_1CF_update(void) {
 void dll_1CF_init(GameObject* obj, const Dll1CFPlacementView* placement) {
     s16 gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
     s16 rotationYDegrees = ObjAnim_ReadPlacementS16(&obj->anim, &placement->rotationYDegrees);
-    if (mainGetBit(gateGameBit) != 0u) {
-        obj->anim.rotY = (s16)(((s32)rotationYDegrees << 13) / 45);
+    if (mainGetBit(gateGameBit) != 0) {
+        obj->anim.rotY = (rotationYDegrees << 13) / 45;
     }
-    obj->anim.rotX = (s16)((s32)placement->rotationXByte << 8);
-    obj->objectFlags = (u16)(obj->objectFlags | (OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN |
-                                                 OBJECT_OBJFLAG_UPDATE_DISABLED));
+    obj->anim.rotX = placement->rotationXByte << 8;
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_UPDATE_DISABLED;
 }
 
 void dll_1CF_release(void) {

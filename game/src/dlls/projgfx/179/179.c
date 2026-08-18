@@ -9,18 +9,8 @@
 #include "main/dll/dll_00B3_projlightning4.h"
 #include "dolphin/os/OSReport.h"
 
-Projlightning4ResourceDescriptor gProjlightning4ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning4_initialise,
-    projlightning4_release,
-    NULL,
-    projlightning4_doUnsupported,
-};
-
-char sProjlightning4DoNoLongerSupported[] = "<projlightning4 Do>No Longer supported \n";
-
 int projlightning4_doUnsupported(void) {
-    OSReport(sProjlightning4DoNoLongerSupported);
+    OSReport("<projlightning4 Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,3 +19,11 @@ void projlightning4_release(void) {
 
 void projlightning4_initialise(void) {
 }
+
+Projlightning4ResourceDescriptor gProjlightning4ResourceDescriptor = {
+    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
+    projlightning4_initialise,
+    projlightning4_release,
+    NULL,
+    projlightning4_doUnsupported,
+};

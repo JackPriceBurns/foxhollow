@@ -87,22 +87,7 @@ typedef enum Dll19BAnimEvent {
 /* Engine-owned environment-effect override; this unit consumes its first word. */
 u32 gDll19BShaderResult;
 
-ObjectDescriptor gDll19BObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll411_initialise,
-    (ObjectDescriptorCallback)dll411_release,
-    NULL,
-    (ObjectDescriptorCallback)dll411_init,
-    (ObjectDescriptorCallback)dll411_update,
-    (ObjectDescriptorCallback)dll411_hitDetect,
-    (ObjectDescriptorCallback)dll411_render,
-    (ObjectDescriptorCallback)dll411_free,
-    (ObjectDescriptorCallback)dll411_getObjectTypeId,
-    dll411_getExtraSize,
-};
+
 
 int dll411_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqState* animUpdate) {
     Dll19BState* state;
@@ -433,3 +418,20 @@ void dll411_release(void) {
 
 void dll411_initialise(void) {
 }
+
+ObjectDescriptor gDll19BObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dll411_initialise,
+    (ObjectDescriptorCallback)dll411_release,
+    NULL,
+    (ObjectDescriptorCallback)dll411_init,
+    (ObjectDescriptorCallback)dll411_update,
+    (ObjectDescriptorCallback)dll411_hitDetect,
+    (ObjectDescriptorCallback)dll411_render,
+    (ObjectDescriptorCallback)dll411_free,
+    (ObjectDescriptorCallback)dll411_getObjectTypeId,
+    dll411_getExtraSize,
+};

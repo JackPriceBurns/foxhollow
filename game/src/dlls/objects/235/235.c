@@ -10,7 +10,6 @@
 #include "main/objtype.h"
 
 #define SIDEREPEL_OBJECT_GROUP 0x40
-#define SIDEREPEL_RADIUS_SHIFT 3
 
 int siderepel_getExtraSize(void) {
     return sizeof(SideRepelState);
@@ -23,9 +22,10 @@ void siderepel_free(GameObject* obj) {
 void siderepel_init(GameObject* obj, SideRepelPlacement* placement) {
     obj->objectFlags |= OBJECT_OBJFLAG_UPDATE_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
     objAddObjectType(obj, SIDEREPEL_OBJECT_GROUP);
-    if (obj->anim.hitReactState != NULL) {
-        ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, (s16)(ObjAnim_ReadPlacementU16(&obj->anim, &(placement->radius)) >> SIDEREPEL_RADIUS_SHIFT));
+    if (obj->anim.hitReactState == NULL) {
+        return;
     }
+    ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, ObjAnim_ReadPlacementU16(&obj->anim, &placement->radius) >> 3);
 }
 
 ObjectDescriptor gSiderepelObjDescriptor = {

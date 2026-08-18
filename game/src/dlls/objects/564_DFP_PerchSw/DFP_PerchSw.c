@@ -5,42 +5,33 @@
 #include "main/dll/DF/dll_0234_dfperchwitch.h"
 #include "dolphin/os/OSReport.h"
 
-int dfperchwitch_getExtraSize(void)
-{
+int dfperchwitch_getExtraSize(void) {
     return 0x0;
 }
-int dfperchwitch_getObjectTypeId(void)
-{
+int dfperchwitch_getObjectTypeId(void) {
     return 0x0;
 }
 
-void dfperchwitch_free(void)
-{
+void dfperchwitch_free(void) {
 }
 
-void dfperchwitch_render(void)
-{
+void dfperchwitch_render(void) {
 }
 
-void dfperchwitch_hitDetect(void)
-{
+void dfperchwitch_hitDetect(void) {
 }
 
-void dfperchwitch_update(void)
-{
-    OSReport(sDfperchwitchInitNoLongerSupported);
+void dfperchwitch_update(void) {
+    OSReport("<dfperchwitch Init>No Longer supported \n");
 }
-void dfperchwitch_init(void)
-{
-    OSReport(sDfperchwitchInitNoLongerSupported);
+void dfperchwitch_init(void) {
+    OSReport("<dfperchwitch Init>No Longer supported \n");
 }
 
-void dfperchwitch_release(void)
-{
+void dfperchwitch_release(void) {
 }
 
-void dfperchwitch_initialise(void)
-{
+void dfperchwitch_initialise(void) {
 }
 
 ObjectDescriptor gDfperchwitchObjDescriptor = {
@@ -59,5 +50,3 @@ ObjectDescriptor gDfperchwitchObjDescriptor = {
     (ObjectDescriptorCallback)dfperchwitch_getObjectTypeId,
     dfperchwitch_getExtraSize,
 };
-
-char sDfperchwitchInitNoLongerSupported[] = "<dfperchwitch Init>No Longer supported \n";

@@ -1,9 +1,19 @@
 #ifndef MAIN_DLL_VF_DLL_021E_VFPBLOCK1_H_
 #define MAIN_DLL_VF_DLL_021E_VFPBLOCK1_H_
 
-typedef struct VfpBlock1Placement VfpBlock1Placement;
+#include "game/objects/object_fwd.h"
+#include "game/objects/object_setup.h"
 
-typedef struct GameObject GameObject;
+typedef struct VfpBlock1State {
+    s16 gameBitId;
+} VfpBlock1State;
+
+typedef struct VfpBlock1Placement {
+    ObjPlacement base;
+    s8 rotXByte;
+    u8 pad19[5];
+    s16 gameBitId;
+} VfpBlock1Placement;
 
 int VFP_Block1_getExtraSize(void);
 int VFP_Block1_getObjectTypeId(void);

@@ -4,16 +4,15 @@
  * trigger a Tricky companion-pickup sequence: clears bits 0x4E4/0x4E5, then
  * asks Tricky to move to this object through his export table.
  */
+#include "main/dll/dll_01D0_dimtricky.h"
 #include "sys/objects/lifecycle.h"
 #include "dlls/object_descriptor.h"
 #include "main/object_render.h"
 #include "main/dll/dll_00C4_tricky.h"
-#include "main/dll/dll_01D0_dimtricky.h"
 #include "main/gamebits.h"
 #include "main/gamebit_ids.h"
 
-enum
-{
+enum {
     DIMTRICKY_STATE_WAIT_TRIGGER = 0,
     DIMTRICKY_STATE_HAND_CONTROL = 1,
     DIMTRICKY_STATE_MOVE_TO_OBJECT = 2,
@@ -22,49 +21,36 @@ enum
 
 #define DIMTRICKY_TRIGGER_GAMEBIT 0xA1B
 
-typedef struct DimTrickyState
-{
-    u8 phase;
-} DimTrickyState;
-
 STATIC_ASSERT(sizeof(DimTrickyState) == 0x1);
 
-int dim_tricky_getExtraSize(void)
-{
+int dim_tricky_getExtraSize(void) {
     return sizeof(DimTrickyState);
 }
 
-int dim_tricky_getObjectTypeId(void)
-{
+int dim_tricky_getObjectTypeId(void) {
     return 0x0;
 }
 
-void dim_tricky_free(void)
-{
+void dim_tricky_free(void) {
 }
 
-void dim_tricky_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
-{
+void dim_tricky_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void dim_tricky_hitDetect(void)
-{
+void dim_tricky_hitDetect(void) {
 }
 
-void dim_tricky_update(GameObject* obj)
-{
+void dim_tricky_update(GameObject* obj) {
     DimTrickyState* state = obj->extra;
     GameObject* trickyObj = getTrickyObject();
-    if (trickyObj == NULL)
-    {
+    if (trickyObj == NULL) {
         return;
     }
-    switch (state->phase)
-    {
+
+    switch (state->phase) {
     case DIMTRICKY_STATE_WAIT_TRIGGER:
-        if (mainGetBit(DIMTRICKY_TRIGGER_GAMEBIT) != 0)
-        {
+        if (mainGetBit(DIMTRICKY_TRIGGER_GAMEBIT) != 0) {
             mainSetBits(GAMEBIT_Tricky_Usable, 0);
             mainSetBits(GAMEBIT_TrickyWarpEnabled, 0);
             state->phase = DIMTRICKY_STATE_HAND_CONTROL;
@@ -82,11 +68,9 @@ void dim_tricky_update(GameObject* obj)
     }
 }
 
-void dim_tricky_init(GameObject* obj)
-{
-    u8 v = DIMTRICKY_STATE_WAIT_TRIGGER;
+void dim_tricky_init(GameObject* obj) {
     DimTrickyState* state = obj->extra;
-    state->phase = v;
+    state->phase = DIMTRICKY_STATE_WAIT_TRIGGER;
 }
 
 ObjectDescriptor gDIM_trickyObjDescriptor = {

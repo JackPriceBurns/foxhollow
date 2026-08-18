@@ -76,25 +76,7 @@ static void appleontree_setFallScale(AppleOnTreeState* state, f32 fallProgress) 
     }
 }
 
-ObjectDescriptor13 gAppleOnTreeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)AppleOnTree_init,
-    (ObjectDescriptorCallback)AppleOnTree_update,
-    0,
-    (ObjectDescriptorCallback)AppleOnTree_render,
-    (ObjectDescriptorCallback)AppleOnTree_free,
-    0,
-    AppleOnTree_getExtraSize,
-    (ObjectDescriptorCallback)AppleOnTree_func0A,
-    (ObjectDescriptorCallback)AppleOnTree_setPosition,
-    (ObjectDescriptorCallback)AppleOnTree_getAnimState,
-};
+
 
 void AppleOnTree_setPosition(GameObject* obj, f32* position) {
     AppleOnTreeState* state = obj->extra;
@@ -700,3 +682,23 @@ void AppleOnTree_init(GameObject* obj, AppleOnTreePlacement* placement) {
         ObjMsg_AllocQueue(obj, APPLE_ON_TREE_MESSAGE_QUEUE_SIZE);
     }
 }
+
+ObjectDescriptor13 gAppleOnTreeObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)AppleOnTree_init,
+    (ObjectDescriptorCallback)AppleOnTree_update,
+    0,
+    (ObjectDescriptorCallback)AppleOnTree_render,
+    (ObjectDescriptorCallback)AppleOnTree_free,
+    0,
+    AppleOnTree_getExtraSize,
+    (ObjectDescriptorCallback)AppleOnTree_func0A,
+    (ObjectDescriptorCallback)AppleOnTree_setPosition,
+    (ObjectDescriptorCallback)AppleOnTree_getAnimState,
+};

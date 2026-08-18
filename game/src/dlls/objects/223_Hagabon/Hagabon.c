@@ -65,22 +65,7 @@ STATIC_ASSERT(sizeof(HagabonAnimEventBuffer) == 0x20);
 int gHagabonCurveInitData[2] = {2, 3};
 int gHagabonLastCurvePoint;
 
-ObjectDescriptor gHagabonObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Hagabon_initialise,
-    (ObjectDescriptorCallback)Hagabon_release,
-    0,
-    (ObjectDescriptorCallback)Hagabon_init,
-    (ObjectDescriptorCallback)Hagabon_update,
-    (ObjectDescriptorCallback)Hagabon_hitDetect,
-    (ObjectDescriptorCallback)Hagabon_render,
-    (ObjectDescriptorCallback)Hagabon_free,
-    (ObjectDescriptorCallback)Hagabon_getObjectTypeId,
-    Hagabon_getExtraSize,
-};
+
 
 void Hagabon_updateMovement(GameObject* obj, HagabonState* state) {
     RomCurveWalker* curve;
@@ -355,3 +340,20 @@ void Hagabon_release(void) {
 
 void Hagabon_initialise(void) {
 }
+
+ObjectDescriptor gHagabonObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)Hagabon_initialise,
+    (ObjectDescriptorCallback)Hagabon_release,
+    0,
+    (ObjectDescriptorCallback)Hagabon_init,
+    (ObjectDescriptorCallback)Hagabon_update,
+    (ObjectDescriptorCallback)Hagabon_hitDetect,
+    (ObjectDescriptorCallback)Hagabon_render,
+    (ObjectDescriptorCallback)Hagabon_free,
+    (ObjectDescriptorCallback)Hagabon_getObjectTypeId,
+    Hagabon_getExtraSize,
+};

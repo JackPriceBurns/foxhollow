@@ -15,6 +15,23 @@
 
 CameraModeCrawlState* gCameraModeCrawlState;
 
+typedef struct CameraModeCrawlDefaultHandlerVTable {
+    void (*slots[6])(void);
+    void (*updatePitch)(f32 targetY, f32 distance, CameraObject* camera);
+} CameraModeCrawlDefaultHandlerVTable;
+
+typedef struct CameraModeCrawlDefaultHandler {
+    CameraModeCrawlDefaultHandlerVTable* vtable;
+} CameraModeCrawlDefaultHandler;
+
+typedef struct CameraModeCrawlDefaultHandlerEntry {
+    u16 actionId;
+    u8 pad02[2];
+    CameraModeCrawlDefaultHandler* handler;
+    u8 priority;
+    u8 pad09[3];
+} CameraModeCrawlDefaultHandlerEntry;
+
 void CameraModeCrawl_copyToCurrent(void* actionData, int recordSize) {
     CameraObject* camera;
     GameObject* target;
@@ -71,7 +88,7 @@ void CameraModeCrawl_update(CameraObject* camera) {
     f32 relativeY;
     f32 relativeZ;
     f32 relativeDistanceXZ;
-    int defaultHandler;
+    CameraModeCrawlDefaultHandlerEntry* defaultHandler;
 
     if (target == NULL) {
         return;
@@ -98,7 +115,7 @@ void CameraModeCrawl_update(CameraObject* camera) {
         camera->anim.rotX = (s16)(0x8000 - getAngle(relativeX, relativeZ));
         camera->anim.rotY = 2048;
     } else {
-        defaultHandler = (int)(*gCameraInterface)->getDefaultHandlerEntry();
+        defaultHandler = (*gCameraInterface)->getDefaultHandlerEntry();
         (*gCameraInterface)
             ->getRelativePosition(camera, &relativeX, &relativeY, &relativeZ, &relativeDistanceXZ, 35.0f, 0);
         {
@@ -112,8 +129,7 @@ void CameraModeCrawl_update(CameraObject* camera) {
             yawDelta = yawDelta + 0xffff;
         }
         camera->anim.rotX += yawDelta;
-        (*(void (**)(CameraObject*, f32, f32))(*(int*)(*(int*)(defaultHandler + 4)) + 24))(
-            camera, target->anim.worldPosY, relativeDistanceXZ);
+        defaultHandler->handler->vtable->updatePitch(target->anim.worldPosY, relativeDistanceXZ, camera);
     }
     Obj_TransformWorldPointToLocal(camera->anim.worldPosX, camera->anim.worldPosY, camera->anim.worldPosZ,
                                    &camera->anim.localPosX, &camera->anim.localPosY, &camera->anim.localPosZ,

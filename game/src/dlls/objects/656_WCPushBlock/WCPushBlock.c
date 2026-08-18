@@ -137,22 +137,7 @@ void wcpushblock_hitDetect(void)
 {
 }
 
-ObjectDescriptor gWCPushBlockObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wcpushblock_initialise,
-    (ObjectDescriptorCallback)wcpushblock_release,
-    0,
-    (ObjectDescriptorCallback)wcpushblock_init,
-    (ObjectDescriptorCallback)wcpushblock_update,
-    (ObjectDescriptorCallback)wcpushblock_hitDetect,
-    (ObjectDescriptorCallback)wcpushblock_render,
-    (ObjectDescriptorCallback)wcpushblock_free,
-    (ObjectDescriptorCallback)wcpushblock_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wcpushblock_getExtraSize,
-};
+
 
 
 void wcpushblock_update(GameObject* obj)
@@ -620,3 +605,20 @@ void wcpushblock_initialise(void)
 
 
 #undef WCPUSHBLOCK_IFACE
+
+ObjectDescriptor gWCPushBlockObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)wcpushblock_initialise,
+    (ObjectDescriptorCallback)wcpushblock_release,
+    0,
+    (ObjectDescriptorCallback)wcpushblock_init,
+    (ObjectDescriptorCallback)wcpushblock_update,
+    (ObjectDescriptorCallback)wcpushblock_hitDetect,
+    (ObjectDescriptorCallback)wcpushblock_render,
+    (ObjectDescriptorCallback)wcpushblock_free,
+    (ObjectDescriptorCallback)wcpushblock_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)wcpushblock_getExtraSize,
+};

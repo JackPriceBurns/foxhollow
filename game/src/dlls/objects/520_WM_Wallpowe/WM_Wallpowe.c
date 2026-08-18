@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gWM_WallpoweNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll208ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

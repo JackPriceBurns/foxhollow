@@ -168,22 +168,7 @@ void landed_arwing_render(GameObject* obj, int renderArg2, int renderArg3, int r
     }
 }
 
-ObjectDescriptor gLanded_ArwingObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)landed_arwing_init,
-    (ObjectDescriptorCallback)landed_arwing_update,
-    0,
-    (ObjectDescriptorCallback)landed_arwing_render,
-    (ObjectDescriptorCallback)landed_arwing_free,
-    0,
-    landed_arwing_getExtraSize,
-};
+
 
 int Landed_Arwing_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     int eventIndex;
@@ -562,3 +547,20 @@ void landed_arwing_updateDamageTexture(GameObject* obj, LandedArwingHitReactionS
         }
     }
 }
+
+ObjectDescriptor gLanded_ArwingObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)landed_arwing_init,
+    (ObjectDescriptorCallback)landed_arwing_update,
+    0,
+    (ObjectDescriptorCallback)landed_arwing_render,
+    (ObjectDescriptorCallback)landed_arwing_free,
+    0,
+    landed_arwing_getExtraSize,
+};

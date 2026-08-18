@@ -771,7 +771,7 @@ void objfx_spawnFrameTimedHitPulse(GameObject* obj, f32 scale, u8 type, u8 varia
 {
     ObjFxS32Table5 variantTbl = gObjFxPulseVariantTbl;
     ObjFxS32Table5 countTbl = gObjFxHitPulseTbl.counts;
-    f32 offset[3];
+    Vec offset;
     int frame;
     if (type == 0)
     {
@@ -790,13 +790,13 @@ void objfx_spawnFrameTimedHitPulse(GameObject* obj, f32 scale, u8 type, u8 varia
         {
             frame = countTbl.values[variant] & 0xff;
         }
-        offset[0] = 0.0f;
-        offset[1] = yOffset;
-        offset[2] = 0.0f;
+        offset.x = 0.0f;
+        offset.y = yOffset;
+        offset.z = 0.0f;
         switch (type)
         {
         case 1:
-            objfx_spawnPulseBurst(obj, scale, (u8)variantTbl.values[variant], frame, 0, offset);
+            objfx_spawnPulseBurst(obj, scale, (u8)variantTbl.values[variant], frame, 0, &offset);
             break;
         }
     }
@@ -1040,7 +1040,7 @@ void objfx_spawnFlaggedTrailBurst(void* obj, f32 fval, u8 mode, int f6val, int f
     }
 }
 
-void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, f32* vec)
+void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, const Vec* offset)
 {
     ObjFxParticleParams params;
     int j;
@@ -1059,11 +1059,11 @@ void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, 
     }
 
     params.scale = scale;
-    if (vec != NULL)
+    if (offset != NULL)
     {
-        params.position[0] = vec[0];
-        params.position[1] = vec[1];
-        params.position[2] = vec[2];
+        params.position[0] = offset->x;
+        params.position[1] = offset->y;
+        params.position[2] = offset->z;
     }
     else
     {

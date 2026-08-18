@@ -10,10 +10,8 @@
 #include "main/dll/dll_00B9_projlightning7.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjlightning7DoNoLongerSupported[];
-
 int projlightning7_doUnsupported(void) {
-    OSReport(sProjlightning7DoNoLongerSupported);
+    OSReport("<projlightning7 Do>No Longer supported \n");
     return -1;
 }
 
@@ -30,5 +28,3 @@ Projlightning7ResourceDescriptor gProjlightning7ResourceDescriptor = {
     NULL,
     projlightning7_doUnsupported,
 };
-
-char sProjlightning7DoNoLongerSupported[] = "<projlightning7 Do>No Longer supported \n";

@@ -53,6 +53,11 @@ skips, see [Runtime porting and debugging](DEBUGGING.md).
 
 ## Symbol and API corrections
 
+- **Object descriptors are uniform and slot-complete**: object DLL IDs 195 through 704 each have a
+  source-defined descriptor at the end of their owning translation unit. Named descriptors use
+  `g<Name>ObjDescriptor`; unnamed slots use `gDll<HEX>ObjDescriptor`. See
+  [Object descriptor convention](OBJECT_DESCRIPTORS.md) for the retail comparison and the two
+  port-specific cases.
 - **Game `rand`/`srand` renamed `sfaRand`/`sfaSrand`** (defined in `main/rand.c`, callers in
   `vecmath.c`, `dlls/engine/7`, `dlls/engine/14`). The game's LCG would otherwise shadow libc
   `rand` for the whole binary, including Aurora/SDL internals.

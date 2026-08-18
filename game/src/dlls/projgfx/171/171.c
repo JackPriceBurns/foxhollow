@@ -9,18 +9,8 @@
 #include "main/dll/dll_00AB_projdummy.h"
 #include "dolphin/os/OSReport.h"
 
-ProjdummyResourceDescriptor gProjdummyResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projdummy_initialise,
-    projdummy_release,
-    NULL,
-    projdummy_doUnsupported,
-};
-
-char sProjdummyDoNoLongerSupported[] = "<projdummy Do>No Longer supported \n";
-
 int projdummy_doUnsupported(void) {
-    OSReport(sProjdummyDoNoLongerSupported);
+    OSReport("<projdummy Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,3 +19,11 @@ void projdummy_release(void) {
 
 void projdummy_initialise(void) {
 }
+
+ProjdummyResourceDescriptor gProjdummyResourceDescriptor = {
+    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
+    projdummy_initialise,
+    projdummy_release,
+    NULL,
+    projdummy_doUnsupported,
+};

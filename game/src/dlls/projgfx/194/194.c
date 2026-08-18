@@ -8,10 +8,8 @@
 #include "main/dll/dll_00C2_projdfp1r.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjdfp1rDoNoLongerSupported[];
-
 int projdfp1r_doUnsupported(void) {
-    OSReport(sProjdfp1rDoNoLongerSupported);
+    OSReport("<projdfp1r Do>No Longer supported \n");
     return -1;
 }
 
@@ -28,5 +26,3 @@ Projdfp1rResourceDescriptor gProjdfp1rResourceDescriptor = {
     NULL,
     projdfp1r_doUnsupported,
 };
-
-char sProjdfp1rDoNoLongerSupported[] = "<projdfp1r Do>No Longer supported \n";

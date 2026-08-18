@@ -40,22 +40,7 @@ u32 gWmGalleonFrameStep = 3;
 void* gWmGalleonResource;
 s8 gWMGalleonShowScreen;
 
-ObjectDescriptor gWM_GalleonObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_Galleon_initialise,
-    WM_Galleon_release,
-    0,
-    (ObjectDescriptorCallback)WM_Galleon_init,
-    (ObjectDescriptorCallback)WM_Galleon_update,
-    WM_Galleon_hitDetect,
-    (ObjectDescriptorCallback)WM_Galleon_render,
-    (ObjectDescriptorCallback)WM_Galleon_free,
-    (ObjectDescriptorCallback)WM_Galleon_getObjectTypeId,
-    WM_Galleon_getExtraSize,
-};
+
 
 int WM_Galleon_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     int eventIndex;
@@ -246,3 +231,20 @@ void WM_Galleon_release(void) {
 
 void WM_Galleon_initialise(void) {
 }
+
+ObjectDescriptor gWM_GalleonObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    WM_Galleon_initialise,
+    WM_Galleon_release,
+    0,
+    (ObjectDescriptorCallback)WM_Galleon_init,
+    (ObjectDescriptorCallback)WM_Galleon_update,
+    WM_Galleon_hitDetect,
+    (ObjectDescriptorCallback)WM_Galleon_render,
+    (ObjectDescriptorCallback)WM_Galleon_free,
+    (ObjectDescriptorCallback)WM_Galleon_getObjectTypeId,
+    WM_Galleon_getExtraSize,
+};

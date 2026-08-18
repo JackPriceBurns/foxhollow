@@ -1,8 +1,9 @@
 # Foxhollow
 
 Native port of Star Fox Adventures (GameCube) built on the SFA decompilation and Aurora.
-The decomp lives at `~/Code/sfa` (github.com/zcanann/SFA-Decomp) and is the source of truth for
-all game code; game-code fixes belong there first, port-layer code belongs here.
+The decomp lives at `~/Code/sfa` (github.com/zcanann/SFA-Decomp) and is the upstream source for
+game code. Make game-code changes in this repository during normal tasks; a separate periodic bulk
+job handles syncing them back to the decomp. Port-layer code belongs here.
 
 ## Rules
 - NEVER write code comments unless explicitly asked.

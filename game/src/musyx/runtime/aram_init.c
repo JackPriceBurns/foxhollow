@@ -1,7 +1,6 @@
 #include "musyx/aram.h"
 #include "musyx/aram_queue.h"
 #include "musyx/sal_dsp.h"
-#include "musyx/snd_reverb.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/ar.h"
 
@@ -16,21 +15,13 @@ u32 aramTop;
  * DMAs it to AR memory at the base address, then sets up the global
  * allocator pointers.
  */
-void aramInit(u32 extraSize)
-{
-    AramTransferQueues* queues;
+void aramInit(u32 extraSize) {
     volatile u8* pendingCount;
-    u16* clear;
-    u8* buf;
-    u32 arBase;
-    int i;
-
-    queues = &aramNormalPriorityQueue;
-    arBase = ARGetBaseAddress();
-    buf = salMalloc(0x500);
-    clear = (u16*)buf;
-    for (i = 0; i < 640; i++)
-    {
+    AramTransferQueues* queues = &aramNormalPriorityQueue;
+    u32 arBase = ARGetBaseAddress();
+    u8* buf = salMalloc(0x500);
+    u16* clear = (u16*)buf;
+    for (int i = 0; i < 640; i++) {
         clear[i] = 0;
     }
     DCFlushRange(buf, 0x500);
@@ -39,13 +30,11 @@ void aramInit(u32 extraSize)
     queues->highPriority.count = 0;
     queues->highPriority.head = 0;
     aramUploadData(buf, arBase, 0x500, 0, 0, 0);
-    while (*pendingCount != 0)
-    {
+    while (*pendingCount != 0) {
     }
     salFree(buf);
     aramTop = arBase + extraSize;
-    if (aramTop > ARGetSize())
-    {
+    if (aramTop > ARGetSize()) {
         aramTop = ARGetSize();
     }
     aramWrite = arBase + 0x500;
@@ -56,15 +45,13 @@ void aramInit(u32 extraSize)
 /*
  * Empty stub (4 bytes: just blr).
  */
-void aramExit(void)
-{
+void aramExit(void) {
 }
 
 /*
  * Returns AR base address.
  */
-u32 aramGetBaseAddress(void)
-{
+u32 aramGetBaseAddress(void) {
     return ARGetBaseAddress();
 }
 

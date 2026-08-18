@@ -24,39 +24,31 @@
 #include "main/dll/dll_02B7_mcupgrade.h"
 #include "main/dll/dll_02B8_mcupgradema.h"
 
-void mcupgrade_update(GameObject* obj)
-{
+void mcupgrade_update(GameObject* obj) {
     GameObject* gameObj = obj;
     McUpgradeSetup* setup = (McUpgradeSetup*)gameObj->anim.placementData;
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->collectedGameBit))) != 0)
-    {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &setup->collectedGameBit)) != 0) {
         gameObj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+        return;
     }
-    else if (ObjTrigger_IsSet(obj) != 0)
-    {
-        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->collectedGameBit)), 1);
-        (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
+
+    if (ObjTrigger_IsSet(obj) != 0) {
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &setup->collectedGameBit), 1);
+        (*gObjectTriggerInterface)->runSequence(0, obj, -1);
+        return;
     }
-    else
-    {
-        objUpdateHitVolumeTransforms(obj);
-    }
+
+    objUpdateHitVolumeTransforms(obj);
 }
 
-void mcupgrade_init(GameObject* obj)
-{
+void mcupgrade_init(GameObject* obj) {
     obj->animEventCallback = mcupgrade_SeqFn;
 }
 
-int mcupgradema_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
-{
-    int i;
-
-    for (i = 0; i < animUpdate->eventCount; i++)
-    {
-        switch (animUpdate->eventIds[i])
-        {
+int mcupgradema_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+    for (int i = 0; i < animUpdate->eventCount; i++) {
+        switch (animUpdate->eventIds[i]) {
         case MCUPGRADEMA_EVENT_SHOW_HUD:
             setHudForceShowMask(1);
             break;

@@ -136,22 +136,7 @@ u8 gKytesMumMoveSets[] = {
 int gKytesMumQuestIdleSfxTable[] = {
     0x02921000, 0x00000292, 0x10000000, 0x02920500, 0x00000292, 0x05000000,
 };
-ObjectDescriptor gKytesMumObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)kytesmum_initialise,
-    (ObjectDescriptorCallback)kytesmum_release,
-    0,
-    (ObjectDescriptorCallback)kytesmum_init,
-    (ObjectDescriptorCallback)kytesmum_update,
-    (ObjectDescriptorCallback)kytesmum_hitDetect,
-    (ObjectDescriptorCallback)kytesmum_render,
-    (ObjectDescriptorCallback)kytesmum_free,
-    (ObjectDescriptorCallback)kytesmum_getObjectTypeId,
-    kytesmum_getExtraSize,
-};
+
 
 void kytesmum_playAnimationEventSfx(GameObject* obj, u8* arg, s16* sfxData)
 {
@@ -439,3 +424,20 @@ void kytesmum_initialise(void)
 }
 
 char sKytesMumYawDiffMessage[] = " YAW DIFF ";
+
+ObjectDescriptor gKytesMumObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)kytesmum_initialise,
+    (ObjectDescriptorCallback)kytesmum_release,
+    0,
+    (ObjectDescriptorCallback)kytesmum_init,
+    (ObjectDescriptorCallback)kytesmum_update,
+    (ObjectDescriptorCallback)kytesmum_hitDetect,
+    (ObjectDescriptorCallback)kytesmum_render,
+    (ObjectDescriptorCallback)kytesmum_free,
+    (ObjectDescriptorCallback)kytesmum_getObjectTypeId,
+    kytesmum_getExtraSize,
+};

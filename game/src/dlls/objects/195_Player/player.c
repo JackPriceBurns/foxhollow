@@ -1,6 +1,7 @@
 #define BADDIE_MOVE_STATUS_SIGNED
 
 #include "main/dll/player.h"
+#include "dlls/object_descriptor.h"
 
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
@@ -338,6 +339,8 @@ static inline int staffCanContinueSpin(void* state) {
     return 0;
 }
 
+
+
 int lbl_80332EC0[5] = {0x1D, 0x1E, 0x1F, 0x20, 0x21};
 GameObject* gPlayerSpawnedObjects[7] = {NULL};
 
@@ -472,13 +475,20 @@ static inline void playerFreeSpawnedObjects(GameObject** p, int i, GameObject* h
 }
 
 typedef struct {
-    u8 pad[0x1ba8];
-    int moveA[4];
-    int moveB[4];
-    int moveC[4];
-    f32 spdD[4];
-    f32 spdE[4];
-} HeadMoveTable;
+    int moveA[5];
+    int moveB[5];
+    int moveC[5];
+    f32 spdD[5];
+    f32 spdE[5];
+} PlayerPushMoveTable;
+
+static const PlayerPushMoveTable sPlayerPushMoveTable = {
+    {0, 0x4D, 0x65, 0x5A, 0x4E},
+    {0, 0x400, 0x409, 0x4B, 0x4A},
+    {0, 0x401, 0x63, 0x49, 0x48},
+    {0.0f, 0.02f, 0.02f, 0.025f, 0.025f},
+    {0.0f, 0.012f, 0.007f, 0.009f, 0.009f},
+};
 
 typedef struct {
     int a[6];
@@ -2402,7 +2412,7 @@ void playerPullOutStaff(GameObject* obj, int mode) {
 
 int playerGetMoney(GameObject* player) {
     PlayerState* inner = player->extra;
-    return (inner->playerStatus)->money;
+    return inner->playerStatus->money;
 }
 
 void playerAddMoney(GameObject* obj, int amount) {
@@ -5503,9 +5513,9 @@ ObjModelChain* gPlayerModelChain;
 PartFxSpawnParams gPlayerPartFxParams;
 
 int playerState1D(GameObject* obj, PlayerState* state, f32 fv) {
-    HeadMoveTable* tbl = (HeadMoveTable*)lbl_80332EC0;
+    const PlayerPushMoveTable* tbl = &sPlayerPushMoveTable;
     u8 prev;
-    int* tblB;
+    const int* tblB;
     GameObject* self = obj;
     PlayerState* inner = self->extra;
     GameObject* sub;
@@ -15883,3 +15893,5 @@ void playerInitFuncPtrs(void) {
 PlayerStateFn gPlayerStateHandlers[66];
 f32 gPlayerMoveRootHeights[16];
 LightmapVertex gPlayerHudVtxBuf[8];
+
+ObjectDescriptor gPlayerObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDBPointMumNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll23DObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

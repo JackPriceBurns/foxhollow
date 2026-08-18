@@ -64,22 +64,7 @@ enum
     WMSPIRITPLACE_SEQEV_SPIRIT_VISION_OFF = 9
 };
 
-ObjectDescriptor gWM_spiritplaceObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_spiritplace_initialise,
-    WM_spiritplace_release,
-    0,
-    (ObjectDescriptorCallback)WM_spiritplace_init,
-    (ObjectDescriptorCallback)WM_spiritplace_update,
-    (ObjectDescriptorCallback)WM_spiritplace_hitDetect,
-    (ObjectDescriptorCallback)WM_spiritplace_render,
-    WM_spiritplace_free,
-    (ObjectDescriptorCallback)WM_spiritplace_getObjectTypeId,
-    WM_spiritplace_getExtraSize,
-};
+
 
 void wmspiritplace_onSeqFree(void)
 {
@@ -555,3 +540,20 @@ void WM_spiritplace_release(void)
 void WM_spiritplace_initialise(void)
 {
 }
+
+ObjectDescriptor gWM_spiritplaceObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    WM_spiritplace_initialise,
+    WM_spiritplace_release,
+    0,
+    (ObjectDescriptorCallback)WM_spiritplace_init,
+    (ObjectDescriptorCallback)WM_spiritplace_update,
+    (ObjectDescriptorCallback)WM_spiritplace_hitDetect,
+    (ObjectDescriptorCallback)WM_spiritplace_render,
+    WM_spiritplace_free,
+    (ObjectDescriptorCallback)WM_spiritplace_getObjectTypeId,
+    WM_spiritplace_getExtraSize,
+};

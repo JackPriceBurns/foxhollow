@@ -12,30 +12,24 @@
 /*
  * Translate a 16.16 volume through a curve table (MusyX TranslateVolume).
  */
-u32 TranslateVolume(u32 volume, u16 curve)
-{
+u32 TranslateVolume(u32 volume, u16 curve) {
     u8* ptr;
     u32 base;
     u32 vlow;
     u32 vhigh;
     s32 delta;
 
-    if (curve != 0xFFFF)
-    {
-        if ((ptr = dataGetCurve(curve)))
-        {
+    if (curve != 0xFFFF) {
+        if ((ptr = dataGetCurve(curve))) {
             vhigh = (volume >> 16) & 0xFFFF;
             vlow = volume & 0xFFFF;
 
-            if (vhigh < 0x7f)
-            {
+            if (vhigh < 0x7f) {
                 base = ptr[vhigh];
                 volume = base << 16;
                 delta = vlow * (ptr[vhigh + 1] - base);
                 volume = delta + volume;
-            }
-            else
-            {
+            } else {
                 volume = ptr[vhigh] << 16;
             }
         }
@@ -48,40 +42,30 @@ u32 TranslateVolume(u32 volume, u16 curve)
  * Compute a volume envelope ramp toward a curve-translated target
  * (MusyX DoEnvelopeCalculation).
  */
-void mcmdScaleVolume(McmdVoiceState* svoice, McmdCommandArgs* cstep, s32 start_vol)
-{
-    u32 tvol;
+void mcmdScaleVolume(McmdVoiceState* svoice, McmdCommandArgs* cstep, s32 start_vol) {
     u32 time;
-    s32 mstime;
-    u16 curve;
-
     time = (u16)(cstep->value >> 16);
 
-    if ((u8)(cstep->value >> 8) & 1)
-    {
+    if ((u8)(cstep->value >> 8) & 1) {
         sndConvertMs(&time);
-    }
-    else
-    {
+    } else {
         sndConvertTicks(&time, svoice);
     }
 
-    mstime = sndConvert2Ms(time);
-    if (mstime == 0)
-    {
+    s32 mstime = sndConvert2Ms(time);
+    if (mstime == 0) {
         mstime = 1;
     }
 
-    tvol = (svoice->volume * (u8)(cstep->flags >> 8) >> 7);
+    u32 tvol = svoice->volume * (u8)(cstep->flags >> 8) >> 7;
     tvol += (u8)(cstep->flags >> 16) << 16;
 
-    if (tvol > 0x7f0000)
-    {
+    if (tvol > 0x7f0000) {
         tvol = 0x7f0000;
     }
 
-    curve = (u16)(u8)(cstep->flags >> 0x18);
-    curve |= (((u16)(u8)cstep->value) << 8);
+    u16 curve = (u16)(u8)(cstep->flags >> 0x18);
+    curve |= (u16)(u8)cstep->value << 8;
     tvol = TranslateVolume(tvol, curve);
     svoice->envTarget = tvol;
     svoice->envCurrent = start_vol;

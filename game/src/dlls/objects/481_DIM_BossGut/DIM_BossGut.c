@@ -4,7 +4,6 @@
  * sequence callback disables sequence events and clears the hit-volume pair.
  */
 #include "dlls/objects/481_DIM_BossGut.h"
-
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
@@ -30,15 +29,13 @@ int DIM_BossGut_getObjectTypeId(void) {
 void DIM_BossGut_free(void) {
 }
 
-void DIM_BossGut_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
-                        s8 shouldRender) {
-    int visible;
-
-    visible = shouldRender;
-    if (visible != 0) {
-        ObjAnim_AdvanceCurrentMove(obj, DIM_BOSS_GUT_ANIMATION_STEP, timeDelta, NULL);
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+void DIM_BossGut_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+    if (visible == 0) {
+        return;
     }
+
+    ObjAnim_AdvanceCurrentMove(obj, DIM_BOSS_GUT_ANIMATION_STEP, timeDelta, NULL);
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void DIM_BossGut_hitDetect(void) {
@@ -48,13 +45,10 @@ void DIM_BossGut_update(void) {
 }
 
 void DIM_BossGut_init(GameObject* obj) {
-    GameObject* objArg;
-
     objSetSlot(obj, DIM_BOSS_GUT_OBJECT_SLOT);
     obj->animEventCallback = DIM_BossGut_SeqFn;
-    objArg = obj;
-    ObjAnim_SetCurrentMove(objArg, 0, 0.0f, 0);
-    ObjAnim_AdvanceCurrentMove(objArg, DIM_BOSS_GUT_ANIMATION_STEP, timeDelta, NULL);
+    ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
+    ObjAnim_AdvanceCurrentMove(obj, DIM_BOSS_GUT_ANIMATION_STEP, timeDelta, NULL);
 }
 
 void DIM_BossGut_release(void) {

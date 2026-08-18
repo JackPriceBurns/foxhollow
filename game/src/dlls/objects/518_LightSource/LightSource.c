@@ -64,7 +64,7 @@ void lightsource_update(GameObject* obj) {
     ModelLightStruct* light;
     s16 glowAlpha;
     int spawnArg;
-    f32 effectOffset[3];
+    Vec effectOffset;
     PartFxSpawnParams sparkParams;
 
     state = obj->extra;
@@ -100,14 +100,14 @@ void lightsource_update(GameObject* obj) {
             spawnArg = 0;
         }
         if (state->fxType != 0 || state->fxArg != 0) {
-            effectOffset[0] = 0.0f;
+            effectOffset.x = 0.0f;
             if (obj->anim.romDefNo == LIGHTSOURCE_SEQID_ARWING_FX) {
-                effectOffset[1] = effectOffset[0];
+                effectOffset.y = effectOffset.x;
             } else {
-                effectOffset[1] = 3.5f;
+                effectOffset.y = 3.5f;
             }
-            effectOffset[2] = 0.0f;
-            objfx_spawnPulseBurst(obj, 10.0f * obj->anim.rootMotionScale, state->fxType, spawnArg, 0, effectOffset);
+            effectOffset.z = 0.0f;
+            objfx_spawnPulseBurst(obj, 10.0f * obj->anim.rootMotionScale, state->fxType, spawnArg, 0, &effectOffset);
         }
         if (state->sparks != 0) {
             state->sparkSpawnTimer -= timeDelta;

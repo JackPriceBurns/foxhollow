@@ -3,7 +3,6 @@
 
 #include "dlls/object_descriptor.h"
 
-extern char sDoorswitchInitNoLongerSupported[];
 extern ObjectDescriptor gDoorswitchObjDescriptor;
 
 int doorswitch_getExtraSize(void);

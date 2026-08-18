@@ -1,6 +1,7 @@
 #ifndef MAIN_OBJFX_H_
 #define MAIN_OBJFX_H_
 
+#include "dolphin/mtx/vec_types.h"
 #include "global.h"
 #include "game/objects/object.h"
 #include "main/objfx_hit_emitter_api.h"
@@ -19,7 +20,7 @@ void objfx_spawnBoxBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chan
                          void* origin, int flags);
 void projectileDoParticleFx(void* obj, f32 scale, int mode);
 void itemPickupDoParticleFx(void* obj, f32 scale, int mode, u8 count);
-void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, f32* offset);
+void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, const Vec* offset);
 void spawnExplosion(GameObject* source, f32 scale, u8 kind, u8 flag4, u8 flag8, u8 flag10, u8 doShake, u8 flag20,
                     u8 initialFlags);
 

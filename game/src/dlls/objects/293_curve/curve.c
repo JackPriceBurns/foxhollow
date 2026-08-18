@@ -5,7 +5,6 @@
  * a type-specific scale or the model's default scale.
  */
 #include "dlls/objects/293_curve.h"
-
 #include "main/dll/rom_curve_def.h"
 #include "main/object_render.h"
 
@@ -28,17 +27,18 @@ void curve_free(void) {
 }
 
 void curve_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    if (visible) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (!visible) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void curve_init(GameObject* obj, RomCurveDef* placement) {
-    obj->anim.rotX = (s16)(placement->yaw << 8);
-    obj->anim.rotY = (s16)(placement->pitch << 8);
-    if (placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_8 ||
-        placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_1A) {
-        obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->roll));
+    obj->anim.rotX = placement->yaw << 8;
+    obj->anim.rotY = placement->pitch << 8;
+    if (placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_8 || placement->type == ROMCURVE_TYPE_SPECIAL_ANGLE_1A) {
+        obj->anim.rotZ = ObjAnim_ReadPlacementS16(&obj->anim, &placement->roll);
     }
     if (placement->type == ROMCURVE_TYPE_SCALE_OVERRIDE_15) {
         obj->anim.rootMotionScale = 1.25f;

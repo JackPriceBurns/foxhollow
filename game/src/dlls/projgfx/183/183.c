@@ -9,10 +9,8 @@
 #include "main/dll/dll_00B7_projship1.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjship1DoNoLongerSupported[];
-
 int projship1_doUnsupported(void) {
-    OSReport(sProjship1DoNoLongerSupported);
+    OSReport("<projship1 Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,5 +27,3 @@ Projship1ResourceDescriptor gProjship1ResourceDescriptor = {
     NULL,
     projship1_doUnsupported,
 };
-
-char sProjship1DoNoLongerSupported[] = "<projship1 Do>No Longer supported \n";

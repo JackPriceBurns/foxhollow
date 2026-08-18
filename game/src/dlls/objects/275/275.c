@@ -198,6 +198,18 @@ void SeqObj2_release(void) {
 void SeqObj2_initialise(void) {
 }
 
+
+
+const char sSeqObjNeedBitClearDuringSequenceFormat[] = "newseqobj %d: need bit clear during sequence\n";
+const char sSeqObjDiagnosticFormats[SEQ_OBJ2_DIAGNOSTIC_FORMATS_SIZE] =
+    "newseqobj %d: used bit set during sequence\n\000newseqobj %d: need bit clear before preempting "
+    "sequence\n\000\000\000\000newseqobj %d: used bit set before preempting sequence\n\000\000newseqobj %d: about to "
+    "prempt the sequence - objs %d\n\000\000\000newseqobj %d: need bit clear after sequence\n\000\000\000\000newseqobj "
+    "%d: used bit set after sequence\n\000\000newseqobj %d: need bit clear before sequence\n\000\000\000newseqobj %d: "
+    "used bit set before sequence\n\000newseqobj %d: about to start the sequence\n\000\000";
+const char sSeqObjNeedAndUsedBitFormat[SEQ_OBJ2_NEED_AND_USED_BIT_STORAGE_SIZE] =
+    "newseqobj %d: Need Bit %d, Used Bit %d\n";
+
 ObjectDescriptor gSeqObj2ObjDescriptor = {
     0,
     0,
@@ -214,13 +226,3 @@ ObjectDescriptor gSeqObj2ObjDescriptor = {
     (ObjectDescriptorCallback)SeqObj2_getObjectTypeId,
     SeqObj2_getExtraSize,
 };
-
-const char sSeqObjNeedBitClearDuringSequenceFormat[] = "newseqobj %d: need bit clear during sequence\n";
-const char sSeqObjDiagnosticFormats[SEQ_OBJ2_DIAGNOSTIC_FORMATS_SIZE] =
-    "newseqobj %d: used bit set during sequence\n\000newseqobj %d: need bit clear before preempting "
-    "sequence\n\000\000\000\000newseqobj %d: used bit set before preempting sequence\n\000\000newseqobj %d: about to "
-    "prempt the sequence - objs %d\n\000\000\000newseqobj %d: need bit clear after sequence\n\000\000\000\000newseqobj "
-    "%d: used bit set after sequence\n\000\000newseqobj %d: need bit clear before sequence\n\000\000\000newseqobj %d: "
-    "used bit set before sequence\n\000newseqobj %d: about to start the sequence\n\000\000";
-const char sSeqObjNeedAndUsedBitFormat[SEQ_OBJ2_NEED_AND_USED_BIT_STORAGE_SIZE] =
-    "newseqobj %d: Need Bit %d, Used Bit %d\n";

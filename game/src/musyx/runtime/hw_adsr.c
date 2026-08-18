@@ -4,8 +4,7 @@
 #include "musyx/hw_adsr.h"
 #include "musyx/adsr.h"
 
-typedef struct HwAdsrEnvelope
-{
+typedef struct HwAdsrEnvelope {
     u16 attack;
     u16 decay;
     u16 sustain;
@@ -14,21 +13,16 @@ typedef struct HwAdsrEnvelope
     u16 releaseTime;
 } HwAdsrEnvelope;
 
-void hwSetADSR(int slot, u32* adsr, u8 mode)
-{
-    HwAdsrEnvelope* envelope;
+void hwSetADSR(int slot, u32* adsr, u8 mode) {
     u32 value;
-
-    envelope = (HwAdsrEnvelope*)adsr;
-    switch (mode)
-    {
+    HwAdsrEnvelope* envelope = (HwAdsrEnvelope*)adsr;
+    switch (mode) {
     case 0:
         dspVoice[slot].adsr.mode = ADSR_MODE_LINEAR;
         dspVoice[slot].adsr.aTime = envelope->attack;
         dspVoice[slot].adsr.dTime = envelope->decay;
 
-        if ((value = envelope->sustain << 3) > 0x7fff)
-        {
+        if ((value = envelope->sustain << 3) > 0x7fff) {
             value = 0x7fff;
         }
 
@@ -40,21 +34,17 @@ void hwSetADSR(int slot, u32* adsr, u8 mode)
         dspVoice[slot].adsr.mode = ADSR_MODE_DLS;
         dspVoice[slot].adsr.aMode = ADSR_ATTACK_MODE_LINEAR;
 
-        if (mode == 1)
-        {
+        if (mode == 1) {
             dspVoice[slot].adsr.aTime = voiceConvertTimeCentsToMs(adsr[0]) & 0xffff;
             dspVoice[slot].adsr.dTime = voiceConvertTimeCentsToMs(adsr[1]) & 0xffff;
 
             value = envelope->decayTime >> 2;
-            if (value > 0x3ff)
-            {
+            if (value > 0x3ff) {
                 value = 0x3ff;
             }
 
             dspVoice[slot].adsr.sLevel = 0xc1 - voiceAdsrDecayTable[value];
-        }
-        else
-        {
+        } else {
             dspVoice[slot].adsr.aTime = adsr[0] & 0xffff;
             dspVoice[slot].adsr.dTime = adsr[1] & 0xffff;
             dspVoice[slot].adsr.sLevel = envelope->decayTime;

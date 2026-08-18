@@ -156,17 +156,6 @@ static inline s16 trackReadSharedLineHeight(const void* record)
     return fhReadBES16(record);
 }
 
-struct IntersectModLineObject
-{
-    u8 pad00[0x30];
-    MapHitLine* sourceLines; /* 0x30 */
-    IntersectLine* lines;        /* 0x34 */
-    u8 (*groupRanges)[2];        /* 0x38 */
-    f32* points;                 /* 0x3c */
-    u8 pad40[0x1c];
-    u8 sourceLineCount;          /* 0x5c */
-};
-
 #define MAP_DYNAMIC_SLOT_COUNT 64
 
 
@@ -1139,7 +1128,7 @@ int trackGetLineIntersect(f32* startPos, f32* endPos, f32 radius, int flags, Tra
     return gTrackSweepHitCount;
 }
 
-void intersectModLineBuild(IntersectModLineObject* obj)
+void intersectModLineBuild(ObjDef* obj)
 {
     s16 pointLinks[0xd48];
     IntersectLine* line;
@@ -1153,8 +1142,8 @@ void intersectModLineBuild(IntersectModLineObject* obj)
     mapBlockFlag = 1;
     gIntersectLineCount = 0;
     gIntersectPointCount = 0;
-    sourceLineCount = obj->sourceLineCount;
-    for (lineIndex = 0, sourceLine = obj->sourceLines; lineIndex < sourceLineCount; sourceLine++, lineIndex++)
+    sourceLineCount = obj->modLineCount;
+    for (lineIndex = 0, sourceLine = obj->modLines; lineIndex < sourceLineCount; sourceLine++, lineIndex++)
     {
         int i;
         if (gIntersectLineCount < 0x5dc)
@@ -1213,13 +1202,13 @@ void intersectModLineBuild(IntersectModLineObject* obj)
     }
     if (gIntersectLineCount * 0x10 + gIntersectPointCount * 0xc + 0x28 == 0)
         return;
-    obj->lines = mmAlloc(gIntersectLineCount * 0x10 + gIntersectPointCount * 0xc + 0x28, 0xffff00ff, 0);
-    obj->points = (f32*)((u8*)obj->lines + gIntersectLineCount * 0x10);
-    obj->groupRanges = (u8(*)[2])((u8*)obj->points + gIntersectPointCount * 0xc);
+    obj->intersectionLines = mmAlloc(gIntersectLineCount * 0x10 + gIntersectPointCount * 0xc + 0x28, 0xffff00ff, 0);
+    obj->intersectionPoints = (f32*)((u8*)obj->intersectionLines + gIntersectLineCount * 0x10);
+    obj->intersectionSegmentRanges = (u8*)obj->intersectionPoints + gIntersectPointCount * 0xc;
     {
         int k;
         for (k = 0; k < 40; k++)
-            (*(u8**)&obj->groupRanges)[k] = 0xff;
+            obj->intersectionSegmentRanges[k] = 0xff;
     }
     previousGroup = -1;
     for (outputLineIndex = 0; outputLineIndex < gIntersectLineCount; outputLineIndex++)
@@ -1242,9 +1231,9 @@ void intersectModLineBuild(IntersectModLineObject* obj)
         }
         if (grp != previousGroup)
         {
-            obj->groupRanges[grp][0] = outputLineIndex;
+            obj->intersectionSegmentRanges[grp * 2] = outputLineIndex;
             if (previousGroup != -1)
-                obj->groupRanges[previousGroup][1] = outputLineIndex;
+                obj->intersectionSegmentRanges[previousGroup * 2 + 1] = outputLineIndex;
             previousGroup = grp;
         }
         {
@@ -1253,10 +1242,11 @@ void intersectModLineBuild(IntersectModLineObject* obj)
             bestLine = best;
             for (m = 0; m < outputLineIndex; m++)
             {
-                if (obj->lines[m].adj[0] == bestLine)
-                    obj->lines[m].adj[0] = outputLineIndex;
-                if (obj->lines[m].adj[1] == bestLine)
-                    obj->lines[m].adj[1] = outputLineIndex;
+                IntersectLine* outputLines = obj->intersectionLines;
+                if (outputLines[m].adj[0] == bestLine)
+                    outputLines[m].adj[0] = outputLineIndex;
+                if (outputLines[m].adj[1] == bestLine)
+                    outputLines[m].adj[1] = outputLineIndex;
             }
         }
         {
@@ -1274,12 +1264,12 @@ void intersectModLineBuild(IntersectModLineObject* obj)
                 }
             }
         }
-        memcpy(&obj->lines[outputLineIndex], (char*)gIntersectLinePool + best * 0x10, 0x10);
+        memcpy(&((IntersectLine*)obj->intersectionLines)[outputLineIndex], (char*)gIntersectLinePool + best * 0x10, 0x10);
         gIntersectLinePool[best].kind = 0x14;
     }
     if (previousGroup != -1)
-        obj->groupRanges[previousGroup][1] = gIntersectLineCount;
-    memcpy(obj->points, gIntersectPoints, gIntersectPointCount * 0xc);
+        obj->intersectionSegmentRanges[previousGroup * 2 + 1] = gIntersectLineCount;
+    memcpy(obj->intersectionPoints, gIntersectPoints, gIntersectPointCount * 0xc);
     gIntersectLineCount = 0;
     gIntersectPointCount = 0;
 }
@@ -1532,13 +1522,13 @@ void trackSetLinesEnabledByParam(int matchVal, GameObject* obj, int flag)
 {
     int count;
     int i;
-    struct IntersectModLineObject* mod;
+    ObjDef* model;
     IntersectLine* e;
     if (obj != NULL)
     {
-        mod = (struct IntersectModLineObject*)(obj)->anim.modelInstance;
-        e = mod->lines;
-        count = mod->sourceLineCount;
+        model = obj->anim.modelInstance;
+        e = model->intersectionLines;
+        count = model->modLineCount;
     }
     else
     {

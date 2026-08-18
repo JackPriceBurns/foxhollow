@@ -168,8 +168,8 @@ s8 tumbleweedbush_spawnSibling(GameObject* obj) {
         {
             GameObject* spawnedPiece = state->pieceObjects[freePieceIndex];
 
-            ((void (*)(GameObject*, f64, f64))(*spawnedPiece->anim.dll)[TUMBLEWEED_BUSH_SET_ORIGIN_SLOT])(
-                spawnedPiece, (f64)obj->anim.localPosX, (f64)obj->anim.localPosZ);
+            ((void (*)(GameObject*, f32, f32))(*spawnedPiece->anim.dll)[TUMBLEWEED_BUSH_SET_ORIGIN_SLOT])(
+                spawnedPiece, obj->anim.localPosX, obj->anim.localPosZ);
         }
     }
     state->spawnedCount++;
@@ -399,26 +399,7 @@ f32 gTumbleweedBushPieceOffsetTable[2][4][3] = {
     },
 };
 
-ObjectDescriptor11WithPadding gTumbleWeedBushObjDescriptor = {
-    {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)TumbleWeedBush_initialise,
-        (ObjectDescriptorCallback)TumbleWeedBush_release,
-        0,
-        (ObjectDescriptorCallback)TumbleWeedBush_init,
-        (ObjectDescriptorCallback)TumbleWeedBush_update,
-        (ObjectDescriptorCallback)TumbleWeedBush_hitDetect,
-        (ObjectDescriptorCallback)TumbleWeedBush_render,
-        (ObjectDescriptorCallback)TumbleWeedBush_free,
-        (ObjectDescriptorCallback)TumbleWeedBush_getObjectTypeId,
-        TumbleWeedBush_getExtraSize,
-        (ObjectDescriptorCallback)tumbleweedbush_removePieceReference,
-    },
-    0,
-};
+
 
 #define TRICKY_SEQ_ID                     0x24    /* retail "Tricky" (DLL 0xC4) */
 #define TUMBLEWEED_MESSAGE_IN_RANGE       0x7000a /* sent to player when grab is offered */
@@ -959,6 +940,27 @@ void tumbleweed_init(GameObject* obj, TumbleweedPlacement* placement) {
 }
 
 f32 gTumbleweedCollisionPoint[3] = {0.0f, 0.0f, 0.0f};
+
+ObjectDescriptor11WithPadding gTumbleWeedBushObjDescriptor = {
+    {
+        0,
+        0,
+        0,
+        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        (ObjectDescriptorCallback)TumbleWeedBush_initialise,
+        (ObjectDescriptorCallback)TumbleWeedBush_release,
+        0,
+        (ObjectDescriptorCallback)TumbleWeedBush_init,
+        (ObjectDescriptorCallback)TumbleWeedBush_update,
+        (ObjectDescriptorCallback)TumbleWeedBush_hitDetect,
+        (ObjectDescriptorCallback)TumbleWeedBush_render,
+        (ObjectDescriptorCallback)TumbleWeedBush_free,
+        (ObjectDescriptorCallback)TumbleWeedBush_getObjectTypeId,
+        TumbleWeedBush_getExtraSize,
+        (ObjectDescriptorCallback)tumbleweedbush_removePieceReference,
+    },
+    0,
+};
 
 ObjectDescriptor16WithPadding gTumbleweedObjDescriptor = {
     {

@@ -36,22 +36,7 @@ enum
 #define SP_DRAPE_LEAVE_RADIUS 8100.0f
 #define SP_DRAPE_REOPEN_PROGRESS 0.6f
 #define SP_DRAPE_PI 3.1415927f
-ObjectDescriptor gSPDrapeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)spdrape_initialise,
-    (ObjectDescriptorCallback)spdrape_release,
-    0,
-    (ObjectDescriptorCallback)spdrape_init,
-    (ObjectDescriptorCallback)spdrape_update,
-    (ObjectDescriptorCallback)spdrape_hitDetect,
-    (ObjectDescriptorCallback)spdrape_render,
-    (ObjectDescriptorCallback)spdrape_free,
-    (ObjectDescriptorCallback)spdrape_getObjectTypeId,
-    spdrape_getExtraSize,
-};
+
 
 int spdrape_getExtraSize(void)
 {
@@ -220,3 +205,20 @@ void spdrape_release(void)
 void spdrape_initialise(void)
 {
 }
+
+ObjectDescriptor gSPDrapeObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)spdrape_initialise,
+    (ObjectDescriptorCallback)spdrape_release,
+    0,
+    (ObjectDescriptorCallback)spdrape_init,
+    (ObjectDescriptorCallback)spdrape_update,
+    (ObjectDescriptorCallback)spdrape_hitDetect,
+    (ObjectDescriptorCallback)spdrape_render,
+    (ObjectDescriptorCallback)spdrape_free,
+    (ObjectDescriptorCallback)spdrape_getObjectTypeId,
+    spdrape_getExtraSize,
+};

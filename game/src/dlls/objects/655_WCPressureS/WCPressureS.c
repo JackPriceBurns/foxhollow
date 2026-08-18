@@ -240,6 +240,10 @@ void wcpressures_release(void) {
 void wcpressures_initialise(void) {
 }
 
+
+
+char sWCPressuresActivateFormat[] = " Avitvate %i ";
+
 ObjectDescriptor gWCPressureSObjDescriptor = {
     0,
     0,
@@ -256,5 +260,3 @@ ObjectDescriptor gWCPressureSObjDescriptor = {
     (ObjectDescriptorCallback)wcpressures_getObjectTypeId,
     (ObjectDescriptorExtraSizeCallback)wcpressures_getExtraSize,
 };
-
-char sWCPressuresActivateFormat[] = " Avitvate %i ";

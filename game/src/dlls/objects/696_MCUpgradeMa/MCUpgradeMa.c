@@ -22,62 +22,51 @@
 #include "sys/objects.h"
 #include "main/objseq.h"
 
-void mcupgradema_update(GameObject* obj)
-{
-    GameObject* gameObj = obj;
-    McUpgradeMaSetup* setup = (McUpgradeMaSetup*)gameObj->anim.placementData;
+void mcupgradema_update(GameObject* obj) {
+    McUpgradeMaSetup* setup = (McUpgradeMaSetup*)obj->anim.placementData;
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->collectedGameBit))) != 0)
-    {
-        gameObj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &setup->collectedGameBit)) != 0) {
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+        return;
     }
-    else if (ObjTrigger_IsSet(obj) != 0)
-    {
-        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->collectedGameBit)), 1);
-        (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
-    }
-    else
-    {
+
+    if (ObjTrigger_IsSet(obj) == 0) {
         objUpdateHitVolumeTransforms(obj);
+        return;
     }
+
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &setup->collectedGameBit), 1);
+    (*gObjectTriggerInterface)->runSequence(0, obj, -1);
 }
 
-void mcupgradema_init(GameObject* obj)
-{
+void mcupgradema_init(GameObject* obj) {
     obj->animEventCallback = mcupgradema_SeqFn;
 }
 
-int mcstaffeffe_SeqFn(GameObject* staffEffect, int unused, ObjSeqState* animUpdate)
-{
-    GameObject* player;
-    GameObject* staff;
-    int i;
+int mcstaffeffe_SeqFn(GameObject* staffEffect, int unused, ObjSeqState* animUpdate) {
+    GameObject* player = Obj_GetPlayerObject();
+    if (player == NULL) {
+        return 0;
+    }
+    GameObject* staff = objGetFirstChild(player);
+    if (staff == NULL) {
+        return 0;
+    }
 
-    player = Obj_GetPlayerObject();
-    if (player == NULL)
-    {
-        return 0;
-    }
-    staff = objGetFirstChild(player);
-    if (staff == NULL)
-    {
-        return 0;
-    }
-    for (i = 0; i < animUpdate->eventCount; i++)
-    {
-        switch (animUpdate->eventIds[i])
-        {
+    for (int i = 0; i < animUpdate->eventCount; i++) {
+        switch (animUpdate->eventIds[i]) {
         case MCSTAFFEFFECT_EVENT_FORCE_GLOW:
             staffSetGlow(staff, 5, 1);
             break;
         case MCSTAFFEFFECT_EVENT_RESTORE_GLOW:
-            staffSetGlow(staff, 5, (u8)staffEffect->userData2);
+            staffSetGlow(staff, 5, staffEffect->userData2);
             break;
         case MCSTAFFEFFECT_EVENT_CLEAR_GLOW:
             staffSetGlow(staff, 5, 0);
             break;
         }
     }
+
     return 0;
 }
 

@@ -69,12 +69,7 @@ typedef union ScarabCollisionResults {
     };
 } ScarabCollisionResults;
 
-typedef union ScarabMoneyValues {
-    u32 packed;
-    u8 values[4];
-} ScarabMoneyValues;
-
-const ScarabMoneyValues gScarabMoneyValues = {0x01050A32};
+const u8 gScarabMoneyValues[4] = {1, 5, 10, 50};
 
 typedef struct ScarabSweepSphere {
     f32 radii[4];   /* 0x00 */
@@ -100,9 +95,6 @@ STATIC_ASSERT(offsetof(ScarabCollisionResults, radii) == 0x40);
 STATIC_ASSERT(offsetof(ScarabCollisionResults, hitAxes) == 0x50);
 STATIC_ASSERT(offsetof(ScarabCollisionResults, signedHitAxes) == 0x50);
 STATIC_ASSERT(sizeof(ScarabCollisionResults) == sizeof(TrackHitResults));
-STATIC_ASSERT(offsetof(ScarabMoneyValues, packed) == 0x0);
-STATIC_ASSERT(offsetof(ScarabMoneyValues, values) == 0x0);
-STATIC_ASSERT(sizeof(ScarabMoneyValues) == 0x4);
 STATIC_ASSERT(offsetof(ScarabSweepSphere, radii) == 0x0);
 STATIC_ASSERT(offsetof(ScarabSweepSphere, hitAxis) == 0x10);
 STATIC_ASSERT(offsetof(ScarabSweepSphere, pad11) == 0x11);
@@ -298,9 +290,6 @@ void Scarab_update(GameObject* obj) {
     TrackGroundHit** groundHits;
     u32 message;
     f32 animationPhase;
-    ScarabMoneyValues queuedMoneyValues;
-    ScarabMoneyValues pickupMoneyValues;
-    ScarabMoneyValues rainMoneyValues;
     int bestGroundHitIndex;
     int collisionDetected;
     GameObject* player;
@@ -329,8 +318,7 @@ void Scarab_update(GameObject* obj) {
         while (ObjMsg_Pop(obj, &message, 0, 0) != 0) {
             switch (message) {
             case SCARAB_MSG_PICKUP:
-                queuedMoneyValues = gScarabMoneyValues;
-                playerAddMoney(player, queuedMoneyValues.values[state->moneyKind]);
+                playerAddMoney(player, gScarabMoneyValues[state->moneyKind]);
                 state->destructDelayTimer = SCARAB_DESTRUCT_DELAY;
                 state->lifetime = 0;
                 state->pickupFlags &= ~SCARAB_PICKUP_PENDING;
@@ -613,8 +601,7 @@ void Scarab_update(GameObject* obj) {
                         mainSetBits(GAMEBIT_SawScarab, 1);
                         state->pickupFlags |= SCARAB_PICKUP_PENDING;
                     } else {
-                        pickupMoneyValues = gScarabMoneyValues;
-                        playerAddMoney(player, pickupMoneyValues.values[state->moneyKind]);
+                        playerAddMoney(player, gScarabMoneyValues[state->moneyKind]);
                         state->destructDelayTimer = SCARAB_DESTRUCT_DELAY;
                         state->lifetime = 0;
                     }
@@ -648,8 +635,7 @@ void Scarab_update(GameObject* obj) {
             } else if (state->stunTimer != 0 && obj->anim.romDefNo == SCARAB_OBJECT_RAIN &&
                        ObjHits_GetPriorityHit(obj, 0, 0, 0) == SCARAB_TRIGGER_HIT_KIND) {
                 Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_46);
-                rainMoneyValues = gScarabMoneyValues;
-                playerAddMoney(player, rainMoneyValues.values[state->moneyKind]);
+                playerAddMoney(player, gScarabMoneyValues[state->moneyKind]);
                 state->destructDelayTimer = SCARAB_DESTRUCT_DELAY;
                 state->lifetime = 0;
             }

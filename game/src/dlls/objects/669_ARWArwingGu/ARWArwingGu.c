@@ -26,22 +26,7 @@ enum
     ARWGU_DEF_GUN_R = 0x615
 };
 
-ObjectDescriptor gARWArwingGuObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWArwingGu_initialise,
-    (ObjectDescriptorCallback)ARWArwingGu_release,
-    NULL,
-    (ObjectDescriptorCallback)ARWArwingGu_init,
-    (ObjectDescriptorCallback)ARWArwingGu_update,
-    (ObjectDescriptorCallback)ARWArwingGu_hitDetect,
-    (ObjectDescriptorCallback)ARWArwingGu_render,
-    (ObjectDescriptorCallback)ARWArwingGu_free,
-    (ObjectDescriptorCallback)ARWArwingGu_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ARWArwingGu_getExtraSize,
-};
+
 
 void arwarwinggu_setActiveVisible(GameObject* obj, u8 active, u8 visible)
 {
@@ -192,3 +177,20 @@ void ARWArwingGu_release(void)
 void ARWArwingGu_initialise(void)
 {
 }
+
+ObjectDescriptor gARWArwingGuObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ARWArwingGu_initialise,
+    (ObjectDescriptorCallback)ARWArwingGu_release,
+    NULL,
+    (ObjectDescriptorCallback)ARWArwingGu_init,
+    (ObjectDescriptorCallback)ARWArwingGu_update,
+    (ObjectDescriptorCallback)ARWArwingGu_hitDetect,
+    (ObjectDescriptorCallback)ARWArwingGu_render,
+    (ObjectDescriptorCallback)ARWArwingGu_free,
+    (ObjectDescriptorCallback)ARWArwingGu_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)ARWArwingGu_getExtraSize,
+};

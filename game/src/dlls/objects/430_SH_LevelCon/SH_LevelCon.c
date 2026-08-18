@@ -85,22 +85,7 @@ ShLevelControlTables gShLevelControlTables = {
      439, 442, 442, 442, 436, 96,  96,  96,  96,  96, 436, 96, 96, 96},
     {-1, -1,  -1, -1,  -1, -1, 424, -1, -1, -1, -1, -1, -1, -1,
      -1, 424, -1, 424, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1}};
-ObjectDescriptor gSH_LevelControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SH_LevelControl_init,
-    (ObjectDescriptorCallback)SH_LevelControl_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)SH_LevelControl_free,
-    0,
-    SH_LevelControl_getExtraSize,
-};
+
 
 char sShLevelControlNumBloopsFormat[] = "numBloops %d\n";
 
@@ -779,3 +764,20 @@ void SH_LevelControl_init(GameObject* obj) {
     }
     Rcp_DisableHeatEffect();
 }
+
+ObjectDescriptor gSH_LevelControlObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)SH_LevelControl_init,
+    (ObjectDescriptorCallback)SH_LevelControl_update,
+    0,
+    0,
+    (ObjectDescriptorCallback)SH_LevelControl_free,
+    0,
+    SH_LevelControl_getExtraSize,
+};

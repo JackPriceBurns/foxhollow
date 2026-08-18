@@ -41,22 +41,7 @@ u16 gScTotemPoleRecordGameBits[4] = {
 
 f32 gScTotemPoleHitEffectCooldown;
 
-ObjectDescriptor gSC_totempoleObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)sc_totempole_initialise,
-    (ObjectDescriptorCallback)sc_totempole_release,
-    0,
-    (ObjectDescriptorCallback)sc_totempole_init,
-    (ObjectDescriptorCallback)sc_totempole_update,
-    (ObjectDescriptorCallback)sc_totempole_hitDetect,
-    (ObjectDescriptorCallback)sc_totempole_render,
-    (ObjectDescriptorCallback)sc_totempole_free,
-    (ObjectDescriptorCallback)sc_totempole_getObjectTypeId,
-    sc_totempole_getExtraSize,
-};
+
 
 // clang-format off
 int sc_totempole_sortCompletionGameBits(recordGameBits, completionTime)
@@ -185,3 +170,20 @@ void sc_totempole_release(void) {
 
 void sc_totempole_initialise(void) {
 }
+
+ObjectDescriptor gSC_totempoleObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)sc_totempole_initialise,
+    (ObjectDescriptorCallback)sc_totempole_release,
+    0,
+    (ObjectDescriptorCallback)sc_totempole_init,
+    (ObjectDescriptorCallback)sc_totempole_update,
+    (ObjectDescriptorCallback)sc_totempole_hitDetect,
+    (ObjectDescriptorCallback)sc_totempole_render,
+    (ObjectDescriptorCallback)sc_totempole_free,
+    (ObjectDescriptorCallback)sc_totempole_getObjectTypeId,
+    sc_totempole_getExtraSize,
+};

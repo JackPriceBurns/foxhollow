@@ -1,25 +1,20 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/dll_003A_dummy3a.h"
 
-void Dummy3A_render(void)
-{
+void Dummy3A_render(void) {
 }
 
-void Dummy3A_frameEnd(void)
-{
+void Dummy3A_frameEnd(void) {
 }
 
-int Dummy3A_frameStart(void)
-{
+int Dummy3A_frameStart(void) {
     return 0;
 }
 
-void Dummy3A_release(void)
-{
+void Dummy3A_release(void) {
 }
 
-void Dummy3A_initialise(void)
-{
+void Dummy3A_initialise(void) {
 }
 
 ObjectDescriptor6 Dummy3A_funcs = {

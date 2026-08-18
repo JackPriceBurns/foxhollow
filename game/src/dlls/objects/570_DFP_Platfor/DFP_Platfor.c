@@ -1,48 +1,36 @@
 #include "dolphin/os.h"
 #include "main/dll/VF/platform1.h"
 
-int platform1_getExtraSize(void)
-{
+int platform1_getExtraSize(void) {
     return 0;
 }
 
-int platform1_getObjectTypeId(void)
-{
+int platform1_getObjectTypeId(void) {
     return 0;
 }
 
-void platform1_free(void)
-{
+void platform1_free(void) {
 }
 
-void platform1_drawUnsupported(void)
-{
-    OSReport(sPlatform1DrawNoLongerSupported);
-    return;
+void platform1_drawUnsupported(void) {
+    OSReport("<platform1 draw>No Longer supported \n");
 }
 
-void platform1_hitDetect(void)
-{
+void platform1_hitDetect(void) {
 }
 
-void platform1_controlUnsupported(void)
-{
-    OSReport(sPlatform1ControlNoLongerSupported);
-    return;
+void platform1_controlUnsupported(void) {
+    OSReport("<platform1 control>No Longer supported \n");
 }
 
-void platform1_init(void)
-{
-    OSReport(sPlatform1InitNoLongerSupported);
-    return;
+void platform1_init(void) {
+    OSReport("<platform1 Init>No Longer supported \n");
 }
 
-void platform1_release(void)
-{
+void platform1_release(void) {
 }
 
-void platform1_initialise(void)
-{
+void platform1_initialise(void) {
 }
 
 ObjectDescriptor gPlatform1ObjDescriptor = {
@@ -61,7 +49,3 @@ ObjectDescriptor gPlatform1ObjDescriptor = {
     (ObjectDescriptorCallback)platform1_getObjectTypeId,
     platform1_getExtraSize,
 };
-
-char sPlatform1DrawNoLongerSupported[] = "<platform1 draw>No Longer supported \n";
-char sPlatform1ControlNoLongerSupported[] = "<platform1 control>No Longer supported \n";
-char sPlatform1InitNoLongerSupported[] = "<platform1 Init>No Longer supported \n";

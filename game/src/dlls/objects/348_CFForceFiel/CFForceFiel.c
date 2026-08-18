@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gCFForceField15CNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll15CObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

@@ -32,22 +32,7 @@ static const f32 sAlphaFadeRate = 3.0f;
 static const f32 sSpinRate = 600.0f;
 static const f32 sExplosionScale = 100.0f;
 
-ObjectDescriptor gARWBombCollObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWBombColl_initialise,
-    (ObjectDescriptorCallback)ARWBombColl_release,
-    NULL,
-    (ObjectDescriptorCallback)ARWBombColl_init,
-    (ObjectDescriptorCallback)ARWBombColl_update,
-    (ObjectDescriptorCallback)ARWBombColl_hitDetect,
-    (ObjectDescriptorCallback)ARWBombColl_render,
-    (ObjectDescriptorCallback)ARWBombColl_free,
-    (ObjectDescriptorCallback)ARWBombColl_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ARWBombColl_getExtraSize,
-};
+
 
 void arwbombcoll_setLifetime(GameObject* obj, int lifetime)
 {
@@ -218,3 +203,20 @@ void ARWBombColl_release(void)
 void ARWBombColl_initialise(void)
 {
 }
+
+ObjectDescriptor gARWBombCollObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ARWBombColl_initialise,
+    (ObjectDescriptorCallback)ARWBombColl_release,
+    NULL,
+    (ObjectDescriptorCallback)ARWBombColl_init,
+    (ObjectDescriptorCallback)ARWBombColl_update,
+    (ObjectDescriptorCallback)ARWBombColl_hitDetect,
+    (ObjectDescriptorCallback)ARWBombColl_render,
+    (ObjectDescriptorCallback)ARWBombColl_free,
+    (ObjectDescriptorCallback)ARWBombColl_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)ARWBombColl_getExtraSize,
+};

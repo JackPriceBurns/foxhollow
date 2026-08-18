@@ -16,22 +16,7 @@
 #include "main/objtype.h"
 #include "dlls/objects/440_SC_totempol.h"
 
-ObjectDescriptor gCrCloudRaceObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)crcloudrace_initialise,
-    (ObjectDescriptorCallback)crcloudrace_release,
-    0,
-    (ObjectDescriptorCallback)crcloudrace_init,
-    (ObjectDescriptorCallback)crcloudrace_update,
-    (ObjectDescriptorCallback)crcloudrace_hitDetect,
-    (ObjectDescriptorCallback)crcloudrace_render,
-    (ObjectDescriptorCallback)crcloudrace_free,
-    (ObjectDescriptorCallback)crcloudrace_getObjectTypeId,
-    crcloudrace_getExtraSize,
-};
+
 
 void crcloudrace_updateCompletionState(GameObject* obj, CrCloudRaceState* state)
 {
@@ -234,3 +219,20 @@ void crcloudrace_initialise(void)
 {
     return;
 }
+
+ObjectDescriptor gCrCloudRaceObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)crcloudrace_initialise,
+    (ObjectDescriptorCallback)crcloudrace_release,
+    0,
+    (ObjectDescriptorCallback)crcloudrace_init,
+    (ObjectDescriptorCallback)crcloudrace_update,
+    (ObjectDescriptorCallback)crcloudrace_hitDetect,
+    (ObjectDescriptorCallback)crcloudrace_render,
+    (ObjectDescriptorCallback)crcloudrace_free,
+    (ObjectDescriptorCallback)crcloudrace_getObjectTypeId,
+    crcloudrace_getExtraSize,
+};

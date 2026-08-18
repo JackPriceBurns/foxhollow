@@ -195,22 +195,7 @@ void AndrossHand_hitDetect(void)
 
 f32 gAndrossHandMoveAnimSpeeds[7] = {0.02f, 0.007f, 0.007f, 0.003f, 0.02f, 0.013f, 0.007f};
 
-ObjectDescriptor gAndrossHandObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)AndrossHand_init,
-    (ObjectDescriptorCallback)AndrossHand_update,
-    (ObjectDescriptorCallback)AndrossHand_hitDetect,
-    (ObjectDescriptorCallback)AndrossHand_render,
-    (ObjectDescriptorCallback)AndrossHand_free,
-    (ObjectDescriptorCallback)AndrossHand_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)AndrossHand_getExtraSize,
-};
+
 
 void AndrossHand_update(GameObject* o)
 {
@@ -490,3 +475,20 @@ int gAndrossHandShotInterval = 2;
 int gAndrossHandHitImpulse = 20;
 int gAndrossHandProjectileForwardStep = 10;
 int gAndrossHandProjectileLifetime[2] = { 150 };
+
+ObjectDescriptor gAndrossHandObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)AndrossHand_init,
+    (ObjectDescriptorCallback)AndrossHand_update,
+    (ObjectDescriptorCallback)AndrossHand_hitDetect,
+    (ObjectDescriptorCallback)AndrossHand_render,
+    (ObjectDescriptorCallback)AndrossHand_free,
+    (ObjectDescriptorCallback)AndrossHand_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)AndrossHand_getExtraSize,
+};

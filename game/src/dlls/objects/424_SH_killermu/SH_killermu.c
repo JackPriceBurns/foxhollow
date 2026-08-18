@@ -130,22 +130,7 @@ s16 gEnemyMushroomStateAnimMoves[ENEMY_MUSHROOM_STATE_ANIM_MOVE_COUNT] = {0, 0, 
 f32 gEnemyMushroomStateAnimRates[ENEMY_MUSHROOM_STATE_ANIM_RATE_COUNT] = {
     0.0f, 0.0f, 0.008f, 0.025f, 0.018f, 0.015f, 0.006f, 0.008f, 0.005f, 0.005f, 0.005f,
 };
-ObjectDescriptor gEnemyMushroomObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)EnemyMushroom_initialise,
-    (ObjectDescriptorCallback)EnemyMushroom_release,
-    0,
-    (ObjectDescriptorCallback)EnemyMushroom_init,
-    (ObjectDescriptorCallback)EnemyMushroom_update,
-    (ObjectDescriptorCallback)EnemyMushroom_hitDetect,
-    (ObjectDescriptorCallback)EnemyMushroom_render,
-    (ObjectDescriptorCallback)EnemyMushroom_free,
-    (ObjectDescriptorCallback)EnemyMushroom_getObjectTypeId,
-    EnemyMushroom_getExtraSize,
-};
+
 
 /* Per-frame poison, hit-reaction, fade, and respawn state machine. */
 void EnemyMushroom_update(GameObject* obj) {
@@ -415,3 +400,20 @@ void EnemyMushroom_release(void) {
 
 void EnemyMushroom_initialise(void) {
 }
+
+ObjectDescriptor gEnemyMushroomObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)EnemyMushroom_initialise,
+    (ObjectDescriptorCallback)EnemyMushroom_release,
+    0,
+    (ObjectDescriptorCallback)EnemyMushroom_init,
+    (ObjectDescriptorCallback)EnemyMushroom_update,
+    (ObjectDescriptorCallback)EnemyMushroom_hitDetect,
+    (ObjectDescriptorCallback)EnemyMushroom_render,
+    (ObjectDescriptorCallback)EnemyMushroom_free,
+    (ObjectDescriptorCallback)EnemyMushroom_getObjectTypeId,
+    EnemyMushroom_getExtraSize,
+};

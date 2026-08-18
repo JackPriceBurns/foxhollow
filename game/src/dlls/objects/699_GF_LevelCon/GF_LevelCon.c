@@ -63,22 +63,7 @@
 #define GFLEVELCON_ENVFX_B 0x21d
 #define GFLEVELCON_ENVFX_C 0x21e
 
-ObjectDescriptor gGF_LevelConObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)gf_levelcon_initialise,
-    (ObjectDescriptorCallback)gf_levelcon_release,
-    0,
-    (ObjectDescriptorCallback)gf_levelcon_init,
-    (ObjectDescriptorCallback)gf_levelcon_update,
-    (ObjectDescriptorCallback)gf_levelcon_hitDetect,
-    (ObjectDescriptorCallback)gf_levelcon_render,
-    (ObjectDescriptorCallback)gf_levelcon_free,
-    (ObjectDescriptorCallback)gf_levelcon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)gf_levelcon_getExtraSize,
-};
+
 
 void gf_levelcon_findLinkedObjects(GameObject* obj)
 {
@@ -270,3 +255,20 @@ void gf_levelcon_release(void)
 void gf_levelcon_initialise(void)
 {
 }
+
+ObjectDescriptor gGF_LevelConObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)gf_levelcon_initialise,
+    (ObjectDescriptorCallback)gf_levelcon_release,
+    0,
+    (ObjectDescriptorCallback)gf_levelcon_init,
+    (ObjectDescriptorCallback)gf_levelcon_update,
+    (ObjectDescriptorCallback)gf_levelcon_hitDetect,
+    (ObjectDescriptorCallback)gf_levelcon_render,
+    (ObjectDescriptorCallback)gf_levelcon_free,
+    (ObjectDescriptorCallback)gf_levelcon_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)gf_levelcon_getExtraSize,
+};

@@ -131,36 +131,7 @@ ShopItemRow gShopItemRows[SHOP_ITEM_ROW_COUNT] = {
     {0, {0, 0, 0}, 0, 0, -1, -1, 0xFFFF},
 };
 
-ObjectDescriptor24 gShopObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)shop_initialise,
-    (ObjectDescriptorCallback)shop_release,
-    0,
-    (ObjectDescriptorCallback)shop_init,
-    (ObjectDescriptorCallback)shop_update,
-    (ObjectDescriptorCallback)shop_hitDetect,
-    (ObjectDescriptorCallback)shop_render,
-    (ObjectDescriptorCallback)shop_free,
-    (ObjectDescriptorCallback)shop_getObjectTypeId,
-    shop_getExtraSize,
-    (ObjectDescriptorCallback)shop_getStateField0,
-    (ObjectDescriptorCallback)shop_playSequence,
-    (ObjectDescriptorCallback)shop_isItemAvailable,
-    (ObjectDescriptorCallback)shop_isItemBought,
-    (ObjectDescriptorCallback)shop_getItemMinPrice,
-    (ObjectDescriptorCallback)shop_getItemSpecialPrice,
-    (ObjectDescriptorCallback)shop_getItemPrice,
-    (ObjectDescriptorCallback)shop_getItemTextId,
-    (ObjectDescriptorCallback)shop_setItemIndex,
-    (ObjectDescriptorCallback)shop_getItemIndex,
-    (ObjectDescriptorCallback)shop_buyItem,
-    (ObjectDescriptorCallback)shop_func15,
-    (ObjectDescriptorCallback)shop_func16,
-    (ObjectDescriptorCallback)shop_func17,
-};
+
 
 /* Triple s8 fan-out: write obj->_b8[2/3/4]
  * (sign-extended) into *out_b3, *out_b2, *out_b4. */
@@ -441,3 +412,34 @@ void shop_release(void)
 void shop_initialise(void)
 {
 }
+
+ObjectDescriptor24 gShopObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+    (ObjectDescriptorCallback)shop_initialise,
+    (ObjectDescriptorCallback)shop_release,
+    0,
+    (ObjectDescriptorCallback)shop_init,
+    (ObjectDescriptorCallback)shop_update,
+    (ObjectDescriptorCallback)shop_hitDetect,
+    (ObjectDescriptorCallback)shop_render,
+    (ObjectDescriptorCallback)shop_free,
+    (ObjectDescriptorCallback)shop_getObjectTypeId,
+    shop_getExtraSize,
+    (ObjectDescriptorCallback)shop_getStateField0,
+    (ObjectDescriptorCallback)shop_playSequence,
+    (ObjectDescriptorCallback)shop_isItemAvailable,
+    (ObjectDescriptorCallback)shop_isItemBought,
+    (ObjectDescriptorCallback)shop_getItemMinPrice,
+    (ObjectDescriptorCallback)shop_getItemSpecialPrice,
+    (ObjectDescriptorCallback)shop_getItemPrice,
+    (ObjectDescriptorCallback)shop_getItemTextId,
+    (ObjectDescriptorCallback)shop_setItemIndex,
+    (ObjectDescriptorCallback)shop_getItemIndex,
+    (ObjectDescriptorCallback)shop_buyItem,
+    (ObjectDescriptorCallback)shop_func15,
+    (ObjectDescriptorCallback)shop_func16,
+    (ObjectDescriptorCallback)shop_func17,
+};

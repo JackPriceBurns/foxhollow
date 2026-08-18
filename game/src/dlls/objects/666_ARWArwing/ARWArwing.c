@@ -142,22 +142,7 @@ f32 sDamageStickBlendRamp[30] = {
     1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 };
 
-ObjectDescriptor gARWArwingObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwarwing_initialise,
-    (ObjectDescriptorCallback)arwarwing_release,
-    NULL,
-    (ObjectDescriptorCallback)arwarwing_init,
-    (ObjectDescriptorCallback)arwarwing_update,
-    (ObjectDescriptorCallback)arwarwing_hitDetect,
-    (ObjectDescriptorCallback)arwarwing_render,
-    (ObjectDescriptorCallback)arwarwing_free,
-    (ObjectDescriptorCallback)arwarwing_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwarwing_getExtraSize,
-};
+
 
 static inline f32 arwarwing_clampTrim(f32 v, f32 lo, f32 hi)
 {
@@ -1877,3 +1862,20 @@ void arwarwing_release(void)
 void arwarwing_initialise(void)
 {
 }
+
+ObjectDescriptor gARWArwingObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)arwarwing_initialise,
+    (ObjectDescriptorCallback)arwarwing_release,
+    NULL,
+    (ObjectDescriptorCallback)arwarwing_init,
+    (ObjectDescriptorCallback)arwarwing_update,
+    (ObjectDescriptorCallback)arwarwing_hitDetect,
+    (ObjectDescriptorCallback)arwarwing_render,
+    (ObjectDescriptorCallback)arwarwing_free,
+    (ObjectDescriptorCallback)arwarwing_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)arwarwing_getExtraSize,
+};

@@ -9,18 +9,8 @@
 #include "main/dll/dll_00AC_projmagicstream.h"
 #include "dolphin/os/OSReport.h"
 
-ProjmagicstreamResourceDescriptor gProjmagicstreamResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projmagicstream_initialise,
-    projmagicstream_release,
-    NULL,
-    projmagicstream_doUnsupported,
-};
-
-char sProjmagicstreamDoNoLongerSupported[] = "<projmagicstream Do>No Longer supported \n";
-
 int projmagicstream_doUnsupported(void) {
-    OSReport(sProjmagicstreamDoNoLongerSupported);
+    OSReport("<projmagicstream Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,3 +19,11 @@ void projmagicstream_release(void) {
 
 void projmagicstream_initialise(void) {
 }
+
+ProjmagicstreamResourceDescriptor gProjmagicstreamResourceDescriptor = {
+    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
+    projmagicstream_initialise,
+    projmagicstream_release,
+    NULL,
+    projmagicstream_doUnsupported,
+};

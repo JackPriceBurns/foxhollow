@@ -182,26 +182,7 @@ STATIC_ASSERT(sizeof(PushableCollisionProbe) == 0x30);
 int gPushableSavedIdentCount;
 int gPushableSavedIdents[0x28];
 
-ObjectDescriptor14 gPushableObjDescriptor = {
-    0,                                                  /* reserved0 */
-    0,                                                  /* reserved1 */
-    0,                                                  /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,                   /* slotCountAndFlags */
-    0,                                                  /* initialise */
-    0,                                                  /* release */
-    0,                                                  /* slot02 */
-    (ObjectDescriptorCallback)pushable_init,            /* init */
-    (ObjectDescriptorCallback)pushable_update,          /* update */
-    (ObjectDescriptorCallback)pushable_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)pushable_render,          /* render */
-    (ObjectDescriptorCallback)pushable_free,            /* free */
-    (ObjectDescriptorCallback)pushable_getObjectTypeId, /* getObjectTypeId */
-    pushable_getExtraSize,    /* slot09 */
-    (ObjectDescriptorCallback)pushable_push,        /* slot0A */
-    (ObjectDescriptorCallback)pushable_isWithinCullDistance,          /* slot0B */
-    (ObjectDescriptorCallback)pushable_setModelFlag,      /* slot0C */
-    (ObjectDescriptorCallback)pushable_isRestored,         /* slot0D */
-};
+
 
 char sPushPullObjectHitpointOverflow[] = "PUSHPULL OBJECT: hitpoint overflow\n";
 const PushableRadii gPushableDefaultBox = {{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -632,18 +613,18 @@ u32 pushable_SeqFn(GameObject* obj, MatrixTransform* referenceTransform, ObjSeqS
 
 void pushable_handleMsgs(GameObject* obj, int unused) {
     PushableState* state;
-    GameObject* messageSender;
+    uintptr_t messageSender;
     u32 messageId;
-    u32 messageParam;
+    uintptr_t messageParam;
 
     (void)unused;
 
     state = obj->extra;
     messageParam = 0;
-    while (ObjMsg_Pop(obj, &messageId, (u32*)&messageSender, &messageParam) != 0) {
+    while (ObjMsg_PopNative(obj, &messageId, &messageSender, &messageParam) != 0) {
         switch (messageId) {
         case PUSHABLE_MSG_SET_SENDER:
-            state->msgSenderObj = messageSender;
+            state->msgSenderObj = (GameObject*)messageSender;
             break;
         case PUSHABLE_MSG_FREE:
             if ((obj->anim.romDefNo != PUSHABLE_SEQ_ID_MAGIC_GEM_21E) &&
@@ -1207,7 +1188,7 @@ void pushable_update(GameObject* obj) {
             obj->anim.localPosY = placement->posY;
             obj->anim.localPosZ = (f32)(PUSHABLE_CURTAIN_POSITION_Z + (f64)placement->posZ);
         }
-        ((int (*)(int, PushableState*))pushable_updateCurtain)((int)obj, state);
+        pushable_updateCurtain(obj, state);
         break;
     case PUSHABLE_SEQ_ID_DIM2_ICE_BLOCK:
         if (PUSHABLE_ZERO == state->prevWaterDepth && state->waterDepth > PUSHABLE_ZERO) {
@@ -1233,8 +1214,8 @@ void pushable_update(GameObject* obj) {
 
 void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     PushableState* state;
+    ObjModel* activeModel;
     ModelFileHeader* model;
-    int* activeModelSlot;
     int i;
     f32* modelMtx;
     f32 vertex[3];
@@ -1253,13 +1234,13 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     state = obj->extra;
     gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->gameBit);
     state->pointCount = 0;
-    activeModelSlot = (int*)((ObjAnimComponent*)obj)->banks[((ObjAnimComponent*)obj)->bankIndex];
-    model = (ModelFileHeader*)*activeModelSlot;
+    activeModel = Obj_GetActiveModel(obj);
+    model = activeModel->file;
     state->unkB0 = ObjAnim_ReadPlacementS32(&obj->anim, &setup->unk1C);
     state->scale = (f32)ObjAnim_ReadPlacementU16(&obj->anim, &setup->scaleRaw) /
                    PUSHABLE_SCALE_DENOM;
     state->scale = state->scale * obj->anim.modelInstance->rootMotionScaleBase;
-    state->cullDistance = state->scale * (f32)modelFileHeaderGetCullDistance((ModelFileHeader*)*activeModelSlot) +
+    state->cullDistance = state->scale * (f32)modelFileHeaderGetCullDistance(model) +
                           PUSHABLE_MIN_GROUND_CLEARANCE;
     {
         f32 z0 = PUSHABLE_ZERO;
@@ -1395,3 +1376,24 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
         arrayRemoveUnordered(gPushableSavedIdents, &gPushableSavedIdentCount, setup->base.ident);
     }
 }
+
+ObjectDescriptor14 gPushableObjDescriptor = {
+    0,                                                  /* reserved0 */
+    0,                                                  /* reserved1 */
+    0,                                                  /* reserved2 */
+    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,                   /* slotCountAndFlags */
+    0,                                                  /* initialise */
+    0,                                                  /* release */
+    0,                                                  /* slot02 */
+    (ObjectDescriptorCallback)pushable_init,            /* init */
+    (ObjectDescriptorCallback)pushable_update,          /* update */
+    (ObjectDescriptorCallback)pushable_hitDetect,       /* hitDetect */
+    (ObjectDescriptorCallback)pushable_render,          /* render */
+    (ObjectDescriptorCallback)pushable_free,            /* free */
+    (ObjectDescriptorCallback)pushable_getObjectTypeId, /* getObjectTypeId */
+    pushable_getExtraSize,    /* slot09 */
+    (ObjectDescriptorCallback)pushable_push,        /* slot0A */
+    (ObjectDescriptorCallback)pushable_isWithinCullDistance,          /* slot0B */
+    (ObjectDescriptorCallback)pushable_setModelFlag,      /* slot0C */
+    (ObjectDescriptorCallback)pushable_isRestored,         /* slot0D */
+};

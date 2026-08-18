@@ -74,14 +74,14 @@ int flameblast_getExtraSize(void) {
 }
 
 void flameblast_render(GameObject* obj) {
-    f32 offset[3];
+    Vec offset;
     f32 scale =
         FLAMEBLAST_RENDER_SCALE_RATE * ((FlameblastState*)obj->extra)->cycleTimer + FLAMEBLAST_RENDER_BASE_SCALE;
 
-    offset[0] = 0.0f;
-    offset[1] = 1.0f;
-    offset[2] = 0.0f;
-    objfx_spawnPulseBurst(obj, scale, FLAMEBLAST_RENDER_EFFECT, 0, 0, offset);
+    offset.x = 0.0f;
+    offset.y = 1.0f;
+    offset.z = 0.0f;
+    objfx_spawnPulseBurst(obj, scale, FLAMEBLAST_RENDER_EFFECT, 0, 0, &offset);
 }
 
 void flameblast_update(GameObject* obj) {

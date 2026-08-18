@@ -78,22 +78,7 @@ STATIC_ASSERT(ARRAY_COUNT(gDll200WanderTargets) == DLL200_WANDER_TARGET_COUNT);
  * Retail data order places this exact descriptor before the TU's diagnostic
  * string and compiler-generated switch tables.
  */
-ObjectDescriptor gDll200ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dll_200_initialise,
-    dll_200_release,
-    0,
-    (ObjectDescriptorCallback)dll_200_init,
-    (ObjectDescriptorCallback)dll_200_update,
-    dll_200_hitDetect,
-    (ObjectDescriptorCallback)dll_200_render,
-    dll_200_free,
-    (ObjectDescriptorCallback)dll_200_getObjectTypeId,
-    dll_200_getExtraSize,
-};
+
 
 char sDll200AngleDiffFormat[9] = "diff %d\n";
 
@@ -451,3 +436,20 @@ void dll_200_release(void) {
 
 void dll_200_initialise(void) {
 }
+
+ObjectDescriptor gDll200ObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    dll_200_initialise,
+    dll_200_release,
+    0,
+    (ObjectDescriptorCallback)dll_200_init,
+    (ObjectDescriptorCallback)dll_200_update,
+    dll_200_hitDetect,
+    (ObjectDescriptorCallback)dll_200_render,
+    dll_200_free,
+    (ObjectDescriptorCallback)dll_200_getObjectTypeId,
+    dll_200_getExtraSize,
+};

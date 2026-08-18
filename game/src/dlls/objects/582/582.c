@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 Dummy246[12] = {0xFFFFFFFF};
+ObjectDescriptor gDll246ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0xFFFFFFFF);

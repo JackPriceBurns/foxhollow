@@ -191,24 +191,7 @@ int babyCloudRunner_func0A(GameObject* obj) {
 
 int gBabyCloudRunnerAirMeterValues[BABYCLOUDRUNNER_AIR_METER_COUNT] = {0x1770, 0x2EE0, 0x2EE0, 0x3E80};
 
-ObjectDescriptor12 gBabyCloudRunnerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)babyCloudRunner_initialise,
-    (ObjectDescriptorCallback)babyCloudRunner_release,
-    0,
-    (ObjectDescriptorCallback)babyCloudRunner_init,
-    (ObjectDescriptorCallback)babyCloudRunner_update,
-    (ObjectDescriptorCallback)babyCloudRunner_hitDetect,
-    (ObjectDescriptorCallback)babyCloudRunner_render,
-    (ObjectDescriptorCallback)babyCloudRunner_free,
-    (ObjectDescriptorCallback)babyCloudRunner_getObjectTypeId,
-    babyCloudRunner_getExtraSize,
-    (ObjectDescriptorCallback)babyCloudRunner_func0A,
-    (ObjectDescriptorCallback)babyCloudRunner_tryCapture,
-};
+
 
 int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     GameObject* player;
@@ -561,3 +544,22 @@ void babyCloudRunner_release(void) {
 
 void babyCloudRunner_initialise(void) {
 }
+
+ObjectDescriptor12 gBabyCloudRunnerObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    (ObjectDescriptorCallback)babyCloudRunner_initialise,
+    (ObjectDescriptorCallback)babyCloudRunner_release,
+    0,
+    (ObjectDescriptorCallback)babyCloudRunner_init,
+    (ObjectDescriptorCallback)babyCloudRunner_update,
+    (ObjectDescriptorCallback)babyCloudRunner_hitDetect,
+    (ObjectDescriptorCallback)babyCloudRunner_render,
+    (ObjectDescriptorCallback)babyCloudRunner_free,
+    (ObjectDescriptorCallback)babyCloudRunner_getObjectTypeId,
+    babyCloudRunner_getExtraSize,
+    (ObjectDescriptorCallback)babyCloudRunner_func0A,
+    (ObjectDescriptorCallback)babyCloudRunner_tryCapture,
+};

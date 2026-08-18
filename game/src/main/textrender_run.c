@@ -1135,6 +1135,15 @@ void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
     p = (u16*)((u8*)texHdr + texHdr[0]);
     p += 2;
     texStart = p;
+    size = (u32)((u8*)texStart - (u8*)loadSlot->loadHandle);
+    defsOfs = (size + 7) & ~7u;
+    newBuf = mmAlloc(defsOfs + cs->entryCount * sizeof(GameTextDef) + numStrings * sizeof(char*), 0x1a, 0);
+    if (newBuf == NULL)
+    {
+        cs->status = 3;
+        loadSlot->state = 6;
+        return;
+    }
     textureSlot = cs->textures;
     while (1)
     {
@@ -1194,9 +1203,6 @@ void gameTextFinalizeLoad(GameTextLoadSlot* loadSlot)
         }
         textureSlot = textureSlot + 1;
     }
-    size = (u32)((u8*)texStart - (u8*)loadSlot->loadHandle);
-    defsOfs = (size + 7) & ~7u;
-    newBuf = mmAlloc(defsOfs + cs->entryCount * sizeof(GameTextDef) + numStrings * sizeof(char*), 0x1a, 0);
     n = size >> 1;
     {
         u16* d = newBuf;

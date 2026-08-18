@@ -72,7 +72,7 @@ void CampFire_update(GameObject* obj) {
     int effectCount;
     int effectMode;
     f32 sunTime;
-    f32 effectOffset[3];
+    Vec effectOffset;
 
     state = obj->extra;
     Obj_GetPlayerObject();
@@ -113,11 +113,11 @@ void CampFire_update(GameObject* obj) {
             state->loopSoundPlaying = 0;
         }
     }
-    effectOffset[0] = 0.0f;
-    effectOffset[1] = 10.0f;
-    effectOffset[2] = 0.0f;
+    effectOffset.x = 0.0f;
+    effectOffset.y = 10.0f;
+    effectOffset.z = 0.0f;
     objfx_spawnPulseBurst(obj, CAMPFIRE_PULSE_SCALE * obj->anim.rootMotionScale, effectType, effectCount, effectMode,
-                          effectOffset);
+                          &effectOffset);
     {
         ModelLightStruct* activeLight = state->light;
         if (activeLight != NULL && activeLight->glowType != 0 && activeLight->enabled != 0) {

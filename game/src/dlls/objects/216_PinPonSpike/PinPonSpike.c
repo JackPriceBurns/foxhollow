@@ -29,22 +29,7 @@
 #define PINPONSPIKE_AIM_DISTANCE_SCALE    1.05f
 #define PINPONSPIKE_FALLBACK_LAUNCH_ANGLE 0x2000
 
-ObjectDescriptor gPinPonSpikeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)pinponspike_initialise,
-    (ObjectDescriptorCallback)pinponspike_release,
-    0,
-    (ObjectDescriptorCallback)pinponspike_init,
-    (ObjectDescriptorCallback)pinponspike_update,
-    (ObjectDescriptorCallback)pinponspike_hitDetect,
-    (ObjectDescriptorCallback)pinponspike_render,
-    (ObjectDescriptorCallback)pinponspike_free,
-    (ObjectDescriptorCallback)pinponspike_getObjectTypeId,
-    pinponspike_getExtraSize,
-};
+
 
 int pinponspike_calculateLaunchAngle(const f32* source, const f32* target, f32 speed, u8 useHighArc, f32 gravity) {
     f32 gravityQuarterOrSpeedSquared;
@@ -172,3 +157,20 @@ void pinponspike_release(void) {
 
 void pinponspike_initialise(void) {
 }
+
+ObjectDescriptor gPinPonSpikeObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)pinponspike_initialise,
+    (ObjectDescriptorCallback)pinponspike_release,
+    0,
+    (ObjectDescriptorCallback)pinponspike_init,
+    (ObjectDescriptorCallback)pinponspike_update,
+    (ObjectDescriptorCallback)pinponspike_hitDetect,
+    (ObjectDescriptorCallback)pinponspike_render,
+    (ObjectDescriptorCallback)pinponspike_free,
+    (ObjectDescriptorCallback)pinponspike_getObjectTypeId,
+    pinponspike_getExtraSize,
+};

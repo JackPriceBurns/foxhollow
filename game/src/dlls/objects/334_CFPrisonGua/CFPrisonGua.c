@@ -45,22 +45,7 @@
 #define CFPRISONGUARD_ALARM_PARTICLE_LIMIT  1.5f
 
 
-ObjectDescriptor gCFPrisonGuardObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPrisonGuard_initialise,
-    (ObjectDescriptorCallback)cfPrisonGuard_release,
-    0,
-    (ObjectDescriptorCallback)cfPrisonGuard_init,
-    (ObjectDescriptorCallback)cfPrisonGuard_update,
-    (ObjectDescriptorCallback)cfPrisonGuard_hitDetect,
-    (ObjectDescriptorCallback)cfPrisonGuard_render,
-    (ObjectDescriptorCallback)cfPrisonGuard_free,
-    (ObjectDescriptorCallback)cfPrisonGuard_getObjectTypeId,
-    cfPrisonGuard_getExtraSize,
-};
+
 
 int cfPrisonGuard_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     GameObject* player;
@@ -273,3 +258,20 @@ void cfPrisonGuard_release(void) {
 
 void cfPrisonGuard_initialise(void) {
 }
+
+ObjectDescriptor gCFPrisonGuardObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)cfPrisonGuard_initialise,
+    (ObjectDescriptorCallback)cfPrisonGuard_release,
+    0,
+    (ObjectDescriptorCallback)cfPrisonGuard_init,
+    (ObjectDescriptorCallback)cfPrisonGuard_update,
+    (ObjectDescriptorCallback)cfPrisonGuard_hitDetect,
+    (ObjectDescriptorCallback)cfPrisonGuard_render,
+    (ObjectDescriptorCallback)cfPrisonGuard_free,
+    (ObjectDescriptorCallback)cfPrisonGuard_getObjectTypeId,
+    cfPrisonGuard_getExtraSize,
+};

@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gLaserBeamNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll14DObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

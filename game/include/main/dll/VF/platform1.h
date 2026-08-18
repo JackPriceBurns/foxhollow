@@ -3,9 +3,6 @@
 
 #include "dlls/object_descriptor.h"
 
-extern char sPlatform1DrawNoLongerSupported[];
-extern char sPlatform1ControlNoLongerSupported[];
-extern char sPlatform1InitNoLongerSupported[];
 extern ObjectDescriptor gPlatform1ObjDescriptor;
 
 int platform1_getExtraSize(void);

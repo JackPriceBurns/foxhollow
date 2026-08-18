@@ -404,22 +404,7 @@ BossDrakorTuning gBossDrakorTurnMoveStates = {
     {50, 100, 200},
 };
 
-ObjectDescriptor gBossDrakorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)bossdrakor_initialise,
-    (ObjectDescriptorCallback)bossdrakor_release,
-    0,
-    (ObjectDescriptorCallback)bossdrakor_init,
-    (ObjectDescriptorCallback)bossdrakor_update,
-    (ObjectDescriptorCallback)bossdrakor_hitDetect,
-    (ObjectDescriptorCallback)bossdrakor_render,
-    (ObjectDescriptorCallback)bossdrakor_free,
-    0,
-    (ObjectDescriptorExtraSizeCallback)bossdrakor_getExtraSize,
-};
+
 
 void bossdrakor_handleActionEvent(GameObject* obj, BossDrakorState* state, int action)
 {
@@ -997,3 +982,20 @@ void bossdrakor_release(void)
 void bossdrakor_initialise(void)
 {
 }
+
+ObjectDescriptor gBossDrakorObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)bossdrakor_initialise,
+    (ObjectDescriptorCallback)bossdrakor_release,
+    0,
+    (ObjectDescriptorCallback)bossdrakor_init,
+    (ObjectDescriptorCallback)bossdrakor_update,
+    (ObjectDescriptorCallback)bossdrakor_hitDetect,
+    (ObjectDescriptorCallback)bossdrakor_render,
+    (ObjectDescriptorCallback)bossdrakor_free,
+    0,
+    (ObjectDescriptorExtraSizeCallback)bossdrakor_getExtraSize,
+};

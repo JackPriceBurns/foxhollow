@@ -29,34 +29,7 @@ const f32 gDirectionalLightInitialFadeDuration = 0.0f;
 
 #define DIRECTIONALLIGHT_FLAG_USE_AMBIENT_COLOR 0x01
 #define DIRECTIONALLIGHT_DEBUG_FIELD_COUNT      8
-struct DirectionalLightObjDescriptorLayout gDirectionalLightObjDescriptor = {
-    0,
-    0,
-    0,
-    0x90000,
-    {
-        (void (*)(void))directionallight_initialise,
-        (void (*)(void))directionallight_release,
-        0,
-        (void (*)(void))directionallight_init,
-        (void (*)(void))directionallight_update,
-        (void (*)(void))directionallight_hitDetect,
-        (void (*)(void))directionallight_render,
-        (void (*)(void))directionallight_free,
-        (void (*)(void))directionallight_getObjectTypeId,
-        (void (*)(void))directionallight_getExtraSize,
-    },
-    "Mode: YAW\n",
-    "Angle: %d\n",
-    "Mode: PITCH\n",
-    "Mode: DIFFUSE COLOUR RED\n",
-    "Colour: %d\n",
-    "Mode: DIFFUSE COLOUR GREEN\n",
-    "Mode: DIFFUSE COLOUR BLUE\n",
-    "Mode: SPECULAR COLOUR RED\n",
-    "Mode: SPECULAR COLOUR GREEN\n",
-    "Mode: SPECULAR COLOUR BLUE\n",
-};
+
 
 void directionallight_debugEdit(GameObject* obj, DirectionalLightState* state)
 {
@@ -314,3 +287,32 @@ void directionallight_release(void)
 void directionallight_initialise(void)
 {
 }
+
+struct DirectionalLightObjDescriptorLayout gDirectionalLightObjDescriptor = {
+    0,
+    0,
+    0,
+    0x90000,
+    {
+        (void (*)(void))directionallight_initialise,
+        (void (*)(void))directionallight_release,
+        0,
+        (void (*)(void))directionallight_init,
+        (void (*)(void))directionallight_update,
+        (void (*)(void))directionallight_hitDetect,
+        (void (*)(void))directionallight_render,
+        (void (*)(void))directionallight_free,
+        (void (*)(void))directionallight_getObjectTypeId,
+        (void (*)(void))directionallight_getExtraSize,
+    },
+    "Mode: YAW\n",
+    "Angle: %d\n",
+    "Mode: PITCH\n",
+    "Mode: DIFFUSE COLOUR RED\n",
+    "Colour: %d\n",
+    "Mode: DIFFUSE COLOUR GREEN\n",
+    "Mode: DIFFUSE COLOUR BLUE\n",
+    "Mode: SPECULAR COLOUR RED\n",
+    "Mode: SPECULAR COLOUR GREEN\n",
+    "Mode: SPECULAR COLOUR BLUE\n",
+};

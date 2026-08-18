@@ -8,10 +8,8 @@
 #include "main/dll/dll_00BE_projtesla.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjteslaDoNoLongerSupported[];
-
 int projtesla_doUnsupported(void) {
-    OSReport(sProjteslaDoNoLongerSupported);
+    OSReport("<projtesla Do>No Longer supported \n");
     return 0;
 }
 
@@ -28,5 +26,3 @@ ProjteslaResourceDescriptor gProjteslaResourceDescriptor = {
     NULL,
     projtesla_doUnsupported,
 };
-
-char sProjteslaDoNoLongerSupported[] = "<projtesla Do>No Longer supported \n";

@@ -67,22 +67,7 @@ enum {
     DOORF4_SEQUENCE_EVENT_PLAY_CLOSE_SFX = 5
 };
 
-ObjectDescriptor gDoorF4ObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)DoorF4_initialise,      /* initialise */
-    (ObjectDescriptorCallback)DoorF4_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)DoorF4_init,            /* init */
-    (ObjectDescriptorCallback)DoorF4_update,          /* update */
-    (ObjectDescriptorCallback)DoorF4_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)DoorF4_render,          /* render */
-    (ObjectDescriptorCallback)DoorF4_free,            /* free */
-    (ObjectDescriptorCallback)DoorF4_getObjectTypeId, /* getObjectTypeId */
-    DoorF4_getExtraSize,                              /* getExtraSize */
-};
+
 
 int DoorF4_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     int message;
@@ -511,3 +496,20 @@ void DoorF4_release(void) {
 
 void DoorF4_initialise(void) {
 }
+
+ObjectDescriptor gDoorF4ObjDescriptor = {
+    0,                                                /* reserved0 */
+    0,                                                /* reserved1 */
+    0,                                                /* reserved2 */
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
+    (ObjectDescriptorCallback)DoorF4_initialise,      /* initialise */
+    (ObjectDescriptorCallback)DoorF4_release,         /* release */
+    0,                                                /* slot02 */
+    (ObjectDescriptorCallback)DoorF4_init,            /* init */
+    (ObjectDescriptorCallback)DoorF4_update,          /* update */
+    (ObjectDescriptorCallback)DoorF4_hitDetect,       /* hitDetect */
+    (ObjectDescriptorCallback)DoorF4_render,          /* render */
+    (ObjectDescriptorCallback)DoorF4_free,            /* free */
+    (ObjectDescriptorCallback)DoorF4_getObjectTypeId, /* getObjectTypeId */
+    DoorF4_getExtraSize,                              /* getExtraSize */
+};

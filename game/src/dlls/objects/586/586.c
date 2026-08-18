@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 Dummy24A[12] = {0xFFFFFFFF};
+ObjectDescriptor gDll24AObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0xFFFFFFFF);

@@ -78,11 +78,6 @@ static inline ObjfsaPatch* Objfsa_GetPatch(int patchIndex)
     return &gObjfsaPatches[patchIndex];
 }
 
-static inline ObjfsaStorage* Objfsa_GetStorage(ObjfsaPatch* patches)
-{
-    return (ObjfsaStorage*)patches;
-}
-
 static inline ObjfsaWalkGroup* Objfsa_GetWalkGroup(int groupIndex)
 {
     return &gObjfsaWalkGroups[groupIndex];
@@ -861,9 +856,8 @@ int isPointWithinPatchGroup(float* point, u32 patchGroupIndex, int groupId)
 
 int getPatchGroup(float* point, int patchGroupIndex)
 {
-    char* base;
     u8* active;
-    char* wg;
+    ObjfsaWalkGroup* wg;
     u8 k;
     u32 pidx;
     u8 i;
@@ -871,10 +865,9 @@ int getPatchGroup(float* point, int patchGroupIndex)
     ObjfsaPatch* patch;
     f32 y;
 
-    base = (char*)gObjfsaPatches;
     k = 0;
-    active = (u8*)gObjfsaPatches + patchGroupIndex + OBJFSA_ACTIVE_WALKGROUPS_OFFSET;
-    wg = (char*)gObjfsaPatches + patchGroupIndex * OBJFSA_PATCHGROUP_STRIDE + 0x3000;
+    active = &gObjfsaWalkGroupActive[patchGroupIndex];
+    wg = &gObjfsaWalkGroups[patchGroupIndex];
 
     for (; k < 4; k++)
     {
@@ -882,12 +875,12 @@ int getPatchGroup(float* point, int patchGroupIndex)
         {
             continue;
         }
-        pidx = ((ObjfsaWalkGroup*)wg)->patchIndices[k];
+        pidx = wg->patchIndices[k];
         if (pidx == 0)
         {
             continue;
         }
-        patch = (ObjfsaPatch*)(base + pidx * 0x30);
+        patch = &gObjfsaPatches[pidx];
         y = point[1];
         if (y < patch->maxY && y > patch->minY)
         {
@@ -1298,7 +1291,7 @@ void Objfsa_UpdateWalkGroupPatches(void)
         }
 
         curveList = (ObjfsaWalkCurveDef**)(*gRomCurveInterface)->getCurves(&curveCount);
-        memset(Objfsa_GetStorage(patchBase[0])->activeWalkGroups, 0, OBJFSA_WALKGROUP_COUNT);
+        memset(gObjfsaWalkGroupActive, 0, OBJFSA_WALKGROUP_COUNT);
         sp = patchBase[0];
         for (pi = 0; pi < 256; pi++)
         {
@@ -1313,8 +1306,8 @@ void Objfsa_UpdateWalkGroupPatches(void)
             if (curve->type == 0x26)
             {
                 gi = curve->walkGroup;
-                wg = &((ObjfsaWalkGroup*)(patchBase[0] + 256))[gi];
-                *(u8*)((gi + OBJFSA_ACTIVE_WALKGROUPS_OFFSET) + (uintptr_t)patchBase[0]) = 1;
+                wg = &gObjfsaWalkGroups[gi];
+                gObjfsaWalkGroupActive[gi] = 1;
 
                 x0 = objfsaCorner(curve->firstEdge[0], scale, &curve->x);
                 z0 = objfsaCorner(curve->firstEdge[1], scale, &curve->z);
@@ -1456,8 +1449,8 @@ void Objfsa_UpdateWalkGroupPatches(void)
         p = &patchBase[0][1];
         for (; pi < gObjfsaPatchCount; pp += 2, p++, pi++)
         {
-            wgT = &((ObjfsaWalkGroup*)(patchBase[0] + 256))[pp[0]];
-            wgBT = &((ObjfsaWalkGroup*)(patchBase[0] + 256))[pp[1]];
+            wgT = &gObjfsaWalkGroups[pp[0]];
+            wgBT = &gObjfsaWalkGroups[pp[1]];
             fdx = p->exit1X - p->exit0X;
             fdz = p->exit1Z - p->exit0Z;
 

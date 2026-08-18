@@ -77,22 +77,7 @@ typedef enum GPSHShrinePhase {
     GPSH_SHRINE_PHASE_FAIL_TRANSITION = 7,
 } GPSHShrinePhase;
 
-ObjectDescriptor gGPSHShrineObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)gpshShrine_initialise,
-    (ObjectDescriptorCallback)gpshShrine_release,
-    0,
-    (ObjectDescriptorCallback)gpshShrine_init,
-    (ObjectDescriptorCallback)gpshShrine_update,
-    (ObjectDescriptorCallback)gpshShrine_hitDetect,
-    (ObjectDescriptorCallback)gpshShrine_render,
-    (ObjectDescriptorCallback)gpshShrine_free,
-    (ObjectDescriptorCallback)gpshShrine_getObjectTypeId,
-    gpshShrine_getExtraSize,
-};
+
 
 void gpshShrine_updateHoverMotion(GameObject* obj) {
     const ObjPlacement* placement;
@@ -471,3 +456,20 @@ void gpshShrine_release(void) {
 
 void gpshShrine_initialise(void) {
 }
+
+ObjectDescriptor gGPSHShrineObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)gpshShrine_initialise,
+    (ObjectDescriptorCallback)gpshShrine_release,
+    0,
+    (ObjectDescriptorCallback)gpshShrine_init,
+    (ObjectDescriptorCallback)gpshShrine_update,
+    (ObjectDescriptorCallback)gpshShrine_hitDetect,
+    (ObjectDescriptorCallback)gpshShrine_render,
+    (ObjectDescriptorCallback)gpshShrine_free,
+    (ObjectDescriptorCallback)gpshShrine_getObjectTypeId,
+    gpshShrine_getExtraSize,
+};

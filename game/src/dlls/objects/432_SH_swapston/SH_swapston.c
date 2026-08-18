@@ -89,22 +89,7 @@ typedef struct WarpStoneDustEffectParams {
 #define WARPSTONE_DUST_FLAG_BURST_READY 0x02
 #define WARPSTONE_DUST_FLAG_ACTIVE      0x04
 
-ObjectDescriptor gWarpStoneObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)warpstone_initialise,
-    (ObjectDescriptorCallback)warpstone_release,
-    0,
-    (ObjectDescriptorCallback)warpstone_init,
-    (ObjectDescriptorCallback)warpstone_update,
-    (ObjectDescriptorCallback)warpstone_hitDetect,
-    (ObjectDescriptorCallback)warpstone_render,
-    (ObjectDescriptorCallback)warpstone_free,
-    (ObjectDescriptorCallback)warpstone_getObjectTypeId,
-    warpstone_getExtraSize,
-};
+
 
 void warpstone_updateDustEffects(GameObject* obj) {
     GameObject* player = Obj_GetPlayerObject();
@@ -672,3 +657,20 @@ void warpstone_release(void) {
 
 void warpstone_initialise(void) {
 }
+
+ObjectDescriptor gWarpStoneObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)warpstone_initialise,
+    (ObjectDescriptorCallback)warpstone_release,
+    0,
+    (ObjectDescriptorCallback)warpstone_init,
+    (ObjectDescriptorCallback)warpstone_update,
+    (ObjectDescriptorCallback)warpstone_hitDetect,
+    (ObjectDescriptorCallback)warpstone_render,
+    (ObjectDescriptorCallback)warpstone_free,
+    (ObjectDescriptorCallback)warpstone_getObjectTypeId,
+    warpstone_getExtraSize,
+};

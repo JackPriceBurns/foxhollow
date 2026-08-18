@@ -11,8 +11,6 @@
 #define TEXTBLOCK_OBJECT_DEF_KP_TEXTBLOC_3 0x02CB
 #define TEXTBLOCK_OBJECT_DEF_DFP_TEXTBLO 0x0371
 
-extern char sTextBlockInitNoLongerSupported[];
-extern char sTextBlockObjInitNoLongerSupported[];
 extern ObjectDescriptor gTextBlockObjDescriptor;
 
 int textblockObj_getExtraSize(void);

@@ -58,7 +58,6 @@ STATIC_ASSERT(offsetof(LaserReleaseInterface, releaseObject) == 0x48);
 #define LASEROBJ_MAIN_SEQUENCE_A_EVENT 0x123
 #define LASEROBJ_MAIN_SEQUENCE_B_EVENT 0x83b
 
-extern char sLaserInitNoLongerSupported[];
 extern ObjectDescriptor gLaserUnsupportedObjDescriptor;
 extern ObjectDescriptor gLaserObjDescriptor;
 

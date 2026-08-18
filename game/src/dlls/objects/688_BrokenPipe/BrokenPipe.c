@@ -11,37 +11,31 @@
 #include "main/dll/dll_02B0_brokenpipe.h"
 #include "main/objhits.h"
 
-int brokenpipe_getExtraSize(void)
-{
+int brokenpipe_getExtraSize(void) {
     return sizeof(BrokenPipeState);
 }
 
-void brokenpipe_update(GameObject* obj)
-{
+void brokenpipe_update(GameObject* obj) {
     BrokenPipeState* state = obj->extra;
 
     ObjHits_PollPriorityHitEffectWithCooldown(obj, 8, 0xb4, 0xf0, 0xff, 0x6f, &state->hitEffectCooldown);
 }
 
-void brokenpipe_init(GameObject* obj, BrokenPipeSetup* setup)
-{
-    f32 zeroScale = 0.0f;
+void brokenpipe_init(GameObject* obj, BrokenPipeSetup* setup) {
+    obj->anim.rotZ = setup->rotZ << 8;
+    obj->anim.rotY = setup->rotY << 8;
+    obj->anim.rotX = setup->rotX << 8;
 
-    obj->anim.rotZ = (s16)(setup->rotZ << 8);
-    obj->anim.rotY = (s16)(setup->rotY << 8);
-    obj->anim.rotX = (s16)(setup->rotX << 8);
-    if (setup->scale != 0)
-    {
-        obj->anim.rootMotionScale = (f32)(u32)setup->scale / 255.0f;
-        if (obj->anim.rootMotionScale == zeroScale)
-        {
+    if (setup->scale != 0) {
+        obj->anim.rootMotionScale = setup->scale / 255.0f;
+        if (obj->anim.rootMotionScale == 0.0f) {
             obj->anim.rootMotionScale = 1.0f;
         }
-        ObjHitbox_SetSphereRadius(&obj->anim,
-                                  (int)((f32)((ObjHitsPriorityState*)obj->anim.hitReactState)->primaryRadius *
-                                        obj->anim.rootMotionScale));
+        ObjHitbox_SetSphereRadius(&obj->anim, ((ObjHitsPriorityState*)obj->anim.hitReactState)->primaryRadius *
+                                                  obj->anim.rootMotionScale);
         obj->anim.rootMotionScale = obj->anim.rootMotionScale * obj->anim.modelInstance->rootMotionScaleBase;
     }
+
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 

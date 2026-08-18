@@ -9,22 +9,7 @@
 #include "main/object_render.h"
 #include "sys/objects.h"
 
-ObjectDescriptor gKaldachomMeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KaldachomMe_initialise,
-    (ObjectDescriptorCallback)KaldachomMe_release,
-    0,
-    (ObjectDescriptorCallback)KaldachomMe_init,
-    (ObjectDescriptorCallback)KaldachomMe_update,
-    (ObjectDescriptorCallback)KaldachomMe_hitDetect,
-    (ObjectDescriptorCallback)KaldachomMe_render,
-    (ObjectDescriptorCallback)KaldachomMe_free,
-    (ObjectDescriptorCallback)KaldachomMe_getObjectTypeId,
-    KaldachomMe_getExtraSize,
-};
+
 
 void kaldachomme_setLinkedMouthMode(GameObject* obj, KaldachomMeLinkedMode mode) {
     KaldachomMeState* state;
@@ -158,3 +143,20 @@ void KaldachomMe_release(void) {
 
 void KaldachomMe_initialise(void) {
 }
+
+ObjectDescriptor gKaldachomMeObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)KaldachomMe_initialise,
+    (ObjectDescriptorCallback)KaldachomMe_release,
+    0,
+    (ObjectDescriptorCallback)KaldachomMe_init,
+    (ObjectDescriptorCallback)KaldachomMe_update,
+    (ObjectDescriptorCallback)KaldachomMe_hitDetect,
+    (ObjectDescriptorCallback)KaldachomMe_render,
+    (ObjectDescriptorCallback)KaldachomMe_free,
+    (ObjectDescriptorCallback)KaldachomMe_getObjectTypeId,
+    KaldachomMe_getExtraSize,
+};

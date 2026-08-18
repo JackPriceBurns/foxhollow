@@ -36,22 +36,7 @@
 const Dll5BSpawnCountRange gMikaBombExplosionSpawnCountRange = {MIKABOMB_EXPLOSION_SPAWN_MIN,
                                                                 MIKABOMB_EXPLOSION_SPAWN_MAX};
 
-ObjectDescriptor gMikaBombObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MikaBomb_initialise,
-    (ObjectDescriptorCallback)MikaBomb_release,
-    0,
-    (ObjectDescriptorCallback)MikaBomb_init,
-    (ObjectDescriptorCallback)MikaBomb_update,
-    (ObjectDescriptorCallback)MikaBomb_hitDetect,
-    (ObjectDescriptorCallback)MikaBomb_render,
-    (ObjectDescriptorCallback)MikaBomb_free,
-    (ObjectDescriptorCallback)MikaBomb_getObjectTypeId,
-    MikaBomb_getExtraSize,
-};
+
 
 int MikaBomb_getExtraSize(void) {
     return sizeof(MikaBombState);
@@ -191,3 +176,20 @@ void MikaBomb_release(void) {
 
 void MikaBomb_initialise(void) {
 }
+
+ObjectDescriptor gMikaBombObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)MikaBomb_initialise,
+    (ObjectDescriptorCallback)MikaBomb_release,
+    0,
+    (ObjectDescriptorCallback)MikaBomb_init,
+    (ObjectDescriptorCallback)MikaBomb_update,
+    (ObjectDescriptorCallback)MikaBomb_hitDetect,
+    (ObjectDescriptorCallback)MikaBomb_render,
+    (ObjectDescriptorCallback)MikaBomb_free,
+    (ObjectDescriptorCallback)MikaBomb_getObjectTypeId,
+    MikaBomb_getExtraSize,
+};

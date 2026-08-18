@@ -456,6 +456,12 @@ void SidekickBall_init(GameObject* obj) {
 
 f32 gSidekickBallPathPointData[3] = {0.0f, 0.0f, 0.0f};
 
+
+
+char sSidekickBallYVelDepthFormat[] = "yvel %f, depth %f\n";
+
+char sSidekickBallDotFormat[] = " dot %f ";
+
 ObjectDescriptor gSidekickBallObjDescriptor = {
     0,                                             /* reserved0 */
     0,                                             /* reserved1 */
@@ -472,7 +478,3 @@ ObjectDescriptor gSidekickBallObjDescriptor = {
     0,                                             /* getObjectTypeId */
     SidekickBall_getExtraSize,                     /* getExtraSize */
 };
-
-char sSidekickBallYVelDepthFormat[] = "yvel %f, depth %f\n";
-
-char sSidekickBallDotFormat[] = " dot %f ";

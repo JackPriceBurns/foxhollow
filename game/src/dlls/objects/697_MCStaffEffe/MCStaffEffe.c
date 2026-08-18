@@ -11,20 +11,16 @@
 #include "main/dll/dll_02B9_mcstaffeffe.h"
 #include "main/objfx.h"
 
-void mcstaffeffe_render(GameObject* staffEffect)
-{
+void mcstaffeffe_render(GameObject* staffEffect) {
     objfx_spawnPulseBurst(staffEffect, staffEffect->anim.rootMotionScale, (u8)staffEffect->userData1, 0, 0, NULL);
 }
 
-void mcstaffeffe_update(void)
-{
+void mcstaffeffe_update(void) {
 }
 
-void mcstaffeffe_init(GameObject* staffEffect, McStaffEffectSetup* placement)
-{
+void mcstaffeffe_init(GameObject* staffEffect, McStaffEffectSetup* placement) {
     staffEffect->animEventCallback = mcstaffeffe_SeqFn;
-    switch (placement->effectProfile)
-    {
+    switch (placement->effectProfile) {
     case 0:
         staffEffect->userData1 = 4;
         staffEffect->userData2 = 1;

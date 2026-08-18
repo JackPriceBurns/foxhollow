@@ -5,6 +5,7 @@
 #include "global.h"
 #include "main/objprint_character_api.h"
 #include "main/dll/curve_walker.h"
+#include "main/dll/curves_collision_state.h"
 #include "game/objects/object.h"
 #include "main/objprint_sound_api.h"
 #include "main/pi_dolphin_path_api.h"
@@ -359,6 +360,7 @@ typedef struct TrickyState {
     f32 particleTimer; /* f32 countdown decremented by timeDelta; while > threshold the queued particle effect keeps emitting; reset to a float sentinel on state entry (tricky/skeetla/weapone6/tricky_substates/mmp_cratercritter/animobjd2) */
     u8 pad83C[0x840 - 0x83C];
     f32 trackTargetPos[3];
+    CurvesCollisionState pathControlState;
 } TrickyState;
 
 STATIC_ASSERT(sizeof(TrickyState) == 0x840);

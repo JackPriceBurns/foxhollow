@@ -8,10 +8,8 @@
 #include "main/dll/dll_00BC_projquakeshock.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjquakeshockDoNoLongerSupported[];
-
 int projquakeshock_doUnsupported(void) {
-    OSReport(sProjquakeshockDoNoLongerSupported);
+    OSReport("<projquakeshock Do>No Longer supported \n");
     return -1;
 }
 
@@ -28,5 +26,3 @@ ProjquakeshockResourceDescriptor gProjquakeshockResourceDescriptor = {
     NULL,
     projquakeshock_doUnsupported,
 };
-
-char sProjquakeshockDoNoLongerSupported[] = "<projquakeshock Do>No Longer supported \n";

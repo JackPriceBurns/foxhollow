@@ -73,22 +73,7 @@
 #define SHSTAFF_PICKUP_MAP_CELL       0x13
 #define SHSTAFF_PICKUP_MAP_LOAD_FLAGS 0x20000000
 
-ObjectDescriptor gSH_staffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)sh_staff_update,
-    0,
-    (ObjectDescriptorCallback)sh_staff_render,
-    (ObjectDescriptorCallback)sh_staff_free,
-    0,
-    sh_staff_getExtraSize,
-};
+
 
 int sh_staff_getExtraSize(void) {
     return sizeof(ShStaffState);
@@ -443,3 +428,20 @@ void sh_staff_update(GameObject* obj) {
         }
     }
 }
+
+ObjectDescriptor gSH_staffObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)sh_staff_update,
+    0,
+    (ObjectDescriptorCallback)sh_staff_render,
+    (ObjectDescriptorCallback)sh_staff_free,
+    0,
+    sh_staff_getExtraSize,
+};

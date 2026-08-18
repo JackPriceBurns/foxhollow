@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDll27DNullResourceDescriptor[12] = {0xFFFFFFFF};
+ObjectDescriptor gDll27DObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0xFFFFFFFF);

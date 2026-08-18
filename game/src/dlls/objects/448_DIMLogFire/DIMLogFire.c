@@ -162,7 +162,7 @@ void DIMLogFire_update(GameObject* obj) {
         effectOffset.x = 0.0f;
         effectOffset.y = 10.0f;
         effectOffset.z = 0.0f;
-        objfx_spawnPulseBurst(obj, obj->anim.rootMotionScale, 2, flickerFlagA, flickerFlagB, &effectOffset.x);
+        objfx_spawnPulseBurst(obj, obj->anim.rootMotionScale, 2, flickerFlagA, flickerFlagB, &effectOffset);
         ObjHits_SetHitVolumeSlot(&obj->anim, DIM_LOG_FIRE_HIT_VOLUME_SLOT, 1, 0);
         break;
     case DIM_LOG_FIRE_MODE_UNLIT:

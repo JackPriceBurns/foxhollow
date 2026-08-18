@@ -14,63 +14,48 @@
 #include "main/dll/dll_025A_staticcamera.h"
 #include "main/objtype.h"
 
-int StaticCamera_getExtraSize(void)
-{
+int StaticCamera_getExtraSize(void) {
     return sizeof(StaticCameraState);
 }
-int StaticCamera_getObjectTypeId(void)
-{
+int StaticCamera_getObjectTypeId(void) {
     return 0x0;
 }
 
-void StaticCamera_free(GameObject* obj)
-{
+void StaticCamera_free(GameObject* obj) {
     objFreeObjectType(obj, STATIC_CAMERA_OBJECT_GROUP);
 }
 
-void StaticCamera_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
-{
-    s32 v = visible;
-    if (v != 0)
-    {
-        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+void StaticCamera_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void StaticCamera_hitDetect(void)
-{
+void StaticCamera_hitDetect(void) {
 }
 
-void StaticCamera_update(void)
-{
+void StaticCamera_update(void) {
 }
 
-void StaticCamera_init(GameObject* obj, StaticCameraPlacement* params, int deferAdd)
-{
-    StaticCameraState* state;
-
-    obj->anim.rotX = -ObjAnim_ReadPlacementS16(
-        &obj->anim, &params->objectRotation.rotX);
-    obj->anim.rotY = -ObjAnim_ReadPlacementS16(
-        &obj->anim, &params->objectRotation.rotY);
-    obj->anim.rotZ = -ObjAnim_ReadPlacementS16(
-        &obj->anim, &params->objectRotation.rotZ);
-    state = obj->extra;
+void StaticCamera_init(GameObject* obj, StaticCameraPlacement* params, int deferAdd) {
+    obj->anim.rotX = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotX);
+    obj->anim.rotY = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotY);
+    obj->anim.rotZ = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotZ);
+    StaticCameraState* state = obj->extra;
     state->setupParam = params->setupParam;
-    state->fov = (f32)(u32)params->fov;
+    state->fov = params->fov;
     state->unk1 = 0;
-    if (deferAdd == 0)
-    {
+    if (deferAdd == 0) {
         objAddObjectType(obj, STATIC_CAMERA_OBJECT_GROUP);
     }
 }
 
-void StaticCamera_release(void)
-{
+void StaticCamera_release(void) {
 }
 
-void StaticCamera_initialise(void)
-{
+void StaticCamera_initialise(void) {
 }
 
 ObjectDescriptor gStaticCameraObjDescriptor = {

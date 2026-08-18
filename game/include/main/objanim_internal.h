@@ -471,7 +471,7 @@ typedef struct ObjAnimComponent {
   f32 activeMoveProgress;
   s16 currentMove;
   s16 activeMove;
-  void *targetObj; /* attention/track target (GameObject*): camera focus/track
+  void* targetObj; /* attention/track target (GameObject*): camera focus/track
                      sites across CAM TUs + baddieControl.c 0xA4-as-pointer
                      census - general object field, not camera-specific */
   f32 hitboxScale;

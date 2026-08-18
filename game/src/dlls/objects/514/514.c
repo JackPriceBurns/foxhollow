@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gDll202NullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll202ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

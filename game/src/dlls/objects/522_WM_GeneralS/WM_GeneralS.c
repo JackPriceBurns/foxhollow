@@ -56,22 +56,7 @@ typedef enum WmGeneralScalesSequenceEvent {
  * Retail symbol order places this exact descriptor before the switch table
  * generated for WM_GeneralScales_sequenceCallback().
  */
-ObjectDescriptor gWM_GeneralScalesObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_GeneralScales_initialise,
-    WM_GeneralScales_release,
-    0,
-    (ObjectDescriptorCallback)WM_GeneralScales_init,
-    WM_GeneralScales_update,
-    WM_GeneralScales_hitDetect,
-    (ObjectDescriptorCallback)WM_GeneralScales_render,
-    (ObjectDescriptorCallback)WM_GeneralScales_free,
-    (ObjectDescriptorCallback)WM_GeneralScales_getObjectTypeId,
-    WM_GeneralScales_getExtraSize,
-};
+
 
 int WM_GeneralScales_sequenceCallback(GameObject* obj, int unusedArg2, ObjSeqState* animUpdate) {
     WmGeneralScalesState* state;
@@ -208,3 +193,20 @@ void WM_GeneralScales_release(void) {
 
 void WM_GeneralScales_initialise(void) {
 }
+
+ObjectDescriptor gWM_GeneralScalesObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    WM_GeneralScales_initialise,
+    WM_GeneralScales_release,
+    0,
+    (ObjectDescriptorCallback)WM_GeneralScales_init,
+    WM_GeneralScales_update,
+    WM_GeneralScales_hitDetect,
+    (ObjectDescriptorCallback)WM_GeneralScales_render,
+    (ObjectDescriptorCallback)WM_GeneralScales_free,
+    (ObjectDescriptorCallback)WM_GeneralScales_getObjectTypeId,
+    WM_GeneralScales_getExtraSize,
+};

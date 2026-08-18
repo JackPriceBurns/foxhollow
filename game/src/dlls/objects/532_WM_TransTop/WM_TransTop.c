@@ -1,3 +1,3 @@
-#include "global.h"
+#include "dlls/object_descriptor.h"
 
-u32 gWM_TransTopNullResourceDescriptor[2] = {0};
+ObjectDescriptor gDll214ObjDescriptor = EMPTY_OBJECT_DESCRIPTOR(0);

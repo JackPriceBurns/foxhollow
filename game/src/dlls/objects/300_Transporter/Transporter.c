@@ -263,22 +263,7 @@ typedef enum TransporterSequenceEvent {
 } TransporterSequenceEvent;
 
 
-ObjectDescriptor gTransporterObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)Transporter_init,
-    (ObjectDescriptorCallback)Transporter_update,
-    (ObjectDescriptorCallback)Transporter_hitDetect,
-    (ObjectDescriptorCallback)Transporter_render,
-    0,
-    0,
-    Transporter_getExtraSize,
-};
+
 
 int Transporter_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     int i;
@@ -600,3 +585,20 @@ void Transporter_init(GameObject* obj, TransporterPlacement* placement) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
 }
+
+ObjectDescriptor gTransporterObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)Transporter_init,
+    (ObjectDescriptorCallback)Transporter_update,
+    (ObjectDescriptorCallback)Transporter_hitDetect,
+    (ObjectDescriptorCallback)Transporter_render,
+    0,
+    0,
+    Transporter_getExtraSize,
+};

@@ -52,22 +52,7 @@ s16 gEdibleMushroomStateMoveIds[12] = {0, 1, 6, 2, 3, 4, 0, 5, 6, 7, -1, 0};
 f32 gEdibleMushroomAnimStepScaleTable[] = {0.005f, 0.01f, 0.005f, 0.01f,  0.01f, 0.015f,
                                            0.005f, 0.01f, 0.005f, 0.012f, 0.0f};
 
-ObjectDescriptor gEdibleMushroomObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)EdibleMushroom_init,
-    (ObjectDescriptorCallback)EdibleMushroom_update,
-    (ObjectDescriptorCallback)EdibleMushroom_hitDetect,
-    0,
-    (ObjectDescriptorCallback)EdibleMushroom_free,
-    0,
-    EdibleMushroom_getExtraSize,
-};
+
 
 int EdibleMushroom_animEventCallback(GameObject* obj) {
     ((EdibleMushroomState*)obj->extra)->seqResetPending = 1;
@@ -612,3 +597,20 @@ void EdibleMushroom_init(GameObject* obj, EdibleMushroomPlacement* placement) {
         state->collectedGameBitId = GAMEBIT_ITEM_TrickyFood_Count;
     }
 }
+
+ObjectDescriptor gEdibleMushroomObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)EdibleMushroom_init,
+    (ObjectDescriptorCallback)EdibleMushroom_update,
+    (ObjectDescriptorCallback)EdibleMushroom_hitDetect,
+    0,
+    (ObjectDescriptorCallback)EdibleMushroom_free,
+    0,
+    EdibleMushroom_getExtraSize,
+};

@@ -77,22 +77,7 @@ f32 gShieldSegmentTable[SHIELD_SEGMENT_TABLE_COUNT] = {
     0.5f, 0.55f, 0.65f, 0.7f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.3f, 0.3f, 0.3f, 0.3f,
 };
 
-ObjectDescriptor gShieldObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Shield_initialise,
-    (ObjectDescriptorCallback)Shield_release,
-    0,
-    (ObjectDescriptorCallback)Shield_init,
-    (ObjectDescriptorCallback)Shield_update,
-    (ObjectDescriptorCallback)Shield_hitDetect,
-    (ObjectDescriptorCallback)Shield_render,
-    (ObjectDescriptorCallback)Shield_free,
-    (ObjectDescriptorCallback)Shield_getObjectTypeId,
-    Shield_getExtraSize,
-};
+
 
 GameObject* Shield_spawnOmniShield(GameObject* obj, f32 rootMotionScale) {
     ObjPlacement* setup;
@@ -608,3 +593,20 @@ void Shield_release(void) {
 
 void Shield_initialise(void) {
 }
+
+ObjectDescriptor gShieldObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)Shield_initialise,
+    (ObjectDescriptorCallback)Shield_release,
+    0,
+    (ObjectDescriptorCallback)Shield_init,
+    (ObjectDescriptorCallback)Shield_update,
+    (ObjectDescriptorCallback)Shield_hitDetect,
+    (ObjectDescriptorCallback)Shield_render,
+    (ObjectDescriptorCallback)Shield_free,
+    (ObjectDescriptorCallback)Shield_getObjectTypeId,
+    Shield_getExtraSize,
+};

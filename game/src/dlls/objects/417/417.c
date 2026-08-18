@@ -39,20 +39,6 @@ typedef struct NwMammothPathParams {
     u8 values[4];
 } NwMammothPathParams;
 
-typedef struct NwMammothTables {
-    ObjHitReactEntry normalHitReactEntry;
-    ObjHitReactEntry heavyHitReactEntry;
-    u8 unknown28[0x68 - 0x28];
-    s16 stateMoveIds[0x18];
-    f32 stateMoveStepScales[0x17];
-    u8 stateFlags[0x18];
-} NwMammothTables;
-
-STATIC_ASSERT(sizeof(NwMammothTables) == 0x10C);
-STATIC_ASSERT(offsetof(NwMammothTables, stateMoveIds) == 0x68);
-STATIC_ASSERT(offsetof(NwMammothTables, stateMoveStepScales) == 0x98);
-STATIC_ASSERT(offsetof(NwMammothTables, stateFlags) == 0xF4);
-
 static const NwMammothPathParams sNwMammothPathParams = {{1, 1, 1, 1}};
 
 u8 gNwMammothFeedState0TriggerList[4] = {1, 0, 0, 0};
@@ -106,10 +92,18 @@ enum NwMammothRuntimeFlag {
     NW_MAMMOTH_RUNTIME_UI_MESSAGE = 0x40,
 };
 
-u8 gNwMammothHitReactEntriesData[40] = {
-    0x02, 0xDA, 0x03, 0x75, 0x00, 0x30, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x44,
-    0x9B, 0xA6, 0x00, 0x00, 0x00, 0x00, 0x02, 0xDA, 0x03, 0x75, 0x00, 0x31, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00, 0x3C, 0x44, 0x9B, 0xA6, 0x00, 0x00, 0x00, 0x00,
+ObjHitReactEntry gNwMammothHitReactEntries[2] = {
+    {0x2DA, 0x375, 0x30, -1, 0, {0, 0, 0}, 0.012f, {0, 0, 0, 0}},
+    {0x2DA, 0x375, 0x31, -1, 0, {0, 0, 0}, 0.012f, {0, 0, 0, 0}},
+};
+
+s16 gNwMammothStateMoveIds[24] = {0, 0, 0, 0, 0, 0, 0, 0, 3, 0x25, 0x24, 0x23,
+                                      0x23, 0x23, 0x23, 0x29, 0x23, 0x23, 0x23, 0, 4, 5, 6, 0};
+
+f32 gNwMammothStateMoveStepScales[23] = {
+    0.005f, 0.005f, 0.005f, 0.005f, 0.005f, 0.005f, 0.005f, 0.005f,
+    0.0f,   0.005f, -0.01f, 0.005f, 0.005f, 0.005f, 0.005f, 0.008f,
+    0.005f, 0.005f, 0.005f, 0.005f, 0.006f, 0.003f, 0.006f,
 };
 
 f32 gNwMammothPathSetupDataA[12] = {-12.0f, 0.0f, -20.0f, 12.0f, 0.0f, -20.0f, 12.0f, 0.0f, 20.0f, -12.0f, 0.0f, 20.0f};
@@ -131,22 +125,7 @@ u8 gNwMammothStateFlags[24] = {0x04, 0x14, 0x14, 0x04, 0x14, 0x04, 0x04, 0x04, 0
 int gNwMammothBushObjectIds[4] = {0x4ABDA, 0x4ABDB, 0x4ABDC, 0x4ABDD};
 int gNwMammothBushGameBits[4] = {0xF22, 0xF23, 0xF24, 0xF25};
 
-ObjectDescriptor gNW_mammothObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)NW_mammoth_init,
-    (ObjectDescriptorCallback)NW_mammoth_update,
-    0,
-    (ObjectDescriptorCallback)NW_mammoth_render,
-    (ObjectDescriptorCallback)NW_mammoth_free,
-    0,
-    NW_mammoth_getExtraSize,
-};
+
 
 f32* NW_mammoth_getSpawnPosition(GameObject* obj) {
     return &((NwMammothState*)obj->extra)->spawnPosX;
@@ -651,12 +630,10 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
     ObjHitReactEntry* hitReactEntries;
     u8 stateFlags;
     u8 stateIndex;
-    NwMammothTables* tables[1];
     NwMammothState* state;
     NwMammothPlacement* placement;
 
     (void)unusedArg;
-    tables[0] = (NwMammothTables*)gNwMammothHitReactEntriesData;
     state = (NwMammothState*)obj->extra;
     placement = (NwMammothPlacement*)obj->anim.placementData;
     if ((state->runtimeFlags & NW_MAMMOTH_RUNTIME_RESET_PATH) != 0) {
@@ -667,7 +644,7 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
         return;
     }
     stateIndex = state->stateIndex;
-    stateFlags = tables[0]->stateFlags[stateIndex];
+    stateFlags = gNwMammothStateFlags[stateIndex];
     if ((stateFlags & NW_MAMMOTH_STATE_FLAG_SOLID) != 0) {
         obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_SHADOW_DISABLED);
         obj->anim.modelState->flags = obj->anim.modelState->flags & ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
@@ -675,12 +652,12 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
         obj->objectFlags = (u16)(obj->objectFlags & ~OBJECT_OBJFLAG_SHADOW_DISABLED);
         obj->anim.modelState->flags = obj->anim.modelState->flags | OBJ_MODEL_STATE_SHADOW_VISIBLE;
     }
-    stateFlags = tables[0]->stateFlags[state->stateIndex];
+    stateFlags = gNwMammothStateFlags[state->stateIndex];
     if ((stateFlags & NW_MAMMOTH_STATE_FLAG_SKIP_HIT_REACT) == 0) {
         if ((stateFlags & NW_MAMMOTH_STATE_FLAG_HEAVY_HIT_REACT) != 0) {
-            hitReactEntries = &tables[0]->heavyHitReactEntry;
+            hitReactEntries = &gNwMammothHitReactEntries[1];
         } else {
-            hitReactEntries = &tables[0]->normalHitReactEntry;
+            hitReactEntries = &gNwMammothHitReactEntries[0];
         }
         state->hitReactState =
             ObjHitReact_Update(obj, hitReactEntries, 1, state->hitReactState, &state->hitReactStepScale);
@@ -706,11 +683,11 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
         NW_mammoth_updateGatekeeper(obj, state, placement);
         break;
     }
-    if ((tables[0]->stateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_PATH_CONTROL) != 0) {
+    if ((gNwMammothStateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_PATH_CONTROL) != 0) {
         obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_PROMPT_SUPPRESSED;
     } else {
         obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_PROMPT_SUPPRESSED;
-        if (((tables[0]->stateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_MENU_ACTION) != 0) &&
+        if (((gNwMammothStateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_MENU_ACTION) != 0) &&
             (cMenuGetSelectedItem() != -1)) {
             Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, 4);
         } else {
@@ -718,14 +695,14 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
         }
     }
     stateIndex = state->stateIndex;
-    if (obj->anim.currentMove != (currentMove = tables[0]->stateMoveIds[stateIndex])) {
-        stepScale = tables[0]->stateMoveStepScales[stateIndex];
+    if (obj->anim.currentMove != (currentMove = gNwMammothStateMoveIds[stateIndex])) {
+        stepScale = gNwMammothStateMoveStepScales[stateIndex];
         if (stepScale > 0.0f) {
             ObjAnim_SetCurrentMove(obj, currentMove, 0.0f, 0);
         } else {
             ObjAnim_SetCurrentMove(obj, currentMove, 1.0f, 0);
         }
-        state->animStepScale = tables[0]->stateMoveStepScales[state->stateIndex];
+        state->animStepScale = gNwMammothStateMoveStepScales[state->stateIndex];
     }
     if (ObjAnim_AdvanceCurrentMove(obj, state->animStepScale, timeDelta, &state->animEvents) != 0) {
         state->runtimeFlags = state->runtimeFlags | NW_MAMMOTH_RUNTIME_ANIM_ENDED;
@@ -735,7 +712,7 @@ void NW_mammoth_update(GameObject* obj, int unusedArg) {
     objAudioDispatchAnimEvents(obj, &state->animEvents, 8, state->pathPoints, &state->pathState, 1.0f,
                                1.0f);
     NW_mammoth_updateEyeTracking(obj, state,
-                                 tables[0]->stateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_TRIGGER_REFRESH);
+                                 gNwMammothStateFlags[state->stateIndex] & NW_MAMMOTH_STATE_FLAG_TRIGGER_REFRESH);
     state->runtimeFlags = state->runtimeFlags & ~NW_MAMMOTH_RUNTIME_TRIGGER_REFRESH;
     if (((state->runtimeFlags & NW_MAMMOTH_RUNTIME_MENU_LOCK) == 0) && (ObjTrigger_IsSet(obj) != 0)) {
         triggerIndex = randomGetRange(NW_MAMMOTH_TRIGGER_RANDOM_MIN, *state->triggerList);
@@ -814,3 +791,20 @@ void NW_mammoth_init(GameObject* obj, NwMammothPlacement* placement, int isReloa
 }
 
 const f32 gNwMammothDefaultAnimStepScale = 0.005f;
+
+ObjectDescriptor gNW_mammothObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)NW_mammoth_init,
+    (ObjectDescriptorCallback)NW_mammoth_update,
+    0,
+    (ObjectDescriptorCallback)NW_mammoth_render,
+    (ObjectDescriptorCallback)NW_mammoth_free,
+    0,
+    NW_mammoth_getExtraSize,
+};

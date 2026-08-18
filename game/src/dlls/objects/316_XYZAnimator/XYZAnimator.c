@@ -48,6 +48,7 @@ void XyzAnimator_captureGeometry(XyzAnimatorPlacement* placement, XyzAnimatorSta
     int t;
     int dataOffset;
     int index;
+    MapBlockBoundsRec* bounds;
     int boundsBufferOffset[1];
     int displayListIndex[1];
     MapBlockData* blockData = blockAddress;
@@ -86,13 +87,13 @@ void XyzAnimator_captureGeometry(XyzAnimatorPlacement* placement, XyzAnimatorSta
     displayListIndex[0] = 0;
     boundsBufferOffset[0] = displayListIndex[0];
     for (; displayListIndex[0] < (int)(u32)blockData->displayListCount; displayListIndex[0]++) {
-        blockIndex = (int)mapBlockGetDisplayListBounds(blockAddress, displayListIndex[0]);
-        *(s16*)(state->minXBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->minX;
-        *(s16*)(state->maxXBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->maxX;
-        *(s16*)(state->minYBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->minY;
-        *(s16*)(state->maxYBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->maxY;
-        *(s16*)(state->minZBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->minZ;
-        *(s16*)(state->maxZBuffer + boundsBufferOffset[0]) = ((MapBlockBoundsRec*)blockIndex)->maxZ;
+        bounds = mapBlockGetDisplayListBounds(blockAddress, displayListIndex[0]);
+        *(s16*)(state->minXBuffer + boundsBufferOffset[0]) = bounds->minX;
+        *(s16*)(state->maxXBuffer + boundsBufferOffset[0]) = bounds->maxX;
+        *(s16*)(state->minYBuffer + boundsBufferOffset[0]) = bounds->minY;
+        *(s16*)(state->maxYBuffer + boundsBufferOffset[0]) = bounds->maxY;
+        *(s16*)(state->minZBuffer + boundsBufferOffset[0]) = bounds->minZ;
+        *(s16*)(state->maxZBuffer + boundsBufferOffset[0]) = bounds->maxZ;
         boundsBufferOffset[0] += 2;
     }
 }
@@ -102,7 +103,8 @@ int XyzAnimator_getExtraSize(void) {
 }
 
 void XyzAnimator_free(GameObject* obj, int flags) {
-    int blockAddress;
+    int blockIndex;
+    MapBlockData* blockAddress;
     XyzAnimatorState* state;
     XyzAnimatorPlacement* placement;
     f32 zeroOffset;
@@ -114,11 +116,11 @@ void XyzAnimator_free(GameObject* obj, int flags) {
     state->offsetY = zeroOffset;
     state->offsetZ = zeroOffset;
     if (flags == 0) {
-        blockAddress = objPosToMapBlockIdx((double)(obj)->anim.localPosX, (double)(obj)->anim.localPosY,
-                                           (double)(obj)->anim.localPosZ);
-        blockAddress = (int)mapGetBlock(blockAddress);
-        if (((void*)blockAddress != NULL) && (state->vertexCount != 0)) {
-            XyzAnimator_applyToMapBlock(placement, state, (MapBlockData*)blockAddress);
+        blockIndex = objPosToMapBlockIdx((double)(obj)->anim.localPosX, (double)(obj)->anim.localPosY,
+                                        (double)(obj)->anim.localPosZ);
+        blockAddress = mapGetBlock(blockIndex);
+        if (blockAddress != NULL && state->vertexCount != 0) {
+            XyzAnimator_applyToMapBlock(placement, state, blockAddress);
         }
     }
     if ((void*)state->geometryBuffer != NULL) {
@@ -149,6 +151,7 @@ void XyzAnimator_applyToMapBlock(XyzAnimatorPlacement* placement, XyzAnimatorSta
     int triangleEnd;
     int index;
     int groupDataOffset[1];
+    MapBlockBoundsRec* bounds;
     void* shaderLayer;
 
     polygonGroupIndex = 0;
@@ -187,22 +190,22 @@ void XyzAnimator_applyToMapBlock(XyzAnimatorPlacement* placement, XyzAnimatorSta
     index = 0;
     dataOffset = index;
     for (; index < (int)(u32)blockData->displayListCount; index++) {
-        vertexOffset[0] = (int)mapBlockGetDisplayListBounds(blockAddress, index);
-        shaderLayer = mapBlockGetShader(blockAddress, *(u8*)(vertexOffset[0] + 0x13));
+        bounds = mapBlockGetDisplayListBounds(blockAddress, index);
+        shaderLayer = mapBlockGetShader(blockAddress, bounds->shaderIndex);
         shaderLayer = Shader_getLayer(shaderLayer, 0);
-        if ((int)*(u8*)((int)shaderLayer + 5) == placement->blockLayer) {
+        if (((ShaderLayer*)shaderLayer)->materialId == placement->blockLayer) {
             scale = 8.0f;
-            ((MapBlockBoundsRec*)vertexOffset[0])->minX =
+            bounds->minX =
                 (s16)(scale * state->offsetX + (f32) * (s16*)(state->minXBuffer + dataOffset));
-            ((MapBlockBoundsRec*)vertexOffset[0])->maxX =
+            bounds->maxX =
                 (s16)(scale * state->offsetX + (f32) * (s16*)(state->maxXBuffer + dataOffset));
-            ((MapBlockBoundsRec*)vertexOffset[0])->minY =
+            bounds->minY =
                 (s16)(scale * state->offsetY + (f32) * (s16*)(state->minYBuffer + dataOffset));
-            ((MapBlockBoundsRec*)vertexOffset[0])->maxY =
+            bounds->maxY =
                 (s16)(scale * state->offsetY + (f32) * (s16*)(state->maxYBuffer + dataOffset));
-            ((MapBlockBoundsRec*)vertexOffset[0])->minZ =
+            bounds->minZ =
                 (s16)(scale * state->offsetZ + (f32) * (s16*)(state->minZBuffer + dataOffset));
-            ((MapBlockBoundsRec*)vertexOffset[0])->maxZ =
+            bounds->maxZ =
                 (s16)(scale * state->offsetZ + (f32) * (s16*)(state->maxZBuffer + dataOffset));
         }
         dataOffset += 2;
@@ -222,7 +225,7 @@ void XyzAnimator_update(GameObject* obj) {
     int value;
 
     blockAddress = (MapBlockData*)mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
-    if ((u32)blockAddress == 0) {
+    if (blockAddress == NULL) {
         state->passCount = 0;
         return;
     }

@@ -383,36 +383,7 @@ int drakorhoverpad_update(RomCurveWalker* curve, int maxIndex)
     return 1;
 }
 
-ObjectDescriptor24 gDrakorHoverPadObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)drakorhoverpad_initialise,
-    (ObjectDescriptorCallback)drakorhoverpad_release,
-    0,
-    (ObjectDescriptorCallback)drakorhoverpad_initMain,
-    (ObjectDescriptorCallback)drakorhoverpad_updateMain,
-    (ObjectDescriptorCallback)drakorhoverpad_hitDetect,
-    (ObjectDescriptorCallback)drakorhoverpad_render,
-    (ObjectDescriptorCallback)drakorhoverpad_free,
-    (ObjectDescriptorCallback)drakorhoverpad_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drakorhoverpad_getExtraSize,
-    (ObjectDescriptorCallback)drakorhoverpad_canMount,
-    (ObjectDescriptorCallback)drakorhoverpad_getMountSide,
-    (ObjectDescriptorCallback)drakorhoverpad_getRiderPosition,
-    (ObjectDescriptorCallback)drakorhoverpad_canDismount,
-    (ObjectDescriptorCallback)drakorhoverpad_getDismountSide,
-    (ObjectDescriptorCallback)drakorhoverpad_getCameraPosition,
-    (ObjectDescriptorCallback)drakorhoverpad_getMountState,
-    (ObjectDescriptorCallback)drakorhoverpad_setMountState,
-    (ObjectDescriptorCallback)drakorhoverpad_getPlayerAnim,
-    (ObjectDescriptorCallback)drakorhoverpad_func13,
-    (ObjectDescriptorCallback)drakorhoverpad_getRacePosition,
-    (ObjectDescriptorCallback)drakorhoverpad_func15,
-    (ObjectDescriptorCallback)drakorhoverpad_handleRiderScale,
-    (ObjectDescriptorCallback)drakorhoverpad_func17,
-};
+
 int drakorhoverpad_init(GameObject* obj)
 {
     DrakorHoverpadState* p = obj->extra;
@@ -1014,3 +985,34 @@ void drakorhoverpad_release(void)
 void drakorhoverpad_initialise(void)
 {
 }
+
+ObjectDescriptor24 gDrakorHoverPadObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+    (ObjectDescriptorCallback)drakorhoverpad_initialise,
+    (ObjectDescriptorCallback)drakorhoverpad_release,
+    0,
+    (ObjectDescriptorCallback)drakorhoverpad_initMain,
+    (ObjectDescriptorCallback)drakorhoverpad_updateMain,
+    (ObjectDescriptorCallback)drakorhoverpad_hitDetect,
+    (ObjectDescriptorCallback)drakorhoverpad_render,
+    (ObjectDescriptorCallback)drakorhoverpad_free,
+    (ObjectDescriptorCallback)drakorhoverpad_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)drakorhoverpad_getExtraSize,
+    (ObjectDescriptorCallback)drakorhoverpad_canMount,
+    (ObjectDescriptorCallback)drakorhoverpad_getMountSide,
+    (ObjectDescriptorCallback)drakorhoverpad_getRiderPosition,
+    (ObjectDescriptorCallback)drakorhoverpad_canDismount,
+    (ObjectDescriptorCallback)drakorhoverpad_getDismountSide,
+    (ObjectDescriptorCallback)drakorhoverpad_getCameraPosition,
+    (ObjectDescriptorCallback)drakorhoverpad_getMountState,
+    (ObjectDescriptorCallback)drakorhoverpad_setMountState,
+    (ObjectDescriptorCallback)drakorhoverpad_getPlayerAnim,
+    (ObjectDescriptorCallback)drakorhoverpad_func13,
+    (ObjectDescriptorCallback)drakorhoverpad_getRacePosition,
+    (ObjectDescriptorCallback)drakorhoverpad_func15,
+    (ObjectDescriptorCallback)drakorhoverpad_handleRiderScale,
+    (ObjectDescriptorCallback)drakorhoverpad_func17,
+};

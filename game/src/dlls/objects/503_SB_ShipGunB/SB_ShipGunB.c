@@ -9,7 +9,6 @@
  * placement record at offset 0x1E.
  */
 #include "dlls/objects/503_SB_ShipGunB.h"
-
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/gamebits_api.h"
@@ -27,9 +26,8 @@ void SB_ShipGunBroke_free(void) {
 }
 
 void SB_ShipGunBroke_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5) {
-    const SBShipGunBrokePlacementView* placement = (const SBShipGunBrokePlacementView*)obj->anim.placementData;
-
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->destroyedGameBit))) != 0u) {
+    SBShipGunBrokePlacementView* placement = (SBShipGunBrokePlacementView*)obj->anim.placementData;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->destroyedGameBit)) != 0) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
@@ -38,9 +36,8 @@ void SB_ShipGunBroke_hitDetect(void) {
 }
 
 void SB_ShipGunBroke_update(GameObject* obj) {
-    const SBShipGunBrokePlacementView* placement = (const SBShipGunBrokePlacementView*)obj->anim.placementData;
-
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->destroyedGameBit))) != 0u) {
+    SBShipGunBrokePlacementView* placement = (SBShipGunBrokePlacementView*)obj->anim.placementData;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->destroyedGameBit)) != 0) {
         Sfx_PlayFromObject(obj, SFXTRIG_en_trpopn_c);
     }
 }

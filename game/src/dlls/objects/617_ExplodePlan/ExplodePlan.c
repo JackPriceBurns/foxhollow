@@ -14,68 +14,52 @@
 #include "main/object_render.h"
 #include "main/objhits.h"
 
-int explodeplan_getExtraSize(void)
-{
+int explodeplan_getExtraSize(void) {
     return sizeof(ExplodePlanState);
 }
 
-int explodeplan_getObjectTypeId(void)
-{
+int explodeplan_getObjectTypeId(void) {
     return 0;
 }
 
-void explodeplan_free(void)
-{
+void explodeplan_free(void) {
 }
 
-void explodeplan_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
-{
-    f32 scale = 1.0f;
-
-    if (visible != 0)
-    {
-        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, scale);
+void explodeplan_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void explodeplan_hitDetect(void)
-{
+void explodeplan_hitDetect(void) {
 }
 
-void explodeplan_update(GameObject* obj)
-{
+void explodeplan_update(GameObject* obj) {
     ExplodePlanPlacement* placement = (ExplodePlanPlacement*)obj->anim.placementData;
-    s16 removeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit);
-    if (mainGetBit(removeGameBit) != 0)
-    {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit)) != 0) {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         ObjHits_DisableObject(obj);
-    }
-    else
-    {
+    } else {
         obj->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
         ObjHits_EnableObject(obj);
     }
 }
 
-void explodeplan_init(GameObject* obj, ExplodePlanPlacement* placement)
-{
-    s16 removeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit);
+void explodeplan_init(GameObject* obj, ExplodePlanPlacement* placement) {
     ObjHits_EnableObject(obj);
-    if (mainGetBit(removeGameBit) != 0)
-    {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->removeGameBit)) != 0) {
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         ObjHits_DisableObject(obj);
     }
-    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->anim.rotX = placement->rotXByte << 8;
 }
 
-void explodeplan_release(void)
-{
+void explodeplan_release(void) {
 }
 
-void explodeplan_initialise(void)
-{
+void explodeplan_initialise(void) {
 }
 
 ObjectDescriptor gExplodePlanObjDescriptor = {

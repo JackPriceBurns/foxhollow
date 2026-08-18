@@ -132,6 +132,10 @@ void mmshWaterSpike_release(void) {
 void mmshWaterSpike_initialise(void) {
 }
 
+
+
+char sMMSHWaterSpikeInvalidXyzAnimatorIdWarning[] = "WARNING Water Spike [%d] as invalid xyzAnim ID\n";
+
 ObjectDescriptor gMMSHWaterSpikeObjDescriptor = {
     0,
     0,
@@ -148,5 +152,3 @@ ObjectDescriptor gMMSHWaterSpikeObjDescriptor = {
     (ObjectDescriptorCallback)mmshWaterSpike_getObjectTypeId,
     mmshWaterSpike_getExtraSize,
 };
-
-char sMMSHWaterSpikeInvalidXyzAnimatorIdWarning[] = "WARNING Water Spike [%d] as invalid xyzAnim ID\n";

@@ -15,16 +15,15 @@
 #define DEPTHOFFIELDPOINT_SEQEV_ENABLE_AREA   2
 #define DEPTHOFFIELDPOINT_SEQEV_ENABLE_BIGGER 3
 
-int depthoffieldpoint_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+int depthoffieldpoint_SeqFn(GameObject* obj, int, ObjSeqState* animUpdate) {
     DepthOfFieldPointState* state = obj->extra;
-    int eventIndex;
 
-    (void)unused;
     if (state->enabled) {
         turnOnBlurFilter(obj->anim.worldPosX, obj->anim.worldPosY, obj->anim.worldPosZ, state->useArea, state->bigger);
     }
-    for (eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++) {
-        switch (animUpdate->eventIds[eventIndex]) {
+
+    for (int i = 0; i < animUpdate->eventCount; i++) {
+        switch (animUpdate->eventIds[i]) {
         case DEPTHOFFIELDPOINT_SEQEV_ENABLE:
             state->enabled = 1;
             state->useArea = 0;
@@ -63,7 +62,6 @@ void depthoffieldpoint_update(GameObject* obj) {
 
 void depthoffieldpoint_init(GameObject* obj) {
     DepthOfFieldPointState* state = obj->extra;
-
     state->enabled = 0;
     obj->animEventCallback = depthoffieldpoint_SeqFn;
     state->useArea = 0;

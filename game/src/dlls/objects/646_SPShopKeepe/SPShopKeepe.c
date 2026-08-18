@@ -138,22 +138,7 @@ void ShopKeeper_init(GameObject* obj);
 void ShopKeeper_release(void);
 void ShopKeeper_initialise(void);
 
-ObjectDescriptor gShopKeeperObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ShopKeeper_initialise,
-    (ObjectDescriptorCallback)ShopKeeper_release,
-    0,
-    (ObjectDescriptorCallback)ShopKeeper_init,
-    (ObjectDescriptorCallback)ShopKeeper_update,
-    (ObjectDescriptorCallback)ShopKeeper_hitDetect,
-    (ObjectDescriptorCallback)ShopKeeper_render,
-    (ObjectDescriptorCallback)ShopKeeper_free,
-    (ObjectDescriptorCallback)ShopKeeper_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ShopKeeper_getExtraSize,
-};
+
 
 const RomCurveSearchPair gShopKeeperCurveSearchKinds = {0xC, 0x1C};
 
@@ -1074,3 +1059,20 @@ void ShopKeeper_initialise(void)
     gShopKeeperStateHandlers[7] = ShopKeeper_state7Handler;
     gShopKeeperDefaultStateHandler = ShopKeeper_defaultStateHandler;
 }
+
+ObjectDescriptor gShopKeeperObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ShopKeeper_initialise,
+    (ObjectDescriptorCallback)ShopKeeper_release,
+    0,
+    (ObjectDescriptorCallback)ShopKeeper_init,
+    (ObjectDescriptorCallback)ShopKeeper_update,
+    (ObjectDescriptorCallback)ShopKeeper_hitDetect,
+    (ObjectDescriptorCallback)ShopKeeper_render,
+    (ObjectDescriptorCallback)ShopKeeper_free,
+    (ObjectDescriptorCallback)ShopKeeper_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)ShopKeeper_getExtraSize,
+};

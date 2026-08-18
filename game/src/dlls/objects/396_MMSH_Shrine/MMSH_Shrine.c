@@ -139,22 +139,7 @@ typedef enum MMSHShrineAnimCommand {
     MMSH_SHRINE_ANIM_COMMAND_SHOW_MODEL = 0xF
 } MMSHShrineAnimCommand;
 
-ObjectDescriptor gMMSHShrineObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmshShrine_initialise,
-    (ObjectDescriptorCallback)mmshShrine_release,
-    0,
-    (ObjectDescriptorCallback)mmshShrine_init,
-    (ObjectDescriptorCallback)mmshShrine_update,
-    (ObjectDescriptorCallback)mmshShrine_hitDetect,
-    (ObjectDescriptorCallback)mmshShrine_render,
-    (ObjectDescriptorCallback)mmshShrine_free,
-    (ObjectDescriptorCallback)mmshShrine_getObjectTypeId,
-    mmshShrine_getExtraSize,
-};
+
 
 void mmshShrine_updateHoverMotion(GameObject* obj) {
     const MMSHShrinePlacement* placement;
@@ -511,3 +496,20 @@ void mmshShrine_release(void) {
 
 void mmshShrine_initialise(void) {
 }
+
+ObjectDescriptor gMMSHShrineObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)mmshShrine_initialise,
+    (ObjectDescriptorCallback)mmshShrine_release,
+    0,
+    (ObjectDescriptorCallback)mmshShrine_init,
+    (ObjectDescriptorCallback)mmshShrine_update,
+    (ObjectDescriptorCallback)mmshShrine_hitDetect,
+    (ObjectDescriptorCallback)mmshShrine_render,
+    (ObjectDescriptorCallback)mmshShrine_free,
+    (ObjectDescriptorCallback)mmshShrine_getObjectTypeId,
+    mmshShrine_getExtraSize,
+};

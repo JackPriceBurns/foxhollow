@@ -8,7 +8,6 @@
 #include "main/objtype.h"
 
 #define SPIRIT_DOOR_SPIRIT_PULSE_TYPE 5
-#define SPIRIT_DOOR_SPIRIT_MAX_ALPHA  0xFF
 
 f32 gSpiritDoorSpiritPulseScale = 0.7f;
 
@@ -41,23 +40,24 @@ void spiritDoorSpirit_update(GameObject* obj) {
     SpiritDoorSpiritState* state = obj->extra;
     SpiritDoorSpiritPlacement* placement = (SpiritDoorSpiritPlacement*)obj->anim.placement;
     s16 gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
-    u8 active;
 
     if (state->active == 0) {
-        state->active = active = (u8)(mainGetBit(gateGameBit) == 0);
-        if (active != 0) {
+        state->active = mainGetBit(gateGameBit) == 0;
+        if (state->active != 0) {
             objAddObjectType(obj, SPIRIT_DOOR_SPIRIT_OBJECT_GROUP);
         }
+
         if (obj->anim.alpha != 0) {
             obj->anim.alpha--;
         }
     } else {
         objfx_spawnPulseBurst(obj, gSpiritDoorSpiritPulseScale, SPIRIT_DOOR_SPIRIT_PULSE_TYPE, 0, 0, NULL);
-        state->active = active = (u8)(mainGetBit(gateGameBit) == 0);
-        if (active == 0) {
+        state->active = mainGetBit(gateGameBit) == 0;
+        if (state->active == 0) {
             objFreeObjectType(obj, SPIRIT_DOOR_SPIRIT_OBJECT_GROUP);
         }
-        if (obj->anim.alpha < SPIRIT_DOOR_SPIRIT_MAX_ALPHA) {
+
+        if (obj->anim.alpha < 0xFF) {
             obj->anim.alpha++;
         }
     }

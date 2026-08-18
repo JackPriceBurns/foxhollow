@@ -84,22 +84,7 @@ NwLevelControlData gNwLevelControlData = {
     },
 };
 
-ObjectDescriptor gNWLevelControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)nwLevelControl_init,
-    (ObjectDescriptorCallback)nwLevelControl_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)nwLevelControl_free,
-    0,
-    nwLevelControl_getExtraSize,
-};
+
 
 int nwLevelControl_advanceSequenceTable(NwLevelControlState* state) {
     NwLevelControlData* data;
@@ -331,3 +316,20 @@ void nwLevelControl_init(GameObject* obj) {
     (*gMapEventInterface)->setObjGroupStatus(7, 0x1c, 0);
     (*gMapEventInterface)->setObjGroupStatus(7, 9, 1);
 }
+
+ObjectDescriptor gNWLevelControlObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)nwLevelControl_init,
+    (ObjectDescriptorCallback)nwLevelControl_update,
+    0,
+    0,
+    (ObjectDescriptorCallback)nwLevelControl_free,
+    0,
+    nwLevelControl_getExtraSize,
+};

@@ -9,10 +9,8 @@
 #include "main/dll/dll_00AE_projroombeam.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjroombeamDoNoLongerSupported[];
-
 int projroombeam_doUnsupported(void) {
-    OSReport(sProjroombeamDoNoLongerSupported);
+    OSReport("<projroombeam Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,5 +27,3 @@ ProjroombeamResourceDescriptor gProjroombeamResourceDescriptor = {
     NULL,
     projroombeam_doUnsupported,
 };
-
-char sProjroombeamDoNoLongerSupported[] = "<projroombeam Do>No Longer supported \n";

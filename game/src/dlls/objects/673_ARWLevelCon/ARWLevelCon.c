@@ -33,22 +33,7 @@
 #define ARWLEVELCON_ENVFX_A 0x21f
 #define ARWLEVELCON_ENVFX_B 0x22b
 
-ObjectDescriptor gARWLevelConObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwlevelcon_initialise,
-    (ObjectDescriptorCallback)arwlevelcon_release,
-    NULL,
-    (ObjectDescriptorCallback)arwlevelcon_init,
-    (ObjectDescriptorCallback)arwlevelcon_update,
-    (ObjectDescriptorCallback)arwlevelcon_hitDetect,
-    (ObjectDescriptorCallback)arwlevelcon_render,
-    (ObjectDescriptorCallback)arwlevelcon_free,
-    (ObjectDescriptorCallback)arwlevelcon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwlevelcon_getExtraSize,
-};
+
 
 void arwlevelcon_onSeqFree(GameObject* obj)
 {
@@ -260,3 +245,20 @@ void arwlevelcon_release(void)
 void arwlevelcon_initialise(void)
 {
 }
+
+ObjectDescriptor gARWLevelConObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)arwlevelcon_initialise,
+    (ObjectDescriptorCallback)arwlevelcon_release,
+    NULL,
+    (ObjectDescriptorCallback)arwlevelcon_init,
+    (ObjectDescriptorCallback)arwlevelcon_update,
+    (ObjectDescriptorCallback)arwlevelcon_hitDetect,
+    (ObjectDescriptorCallback)arwlevelcon_render,
+    (ObjectDescriptorCallback)arwlevelcon_free,
+    (ObjectDescriptorCallback)arwlevelcon_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)arwlevelcon_getExtraSize,
+};

@@ -9,10 +9,8 @@
 #include "main/dll/dll_00BD_projsunshock.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjsunshockDoNoLongerSupported[];
-
 int projsunshock_doUnsupported(void) {
-    OSReport(sProjsunshockDoNoLongerSupported);
+    OSReport("<projsunshock Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,5 +27,3 @@ ProjsunshockResourceDescriptor gProjsunshockResourceDescriptor = {
     NULL,
     projsunshock_doUnsupported,
 };
-
-char sProjsunshockDoNoLongerSupported[] = "<projsunshock Do>No Longer supported \n";

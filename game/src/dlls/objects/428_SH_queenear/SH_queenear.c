@@ -69,22 +69,7 @@ u8 gQueenEarthWalkerEventTableComplete[QUEEN_EARTH_WALKER_COMPLETE_EVENT_TABLE_S
 s16 gQueenEarthWalkerMoveTable[QUEEN_EARTH_WALKER_MOVE_COUNT] = {34, 34, 34, 5, 28, 0};
 f32 gQueenEarthWalkerMoveSpeedTable[QUEEN_EARTH_WALKER_MOVE_SPEED_COUNT] = {0.005f, 0.005f, 0.005f, 0.01f, 0.005f};
 
-ObjectDescriptor gSH_queenearthwalkerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)sh_queenearthwalker_init,
-    (ObjectDescriptorCallback)sh_queenearthwalker_update,
-    0,
-    0,
-    0,
-    0,
-    sh_queenearthwalker_getExtraSize,
-};
+
 
 /*
  * Processes animation events that drive the Queen's attack and feeding
@@ -411,3 +396,20 @@ void sh_queenearthwalker_init(GameObject* obj, QueenEarthWalkerPlacement* placem
     obj->animEventCallback = sh_queenearthwalker_processAnimEvents;
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
+
+ObjectDescriptor gSH_queenearthwalkerObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)sh_queenearthwalker_init,
+    (ObjectDescriptorCallback)sh_queenearthwalker_update,
+    0,
+    0,
+    0,
+    0,
+    sh_queenearthwalker_getExtraSize,
+};

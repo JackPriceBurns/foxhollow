@@ -49,22 +49,7 @@
 
 u32 gDll199Event9Result;
 
-ObjectDescriptor gDll199ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll409_initialise,
-    (ObjectDescriptorCallback)dll409_release,
-    0,
-    (ObjectDescriptorCallback)dll409_init,
-    (ObjectDescriptorCallback)dll409_update,
-    (ObjectDescriptorCallback)dll409_hitDetect,
-    (ObjectDescriptorCallback)dll409_render,
-    (ObjectDescriptorCallback)dll409_free,
-    (ObjectDescriptorCallback)dll409_getObjectTypeId,
-    dll409_getExtraSize,
-};
+
 
 int dll409_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     Dll199State* state;
@@ -428,3 +413,20 @@ void dll409_release(void) {
 
 void dll409_initialise(void) {
 }
+
+ObjectDescriptor gDll199ObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dll409_initialise,
+    (ObjectDescriptorCallback)dll409_release,
+    0,
+    (ObjectDescriptorCallback)dll409_init,
+    (ObjectDescriptorCallback)dll409_update,
+    (ObjectDescriptorCallback)dll409_hitDetect,
+    (ObjectDescriptorCallback)dll409_render,
+    (ObjectDescriptorCallback)dll409_free,
+    (ObjectDescriptorCallback)dll409_getObjectTypeId,
+    dll409_getExtraSize,
+};

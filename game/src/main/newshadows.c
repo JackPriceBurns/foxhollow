@@ -79,8 +79,14 @@
 extern Texture* gNewShadowHeavyFogTexture;
 extern u8 gNewShadowHeavyFogIntensity;
 
-#define READ_TEXTURE_U16(address) (*(u16*)(address))
-#define WRITE_TEXTURE_U16(address, value) (*(u16*)(address) = (value))
+#define READ_TEXTURE_U16(address) fhReadBE16(address)
+#define WRITE_TEXTURE_U16(address, value)                                                                                  \
+    do                                                                                                                     \
+    {                                                                                                                      \
+        u16 textureValue = (u16)(value);                                                                                   \
+        ((u8*)(address))[0] = (u8)(textureValue >> 8);                                                                     \
+        ((u8*)(address))[1] = (u8)textureValue;                                                                            \
+    } while (0)
 
 void blendTextures(Texture* src1, Texture* src2, f32 blend, Texture* dst)
 {

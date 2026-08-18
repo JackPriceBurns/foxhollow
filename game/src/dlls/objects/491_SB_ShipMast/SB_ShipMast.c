@@ -7,7 +7,6 @@
  * initialise) are stubs - the mast is purely cosmetic.
  */
 #include "dlls/objects/491_SB_ShipMast.h"
-
 #include "dlls/objects/504_WM_Galleon.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
@@ -26,52 +25,50 @@ void SB_ShipMast_free(void) {
 }
 
 void SB_ShipMast_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 isVisible = visible;
-
-    if (isVisible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void SB_ShipMast_hitDetect(void) {
 }
 
 void SB_ShipMast_update(GameObject* obj) {
-    GameObject* parent;
-    int phase;
-    f32 speed;
-
-    parent = obj->anim.parent;
+    GameObject* parent = obj->anim.parent;
     if (parent == NULL) {
         return;
     }
-    phase = parent->userData1;
+
     obj->anim.localPosX = 0.0f;
     obj->anim.localPosY = 0.0f;
     obj->anim.localPosZ = 0.0f;
-    if (((GameObject*)obj->anim.parent)->anim.romDefNo == WM_GALLEON_OBJECT_ID) {
-        if (phase >= 0xa && phase < 0xd) {
-            if (obj->anim.currentMove != 0) {
-                ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
-            }
-            if (phase >= 0xc) {
-                speed = -0.003f;
-            } else {
-                speed = 0.003f;
-            }
-        } else {
-            if (obj->anim.currentMove != 1) {
-                ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
-            }
-            speed = 0.03f;
-        }
-    } else {
+
+    if (((GameObject*)obj->anim.parent)->anim.romDefNo != WM_GALLEON_OBJECT_ID) {
         if (obj->anim.currentMove != 1) {
             ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
         }
-        speed = 0.03f;
+
+        ObjAnim_AdvanceCurrentMove(obj, 0.03f, framesThisStep, NULL);
+        return;
     }
-    ObjAnim_AdvanceCurrentMove(obj, speed, (f32)(u32)framesThisStep, NULL);
+
+    if (parent->userData1 < 0xa || parent->userData1 >= 0xd) {
+        if (obj->anim.currentMove != 1) {
+            ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
+        }
+
+        ObjAnim_AdvanceCurrentMove(obj, 0.03f, framesThisStep, NULL);
+        return;
+    }
+
+    if (obj->anim.currentMove != 0) {
+        ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
+    }
+
+    f32 speed = parent->userData1 >= 0xc ? -0.003f : 0.003f;
+    ObjAnim_AdvanceCurrentMove(obj, speed, framesThisStep, NULL);
 }
 
 void SB_ShipMast_init(void) {

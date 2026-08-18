@@ -548,36 +548,7 @@ HighTopTuning gHighTopTuning = {
      60.0f,  0.0f, 0.0f,   0.0f,  0.0f, 0.0f,   0.0f,  35.0f, 0.0f, 0.0f,  -35.0f},
 };
 f32 gHighTopBandSpeedThresholds[4] = {0.0f, 0.03f, 0.05f, 8.0f};
-ObjectDescriptor24 gHighTopObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)HighTop_initialise,
-    (ObjectDescriptorCallback)HighTop_release,
-    0,
-    (ObjectDescriptorCallback)HighTop_init,
-    (ObjectDescriptorCallback)HighTop_update,
-    (ObjectDescriptorCallback)HighTop_hitDetect,
-    (ObjectDescriptorCallback)HighTop_render,
-    (ObjectDescriptorCallback)HighTop_free,
-    (ObjectDescriptorCallback)HighTop_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)HighTop_getExtraSize,
-    (ObjectDescriptorCallback)HighTop_canMount,
-    (ObjectDescriptorCallback)HighTop_getMountSide,
-    (ObjectDescriptorCallback)HighTop_getRiderPosition,
-    (ObjectDescriptorCallback)HighTop_canDismount,
-    (ObjectDescriptorCallback)HighTop_getDismountSide,
-    (ObjectDescriptorCallback)HighTop_getCameraPosition,
-    (ObjectDescriptorCallback)HighTop_getMountState,
-    (ObjectDescriptorCallback)HighTop_setMountState,
-    (ObjectDescriptorCallback)HighTop_getPlayerAnim,
-    (ObjectDescriptorCallback)hightop_func13,
-    (ObjectDescriptorCallback)HighTop_getRacePosition,
-    (ObjectDescriptorCallback)hightop_func15,
-    (ObjectDescriptorCallback)HighTop_handleRiderScale,
-    (ObjectDescriptorCallback)HighTop_getLookTargetYaw,
-};
+
 
 int hightop_handleMotionEvent(GameObject* obj, u8 event)
 {
@@ -1263,3 +1234,34 @@ void HighTop_initialise(void)
     t[10] = hightop_stateHandler10;
     gHighTopDefaultStateHandler = hightop_defaultStateHandler;
 }
+
+ObjectDescriptor24 gHighTopObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+    (ObjectDescriptorCallback)HighTop_initialise,
+    (ObjectDescriptorCallback)HighTop_release,
+    0,
+    (ObjectDescriptorCallback)HighTop_init,
+    (ObjectDescriptorCallback)HighTop_update,
+    (ObjectDescriptorCallback)HighTop_hitDetect,
+    (ObjectDescriptorCallback)HighTop_render,
+    (ObjectDescriptorCallback)HighTop_free,
+    (ObjectDescriptorCallback)HighTop_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)HighTop_getExtraSize,
+    (ObjectDescriptorCallback)HighTop_canMount,
+    (ObjectDescriptorCallback)HighTop_getMountSide,
+    (ObjectDescriptorCallback)HighTop_getRiderPosition,
+    (ObjectDescriptorCallback)HighTop_canDismount,
+    (ObjectDescriptorCallback)HighTop_getDismountSide,
+    (ObjectDescriptorCallback)HighTop_getCameraPosition,
+    (ObjectDescriptorCallback)HighTop_getMountState,
+    (ObjectDescriptorCallback)HighTop_setMountState,
+    (ObjectDescriptorCallback)HighTop_getPlayerAnim,
+    (ObjectDescriptorCallback)hightop_func13,
+    (ObjectDescriptorCallback)HighTop_getRacePosition,
+    (ObjectDescriptorCallback)hightop_func15,
+    (ObjectDescriptorCallback)HighTop_handleRiderScale,
+    (ObjectDescriptorCallback)HighTop_getLookTargetYaw,
+};

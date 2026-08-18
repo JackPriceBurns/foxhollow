@@ -10,10 +10,8 @@
 #include "main/dll/dll_00B0_projlightning2.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjlightning2DoNoLongerSupported[];
-
 int projlightning2_doUnsupported(void) {
-    OSReport(sProjlightning2DoNoLongerSupported);
+    OSReport("<projlightning2 Do>No Longer supported \n");
     return -1;
 }
 
@@ -30,5 +28,3 @@ Projlightning2ResourceDescriptor gProjlightning2ResourceDescriptor = {
     NULL,
     projlightning2_doUnsupported,
 };
-
-char sProjlightning2DoNoLongerSupported[] = "<projlightning2 Do>No Longer supported \n";

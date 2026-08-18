@@ -114,22 +114,7 @@ static const u16 sMagicGemRedTexturePair[2] = {MAGICGEM_RED_TEXTURE_PAIR, 0};
 static u8 sMagicGemPathData[12] = {0};
 
 /* Target data order places the descriptor before the OSReport string. */
-ObjectDescriptor gMagicGemObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicDust_init,
-    (ObjectDescriptorCallback)MagicDust_update,
-    0,
-    (ObjectDescriptorCallback)MagicDust_render,
-    (ObjectDescriptorCallback)MagicDust_free,
-    0,
-    MagicDust_getExtraSize,
-};
+
 
 int MagicDust_getExtraSize(void) {
     return sizeof(MagicGemState);
@@ -434,3 +419,20 @@ void MagicDust_init(GameObject* obj, CollectibleSetup* placement) {
     }
     ObjMsg_AllocQueue(obj, MAGICGEM_MESSAGE_SLOTS);
 }
+
+ObjectDescriptor gMagicGemObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)MagicDust_init,
+    (ObjectDescriptorCallback)MagicDust_update,
+    0,
+    (ObjectDescriptorCallback)MagicDust_render,
+    (ObjectDescriptorCallback)MagicDust_free,
+    0,
+    MagicDust_getExtraSize,
+};

@@ -24,22 +24,7 @@
 #define BADDIE_INTEREST_SUN_MODE_POSITION_NONZERO 2
 #define BADDIE_INTEREST_GAME_BIT_NONE             -1
 
-ObjectDescriptor gBaddieInterestPObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)BaddieInterestP_initialise,
-    (ObjectDescriptorCallback)BaddieInterestP_release,
-    0,
-    (ObjectDescriptorCallback)BaddieInterestP_init,
-    (ObjectDescriptorCallback)BaddieInterestP_update,
-    (ObjectDescriptorCallback)BaddieInterestP_hitDetect,
-    (ObjectDescriptorCallback)BaddieInterestP_render,
-    (ObjectDescriptorCallback)BaddieInterestP_free,
-    (ObjectDescriptorCallback)BaddieInterestP_getObjectTypeId,
-    BaddieInterestP_getExtraSize,
-};
+
 
 int BaddieInterestP_getExtraSize(void) {
     return 0;
@@ -190,3 +175,20 @@ void BaddieInterestP_release(void) {
 
 void BaddieInterestP_initialise(void) {
 }
+
+ObjectDescriptor gBaddieInterestPObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)BaddieInterestP_initialise,
+    (ObjectDescriptorCallback)BaddieInterestP_release,
+    0,
+    (ObjectDescriptorCallback)BaddieInterestP_init,
+    (ObjectDescriptorCallback)BaddieInterestP_update,
+    (ObjectDescriptorCallback)BaddieInterestP_hitDetect,
+    (ObjectDescriptorCallback)BaddieInterestP_render,
+    (ObjectDescriptorCallback)BaddieInterestP_free,
+    (ObjectDescriptorCallback)BaddieInterestP_getObjectTypeId,
+    BaddieInterestP_getExtraSize,
+};

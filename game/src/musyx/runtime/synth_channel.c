@@ -1,23 +1,16 @@
 #include "src/musyx/runtime/synth_internal.h"
 
-void seqMute(u32 seqId, u32 mask1, u32 mask2)
-{
-    u32 slot;
+void seqMute(u32 seqId, u32 mask1, u32 mask2) {
+    u32 slot = seqGetPrivateIdInline(seqId);
 
-    slot = seqGetPrivateIdInline(seqId);
-
-    if (slot == SYNTH_HANDLE_INVALID)
-    {
+    if (slot == SYNTH_HANDLE_INVALID) {
         return;
     }
 
-    if ((slot & SYNTH_HANDLE_QUEUED_FLAG) == 0)
-    {
+    if ((slot & SYNTH_HANDLE_QUEUED_FLAG) == 0) {
         seqInstance[slot].trackMute[0] = mask1;
         seqInstance[slot].trackMute[1] = mask2;
-    }
-    else
-    {
+    } else {
         seqInstance[slot & SYNTH_HANDLE_ID_MASK].syncCrossInfo.flags |= SND_CROSSFADE_TRACKMUTE;
         seqInstance[slot & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[0] = mask1;
         seqInstance[slot & SYNTH_HANDLE_ID_MASK].syncCrossInfo.trackMute2[1] = mask2;

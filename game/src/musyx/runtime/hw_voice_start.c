@@ -3,9 +3,7 @@
 #include "musyx/hw_dspctrl.h"
 #include "musyx/hw_init.h"
 
-
-void hwStart(u32 voice, u8 studio)
-{
+void hwStart(u32 voice, u8 studio) {
     dspVoice[voice].singleOffset = salTimeOffset;
     salActivateVoice(&dspVoice[voice], studio);
 }

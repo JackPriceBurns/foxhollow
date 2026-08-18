@@ -145,11 +145,14 @@ u8 gSnowwormBabyMoveSequence[0x60] = {0x3f, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 
                          0x08, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x07, 0x07, 0x07, 0x00,
                          0x40, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-u8* gCrawlerReactionTables[] = {
-    gSnowwormMoveSequence,
-    gSnowwormHitReactionSeqIndices,
-    gSnowwormBabyMoveSequence,
-    gSnowwormBabyHitReactionSeqIndices,
+typedef struct SnowwormReactionTablePair {
+    u8* moveSequence;
+    u8* hitReactionSeqIndices;
+} SnowwormReactionTablePair;
+
+SnowwormReactionTablePair gCrawlerReactionTables[] = {
+    {gSnowwormMoveSequence, gSnowwormHitReactionSeqIndices},
+    {gSnowwormBabyMoveSequence, gSnowwormBabyHitReactionSeqIndices},
 };
 
 void snowworm_spawnProjectile(GameObject* obj)
@@ -181,14 +184,7 @@ void snowworm_updateWhileFrozen(GameObject* obj, u8* st, GameObject* attacker, i
     u8* base;
     u32 r;
 
-    {
-        u8* bbase;
-        u32 idx;
-        bbase = (u8*)gCrawlerReactionTables;
-        idx = ((EnemyState*)st)->phaseAngle;
-        bbase = bbase + idx * 8;
-        base = *(u8**)(bbase + 4);
-    }
+    base = gCrawlerReactionTables[((EnemyState*)st)->phaseAngle].hitReactionSeqIndices;
 
     if (cmd == 0x11)
     {
@@ -299,7 +295,7 @@ void crawler_playReactionEffects(GameObject* obj, int* st)
 
 void snowworm_update(GameObject* obj, u8* state)
 {
-    u8* tbl = *(u8**)((char*)gCrawlerReactionTables + ((EnemyState*)state)->phaseAngle * 8);
+    u8* tbl = gCrawlerReactionTables[((EnemyState*)state)->phaseAngle].moveSequence;
     int i;
 
     ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority = 10;
@@ -374,7 +370,7 @@ void snowworm_update(GameObject* obj, u8* state)
 
 void snowworm_applyReactionState(GameObject* obj, int* st)
 {
-    u8* t1 = *(u8**)((char*)gCrawlerReactionTables + ((EnemyState*)st)->phaseAngle * 8);
+    u8* t1 = gCrawlerReactionTables[((EnemyState*)st)->phaseAngle].moveSequence;
     *((u8*)obj + 0xaf) = (u8)(*((u8*)obj + 0xaf) | 0x8);
     if ((((EnemyState*)st)->controlFlags & BADDIE_CONTROL_SEQUENCE_DRIVEN) != 0)
     {
@@ -406,13 +402,13 @@ void snowworm_init(GameObject* obj, int* st)
     ((EnemyState*)st)->animPlaySpeed = 0.01f;
     ((EnemyState*)st)->gravity = 0.006f;
     ((EnemyState*)st)->drag = 0.95f;
-    *((u8*)st + 0x320) = 0;
+    ((EnemyState*)st)->moveId0 = 0;
     {
         f32 d = 1.0f;
         ((EnemyState*)st)->moveSpeedScale0 = d;
-        *((u8*)st + 0x321) = 0xa;
+        ((EnemyState*)st)->moveId1 = 0xa;
         ((EnemyState*)st)->moveSpeedScale1 = d;
-        *((u8*)st + 0x322) = 7;
+        ((EnemyState*)st)->moveId2 = 7;
         ((EnemyState*)st)->moveSpeedScale2 = d;
     }
     ((EnemyState*)st)->userData1 = 1;

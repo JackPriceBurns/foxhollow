@@ -3,6 +3,10 @@
 
 #include "game/objects/object.h"
 
+typedef struct DimTrickyState {
+    u8 phase;
+} DimTrickyState;
+
 int dim_tricky_getExtraSize(void);
 int dim_tricky_getObjectTypeId(void);
 void dim_tricky_free(void);

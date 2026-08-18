@@ -580,22 +580,7 @@ f32 gAndrossMoveAnimSpeeds[23] = {
     0.03f, 0.03f, 0.02f,  0.02f,  0.01f, 0.02f,  0.02f,  0.02f,  0.02f,  0.007f, 0.003f,
 };
 
-ObjectDescriptor gAndrossObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)andross_init,
-    (ObjectDescriptorCallback)andross_update,
-    (ObjectDescriptorCallback)andross_hitDetect,
-    (ObjectDescriptorCallback)andross_render,
-    (ObjectDescriptorCallback)andross_free,
-    (ObjectDescriptorCallback)andross_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)andross_getExtraSize,
-};
+
 
 void andross_update(GameObject* boss) {
     AndrossState* state = boss->extra;
@@ -1723,3 +1708,20 @@ int gAndrossRingProjectileLifetime = 110;
 f32 gAndrossRingProjectileScale = 5.0f;
 int gAndrossProjectileForwardStep = 7;
 int gAndrossSpawnedObjectLifetime = 200;
+
+ObjectDescriptor gAndrossObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    0,
+    0,
+    0,
+    (ObjectDescriptorCallback)andross_init,
+    (ObjectDescriptorCallback)andross_update,
+    (ObjectDescriptorCallback)andross_hitDetect,
+    (ObjectDescriptorCallback)andross_render,
+    (ObjectDescriptorCallback)andross_free,
+    (ObjectDescriptorCallback)andross_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)andross_getExtraSize,
+};

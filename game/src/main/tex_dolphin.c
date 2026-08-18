@@ -1647,7 +1647,7 @@ static void mapBlockUnpackDisplayLists(MapBlockBoundsRec* lists, u8* raw, u32 of
         list->maxY = mapBlockReadS16(src, 0x0e);
         list->maxZ = mapBlockReadS16(src, 0x10);
         list->flags = src[0x12];
-        list->pad13 = src[0x13];
+        list->shaderIndex = src[0x13];
         list->renderBitOffset = mapBlockReadU16(src, 0x14);
         memcpy(list->pad16, src + 0x16, sizeof(list->pad16));
         list->selector = src[0x18];

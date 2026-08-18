@@ -46,22 +46,7 @@ f32 gArwingAndrossRingRadiusScale = 10.0f;
 
 #define ARWINGANDROSSSTUFF_HIT_VOLUME_SLOT      0xf
 
-ObjectDescriptor gArwingAndrossStuffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwingandrossstuff_initialise,
-    (ObjectDescriptorCallback)arwingandrossstuff_release,
-    NULL,
-    (ObjectDescriptorCallback)arwingandrossstuff_init,
-    (ObjectDescriptorCallback)arwingandrossstuff_update,
-    (ObjectDescriptorCallback)arwingandrossstuff_hitDetect,
-    (ObjectDescriptorCallback)arwingandrossstuff_render,
-    (ObjectDescriptorCallback)arwingandrossstuff_free,
-    (ObjectDescriptorCallback)arwingandrossstuff_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwingandrossstuff_getExtraSize,
-};
+
 
 void arwprojectile_createLinkedEffect(GameObject* obj, u8 enable)
 {
@@ -355,3 +340,20 @@ void arwingandrossstuff_release(void)
 void arwingandrossstuff_initialise(void)
 {
 }
+
+ObjectDescriptor gArwingAndrossStuffObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)arwingandrossstuff_initialise,
+    (ObjectDescriptorCallback)arwingandrossstuff_release,
+    NULL,
+    (ObjectDescriptorCallback)arwingandrossstuff_init,
+    (ObjectDescriptorCallback)arwingandrossstuff_update,
+    (ObjectDescriptorCallback)arwingandrossstuff_hitDetect,
+    (ObjectDescriptorCallback)arwingandrossstuff_render,
+    (ObjectDescriptorCallback)arwingandrossstuff_free,
+    (ObjectDescriptorCallback)arwingandrossstuff_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)arwingandrossstuff_getExtraSize,
+};

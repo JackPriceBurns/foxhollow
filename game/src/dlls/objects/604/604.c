@@ -141,6 +141,7 @@ int gSnowClawDropBombAngle;
 s32 gSnowClawMoveTable[12] = {905, 909, 906, 910, 1235, 1236, 365, 364, 368, 367, 1000, 1002};
 
 s32 gSnowClawAttackTimerByRank[4] = {150, 200, 300, 400};
+s16 gSnowClawActivationGameBits[3] = {1175, 930, 2000};
 
 u32 gSnowClawHurtSfxTable[8] = {0x2EF, 0x2EE, 0x2ED, 0x2EC, 0x2EB, 0x0497049C, 0x03A2049C, 0x07D007D1};
 
@@ -164,22 +165,7 @@ void snowclaw_hitDetect(GameObject* obj);
 void snowclaw_update(GameObject* obj);
 int snowclaw_animEventCallback(GameObject* obj, int a2, ObjSeqState* seq);
 
-ObjectDescriptor gSnowClawObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)snowclaw_initialise,
-    (ObjectDescriptorCallback)snowclaw_release,
-    0,
-    (ObjectDescriptorCallback)snowclaw_init,
-    (ObjectDescriptorCallback)snowclaw_update,
-    (ObjectDescriptorCallback)snowclaw_hitDetect,
-    (ObjectDescriptorCallback)snowclaw_render,
-    (ObjectDescriptorCallback)snowclaw_free,
-    (ObjectDescriptorCallback)snowclaw_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)snowclaw_getExtraSize,
-};
+
 
 
 void snowclaw_spawnDropBomb(GameObject* obj, GameObject* owner, int launchMode, int userData1Value)
@@ -676,7 +662,7 @@ void snowclaw_update(GameObject* obj)
     u32 pulseModes[4];
     u32* pulseType;
     u32* pulseMode;
-    f32 pulseVec[3];
+    Vec pulseVec;
     SnowClawDropObjectTable dropTable;
     const SnowClawPulse4* pulseSrc;
 
@@ -794,12 +780,12 @@ void snowclaw_update(GameObject* obj)
         i = s->tickCounter++;
         if ((i % gSnowClawPulseInterval) != 0)
         {
-            pulseVec[0] = 0.0f;
-            pulseVec[1] = gSnowClawPulseOffsetY;
-            pulseVec[2] = 0.0f;
+            pulseVec.x = 0.0f;
+            pulseVec.y = gSnowClawPulseOffsetY;
+            pulseVec.z = 0.0f;
             pulseType = &pulseTypes[pulseIndex];
             pulseMode = &pulseModes[pulseIndex];
-            objfx_spawnPulseBurst(obj, gSnowClawPulseScale, (u8)*pulseType, (u8)*pulseMode, 0, pulseVec);
+            objfx_spawnPulseBurst(obj, gSnowClawPulseScale, (u8)*pulseType, (u8)*pulseMode, 0, &pulseVec);
         }
     }
 }
@@ -827,16 +813,16 @@ void snowclaw_init(GameObject* obj, SnowclawPlacement* placement)
     case 0x16d:
     case 0x170:
     default:
-        inner->moveTablePtr = (s16*)(table + 0x58);
+        inner->moveTablePtr = &gSnowClawActivationGameBits[1];
         inner->moveIdBase = 0x100;
         break;
     case 0x389:
     case 0x38a:
     case 0x4d3:
-        inner->moveTablePtr = (s16*)(table + 0x54);
+        inner->moveTablePtr = &gSnowClawActivationGameBits[0];
         inner->moveIdBase = 0x400;
     case 0x3e8:
-        inner->moveTablePtr = (s16*)(table + 0x5c);
+        inner->moveTablePtr = &gSnowClawActivationGameBits[2];
         inner->moveIdBase = 0x400;
         break;
     }
@@ -844,7 +830,7 @@ void snowclaw_init(GameObject* obj, SnowclawPlacement* placement)
     inner->attackDelay = 0x64;
     inner->unk30 = 0.006f;
     storeZeroToFloatParam(&inner->attackTimer);
-    s16toFloat(&inner->attackTimer, * (int*)(table + 0x3c));
+    s16toFloat(&inner->attackTimer, gSnowClawAttackTimerByRank[3]);
     seqPairTablePrepare((u8*)gSnowClawMoveTable, 6);
     gSnowClawDropBombAngle = 0x96;
     inner->b0 = 0;
@@ -857,3 +843,20 @@ void snowclaw_release(void)
 void snowclaw_initialise(void)
 {
 }
+
+ObjectDescriptor gSnowClawObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)snowclaw_initialise,
+    (ObjectDescriptorCallback)snowclaw_release,
+    0,
+    (ObjectDescriptorCallback)snowclaw_init,
+    (ObjectDescriptorCallback)snowclaw_update,
+    (ObjectDescriptorCallback)snowclaw_hitDetect,
+    (ObjectDescriptorCallback)snowclaw_render,
+    (ObjectDescriptorCallback)snowclaw_free,
+    (ObjectDescriptorCallback)snowclaw_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)snowclaw_getExtraSize,
+};

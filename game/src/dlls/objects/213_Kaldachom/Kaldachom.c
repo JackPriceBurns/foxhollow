@@ -87,24 +87,7 @@ s16 gKaldachomMoves[6] = {0, 0, 1, 1, 2, 0};
 
 f32 gKaldachomMoveSpeeds[5] = {0.004f, 0.006f, 0.01f, 0.01f, 0.01f};
 
-ObjectDescriptor12 gKaldachomObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)kaldachom_initialise,
-    (ObjectDescriptorCallback)kaldachom_release,
-    0,
-    (ObjectDescriptorCallback)kaldachom_init,
-    (ObjectDescriptorCallback)kaldachom_update,
-    (ObjectDescriptorCallback)kaldachom_hitDetect,
-    (ObjectDescriptorCallback)kaldachom_render,
-    (ObjectDescriptorCallback)kaldachom_free,
-    (ObjectDescriptorCallback)kaldachom_getObjectTypeId,
-    kaldachom_getExtraSize,
-    (ObjectDescriptorCallback)kaldachom_getControlMode,
-    (ObjectDescriptorCallback)kaldachom_func0B,
-};
+
 
 int kaldachom_stateHandlerB05(GameObject* obj, GroundBaddieState* state) {
     KaldachomState* objectState;
@@ -784,3 +767,22 @@ void kaldachom_initialise(void) {
     gKaldachomStateHandlersB[4] = kaldachom_stateHandlerB04;
     gKaldachomStateHandlersB[5] = kaldachom_stateHandlerB05;
 }
+
+ObjectDescriptor12 gKaldachomObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    (ObjectDescriptorCallback)kaldachom_initialise,
+    (ObjectDescriptorCallback)kaldachom_release,
+    0,
+    (ObjectDescriptorCallback)kaldachom_init,
+    (ObjectDescriptorCallback)kaldachom_update,
+    (ObjectDescriptorCallback)kaldachom_hitDetect,
+    (ObjectDescriptorCallback)kaldachom_render,
+    (ObjectDescriptorCallback)kaldachom_free,
+    (ObjectDescriptorCallback)kaldachom_getObjectTypeId,
+    kaldachom_getExtraSize,
+    (ObjectDescriptorCallback)kaldachom_getControlMode,
+    (ObjectDescriptorCallback)kaldachom_func0B,
+};

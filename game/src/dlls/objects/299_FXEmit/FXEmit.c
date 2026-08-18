@@ -387,6 +387,10 @@ void FXEmit_release(void) {
 void FXEmit_initialise(void) {
 }
 
+
+
+char sFXEmitDebugFormat[12] = "%x   %f %f\n";
+
 ObjectDescriptor gFXEmitObjDescriptor = {
     0,
     0,
@@ -403,5 +407,3 @@ ObjectDescriptor gFXEmitObjDescriptor = {
     (ObjectDescriptorCallback)FXEmit_getObjectTypeId,
     FXEmit_getExtraSize,
 };
-
-char sFXEmitDebugFormat[12] = "%x   %f %f\n";

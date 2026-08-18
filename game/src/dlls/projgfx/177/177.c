@@ -9,18 +9,8 @@
 #include "main/dll/dll_00B1_projlightning3.h"
 #include "dolphin/os/OSReport.h"
 
-Projlightning3ResourceDescriptor gProjlightning3ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning3_initialise,
-    projlightning3_release,
-    NULL,
-    projlightning3_doUnsupported,
-};
-
-char sProjlightning3DoNoLongerSupported[] = "<projlightning3 Do>No Longer supported \n";
-
 int projlightning3_doUnsupported(void) {
-    OSReport(sProjlightning3DoNoLongerSupported);
+    OSReport("<projlightning3 Do>No Longer supported \n");
     return -1;
 }
 
@@ -29,3 +19,11 @@ void projlightning3_release(void) {
 
 void projlightning3_initialise(void) {
 }
+
+Projlightning3ResourceDescriptor gProjlightning3ResourceDescriptor = {
+    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
+    projlightning3_initialise,
+    projlightning3_release,
+    NULL,
+    projlightning3_doUnsupported,
+};

@@ -497,24 +497,7 @@ void dbegg_hitDetect(GameObject* obj)
     (obj)->anim.previousLocalPosZ = (obj)->anim.localPosZ;
 }
 
-ObjectDescriptor12 gDB_eggObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dbegg_initialise,
-    (ObjectDescriptorCallback)dbegg_release,
-    0,
-    (ObjectDescriptorCallback)dbegg_init,
-    (ObjectDescriptorCallback)dbegg_update,
-    (ObjectDescriptorCallback)dbegg_hitDetect,
-    (ObjectDescriptorCallback)dbegg_render,
-    (ObjectDescriptorCallback)dbegg_free,
-    (ObjectDescriptorCallback)dbegg_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)dbegg_getExtraSize,
-    (ObjectDescriptorCallback)dbegg_isActive,
-    (ObjectDescriptorCallback)dbegg_setLaunchVelocity,
-};
+
 
 char sAnimGreaterMessage[11] = " GREATER \n\000";
 
@@ -908,3 +891,22 @@ void dbegg_release(void)
 void dbegg_initialise(void)
 {
 }
+
+ObjectDescriptor12 gDB_eggObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    (ObjectDescriptorCallback)dbegg_initialise,
+    (ObjectDescriptorCallback)dbegg_release,
+    0,
+    (ObjectDescriptorCallback)dbegg_init,
+    (ObjectDescriptorCallback)dbegg_update,
+    (ObjectDescriptorCallback)dbegg_hitDetect,
+    (ObjectDescriptorCallback)dbegg_render,
+    (ObjectDescriptorCallback)dbegg_free,
+    (ObjectDescriptorCallback)dbegg_getObjectTypeId,
+    (ObjectDescriptorExtraSizeCallback)dbegg_getExtraSize,
+    (ObjectDescriptorCallback)dbegg_isActive,
+    (ObjectDescriptorCallback)dbegg_setLaunchVelocity,
+};

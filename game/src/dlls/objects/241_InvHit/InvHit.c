@@ -76,22 +76,7 @@ void InvHit_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int f
 void InvHit_hitDetect(void) {
 }
 
-ObjectDescriptor gInvHitObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)InvHit_initialise,      /* initialise */
-    (ObjectDescriptorCallback)InvHit_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)InvHit_init,            /* init */
-    (ObjectDescriptorCallback)InvHit_update,          /* update */
-    (ObjectDescriptorCallback)InvHit_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)InvHit_render,          /* render */
-    (ObjectDescriptorCallback)InvHit_free,            /* free */
-    (ObjectDescriptorCallback)InvHit_getObjectTypeId, /* getObjectTypeId */
-    InvHit_getExtraSize,                              /* getExtraSize */
-};
+
 
 void InvHit_update(GameObject* obj) {
     InvHitState* state;
@@ -316,3 +301,20 @@ void InvHit_release(void) {
 
 void InvHit_initialise(void) {
 }
+
+ObjectDescriptor gInvHitObjDescriptor = {
+    0,                                                /* reserved0 */
+    0,                                                /* reserved1 */
+    0,                                                /* reserved2 */
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
+    (ObjectDescriptorCallback)InvHit_initialise,      /* initialise */
+    (ObjectDescriptorCallback)InvHit_release,         /* release */
+    0,                                                /* slot02 */
+    (ObjectDescriptorCallback)InvHit_init,            /* init */
+    (ObjectDescriptorCallback)InvHit_update,          /* update */
+    (ObjectDescriptorCallback)InvHit_hitDetect,       /* hitDetect */
+    (ObjectDescriptorCallback)InvHit_render,          /* render */
+    (ObjectDescriptorCallback)InvHit_free,            /* free */
+    (ObjectDescriptorCallback)InvHit_getObjectTypeId, /* getObjectTypeId */
+    InvHit_getExtraSize,                              /* getExtraSize */
+};

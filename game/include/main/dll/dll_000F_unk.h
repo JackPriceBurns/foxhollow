@@ -45,7 +45,7 @@ void player_advanceMove(short* moveState, u32* obj, f32 dt, int flags);
 void player_runSubstateMachine(GameObject* obj, BaddieState* state, f32 dt, PlayerSubstateFn* stateFns);
 void playerRunStateMachine(GameObject* obj, BaddieState* state, f32 dt, PlayerStateFn* stateFns);
 void player_setState(void* ctx, void* p, int new_state);
-void player_setOverride(u32 x);
+void player_setOverride(GameObject* obj);
 void player_updateVel(char* p, char* obj, void* stateFns);
 void player_update(char* pos, char* state, float dt, float pathDt, void* stateFns, void* auxStateFns);
 void player_init(void* unused, void* obj, int a, int b);

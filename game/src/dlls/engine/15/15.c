@@ -26,7 +26,7 @@ u8 gPlayerMoveAdvanced;
 u32 gPlayerMoveFastMoveId;
 u32 gPlayerMoveSlowMoveId;
 u8 gPlayerMoveVelHandled;
-u32 playerOverride;
+GameObject* playerOverride;
 
 #define PLAYER_MOVE_ZERO              0.0f
 #define PLAYER_MOVE_DAMPING           0.9f
@@ -821,9 +821,9 @@ void player_setState(void* ctx, void* p, int new_state)
         q->suppressOutgoingHits = 0;
 }
 
-void player_setOverride(u32 x)
+void player_setOverride(GameObject* obj)
 {
-    playerOverride = x;
+    playerOverride = obj;
 }
 
 void player_updateVel(char* p, char* obj, void* stateFns)
@@ -966,7 +966,7 @@ void player_update(char* pos, char* state, float dt, float pathDt, void* stateFn
         player_applyVelocityStep((GameObject*)pos, (int*)state, dt);
     }
 
-    overrideObj = (GameObject*)playerOverride;
+    overrideObj = playerOverride;
     if ((void*)overrideObj != NULL)
     {
         dx = overrideObj->anim.localPosX - gPlayerMoveOverridePosX;
@@ -1001,7 +1001,7 @@ void player_update(char* pos, char* state, float dt, float pathDt, void* stateFn
         }
     }
 
-    playerOverride = 0;
+    playerOverride = NULL;
 
     if ((*(int*)state & 0x1000000) == 0 && (*(int*)state & 0x400000) == 0 && keepPathControls != 0)
     {

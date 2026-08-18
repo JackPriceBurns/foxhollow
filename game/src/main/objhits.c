@@ -2951,48 +2951,43 @@ void ObjHits_RefreshObjectState(GameObject* object) {
 }
 
 int ObjHits_RecordObjectHit(GameObject* obj, GameObject* hitObj, s8 priority, int hitVolume, s8 sphereIndex) {
-    ObjAnimComponent* sourceObj;
-    ObjAnimComponent* targetObj;
-    ObjHitsPriorityState* hitState;
-    int hitSlot;
-    u8 hitVolumeId;
-
-    if (priority == '\0') {
+    if (priority == 0) {
         return 0;
     }
-    sourceObj = (ObjAnimComponent*)obj;
-    targetObj = (ObjAnimComponent*)hitObj;
-    hitState = (ObjHitsPriorityState*)sourceObj->hitReactState;
+
+    ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     if ((hitState->flags & OBJHITS_PRIORITY_STATE_ENABLED) == 0) {
         return 0;
     }
-    if ((targetObj != NULL) && (targetObj->hitReactState != NULL)) {
-        ((ObjHitsPriorityState*)targetObj->hitReactState)->lastHitObject = (uintptr_t)obj;
+
+    if (hitObj != NULL && hitObj->anim.hitReactState != NULL) {
+        ((ObjHitsPriorityState*)hitObj->anim.hitReactState)->lastHitObject = (uintptr_t)obj;
     }
-    hitSlot = 0;
-    hitVolumeId = hitVolume;
+
+    int hitSlot = 0;
     while (hitSlot < hitState->priorityHitCount) {
         if ((void*)hitState->hitObjects[hitSlot] == (void*)hitObj) {
             if (hitState->priorities[hitSlot] > priority) {
                 hitState->sphereIndices[hitSlot] = sphereIndex;
                 hitState->priorities[hitSlot] = priority;
-                hitState->hitVolumes[hitSlot] = hitVolumeId;
-                hitState->hitPosX[hitSlot] = sourceObj->localPosX;
-                hitState->hitPosY[hitSlot] = sourceObj->localPosY;
-                hitState->hitPosZ[hitSlot] = sourceObj->localPosZ;
+                hitState->hitVolumes[hitSlot] = hitVolume;
+                hitState->hitPosX[hitSlot] = obj->anim.localPosX;
+                hitState->hitPosY[hitSlot] = obj->anim.localPosY;
+                hitState->hitPosZ[hitSlot] = obj->anim.localPosZ;
             }
             hitSlot = hitState->priorityHitCount + 1;
         }
         hitSlot = hitSlot + 1;
     }
-    if ((hitSlot == hitState->priorityHitCount) && (hitState->priorityHitCount < OBJHITS_PRIORITY_HIT_COUNT)) {
+
+    if (hitSlot == hitState->priorityHitCount && hitState->priorityHitCount < OBJHITS_PRIORITY_HIT_COUNT) {
         hitState->sphereIndices[hitState->priorityHitCount] = sphereIndex;
         hitState->priorities[hitState->priorityHitCount] = priority;
-        hitState->hitVolumes[hitState->priorityHitCount] = hitVolumeId;
+        hitState->hitVolumes[hitState->priorityHitCount] = hitVolume;
         hitState->hitObjects[hitState->priorityHitCount] = (uintptr_t)hitObj;
-        hitState->hitPosX[hitState->priorityHitCount] = sourceObj->localPosX;
-        hitState->hitPosY[hitState->priorityHitCount] = sourceObj->localPosY;
-        hitState->hitPosZ[hitState->priorityHitCount] = sourceObj->localPosZ;
+        hitState->hitPosX[hitState->priorityHitCount] = obj->anim.localPosX;
+        hitState->hitPosY[hitState->priorityHitCount] = obj->anim.localPosY;
+        hitState->hitPosZ[hitState->priorityHitCount] = obj->anim.localPosZ;
         hitState->priorityHitCount++;
     }
     return 1;
@@ -3006,7 +3001,7 @@ int ObjHits_RecordPositionHit(GameObject* obj, GameObject* hitObj, s8 priority, 
     int hitSlot;
     u8 hitVolumeId;
 
-    if ((int)priority == '\0') {
+    if (priority == 0) {
         return 0;
     }
     sourceObj = (ObjAnimComponent*)obj;

@@ -10,10 +10,8 @@
 #include "main/dll/dll_00B4_projenergise1.h"
 #include "dolphin/os/OSReport.h"
 
-extern char sProjenergise1DoNoLongerSupported[];
-
 int projenergise1_doUnsupported(void) {
-    OSReport(sProjenergise1DoNoLongerSupported);
+    OSReport("<projenergise1 Do>No Longer supported \n");
     return -1;
 }
 
@@ -30,5 +28,3 @@ Projenergise1ResourceDescriptor gProjenergise1ResourceDescriptor = {
     NULL,
     projenergise1_doUnsupported,
 };
-
-char sProjenergise1DoNoLongerSupported[] = "<projenergise1 Do>No Longer supported \n";

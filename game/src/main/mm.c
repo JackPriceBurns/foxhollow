@@ -41,6 +41,10 @@ char sMmStoreAllocationTag[] = "mmStore";
 #define MM_STORE_COUNT 0x20
 #define MM_DEFERRED_FREE_CAPACITY 2000
 #define MM_REGION_CAPACITY 8
+#define MM_REGION0_SLOT_COUNT 0x1f4
+#define MM_REGION1_SLOT_COUNT 0x6a4
+#define MM_REGION2_SLOT_COUNT 0x6a4
+#define MM_REGION3_SLOT_COUNT 0x910
 
 typedef struct MmRegion
 {
@@ -985,7 +989,7 @@ void mmInit(void)
     gMmRegion0Size = size;
     p = OSAllocFromHeap(__OSCurrHeap, size);
     DCFlushRange(p, size);
-    mmInitRegion(p, size, 0xfa);
+    mmInitRegion(p, size, MM_REGION0_SLOT_COUNT);
 
     p = OSAllocFromHeap(__OSCurrHeap, 0x6ed);
     gSaveGameWorkBuffer = p;
@@ -993,15 +997,15 @@ void mmInit(void)
 
     p = OSAllocFromHeap(__OSCurrHeap, 0x380000);
     DCFlushRange(p, 0x380000);
-    mmInitRegion(p, 0x380000, 0x352);
+    mmInitRegion(p, 0x380000, MM_REGION1_SLOT_COUNT);
 
     p = OSAllocFromHeap(__OSCurrHeap, 0x13ff40);
     DCFlushRange(p, 0x13ff40);
-    mmInitRegion(p, 0x13ff40, 0x352);
+    mmInitRegion(p, 0x13ff40, MM_REGION2_SLOT_COUNT);
 
     p = OSAllocFromHeap(__OSCurrHeap, 0x8bff40);
     DCFlushRange(p, 0x8bff40);
-    mmInitRegion(p, 0x8bff40, 0x488);
+    mmInitRegion(p, 0x8bff40, MM_REGION3_SLOT_COUNT);
 
     gMmOpCount++;
     gMmFreeDelay = 2;

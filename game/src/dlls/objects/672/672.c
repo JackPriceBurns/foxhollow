@@ -72,22 +72,7 @@ RingTable gRingModeParams[] = {
     {0x7A2, 0x7A3, 0x4000, 50, 0x1000, 732.0f},
 };
 
-ObjectDescriptor gRingObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ring_initialise,
-    (ObjectDescriptorCallback)ring_release,
-    NULL,
-    (ObjectDescriptorCallback)ring_init,
-    (ObjectDescriptorCallback)ring_update,
-    (ObjectDescriptorCallback)ring_hitDetect,
-    (ObjectDescriptorCallback)ring_render,
-    (ObjectDescriptorCallback)ring_free,
-    (ObjectDescriptorCallback)ring_getObjectTypeId,
-    ring_getExtraSize,
-};
+
 
 void ring_updateMovingAxis(GameObject* obj, RingState* state)
 {
@@ -555,3 +540,20 @@ void ring_release(void)
 void ring_initialise(void)
 {
 }
+
+ObjectDescriptor gRingObjDescriptor = {
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ring_initialise,
+    (ObjectDescriptorCallback)ring_release,
+    NULL,
+    (ObjectDescriptorCallback)ring_init,
+    (ObjectDescriptorCallback)ring_update,
+    (ObjectDescriptorCallback)ring_hitDetect,
+    (ObjectDescriptorCallback)ring_render,
+    (ObjectDescriptorCallback)ring_free,
+    (ObjectDescriptorCallback)ring_getObjectTypeId,
+    ring_getExtraSize,
+};
