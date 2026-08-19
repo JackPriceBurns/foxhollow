@@ -939,7 +939,7 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
     u8 ch;
     u16 f;
     u8 b;
-    ModelLightStruct* larr[8];
+    ModelLightStruct* larr[6];
     s32 count;
     GXColor c;
 
@@ -3115,6 +3115,10 @@ void objRenderFuzzShadowShells(GameObject* obj)
     }
 }
 
+#define OBJPRINT_SEQID_FRONT_FOX 0x77d
+#define OBJPRINT_SEQID_DIE_FOX 0x882
+#define OBJPRINT_SEQID_DIE_KRYSTAL 0x887
+
 void objRenderFuzz(GameObject* obj)
 {
     int n;
@@ -3125,10 +3129,12 @@ void objRenderFuzz(GameObject* obj)
     u8 strong;
     f32 dx, dy, dz, dist;
     Camera* cam = Camera_GetCurrent();
-    if ((obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) || obj->anim.mapEventSlot == 0x3f)
+    if ((obj->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) || obj->anim.mapEventSlot == 0x3f ||
+        obj->anim.romDefNo == OBJPRINT_SEQID_DIE_FOX || obj->anim.romDefNo == OBJPRINT_SEQID_DIE_KRYSTAL)
     {
         strong = 1;
-        if (obj->anim.classId == 1)
+        if (obj->anim.classId == 1 || obj->anim.romDefNo == OBJPRINT_SEQID_FRONT_FOX ||
+            obj->anim.romDefNo == OBJPRINT_SEQID_DIE_FOX || obj->anim.romDefNo == OBJPRINT_SEQID_DIE_KRYSTAL)
         {
             maxN = 0xf;
         }

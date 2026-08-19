@@ -1,7 +1,4 @@
-/* View-dependent magic wall in CloudRunner Fortress. */
-
 #include "dlls/objects/354_CFMagicWall.h"
-
 #include "main/camera.h"
 #include "main/gamebits_api.h"
 #include "main/obj_query.h"
@@ -22,10 +19,11 @@ void cfmagicwall_free(void) {
 }
 
 void cfmagicwall_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 v = visible;
-    if (v != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void cfmagicwall_hitDetect(void) {
@@ -33,48 +31,36 @@ void cfmagicwall_hitDetect(void) {
 
 void cfmagicwall_update(GameObject* obj) {
     CfMagicWallPlacement* placement = (CfMagicWallPlacement*)obj->anim.placementData;
-    GameObject* player = Obj_GetPlayerObject();
-    u8 alpha = 0xFF;
-
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibleGameBit))) != 0) {
-        int yaw = (s16)Obj_GetYawDeltaToObject(obj, player, NULL);
-
-        yaw = (yaw >= 0) ? yaw : -yaw;
-
-        if (yaw > CFMAGICWALL_MAX_VISIBLE_YAW) {
-            obj->anim.alpha = 0;
-            return;
-        }
-
-        {
-            f32 playerDistance;
-            f32 range;
-            f32 fadeDistance;
-            range = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->fadeRange));
-            playerDistance = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
-            fadeDistance =
-                Camera_DistanceToCurrentViewPosition(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
-
-            if (fadeDistance < playerDistance) {
-                fadeDistance =
-                    Camera_DistanceToCurrentViewPosition(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
-            } else {
-                fadeDistance = playerDistance;
-            }
-
-            if (fadeDistance < range) {
-                alpha = 255.0f * (fadeDistance / range);
-            }
-
-            obj->anim.alpha = alpha;
-        }
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->visibleGameBit)) == 0) {
+        return;
     }
+
+    GameObject* player = Obj_GetPlayerObject();
+    int yaw = Obj_GetYawDeltaToObject(obj, player, NULL);
+    yaw = yaw >= 0 ? yaw : -yaw;
+
+    if (yaw > CFMAGICWALL_MAX_VISIBLE_YAW) {
+        obj->anim.alpha = 0;
+        return;
+    }
+
+    f32 range = ObjAnim_ReadPlacementS16(&obj->anim, &placement->fadeRange);
+    f32 playerDistance = Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
+    f32 fadeDistance =
+        Camera_DistanceToCurrentViewPosition(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
+
+    if (fadeDistance < playerDistance) {
+        fadeDistance =
+            Camera_DistanceToCurrentViewPosition(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ);
+    } else {
+        fadeDistance = playerDistance;
+    }
+
+    obj->anim.alpha = fadeDistance < range ? 255.0f * (fadeDistance / range) : 255.0f;
 }
 
 void cfmagicwall_init(GameObject* obj, CfMagicWallPlacement* placement) {
-    s8 v = placement->rotXByte;
-    s16 t = v << 8;
-    obj->anim.rotX = t;
+    obj->anim.rotX = placement->rotXByte << 8;
 }
 
 void cfmagicwall_release(void) {

@@ -130,13 +130,13 @@ void dbegg_processMessages(GameObject* obj)
     DbEggState* eggState;
     DbeggPlacement* config;
     u32 msgType = 0;
-    int msgFlag = 0;
-    int msgArg;
+    u32 msgFlag = 0;
+    uintptr_t msgArg;
 
-    eggState = (DbEggState*)((int)obj->extra);
+    eggState = obj->extra;
     config = (DbeggPlacement*)(obj)->anim.placementData;
 
-    while (ObjMsg_Pop(obj, &msgType, (u32*)&msgArg, (u32*)&msgFlag) != 0)
+    while (ObjMsg_Pop(obj, &msgType, &msgArg, &msgFlag) != 0)
     {
         if (msgType == 17)
         {
@@ -390,17 +390,17 @@ void dbegg_computeFlocking(GameObject* obj, f32* vel)
     f32 sumX;
     f32 sumZ;
     int count;
-    int* objCursor;
+    GameObject** objCursor;
     GameObject* sibling;
     int i;
 
-    int* objList;
+    GameObject** objList;
     sumZ = sumX = 0.0f;
-    objList = (int*)objGetAllOfType(DBEGG_SIBLING_OBJGROUP, &count);
+    objList = objGetAllOfType(DBEGG_SIBLING_OBJGROUP, &count);
     for (i = 0, objCursor = objList, limit = 7.0f; i < count; i++)
     {
         f32 dy;
-        sibling = (GameObject*)*objCursor;
+        sibling = *objCursor;
         dy = sibling->anim.localPosY - obj->anim.localPosY;
         if (dy <= limit && dy >= -7.0f)
         {
@@ -681,7 +681,7 @@ void dbegg_update(GameObject* obj)
                 pickupState->msg11C = -1;
                 pickupState->msg11E = 0;
                 pickupState->msg120 = 1.0f;
-                ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)pickupState + 0x11c);
+                ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)&pickupState->msg11C);
                 (obj)->userData2 = 0;
             }
             else if (getButtonsJustPressed(0) & PAD_BUTTON_A)
@@ -795,9 +795,9 @@ void dbegg_update(GameObject* obj)
             d[1] = (obj)->anim.localPosY - data->base.posY;
             d[2] = (obj)->anim.localPosZ - data->base.posZ;
             Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_baddie_eba_smallswipe1);
-            fz = *(f32*)((int)d + 8);
+            fz = d[2];
             fz = fz >= 0.0f ? fz : -fz;
-            fx = *(f32*)((int)d + 0);
+            fx = d[0];
             fx = fx >= 0.0f ? fx : -fx;
             if (fx + fz < 6.0f)
             {
@@ -852,7 +852,7 @@ void dbegg_update(GameObject* obj)
                         pickupState->msg11C = -1;
                         pickupState->msg11E = 0;
                         pickupState->msg120 = 1.0f;
-                        ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)pickupState + 0x11c);
+                        ObjMsg_SendToObject(playerObj, DBEGG_MSG_IN_RANGE, obj, (uintptr_t)&pickupState->msg11C);
                     }
                     else
                     {

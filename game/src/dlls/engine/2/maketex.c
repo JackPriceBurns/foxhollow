@@ -56,10 +56,21 @@ static inline u64 saveGame_checksum(u64* p, int count)
     acc[0] = 1;
     for (i[0] = (int)x[0]; (int)i[0] < count; i[0]++)
     {
-        x[0] ^= p[i[0]];
-        acc[0] += p[i[0]];
+        u64 value = fhReadBE64(&p[i[0]]);
+        x[0] ^= value;
+        acc[0] += value;
     }
     return x[0] ^ (acc[0] + 13);
+}
+
+static inline u64 saveGame_readChecksum(const void* p)
+{
+    return fhReadBE64(p);
+}
+
+static inline void saveGame_writeChecksum(void* p, u64 checksum)
+{
+    fhWriteBE64(p, checksum);
 }
 
 static inline u64 saveGame_getCachedChecksum(void)
@@ -87,6 +98,7 @@ static inline void saveGame_setCachedSerial(u64 serial)
 int saveGameReadSlotCb(u8 idx, int unused, void* dst)
 {
     memcpy(dst, (void*)(gSaveCardIoBuffer + idx * 1772 + 2640), 1772);
+    fhSwapSaveGameSlot(dst);
     return 0;
 }
 
@@ -108,11 +120,11 @@ int saveGame_doWrite(int slot)
     a[0] = 1;
     for (i[0] = (int)x[0]; (int)i[0] < 0x3ff; i[0]++)
     {
-        x[0] = x[0] ^ p[i[0]];
-        a[0] = a[0] + p[i[0]];
+        x[0] = x[0] ^ saveGame_readChecksum(&p[i[0]]);
+        a[0] = a[0] + saveGame_readChecksum(&p[i[0]]);
     }
     chk = x[0] ^ (a[0] + 13);
-    p[0x3ff] = chk;
+    saveGame_writeChecksum(&p[0x3ff], chk);
     DCFlushRange((void*)gSaveCardIoBuffer, 0x2000);
     result = CARDWrite(&gSaveCardFileInfo.fileInfo, (void*)gSaveCardIoBuffer, 0x2000, offset = (u8)slot << 13);
     if (result == -5)
@@ -132,8 +144,8 @@ int saveGame_doWrite(int slot)
             a2[0] = 1;
             for (i[0] = (int)x2[0]; (int)i[0] < 0x3ff; i[0]++)
             {
-                x2[0] = x2[0] ^ p[i[0]];
-                a2[0] = a2[0] + p[i[0]];
+                x2[0] = x2[0] ^ saveGame_readChecksum(&p[i[0]]);
+                a2[0] = a2[0] + saveGame_readChecksum(&p[i[0]]);
             }
             chk2 = x2[0] ^ (a2[0] + 13);
             if (chk != chk2)
@@ -181,7 +193,7 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
     {
         c = saveGame_checksum((u64*)gSaveCardIoBuffer, 0x3ff);
         chk = c;
-        if (c != ((u64*)gSaveCardIoBuffer)[0x3ff])
+        if (c != saveGame_readChecksum(gSaveCardIoBuffer + 0x1ff8))
         {
             DCInvalidateRange((void*)gSaveCardIoBuffer, 0x2000);
             result = CARDRead(&gSaveCardFileInfo.fileInfo, (void*)gSaveCardIoBuffer, 0x2000, 0x4000);
@@ -189,7 +201,7 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
             {
                 c = saveGame_checksum((u64*)gSaveCardIoBuffer, 0x3ff);
                 chk = c;
-                if (c == ((u64*)gSaveCardIoBuffer)[0x3ff])
+                if (c == saveGame_readChecksum(gSaveCardIoBuffer + 0x1ff8))
                 {
                     result = saveGame_doWrite(1);
                 }
@@ -245,7 +257,7 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
         if (result == CARD_RESULT_READY)
         {
             chk2 = saveGame_checksum((u64*)gSaveCardImageBuffer, 0x400);
-            if (chk2 != *(u64*)(gSaveCardIoBuffer + 0xa40))
+            if (chk2 != saveGame_readChecksum(gSaveCardIoBuffer + 0xa40))
             {
                 if ((u8)writeImages != 0)
                 {
@@ -263,11 +275,11 @@ int saveGame_prepareAndWrite(int writeImages, int cbA, int cbB, void* cbC, void*
                     }
                     if (result == CARD_RESULT_READY)
                     {
-                        t = *(u64*)(gSaveCardImageBuffer + 0x2a40);
-                        if (t != *(u64*)(gSaveCardIoBuffer + 0xa40))
+                        t = saveGame_readChecksum(gSaveCardImageBuffer + 0x2a40);
+                        if (t != saveGame_readChecksum(gSaveCardIoBuffer + 0xa40))
                         {
                             int writeResult;
-                            *(u64*)(gSaveCardIoBuffer + 0xa40) = t;
+                            saveGame_writeChecksum(gSaveCardIoBuffer + 0xa40, t);
                             writeResult = saveGame_doWrite(2);
                             if (writeResult == 0)
                             {
@@ -402,22 +414,22 @@ void loadMemCardImages(void)
     a[0] = 1;
     for (i[0] = (int)x[0]; (int)i[0] < 0x400; i[0]++)
     {
-        x[0] = x[0] ^ p[i[0]];
-        a[0] = a[0] + p[i[0]];
+        x[0] = x[0] ^ saveGame_readChecksum(&p[i[0]]);
+        a[0] = a[0] + saveGame_readChecksum(&p[i[0]]);
     }
     chk = x[0] ^ (a[0] + 13);
     q = (u64*)gSaveCardImageBuffer;
-    q[0x548] = chk;
+    saveGame_writeChecksum(&q[0x548], chk);
     p = q + 0x400;
     x2[0] = 0;
     a2[0] = 1;
     for (i[0] = (int)x2[0]; (int)i[0] < 0x3ff; i[0]++)
     {
-        x2[0] = x2[0] ^ p[i[0]];
-        a2[0] = a2[0] + p[i[0]];
+        x2[0] = x2[0] ^ saveGame_readChecksum(&p[i[0]]);
+        a2[0] = a2[0] + saveGame_readChecksum(&p[i[0]]);
     }
     chk = x2[0] ^ (a2[0] + 13);
-    q[0x7ff] = chk;
+    saveGame_writeChecksum(&q[0x7ff], chk);
     DCFlushRange(gSaveCardImageBuffer, 0x4000);
 }
 
@@ -584,7 +596,7 @@ int saveGame(int writeImages)
                 result = CARDSetStatus(0, gSaveCardFileInfo.fileInfo.fileNo, &stat);
                 if (result == CARD_RESULT_READY)
                 {
-                    saveGame_setCachedChecksum(*(u64*)(gSaveCardImageBuffer + 0x3ff8));
+                    saveGame_setCachedChecksum(saveGame_readChecksum(gSaveCardImageBuffer + 0x3ff8));
                 }
             }
         }

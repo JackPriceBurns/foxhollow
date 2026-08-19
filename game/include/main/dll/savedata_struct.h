@@ -10,8 +10,8 @@
 
 typedef struct SaveScoreEntry
 {
-    u32 score : 31;
     u32 flag : 1;
+    u32 score : 31;
     u8 initials[4];
 } SaveScoreEntry;
 

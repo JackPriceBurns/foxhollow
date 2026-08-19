@@ -25,6 +25,24 @@ static inline uint32_t fhReadBE32(const void* p) {
   return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) |
          ((uint32_t)bytes[2] << 8) | bytes[3];
 }
+static inline uint64_t fhReadBE64(const void* p) {
+  const uint8_t* bytes = (const uint8_t*)p;
+  return ((uint64_t)bytes[0] << 56) | ((uint64_t)bytes[1] << 48) |
+         ((uint64_t)bytes[2] << 40) | ((uint64_t)bytes[3] << 32) |
+         ((uint64_t)bytes[4] << 24) | ((uint64_t)bytes[5] << 16) |
+         ((uint64_t)bytes[6] << 8) | bytes[7];
+}
+static inline void fhWriteBE64(void* p, uint64_t value) {
+  uint8_t* bytes = (uint8_t*)p;
+  bytes[0] = (uint8_t)(value >> 56);
+  bytes[1] = (uint8_t)(value >> 48);
+  bytes[2] = (uint8_t)(value >> 40);
+  bytes[3] = (uint8_t)(value >> 32);
+  bytes[4] = (uint8_t)(value >> 24);
+  bytes[5] = (uint8_t)(value >> 16);
+  bytes[6] = (uint8_t)(value >> 8);
+  bytes[7] = (uint8_t)value;
+}
 static inline float fhReadBEF32(const void* p) {
   uint32_t bits = fhReadBE32(p);
   float value;
@@ -59,6 +77,8 @@ static inline void fhSwapU32Array(void* p, unsigned long words) {
 void fhSwapLoadedTabFile(void* buf, unsigned int size, const char* name);
 void fhSwapObjDef(void* def);
 void fhSwapRomListSection(void* buf, unsigned int size);
+void fhSwapSaveGameSlot(void* data);
+void fhSwapSaveData(void* data);
 int fhTabIs16Bit(const char* name);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);

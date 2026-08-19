@@ -14,7 +14,6 @@
 #include "main/objtype.h"
 
 #define NW_ICE_COLLISION_ALPHA_THRESHOLD 0xC0
-#define NW_ICE_NEAR_DISTANCE             120.0f
 
 int NW_ice_getExtraSize(void) {
     return sizeof(NwIceState);
@@ -28,22 +27,15 @@ void NW_ice_render(void) {
 }
 
 void NW_ice_update(GameObject* obj) {
-    GameObject** candidatePtr;
-    int objectIndex;
-    NwIcePlacement* placement;
-    NwIceState* state;
-    GameObject** pairedObjects;
-    GameObject* candidateObject;
-    int objectCount;
-    f32 nearestDistance;
+    NwIceState* state = obj->extra;
 
-    nearestDistance = 3.4028235e38f;
-    state = (NwIceState*)obj->extra;
     if (state->pairedIceObject != NULL) {
         obj->anim.localPosX = state->pairedIceObject->anim.localPosX;
         obj->anim.localPosY = state->pairedIceObject->anim.localPosY;
         obj->anim.localPosZ = state->pairedIceObject->anim.localPosZ;
         obj->anim.rotX = state->pairedIceObject->anim.rotX;
+
+        f32 nearestDistance = 3.4028235e38f;
         objGetNearestTypeToExcludingSelf(NW_ICE_OBJECT_GROUP_ID, obj, &nearestDistance);
 
         if (state->pairedIceObject->anim.alpha < NW_ICE_COLLISION_ALPHA_THRESHOLD) {
@@ -53,22 +45,25 @@ void NW_ice_update(GameObject* obj) {
             ObjHits_EnableObject(obj);
         }
 
-        if ((state->pairedIceObject->anim.alpha < NW_ICE_COLLISION_ALPHA_THRESHOLD) ||
-            (nearestDistance < NW_ICE_NEAR_DISTANCE)) {
-            obj->objectFlags = (u16)(obj->objectFlags | 0x100);
+        if (state->pairedIceObject->anim.alpha < NW_ICE_COLLISION_ALPHA_THRESHOLD ||
+            nearestDistance < 120.0f) {
+            obj->objectFlags |= 0x100;
         } else {
-            obj->objectFlags = (u16)(obj->objectFlags & ~0x100);
+            obj->objectFlags &= ~0x100;
         }
-    } else {
-        pairedObjects = (GameObject**)objGetAllOfType(DLL1A3_OBJECT_GROUP_ID, &objectCount);
-        placement = (NwIcePlacement*)obj->anim.placementData;
-        for (objectIndex = 0, candidatePtr = pairedObjects; objectIndex < objectCount; candidatePtr++, objectIndex++) {
-            candidateObject = *candidatePtr;
-            if (obj != candidateObject &&
-                placement->pairId == ((NwIcePlacement*)candidateObject->anim.placementData)->pairId) {
-                state->pairedIceObject = pairedObjects[objectIndex];
-                break;
-            }
+
+        return;
+    }
+
+    int objectCount;
+    GameObject** pairedObjects = objGetAllOfType(DLL1A3_OBJECT_GROUP_ID, &objectCount);
+    NwIcePlacement* placement = (NwIcePlacement*)obj->anim.placementData;
+    for (int i = 0; i < objectCount; i++) {
+        GameObject* candidateObject = pairedObjects[i];
+        if (obj != candidateObject &&
+            placement->pairId == ((NwIcePlacement*)candidateObject->anim.placementData)->pairId) {
+            state->pairedIceObject = pairedObjects[i];
+            break;
         }
     }
 }

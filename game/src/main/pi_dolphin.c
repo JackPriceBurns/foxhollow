@@ -219,34 +219,6 @@ struct ZlbHeader
 #define DVD_FI_LENGTH(fi) ((fi)->length)
 
 /* header of a packed rom section (romlist blocks, MAPS.BIN sections) */
-
-static void fhFixPackHeader(volatile u32* w)
-{
-    int i;
-    if (w[0] == 0xedfecefa)
-    {
-        w[0] = 0xfacefeed;
-        for (i = 1; i < 4; i++)
-        {
-            w[i] = fhSwap32(w[i]);
-        }
-        return;
-    }
-    if (((char*)w)[0] == 'Z' && ((char*)w)[1] == 'L' && ((char*)w)[2] == 'B')
-    {
-        return;
-    }
-    if (w[0] == 0xe0e0e0e0 || w[0] == 0xfacefeed)
-    {
-        for (i = 1; i < 4; i++)
-        {
-            if (w[i] >= 0x01000000)
-            {
-                w[i] = fhSwap32(w[i]);
-            }
-        }
-    }
-}
 struct PackHeader
 {
     u32 magic;            /* 0xFACEFEED = zlb-packed, 0xE0E0E0E0 = stored raw */
@@ -254,6 +226,15 @@ struct PackHeader
     int auxSize;          /* +0x08: extra bytes between header and payload */
     int compressedSize;   /* +0x0c */
 };
+
+static void fhReadPackHeader(const void* raw, struct PackHeader* header)
+{
+    const u8* bytes = raw;
+    header->magic = fhReadBE32(bytes);
+    header->decompressedSize = (int)fhReadBE32(bytes + 4);
+    header->auxSize = (int)fhReadBE32(bytes + 8);
+    header->compressedSize = (int)fhReadBE32(bytes + 0xc);
+}
 
 /* Resource archive file-name strings (indexed by sResourceFileNameTable). */
 char sResourceFileNameAudioTab[] = "AUDIO.tab";
@@ -4400,18 +4381,18 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
         }
         else if (fileId == 0x2b || fileId == 0x46)
         {
-            struct PackHeader* hdr = (struct PackHeader*)(qptr + offsetFlags);
-            fhFixPackHeader((volatile u32*)hdr);
-            if (hdr->magic == 0xe0e0e0e0)
+            struct PackHeader hdr;
+            uintptr_t pack = qptr + offsetFlags;
+            fhReadPackHeader((void*)pack, &hdr);
+            if (hdr.magic == 0xe0e0e0e0)
             {
-                memcpy(destBuf, (void*)(qptr + ((hdr->auxSize + 0x18) + (intptr_t)hdr - (intptr_t)qptr)),
-                       hdr->decompressedSize);
+                memcpy(destBuf, (void*)(pack + hdr.auxSize + 0x18), hdr.decompressedSize);
             }
-            else if (hdr->magic == 0xfacefeed)
+            else if (hdr.magic == 0xfacefeed)
             {
-                zlbDecompress((u8*)(qptr + ((hdr->auxSize + 0x28) + (intptr_t)hdr - (intptr_t)qptr)), hdr->compressedSize - 0x10,
-                              (u8*)destBuf, &hdr->decompressedSize);
-                DCStoreRange(destBuf, hdr->decompressedSize);
+                zlbDecompress((u8*)(pack + hdr.auxSize + 0x28), hdr.compressedSize - 0x10, (u8*)destBuf,
+                              &hdr.decompressedSize);
+                DCStoreRange(destBuf, hdr.decompressedSize);
             }
             {
                 char* fhName = MLDF_FILE_NAME(fileId);
@@ -4420,11 +4401,11 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
                 {
                     if (fhTabIs16Bit(fhName))
                     {
-                        fhSwapU16Array(destBuf, hdr->decompressedSize / 2);
+                        fhSwapU16Array(destBuf, hdr.decompressedSize / 2);
                     }
                     else
                     {
-                        fhSwapU32Array(destBuf, hdr->decompressedSize / 4);
+                        fhSwapU32Array(destBuf, hdr.decompressedSize / 4);
                     }
                 }
             }
@@ -4432,7 +4413,6 @@ void* loadAndDecompressDataFile(int fileId, void* destBuf, int offsetFlags, u32 
         else if (fileId == 0x23 || fileId == 0x4d)
         {
             fileBuf = qptr + (offsetFlags & 0xffffff);
-            fhFixPackHeader((volatile u32*)fileBuf);
             decompSize = fhSwap32(ZLB_HDR(fileBuf)->decompressedSize);
             zlbDecompress((u8*)(fileBuf + 0x10), fhSwap32(ZLB_HDR(fileBuf)->compressedSize), (u8*)destBuf, &decompSize);
             DCStoreRange(destBuf, decompSize);
@@ -4606,7 +4586,7 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
     char buf[1024];
     DVDFileInfo* fi;
     int ok;
-    struct PackHeader* hdr;
+    struct PackHeader hdr;
 
     if ((destBuf == NULL) && ((void*)gMapRomListBuffers[mapIndex] == NULL))
     {
@@ -4636,13 +4616,12 @@ void piRomLoadSection(int romOffset, int mapIndex, void* destBuf)
             DVDClose(fi);
             AtomicSList_Push(gDvdFileInfoPool, fi);
         }
-        hdr = (struct PackHeader*)(gResourceFileBuffers[0x1d] + romOffset);
-        fhFixPackHeader((volatile u32*)hdr);
-        if (hdr->magic == 0xfacefeed)
+        fhReadPackHeader((void*)(gResourceFileBuffers[0x1d] + romOffset), &hdr);
+        if (hdr.magic == 0xfacefeed)
         {
-            zlbDecompress((u8*)(gMapRomListBuffers[mapIndex] + 0x10), hdr->compressedSize, (u8*)destBuf, &hdr->decompressedSize);
-            fhSwapRomListSection(destBuf, hdr->decompressedSize);
-            DCStoreRange(destBuf, hdr->decompressedSize);
+            zlbDecompress((u8*)(gMapRomListBuffers[mapIndex] + 0x10), hdr.compressedSize, (u8*)destBuf, &hdr.decompressedSize);
+            fhSwapRomListSection(destBuf, hdr.decompressedSize);
+            DCStoreRange(destBuf, hdr.decompressedSize);
         }
     }
 }
@@ -4764,19 +4743,19 @@ void tex0GetFrame(int texId, int unused, int* outA, int* outB, int count, int* f
         OSRestoreInterrupts(s);
         f478 = gResourceFileBuffers[0x24];
         f520 = gResourceFileBuffers[0x4e];
-        if ((texId & 0x80000000) != 0 && (flags & 0x200) == 0 && gResourceFileBuffers[0x4d] != 0)
+        if ((texId & 0x80000000) != 0 && (flags & 0x200) == 0)
         {
             idx = 0x4d;
         }
-        else if ((texId & 0x40000000) != 0 && (flags & 0x100) == 0 && gResourceFileBuffers[0x23] != 0)
+        else if ((texId & 0x40000000) != 0 && (flags & 0x100) == 0)
         {
             idx = 0x23;
         }
-        else if (f478 != 0 && (flags & 0x100) == 0 && gResourceFileBuffers[0x23] != 0)
+        else if (f478 != 0 && (flags & 0x100) == 0)
         {
             idx = 0x23;
         }
-        else if (f520 != 0 && (flags & 0x200) == 0 && gResourceFileBuffers[0x4d] != 0)
+        else if (f520 != 0 && (flags & 0x200) == 0)
         {
             idx = 0x4d;
         }
@@ -4846,6 +4825,7 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
     int flags;
     int saved;
     char* entry;
+    struct PackHeader header;
     if (gResourceFileBuffers[0x2b] != 0 || gResourceFileBuffers[0x46] != 0)
     {
         saved = OSDisableInterrupts();
@@ -4876,11 +4856,11 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
             idx = 0x46;
         }
         entry = (char*)gResourceFileBuffers[idx] + (offsetFlags & 0x0fffffff);
-        fhFixPackHeader((volatile u32*)entry);
-        *p18 = (int)fhSwap32(*(u32*)(entry + 0x18));
-        *p1c = (int)fhSwap32(*(u32*)(entry + 0x1c));
-        *p20 = (int)fhSwap32(*(u32*)(entry + 0x20));
-        *p4 = *(int*)(entry + 0x4);
+        fhReadPackHeader(entry, &header);
+        *p18 = (int)fhReadBE32(entry + 0x18);
+        *p1c = (int)fhReadBE32(entry + 0x1c);
+        *p20 = (int)fhReadBE32(entry + 0x20);
+        *p4 = header.decompressedSize;
     }
 }
 
@@ -4888,6 +4868,7 @@ void loadModelsBin(int offsetFlags, int* p1c, int* p20, int* p18, int* p4, int w
 void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
 {
     u8 sizeFields[4];
+    u8 romListHeaderRaw[sizeof(struct PackHeader)];
     s32 sectionOffsets[7];
     struct PackHeader romListHeader;
 
@@ -4897,8 +4878,8 @@ void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
 
     fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, sizeFields, idx + 0x1c, sizeof(sizeFields));
     mapsLoadTabOffsets(p5, sectionOffsets, 7);
-    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, &romListHeader, sectionOffsets[6], sizeof(romListHeader));
-    fhFixPackHeader((volatile u32*)&romListHeader);
+    fileLoadToBufferOffset(MLDF_FILEID_MAPS_BIN, romListHeaderRaw, sectionOffsets[6], sizeof(romListHeaderRaw));
+    fhReadPackHeader(romListHeaderRaw, &romListHeader);
 
     *out1 = fhReadBES16(&sizeFields[0]);
     *out2 = fhReadBES16(&sizeFields[2]);
@@ -4907,21 +4888,9 @@ void mapsBinGetRomlistSize(int idx, int* out1, int* out2, int* out3, int p5)
 
 void mapsLoadTabOffsets(int firstWord, s32* offsets, int count)
 {
-    u32 mapsBinSize = gResourceFileSizes[MLDF_FILEID_MAPS_BIN];
-    int valid = count > 0;
-    int i;
-
     fileLoadToBufferOffset(MLDF_FILEID_MAPS_TAB, offsets, firstWord * 4, count * sizeof(*offsets));
 
-    for (i = 0; valid && i < count; i++)
-    {
-        if (offsets[i] < 0 || (mapsBinSize != 0 && (u32)offsets[i] > mapsBinSize) ||
-            (i != 0 && offsets[i] < offsets[i - 1]))
-        {
-            valid = 0;
-        }
-    }
-    if (!valid)
+    if (gResourceFileBuffers[MLDF_FILEID_MAPS_TAB] == 0)
     {
         fhSwapU32Array(offsets, count);
     }

@@ -2061,8 +2061,8 @@ void playerSetDisguised(GameObject* obj, int mode) {
         oldModel = Obj_GetActiveModel(obj);
         Obj_SetActiveModelIndex(obj, 1);
         newModel = Obj_GetActiveModel(obj);
-        memcpy(newModel->animStateA, oldModel->animStateA, 0x68);
-        memcpy(newModel->animStateB, oldModel->animStateB, 0x68);
+        memcpy(newModel->animStateA, oldModel->animStateA, sizeof(ObjAnimState));
+        memcpy(newModel->animStateB, oldModel->animStateB, sizeof(ObjAnimState));
         mainSetBits(GAMEBIT_PlayerIsDisguised, 0);
         Sfx_PlayFromObject(obj, SFXTRIG_en_lrope_powerup);
         return;
@@ -2080,8 +2080,8 @@ void playerSetDisguised(GameObject* obj, int mode) {
     oldModel = Obj_GetActiveModel(obj);
     Obj_SetActiveModelIndex(obj, 2);
     newModel = Obj_GetActiveModel(obj);
-    memcpy(newModel->animStateA, oldModel->animStateA, 0x68);
-    memcpy(newModel->animStateB, oldModel->animStateB, 0x68);
+    memcpy(newModel->animStateA, oldModel->animStateA, sizeof(ObjAnimState));
+    memcpy(newModel->animStateB, oldModel->animStateB, sizeof(ObjAnimState));
     if (mode == 2) {
         inner->flags3F4.b80 = 1;
     }
@@ -15383,7 +15383,7 @@ void playerDoHitDetection(GameObject* obj) {
     }
 
     if ((inner->flags360 & 2) != 0) {
-        ObjAnimComponent* h = inner->baddie.curvesCollision.segmentHits.objects[3];
+        ObjAnimComponent* h = (ObjAnimComponent*)inner->baddie.curvesCollision.contactObj;
         if (h != NULL) {
             u32 fl = h->modelInstance->flags;
             if ((fl & OBJMODEL_FLAG_SKIP_RESET_UPDATE) != 0 && (fl & 0x8000) == 0) {

@@ -746,6 +746,8 @@ int saveGameWriteSlotCb(u8 slot, int unused, void* src1, void* src2)
     int ret;
     memcpy(gSaveCardIoBuffer + slot * 0x6EC + 0xA50, src1, 0x6EC);
     memcpy(gSaveCardIoBuffer + 0x1F14, src2, 0xE4);
+    fhSwapSaveGameSlot(gSaveCardIoBuffer + slot * 0x6EC + 0xA50);
+    fhSwapSaveData(gSaveCardIoBuffer + 0x1F14);
     ret = saveGame_doWrite(2);
     if (ret == 0)
     {
@@ -762,6 +764,7 @@ int saveGameWriteSlotCb(u8 slot, int unused, void* src1, void* src2)
 int saveGameReadGlobalsCb(int saveId, int size, void* dst)
 {
     memcpy(dst, gSaveCardIoBuffer + 0x1F14, 0xE4);
+    fhSwapSaveData(dst);
     return 0;
 }
 

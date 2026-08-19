@@ -187,22 +187,22 @@ All 855 non-header regular files under `game/`, ordered from smallest to largest
 - [x] `game/src/track/intersect_screenmath.c` — 2861 bytes
 - [x] `game/src/dlls/objects/303_BarrelPad/BarrelPad.c` — 2865 bytes
 - [x] `game/src/dlls/objects/596_KT_Fallingr/KT_Fallingr.c` — 2890 bytes
-- [ ] `game/src/dlls/objects/354_CFMagicWall/CFMagicWall.c` — 2909 bytes
-- [ ] `game/src/dlls/objects/537/537.c` — 2934 bytes
-- [ ] `game/src/musyx/runtime/aram_queue.c` — 2999 bytes
-- [ ] `game/src/musyx/runtime/aram_data.c` — 3025 bytes
-- [ ] `game/src/dlls/objects/220_MikaBombSha/MikaBombSha.c` — 3035 bytes
-- [ ] `game/src/dlls/objects/486_DIMbosscrac/DIMbosscrac.c` — 3048 bytes
-- [ ] `game/src/dlls/objects/420/420.c` — 3068 bytes
-- [ ] `game/src/musyx/runtime/mcmd_wait.c` — 3076 bytes
-- [ ] `game/src/dlls/objects/649_SPitembeam/SPitembeam.c` — 3104 bytes
-- [ ] `game/src/dlls/objects/665/665.c` — 3111 bytes
-- [ ] `game/src/dlls/objects/271_MMP_Bridge/MMP_Bridge.c` — 3114 bytes
-- [ ] `game/src/dlls/objects/595_KT_Lazerlig/KT_Lazerlig.c` — 3144 bytes
-- [ ] `game/src/dlls/objects/207_CannonClaw/CannonClaw.c` — 3150 bytes
-- [ ] `game/src/musyx/runtime/hw_volume.c` — 3154 bytes
-- [ ] `game/src/dlls/objects/509_WM_LaserTar/WM_LaserTar.c` — 3155 bytes
-- [ ] `game/src/dlls/objects/314_VisAnimator/VisAnimator.c` — 3170 bytes
+- [x] `game/src/dlls/objects/354_CFMagicWall/CFMagicWall.c` — 2909 bytes
+- [x] `game/src/dlls/objects/537/537.c` — 2934 bytes
+- [x] `game/src/musyx/runtime/aram_queue.c` — 2999 bytes
+- [x] `game/src/musyx/runtime/aram_data.c` — 3025 bytes
+- [x] `game/src/dlls/objects/220_MikaBombSha/MikaBombSha.c` — 3035 bytes
+- [x] `game/src/dlls/objects/486_DIMbosscrac/DIMbosscrac.c` — 3048 bytes
+- [x] `game/src/dlls/objects/420/420.c` — 3068 bytes
+- [x] `game/src/musyx/runtime/mcmd_wait.c` — 3076 bytes
+- [x] `game/src/dlls/objects/649_SPitembeam/SPitembeam.c` — 3104 bytes
+- [x] `game/src/dlls/objects/665/665.c` — 3111 bytes
+- [x] `game/src/dlls/objects/271_MMP_Bridge/MMP_Bridge.c` — 3114 bytes
+- [x] `game/src/dlls/objects/595_KT_Lazerlig/KT_Lazerlig.c` — 3144 bytes
+- [x] `game/src/dlls/objects/207_CannonClaw/CannonClaw.c` — 3150 bytes
+- [x] `game/src/musyx/runtime/hw_volume.c` — 3154 bytes
+- [x] `game/src/dlls/objects/509_WM_LaserTar/WM_LaserTar.c` — 3155 bytes
+- [x] `game/src/dlls/objects/314_VisAnimator/VisAnimator.c` — 3170 bytes
 - [ ] `game/src/dlls/objects/674_ARWSpeedStr/ARWSpeedStr.c` — 3204 bytes
 - [ ] `game/src/dlls/objects/295/295.c` — 3236 bytes
 - [ ] `game/src/dlls/objects/498_SB_CageKyte/SB_CageKyte.c` — 3241 bytes

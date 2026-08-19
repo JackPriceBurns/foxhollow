@@ -5507,7 +5507,7 @@ void highScoreScreenDraw(int p1, int p2, int p3)
             int rowY;
             int starY;
             u32 starred;
-            starred = *(u8*)(e + 3) & 1;
+            starred = *(u32*)e & 1;
             sprintf(buf, sHighScoreRowFormat, *(u32*)e >> 1);
             if (k == gHighScoreHighlightRow)
             {

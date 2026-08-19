@@ -17,37 +17,26 @@
 #define DLL_219_INERT_OBJECT_ID_LO 0x3ad
 #define DLL_219_INERT_OBJECT_ID_HI 0x3ae
 
-int dll_219_getExtraSize_ret_4(void)
-{
+int dll_219_getExtraSize_ret_4(void) {
     return 0x4;
 }
 
-int dll_219_getObjectTypeId(void)
-{
+int dll_219_getObjectTypeId(void) {
     return 0x0;
 }
 
-void dll_219_free(GameObject* obj)
-{
+void dll_219_free(GameObject* obj) {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
 
-void dll_219_render_nop(void)
-{
+void dll_219_render_nop(void) {
 }
 
-void dll_219_hitDetect_nop(void)
-{
+void dll_219_hitDetect_nop(void) {
 }
 
-void dll_219_update(GameObject* obj)
-{
-    ObjPlacement* setup = (ObjPlacement*)obj->anim.placementData;
-    Dll219State* state = obj->extra;
-    s16 objectId = obj->anim.romDefNo;
-
-    switch (objectId)
-    {
+void dll_219_update(GameObject* obj) {
+    switch (obj->anim.romDefNo) {
     case DLL_219_MOVING_OBJECT_ID:
         break;
     case DLL_219_INERT_OBJECT_ID_LO:
@@ -56,45 +45,39 @@ void dll_219_update(GameObject* obj)
         return;
     }
 
-    if (mainGetBit(state->gameBit) != 0)
-    {
-        if (obj->anim.localPosX > setup->posX - 30.0f)
-        {
+    ObjPlacement* setup = (ObjPlacement*)obj->anim.placementData;
+    Dll219State* state = obj->extra;
+    if (mainGetBit(state->gameBit) != 0) {
+        if (obj->anim.localPosX > setup->posX - 30.0f) {
             obj->anim.localPosX -= 0.4f;
-            if (obj->anim.localPosX < setup->posX - 30.0f)
-            {
+            if (obj->anim.localPosX < setup->posX - 30.0f) {
                 obj->anim.localPosX = setup->posX - 30.0f;
             }
             return;
         }
     }
-    if (mainGetBit(state->gameBit) == 0)
-    {
-        if (obj->anim.localPosX < setup->posX)
-        {
+
+    if (mainGetBit(state->gameBit) == 0) {
+        if (obj->anim.localPosX < setup->posX) {
             obj->anim.localPosX += 0.2f;
-            if (obj->anim.localPosX > setup->posX)
-            {
+            if (obj->anim.localPosX > setup->posX) {
                 obj->anim.localPosX = setup->posX;
             }
         }
     }
 }
 
-void dll_219_init(GameObject* obj, Dll219Setup* placement)
-{
+void dll_219_init(GameObject* obj, Dll219Setup* placement) {
     Dll219State* state = obj->extra;
-    obj->anim.rotX = (s16)(placement->rotX << 8);
-    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
-    obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
+    obj->anim.rotX = placement->rotX << 8;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
-void dll_219_release_nop(void)
-{
+void dll_219_release_nop(void) {
 }
 
-void dll_219_initialise_nop(void)
-{
+void dll_219_initialise_nop(void) {
 }
 
 ObjectDescriptor gDll219ObjDescriptor = {

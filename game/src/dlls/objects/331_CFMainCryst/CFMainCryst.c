@@ -78,35 +78,35 @@ void cfMainCrystal_updateBeams(GameObject* obj) {
     int activePylonCount;
     PartFxSpawnParams effectParams;
     f32 beamDirection[3];
-    GameObject* messageSender;
+    uintptr_t messageSender;
     u32 message;
     u32 unusedMessageArgument = 0;
     Obj_GetPlayerObject();
     CameraShake_Enable();
-    while (ObjMsg_Pop(obj, &message, (u32*)&messageSender, &unusedMessageArgument) != 0) {
+    while (ObjMsg_Pop(obj, &message, &messageSender, &unusedMessageArgument) != 0) {
         switch (message) {
         case CFPOWERBASE_PYLON_MESSAGE_1:
-            state->pylonX[CFMAINCRYSTAL_PYLON_RED] = messageSender->anim.localPosX;
+            state->pylonX[CFMAINCRYSTAL_PYLON_RED] = ((GameObject*)messageSender)->anim.localPosX;
             state->pylonY[CFMAINCRYSTAL_PYLON_RED] = CFMAINCRYSTAL_PYLON_BEAM_Y;
-            state->pylonZ[CFMAINCRYSTAL_PYLON_RED] = messageSender->anim.localPosZ;
+            state->pylonZ[CFMAINCRYSTAL_PYLON_RED] = ((GameObject*)messageSender)->anim.localPosZ;
             state->pylonTimers[CFMAINCRYSTAL_PYLON_RED] = 1;
             break;
         case CFPOWERBASE_PYLON_MESSAGE_2:
-            state->pylonX[CFMAINCRYSTAL_PYLON_GREEN] = messageSender->anim.localPosX;
+            state->pylonX[CFMAINCRYSTAL_PYLON_GREEN] = ((GameObject*)messageSender)->anim.localPosX;
             state->pylonY[CFMAINCRYSTAL_PYLON_GREEN] = CFMAINCRYSTAL_PYLON_BEAM_Y;
-            state->pylonZ[CFMAINCRYSTAL_PYLON_GREEN] = messageSender->anim.localPosZ;
+            state->pylonZ[CFMAINCRYSTAL_PYLON_GREEN] = ((GameObject*)messageSender)->anim.localPosZ;
             state->pylonTimers[CFMAINCRYSTAL_PYLON_GREEN] = 1;
             break;
         case CFPOWERBASE_PYLON_MESSAGE_3:
-            state->pylonX[CFMAINCRYSTAL_PYLON_BLUE] = messageSender->anim.localPosX;
+            state->pylonX[CFMAINCRYSTAL_PYLON_BLUE] = ((GameObject*)messageSender)->anim.localPosX;
             state->pylonY[CFMAINCRYSTAL_PYLON_BLUE] = CFMAINCRYSTAL_PYLON_BEAM_Y;
-            state->pylonZ[CFMAINCRYSTAL_PYLON_BLUE] = messageSender->anim.localPosZ;
+            state->pylonZ[CFMAINCRYSTAL_PYLON_BLUE] = ((GameObject*)messageSender)->anim.localPosZ;
             state->pylonTimers[CFMAINCRYSTAL_PYLON_BLUE] = 1;
             break;
         case CFMAINCRYSTAL_MESSAGE_POSITION:
-            state->crystalX = messageSender->anim.localPosX;
-            state->crystalY = messageSender->anim.localPosY;
-            state->crystalZ = messageSender->anim.localPosZ;
+            state->crystalX = ((GameObject*)messageSender)->anim.localPosX;
+            state->crystalY = ((GameObject*)messageSender)->anim.localPosY;
+            state->crystalZ = ((GameObject*)messageSender)->anim.localPosZ;
             state->hasCrystalPosition = 1;
             break;
         }
@@ -299,7 +299,7 @@ int cfMainCrystal_getObjectTypeId(void) {
 }
 
 void cfMainCrystal_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource((u32)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
 }
 
 void cfMainCrystal_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -315,7 +315,7 @@ void cfMainCrystal_hitDetect(void) {
 void cfMainCrystal_update(GameObject* obj) {
     u32 unusedMessageArgument;
     u32 message;
-    u32 messageSender;
+    uintptr_t messageSender;
     s8 variant;
     variant = ((CfMainCrystalPlacement*)obj->anim.placement)->variant;
     switch (variant) {

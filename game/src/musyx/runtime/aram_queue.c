@@ -1,7 +1,6 @@
 #include "musyx/aram_queue.h"
 #include "dolphin/os/OSInterrupt.h"
 
-
 AramTransferQueue aramNormalPriorityQueue;
 
 /*
@@ -11,22 +10,18 @@ AramTransferQueue aramNormalPriorityQueue;
  * and invokes any pending entry's callback whose request handle
  * matches `req`. Decrements the count when done.
  */
-static void aramQueueCallback(uintptr_t requestAddress)
-{
-    ARQRequest* request;
-    AramTransferQueue* queue;
-    u32 i;
+static void aramQueueCallback(uintptr_t requestAddress) {
+    ARQRequest* request = (ARQRequest*)requestAddress;
+    AramTransferQueue* queue =
+        request->priority == ARQ_PRIORITY_HIGH ? &aramHighPriorityQueue : &aramNormalPriorityQueue;
 
-    request = (ARQRequest*)requestAddress;
-    queue = (request->priority == ARQ_PRIORITY_HIGH) ? &aramHighPriorityQueue : &aramNormalPriorityQueue;
-    for (i = 0; i < ARAM_TRANSFER_QUEUE_CAPACITY; i++)
-    {
-        if (request == &queue->slots[i].request && queue->slots[i].completionCallback != NULL)
-        {
+    for (u32 i = 0; i < ARAM_TRANSFER_QUEUE_CAPACITY; i++) {
+        if (request == &queue->slots[i].request && queue->slots[i].completionCallback != NULL) {
             queue->slots[i].completionCallback(queue->slots[i].callbackArg);
         }
     }
-    queue->count = queue->count - 1;
+
+    queue->count--;
 }
 
 /*
@@ -35,18 +30,12 @@ static void aramQueueCallback(uintptr_t requestAddress)
  * ARQPostRequest, then bumps the head/count and restores interrupts.
  * If the queue is full, just unlocks and retries (busy-loop).
  */
-void aramUploadData(void* src, u32 dst, u32 size, u32 mode, void (*callback)(u32), u32 callbackArg)
-{
-    AramTransferQueue* queue;
-    BOOL irq;
+void aramUploadData(void* src, u32 dst, u32 size, u32 mode, void (*callback)(u32), u32 callbackArg) {
+    AramTransferQueue* queue = mode != 0 ? &aramHighPriorityQueue : &aramNormalPriorityQueue;
 
-    queue = (mode != 0) ? &aramHighPriorityQueue : &aramNormalPriorityQueue;
-
-    while (1)
-    {
-        irq = OSDisableInterrupts();
-        if (queue->count < ARAM_TRANSFER_QUEUE_CAPACITY)
-        {
+    while (1) {
+        BOOL irq = OSDisableInterrupts();
+        if (queue->count < ARAM_TRANSFER_QUEUE_CAPACITY) {
             queue->slots[queue->head].request.owner = 0x2a;
             queue->slots[queue->head].request.type = ARQ_TYPE_MRAM_TO_ARAM;
             queue->slots[queue->head].request.priority = (mode != 0) ? ARQ_PRIORITY_HIGH : ARQ_PRIORITY_LOW;
@@ -72,9 +61,7 @@ void aramUploadData(void* src, u32 dst, u32 size, u32 mode, void (*callback)(u32
 /*
  * Wait until ARQ count drops to zero.
  */
-void aramSyncTransferQueue(void)
-{
-    while (aramNormalPriorityQueue.count != 0)
-    {
+void aramSyncTransferQueue(void) {
+    while (aramNormalPriorityQueue.count != 0) {
     }
 }

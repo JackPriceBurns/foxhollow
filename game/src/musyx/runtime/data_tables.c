@@ -731,11 +731,7 @@ void* dataGetMacro(u16 mid)
 {
     u16 num;
 
-    dataGetMacro_bucket = mid >> 6;
-    if (dataGetMacro_bucket >= 512)
-    {
-        return NULL;
-    }
+    dataGetMacro_bucket = (mid >> 6) & 0x3fff;
     num = dataMacroBucketTable[dataGetMacro_bucket].num;
 
     if (num != 0)

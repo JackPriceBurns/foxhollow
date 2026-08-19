@@ -875,7 +875,7 @@ void* mmAlloc(int size, int type, uintptr_t flag)
     u8 ok;
     u8 i;
 
-    if (size <= 0)
+    if (size == 0)
     {
         return 0;
     }

@@ -141,6 +141,16 @@ typedef struct
 
 typedef struct
 {
+    u8 pad[4];
+    u32 sfxId;
+    u8 pad2;
+    u8 shakeAmt;
+    u8 rumbleAmt;
+    u8 flags;
+} CrawlerSubDesc;
+
+typedef struct
+{
     CrawlerSeq12* tbl0; // 0x0  anim move ids
     CrawlerSeq12* tbl4;  // 0x4  chained move table
     CrawlerSeq12* tbl8;  // 0x8  random move table
@@ -148,8 +158,38 @@ typedef struct
     CrawlerSeq12* tbl10; // 0x10 single move entry
     CrawlerSeq16* seq;   // 0x14
     CrawlerSeq12* tbl18; // 0x18 anim-id loop table
-    u8 pad1C[4];
+    CrawlerSubDesc* eventFx;
 } CrawlerDescriptor;
+
+static f32 crawlerSeq12Speed(const CrawlerSeq12* entry)
+{
+    return fhReadBEF32(&entry->spd);
+}
+
+static u32 crawlerSeq12Mask(const CrawlerSeq12* entry)
+{
+    return fhReadBE32(&entry->mask);
+}
+
+static f32 crawlerSeq16Speed(const CrawlerSeq16* entry)
+{
+    return fhReadBEF32(&entry->spd);
+}
+
+static u32 crawlerSeq16Mask(const CrawlerSeq16* entry)
+{
+    return fhReadBE32(&entry->mask);
+}
+
+static int crawlerSeq16FlagC(const CrawlerSeq16* entry)
+{
+    return (int)fhReadBE32(&entry->flagC);
+}
+
+static u32 crawlerSubDescSfxId(const CrawlerSubDesc* entry)
+{
+    return fhReadBE32(&entry->sfxId);
+}
 
 /* Nearby-object scan. Asks enemy_findNearbyEnemies for up to 40 objects
  * within 640.0f, walks the result array of (obj, ?) pairs, and if
@@ -444,8 +484,8 @@ void firecrawler_spawnProjectile(GameObject* obj, u8* state)
         setup->color[1] = 4;
         setup->color[2] = 0xff;
         setup->color[3] = 0xff;
-        child = (GameObject*)((int)objSetupObject((ObjPlacement*)setup, 5, -1, -1, 0));
-        if ((u32)child != 0)
+        child = objSetupObject(setup, 5, -1, -1, 0);
+        if (child != NULL)
         {
             f32 dur = 60.0f * ((f32)((EnemyState*)state)->targetDist / ((EnemyState*)state)->aggroRange);
             child->anim.velocityX = (((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosX -
@@ -466,23 +506,9 @@ void firecrawler_spawnProjectile(GameObject* obj, u8* state)
 
 void crawlerPlayMoveEventFx(GameObject* obj, u8* state)
 {
-    typedef struct
-    {
-        u8 pad[4];
-        u32 sfxId; /* 0x4 */
-        u8 pad2;
-        u8 shakeAmt;  /* 0x9 */
-        u8 rumbleAmt; /* 0xa */
-        u8 flags;     /* 0xb */
-    } CrawlerSubDesc;
-    typedef struct
-    {
-        u8 pad[0x1c];
-        CrawlerSubDesc* p;
-    } CrawlerDescE;
-    CrawlerDescE* d = (CrawlerDescE*)gCrawlerDescriptorTable;
+    CrawlerDescriptor* d = (CrawlerDescriptor*)gCrawlerDescriptorTable;
     CrawlerSubDesc* sub;
-    CrawlerSubDesc* entry = d[((EnemyState*)state)->userData2].p;
+    CrawlerSubDesc* entry = d[((EnemyState*)state)->userData2].eventFx;
     u8 i;
 
     gCrawlerHitSfxTimer = gCrawlerHitSfxTimer - timeDelta;
@@ -492,9 +518,9 @@ void crawlerPlayMoveEventFx(GameObject* obj, u8* state)
         if ((((EnemyState*)state)->animEventMask & (1 << i)) != 0)
         {
             sub = &entry[i];
-            if (sub->sfxId != 0)
+            if (crawlerSubDescSfxId(sub) != 0)
             {
-                Sfx_PlayFromObject(obj, sub->sfxId);
+                Sfx_PlayFromObject(obj, crawlerSubDescSfxId(sub));
             }
             if (sub->shakeAmt != 0)
             {
@@ -547,14 +573,8 @@ void crawlerPlayMoveEventFx(GameObject* obj, u8* state)
 
 void crawler_onHit(GameObject* obj, u8* state, GameObject* attacker, int cmd, int p5, int damage, Vec* wpad0, int wpad1)
 {
-    typedef struct
-    {
-        u8 pad[0x14];
-        CrawlerSeq16* seq; // 0x14
-        u8 pad2[8];
-    } CrawlerDesc;
     u8 idx;
-    CrawlerDesc* d = (CrawlerDesc*)gCrawlerDescriptorTable;
+    CrawlerDescriptor* d = (CrawlerDescriptor*)gCrawlerDescriptorTable;
     CrawlerSeq16* tbl = d[(idx = ((EnemyState*)state)->userData2)].seq;
 
     if (cmd == 0xe)
@@ -624,8 +644,9 @@ void crawler_onHit(GameObject* obj, u8* state, GameObject* attacker, int cmd, in
         {
             step = 3;
         }
-        baddieSetMove(obj, state, tbl[step].moveId, tbl[step].spd, 0, tbl[step].mask & 0xff);
-        ((EnemyState*)state)->familyData.crawler.flagsC = tbl[step].flagC;
+        baddieSetMove(obj, state, tbl[step].moveId, crawlerSeq16Speed(&tbl[step]), 0,
+                      crawlerSeq16Mask(&tbl[step]) & 0xff);
+        ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(&tbl[step]);
         (obj)->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
         ((EnemyState*)state)->familyData.crawler.reactStep = tbl[step].next9;
         ((EnemyState*)state)->flags2E8 = ((EnemyState*)state)->flags2E8 | 8;
@@ -671,8 +692,9 @@ void crawler_onHit(GameObject* obj, u8* state, GameObject* attacker, int cmd, in
         ((EnemyState*)state)->userData2 == 1)
     {
         u8 v;
-        baddieSetMove(obj, state, tbl[1].moveId, tbl[1].spd, 0, tbl[1].mask & 0xff);
-        ((EnemyState*)state)->familyData.crawler.flagsC = tbl[1].flagC;
+        baddieSetMove(obj, state, tbl[1].moveId, crawlerSeq16Speed(&tbl[1]), 0,
+                      crawlerSeq16Mask(&tbl[1]) & 0xff);
+        ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(&tbl[1]);
         (obj)->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
         ((EnemyState*)state)->familyData.crawler.reactStep = tbl[1].next9;
         v = ((EnemyState*)state)->userData2;
@@ -804,7 +826,8 @@ void crawler_updateC(GameObject* obj, u8* state)
         {
             ((EnemyState*)state)->crawler.emergeTimer = cap;
             ((EnemyState*)state)->controlFlags |= (u64)BADDIE_CONTROL_SEQUENCE_DRIVEN;
-            ((EnemyState*)state)->familyData.crawler.flagsC = seq[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+            ((EnemyState*)state)->familyData.crawler.flagsC =
+                crawlerSeq16FlagC(&seq[((EnemyState*)state)->familyData.crawler.reactStep]);
             obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
             ((EnemyState*)state)->familyData.crawler.reactStep = seq[((EnemyState*)state)->familyData.crawler.reactStep].nextA;
         }
@@ -908,10 +931,10 @@ void crawler_updateC(GameObject* obj, u8* state)
                 ((EnemyState*)state)->familyData.crawler.flagsD = ((EnemyState*)state)->familyData.crawler.flagsD & ~0x20;
                 if (((EnemyState*)state)->familyData.crawler.reactStep != 0)
                 {
-                    baddieSetMove(obj, state, seq[((EnemyState*)state)->familyData.crawler.reactStep].moveId,
-                                   seq[((EnemyState*)state)->familyData.crawler.reactStep].spd, 0,
-                                   seq[((EnemyState*)state)->familyData.crawler.reactStep].mask & 0xff);
-                    ((EnemyState*)state)->familyData.crawler.flagsC = seq[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+                    CrawlerSeq16* entry = &seq[((EnemyState*)state)->familyData.crawler.reactStep];
+                    baddieSetMove(obj, state, entry->moveId, crawlerSeq16Speed(entry), 0,
+                                   crawlerSeq16Mask(entry) & 0xff);
+                    ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(entry);
                     obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
                     ((EnemyState*)state)->familyData.crawler.reactStep = seq[((EnemyState*)state)->familyData.crawler.reactStep].next9;
                 }
@@ -968,7 +991,7 @@ void crawler_updateC(GameObject* obj, u8* state)
                     }
                     else
                     {
-                        baddieSetMove(obj, state, mv, tC[i].spd, 0, tC[i].mode);
+                        baddieSetMove(obj, state, mv, crawlerSeq12Speed(&tC[i]), 0, tC[i].mode);
                         ((EnemyState*)state)->familyData.crawler.flagsD = ((EnemyState*)state)->familyData.crawler.flagsD | 8;
                     }
                 }
@@ -981,7 +1004,7 @@ void crawler_updateC(GameObject* obj, u8* state)
         else if ((flags & 0xc0000000) != 0)
         {
             i = randomGetRange(1, t8[0].moveId) & 0xff;
-            baddieSetMove(obj, state, t8[i].moveId, t8[i].spd, 0, t8[i].mode);
+            baddieSetMove(obj, state, t8[i].moveId, crawlerSeq12Speed(&t8[i]), 0, t8[i].mode);
         }
     }
     crawlerPlayMoveEventFx(obj, state);
@@ -1033,7 +1056,8 @@ void crawler_updateB(GameObject* obj, u8* state)
         {
             ((EnemyState*)state)->crawler.emergeTimer = cap;
             ((EnemyState*)state)->controlFlags |= (u64)BADDIE_CONTROL_SEQUENCE_DRIVEN;
-            ((EnemyState*)state)->familyData.crawler.flagsC = seq[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+            ((EnemyState*)state)->familyData.crawler.flagsC =
+                crawlerSeq16FlagC(&seq[((EnemyState*)state)->familyData.crawler.reactStep]);
             obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
             ((EnemyState*)state)->familyData.crawler.reactStep = seq[((EnemyState*)state)->familyData.crawler.reactStep].nextA;
         }
@@ -1047,9 +1071,10 @@ void crawler_updateB(GameObject* obj, u8* state)
         {
             if (((EnemyState*)state)->familyData.crawler.reactStep != 0)
             {
-                baddieSetMove(obj, state, seq[((EnemyState*)state)->familyData.crawler.reactStep].moveId,
-                               seq[((EnemyState*)state)->familyData.crawler.reactStep].spd, 0, seq[((EnemyState*)state)->familyData.crawler.reactStep].mask & 0xff);
-                ((EnemyState*)state)->familyData.crawler.flagsC = seq[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+                CrawlerSeq16* entry = &seq[((EnemyState*)state)->familyData.crawler.reactStep];
+                baddieSetMove(obj, state, entry->moveId, crawlerSeq16Speed(entry), 0,
+                               crawlerSeq16Mask(entry) & 0xff);
+                ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(entry);
                 obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
                 ((EnemyState*)state)->familyData.crawler.reactStep = seq[((EnemyState*)state)->familyData.crawler.reactStep].next9;
             }
@@ -1082,23 +1107,23 @@ void crawler_updateB(GameObject* obj, u8* state)
                         {
                             int i2 = ((EnemyState*)state)->familyData.crawler.moveChainIndex;
 
-                            baddieSetMove(obj, state, t4[i2].moveId, t4[i2].spd, 0, t4[i2].mode);
+                            baddieSetMove(obj, state, t4[i2].moveId, crawlerSeq12Speed(&t4[i2]), 0, t4[i2].mode);
                             ((EnemyState*)state)->familyData.crawler.moveChainIndex = t4[((EnemyState*)state)->familyData.crawler.moveChainIndex].next;
                         }
                         else
                         {
-                            baddieSetMove(obj, state, mv, tC[i].spd, 0, tC[i].mode);
+                            baddieSetMove(obj, state, mv, crawlerSeq12Speed(&tC[i]), 0, tC[i].mode);
                         }
                     }
                     else
                     {
                         i = randomGetRange(1, t8[0].moveId) & 0xff;
-                        baddieSetMove(obj, state, t8[i].moveId, t8[i].spd, 0, t8[i].mode);
+                        baddieSetMove(obj, state, t8[i].moveId, crawlerSeq12Speed(&t8[i]), 0, t8[i].mode);
                     }
                 }
                 else
                 {
-                    baddieSetMove(obj, state, t10[0].moveId, t10[0].spd, 0, t10[0].mode);
+                    baddieSetMove(obj, state, t10[0].moveId, crawlerSeq12Speed(&t10[0]), 0, t10[0].mode);
                 }
                 ((EnemyState*)state)->familyData.crawler.flagsD = ((EnemyState*)state)->familyData.crawler.flagsD | 0x20;
                 ((EnemyState*)state)->familyData.crawler.flagsD = ((EnemyState*)state)->familyData.crawler.flagsD & ~0x10;
@@ -1117,9 +1142,10 @@ void crawler_updateB(GameObject* obj, u8* state)
             }
             if (((EnemyState*)state)->familyData.crawler.reactStep != 0)
             {
-                baddieSetMove(obj, state, seq[((EnemyState*)state)->familyData.crawler.reactStep].moveId,
-                               seq[((EnemyState*)state)->familyData.crawler.reactStep].spd, 0, seq[((EnemyState*)state)->familyData.crawler.reactStep].mask & 0xff);
-                ((EnemyState*)state)->familyData.crawler.flagsC = seq[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+                CrawlerSeq16* entry = &seq[((EnemyState*)state)->familyData.crawler.reactStep];
+                baddieSetMove(obj, state, entry->moveId, crawlerSeq16Speed(entry), 0,
+                               crawlerSeq16Mask(entry) & 0xff);
+                ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(entry);
                 obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
                 ((EnemyState*)state)->familyData.crawler.reactStep = seq[((EnemyState*)state)->familyData.crawler.reactStep].next9;
             }
@@ -1127,19 +1153,19 @@ void crawler_updateB(GameObject* obj, u8* state)
             {
                 int i2;
                 CrawlerSeq12* q;
-                if ((((EnemyState*)state)->controlFlags &
-                     (q = &t4[i2 = ((EnemyState*)state)->familyData.crawler.moveChainIndex])->mask) != 0)
+                q = &t4[i2 = ((EnemyState*)state)->familyData.crawler.moveChainIndex];
+                if ((((EnemyState*)state)->controlFlags & crawlerSeq12Mask(q)) != 0)
                 {
                     u8 mv;
                     i = ((EnemyState*)state)->turnOctant;
                     mv = tC[i].moveId;
                     if (mv == 0)
                     {
-                        baddieSetMove(obj, state, q->moveId, t4[i2].spd, 0, q->mode);
+                        baddieSetMove(obj, state, q->moveId, crawlerSeq12Speed(&t4[i2]), 0, q->mode);
                     }
                     else
                     {
-                        baddieSetMove(obj, state, mv, tC[i].spd, 0, tC[i].mode);
+                        baddieSetMove(obj, state, mv, crawlerSeq12Speed(&tC[i]), 0, tC[i].mode);
                     }
                 }
                 else
@@ -1150,11 +1176,11 @@ void crawler_updateB(GameObject* obj, u8* state)
                     if (mv == 0)
                     {
                         int i4 = randomGetRange(1, t8[0].moveId) & 0xff;
-                        baddieSetMove(obj, state, t8[i4].moveId, t8[i4].spd, 0, t8[i4].mode);
+                        baddieSetMove(obj, state, t8[i4].moveId, crawlerSeq12Speed(&t8[i4]), 0, t8[i4].mode);
                     }
                     else
                     {
-                        baddieSetMove(obj, state, mv, tC[i].spd, 0, tC[i].mode);
+                        baddieSetMove(obj, state, mv, crawlerSeq12Speed(&tC[i]), 0, tC[i].mode);
                     }
                 }
                 {
@@ -1175,7 +1201,7 @@ void crawler_updateB(GameObject* obj, u8* state)
             if (obj->anim.currentMove == p->moveId)
             {
                 p = t18 + j;
-                ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority = (s8)p->mask;
+                ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority = (s8)crawlerSeq12Mask(p);
                 ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumeId = (s8)p->next;
                 if (((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority == 0x1f)
                 {
@@ -1203,20 +1229,11 @@ void crawler_updateB(GameObject* obj, u8* state)
 
 void crawler_update(GameObject* obj, u8* state)
 {
-    typedef struct
-    {
-        u8 pad[0xc];
-        CrawlerSeq12* tC;
-        CrawlerSeq12* t10;
-        CrawlerSeq16* t14;
-        CrawlerSeq12* t18;
-        u8 pad2[4];
-    } CrawlerDescL;
-    CrawlerDescL* d = (CrawlerDescL*)gCrawlerDescriptorTable;
-    CrawlerSeq12* t9 = d[((EnemyState*)state)->userData2].t10;
-    CrawlerSeq12* t8 = d[((EnemyState*)state)->userData2].t18;
-    CrawlerSeq12* t7 = d[((EnemyState*)state)->userData2].tC;
-    CrawlerSeq16* t6 = d[((EnemyState*)state)->userData2].t14;
+    CrawlerDescriptor* d = (CrawlerDescriptor*)gCrawlerDescriptorTable;
+    CrawlerSeq12* t9 = d[((EnemyState*)state)->userData2].tbl10;
+    CrawlerSeq12* t8 = d[((EnemyState*)state)->userData2].tbl18;
+    CrawlerSeq12* t7 = d[((EnemyState*)state)->userData2].tblC;
+    CrawlerSeq16* t6 = d[((EnemyState*)state)->userData2].seq;
     f32 cap;
     int i;
     CrawlerSeq12* p;
@@ -1250,7 +1267,8 @@ void crawler_update(GameObject* obj, u8* state)
         {
             ((EnemyState*)state)->crawler.emergeTimer = cap;
             ((EnemyState*)state)->controlFlags |= (u64)BADDIE_CONTROL_SEQUENCE_DRIVEN;
-            ((EnemyState*)state)->familyData.crawler.flagsC = t6[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+            ((EnemyState*)state)->familyData.crawler.flagsC =
+                crawlerSeq16FlagC(&t6[((EnemyState*)state)->familyData.crawler.reactStep]);
             obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
             ((EnemyState*)state)->familyData.crawler.reactStep = t6[((EnemyState*)state)->familyData.crawler.reactStep].nextA;
         }
@@ -1265,9 +1283,10 @@ void crawler_update(GameObject* obj, u8* state)
         }
         if (((EnemyState*)state)->familyData.crawler.reactStep != 0)
         {
-            baddieSetMove(obj, state, t6[((EnemyState*)state)->familyData.crawler.reactStep].moveId, t6[((EnemyState*)state)->familyData.crawler.reactStep].spd, 0,
-                           t6[((EnemyState*)state)->familyData.crawler.reactStep].mask & 0xff);
-            ((EnemyState*)state)->familyData.crawler.flagsC = t6[((EnemyState*)state)->familyData.crawler.reactStep].flagC;
+            CrawlerSeq16* entry = &t6[((EnemyState*)state)->familyData.crawler.reactStep];
+            baddieSetMove(obj, state, entry->moveId, crawlerSeq16Speed(entry), 0,
+                           crawlerSeq16Mask(entry) & 0xff);
+            ((EnemyState*)state)->familyData.crawler.flagsC = crawlerSeq16FlagC(entry);
             obj->hitVolumeIndex = ((EnemyState*)state)->familyData.crawler.flagsC & 1;
             ((EnemyState*)state)->familyData.crawler.reactStep = t6[((EnemyState*)state)->familyData.crawler.reactStep].next9;
         }
@@ -1281,19 +1300,20 @@ void crawler_update(GameObject* obj, u8* state)
                     ((EnemyState*)state)->userData1 = 0;
                 }
                 enemy_findNearbyEnemies(obj, 250.0f, 6, 0x28, gCrawlerNearbyObjectBuffer);
-                if ((((EnemyState*)state)->controlFlags & t9[((EnemyState*)state)->userData1].mask) == 0 &&
+                if ((((EnemyState*)state)->controlFlags &
+                      crawlerSeq12Mask(&t9[((EnemyState*)state)->userData1])) == 0 &&
                     t9[((EnemyState*)state)->userData1].next != 0)
                 {
                     ((EnemyState*)state)->userData1 = t9[((EnemyState*)state)->userData1].next;
                 }
                 baddieSetMove(obj, state, t9[((EnemyState*)state)->userData1].moveId,
-                               t9[((EnemyState*)state)->userData1].spd, 0,
+                               crawlerSeq12Speed(&t9[((EnemyState*)state)->userData1]), 0,
                                t9[((EnemyState*)state)->userData1].mode);
                 ((EnemyState*)state)->userData1 = t9[((EnemyState*)state)->userData1].next;
             }
             else
             {
-                baddieSetMove(obj, state, t7[i].moveId, t7[i].spd, 0, t7[i].mode);
+                baddieSetMove(obj, state, t7[i].moveId, crawlerSeq12Speed(&t7[i]), 0, t7[i].mode);
             }
         }
     }
@@ -1308,7 +1328,7 @@ void crawler_update(GameObject* obj, u8* state)
         if (obj->anim.currentMove == p->moveId)
         {
             ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority =
-                (s8)t8[j].mask;
+                (s8)crawlerSeq12Mask(&t8[j]);
             ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumeId =
                 (s8)t8[j].next;
             if (((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority == 0x1f)

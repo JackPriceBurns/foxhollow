@@ -39,51 +39,49 @@ void cannonclaw_free(GameObject* obj) {
 }
 
 void cannonclaw_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int fwdArg5, s8 visible) {
-    if (visible != 0) {
-        switch (obj->userData1) {
-        case CANNON_CLAW_STATUS_ACTIVE:
-            objRenderModelAndHitVolumes(obj, fwdArg2, fwdArg3, fwdArg4, fwdArg5, 1.0f);
-            break;
-        default:
-            break;
-        }
+    if (visible == 0) {
+        return;
+    }
+
+    switch (obj->userData1) {
+    case CANNON_CLAW_STATUS_ACTIVE:
+        objRenderModelAndHitVolumes(obj, fwdArg2, fwdArg3, fwdArg4, fwdArg5, 1.0f);
+        break;
+    default:
+        break;
     }
 }
 
 void cannonclaw_hitDetect(GameObject* obj) {
-    (void)obj;
 }
 
 void cannonclaw_update(GameObject* obj) {
-    GameObject* trickyObj;
-    CannonClawGatePlacement* gatePlacement;
-
-    getTrickyObject();
-    trickyObj = ObjList_FindObjectById(CANNON_CLAW_TRICKY_OBJECT_ID);
+    getTrickyObject(); // no used?
+    GameObject* trickyObj = ObjList_FindObjectById(CANNON_CLAW_TRICKY_OBJECT_ID);
     if (obj->userData1 != CANNON_CLAW_STATUS_ACTIVE) {
         return;
     }
     if (obj->anim.currentMove != CANNON_CLAW_ARM_MOVE_ID) {
         ObjAnim_SetCurrentMove(obj, CANNON_CLAW_ARM_MOVE_ID, 0.0f, 0);
     }
+
     ObjAnim_AdvanceCurrentMove(obj, CANNON_CLAW_ANIM_SPEED, timeDelta, NULL);
     if (trickyObj == NULL) {
         return;
     }
-    gatePlacement = (CannonClawGatePlacement*)trickyObj->anim.placementData;
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&trickyObj->anim, &(gatePlacement->activationGameBit))) == 0) {
+
+    CannonClawGatePlacement* gatePlacement = (CannonClawGatePlacement*)trickyObj->anim.placementData;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&trickyObj->anim, &gatePlacement->activationGameBit)) == 0) {
         return;
     }
+
     obj->userData1 = CANNON_CLAW_STATUS_DISABLED;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     ObjHits_DisableObject(obj);
 }
 
 void cannonclaw_init(GameObject* obj, CannonClawPlacement* placement) {
-    s8 rotXScale = placement->rotXScale;
-    s16 rotX = rotXScale << 8;
-
-    obj->anim.rotX = rotX;
+    obj->anim.rotX = placement->rotXScale << 8;
 }
 
 void cannonclaw_release(void) {

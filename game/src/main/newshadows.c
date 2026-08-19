@@ -1873,7 +1873,7 @@ void allocLotsOfTextures(void)
                     bi = (int)b & 0xf;
                     ci = ((u16)(int)c & 0xf) << 4;
                     ai = ((u16)(int)a & 7) << 12;
-                    *(u16*)(dst + sizeof(Texture)) = (u16)(ci | ai | bi);
+                    *(u16*)(dst + sizeof(Texture)) = fhSwap16((u16)(ci | ai | bi));
                 }
             }
         }
@@ -1948,14 +1948,14 @@ void allocLotsOfTextures(void)
         t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         hi = ((int)(255.0f * x + 128.0f) & 0xff) << 8;
-        *(u16*)(t + sizeof(Texture)) = (u16)(hi | ((int)lbl_803DED38 & 0xff));
+        *(u16*)(t + sizeof(Texture)) = fhSwap16((u16)(hi | ((int)lbl_803DED38 & 0xff)));
         t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
-        *(u16*)(t + sizeof(Texture) + 8) = (u16)(hi | ((int)lbl_803DEE14 & 0xff));
+        *(u16*)(t + sizeof(Texture) + 8) = fhSwap16((u16)(hi | ((int)lbl_803DEE14 & 0xff)));
         t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
-        *(u16*)(t + sizeof(Texture) + 0x10) = (u16)(hi | ((int)lbl_803DEE18 & 0xff));
-        v = (u16)(hi | ((int)lbl_803DEE1C & 0xff));
+        *(u16*)(t + sizeof(Texture) + 0x10) = fhSwap16((u16)(hi | ((int)lbl_803DEE18 & 0xff)));
+        v = fhSwap16((u16)(hi | ((int)lbl_803DEE1C & 0xff)));
         t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         *(u16*)(t + sizeof(Texture) + 0x18) = v;

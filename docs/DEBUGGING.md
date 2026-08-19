@@ -4,6 +4,9 @@ Foxhollow runs GameCube game code on a little-endian, 64-bit host. Most runtime 
 far have not been bad gameplay logic: the code is acting on the wrong representation of otherwise
 valid retail data.
 
+For investigated oddities that are genuine GameCube behavior and intentionally preserved, see the
+[retail bug archive](RETAIL_BUGS.md).
+
 Before changing game behaviour, establish two facts about every suspicious value:
 
 1. Did it come directly from the disc, or was it created by native code?

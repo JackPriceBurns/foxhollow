@@ -49,7 +49,7 @@ typedef struct ObjectTriggerInterface {
     void (*func19Nop)(void);
     int (*runSequence)(int seqIndex, void *obj, int flags);
     void (*endSequence)(int seqIndex);
-    void (*setCamVars)(int camA, int camB, int camC, int camD);
+    void (*setCamVars)(int camA, int camB, uintptr_t camC, int camD);
     void (*preempt)(uintptr_t obj, int triggerId);
     void (*yield)(ObjSeqState *seq, int value);
     u8 (*getGlobal3)(void);

@@ -69,3 +69,50 @@ void fhSwapLoadedTabFile(void* buf, unsigned int size, const char* name) {
     fhSwapU32Array(buf, size / 4);
   }
 }
+
+void fhSwapSaveGameSlot(void* data) {
+  u8* p = (u8*)data;
+  u32 i;
+  u32 j;
+
+  for (i = 0; i < 2; i++) {
+    u32 base = i * 0xc;
+    *(u16*)(p + base + 4) = fhSwap16(*(u16*)(p + base + 4));
+    *(u16*)(p + base + 6) = fhSwap16(*(u16*)(p + base + 6));
+  }
+  for (i = 0; i < 0x3f; i++) {
+    u32 base = 0x168 + i * 0x10;
+    for (j = 0; j < 4; j++) {
+      *(u32*)(p + base + j * 4) = fhSwap32(*(u32*)(p + base + j * 4));
+    }
+  }
+  *(u32*)(p + 0x560) = fhSwap32(*(u32*)(p + 0x560));
+  for (i = 0; i < 2; i++) {
+    u32 base = 0x684 + i * 0x10;
+    for (j = 0; j < 3; j++) {
+      *(u32*)(p + base + j * 4) = fhSwap32(*(u32*)(p + base + j * 4));
+    }
+  }
+  *(u16*)(p + 0x6a4) = fhSwap16(*(u16*)(p + 0x6a4));
+  *(u32*)(p + 0x6a8) = fhSwap32(*(u32*)(p + 0x6a8));
+  for (i = 0x6ac; i <= 0x6ba; i += 2) {
+    if (i != 0x6b0) {
+      *(u16*)(p + i) = fhSwap16(*(u16*)(p + i));
+    }
+  }
+  for (i = 0x6bc; i < 0x6e0; i += 4) {
+    *(u32*)(p + i) = fhSwap32(*(u32*)(p + i));
+  }
+}
+
+void fhSwapSaveData(void* data) {
+  u8* p = (u8*)data;
+  u32 i;
+
+  *(u32*)(p + 0x10) = fhSwap32(*(u32*)(p + 0x10));
+  *(u32*)(p + 0x14) = fhSwap32(*(u32*)(p + 0x14));
+  for (i = 0; i < 25; i++) {
+    u32 offset = 0x1c + i * 8;
+    *(u32*)(p + offset) = fhSwap32(*(u32*)(p + offset));
+  }
+}

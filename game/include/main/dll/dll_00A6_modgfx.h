@@ -8,6 +8,11 @@
 
 typedef void (*DllA6SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 flags);
 
+typedef struct DllA6Interface {
+    ResourceDescriptorCallback reserved;
+    DllA6SpawnFn spawn;
+} DllA6Interface;
+
 typedef struct DllA6ResourceDescriptor {
     u32 metadata[4];
     ResourceDescriptorCallback initialise;

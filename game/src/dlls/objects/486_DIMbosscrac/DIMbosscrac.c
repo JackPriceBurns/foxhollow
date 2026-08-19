@@ -13,15 +13,19 @@
 #define DIMBOSSCRACKPAR_BASE_PARTICLE_ID 0x4C6
 #define DIMBOSSCRACKPAR_GLOW_PARTICLE_ID 0x4C8
 
-
 int DIMbosscrackpar_SeqFn(GameObject* obj) {
     DIMbosscrackparPlacementView* placement = (DIMbosscrackparPlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit)) == 0) {
         return 0;
     }
+
     (*gPartfxInterface)
-        ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->particleEffectOffset)) + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
+        ->spawnObject(obj,
+                      ObjAnim_ReadPlacementS16(&obj->anim, &placement->particleEffectOffset) +
+                          DIMBOSSCRACKPAR_BASE_PARTICLE_ID,
+                      NULL, 2, -1, NULL);
+
     (*gPartfxInterface)->spawnObject(obj, DIMBOSSCRACKPAR_GLOW_PARTICLE_ID, NULL, 2, -1, NULL);
     return 0;
 }
@@ -38,11 +42,7 @@ void DIMbosscrackpar_free(GameObject* obj) {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
 
-void DIMbosscrackpar_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
-                            s8 visible) {
-    if (visible == 0) {
-        return;
-    }
+void DIMbosscrackpar_render(GameObject*, int, int, int, int, s8 visible) {
 }
 
 void DIMbosscrackpar_hitDetect(void) {
@@ -51,9 +51,12 @@ void DIMbosscrackpar_hitDetect(void) {
 void DIMbosscrackpar_update(GameObject* obj) {
     DIMbosscrackparPlacementView* placement = (DIMbosscrackparPlacementView*)obj->anim.placementData;
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit)) != 0) {
         (*gPartfxInterface)
-            ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->particleEffectOffset)) + DIMBOSSCRACKPAR_BASE_PARTICLE_ID, NULL, 2, -1, NULL);
+            ->spawnObject(obj,
+                          ObjAnim_ReadPlacementS16(&obj->anim, &placement->particleEffectOffset) +
+                              DIMBOSSCRACKPAR_BASE_PARTICLE_ID,
+                          NULL, 2, -1, NULL);
         (*gPartfxInterface)->spawnObject(obj, DIMBOSSCRACKPAR_GLOW_PARTICLE_ID, NULL, 2, -1, NULL);
     }
 }
@@ -62,9 +65,9 @@ void DIMbosscrackpar_init(GameObject* obj, DIMbosscrackparPlacementView* placeme
     obj->anim.rotX = 0;
     obj->anim.rootMotionScale = 0.1f;
     obj->animEventCallback = DIMbosscrackpar_SeqFn;
-    obj->anim.rotX = (s16)((s32)placement->rotationXByte << 8);
-    obj->anim.rotY = (s16)((s32)placement->rotationYByte << 8);
-    obj->anim.rotZ = (s16)((s32)placement->rotationZByte << 8);
+    obj->anim.rotX = placement->rotationXByte << 8;
+    obj->anim.rotY = placement->rotationYByte << 8;
+    obj->anim.rotZ = placement->rotationZByte << 8;
 }
 
 void DIMbosscrackpar_release(void) {

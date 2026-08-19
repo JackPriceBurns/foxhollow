@@ -2,6 +2,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
+#include "main/dll/dll_00A6_modgfx.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
@@ -13,7 +14,7 @@
 #define VFP_LAVASTAR_PARTFX                     0x3a4
 
 
-void* gVfpLavaPoolEffectResource;
+DllA6Interface** gVfpLavaPoolEffectResource;
 
 typedef struct VfpLavaStarState
 {
@@ -57,7 +58,7 @@ int VFP_lavastar_getObjectTypeId(void)
 
 void VFP_lavastar_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     (*gModgfxInterface)->freeSourceEffects((void*)obj);
 }
 
@@ -85,9 +86,7 @@ void VFP_lavastar_update(GameObject* obj)
     state->effectTimer += (s16)timeDelta;
     if (gVfpLavaPoolEffectResource != 0 && state->effectTimer >= 0x28)
     {
-        (*(void (*)(int, int, int, int, int, int)) *
-         (int*)(*(int*)gVfpLavaPoolEffectResource + 4))(
-            (int)obj, 0, 0, 4, -1, 0);
+        (*gVfpLavaPoolEffectResource)->spawn(obj, 0, NULL, 4);
         state->effectTimer = 0;
     }
     if (state->particleToggle == 0)

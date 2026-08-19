@@ -49,41 +49,6 @@ void* animLoadFromTable(u8* hdr, int idx, int a, u8* b);
 int mergeTableFiles(void* table, int id, int idx, int count_);
 extern uintptr_t gResourceFileBuffers[];
 
-static void modelNormalizePackHeader(int offsetFlags)
-{
-    uintptr_t bufBase;
-    volatile u32* w;
-    int i;
-    int slot;
-
-    slot = 0x2b;
-    if (((offsetFlags & 0x20000000) != 0 || gResourceFileBuffers[0x2b] == 0) &&
-        gResourceFileBuffers[0x46] != 0)
-    {
-        slot = 0x46;
-    }
-    bufBase = gResourceFileBuffers[slot];
-    if (bufBase == 0)
-    {
-        return;
-    }
-    w = (volatile u32*)(bufBase + (offsetFlags & 0x0fffffff));
-    if (w[0] == 0xedfecefa)
-    {
-        w[0] = 0xfacefeed;
-    }
-    if (w[0] == 0xe0e0e0e0 || w[0] == 0xfacefeed)
-    {
-        for (i = 1; i < 4; i++)
-        {
-            if (w[i] >= 0x01000000)
-            {
-                w[i] = fhSwap32(w[i]);
-            }
-        }
-    }
-}
-
 static void modelSyncResourceTables(void)
 {
     mergeTableFiles(getCurrentDataFile(MLDF_FILEID_MODELS_TAB_A), MLDF_FILEID_MODELS_TAB_A,
@@ -2023,9 +1988,7 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
     int bv;
     u8* anim;
 
-    if (model->file->animationCount == 0 || model->file->jointCount == 0 ||
-        ((model->file->flags & MODEL_FLAG_VERTEX_ANIM_AREA) == 0 &&
-         model->file->animationModelPtrs == NULL))
+    if (model->file->animationCount == 0)
     {
         f32 z = 0.0f;
         outPos[0] = z;
@@ -2034,7 +1997,6 @@ void ObjModel_SampleJointTransform(ObjModel* model, int b, int idx, f32 t, f32 s
         outRot[0] = 0;
         outRot[1] = 0;
         outRot[2] = 0;
-        return;
     }
     if (b != 0)
     {
@@ -2932,7 +2894,6 @@ void* ObjModel_LoadModelData(int id)
     headerSize += 0xb0;
     amapSize = modelGetAmapSize(id, amapFlag, animCount);
     tmp = mmAlloc(dataLen, 9, 0);
-    modelNormalizePackHeader(fileOffset);
     loadAndDecompressDataFile(MLDF_FILEID_MODELS_BIN_A, tmp, fileOffset, dataLen, 0, id, 0);
     texTabOff = ALIGN_NEXT((u32)sizeof(ModelFileHeader), 16);
     morphTabOff = texTabOff + tmp[0xf2] * (u32)sizeof(uintptr_t);

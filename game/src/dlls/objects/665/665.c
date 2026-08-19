@@ -15,15 +15,11 @@
 #include "main/resource.h"
 #include "main/vecmath.h"
 
-void* gDll299Resource;
+DllA6Interface** gDll299Resource;
 
 #define DLL299_RESOURCE_ID 0xa6
-
-/* main particle burst seeded 3x once at init */
 #define DLL0299_PARTFX_INIT 0x545
-/* second distinct particle seeded once at init alongside the INIT trio */
 #define DLL0299_PARTFX_INIT2 0x546
-/* ambient particle burst spawned 3x every update tick */
 #define DLL0299_PARTFX_AMBIENT 0x547
 
 int dll_299_getExtraSize_ret_2(void) {
@@ -35,8 +31,8 @@ int dll_299_getObjectTypeId(void) {
 }
 
 void dll_299_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
-    (*gModgfxInterface)->freeSourceEffects((void*)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
+    (*gModgfxInterface)->freeSourceEffects(obj);
     Resource_Release(gDll299Resource);
     gDll299Resource = NULL;
 }
@@ -49,21 +45,21 @@ void dll_299_hitDetect_nop(void) {
 
 void dll_299_update(GameObject* obj) {
     if (randomGetRange(0, 2) == 0) {
-        (*(Dll299Vtable**)gDll299Resource)->slot1((int)obj, 1, 0, 4, -1, 0);
+        (*gDll299Resource)->spawn(obj, 1, NULL, 4);
     }
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_AMBIENT, NULL, 4, -1, NULL);
 }
 
 void dll_299_init(GameObject* obj, Dll299Setup* setup) {
-    ((Dll299State*)obj->extra)->id = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->id));
+    ((Dll299State*)obj->extra)->id = ObjAnim_ReadPlacementS16(&obj->anim, &setup->id);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     gDll299Resource = Resource_Acquire(DLL299_RESOURCE_ID, 1);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
-    (*gPartfxInterface)->spawnObject((void*)obj, DLL0299_PARTFX_INIT2, NULL, 0x802, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_INIT, NULL, 0x802, -1, NULL);
+    (*gPartfxInterface)->spawnObject(obj, DLL0299_PARTFX_INIT2, NULL, 0x802, -1, NULL);
 }
 
 void dll_299_release_nop(void) {

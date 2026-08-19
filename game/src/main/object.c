@@ -652,7 +652,7 @@ int objMove(GameObject* obj, f32 dx, f32 dy, f32 dz) {
 
 GameObject* getTrickyObject(void) {
     int count;
-    GameObject** objs = (GameObject**)objGetAllOfType(1, &count);
+    GameObject** objs = objGetAllOfType(1, &count);
     if (count != 0) {
         return objs[0];
     }
@@ -1286,8 +1286,7 @@ void Obj_RunInitCallback(GameObject* obj, void* cb, int flags) {
     default: {
         ObjectInterfaceHandle p = obj->anim.dll;
         if (p != NULL) {
-            void (*fn)(GameObject*, void*, int) =
-                (void (*)(GameObject*, void*, int))((ObjectInterface*)*p)->init;
+            void (*fn)(GameObject*, void*, int) = (void (*)(GameObject*, void*, int))((ObjectInterface*)*p)->init;
             if ((intptr_t)fn != -1 && fn != NULL) {
                 fn(obj, cb, flags);
             }
@@ -1544,7 +1543,7 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags) {
 }
 
 void Obj_RegisterObject(GameObject* obj, int flags) {
-    extern void Obj_RunInitCallback(GameObject* obj, void* cb, int flags);
+    extern void Obj_RunInitCallback(GameObject * obj, void* cb, int flags);
     ObjAnimComponent* object;
     int id;
     uintptr_t prev;

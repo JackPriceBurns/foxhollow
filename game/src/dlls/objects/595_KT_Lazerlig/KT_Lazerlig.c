@@ -13,81 +13,67 @@
 #include "main/dll/DR/dll_0253_ktlazerlight.h"
 #include "main/model_light.h"
 
-int ktlazerlight_getExtraSize(void)
-{
+int ktlazerlight_getExtraSize(void) {
     return sizeof(KtlazerlightState);
 }
 
-int ktlazerlight_getObjectTypeId(void)
-{
+int ktlazerlight_getObjectTypeId(void) {
     return 0x0;
 }
 
-void ktlazerlight_free(GameObject* obj)
-{
+void ktlazerlight_free(GameObject* obj) {
     KtlazerlightState* state = obj->extra;
-    if (state->light != NULL)
-    {
+    if (state->light != NULL) {
         ModelLightStruct_free(state->light);
     }
 }
 
-void ktlazerlight_render(void)
-{
+void ktlazerlight_render(void) {
 }
 
-void ktlazerlight_hitDetect(void)
-{
+void ktlazerlight_hitDetect(void) {
 }
 
-void ktlazerlight_update(GameObject* obj)
-{
+void ktlazerlight_update(GameObject* obj) {
     KtlazerlightPlacement* placement = (KtlazerlightPlacement*)obj->anim.placementData;
     KtlazerlightState* state = obj->extra;
-    s16 intensity;
     ModelLightStruct* light = state->light;
-    intensity = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->onIntensityBit)));
-    if (intensity >= 1 || mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->onStayLitBit))) != 0)
-    {
-        if (intensity == 0)
-        {
-            intensity = 0x10;
+
+    s16 intensity = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->onIntensityBit));
+    if (intensity < 1 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->onStayLitBit)) == 0) {
+        if (light != 0) {
+            modelLightStruct_setEnabled(light, 0, 0.0f);
         }
-        if (light != 0)
-        {
-            modelLightStruct_setEnabled(light, 1, (0.0f));
-            modelLightStruct_setDiffuseColor(light, 0x64, 0x6e, 0xff, 0xff);
-            modelLightStruct_setDistanceAttenuation(state->light, (f32)(intensity * 0x1a),
-                                                    (f32)(intensity * 0x1a + 0x14));
-        }
+        return;
     }
-    else
-    {
-        if (light != 0)
-        {
-            modelLightStruct_setEnabled(light, 0, (0.0f));
-        }
+
+    if (intensity == 0) {
+        intensity = 16;
+    }
+
+    if (light != 0) {
+        modelLightStruct_setEnabled(light, 1, 0.0f);
+        modelLightStruct_setDiffuseColor(light, 0x64, 0x6e, 0xff, 0xff);
+        modelLightStruct_setDistanceAttenuation(state->light, intensity * 26, intensity * 26 + 20);
     }
 }
 
-void ktlazerlight_init(GameObject* obj, KtlazerlightPlacement* placement)
-{
+void ktlazerlight_init(GameObject* obj, KtlazerlightPlacement* placement) {
     KtlazerlightState* state = obj->extra;
     state->light = objCreateLight(NULL, 1);
-    if (state->light != NULL)
-    {
-        modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
-        modelLightStruct_setPosition(state->light, placement->base.posX, placement->base.posY, placement->base.posZ);
-        modelLightStruct_setAffectsAabbLightSelection(state->light, 1);
+    if (state->light == NULL) {
+        return;
     }
+
+    modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
+    modelLightStruct_setPosition(state->light, placement->base.posX, placement->base.posY, placement->base.posZ);
+    modelLightStruct_setAffectsAabbLightSelection(state->light, 1);
 }
 
-void ktlazerlight_release(void)
-{
+void ktlazerlight_release(void) {
 }
 
-void ktlazerlight_initialise(void)
-{
+void ktlazerlight_initialise(void) {
 }
 
 ObjectDescriptor gKtLazerlightObjDescriptor = {

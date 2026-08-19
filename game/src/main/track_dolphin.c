@@ -170,7 +170,7 @@ int trackSweepCircleAgainstLines(f32* startPos, f32* endPos, f32 radius, int fla
 
 extern u8 gTrackGridOrigin[0x104];
 
-TrackBlockDescriptor gTrackBlockDescriptors[21];
+TrackBlockDescriptor gTrackBlockDescriptors[20];
 
 u32 trackGetPackedSurfaceType(int* obj);
 

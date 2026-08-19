@@ -1,6 +1,5 @@
 /* Tracks a game-bit-controlled visibility state for the containing map block. */
 #include "dlls/objects/314_VisAnimator.h"
-
 #include "game/objects/object.h"
 #include "main/gamebits_api.h"
 #include "main/lightmap_api.h"
@@ -25,21 +24,19 @@ void VisAnimator_hitDetect(void) {
 void VisAnimator_update(GameObject* obj) {
     VisAnimatorPlacement* placement = (VisAnimatorPlacement*)obj->anim.placementData;
     VisAnimatorState* state = obj->extra;
-    s16 gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
-    int blockIndex =
-        objPosToMapBlockIdx((double)obj->anim.localPosX, (double)obj->anim.localPosY, (double)obj->anim.localPosZ);
-    int gateValue;
 
-    if (mapGetBlock(blockIndex) == NULL) {
+    if (mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ)) == NULL) {
         state->flags |= VIS_ANIMATOR_STATE_REFRESH_PENDING;
         return;
     }
-    gateValue = mainGetBit(gateGameBit);
-    state->currentGateState = (u8)(state->gateMask & gateValue);
+
+    state->currentGateState =
+        state->gateMask & mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit));
     if (state->previousGateState != state->currentGateState) {
         state->visibilityBit = state->visibilityBit ^ 1;
         state->flags |= VIS_ANIMATOR_STATE_REFRESH_PENDING;
     }
+
     state->previousGateState = state->currentGateState;
     if (state->flags & VIS_ANIMATOR_STATE_REFRESH_PENDING) {
         state->flags &= ~VIS_ANIMATOR_STATE_REFRESH_PENDING;
@@ -47,26 +44,19 @@ void VisAnimator_update(GameObject* obj) {
 }
 
 void VisAnimator_init(GameObject* obj, VisAnimatorPlacement* placement) {
-    VisAnimatorState* state;
-    s16 gateGameBit;
-    u32 gateValue;
-    u8 gateState;
-    int initialVisibility;
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 
-    obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
-    state = obj->extra;
-    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
-    initialVisibility = placement->initialVisibilityBit;
-    state->visibilityBit = initialVisibility;
-    state->gateMask = (u8)(1 << placement->gateBitIndex);
-    gateValue = mainGetBit(gateGameBit);
-    if ((state->gateMask & gateValue) != 0) {
-        state->visibilityBit = state->visibilityBit ^ 1;
+    VisAnimatorState* state = obj->extra;
+    state->visibilityBit = placement->initialVisibilityBit;
+    state->gateMask = 1 << placement->gateBitIndex;
+    if ((state->gateMask & mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit))) != 0) {
+        state->visibilityBit ^= 1;
     }
-    mapGetBlock(
-        objPosToMapBlockIdx((double)obj->anim.localPosX, (double)obj->anim.localPosY, (double)obj->anim.localPosZ));
-    gateValue = mainGetBit(gateGameBit);
-    gateState = (u8)(state->gateMask & gateValue);
+
+    // not sure what this does?
+    mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
+
+    u8 gateState = state->gateMask & mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit));
     state->currentGateState = gateState;
     state->previousGateState = gateState;
     state->flags |= VIS_ANIMATOR_STATE_REFRESH_PENDING;

@@ -1990,7 +1990,7 @@ void newclouds_updateEnvfxAct(GameObject* objA, GameObject* objB, u8* params)
         posB[1] = objB->anim.worldPosY;
         posB[2] = objB->anim.worldPosZ;
     }
-    if ((u32)cfg->cloudIndex >= 8)
+    if ((u32)cfg->cloudIndex > 8)
     {
         return;
     }

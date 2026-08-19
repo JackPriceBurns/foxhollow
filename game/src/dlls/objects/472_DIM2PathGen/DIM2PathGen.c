@@ -106,7 +106,8 @@ void DIM2PathGenerator_update(GameObject* obj) {
     objects = (int**)objGetAllOfType(DIM2_PATH_GENERATOR_SNOWBALL_GROUP, &count);
     for (objectIndex = 0; objectIndex < count; objectIndex++) {
         if (state->spawnTypes[toggle] == ((GameObject*)objects[objectIndex])->anim.romDefNo) {
-            Dim2SnowBallPlacement* childPlacementData = *(Dim2SnowBallPlacement**)((char*)objects[objectIndex] + 0x4c);
+            Dim2SnowBallPlacement* childPlacementData =
+                (Dim2SnowBallPlacement*)((GameObject*)objects[objectIndex])->anim.placementData;
             int poolIndex;
 
             childPlacementData->base.posX = state->originX;

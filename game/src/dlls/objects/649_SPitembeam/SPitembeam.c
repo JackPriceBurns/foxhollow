@@ -16,80 +16,60 @@
 #include "dlls/object_descriptor.h"
 
 /* texture-scroll wrap (1/4 of the 0x1000 fixed-point texcoord range) */
-#define SPITEMBEAM_SCROLL_STEP 8
-#define SPITEMBEAM_SCROLL_WRAP 0x400
-
+#define SPITEMBEAM_SCROLL_WRAP     0x400
 #define SPITEMBEAM_TARGET_OBJGROUP 9
 
-int spitembeam_getExtraSize(void)
-{
+int spitembeam_getExtraSize(void) {
     return 0x0;
 }
-int spitembeam_getObjectTypeId(void)
-{
+int spitembeam_getObjectTypeId(void) {
     return 0x0;
 }
 
-void spitembeam_free(void)
-{
+void spitembeam_free(void) {
 }
 
-void spitembeam_render(void)
-{
+void spitembeam_render(void) {
 }
 
-void spitembeam_hitDetect(void)
-{
+void spitembeam_hitDetect(void) {
 }
 
-void spitembeam_update(GameObject* obj)
-{
-    int* shop;
-    SpitembeamPlacement* def;
-    ObjTextureRuntimeSlot* tex;
-    f32 searchRadius;
+void spitembeam_update(GameObject* obj) {
 
-    shop = (int*)obj->userData1;
-    def = (SpitembeamPlacement*)obj->anim.placementData;
-    searchRadius = 10000.0f;
-    if (shop == NULL)
-    {
+    GameObject* shop = (GameObject*)obj->userData1;
+    SpitembeamPlacement* def = (SpitembeamPlacement*)obj->anim.placementData;
+    if (shop == NULL) {
+        f32 searchRadius = 10000.0f;
         obj->userData1 = (intptr_t)objGetNearestTypeTo(SPITEMBEAM_TARGET_OBJGROUP, obj, &searchRadius);
+        return;
     }
-    else
-    {
-        if (SHOP_INTERFACE(shop)->isItemAvailable((GameObject*)shop,
-                                                  ObjAnim_ReadPlacementS16(&obj->anim, &(def->itemIndex))) == 0 ||
-            SHOP_INTERFACE(shop)->isItemBought((GameObject*)shop,
-                                               ObjAnim_ReadPlacementS16(&obj->anim, &(def->itemIndex))) != 0)
-        {
-            obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
-            obj->objectFlags =
-                (u16)(obj->objectFlags | OBJECT_OBJFLAG_UPDATE_DISABLED);
-        }
-        tex = objFindTexture(obj, 0, 0);
-        if (tex != NULL)
-        {
-            tex->offsetS += SPITEMBEAM_SCROLL_STEP;
-            if (tex->offsetS > SPITEMBEAM_SCROLL_WRAP)
-            {
-                tex->offsetS -= SPITEMBEAM_SCROLL_WRAP;
-            }
-        }
+
+    if (SHOP_INTERFACE(shop)->isItemAvailable(shop, ObjAnim_ReadPlacementS16(&obj->anim, &def->itemIndex)) == 0 ||
+        SHOP_INTERFACE(shop)->isItemBought(shop, ObjAnim_ReadPlacementS16(&obj->anim, &def->itemIndex)) != 0) {
+        obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
+        obj->objectFlags |= OBJECT_OBJFLAG_UPDATE_DISABLED;
+    }
+
+    ObjTextureRuntimeSlot* tex = objFindTexture(obj, 0, 0);
+    if (tex == NULL) {
+        return;
+    }
+
+    tex->offsetS += 8;
+    if (tex->offsetS > SPITEMBEAM_SCROLL_WRAP) {
+        tex->offsetS -= SPITEMBEAM_SCROLL_WRAP;
     }
 }
 
-void spitembeam_init(GameObject* obj)
-{
-    obj->objectFlags = (u16)(obj->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
+void spitembeam_init(GameObject* obj) {
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
-void spitembeam_release(void)
-{
+void spitembeam_release(void) {
 }
 
-void spitembeam_initialise(void)
-{
+void spitembeam_initialise(void) {
 }
 
 ObjectDescriptor gSPitembeamObjDescriptor = {

@@ -6,7 +6,6 @@
  * from its placement.
  */
 #include "dlls/objects/509_WM_LaserTar.h"
-
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
 #include "main/gamebits_api.h"
@@ -27,45 +26,49 @@ void WM_LaserTarget_free(void) {
 
 void WM_LaserTarget_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
                            s8 visible) {
-    if (visible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (visible == 0) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void WM_LaserTarget_hitDetect(void) {
 }
 
 void WM_LaserTarget_update(GameObject* obj) {
-    const WMLaserTargetPlacement* placement;
-    WMLaserTargetState* state;
-
-    placement = (const WMLaserTargetPlacement*)obj->anim.placementData;
-    state = obj->extra;
+    WMLaserTargetPlacement* placement = (WMLaserTargetPlacement*)obj->anim.placementData;
+    WMLaserTargetState* state = obj->extra;
     if (ObjHits_GetPriorityHit(obj, NULL, NULL, NULL) != 0) {
         state->toggleQueued = 1;
-        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
+        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &placement->cooldown);
     }
-    if (state->cooldown <= 0 && state->toggleQueued != 0) {
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit))) != 0) {
-            Obj_SetActiveModelIndex(obj, 0);
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)), 0);
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pairedGameBit)), 0);
-        } else {
-            Obj_SetActiveModelIndex(obj, 1);
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)), 1);
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->pairedGameBit)), 1);
+
+    if (state->cooldown > 0 || state->toggleQueued == 0) {
+        if (state->cooldown > 0) {
+            state->cooldown -= framesThisStep;
         }
-        state->toggleQueued = 0;
-        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
-    } else if (state->cooldown > 0) {
-        state->cooldown -= framesThisStep;
+        return;
     }
+
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit)) != 0) {
+        Obj_SetActiveModelIndex(obj, 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit), 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->pairedGameBit), 0);
+    } else {
+        Obj_SetActiveModelIndex(obj, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit), 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->pairedGameBit), 1);
+    }
+
+    state->toggleQueued = 0;
+    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
 }
 
 void WM_LaserTarget_init(GameObject* obj, const WMLaserTargetPlacement* placement) {
     WMLaserTargetState* state = obj->extra;
-    obj->anim.bankIndex = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->toggleGameBit)));
-    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
+    obj->anim.bankIndex = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit));
+    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &placement->cooldown);
     state->toggleQueued = 0;
 }
 

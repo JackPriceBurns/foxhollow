@@ -29,7 +29,7 @@ typedef enum CfPowerBaseIndex {
 
 int cfPowerBase_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     CfPowerBaseState* state = obj->extra;
-    u32 messageSender;
+    uintptr_t messageSender;
     u32 message;
     u32 unusedMessageArgument = 0;
     int eventIndex;

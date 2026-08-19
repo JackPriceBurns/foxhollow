@@ -1865,7 +1865,8 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
                 ((EnemyState*)sub)->weaponRomDefNo = 0x33;
             break;
         case 3:
-            (*gObjectTriggerInterface)->setCamVars(CAMERA_MODE_COMBAT_RESOURCE_ID, 4, (int)(uintptr_t)node, 0x3c);
+            (*gObjectTriggerInterface)
+                ->setCamVars(CAMERA_MODE_COMBAT_RESOURCE_ID, sizeof(node), (uintptr_t)node, 0x3c);
             break;
         case 6:
             if (((EnemyState*)sub)->tailSimHandle != NULL)

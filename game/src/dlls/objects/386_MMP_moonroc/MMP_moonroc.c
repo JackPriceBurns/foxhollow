@@ -224,7 +224,7 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
     list = ObjList_GetObjects(&i, &count);
     for (; i < count; i++) {
         GameObject* otherObj = list[i];
-        if ((u32)otherObj != (u32)obj && otherObj->anim.romDefNo == MMP_GEYSER_VENT_SEQUENCE_ID &&
+        if (otherObj != obj && otherObj->anim.romDefNo == MMP_GEYSER_VENT_SEQUENCE_ID &&
             Vec_distance(&obj->anim.worldPosX, &otherObj->anim.worldPosX) < 40.0f) {
             ventPlacement = (MMPGeyserVentPlacement*)(list[i])->anim.placementData;
             rockPlacement = (MMPMoonRockPlacement*)obj->anim.placementData;
@@ -355,22 +355,20 @@ void mmpMoonRock_render(GameObject* obj, int renderArg2, int renderArg3, int ren
 void mmpMoonRock_hitDetect(void) {
 }
 
-static inline u8 mmpMoonRock_spacingIsClear(GameObject* obj, int stateAddress) {
-    u32* list;
+static inline u8 mmpMoonRock_spacingIsClear(GameObject* obj, MMPMoonRockState* state) {
+    GameObject** list;
     int count;
     int i;
     f32 minimumSpacing;
-    MMPMoonRockPlacement* objects;
 
-    objects = (MMPMoonRockPlacement*)objGetAllOfType(CARRYABLE_OBJECT_GROUP, &count);
+    list = objGetAllOfType(CARRYABLE_OBJECT_GROUP, &count);
     i = 0;
-    list = (u32*)objects;
     minimumSpacing = 40.0f;
     for (; i < count; i++) {
-        GameObject* otherRock = (GameObject*)*list;
+        GameObject* otherRock = *list;
         if (otherRock != obj && otherRock->anim.romDefNo == MMP_MOON_ROCK_SEQUENCE_ID &&
             Vec_xzDistance(&obj->anim.worldPosX, &otherRock->anim.worldPosX) < minimumSpacing) {
-            (*gCarryableInterface)->setDropDisabled((void*)stateAddress, 1);
+            (*gCarryableInterface)->setDropDisabled(state, 1);
             return 0;
         }
         list++;
@@ -382,7 +380,6 @@ void mmpMoonRock_update(GameObject* obj) {
     MMPMoonRockState* state = obj->extra;
     u8 isHeld;
     int particleHeight;
-    int stateAddress;
     MMPMoonRockPlacement* placementOrObjects = (MMPMoonRockPlacement*)obj->anim.placementData;
     if (objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ) == -1) {
         return;
@@ -442,9 +439,8 @@ void mmpMoonRock_update(GameObject* obj) {
             state->flags |= MMP_MOON_ROCK_FLAG_HELD_LAST_UPDATE | MMP_MOON_ROCK_FLAG_ICON_THROW;
             state->flags &= ~MMP_MOON_ROCK_FLAG_ICON_PLACE;
         }
-        stateAddress = (int)obj->extra;
-        (*gCarryableInterface)->setDropDisabled((void*)stateAddress, 0);
-        spacingClear = mmpMoonRock_spacingIsClear(obj, stateAddress);
+        (*gCarryableInterface)->setDropDisabled(state, 0);
+        spacingClear = mmpMoonRock_spacingIsClear(obj, state);
         if (spacingClear != 0) {
             state->flags |= MMP_MOON_ROCK_FLAG_ACTION_PENDING;
         }

@@ -173,9 +173,9 @@ void pathcam_buildWindowSamples(int* nodeIds, f32* outX, f32* outY, f32* outZ, f
             *sampleX = node->x;
             *sampleY = node->y;
             *sampleZ = node->z;
-            *sampleRotationX = (f32)node->sampleA;
-            *sampleRotationY = (f32)node->sampleB;
-            *sampleRotationZ = (f32)node->sampleC;
+            *sampleRotationX = (f32)fhReadBES16(&node->sampleA);
+            *sampleRotationY = (f32)fhReadBES16(&node->sampleB);
+            *sampleRotationZ = (f32)fhReadBES16(&node->sampleC);
             *sampleFov = (f32)node->sampleD;
         }
         nodeIdCursor++;
@@ -208,18 +208,30 @@ void pathcam_buildWindowSamples(int* nodeIds, f32* outX, f32* outY, f32* outZ, f
                     *writeX = node->x + (node->x - windowNodes[2]->x);
                     *writeY = node->y + (node->y - windowNodes[2]->y);
                     *writeZ = node->z + (node->z - windowNodes[2]->z);
-                    *writeRotationX = (f32)(node->sampleA + (node->sampleA - windowNodes[2]->sampleA));
-                    *writeRotationY = (f32)(node->sampleB + (node->sampleB - windowNodes[2]->sampleB));
-                    *writeRotationZ = (f32)(node->sampleC + (node->sampleC - windowNodes[2]->sampleC));
+                    *writeRotationX =
+                        (f32)(fhReadBES16(&node->sampleA) +
+                              (fhReadBES16(&node->sampleA) - fhReadBES16(&windowNodes[2]->sampleA)));
+                    *writeRotationY =
+                        (f32)(fhReadBES16(&node->sampleB) +
+                              (fhReadBES16(&node->sampleB) - fhReadBES16(&windowNodes[2]->sampleB)));
+                    *writeRotationZ =
+                        (f32)(fhReadBES16(&node->sampleC) +
+                              (fhReadBES16(&node->sampleC) - fhReadBES16(&windowNodes[2]->sampleC)));
                     *writeFov = (f32)node->sampleD + ((f32)node->sampleD - (f32)windowNodes[2]->sampleD);
                 } else if (fillIndex == 3) {
                     node = windowNodes[2];
                     *writeX = node->x + (node->x - windowNodes[1]->x);
                     *writeY = node->y + (node->y - windowNodes[1]->y);
                     *writeZ = node->z + (node->z - windowNodes[1]->z);
-                    *writeRotationX = (f32)(node->sampleA + (node->sampleA - windowNodes[1]->sampleA));
-                    *writeRotationY = (f32)(node->sampleB + (node->sampleB - windowNodes[1]->sampleB));
-                    *writeRotationZ = (f32)(node->sampleC + (node->sampleC - windowNodes[1]->sampleC));
+                    *writeRotationX =
+                        (f32)(fhReadBES16(&node->sampleA) +
+                              (fhReadBES16(&node->sampleA) - fhReadBES16(&windowNodes[1]->sampleA)));
+                    *writeRotationY =
+                        (f32)(fhReadBES16(&node->sampleB) +
+                              (fhReadBES16(&node->sampleB) - fhReadBES16(&windowNodes[1]->sampleB)));
+                    *writeRotationZ =
+                        (f32)(fhReadBES16(&node->sampleC) +
+                              (fhReadBES16(&node->sampleC) - fhReadBES16(&windowNodes[1]->sampleC)));
                     *writeFov = (f32)node->sampleD + ((f32)node->sampleD - (f32)windowNodes[1]->sampleD);
                 }
             }

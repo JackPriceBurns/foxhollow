@@ -713,7 +713,7 @@ extern s8 gObjSeqBoolFlags[];
 extern s8 gObjSeqCondFlags[];
 extern s8 gObjSeqSlotResults[];
 extern ObjSeqBgCmd gObjSeqDeferredCmds[];
-void ObjSeq_setCamVars(int camA, int camB, int camC, int camD);
+void ObjSeq_setCamVars(int camA, int camB, uintptr_t camC, int camD);
 int objSeqFindLabel(u8* seq, int label);
 int objSeqFindConditional(u8* seq, GameObject* seqState);
 void objCallSeqFn(GameObject* obj, GameObject* sourceObj, ObjSeqState* seq, int action);
@@ -813,7 +813,7 @@ u8 lbl_803DD111;
 u8 gObjSeqCameraActive;
 int gObjSeqCamMode;
 int gObjSeqCamModeArgB;
-int gObjSeqCamModeArgC;
+uintptr_t gObjSeqCamModeArgC;
 int gObjSeqCamModeArgD;
 GameObject* focusedNpc;
 u8 gObjSeqCameraOverrideActive;
@@ -2745,7 +2745,7 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
     return 1;
 }
 
-void ObjSeq_setCamVars(int camA, int camB, int camC, int camD)
+void ObjSeq_setCamVars(int camA, int camB, uintptr_t camC, int camD)
 {
     gObjSeqCamMode = camA;
     gObjSeqCamModeArgB = camB;
