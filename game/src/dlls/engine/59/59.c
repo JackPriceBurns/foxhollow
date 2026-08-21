@@ -7,115 +7,98 @@
 #include "track/intersect_screen_api.h"
 #include "main/dll/dll_003B_menu.h"
 
-#define PAD_ACCEPT_MASK  (PAD_BUTTON_A | PAD_BUTTON_START)
-
 s8 gMenuSelectedId;
 s8 gMenuCancelId;
 s16 gMenuTotalWidth;
 s8 gMenuItemCount;
 f32 gMenuScrollTimer;
 s8 gMenuArmed;
-s32 Menu_getItemCount(void)
-{
+
+s32 Menu_getItemCount(void) {
     return gMenuItemCount;
 }
-void Menu_setArmed(int v)
-{
+
+void Menu_setArmed(int v) {
     gMenuArmed = v;
 }
-void Menu_func09_nop(void)
-{
+
+void Menu_func09_nop(void) {
 }
-int Menu_poll(int* sel)
-{
+
+int Menu_poll(int* sel) {
     s8 xInput;
     s8 yInput;
-    int input;
-    f32 timer;
 
-    if (getHudHiddenFrameCount() != 0)
-    {
+    if (getHudHiddenFrameCount() != 0) {
         return -1;
     }
-    timer = gMenuScrollTimer + timeDelta;
-    gMenuScrollTimer = timer;
-    if (timer > 2e+02f)
-    {
-        gMenuScrollTimer = timer - 2e+02f;
+
+    gMenuScrollTimer += timeDelta;
+    if (gMenuScrollTimer > 200.0f) {
+        gMenuScrollTimer -= 200.0f;
     }
+
     padGetAnalogInput(0, &xInput, &yInput);
-    if (yInput < 0)
-    {
-        *sel = *sel + 1;
+    if (yInput < 0) {
+        *sel++;
+    } else if (yInput > 0) {
+        *sel--;
     }
-    else if (yInput > 0)
-    {
-        *sel = *sel - 1;
-    }
-    if (*sel < 0)
-    {
+
+    if (*sel < 0) {
         *sel = gMenuItemCount - 1;
     }
-    if (*sel >= gMenuItemCount)
-    {
+    if (*sel >= gMenuItemCount) {
         *sel = 0;
     }
-    if (gMenuArmed != 0)
-    {
-        input = getButtonsJustPressed(0);
-        if (((input & PAD_ACCEPT_MASK) != 0) && (mainGetBit(GAMEBIT_MenuRelated044F) == 0))
-        {
+
+    if (gMenuArmed != 0) {
+        int input = getButtonsJustPressed(0);
+        if ((input & (PAD_BUTTON_A | PAD_BUTTON_START)) != 0 && mainGetBit(GAMEBIT_MenuRelated044F) == 0) {
             return gMenuSelectedId;
         }
-        if ((input & PAD_BUTTON_B) != 0)
-        {
+        if ((input & PAD_BUTTON_B) != 0) {
             return gMenuCancelId;
         }
     }
+
     gMenuArmed = 1;
     return -1;
 }
-void Menu_setCancelId(int v)
-{
+void Menu_setCancelId(int v) {
     gMenuCancelId = v;
 }
-void Menu_addItemEx(int resultId, int unused2, int unused3, int itemWidth, int defaultIndex)
-{
-    if (defaultIndex == gMenuItemCount)
-    {
+void Menu_addItemEx(int resultId, int unused2, int unused3, int itemWidth, int defaultIndex) {
+    if (defaultIndex == gMenuItemCount) {
         gMenuSelectedId = resultId;
     }
-    gMenuTotalWidth = (s32)gMenuTotalWidth + itemWidth;
+
+    gMenuTotalWidth += itemWidth;
     gMenuItemCount++;
 }
 
-void Menu_addItem(int resultId, int unused2, int itemWidth, int defaultIndex)
-{
-    if (defaultIndex == gMenuItemCount)
-    {
+void Menu_addItem(int resultId, int unused2, int itemWidth, int defaultIndex) {
+    if (defaultIndex == gMenuItemCount) {
         gMenuSelectedId = resultId;
     }
-    gMenuTotalWidth = (s32)gMenuTotalWidth + itemWidth;
+
+    gMenuTotalWidth += itemWidth;
     gMenuItemCount++;
 }
-void Menu_open(int unused, int v)
-{
+void Menu_open(int unused, int v) {
     getScreenResolution();
     gMenuTotalWidth = v;
     gMenuItemCount = 0;
     gMenuCancelId = -1;
 }
-void Menu_reset(int v)
-{
+void Menu_reset(int v) {
     gMenuTotalWidth = v;
     gMenuItemCount = 0;
     gMenuCancelId = -1;
 }
-void Menu_release(void)
-{
+void Menu_release(void) {
 }
-void Menu_initialise(void)
-{
+void Menu_initialise(void) {
     gMenuItemCount = 0;
     gMenuTotalWidth = 0;
     gMenuCancelId = 0;

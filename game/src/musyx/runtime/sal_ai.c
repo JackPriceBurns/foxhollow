@@ -25,10 +25,8 @@ volatile u32 salDspCallbackEnabled;
 uintptr_t salAiDmaBuffer;
 SalAiCallback salAiCallback;
 
-static inline void callUserCallback(void)
-{
-    if (salCallbackActive != 0)
-    {
+static inline void callUserCallback(void) {
+    if (salCallbackActive != 0) {
         return;
     }
 
@@ -45,17 +43,13 @@ static inline void callUserCallback(void)
  * level user callback is registered, runs it under a re-entrancy
  * guard with interrupts re-enabled.
  */
-void salCallback(u32 p1, u32 p2, u32 p3, int p4, u32 p5, u32 p6)
-{
+void salCallback(u32 p1, u32 p2, u32 p3, int p4, u32 p5, u32 p6) {
     salAIBufferIndex = (salAIBufferIndex + 1) % SAL_AI_BUFFER_COUNT;
     AIInitDMA(salAiDmaBuffer + salAIBufferIndex * SAL_AI_DMA_CHUNK_SIZE, SAL_AI_DMA_CHUNK_SIZE);
     salLastTick = OSGetTick();
-    if (salDspCallbackEnabled != 0)
-    {
+    if (salDspCallbackEnabled != 0) {
         callUserCallback();
-    }
-    else
-    {
+    } else {
         salDspCallbackPending = 1;
     }
 }
@@ -63,8 +57,7 @@ void salCallback(u32 p1, u32 p2, u32 p3, int p4, u32 p5, u32 p6)
 /*
  * Mark "needs callback" + "frame done".
  */
-void dspInitCallback(void* task)
-{
+void dspInitCallback(void* task) {
     salDspCallbackEnabled = 1;
     salDspInitIsDone = 1;
 }
@@ -72,16 +65,13 @@ void dspInitCallback(void* task)
 /*
  * Run pending user callback (if any) under a re-entrancy guard.
  */
-void dspResumeCallback(void* task)
-{
-    struct
-    {
+void dspResumeCallback(void* task) {
+    struct {
         u32 pending;
     } d;
     salDspCallbackEnabled = 1;
     d.pending = salDspCallbackPending;
-    if (d.pending != 0)
-    {
+    if (d.pending != 0) {
         salDspCallbackPending = 0;
         callUserCallback();
     }
@@ -92,44 +82,40 @@ void dspResumeCallback(void* task)
  * zero it, register the AI DMA callback, and kick off the first DMA.
  * Returns 1 on success, 0 if allocation failed.
  */
-int salInitAi(SalAiCallback userCallback, u32 unused, u32* outSampleCount)
-{
-    if ((salAiDmaBuffer = (uintptr_t)salMalloc(SAL_AI_DMA_BUFFER_SIZE)) != 0)
-    {
-        memset((void*)salAiDmaBuffer, 0, SAL_AI_DMA_BUFFER_SIZE);
-        DCFlushRange((void*)salAiDmaBuffer, SAL_AI_DMA_BUFFER_SIZE);
-        salAIBufferIndex = 1;
-        salDspCallbackPending = 0;
-        salDspCallbackEnabled = 1;
-        salCallbackActive = 0;
-        salAiCallback = userCallback;
-        AIRegisterDMACallback(salCallback);
-        AIInitDMA(salAiDmaBuffer + salAIBufferIndex * SAL_AI_DMA_CHUNK_SIZE, SAL_AI_DMA_CHUNK_SIZE);
-        SYNTH_CONFIGURATION->numSamples = 0x20;
-        *outSampleCount = SAL_AI_OUTPUT_SAMPLE_COUNT;
-        return 1;
+int salInitAi(SalAiCallback userCallback, u32 unused, u32* outSampleCount) {
+    if ((salAiDmaBuffer = (uintptr_t)salMalloc(SAL_AI_DMA_BUFFER_SIZE)) == 0) {
+        return 0;
     }
-    return 0;
+
+    memset((void*)salAiDmaBuffer, 0, SAL_AI_DMA_BUFFER_SIZE);
+    DCFlushRange((void*)salAiDmaBuffer, SAL_AI_DMA_BUFFER_SIZE);
+    salAIBufferIndex = 1;
+    salDspCallbackPending = 0;
+    salDspCallbackEnabled = 1;
+    salCallbackActive = 0;
+    salAiCallback = userCallback;
+    AIRegisterDMACallback(salCallback);
+    AIInitDMA(salAiDmaBuffer + salAIBufferIndex * SAL_AI_DMA_CHUNK_SIZE, SAL_AI_DMA_CHUNK_SIZE);
+    SYNTH_CONFIGURATION->numSamples = 0x20;
+    *outSampleCount = SAL_AI_OUTPUT_SAMPLE_COUNT;
+    return 1;
 }
 
 /*
  * Start AI DMA.
  */
-void salStartAi(void)
-{
+void salStartAi(void) {
     AIStartDMA();
 }
 
-int salExitAi(void)
-{
+int salExitAi(void) {
     AIRegisterDMACallback(0);
     AIStopDMA();
     salFree((void*)salAiDmaBuffer);
     return 1;
 }
 
-s16* salAiGetDest(void)
-{
+s16* salAiGetDest(void) {
     int nextBuffer;
 
     nextBuffer = salAIBufferIndex + 2;

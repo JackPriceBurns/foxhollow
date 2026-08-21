@@ -13,64 +13,54 @@
 #include "main/dll/dll_80136a40.h"
 #include "main/objprint_render_api.h"
 
-#define STAYPOINT_ENGAGE_RADIUS_SQ 1e+02f
-
-#define STAYPOINT_GAMEBIT_NONE   -1
-#define STAYPOINT_MENU_ITEM_NONE -1
-
-#define STAYPOINT_PRIORITY_DEFAULT 0
-#define STAYPOINT_PRIORITY_MENU    0x10
-
-#define STAYPOINT_MODEL_VISIBLE_FLAG 0x01
-
-#define STAYPOINT_COMMAND_KIND 1
-#define STAYPOINT_COMMAND_TYPE 3
+#define STAYPOINT_COMMAND_KIND       1
+#define STAYPOINT_COMMAND_TYPE       3
 
 void StayPoint_update(GameObject* obj) {
-    StayPointPlacement* placement;
-    GameObject* tricky;
-    int isCurrentStayPoint;
-
-    placement = (StayPointPlacement*)obj->anim.placementData;
-    tricky = getTrickyObject();
+    StayPointPlacement* placement = (StayPointPlacement*)obj->anim.placementData;
+    GameObject* tricky = getTrickyObject();
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    if (tricky != NULL) {
-        isCurrentStayPoint = ((int)obj - (int)trickyGetStayPoint(tricky) == 0);
-        if (isCurrentStayPoint == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) != STAYPOINT_GAMEBIT_NONE) {
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)), 0);
+
+    if (tricky == NULL) {
+        return;
+    }
+
+    if (obj != trickyGetStayPoint(tricky) && ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBit) != -1) {
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBit), 0);
+    }
+
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->requiredGameBit) != -1 &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->requiredGameBit)) == 0) {
+        return;
+    }
+
+    if (obj == trickyGetStayPoint(tricky) &&
+        vec3f_distanceSquared(&obj->anim.worldPosX, &tricky->anim.worldPosX) < 100.0f) {
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBit) != -1) {
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBit), 1);
         }
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit)) == STAYPOINT_GAMEBIT_NONE || mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->requiredGameBit))) != 0) {
-            if (isCurrentStayPoint != 0 &&
-                vec3f_distanceSquared(&obj->anim.worldPosX, &tricky->anim.worldPosX) < STAYPOINT_ENGAGE_RADIUS_SQ) {
-                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) != STAYPOINT_GAMEBIT_NONE) {
-                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)), 1);
-                }
-                return;
-            }
-            if (cMenuGetSelectedItem() == STAYPOINT_MENU_ITEM_NONE) {
-                obj->anim.modelInstance->hitVolumes[0].priority = STAYPOINT_PRIORITY_DEFAULT;
-            } else {
-                obj->anim.modelInstance->hitVolumes[0].priority = STAYPOINT_PRIORITY_MENU;
-            }
-            obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
-            if (((obj->anim.modelInstance->flags & STAYPOINT_MODEL_VISIBLE_FLAG) != 0) &&
-                obj->anim.hitVolumeTransforms != NULL) {
-                objUpdateHitVolumeTransforms(obj);
-            }
-            if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
-                TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, STAYPOINT_COMMAND_KIND,
-                                                           STAYPOINT_COMMAND_TYPE);
-            }
-        }
+
+        return;
+    }
+
+    if (cMenuGetSelectedItem() == -1) {
+        obj->anim.modelInstance->hitVolumes[0].priority = 0;
+    } else {
+        obj->anim.modelInstance->hitVolumes[0].priority = 16;
+    }
+
+    obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
+    if ((obj->anim.modelInstance->flags & OBJDEF_FLAG_HAS_MODELS) != 0 && obj->anim.hitVolumeTransforms != NULL) {
+        objUpdateHitVolumeTransforms(obj);
+    }
+
+    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
+        TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, STAYPOINT_COMMAND_KIND, STAYPOINT_COMMAND_TYPE);
     }
 }
 
 void StayPoint_init(GameObject* obj) {
-    u32 flags;
-
-    flags = obj->objectFlags;
-    flags |= OBJECT_OBJFLAG_HIDDEN;
-    obj->objectFlags = flags;
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
 ObjectDescriptor gStayPointObjDescriptor = {

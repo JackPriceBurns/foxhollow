@@ -223,7 +223,7 @@ void dim2snowball_init(GameObject* obj, Dim2SnowBallPlacement* placement) {
         ObjModelState* modelState = obj->anim.modelState;
 
         if (modelState != NULL) {
-            modelState->flags |= 0xA10;
+            modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010);
         }
     }
     state->pathGenerator = ObjList_FindObjectById(state->targetObjectId);

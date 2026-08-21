@@ -1,75 +1,17 @@
 #include "main/shader_api.h"
-#include "main/sky_api.h"
-#include "main/lightmap_render_queue_api.h"
-#include "main/model_render_instrs_api.h"
-#include "main/newclouds.h"
-#include "main/objprint_render_api.h"
-#include "main/sky_interface.h"
-#include "main/vecmath.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/gx/GXLighting.h"
-#include "main/sky_state.h"
 #include "main/track_dolphin_api.h"
 #include "main/mm.h"
-#include "string.h"
-#include "main/rcp_dolphin.h"
-#include "main/dll/dll_0000_gameui.h"
-#include "main/dll/dll_0031_minimap.h"
-#include "main/sky.h"
-#include "track/intersect_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "main/trig.h"
-#include "main/tex_dolphin.h"
-#include "main/acosf_api.h"
-#include "dolphin/gx/GXGeometry.h"
-#include "dolphin/gx/GXTransform.h"
 #include "main/asset_load.h"
-
-#include "main/lightmap_internal.h"
-
-
 #include "main/render_flags.h"
 #include "main/lightmap_lifecycle_api.h"
 
-
-
-
-
 extern u32 gVisibleObjectSortKeys[];
-
-
-
-
-
 
 #define MAP_BLOCK_LAYER_COUNT 5
 
-
-static inline void fillBoxRows(u8* map, int* box)
-{
-    int y, x0;
-    int xs, xe;
-    u8* p;
-    for (y = box[2]; y <= box[3]; y++)
-    {
-        xs = box[0];
-        p = map + (y + 7) * 0x10 + xs;
-        xe = box[1];
-        for (x0 = xs; x0 <= xe; x0++)
-        {
-            p[7] = 1;
-            p++;
-        }
-    }
-}
-
-void initMapBlocks(void)
-{
-    MapRomListPage* zero;
-    MapRomListPage** q;
-    u16* p;
-    void* tmp;
-    int i;
+void initMapBlocks(void) {
 
     renderFlags = 0;
     gMapBlocks = mmAlloc(64 * sizeof(MapBlockData*), 5, 0);
@@ -80,8 +22,7 @@ void initMapBlocks(void)
     gMapBlockCellEntryTables[0] = mmAlloc(0x3c00, 5, 0);
     gMapBlockCellStateTables[0] = mmAlloc(0x500, 5, 0);
 
-    for (i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         gMapBlockLayerTables[i + 1] = gMapBlockLayerTables[i] + 0x100;
         gMapBlockCellEntryTables[i + 1] = gMapBlockCellEntryTables[i] + 0x100;
         gMapBlockCellStateTables[i + 1] = gMapBlockCellStateTables[i] + 0x100;
@@ -90,59 +31,13 @@ void initMapBlocks(void)
     loadAssetFileById(&gMapsTab, MLDF_FILEID_MAPS_TAB);
     loadAssetFileById(&gHitsTab, MLDF_FILEID_HITS_TAB);
 
-    q = gLoadedRomListPages;
-    zero = 0;
-    for (i = 0; i < 3; i++)
-    {
-        q[0] = zero;
-        q[1] = zero;
-        q[2] = zero;
-        q[3] = zero;
-        q[4] = zero;
-        q[5] = zero;
-        q[6] = zero;
-        q[7] = zero;
-        q[8] = zero;
-        q[9] = zero;
-        q[10] = zero;
-        q[11] = zero;
-        q[12] = zero;
-        q[13] = zero;
-        q[14] = zero;
-        q[15] = zero;
-        q[16] = zero;
-        q[17] = zero;
-        q[18] = zero;
-        q[19] = zero;
-        q[20] = zero;
-        q[21] = zero;
-        q[22] = zero;
-        q[23] = zero;
-        q[24] = zero;
-        q[25] = zero;
-        q[26] = zero;
-        q[27] = zero;
-        q[28] = zero;
-        q[29] = zero;
-        q[30] = zero;
-        q[31] = zero;
-        q[32] = zero;
-        q[33] = zero;
-        q[34] = zero;
-        q[35] = zero;
-        q[36] = zero;
-        q[37] = zero;
-        q[38] = zero;
-        q[39] = zero;
-        q += 40;
-    }
+    memset(gLoadedRomListPages, 0, sizeof(gLoadedRomListPages));
 
     loadAssetFileById(&gTrkBlkTab, MLDF_FILEID_TRKBLK_TAB);
 
     gTrkBlkTabCount = 0;
-    p = gTrkBlkTab;
-    while (*p != 0xffff)
-    {
+    u16* p = gTrkBlkTab;
+    while (*p != 0xffff) {
         p++;
         gTrkBlkTabCount++;
     }
@@ -150,7 +45,7 @@ void initMapBlocks(void)
     gPendingWarpIndex = -1;
     gArrivedWarpIndex = -2;
 
-    tmp = mmAlloc(80 * sizeof(MapTextureOverride), 5, 0);
+    void* tmp = mmAlloc(80 * sizeof(MapTextureOverride), 5, 0);
     gMapTextureOverrides = tmp;
     memset(tmp, 0, 80 * sizeof(MapTextureOverride));
 
@@ -158,9 +53,7 @@ void initMapBlocks(void)
     gMapTextureScrolls = tmp;
     memset(tmp, 0, 0x3a0);
 
-    {
-        extern u32 gVisibleObjectSortKeys[];
-        memset(gVisibleObjectSortKeys, 0, 0xfa0);
-        gVisibleObjectSortKeys[0] = -1;
-    }
+    extern u32 gVisibleObjectSortKeys[];
+    memset(gVisibleObjectSortKeys, 0, 0xfa0);
+    gVisibleObjectSortKeys[0] = -1;
 }

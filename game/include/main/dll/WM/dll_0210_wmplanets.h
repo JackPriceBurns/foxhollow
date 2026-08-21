@@ -5,8 +5,7 @@
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 
-typedef struct WmPlanetsState
-{
+typedef struct WmPlanetsState {
     s16 orbitYawStep; /* 0x00: orbit advance per frame, random 100..200 */
     s16 yawStep;      /* 0x02: model-spin rate, random 200..400 (timeDelta-scaled) */
     s16 orbitYaw;     /* 0x04: current orbit angle */
@@ -19,14 +18,7 @@ typedef struct WmPlanetsState
     f32 baseZ;       /* 0x18 */
 } WmPlanetsState;
 
-typedef union WmPlanetsVector
-{
-    f32 f[3];
-    u32 word[3];
-} WmPlanetsVector;
-
-typedef struct WmPlanetsMapData
-{
+typedef struct WmPlanetsMapData {
     ObjPlacement base;
     s8 scaleByte;   /* 0x18: extra whole-model scale (scale *= 1 + byte) */
     s8 radiusByte;  /* 0x19: orbit radius in 16-unit steps (negated) */
@@ -39,7 +31,6 @@ STATIC_ASSERT(offsetof(WmPlanetsMapData, scaleByte) == 0x18);
 STATIC_ASSERT(offsetof(WmPlanetsMapData, radiusByte) == 0x19);
 STATIC_ASSERT(offsetof(WmPlanetsMapData, modelIndex) == 0x1A);
 STATIC_ASSERT(sizeof(WmPlanetsMapData) == 0x1C);
-
 
 int WM_Planets_getExtraSize(void);
 int WM_Planets_getObjectTypeId(void);

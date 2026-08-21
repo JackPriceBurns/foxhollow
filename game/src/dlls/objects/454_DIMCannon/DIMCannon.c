@@ -597,9 +597,9 @@ void DIMCannon_init(GameObject* obj, DimCannonPlacement* placement) {
         obj->userData1 = 0;
         modelState = obj->anim.modelState;
         if (modelState != 0) {
-            modelState->flags |= 0xc10;
+            modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0400 | OBJ_MODEL_STATE_UNREAD_0010);
             modelState = obj->anim.modelState;
-            modelState->flags |= 0x8000LL;
+            modelState->flags |= OBJ_MODEL_STATE_UNREAD_8000;
         }
         state = obj->extra;
         state->rotationZRate = randomGetRange(-0x64, 0x64);

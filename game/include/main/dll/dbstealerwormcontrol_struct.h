@@ -18,7 +18,7 @@ typedef struct DbStealerwormInterface
 {
     void* pad00[8];
     int (*getControlMode)(struct GameObject* worm);
-    int (*handleMessage)(struct GameObject* worm, u8 msg, int* out);
+    intptr_t (*handleMessage)(struct GameObject* worm, u8 msg, int* out);
 } DbStealerwormInterface;
 
 #define DB_STEALERWORM_INTERFACE(worm) ((DbStealerwormInterface*)*((struct GameObject*)(worm))->anim.dll)
@@ -28,9 +28,9 @@ STATIC_ASSERT(offsetof(DbStealerwormInterface, handleMessage) == 0x24);
 
 typedef struct DbStealerwormScriptStep
 {
-    int code;
-    int mode;
-    int objGroup;
+    intptr_t code;
+    intptr_t mode;
+    intptr_t objGroup;
 } DbStealerwormScriptStep;
 
 typedef struct DbStealerwormScript
@@ -60,21 +60,21 @@ typedef struct DbStealerwormControl
     u8 flags15; /* bits 1/4 */
     u8 unk16[2];
     union {
-        int linkedObj;
+        intptr_t linkedObj;
         struct GameObject* linkedObject; /* ObjMsg target object */
     };
     s16 msgSlotIndex; /* queued message-config slot index (-1 = none); pushed as the type-7 frame payload */
     u8 unk1E[2];
     const DbStealerwormScriptStep* routeCursor;
     RingBufferQueue* msgStack; /* queued 3-word messages */
-    int msgCode; /* current message word 0: code dispatched to the player interface (frame[0]) */
-    int msgMode; /* current message word 1: target-acquisition mode 0/1 (frame[1]) */
-    int objGroup; /* current message word 2: ObjGroup id for FindNearest/Contains (frame[2]) */
+    intptr_t msgCode; /* current message word 0: code dispatched to the player interface (frame[0]) */
+    intptr_t msgMode; /* current message word 1: target-acquisition mode 0/1 (frame[1]) */
+    intptr_t objGroup; /* current message word 2: ObjGroup id for FindNearest/Contains (frame[2]) */
     u8 msgAdvance; /* set to advance to / pop the next queued message next tick */
     u8 unk35[3];
     f32 spawnAccumulator; /* 0x38: accumulates on worm move-done; when over threshold, triggers a spawn-search and subtracts the threshold */
     union {
-        int savedTargetObj; /* cached target-object handle */
+        intptr_t savedTargetObj; /* cached target-object handle */
         struct GameObject* savedTargetObject;
     };
     u8 unk40[4];

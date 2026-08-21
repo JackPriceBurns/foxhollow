@@ -476,7 +476,7 @@ extern GXColor gObjFuzzKColor;
 extern u8 lbl_803DCC35;
 extern u8 lbl_803DCC36;
 extern s32 gObjSelectedLightCount;
-extern u8 gObjProjectedLightChannel;
+extern u8 gObjProjectedLightChannel[3];
 extern int lbl_803DB48C;
 extern int lbl_803DB490;
 
@@ -590,7 +590,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_A2);
     GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
     GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVPREV);
-    if (gObjSelectedLightCount != 0 && shaderProjDisabled(gObjSelectedLights) == 0)
+    if (gObjSelectedLightCount != 0 && shaderProjDisabled(gObjSelectedLights[0]) == 0)
     {
         fancy = 1;
     }
@@ -601,9 +601,9 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     if (fancy)
     {
         GXSetTevDirect(GX_TEVSTAGE2);
-        GXLoadTexMtxImm((MtxPtr)modelLightStruct_getProjectionTexMtx(gObjSelectedLights), GX_PTTEXMTX3, GX_MTX3x4);
+        GXLoadTexMtxImm((MtxPtr)modelLightStruct_getProjectionTexMtx(gObjSelectedLights[0]), GX_PTTEXMTX3, GX_MTX3x4);
         GXSetTexCoordGen2(GX_TEXCOORD1, GX_TG_MTX3x4, GX_TG_POS, GX_PNMTX0, GX_FALSE, GX_PTTEXMTX3);
-        if (gObjProjectedLightChannel == 0 || gObjProjectedLightChannel == 2)
+        if (gObjProjectedLightChannel[0] == 0 || gObjProjectedLightChannel[0] == 2)
         {
             GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD1, GX_TEXMAP5, GX_COLOR0A0);
         }
@@ -611,8 +611,8 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         {
             GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD1, GX_TEXMAP5, GX_COLOR1A1);
         }
-        selectTexture((Texture*)(modelLightStruct_getProjectionTexture(gObjSelectedLights)), 5);
-        modelLightStruct_getProjectionTevModes(gObjSelectedLights, &projFlagOut1, &projBlendMode);
+        selectTexture((Texture*)(modelLightStruct_getProjectionTexture(gObjSelectedLights[0])), 5);
+        modelLightStruct_getProjectionTevModes(gObjSelectedLights[0], &projFlagOut1, &projBlendMode);
         if (projBlendMode == 2)
         {
             GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_C1, GX_CC_TEXC, GX_CC_ZERO);
@@ -625,7 +625,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         {
             GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C1);
         }
-        else if (gObjProjectedLightChannel == 0 || gObjProjectedLightChannel == 1)
+        else if (gObjProjectedLightChannel[0] == 0 || gObjProjectedLightChannel[0] == 1)
         {
             GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_RASC, GX_CC_TEXC, GX_CC_C1);
         }
@@ -738,11 +738,8 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
     return 1;
 }
 
-u32 lbl_803DCC6C;
-u32 lbl_803DCC68;
-
-ModelLightStruct* gObjSelectedLights;
-u8 gObjProjectedLightChannel;
+ModelLightStruct* gObjSelectedLights[3];
+u8 gObjProjectedLightChannel[3];
 s32 gObjSelectedLightCount;
 u8 gObjOverrideColor[3];
 GXColor gObjCurChanColor;
@@ -1047,7 +1044,7 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
             u32 nf = ((ModelFileHeader*)model)->texMtxCount;
             if (nf != 0)
             {
-                modelLightStruct_selectObjectLights(obj, &gObjSelectedLights, nf, &gObjSelectedLightCount, 8);
+                modelLightStruct_selectObjectLights(obj, gObjSelectedLights, nf, &gObjSelectedLightCount, 8);
                 if ((OBJPRINT_MODEL_DEF(obj)->renderFlags & OBJDEF_RENDERFLAG_PROJECTED_SHADOW) || gObjShadowNear)
                 {
                     gObjSelectedLightCount = 0;
@@ -1059,8 +1056,8 @@ static void objSetupLightChannels(u8* model, GameObject* obj)
                     int k;
                     got = 0;
                     k = 0;
-                    lp = &gObjSelectedLights;
-                    sp = &gObjProjectedLightChannel;
+                    lp = gObjSelectedLights;
+                    sp = gObjProjectedLightChannel;
                     for (; k < gObjSelectedLightCount; k++)
                     {
                         int t = modelLightStruct_getProjectedLightChannelPreference(*lp);
@@ -1384,7 +1381,7 @@ static void modelRenderFn_setVtxDescr(u8* modelHeader, u8* shader, ModelRenderOp
                     int projectionModeA;
                     if (gObjSelectedLightCount != 0 &&
                         (modelLightStruct_getProjectionTevModes(
-                             gObjSelectedLights, &projectionModeA, &projectionModeB),
+                             gObjSelectedLights[0], &projectionModeA, &projectionModeB),
                          projectionModeA == 0))
                     {
                         useForwardAttr = 1;
@@ -1832,8 +1829,8 @@ static u32 objSetupRenderOpGxState(GameObject* obj, u8* p2, int* am, MtxBitStrea
         else if (b4 == 0)
         {
             i = 0;
-            lp = &gObjSelectedLights;
-            sp = &gObjProjectedLightChannel;
+            lp = gObjSelectedLights;
+            sp = gObjProjectedLightChannel;
             for (; i < gObjSelectedLightCount; i++)
             {
                 u8* t = (u8*)modelLightStruct_getProjectionTexture(*lp);
@@ -2602,7 +2599,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
         Obj_BuildWorldTransformMatrix(obj, wm, 0);
     }
     gObjShadowNear = 0;
-    if (((ObjAnimComponent*)obj)->modelInstance->flags & 0x400)
+    if (((ObjAnimComponent*)obj)->modelInstance->flags & OBJDEF_FLAG_ENABLE_CULLING)
     {
         GameObject* player = Obj_GetPlayerObject();
         GameObject* cam = (*gCameraInterface)->getCamera();

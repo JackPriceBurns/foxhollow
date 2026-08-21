@@ -5,6 +5,15 @@
 #include "game/objects/object_fwd.h"
 #include "main/objseq.h"
 
+typedef struct NwGeyserTextureScrollParams {
+    f32 unitsPerSecond;
+    f32 unknown04;
+} NwGeyserTextureScrollParams;
+
+STATIC_ASSERT(sizeof(NwGeyserTextureScrollParams) == 0x08);
+STATIC_ASSERT(offsetof(NwGeyserTextureScrollParams, unitsPerSecond) == 0x00);
+STATIC_ASSERT(offsetof(NwGeyserTextureScrollParams, unknown04) == 0x04);
+
 extern ObjectDescriptor gNWGeyserObjDescriptor;
 
 int nwGeyser_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqState* animUpdate);

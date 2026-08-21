@@ -4,8 +4,8 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/curve_types.h"
 #include "main/dll/curves_collision_state.h"
+#include "main/dll/curve_walker.h"
 #include "main/objseq.h"
 #include "main/objprint_character_api.h"
 
@@ -21,9 +21,10 @@ typedef struct NwMammothPlacement {
     u8 unknown1E[NW_MAMMOTH_PLACEMENT_SIZE - 0x1E];
 } NwMammothPlacement;
 
-typedef struct NwMammothCurveState {
+typedef union NwMammothCurveState {
     Curve curve;
-    u8 unknown9C[0x110 - sizeof(Curve)];
+    RomCurveWalker walker;
+    u8 retailStorage[0x110];
 } NwMammothCurveState;
 
 typedef struct NwMammothState {
@@ -65,7 +66,7 @@ STATIC_ASSERT(offsetof(NwMammothPlacement, triggerDistance) == 0x18);
 STATIC_ASSERT(offsetof(NwMammothPlacement, modelIndex) == 0x1C);
 STATIC_ASSERT(offsetof(NwMammothPlacement, behaviorMode) == 0x1D);
 
-STATIC_ASSERT(sizeof(NwMammothCurveState) == 0x110);
+STATIC_ASSERT(sizeof(NwMammothCurveState) >= 0x110);
 STATIC_ASSERT(offsetof(NwMammothCurveState, curve.sample) == 0x68);
 
 STATIC_ASSERT(sizeof(NwMammothState) == 0x48C);

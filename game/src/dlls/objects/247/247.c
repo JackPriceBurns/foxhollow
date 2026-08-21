@@ -32,7 +32,6 @@
 #define DLLF7_RESOURCE_MODGFX          0x5B
 
 #define DLLF7_HIT_COUNT                 2
-#define DLLF7_MODEL_FLAGS               0x810
 #define DLLF7_RENDER_RED                0xC8
 #define DLLF7_BREAK_TIME                1200.0f
 #define DLLF7_BOUNCE_START_OFFSET       1.0f
@@ -218,7 +217,7 @@ void dll_F7_init(GameObject* obj, DllF7Placement* placement) {
     {
         ObjModelState* modelState = obj->anim.modelState;
         if (modelState != NULL) {
-            modelState->flags |= DLLF7_MODEL_FLAGS;
+            modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
         }
     }
     state->hitsRemaining = DLLF7_HIT_COUNT;

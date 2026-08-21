@@ -94,24 +94,6 @@ void sortVisibleObjectKeysDescending(u32* arr, int n);
 void sortVisibleObjectKeysDescending(u32* arr, int n);
 void getVisibleObjects(s8* opacity);
 
-static inline void fillBoxRows(u8* map, int* box)
-{
-    int y, x0;
-    int xs, xe;
-    u8* p;
-    for (y = box[2]; y <= box[3]; y++)
-    {
-        xs = box[0];
-        p = map + (y + 7) * 0x10 + xs;
-        xe = box[1];
-        for (x0 = xs; x0 <= xe; x0++)
-        {
-            p[7] = 1;
-            p++;
-        }
-    }
-}
-
 void renderSceneGeometry(u8 renderType, s8* order);
 
 

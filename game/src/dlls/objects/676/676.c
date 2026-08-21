@@ -20,55 +20,41 @@
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 
-/* random start-rotation range and per-axis spin-rate range */
-#define ROT_RANGE_MAX 0xffff
-#define SPIN_RATE_MAG 0x14
-
-void dll_2A4_setLifetime(GameObject* obj, int lifetime)
-{
+void dll_2A4_setLifetime(GameObject* obj, int lifetime) {
     Dll2A3State* state = obj->extra;
     state->lifetime = lifetime;
 }
 
-void dll_2A4_setVelocity(GameObject* obj, Vec3f* velocity)
-{
+void dll_2A4_setVelocity(GameObject* obj, Vec3f* velocity) {
     obj->anim.velocityX = velocity->x;
     obj->anim.velocityY = velocity->y;
     obj->anim.velocityZ = velocity->z;
 }
 
-int dll_2A4_getExtraSize_ret_12(void)
-{
+int dll_2A4_getExtraSize_ret_12(void) {
     return sizeof(Dll2A3State);
 }
 
-int dll_2A4_getObjectTypeId(void)
-{
+int dll_2A4_getObjectTypeId(void) {
     return 0x0;
 }
 
-void dll_2A4_free_nop(void)
-{
+void dll_2A4_free_nop(void) {
 }
 
-void dll_2A4_render(GameObject* obj, int p2, int p3, int p4, int p5)
-{
+void dll_2A4_render(GameObject* obj, int p2, int p3, int p4, int p5) {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void dll_2A4_hitDetect_nop(void)
-{
+void dll_2A4_hitDetect_nop(void) {
 }
 
-void dll_2A4_update(GameObject* obj)
-{
+void dll_2A4_update(GameObject* obj) {
     Dll2A3State* state = obj->extra;
 
-    if (state->lifetime > 0.0f)
-    {
+    if (state->lifetime > 0.0f) {
         state->lifetime -= timeDelta;
-        if (state->lifetime <= 0.0f)
-        {
+        if (state->lifetime <= 0.0f) {
             state->lifetime = 0.0f;
             Obj_FreeObject(obj);
             return;
@@ -79,35 +65,39 @@ void dll_2A4_update(GameObject* obj)
     obj->anim.rotY = (s16)((f32)state->spinRateY * timeDelta + (f32)obj->anim.rotY);
     obj->anim.rotZ = (s16)((f32)state->spinRateZ * timeDelta + (f32)obj->anim.rotZ);
 
-    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta,
-            obj->anim.velocityZ * timeDelta);
+    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
 }
 
-void dll_2A4_init(GameObject* obj)
-{
+void dll_2A4_init(GameObject* obj) {
     Dll2A3State* state = obj->extra;
 
-    obj->anim.rotX = randomGetRange(0, ROT_RANGE_MAX);
-    obj->anim.rotY = randomGetRange(0, ROT_RANGE_MAX);
-    obj->anim.rotZ = randomGetRange(0, ROT_RANGE_MAX);
-    state->spinRateX = randomGetRange(-SPIN_RATE_MAG, SPIN_RATE_MAG);
-    state->spinRateY = randomGetRange(-SPIN_RATE_MAG, SPIN_RATE_MAG);
-    state->spinRateZ = randomGetRange(-SPIN_RATE_MAG, SPIN_RATE_MAG);
+    obj->anim.rotX = randomGetRange(0, 65535);
+    obj->anim.rotY = randomGetRange(0, 65535);
+    obj->anim.rotZ = randomGetRange(0, 65535);
+    state->spinRateX = randomGetRange(-20, 20);
+    state->spinRateY = randomGetRange(-20, 20);
+    state->spinRateZ = randomGetRange(-20, 20);
 }
 
-void dll_2A4_release_nop(void)
-{
+void dll_2A4_release_nop(void) {
 }
 
-void dll_2A4_initialise_nop(void)
-{
+void dll_2A4_initialise_nop(void) {
 }
 
 ObjectDescriptor gDll2A4ObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_2A4_initialise_nop, (ObjectDescriptorCallback)dll_2A4_release_nop, 0,
-    (ObjectDescriptorCallback)dll_2A4_init, (ObjectDescriptorCallback)dll_2A4_update,
-    (ObjectDescriptorCallback)dll_2A4_hitDetect_nop, (ObjectDescriptorCallback)dll_2A4_render,
-    (ObjectDescriptorCallback)dll_2A4_free_nop, (ObjectDescriptorCallback)dll_2A4_getObjectTypeId,
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dll_2A4_initialise_nop,
+    (ObjectDescriptorCallback)dll_2A4_release_nop,
+    0,
+    (ObjectDescriptorCallback)dll_2A4_init,
+    (ObjectDescriptorCallback)dll_2A4_update,
+    (ObjectDescriptorCallback)dll_2A4_hitDetect_nop,
+    (ObjectDescriptorCallback)dll_2A4_render,
+    (ObjectDescriptorCallback)dll_2A4_free_nop,
+    (ObjectDescriptorCallback)dll_2A4_getObjectTypeId,
     dll_2A4_getExtraSize_ret_12,
 };

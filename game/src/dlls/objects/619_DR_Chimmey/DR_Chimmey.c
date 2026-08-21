@@ -5,66 +5,54 @@
  * the completion game bit is set and a countdown timer resets the
  * altar back to its idle state.
  */
+#include "main/dll/DR/dll_026B_drchimmey.h"
 #include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
 #include "main/maketex_timer_api.h"
 #include "main/object_render.h"
-#include "main/dll/DR/dll_026B_drchimmey.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/objprint_render_api.h"
 
-#define DRCHIMMEY_INITIAL_OFFERING_COUNT 3
-#define DRCHIMMEY_REPEAT_OFFERING_COUNT  1
-#define DRCHIMMEY_EVENT_DURATION         90.0f
-#define DRCHIMMEY_RESET_GAMEBIT          0xEA4
+#define DRCHIMMEY_RESET_GAMEBIT 0xEA4
 
-int drchimmey_countdownCallback(GameObject* obj, int amount)
-{
+int drchimmey_countdownCallback(GameObject* obj, int amount) {
     DRChimmeyState* state = obj->extra;
     state->offeringsRemaining -= amount;
     return state->offeringsRemaining <= 0;
 }
 
-int DR_Chimmey_getExtraSize(void)
-{
+int DR_Chimmey_getExtraSize(void) {
     return sizeof(DRChimmeyState);
 }
 
-void DR_Chimmey_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible)
-{
-    if (visible != 0)
-    {
-        f32 scale = 1.0f;
-        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, scale);
-    }
-}
-
-void DR_Chimmey_update(GameObject* obj)
-{
-    DRChimmeySetup* setup = (DRChimmeySetup*)obj->anim.placementData;
-    DRChimmeyState* state = obj->extra;
-    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableGameBit);
-
-    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-    if (enableGameBit != -1 && mainGetBit(enableGameBit) == 0)
-    {
+void DR_Chimmey_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible) {
+    if (visible == 0) {
         return;
     }
-    if (timerIsActive(&state->timer) == 0)
-    {
-        if (state->offeringsRemaining <= 0)
-        {
+
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void DR_Chimmey_update(GameObject* obj) {
+    DRChimmeySetup* setup = (DRChimmeySetup*)obj->anim.placementData;
+    DRChimmeyState* state = obj->extra;
+
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableGameBit);
+    if (enableGameBit != -1 && mainGetBit(enableGameBit) == 0) {
+        return;
+    }
+
+    if (timerIsActive(&state->timer) == 0) {
+        if (state->offeringsRemaining <= 0) {
             state->eventActive = 1;
             s16toFloat(&state->timer, state->timerDuration);
             mainSetBits(state->completionGameBit, 1);
-        }
-        else
-        {
+        } else {
             GameObject* tricky = getTrickyObject();
-            if (tricky != NULL)
-            {
-                if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0)
-                {
+            if (tricky != NULL) {
+                if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
                     TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, 1, 4);
                 }
                 obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
@@ -72,26 +60,25 @@ void DR_Chimmey_update(GameObject* obj)
             }
         }
     }
-    if (timerCountDown(&state->timer) != 0)
-    {
-        state->linkedObject = NULL;
-        state->timer = 0.0f;
-        state->eventActive = 0;
-        state->offeringsRemaining = DRCHIMMEY_REPEAT_OFFERING_COUNT;
-        mainSetBits(state->completionGameBit, 0);
-        mainSetBits(DRCHIMMEY_RESET_GAMEBIT, 0);
+
+    if (timerCountDown(&state->timer) == 0) {
+        return;
     }
+
+    state->linkedObject = NULL;
+    state->timer = 0.0f;
+    state->eventActive = 0;
+    state->offeringsRemaining = 1;
+    mainSetBits(state->completionGameBit, 0);
+    mainSetBits(DRCHIMMEY_RESET_GAMEBIT, 0);
 }
 
-void DR_Chimmey_init(GameObject* obj, DRChimmeySetup* setup)
-{
-    DRChimmeyState* state;
-
-    obj->anim.rotX = (s16)(setup->initialRotX << 8);
-    state = obj->extra;
-    state->timerDuration = DRCHIMMEY_EVENT_DURATION;
+void DR_Chimmey_init(GameObject* obj, DRChimmeySetup* setup) {
+    obj->anim.rotX = setup->initialRotX << 8;
+    DRChimmeyState* state = obj->extra;
+    state->timerDuration = 90.0f;
     state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->completionGameBit);
-    state->offeringsRemaining = DRCHIMMEY_INITIAL_OFFERING_COUNT;
+    state->offeringsRemaining = 3;
     storeZeroToFloatParam(&state->timer);
 }
 

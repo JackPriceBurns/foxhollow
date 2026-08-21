@@ -53,7 +53,6 @@ void wcfloortile_update(GameObject* obj)
 {
     ObjAnimComponent* objAnim = &obj->anim;
     WcFloorTileState* state = obj->extra;
-    int off;
     int i;
     WcFloorTileSetup* setup = (WcFloorTileSetup*)obj->anim.placementData;
 
@@ -71,10 +70,9 @@ void wcfloortile_update(GameObject* obj)
             if (obj->anim.hitboxTransformState->contactObjectCount > 0)
             {
                 f32 z = 0.0f;
-                for (i = 0, off = 0; i < obj->anim.hitboxTransformState->contactObjectCount; off += 4, i++)
+                for (i = 0; i < obj->anim.hitboxTransformState->contactObjectCount; i++)
                 {
-                    GameObject* e = *(GameObject**)((int)obj->anim.hitboxTransformState + off +
-                                                   offsetof(ObjHitboxTransformState, contactObjects));
+                    GameObject* e = (GameObject*)obj->anim.hitboxTransformState->contactObjects[i];
                     if (e->anim.classId == 1)
                     {
                         Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_c6);

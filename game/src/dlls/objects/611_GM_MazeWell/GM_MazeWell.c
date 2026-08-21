@@ -95,7 +95,6 @@ void GM_MazeWell_render(void* obj, int p2, int p3, int p4, int p5, s8 visible)
 void GM_MazeWell_update(GameObject* obj)
 {
     s16* questBits = gGmMazeWellQuestBits;
-    s32* questBits32 = (s32*)questBits;
     GmmazewellState* state = obj->extra;
     GameObject* player;
     int matchedBit;
@@ -147,6 +146,9 @@ void GM_MazeWell_update(GameObject* obj)
         {
             if ((*gGameUIInterface)->isItemBeingUsed(*questBitPtr) != 0)
             {
+                int dialogueIndex = (i + QUEST_DIALOGUE_BASE32) * 2;
+                s32 dialogue = (s32)(((u32)(u16)questBits[dialogueIndex] << 16) |
+                                     (u16)questBits[dialogueIndex + 1]);
                 if (gGameTextFontIsSjis != 0)
                 {
                     state = obj->extra;
@@ -159,13 +161,13 @@ void GM_MazeWell_update(GameObject* obj)
                         saveFileStruct_unlockCheat((u8)i);
                         break;
                     }
-                    state->pendingDialogue = questBits32[i + QUEST_DIALOGUE_BASE32];
+                    state->pendingDialogue = dialogue;
                     mainSetBits(questBits[i + QUEST_FOLLOWUP_BASE], 1);
                 }
                 else
                 {
                     state = obj->extra;
-                    state->pendingDialogue = questBits32[i + QUEST_DIALOGUE_BASE32];
+                    state->pendingDialogue = dialogue;
                     switch (i)
                     {
                     case 3:

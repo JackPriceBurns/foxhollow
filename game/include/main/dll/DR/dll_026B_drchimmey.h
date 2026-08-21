@@ -6,8 +6,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_setup.h"
 
-typedef struct DRChimmeySetup
-{
+typedef struct DRChimmeySetup {
     ObjPlacement base;
     s8 initialRotX;
     u8 pad19[5];
@@ -16,8 +15,7 @@ typedef struct DRChimmeySetup
     u8 pad22[0x24 - 0x22];
 } DRChimmeySetup;
 
-typedef struct DRChimmeyState
-{
+typedef struct DRChimmeyState {
     void* linkedObject;
     u8 pad04[8];
     f32 timerDuration;

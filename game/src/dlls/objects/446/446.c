@@ -41,7 +41,6 @@
 #define DIM_LAVA_HIT_MASK            0x10
 #define DIM_LAVA_EXPLOSION_COOLDOWN  0xA
 #define DIM_LAVA_EXPLOSION_SCALE     60.0f
-#define DIM_LAVA_MODEL_FLAGS         0x810
 
 #define DIM_LAVA_LIGHT_RED        0xFF
 #define DIM_LAVA_LIGHT_GREEN      0x80
@@ -270,7 +269,7 @@ void lavaball1be_init(GameObject* obj, DimLavaProjectilePlacement* placement) {
             hitState->lateralResponseWeight = 0;
         }
         if (obj->anim.modelState != NULL) {
-            obj->anim.modelState->flags |= DIM_LAVA_MODEL_FLAGS;
+            obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
         }
         state->target = ObjList_FindObjectById(state->targetObjectId);
         state->statusFlags |= DIM_LAVA_FLAG_INACTIVE;

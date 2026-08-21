@@ -31,7 +31,6 @@
 #define POLLEN_DESPAWN_DELAY               60
 #define POLLEN_GRAVITY                     0.045f
 #define POLLEN_PARTFX_MOTE                 0x4ba
-#define POLLEN_MODEL_FLAGS                 0x810
 
 
 
@@ -166,7 +165,7 @@ void Pollen_init(GameObject* obj) {
     {
         ObjModelState* modelStateAddress = obj->anim.modelState;
         if (modelStateAddress != NULL) {
-            modelStateAddress->flags |= POLLEN_MODEL_FLAGS;
+            modelStateAddress->flags |= OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010;
         }
     }
 }

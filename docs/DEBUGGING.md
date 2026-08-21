@@ -26,6 +26,7 @@ Those questions identify most of the recurring bug classes below.
 | A pointer passed through an event or message becomes invalid | The pointer was stored in a `u32` parameter | Carry it as `uintptr_t` and use the native-width message API |
 | Colours have swapped channels or a full-screen tint | A packed scalar was reinterpreted as a byte struct on a different-endian host | Construct the byte struct explicitly |
 | A few animated vertices explode only at extreme poses | A retail saturating conversion was replaced by a normal C cast | Match the original PPC conversion semantics |
+| Locked frame rate that still feels like it stutters | A port shim measures what retail counted, and the consumer truncates or accumulates the result | Log the derived value per frame and check it is exactly integral |
 
 ### Big-endian file data
 
@@ -118,6 +119,60 @@ encountered during the Galleon work include:
 If retail collision or movement is known to be solid, investigate the data, object state, and
 layout before modifying collision response or animation constants. A gameplay workaround often
 hides the corrupted input and creates a second bug.
+
+### Retail counted what the port measures
+
+Retail derives some quantities from hardware events that the port replaces with software. Where
+the port substitutes a *measurement* for something retail obtained by *counting*, the game inherits
+host jitter that never existed on GameCube — and the surrounding retail code is often written on
+the assumption that the value is exact.
+
+`waitNextFrame` (`game/src/main/pi_videoinit.c`) is the worked example. It converts elapsed
+milliseconds into an integer count of 1/60 s logic steps, carrying the fraction in
+`gFrameStepRemainder`:
+
+```c
+timeDelta = 60.0f * (0.001f * gFrameElapsedMs);
+step = (int)(timeDelta + gFrameStepRemainder);
+frames = step & 0xff;
+gFrameStepRemainder = (timeDelta + gFrameStepRemainder) - (f32)frames;
+if (frames < 1) framesThisStep = 1;
+```
+
+On GameCube `gFrameElapsedMs` was quantised by the VI retrace wait, so `timeDelta` was essentially
+exactly 1.0 and the fractional machinery never engaged. The port measured wall-clock time between
+two points that are *not* phase-locked to presentation, so `timeDelta` inherited the variance of
+whatever game work happened to sit between them.
+
+Measured on the title screen before the fix, over 1100 frames:
+
+| | Before | After |
+| --- | --- | --- |
+| `timeDelta` | mean 0.999, **stdev 0.107**, range 0.48–1.51 | exactly 1.0, stdev 0 |
+| Double/triple logic steps | 70 | 0 |
+| Clamp events (`frames < 1`) | 71 | 0 |
+| `gFrameStepRemainder` | nonzero every frame, random-walking 0.0–1.0 | identically 0 |
+
+The presentation path was never at fault, which is what made this misleading. Instrumenting
+`wait_for_retrace_deadline` in `port/src/vi_shim.c` showed `SDL_DelayPrecise` landing within
+6 microseconds of its deadline with the resync branch never firing — a near-perfect 60 Hz
+metronome. Frames were being *displayed* on an exact cadence while the world advanced by a
+jittering amount of simulated time, which is precisely the "runs at a locked 60 fps but feels like
+it is lagging" complaint. The 70 boundary crossings per 1100 frames were the visible jolts on top.
+
+The clamp compounds it: when `frames < 1` the code forces `framesThisStep = 1` without debiting
+`gFrameStepRemainder`, so the game is granted a step it never pays back and the remainder parks
+near a boundary, converting later timing spikes into doubled world steps.
+
+The fix counts presented frames instead of measuring them — `VIGetRetraceCount()` (newly
+implemented in `port/src/vi_shim.c`; it was declared by Aurora but had no body) differenced across
+calls, times 1000/60. `timeDelta` becomes exactly integral, so the remainder stays at zero and both
+the clamp and the double-step path become unreachable in steady state.
+
+Generalising: audit any port shim that replaces a hardware counter with a host measurement, and
+check whether the consuming code truncates, accumulates a remainder, or clamps. Those three shapes
+turn small host jitter into visible discrete artefacts. Prefer counting the event the hardware
+would have counted.
 
 ### First-use geometry gaps and Aurora's pipeline caches
 

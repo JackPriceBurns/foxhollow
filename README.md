@@ -29,6 +29,8 @@ The first configure fetches and builds Dawn (WebGPU); expect it to take a while.
 - [Porting notes](docs/PORTING_NOTES.md)
 - [Runtime porting and debugging](docs/DEBUGGING.md) — recurring bug classes, shared endian and
   native-width helpers, LLDB triage, and development tools
+- [Mod support design notes](docs/MODDING.md) — what a mod layer has to hook, plus a feasibility
+  pass over the proposed mod backlog
 
 ## Credits
 

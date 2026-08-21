@@ -880,7 +880,7 @@ void dbegg_init(GameObject* obj)
     modelState = (obj)->anim.modelState;
     if (modelState != NULL)
     {
-        modelState->flags |= 0x4008;
+        modelState->flags |= (OBJ_MODEL_STATE_UNREAD_4000 | OBJ_MODEL_STATE_SHADOW_INIT_CALLBACK_RAN);
     }
 }
 

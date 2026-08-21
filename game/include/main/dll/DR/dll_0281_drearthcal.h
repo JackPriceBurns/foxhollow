@@ -6,8 +6,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_setup.h"
 
-typedef struct DREarthCalSetup
-{
+typedef struct DREarthCalSetup {
     ObjPlacement base;
     s8 yaw;
 } DREarthCalSetup;

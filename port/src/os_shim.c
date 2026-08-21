@@ -1,4 +1,5 @@
 #include <dolphin/os.h>
+#include <aurora/dvd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,12 +17,18 @@ BOOL OSDisableInterrupts(void) {
 
 BOOL OSEnableInterrupts(void) {
   BOOL prev = sInterruptsEnabled;
+  sInterruptsEnabled = 0;
+  aurora_dvd_process_callbacks();
   sInterruptsEnabled = 1;
   return prev;
 }
 
 BOOL OSRestoreInterrupts(BOOL level) {
   BOOL prev = sInterruptsEnabled;
+  if (level) {
+    sInterruptsEnabled = 0;
+    aurora_dvd_process_callbacks();
+  }
   sInterruptsEnabled = level;
   return prev;
 }

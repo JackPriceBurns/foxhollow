@@ -69,7 +69,7 @@ extern int lbl_803DDD70;
 
 int drshackle_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate);
 int drshackle_getAttachSlot(GameObject* obj);
-int drshackle_renderAtPathPoint(GameObject* obj, int a, int b, int c, int d, int e, int f);
+int drshackle_renderAtPathPoint(GameObject* obj, GameObject* owner, int b, int c, int d, int e, int f);
 int drshackle_getExtraSize(void);
 int drshackle_getObjectTypeId(void);
 void drshackle_free(GameObject* obj);

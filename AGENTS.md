@@ -372,15 +372,6 @@ instead of trading descriptions.
 **Extract frames from screen recordings** with AVFoundation via `swiftc`, then crop/zoom, to
 inspect an artifact frame by frame instead of relying on description.
 
-**Drive the game yourself instead of using the user as an input device.** `FOXHOLLOW_AUTO_A=1`
-makes `padUpdate` (`game/src/main/pad.c`) synthesize an A press for 6 of every 45 frames, which
-is enough to walk the title screen → save select → load, and to trigger any A-activated object.
-With a save parked next to the thing you are debugging, one `nohup ./build/foxhollow <iso> &`
-plus a log grep is a complete reproduce-measure cycle with no human in the loop — turn a
-ten-minute-per-iteration hunt into a thirty-second one. Audio defaults to muted in
-`FOXHOLLOW_DEBUG_SHORTCUTS` builds (`port/src/ai_shim.c`, `m` toggles), so unattended runs are
-silent. Add more synthetic buttons the same way when a repro needs them.
-
 **Reset per-frame counters inside the log window, not at declaration.** A counter that starts
 accumulating at program start reads as a huge first sample and invites a wrong conclusion —
 this cost real time when 681 render calls in the first logged frame looked like the anomaly and

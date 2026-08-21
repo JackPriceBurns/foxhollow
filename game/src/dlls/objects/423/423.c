@@ -539,7 +539,7 @@ void EdibleMushroom_init(GameObject* obj, EdibleMushroomPlacement* placement) {
         obj->anim.flags = (short)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
     }
 
-    obj->anim.modelState->flags |= 0x810;
+    obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
 
     state->lungeRootSpeedScale = 0.5f;
     state->mapParamScale = 0.2f * ((f32)placement->scaleParam / 255.0f);

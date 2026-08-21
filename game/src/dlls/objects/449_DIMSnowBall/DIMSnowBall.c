@@ -18,7 +18,6 @@
 #define DIM_SNOWBALL_COORDINATE_SCALE      16.0f
 #define DIM_SNOWBALL_JINGLE_COOLDOWN       0x1E
 #define DIM_SNOWBALL_ROTATION_SCALE        1000.0f
-#define DIM_SNOWBALL_MODEL_FLAGS           0x810
 #define DIM_SNOWBALL_HIT_VOLUME_PRIORITY   4
 #define DIM_SNOWBALL_HIT_VOLUME_ID         2
 #define DIM_SNOWBALL_HIT_MASK              0x10
@@ -202,7 +201,7 @@ void dimsnowball_init(GameObject* objArg, DimSnowBallPlacement* placement) {
         ((ObjHitsPriorityState*)obj->anim.hitReactState)->lateralResponseWeight = 0;
     }
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= DIM_SNOWBALL_MODEL_FLAGS;
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
 }

@@ -172,7 +172,7 @@ int ktrex_shouldAdvanceArenaPhase(void)
 
 void ktrex_spawnRandomEnergyArc(GameObject* obj, int angle, f32 arcLen, int slot)
 {
-    int* model;
+    ObjModel* model;
     Vec point1;
     Vec point2;
     Vec localPoint;
@@ -182,18 +182,18 @@ void ktrex_spawnRandomEnergyArc(GameObject* obj, int angle, f32 arcLen, int slot
         mm_free(gKTRexState->lightning[slot]);
         gKTRexState->lightning[slot] = NULL;
     }
-    model = (int*)Obj_GetActiveModel(obj);
+    model = Obj_GetActiveModel(obj);
     localPoint.x = 0.0f;
     localPoint.y = 0.0f;
     localPoint.z = 0.0f;
 
-    PSMTXMultVec((MtxPtr)ObjModel_GetJointMatrix((u8*)model, randomGetRange(0, *(u8*)(*model + 0xf3) - 1)), &localPoint,
+    PSMTXMultVec((MtxPtr)ObjModel_GetJointMatrix((u8*)model, randomGetRange(0, model->file->jointCount - 1)), &localPoint,
                  &point1);
     point1.x = point1.x + playerMapOffsetX;
     point1.y += 50.0f;
     point1.z = point1.z + playerMapOffsetZ;
 
-    PSMTXMultVec((MtxPtr)ObjModel_GetJointMatrix((u8*)model, randomGetRange(0, *(u8*)(*model + 0xf3) - 1)), &localPoint,
+    PSMTXMultVec((MtxPtr)ObjModel_GetJointMatrix((u8*)model, randomGetRange(0, model->file->jointCount - 1)), &localPoint,
                  &point2);
     point2.x = point2.x + playerMapOffsetX;
     point2.z = point2.z + playerMapOffsetZ;
@@ -1008,8 +1008,8 @@ int ktrex_stateHandlerB00(GameObject* obj, GroundBaddieState* runtime)
 static inline f32* KTRex_GetActiveContactPointTable(GameObject* obj)
 {
     ObjAnimComponent* objAnim = &obj->anim;
-    u8* model = (u8*)objAnim->banks[objAnim->bankIndex];
-    return *(f32**)(model + 0x50);
+    ObjModel* model = objAnim->banks[objAnim->bankIndex];
+    return (f32*)model->activeHitVolumeSpheres;
 }
 
 void ktrex_updateContactEffects(GameObject* obj, GroundBaddieState* runtime)
@@ -1046,7 +1046,7 @@ void ktrex_updateContactEffects(GameObject* obj, GroundBaddieState* runtime)
     {
         return;
     }
-    contactPoints = *(f32**)((u8*)(&obj->anim)->banks[(&obj->anim)->bankIndex] + 0x50);
+    contactPoints = KTRex_GetActiveContactPointTable(obj);
     if (runtime->baddie.hitPoints != 0 && (hitType == 3 || hitType == 2) &&
         (gKTRexState->timerFA & 0x10) != 0 && hit == 5)
     {
@@ -1443,14 +1443,14 @@ void ktrex_func0B(void)
 
 int ktrex_getControlMode(GameObject* obj)
 {
-    KtrexState* p = obj->extra;
-    gKTRexRuntime = (GroundBaddieState*)p;
-    return p->controlMode;
+    GroundBaddieState* runtime = obj->extra;
+    gKTRexRuntime = runtime;
+    return runtime->baddie.controlMode;
 }
 
 int ktrex_getExtraSize(void)
 {
-    return 0x5a4;
+    return sizeof(GroundBaddieState) + sizeof(KTRexArenaState);
 }
 
 int ktrex_getObjectTypeId(void)
@@ -1660,11 +1660,11 @@ void ktrex_update(GameObject* obj)
 
 void ktrex_init(GameObject* obj, char* arg, int flag)
 {
-    int* base = (int*)gKTRexTurnMoveIdByLaneAndDir;
-    int* pA;
+    int* pA = gKTRexLaneTuning.curveIds[1];
     int iv;
-    int* pB;
-    int* pC;
+    int* pB = gKTRexLaneTuning.curveIds[0];
+    int* pC = gKTRexLaneTuning.curveIds[3];
+    int* pD = gKTRexLaneTuning.curveIds[2];
     GroundBaddieState* rt;
     int i;
     RomCurveDef* cp;
@@ -1689,7 +1689,7 @@ void ktrex_init(GameObject* obj, char* arg, int flag)
     ObjHits_EnableObject(obj);
     if ((obj)->anim.modelState != NULL)
     {
-        (obj)->anim.modelState->flags |= 0x810;
+        (obj)->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     gKTRexState = gKTRexRuntime->control;
     gKTRexState->stack = Queue_Alloc(4, 4);
@@ -1697,11 +1697,7 @@ void ktrex_init(GameObject* obj, char* arg, int flag)
     (obj)->anim.rotX = yaw;
     gKTRexState->homeYaw = yaw;
     i = 0;
-    pA = base + 0x4c / 4;
     iv = 0;
-    pB = base + 0x3c / 4;
-    pC = base + 0x6c / 4;
-    base = base + 0x5c / 4;
     for (; i < 4; i++)
     {
         cp = (RomCurveDef*)(*gRomCurveInterface)->getById(*pA);
@@ -1718,7 +1714,7 @@ void ktrex_init(GameObject* obj, char* arg, int flag)
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneCX[0] = cp->x;
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneCY[0] = cp->y;
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneCZ[0] = cp->z;
-            cp = (RomCurveDef*)(*gRomCurveInterface)->getById(*base);
+            cp = (RomCurveDef*)(*gRomCurveInterface)->getById(*pD);
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneDX[0] = cp->x;
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneDY[0] = cp->y;
             ((KTRexArenaState*)((char*)gKTRexState + iv))->laneDZ[0] = cp->z;
@@ -1727,7 +1723,7 @@ void ktrex_init(GameObject* obj, char* arg, int flag)
         iv += 4;
         pB++;
         pC++;
-        base++;
+        pD++;
     }
     gKTRexState->rowAX = gKTRexState->laneAX;
     gKTRexState->rowAY = gKTRexState->laneAY;

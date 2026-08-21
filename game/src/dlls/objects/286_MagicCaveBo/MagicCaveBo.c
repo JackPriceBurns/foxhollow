@@ -18,35 +18,25 @@
 #include "main/render_envfx_api.h"
 #include "main/sky_api.h"
 
-#define MAGIC_CAVE_BOTTOM_ENVFX_FIRST  0x2C
-#define MAGIC_CAVE_BOTTOM_ENVFX_SECOND 0x2D
-
-#define MAGIC_CAVE_BOTTOM_PRIMARY_SETUP_SEQUENCE   0
-#define MAGIC_CAVE_BOTTOM_PRIMARY_WARP_SEQUENCE    1
-#define MAGIC_CAVE_BOTTOM_SECONDARY_SETUP_SEQUENCE 2
-#define MAGIC_CAVE_BOTTOM_SECONDARY_WARP_SEQUENCE  3
-#define MAGIC_CAVE_BOTTOM_SEQUENCE_ARG_NONE        -1
-#define MAGIC_CAVE_BOTTOM_A_BUTTON_ICON            0x19
-#define MAGIC_CAVE_BOTTOM_WARP_TRANSITION_TYPE     0
+#define MAGIC_CAVE_BOTTOM_ENVFX_FIRST   0x2C
+#define MAGIC_CAVE_BOTTOM_ENVFX_SECOND  0x2D
+#define MAGIC_CAVE_BOTTOM_A_BUTTON_ICON 0x19
 
 int MagicCaveBottom_getExtraSize(void) {
     return sizeof(MagicCaveBottomState);
 }
 
 void MagicCaveBottom_free(GameObject* obj) {
-    (void)obj;
     mainSetBits(GAMEBIT_MC_IsActive, 0);
     Music_Trigger(MUSICTRIG_PU3_Adventure, 0);
 }
 
 void MagicCaveBottom_update(GameObject* obj) {
-    MagicCaveBottomPlacement* placement;
-    MagicCaveBottomState* state;
+    MagicCaveBottomPlacement* placement = (MagicCaveBottomPlacement*)obj->anim.placementData;
+    MagicCaveBottomState* state = obj->extra;
 
-    placement = (MagicCaveBottomPlacement*)obj->anim.placementData;
-    state = obj->extra;
+    obj->anim.rotX = placement->rotationX << 8;
 
-    obj->anim.rotX = (s16)((s32)placement->rotationX << 8);
     switch (state->phase) {
     case MAGIC_CAVE_BOTTOM_PHASE_SETUP:
         mainSetBits(GAMEBIT_MC_IsActive, 1);
@@ -54,12 +44,11 @@ void MagicCaveBottom_update(GameObject* obj) {
         getEnvfxAct(obj, obj, MAGIC_CAVE_BOTTOM_ENVFX_FIRST, 0);
         getEnvfxAct(obj, obj, MAGIC_CAVE_BOTTOM_ENVFX_SECOND, 0);
         state->phase = MAGIC_CAVE_BOTTOM_PHASE_START_MUSIC;
+
         if (placement->sequenceBank != 0) {
-            (*gObjectTriggerInterface)
-                ->runSequence(MAGIC_CAVE_BOTTOM_PRIMARY_SETUP_SEQUENCE, obj, MAGIC_CAVE_BOTTOM_SEQUENCE_ARG_NONE);
+            (*gObjectTriggerInterface)->runSequence(0, obj, -1);
         } else {
-            (*gObjectTriggerInterface)
-                ->runSequence(MAGIC_CAVE_BOTTOM_SECONDARY_SETUP_SEQUENCE, obj, MAGIC_CAVE_BOTTOM_SEQUENCE_ARG_NONE);
+            (*gObjectTriggerInterface)->runSequence(2, obj, -1);
         }
         break;
     case MAGIC_CAVE_BOTTOM_PHASE_START_MUSIC:
@@ -70,14 +59,13 @@ void MagicCaveBottom_update(GameObject* obj) {
         if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
             setAButtonIcon(MAGIC_CAVE_BOTTOM_A_BUTTON_ICON);
         }
+
         if (ObjTrigger_IsSet(obj) != 0) {
             state->phase = MAGIC_CAVE_BOTTOM_PHASE_WARP;
             if (placement->sequenceBank != 0) {
-                (*gObjectTriggerInterface)
-                    ->runSequence(MAGIC_CAVE_BOTTOM_PRIMARY_WARP_SEQUENCE, obj, MAGIC_CAVE_BOTTOM_SEQUENCE_ARG_NONE);
+                (*gObjectTriggerInterface)->runSequence(1, obj, -1);
             } else {
-                (*gObjectTriggerInterface)
-                    ->runSequence(MAGIC_CAVE_BOTTOM_SECONDARY_WARP_SEQUENCE, obj, MAGIC_CAVE_BOTTOM_SEQUENCE_ARG_NONE);
+                (*gObjectTriggerInterface)->runSequence(3, obj, -1);
             }
         } else {
             objUpdateHitVolumeTransforms(obj);
@@ -85,7 +73,7 @@ void MagicCaveBottom_update(GameObject* obj) {
         break;
     case MAGIC_CAVE_BOTTOM_PHASE_WARP:
         mainSetBits(GAMEBIT_MC_IsExiting, 1);
-        warpToMap(mainGetBit(GAMEBIT_MagicCaveExitWarp), MAGIC_CAVE_BOTTOM_WARP_TRANSITION_TYPE);
+        warpToMap(mainGetBit(GAMEBIT_MagicCaveExitWarp), 0);
         break;
     }
 }

@@ -3307,7 +3307,7 @@ void trackIntersectBroadphase(GameObject* obj, TrackQueryBounds* ranges, u32 que
                 f32 r, c;
 
                 resetObj = *resetObjects;
-                if (flag80 && (resetObj->modelInstance->flags & 0x01000000))
+                if (flag80 && (resetObj->modelInstance->flags & OBJDEF_FLAG_RELATED_TO_HIT_DETECT))
                     continue;
                 hitState = (ObjHitsPriorityState*)resetObj->hitReactState;
                 if (hitState == NULL)

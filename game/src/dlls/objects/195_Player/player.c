@@ -574,7 +574,7 @@ int playerStopRidingObject(GameObject* obj) {
     VEHICLE_INTERFACE(sub)->setMountState(sub, VEHICLE_NoRider);
     (*gCameraInterface)->setFocus((void*)obj, 0);
     obj->anim.flags &= ~8;
-    obj->anim.modelState->flags = obj->anim.modelState->flags & 0xFFFFFEFFFLL;
+    obj->anim.modelState->flags = obj->anim.modelState->flags & ~(u64)OBJ_MODEL_STATE_SHADOW_FADE_OUT;
     inner->focusObject = NULL;
     obj->anim.activeMove = -1;
     (*gPlayerInterface)->setState(obj, inner, 1);
@@ -6204,7 +6204,7 @@ int playerState19(GameObject* obj, PlayerState* state) {
 void playerStagedClearActiveMove(GameObject* obj) {
     ObjModelState* modelState = obj->anim.modelState;
     s16* v;
-    modelState->flags &= 0xFFFFEFFFLL;
+    modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_FADE_OUT;
     obj->anim.flags &= ~0x8;
     obj->anim.activeMove = -1;
     v = objFindJointPoseVector(obj, 9);
@@ -10365,7 +10365,7 @@ int playerBuildWallTransitionProbe(GameObject* obj, TrackBBoxHit* hit, PlayerSta
             state->leapBaseY += ((ObjAnimComponent*)obj->anim.parent)->localPosY;
         }
         state->unk609 = 1;
-        if (parent != NULL && (parent->modelInstance->flags & 0x8000) == 0) {
+        if (parent != NULL && (parent->modelInstance->flags & OBJDEF_FLAG_CAN_HOLD_PLAYER) == 0) {
             inner->groundObject = (void*)parent;
         } else {
             inner->groundObject = NULL;
@@ -10492,7 +10492,7 @@ int playerBuildLedgeClimbProbe(GameObject* obj, PlayerState* state, TrackBBoxHit
         state->leapBaseY = obj->anim.previousLocalPosY;
         state->leapSpeed = state->leapTargetY - state->leapBaseY;
         if (state->flags3F1.b01 != 0u) {
-            if (hit != NULL && (hit->modelInstance->flags & 0x8000) == 0) {
+            if (hit != NULL && (hit->modelInstance->flags & OBJDEF_FLAG_CAN_HOLD_PLAYER) == 0) {
                 state->groundObject = (GameObject*)hit;
             }
             if (state->leapSpeed <= 64.0f) {
@@ -10508,7 +10508,7 @@ int playerBuildLedgeClimbProbe(GameObject* obj, PlayerState* state, TrackBBoxHit
             q = hitInfo->interpolation * (hitInfo->lineEndY - hitInfo->lineStartY) + hitInfo->lineStartY;
             q = state->leapTargetY - q;
             if (state->leapSpeed >= 10.0f && state->leapSpeed <= 60.0f && q >= 40.0f) {
-                if (hit != NULL && (hit->modelInstance->flags & 0x8000) == 0) {
+                if (hit != NULL && (hit->modelInstance->flags & OBJDEF_FLAG_CAN_HOLD_PLAYER) == 0) {
                     state->groundObject = (GameObject*)hit;
                 }
                 return 6;
@@ -10520,7 +10520,7 @@ int playerBuildLedgeClimbProbe(GameObject* obj, PlayerState* state, TrackBBoxHit
         if (state->leapSpeed >= 34.0f) {
             return 0;
         }
-        if (hit != NULL && (hit->modelInstance->flags & 0x8000) == 0) {
+        if (hit != NULL && (hit->modelInstance->flags & OBJDEF_FLAG_CAN_HOLD_PLAYER) == 0) {
             state->groundObject = (GameObject*)hit;
         }
         return 3;
@@ -14961,49 +14961,51 @@ int player_SeqFn(GameObject* obj, GameObject* obj2, ObjSeqState* seq, int endFla
 }
 
 void playerUpdateTargetSelection(GameObject* obj, PlayerState* inner, PlayerState* inner2) {
-    GameObject* target = (GameObject*)(*gCameraInterface)->getOverrideTarget();
+    GameObject* target = (*gCameraInterface)->getOverrideTarget();
     u32 v = inner->flags3F4.b40;
 
-    if (v != 0) {
-        if ((inner->flags360 & 0x10) != 0) {
-            if (gPlayerPathObject != NULL && v != 0) {
-                inner->staffActionRequest = 2;
-                inner->flags3F4.b08 = 0;
-            }
-            inner2->baddie.hasTarget = 1;
-            if (target != NULL) {
-                inner2->baddie.targetObj = (void*)target;
-            } else {
-                f32 dist = 500.0f;
-                inner2->baddie.targetObj = objGetNearestTypeTo(3, obj, &dist);
-            }
+    if (v == 0) {
+        return;
+    }
+
+    if ((inner->flags360 & 0x10) != 0) {
+        if (gPlayerPathObject != NULL && v != 0) {
+            inner->staffActionRequest = 2;
+            inner->flags3F4.b08 = 0;
+        }
+        inner2->baddie.hasTarget = 1;
+        if (target != NULL) {
+            inner2->baddie.targetObj = (void*)target;
         } else {
-            if (target != NULL) {
-                if ((GameObject*)inner2->baddie.targetObj != target) {
-                    inner2->baddie.hasTarget = 0;
-                    if ((target->anim.hitVolumeBounds->flags & 0xf) == 1) {
-                        if (gPlayerPathObject != NULL) {
-                            u32 targetFlag = inner->flags3F4.b40;
-                            if (targetFlag != 0) {
-                                inner->staffActionRequest = 2;
-                                inner->flags3F4.b08 = 0;
-                            }
-                        }
-                        inner2->baddie.hasTarget = 1;
-                    }
-                }
-                inner2->baddie.targetObj = (void*)target;
-            } else {
-                inner2->baddie.targetObj = 0;
+            f32 dist = 500.0f;
+            inner2->baddie.targetObj = objGetNearestTypeTo(3, obj, &dist);
+        }
+    } else {
+        if (target != NULL) {
+            if ((GameObject*)inner2->baddie.targetObj != target) {
                 inner2->baddie.hasTarget = 0;
+                if ((target->anim.hitVolumeBounds->flags & 0xf) == 1) {
+                    if (gPlayerPathObject != NULL) {
+                        u32 targetFlag = inner->flags3F4.b40;
+                        if (targetFlag != 0) {
+                            inner->staffActionRequest = 2;
+                            inner->flags3F4.b08 = 0;
+                        }
+                    }
+                    inner2->baddie.hasTarget = 1;
+                }
             }
-        }
-        if ((int*)inner2->baddie.targetObj != NULL) {
-            enemy_getCurveParams((GameObject*)inner2->baddie.targetObj, (int*)&inner->flags884, &inner->animSpeedDecay,
-                                 &inner->animSpeedStart);
+            inner2->baddie.targetObj = (void*)target;
         } else {
-            inner->deferredItemCommand = -1;
+            inner2->baddie.targetObj = 0;
+            inner2->baddie.hasTarget = 0;
         }
+    }
+    if ((int*)inner2->baddie.targetObj != NULL) {
+        enemy_getCurveParams((GameObject*)inner2->baddie.targetObj, (int*)&inner->flags884, &inner->animSpeedDecay,
+                             &inner->animSpeedStart);
+    } else {
+        inner->deferredItemCommand = -1;
     }
 }
 
@@ -15025,7 +15027,7 @@ void playerAnimate(GameObject* obj, PlayerState* state, f32 fv) {
     state->emissionState = 0;
     state->flags360 &= ~PLAYER_FLAG_NO_POS_VELOCITY;
     state->baddie.flags0 |= 0x1000000;
-    playerUpdateMotionState(obj, (void*)state, &state->baddie);
+    playerUpdateMotionState(obj, state, &state->baddie);
     if ((s8)playerCheckIfClimbingOntoWall(obj, state, state, buf, fv, 0x60) == 8) {
         state->baddie.targetObj = 0;
         state->baddie.hasTarget = 0;
@@ -15386,7 +15388,7 @@ void playerDoHitDetection(GameObject* obj) {
         ObjAnimComponent* h = (ObjAnimComponent*)inner->baddie.curvesCollision.contactObj;
         if (h != NULL) {
             u32 fl = h->modelInstance->flags;
-            if ((fl & OBJMODEL_FLAG_SKIP_RESET_UPDATE) != 0 && (fl & 0x8000) == 0) {
+            if ((fl & OBJDEF_FLAG_HITBOX_GROUP) != 0 && (fl & OBJDEF_FLAG_CAN_HOLD_PLAYER) == 0) {
                 Obj_SetParent(obj, (GameObject*)h, 1);
             }
         } else if (obj->anim.parent != NULL) {
@@ -15462,7 +15464,7 @@ void playerDoHitDetection(GameObject* obj) {
             obj->anim.modelState->overrideWorldPosX += g->anim.localPosX;
             obj->anim.modelState->overrideWorldPosY += g->anim.localPosY;
             obj->anim.modelState->overrideWorldPosZ += g->anim.localPosZ;
-            obj->anim.modelState->flags |= 0x2020;
+            obj->anim.modelState->flags |= (OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE | OBJ_MODEL_STATE_SHADOW_KEEP_ROT_Z);
             obj->anim.rotZ = g->anim.rotZ;
             inner->flags360 |= PLAYER_FLAG_WORLDPOS_OVERRIDE;
         }
@@ -15745,7 +15747,7 @@ void objLoadPlayerFromSave(GameObject* obj) {
     Player_GetObjHitsState(obj)->trackContactMask = 0x29;
     obj->anim.alpha = 0xff;
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= 0x4008;
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_4000 | OBJ_MODEL_STATE_SHADOW_INIT_CALLBACK_RAN);
     }
     ((void (*)(GameUIInterface*))(*gGameUIInterface)->pad10_slots[1])(*gGameUIInterface);
     gPlayerChildObject = NULL;

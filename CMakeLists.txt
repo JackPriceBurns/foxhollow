@@ -67,13 +67,18 @@ if (APPLE)
 endif ()
 
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
+if (FOXHOLLOW_DEBUG_SHORTCUTS)
+    list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/debug_overlay.cpp)
+endif ()
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)
 target_compile_definitions(port_shims PRIVATE TARGET_PC=1)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     target_compile_definitions(port_shims PRIVATE FOXHOLLOW_DEBUG_SHORTCUTS=1)
 endif ()
-target_compile_options(port_shims PRIVATE -std=gnu11 -fsigned-char -fcommon)
+target_compile_options(port_shims PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:-std=gnu11;-fsigned-char;-fcommon>
+        $<$<COMPILE_LANGUAGE:CXX>:-fsigned-char>)
 target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG)
 
 

@@ -21,14 +21,11 @@
 #define ARWBLOCKER_SEQMODE_DEFAULT 0 /* fires sequence 0; never reports "armed" */
 #define ARWBLOCKER_SEQMODE_ARMED   1 /* fires sequence 1; reports armed until locked */
 
-int ARWBlocker_SeqFn(GameObject* obj)
-{
+int ARWBlocker_SeqFn(GameObject* obj) {
     ARWBlockerState* state = obj->extra;
-    switch (state->sequenceMode)
-    {
+    switch (state->sequenceMode) {
     case ARWBLOCKER_SEQMODE_ARMED:
-        if (state->sequenceLocked != 0)
-        {
+        if (state->sequenceLocked != 0) {
             break;
         }
         return 1;
@@ -38,90 +35,93 @@ int ARWBlocker_SeqFn(GameObject* obj)
     return 0;
 }
 
-int ARWBlocker_getExtraSize(void)
-{
+int ARWBlocker_getExtraSize(void) {
     return 2;
 }
 
-int ARWBlocker_getObjectTypeId(void)
-{
+int ARWBlocker_getObjectTypeId(void) {
     return 0;
 }
 
-void ARWBlocker_free(void)
-{
+void ARWBlocker_free(void) {
 }
 
-void ARWBlocker_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale)
-{
+void ARWBlocker_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale) {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void ARWBlocker_hitDetect(void)
-{
+void ARWBlocker_hitDetect(void) {
 }
 
-void ARWBlocker_update(GameObject* obj)
-{
-    ObjAnimComponent* objAnim = &(obj)->anim;
-    ARWBlockerState* state = (obj)->extra;
-    GameObject* arwing = (GameObject*)getArwing();
+void ARWBlocker_update(GameObject* obj) {
+    ObjAnimComponent* objAnim = &obj->anim;
+    ARWBlockerState* state = obj->extra;
+    GameObject* arwing = getArwing();
 
-    if (arwing == NULL)
+    if (arwing == NULL) {
         arwing = Obj_GetPlayerObject();
-    if (Vec_distance(&objAnim->worldPosX, &arwing->anim.worldPosX) < 5120.0f)
-    {
-        int alpha = (int)(3.0f * timeDelta + (f32)(u32)objAnim->alpha);
-        if (alpha > 0xff)
-            alpha = 0xff;
-        objAnim->alpha = alpha;
-        (obj)->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
-        ObjHits_EnableObject(obj);
-        if ((obj)->userData1 == 0)
-        {
-            switch (state->sequenceMode)
-            {
-            case ARWBLOCKER_SEQMODE_ARMED:
-                (*gObjectTriggerInterface)->runSequence(1, (void*)obj, -1);
-                break;
-            case ARWBLOCKER_SEQMODE_DEFAULT:
-            default:
-                (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
-                break;
-            }
-            (obj)->userData1 = 1;
+    }
+
+    if (Vec_distance(&objAnim->worldPosX, &arwing->anim.worldPosX) >= 5120.0f) {
+        return;
+    }
+
+    int alpha = 3.0f * timeDelta + objAnim->alpha;
+    if (alpha > 0xff) {
+        alpha = 0xff;
+    }
+
+    objAnim->alpha = alpha;
+    obj->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
+    ObjHits_EnableObject(obj);
+
+    if (obj->userData1 == 0) {
+        switch (state->sequenceMode) {
+        case ARWBLOCKER_SEQMODE_ARMED:
+            (*gObjectTriggerInterface)->runSequence(1, obj, -1);
+            break;
+        case ARWBLOCKER_SEQMODE_DEFAULT:
+        default:
+            (*gObjectTriggerInterface)->runSequence(0, obj, -1);
+            break;
         }
+        obj->userData1 = 1;
     }
 }
 
-void ARWBlocker_init(GameObject* obj, ARWBlockerSetup* setup)
-{
-    ObjAnimComponent* objAnim = &(obj)->anim;
-    ARWBlockerState* state = (obj)->extra;
+void ARWBlocker_init(GameObject* obj, ARWBlockerSetup* setup) {
+    ObjAnimComponent* objAnim = &obj->anim;
+    ARWBlockerState* state = obj->extra;
     ARWBlockerSetup* mapData = setup;
 
-    (obj)->anim.rotX = -0x8000;
-    (obj)->anim.rotZ = (s16)(mapData->rotZ << 8);
-    (obj)->animEventCallback = ARWBlocker_SeqFn;
+    obj->anim.rotX = -0x8000;
+    obj->anim.rotZ = mapData->rotZ << 8;
+    obj->animEventCallback = ARWBlocker_SeqFn;
     state->sequenceMode = mapData->sequenceMode;
-    (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
+    obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
     objAnim->alpha = 0;
     ObjHits_DisableObject(obj);
 }
 
-void ARWBlocker_release(void)
-{
+void ARWBlocker_release(void) {
 }
 
-void ARWBlocker_initialise(void)
-{
+void ARWBlocker_initialise(void) {
 }
 
 ObjectDescriptor gARWBlockerObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWBlocker_initialise, (ObjectDescriptorCallback)ARWBlocker_release, 0,
-    (ObjectDescriptorCallback)ARWBlocker_init, (ObjectDescriptorCallback)ARWBlocker_update,
-    (ObjectDescriptorCallback)ARWBlocker_hitDetect, (ObjectDescriptorCallback)ARWBlocker_render,
-    (ObjectDescriptorCallback)ARWBlocker_free, (ObjectDescriptorCallback)ARWBlocker_getObjectTypeId,
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ARWBlocker_initialise,
+    (ObjectDescriptorCallback)ARWBlocker_release,
+    0,
+    (ObjectDescriptorCallback)ARWBlocker_init,
+    (ObjectDescriptorCallback)ARWBlocker_update,
+    (ObjectDescriptorCallback)ARWBlocker_hitDetect,
+    (ObjectDescriptorCallback)ARWBlocker_render,
+    (ObjectDescriptorCallback)ARWBlocker_free,
+    (ObjectDescriptorCallback)ARWBlocker_getObjectTypeId,
     ARWBlocker_getExtraSize,
 };

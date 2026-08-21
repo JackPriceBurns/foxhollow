@@ -11,8 +11,8 @@
  * free); gDll2A3UpdatedThisFrame is a once-per-frame "an instance updated" flag,
  * cleared by hitDetect and set by the first update.
  */
-#include "main/frame_timing.h"
 #include "main/dll/ARW/dll_02A3.h"
+#include "main/frame_timing.h"
 #include "dlls/object_descriptor.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
@@ -22,110 +22,97 @@
 int gDll2A3UpdatedThisFrame;
 int gDll2A3InstanceCount;
 
-void dll_2A3_setLifetime(GameObject* obj, int lifetime)
-{
+void dll_2A3_setLifetime(GameObject* obj, int lifetime) {
     Dll2A3State* state = obj->extra;
     state->lifetime = lifetime;
 }
 
-void dll_2A3_setVelocity(GameObject* obj, Vec3f* velocity)
-{
+void dll_2A3_setVelocity(GameObject* obj, Vec3f* velocity) {
     obj->anim.velocityX = velocity->x;
     obj->anim.velocityY = velocity->y;
     obj->anim.velocityZ = velocity->z;
 }
 
-int dll_2A3_getExtraSize_ret_12(void)
-{
+int dll_2A3_getExtraSize_ret_12(void) {
     return sizeof(Dll2A3State);
 }
 
-int dll_2A3_getObjectTypeId(void)
-{
+int dll_2A3_getObjectTypeId(void) {
     return 0x0;
 }
 
-void dll_2A3_free(void)
-{
-    gDll2A3InstanceCount = gDll2A3InstanceCount - 1;
+void dll_2A3_free(void) {
+    gDll2A3InstanceCount--;
 }
 
-void dll_2A3_render(GameObject* obj, int p2, int p3, int p4, int p5)
-{
+void dll_2A3_render(GameObject* obj, int p2, int p3, int p4, int p5) {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void dll_2A3_hitDetect(void)
-{
+void dll_2A3_hitDetect(void) {
     gDll2A3UpdatedThisFrame = 0;
 }
 
-void dll_2A3_update(GameObject* obj)
-{
-    f32 lifetimeFloor;
-    f32 lifetime;
-    f32 alpha;
+void dll_2A3_update(GameObject* obj) {
     Dll2A3State* state = obj->extra;
 
-    if ((lifetime = state->lifetime) > (lifetimeFloor = 0.0f))
-    {
-        state->lifetime = lifetime - timeDelta;
-        if (state->lifetime <= lifetimeFloor)
-        {
-            state->lifetime = lifetimeFloor;
+    if (state->lifetime > 0.0f) {
+        state->lifetime -= timeDelta;
+        if (state->lifetime <= 0.0f) {
+            state->lifetime = 0.0f;
             Obj_FreeObject(obj);
             return;
         }
     }
 
-    alpha = (f32)(u32)obj->anim.alpha;
-    alpha += 8.0f * timeDelta;
-    if (alpha > 255.0f)
-    {
+    f32 alpha = obj->anim.alpha + 8.0f * timeDelta;
+    if (alpha > 255.0f) {
         alpha = 255.0f;
     }
+
     obj->anim.alpha = alpha;
+    obj->anim.rotX += state->spinRateX * timeDelta;
+    obj->anim.rotY += state->spinRateY * timeDelta;
+    obj->anim.rotZ += state->spinRateZ * timeDelta;
 
-    obj->anim.rotX = (s16)((f32)state->spinRateX * timeDelta + (f32)obj->anim.rotX);
-    obj->anim.rotY = (s16)((f32)state->spinRateY * timeDelta + (f32)obj->anim.rotY);
-    obj->anim.rotZ = (s16)((f32)state->spinRateZ * timeDelta + (f32)obj->anim.rotZ);
+    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
 
-    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta,
-            obj->anim.velocityZ * timeDelta);
-
-    if (gDll2A3UpdatedThisFrame == 0)
-    {
+    if (gDll2A3UpdatedThisFrame == 0) {
         gDll2A3UpdatedThisFrame = 1;
     }
 }
 
-void dll_2A3_init(GameObject* obj)
-{
+void dll_2A3_init(GameObject* obj) {
     Dll2A3State* state = obj->extra;
-
     obj->anim.alpha = 0;
-    obj->anim.rotX = randomGetRange(0, 0xffff);
-    obj->anim.rotY = randomGetRange(0, 0xffff);
-    obj->anim.rotZ = randomGetRange(0, 0xffff);
-    state->spinRateX = randomGetRange(-0x32, 0x32);
-    state->spinRateY = randomGetRange(-0x32, 0x32);
-    state->spinRateZ = randomGetRange(-0x32, 0x32);
-    gDll2A3InstanceCount = gDll2A3InstanceCount + 1;
+    obj->anim.rotX = randomGetRange(0, 65535);
+    obj->anim.rotY = randomGetRange(0, 65535);
+    obj->anim.rotZ = randomGetRange(0, 65535);
+    state->spinRateX = randomGetRange(-50, 50);
+    state->spinRateY = randomGetRange(-50, 50);
+    state->spinRateZ = randomGetRange(-50, 50);
+    gDll2A3InstanceCount++;
 }
 
-void dll_2A3_release_nop(void)
-{
+void dll_2A3_release_nop(void) {
 }
 
-void dll_2A3_initialise_nop(void)
-{
+void dll_2A3_initialise_nop(void) {
 }
 
 ObjectDescriptor gDll2A3ObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_2A3_initialise_nop, (ObjectDescriptorCallback)dll_2A3_release_nop, 0,
-    (ObjectDescriptorCallback)dll_2A3_init, (ObjectDescriptorCallback)dll_2A3_update,
-    (ObjectDescriptorCallback)dll_2A3_hitDetect, (ObjectDescriptorCallback)dll_2A3_render,
-    (ObjectDescriptorCallback)dll_2A3_free, (ObjectDescriptorCallback)dll_2A3_getObjectTypeId,
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)dll_2A3_initialise_nop,
+    (ObjectDescriptorCallback)dll_2A3_release_nop,
+    0,
+    (ObjectDescriptorCallback)dll_2A3_init,
+    (ObjectDescriptorCallback)dll_2A3_update,
+    (ObjectDescriptorCallback)dll_2A3_hitDetect,
+    (ObjectDescriptorCallback)dll_2A3_render,
+    (ObjectDescriptorCallback)dll_2A3_free,
+    (ObjectDescriptorCallback)dll_2A3_getObjectTypeId,
     dll_2A3_getExtraSize_ret_12,
 };

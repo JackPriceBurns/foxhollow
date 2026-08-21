@@ -81,9 +81,9 @@ void DR_CloudRunner_setupPath(GameObject* obj, CloudRunnerState* state, int mode
 {
     DRCloudRunnerMoveParams* base = &gDRCloudRunnerMoveParamTable;
     u8 stk[4] = { 0, 1, 1, 1 };
-    u8* pathState = (u8*)&state->baddie + 4;
+    CurvesCollisionState* pathState = &state->baddie.curvesCollision;
     u8 moveMode;
-    pathState[0x25b] = 1;
+    pathState->subtype = 1;
     moveMode = mode;
     if (moveMode == 1)
     {
@@ -1205,13 +1205,13 @@ void DR_CloudRunner_update(GameObject* obj)
     {
         (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         DR_CloudRunner_updateFlightControl(obj, timeDelta, -1);
-        (&obj->anim)->modelInstance->flags |= 0x200000LL;
+        (&obj->anim)->modelInstance->flags |= OBJDEF_FLAG_RENDER_WHEN_INVISIBLE;
     }
     else
     {
         inner->baddie.physicsActive = 0;
         DR_CloudRunner_updateFlightControl(obj, timeDelta, -1);
-        (&obj->anim)->modelInstance->flags &= ~0x200000LL;
+        (&obj->anim)->modelInstance->flags &= ~OBJDEF_FLAG_RENDER_WHEN_INVISIBLE;
     }
     if (inner->cooldownTimer != 0)
     {
@@ -1287,7 +1287,7 @@ void DR_CloudRunner_init(GameObject* obj, DRCloudRunnerPlacement* def)
     inner->pathFollowSpeed = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &def->pathSpeedTenths) / 10.0f;
     if ((obj)->anim.modelState != NULL)
     {
-        (obj)->anim.modelState->flags |= 0xa10;
+        (obj)->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     savedSlot = mainGetBit(0x7a9);
     if (savedSlot != 0)

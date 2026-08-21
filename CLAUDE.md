@@ -7,9 +7,18 @@ job handles syncing them back to the decomp. Port-layer code belongs here.
 
 ## Rules
 - NEVER write code comments unless explicitly asked.
+- Do not add `TARGET_PC` conditionals for native-port behavior; write the native implementation directly.
 - NEVER commit game assets, disc images, or anything derived from the retail binary.
 - NEVER add co-authored-by lines to commits.
 - The repo is private until release; do not make it public or publish artifacts from it.
+- Preserve retail game code and behavior as closely as the native port permits.
+- When the port disagrees with retail, inspect the corresponding retail assembly before changing
+  code; do not infer retail behavior from the decomp alone.
+- Make the port match the behavior demonstrated by retail assembly. Fix the underlying portability
+  mismatch (such as data layout, endianness, pointer width, or instruction semantics) instead of
+  adding a symptom-specific workaround.
+- Keep unavoidable port adaptations minimal and localized, and do not change game logic to
+  compensate for a port-layer mismatch.
 
 ## Build
 ```sh
@@ -334,11 +343,11 @@ the fix; bounded final poses alone can miss a one-instruction packing mismatch.
 **Diff against retail live with the Dolphin GDB stub.** This is the strongest tool available and
 ends arguments that source reading cannot. `~/Code/dolphin-debugger-mcp` talks to Dolphin's GDB
 stub over RSP (pure stdlib Python; `rsp.py` has `add_breakpoint`/`read_gprs`/`read_memory`/
-`read_u32`/`resume`/`wait_stop`). Enable it with `GDBPort = 2159` under **`[General]`** in
-`~/Library/Application Support/Dolphin/Config/Dolphin.ini` — edit only while Dolphin is fully
-quit, it rewrites the file on exit. Because the decomp byte-matches, `config/GSAE01/symbols.txt`
-addresses are live RAM addresses, so you can breakpoint any DOL function by name and read the
-same globals the port has.
+`read_u32`/`resume`/`wait_stop`). Launch Dolphin with the `dolphin-debug` command, which enables
+the GDB stub for that session. **Never add `GDBPort` to or otherwise edit
+`~/Library/Application Support/Dolphin/Config/Dolphin.ini` to enable debugging.** Because the
+decomp byte-matches, `config/GSAE01/symbols.txt` addresses are live RAM addresses, so you can
+breakpoint any DOL function by name and read the same globals the port has.
 
 Worked example that settled a long hunt: the flame's reflection overlay. Breaking on
 `drawGlow` gave `r3` = the slot pool base, and walking `0x50` pools x `0x19` slots x `0xA0`
@@ -353,24 +362,15 @@ Caveats, both of which cost time: the stub accepts **one connection per boot** (
 copies back to RAM** by default (EFB Copies: Texture Only), so a copy destination reads as all
 zeros even though the copy happened. Do not conclude "retail's texture is black" from that.
 
-**Screenshot the two builds and look at them yourself.** `screencapture -x -o -R x,y,w,h out.png`
-grabs a region in logical points, `sips -Z N` scales it, and the Read tool displays it. Bring a
-window forward with `osascript -e 'tell application "System Events" to set frontmost of (first
-process whose unix id is PID) to true'`. This removes the human from the reproduce-measure loop
-for visual bugs and lets you compare port vs Dolphin frame to frame instead of trading
-descriptions.
+**Screenshot the two builds and look at them yourself.** Resolve the CoreGraphics window id and
+use `screencapture -x -o -l WINDOW_ID out.png`; window-id capture isolates the window even when
+another window is in front of it. Use `screencapture -x -o -R x,y,w,h out.png` only when no window
+id is available. `sips -Z N` scales it, and the Read tool displays it. This removes the human from
+the reproduce-measure loop for visual bugs and lets you compare port vs Dolphin frame to frame
+instead of trading descriptions.
 
 **Extract frames from screen recordings** with AVFoundation via `swiftc`, then crop/zoom, to
 inspect an artifact frame by frame instead of relying on description.
-
-**Drive the game yourself instead of using the user as an input device.** `FOXHOLLOW_AUTO_A=1`
-makes `padUpdate` (`game/src/main/pad.c`) synthesize an A press for 6 of every 45 frames, which
-is enough to walk the title screen → save select → load, and to trigger any A-activated object.
-With a save parked next to the thing you are debugging, one `nohup ./build/foxhollow <iso> &`
-plus a log grep is a complete reproduce-measure cycle with no human in the loop — turn a
-ten-minute-per-iteration hunt into a thirty-second one. Audio defaults to muted in
-`FOXHOLLOW_DEBUG_SHORTCUTS` builds (`port/src/ai_shim.c`, `m` toggles), so unattended runs are
-silent. Add more synthetic buttons the same way when a repro needs them.
 
 **Reset per-frame counters inside the log window, not at declaration.** A counter that starts
 accumulating at program start reads as a huge first sample and invites a wrong conclusion —

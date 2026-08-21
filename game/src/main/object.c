@@ -627,7 +627,7 @@ void Obj_SetActiveModelIndex(GameObject* obj, int idx) {
 
 void objSetSlot(GameObject* obj, s8 slot) {
     if (slot == 0x5a) {
-        if ((obj->anim.modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE) == 0) {
+        if ((obj->anim.modelInstance->flags & OBJDEF_FLAG_HITBOX_GROUP) == 0) {
             return;
         }
     }
@@ -792,7 +792,7 @@ static void objFreeObjdef(u8* obj, int flag) {
     }
     gTitleMenuControlInterface->vtable->func15(obj);
     (*gExpgfxInterface)->freeOwner3((u32)(uintptr_t)obj);
-    if (((ObjAnimComponent*)obj)->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE) {
+    if (((ObjAnimComponent*)obj)->modelInstance->flags & OBJDEF_FLAG_HITBOX_GROUP) {
         objFreeObjectType(obj, OBJECT_OBJGROUP_HITBOX);
         if (flag == 0) {
             count = 0;
@@ -1505,7 +1505,7 @@ int objGetTotalDataSize(void* tmpl, u8* def, s16* data, int flags) {
         break;
     }
     size += extra;
-    if ((flags & 0x40) || (modelDef->flags & 0x400000)) {
+    if ((flags & 0x40) || (modelDef->flags & OBJDEF_FLAG_HAS_EVENT)) {
         size = roundUpTo8(roundUpTo4(size) + sizeof(ObjAnimEventTable)) + 0x50;
     }
     if (flags & OBJLOAD_FLAG_WEAPON_DA) {
@@ -1578,9 +1578,9 @@ void Obj_RegisterObject(GameObject* obj, int flags) {
     if (id > -1) {
         mapLoadForObject(id, obj);
     }
-    if (object->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE) {
+    if (object->modelInstance->flags & OBJDEF_FLAG_HITBOX_GROUP) {
         objAddObjectType(obj, OBJECT_OBJGROUP_HITBOX);
-        if (object->activeHitboxMode != 0x5a && (object->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE)) {
+        if (object->activeHitboxMode != 0x5a && (object->modelInstance->flags & OBJDEF_FLAG_HITBOX_GROUP)) {
             object->activeHitboxMode = 0x5a;
         }
     } else {
@@ -1605,7 +1605,7 @@ void Obj_RegisterObject(GameObject* obj, int flags) {
     if (object->modelInstance->group8RegistrationCount > 0) {
         objAddObjectType(obj, OBJECT_OBJGROUP_GROUP8);
     }
-    if (object->modelInstance->flags & 1) {
+    if (object->modelInstance->flags & OBJDEF_FLAG_HAS_MODELS) {
         gObjPartitionPivot = 0;
     }
 }
@@ -1667,10 +1667,10 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     tmpl.anim.classId = modelDef->category;
     tmpl.anim.rootMotionScale = modelDef->rootMotionScaleBase;
     tmpl.anim.flags = 2;
-    if (modelDef->flags & 0x80) {
+    if (modelDef->flags & OBJDEF_FLAG_TRANSLUCENT) {
         tmpl.anim.flags = tmpl.anim.flags | 0x80;
     }
-    if (modelDef->flags & 0x40000) {
+    if (modelDef->flags & OBJDEF_FLAG_FORCE_ALPHA_SORT) {
         tmpl.objectFlags = tmpl.objectFlags | 0x80;
     }
     if (flags & 4) {
@@ -1717,7 +1717,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
         }
         break;
     }
-    if (modelDef->flags & 0x20) {
+    if (modelDef->flags & OBJDEF_FLAG_RELATED_TO_MODELS) {
         loadFlags = fnFlags & ~1;
     } else {
         loadFlags = fnFlags | 1;
@@ -1730,7 +1730,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     if (modelDef->shadowType == OBJ_SHADOW_TYPE_CRASH) {
         loadFlags |= OBJLOAD_FLAG_SHADOW_TYPE3;
     }
-    if (modelDef->flags & 1) {
+    if (modelDef->flags & OBJDEF_FLAG_HAS_MODELS) {
         loadFlags |= OBJLOAD_FLAG_SINGLE_MODEL;
     }
     total = 0;
@@ -1757,7 +1757,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     memset((u8*)obj + sizeof(GameObject), 0, allocSize - sizeof(GameObject));
     modelTable = (u8**)(obj + 1);
     obj->anim.modelBanks = (ObjModel**)modelTable;
-    obj->anim.modelInstance->flags |= 0x800000;
+    obj->anim.modelInstance->flags |= OBJDEF_FLAG_RUNTIME_BATCHABLE;
     i = 0;
     obj->afterBonesCallback = NULL;
     if (loadFlags & OBJLOAD_FLAG_INDEXED_MODEL) {
@@ -1766,7 +1766,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
             modelTable[idx] = (u8*)obj + base + offsets[idx];
             ObjModel_LoadAnimData(models[idx], loadFlags, modelTable[idx]);
             if (!(((ObjModel*)modelTable[idx])->file->flags & 0x8000)) {
-                obj->anim.modelInstance->flags &= ~0x800000;
+                obj->anim.modelInstance->flags &= ~OBJDEF_FLAG_RUNTIME_BATCHABLE;
             }
             ObjModel_LoadRenderOpTextures(modelTable[idx], obj);
             modelInitBones(obj->anim.rootMotionScale, modelTable[idx]);
@@ -1787,7 +1787,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
             ObjModel_LoadAnimData(models[i], loadFlags, modelTable[i]);
             modelFlags = ((ObjModel*)modelTable[i])->file->flags;
             if (!(modelFlags & 0x8000) && !(modelFlags & 0x4000)) {
-                obj->anim.modelInstance->flags &= ~0x800000;
+                obj->anim.modelInstance->flags &= ~OBJDEF_FLAG_RUNTIME_BATCHABLE;
             }
             ObjModel_LoadRenderOpTextures(modelTable[i], obj);
             modelInitBones(obj->anim.rootMotionScale, modelTable[i]);
@@ -1824,7 +1824,7 @@ void* loadCharacter(s16* data, int flags, int arg2, int arg3, void* parent, int 
     } else {
         obj->extra = NULL;
     }
-    if ((loadFlags & OBJLOAD_FLAG_ANIM_EVENTS) || (obj->anim.modelInstance->flags & 0x400000)) {
+    if ((loadFlags & OBJLOAD_FLAG_ANIM_EVENTS) || (obj->anim.modelInstance->flags & OBJDEF_FLAG_HAS_EVENT)) {
         seq2[0] = obj->anim.romDefNo;
         alignedCursor = (cursor + 3) & ~(uintptr_t)3;
         obj->anim.eventTable = (ObjAnimEventTable*)alignedCursor;
@@ -1985,7 +1985,7 @@ int ObjList_PartitionForRender(int* out) {
 
         stop = 0;
         while (i <= hi && stop == 0) {
-            if (((ObjAnimComponent*)gObjList[i])->modelInstance->flags & 1) {
+            if (((ObjAnimComponent*)gObjList[i])->modelInstance->flags & OBJDEF_FLAG_HAS_MODELS) {
                 i++;
             } else {
                 stop = -1;
@@ -1993,7 +1993,7 @@ int ObjList_PartitionForRender(int* out) {
         }
         stop = 0;
         while (j >= 0 && stop == 0) {
-            if (!(((ObjAnimComponent*)gObjList[j])->modelInstance->flags & 1)) {
+            if (!(((ObjAnimComponent*)gObjList[j])->modelInstance->flags & OBJDEF_FLAG_HAS_MODELS)) {
                 j--;
             } else {
                 stop = -1;
@@ -2139,7 +2139,7 @@ void Obj_UpdateAllObjects(u8 flags) {
         Obj_UpdateObject((GameObject*)obj);
         obj = *(uintptr_t*)(obj + off);
     }
-    while (obj != 0 && (((ObjAnimComponent*)obj)->modelInstance->flags & OBJMODEL_FLAG_SKIP_RESET_UPDATE)) {
+    while (obj != 0 && (((ObjAnimComponent*)obj)->modelInstance->flags & OBJDEF_FLAG_HITBOX_GROUP)) {
         Obj_UpdateObject((GameObject*)obj);
         ((GameObject*)obj)->anim.transformMatrixIndex = Obj_BuildTransformMatrixSlot((GameObject*)obj);
         obj = *(uintptr_t*)(obj + off);

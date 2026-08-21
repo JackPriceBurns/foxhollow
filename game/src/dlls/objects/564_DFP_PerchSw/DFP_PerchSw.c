@@ -1,5 +1,5 @@
 /*
- * DragonRock Palace perch switch. This legacy object is no longer
+ * Ocean Force Point Temple perch switch. This legacy object is no longer
  * supported; its init and update callbacks only report that fact.
  */
 #include "main/dll/DF/dll_0234_dfperchwitch.h"

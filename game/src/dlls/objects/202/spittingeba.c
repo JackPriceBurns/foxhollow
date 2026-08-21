@@ -90,7 +90,9 @@
 void spittingEbaSpawnPollen(GameObject* obj, void* state)
 {
     u32 loadLocked;
-    int ref;
+    int angle;
+    GameObject* target;
+    GameObject* pollen;
     ObjPlacement* setup;
     f32 spd;
     f32 t;
@@ -109,21 +111,21 @@ void spittingEbaSpawnPollen(GameObject* obj, void* state)
         a[0] = obj->anim.localPosX;
         a[1] = 15.0f + obj->anim.localPosY;
         a[2] = obj->anim.localPosZ;
-        ref = (int)((EnemyState*)state)->trackedObj;
-        b[0] = ((GameObject*)ref)->anim.localPosX;
-        b[1] = 30.0f + ((GameObject*)ref)->anim.localPosY;
-        b[2] = ((GameObject*)ref)->anim.localPosZ;
+        target = ((EnemyState*)state)->trackedObj;
+        b[0] = target->anim.localPosX;
+        b[1] = 30.0f + target->anim.localPosY;
+        b[2] = target->anim.localPosZ;
         spd = (3.25f) * ((0.02f) * (f32)(int)randomGetRange(-10, 10) + (1.0f));
-        ref = pinponspike_calculateLaunchAngle(a, b, spd, 1, (0.045f));
-        angleToVec2Precise(ref, &cosVal, &velXZ);
+        angle = pinponspike_calculateLaunchAngle(a, b, spd, 1, (0.045f));
+        angleToVec2Precise(angle, &cosVal, &velXZ);
         velXZ = velXZ * spd;
         cosVal = cosVal * spd;
         dx = b[0] - obj->anim.localPosX;
         dz = b[2] - obj->anim.localPosZ;
         if (dz != 0.0f)
         {
-            ref = getAngle(dx, dz);
-            angleToVec2Precise(ref, &cosPitch, &velY);
+            angle = getAngle(dx, dz);
+            angleToVec2Precise(angle, &cosPitch, &velY);
             t = velXZ;
             velY = velY * t;
             velXZ = t * cosPitch;
@@ -140,13 +142,13 @@ void spittingEbaSpawnPollen(GameObject* obj, void* state)
         setup->color[1] = 1;
         setup->color[2] = 0xff;
         setup->color[3] = 0xff;
-        ref = (int)objSetupObject((ObjPlacement*)setup, 5, -1, -1, 0);
-        if ((void*)ref != NULL)
+        pollen = objSetupObject((ObjPlacement*)setup, 5, -1, -1, 0);
+        if (pollen != NULL)
         {
-            ((GameObject*)ref)->anim.velocityX = velXZ;
-            ((GameObject*)ref)->anim.velocityY = cosVal;
-            ((GameObject*)ref)->anim.velocityZ = velY;
-            ((GameObject*)ref)->ownerObj = obj;
+            pollen->anim.velocityX = velXZ;
+            pollen->anim.velocityY = cosVal;
+            pollen->anim.velocityZ = velY;
+            pollen->ownerObj = obj;
             Sfx_PlayFromObject(obj, SFXTRIG_baddie_mika_cackle);
         }
     }

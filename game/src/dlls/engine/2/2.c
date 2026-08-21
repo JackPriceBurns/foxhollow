@@ -1290,7 +1290,7 @@ int ObjSeq_start(int seqIdx, GameObject* obj, int flags)
                 gObjSeqSlotHandles[obj->seqIndex] =
                     ((ObjPlacement*)newObj->anim.placementData)->ident;
                 mapFlags = obj->anim.modelInstance->flags;
-                if ((mapFlags & OBJMODEL_FLAG_SKIP_RESET_UPDATE) && !(mapFlags & 0x8000))
+                if ((mapFlags & OBJDEF_FLAG_HITBOX_GROUP) && !(mapFlags & OBJDEF_FLAG_CAN_HOLD_PLAYER))
                 {
                     parent = obj;
                     z = y = x = 0.0f;

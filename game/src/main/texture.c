@@ -833,7 +833,7 @@ void* textureLoad(int texId, u8 flagIn)
             }
             *buf = header;
             memcpy((u8*)buf + sizeof(Texture), src + GC_TEXTURE_HEADER_SIZE, payloadSize);
-            buf->cached = 1;
+            buf->cached = 0;
             if (flagIn != 0)
             {
                 flagIn = 0;

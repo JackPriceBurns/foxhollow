@@ -17,39 +17,31 @@
 #include "main/camera.h"
 #include "main/vecmath.h"
 
-static f32 ARWSpeedStr_randomSpread(f32 spread)
-{
-    return (f32)randomGetRange((int)-spread, (int)spread);
+static f32 ARWSpeedStr_randomSpread(f32 spread) {
+    return randomGetRange(-spread, spread);
 }
 
-int ARWSpeedStr_getExtraSize(void)
-{
+int ARWSpeedStr_getExtraSize(void) {
     return sizeof(ARWSpeedStrState);
 }
 
-int ARWSpeedStr_getObjectTypeId(void)
-{
+int ARWSpeedStr_getObjectTypeId(void) {
     return 0;
 }
 
-void ARWSpeedStr_free(void)
-{
+void ARWSpeedStr_free(void) {
 }
 
-void ARWSpeedStr_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
-{
+void ARWSpeedStr_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
-void ARWSpeedStr_hitDetect(void)
-{
+void ARWSpeedStr_hitDetect(void) {
 }
 
-void ARWSpeedStr_update(GameObject* obj)
-{
+void ARWSpeedStr_update(GameObject* obj) {
     ARWSpeedStrState* state = obj->extra;
-    if (state->flags == 0)
-    {
+    if (state->flags == 0) {
         Vec cameraOffset;
         cameraOffset.x = ARWSpeedStr_randomSpread(state->spreadX);
         cameraOffset.y = ARWSpeedStr_randomSpread(state->spreadY);
@@ -57,52 +49,54 @@ void ARWSpeedStr_update(GameObject* obj)
         PSMTXMultVec((MtxP)Camera_GetInverseViewMatrix(), &cameraOffset, (Vec*)&obj->anim.localPosX);
         obj->anim.localPosX += playerMapOffsetX;
         obj->anim.localPosZ += playerMapOffsetZ;
-        state->flags = (state->flags | ARWSPEEDSTR_FLAG_POSITION_INITIALIZED) & 0xff;
+        state->flags |= ARWSPEEDSTR_FLAG_POSITION_INITIALIZED;
+        state->flags &= 0xff;
         state->alpha = 0.0f;
     }
-    {
-        f32 lifeTimer = state->lifeTimer;
-        f32 zero = 0.0f;
-        if (lifeTimer > zero)
-        {
-            state->lifeTimer = lifeTimer - timeDelta;
-            if (state->lifeTimer <= zero)
-            {
-                state->lifeTimer = zero;
-                Obj_FreeObject(obj);
-                return;
-            }
-        }
-        else
-        {
-            return;
-        }
-        objMove(obj, zero, zero, state->speed * timeDelta);
-        state->alpha = 2.0f * timeDelta + state->alpha;
-        if (state->alpha > 140.0f)
-            state->alpha = 140.0f;
-        obj->anim.alpha = state->alpha;
+
+    if (state->lifeTimer <= 0.0f) {
+        return;
     }
+
+    state->lifeTimer -= timeDelta;
+    if (state->lifeTimer <= 0.0f) {
+        state->lifeTimer = 0.0f;
+        Obj_FreeObject(obj);
+        return;
+    }
+
+    objMove(obj, 0.0f, 0.0f, state->speed * timeDelta);
+    state->alpha += 2.0f * timeDelta;
+    if (state->alpha > 140.0f) {
+        state->alpha = 140.0f;
+    }
+
+    obj->anim.alpha = state->alpha;
 }
 
-void ARWSpeedStr_init(GameObject* obj, ObjPlacement* placement)
-{
+void ARWSpeedStr_init(GameObject* obj, ObjPlacement* placement) {
     obj->anim.alpha = 0;
 }
 
-void ARWSpeedStr_release(void)
-{
+void ARWSpeedStr_release(void) {
 }
 
-void ARWSpeedStr_initialise(void)
-{
+void ARWSpeedStr_initialise(void) {
 }
 
 ObjectDescriptor gARWSpeedStrObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWSpeedStr_initialise, (ObjectDescriptorCallback)ARWSpeedStr_release, 0,
-    (ObjectDescriptorCallback)ARWSpeedStr_init, (ObjectDescriptorCallback)ARWSpeedStr_update,
-    (ObjectDescriptorCallback)ARWSpeedStr_hitDetect, (ObjectDescriptorCallback)ARWSpeedStr_render,
-    (ObjectDescriptorCallback)ARWSpeedStr_free, (ObjectDescriptorCallback)ARWSpeedStr_getObjectTypeId,
+    0,
+    0,
+    0,
+    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    (ObjectDescriptorCallback)ARWSpeedStr_initialise,
+    (ObjectDescriptorCallback)ARWSpeedStr_release,
+    0,
+    (ObjectDescriptorCallback)ARWSpeedStr_init,
+    (ObjectDescriptorCallback)ARWSpeedStr_update,
+    (ObjectDescriptorCallback)ARWSpeedStr_hitDetect,
+    (ObjectDescriptorCallback)ARWSpeedStr_render,
+    (ObjectDescriptorCallback)ARWSpeedStr_free,
+    (ObjectDescriptorCallback)ARWSpeedStr_getObjectTypeId,
     ARWSpeedStr_getExtraSize,
 };

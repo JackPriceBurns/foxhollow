@@ -1365,7 +1365,7 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     {
         ObjModelState* modelState = obj->anim.modelState;
         if (modelState != NULL) {
-            modelState->flags = modelState->flags | 0xA10;
+            modelState->flags |= OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010;
             obj->anim.modelState->shadowTintA = 0x60;
             obj->anim.modelState->shadowTintB = 0x40;
         }

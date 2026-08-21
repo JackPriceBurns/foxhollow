@@ -980,7 +980,7 @@ void HighTop_render(void* obj, int p2, int p3, int p4, int p5, char visible)
     if (visible != 0)
     {
         int count;
-        int** list;
+        GameObject** list;
         int i;
         objRenderModelAndHitVolumes((GameObject*)obj, p2, p3, p4, p5, scale);
         ObjPath_GetPointWorldPosition((GameObject*)obj, 2, &runtime->pathPoint2X, &runtime->pathPoint2Y, &runtime->pathPoint2Z,
@@ -992,13 +992,13 @@ void HighTop_render(void* obj, int p2, int p3, int p4, int p5, char visible)
         dll_2E_setTargetFromPathPoint((GameObject*)obj, &runtime->lookController, 0);
         if (runtime->flagsC49.b1 != 0)
         {
-            int** t = (int**)objGetAllOfType(55, &count);
+            GameObject** t = objGetAllOfType(55, &count);
             for (i = 0, list = t; i < count; i++)
             {
-                int idx = DRSHACKLE_INTERFACE(*list)->getAttachSlot((GameObject*)*list);
+                int idx = DRSHACKLE_INTERFACE(*list)->getAttachSlot(*list);
                 void (*dispatch)(GameObject*, void*, int, int, int, int, int) =
                     DRSHACKLE_INTERFACE(*list)->renderAtPathPoint;
-                dispatch((GameObject*)*list, obj, gHighTopTuning.shacklePathPoints[idx], p2, p3, p4, p5);
+                dispatch(*list, obj, gHighTopTuning.shacklePathPoints[idx], p2, p3, p4, p5);
                 list++;
             }
         }
@@ -1154,7 +1154,7 @@ void HighTop_update(GameObject* obj)
         if (runtime->sfxIntervalTimer > 60.0f)
         {
             runtime->sfxIntervalTimer -= 60.0f;
-            Sfx_PlayFromObject((GameObject*)(u32)self, SFXTRIG_hightop_fstep);
+            Sfx_PlayFromObject((GameObject*)self, SFXTRIG_hightop_fstep);
         }
     }
 }
@@ -1164,7 +1164,7 @@ void HighTop_init(GameObject* obj, HighTopPlacement* placement)
 {
     u8* base = gHighTopConfigTable;
     HighTopRuntime* runtime = (obj)->extra;
-    u8* pathState;
+    CurvesCollisionState* pathState;
     ObjModelState* node;
     HtInitData local1;
     HtInitData local2;
@@ -1179,14 +1179,14 @@ void HighTop_init(GameObject* obj, HighTopPlacement* placement)
     node = (ObjModelState*)((int*)(obj)->anim.modelState);
     if (node != 0)
     {
-        node->flags |= 0xa10;
+        node->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     objAddObjectType(obj, PLAYER_VEHICLE_OBJGROUP);
     objAddObjectType(obj, HIGHTOP_OBJGROUP);
     (*gPlayerInterface)->init(obj, runtime, 11, 1);
     runtime->baddie.gravity = 0.17f;
-    pathState = (u8*)&runtime->baddie + 4;
-    pathState[0x25b] = 1;
+    pathState = &runtime->baddie.curvesCollision;
+    pathState->subtype = 1;
     (*gPathControlInterface)->init(pathState, 3, 1024, 0);
     (*gPathControlInterface)->setLocalPointCollision(pathState, 2, &base[0xe8], gHighTopPathPointRadii, 8);
     (*gPathControlInterface)->setup(pathState, 4, &base[0xa8], &base[0xd8], pathParam.values);

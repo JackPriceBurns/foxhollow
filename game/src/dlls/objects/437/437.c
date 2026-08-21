@@ -575,35 +575,35 @@ void Lightfoot_ProcessHitResponseFlags(GameObject* obj, BaddieState* inner)
     if (inner->eventFlags & 4)
     {
         inner->eventFlags &= ~4;
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_sc_spotfox02);
+        Sfx_PlayFromObject(obj, SFXTRIG_sc_spotfox02);
     }
     if (inner->eventFlags & 2)
     {
         inner->eventFlags &= ~2;
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_sc_spotfox02);
+        Sfx_PlayFromObject(obj, SFXTRIG_sc_spotfox02);
     }
     if (inner->eventFlags & 1)
     {
         inner->eventFlags &= ~1;
         if (randomGetRange(0, 2) == 0)
         {
-            Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_skeep_mumb4);
+            Sfx_PlayFromObject(obj, SFXTRIG_skeep_mumb4);
         }
     }
     if (inner->eventFlags & 0x80)
     {
         inner->eventFlags &= ~0x80;
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_wp_swdtest322);
+        Sfx_PlayFromObject(obj, SFXTRIG_wp_swdtest322);
     }
     if (inner->eventFlags & 0x200)
     {
         inner->eventFlags &= ~0x200;
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_sk_trwhin3);
+        Sfx_PlayFromObject(obj, SFXTRIG_sk_trwhin3);
     }
     if (inner->eventFlags & 0x40)
     {
         inner->eventFlags &= ~0x40;
-        Sfx_PlayFromObject((GameObject*)(u32)obj, SFXTRIG_wp_swdtest322_135);
+        Sfx_PlayFromObject(obj, SFXTRIG_wp_swdtest322_135);
     }
     if (inner->eventFlags & 0x800)
     {

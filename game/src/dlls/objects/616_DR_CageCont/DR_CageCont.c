@@ -15,124 +15,98 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/DR/dll_0268_drcagecontrol.h"
 
-int DR_CageControl_SeqFn(GameObject* obj)
-{
-    int ret;
+int DR_CageControl_SeqFn(GameObject* obj) {
     CageControlPlacement* placement = (CageControlPlacement*)obj->anim.placementData;
     DRCageControlState* state = obj->extra;
-    if (state->sequenceId == 0)
-    {
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0)
-        {
+
+    if (state->sequenceId == 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->armGameBit)) != 0) {
             Sfx_StopObjectChannel(obj, 8);
             return 4;
         }
-        if (state->flags.watchBitSet != mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))))
-        {
+
+        if (state->flags.watchBitSet != mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->watchGameBit))) {
             Sfx_PlayFromObject(obj, SFXTRIG_mv_blkhit_c);
             Sfx_PlayFromObject(obj, SFXTRIG_mv_persquk2);
-            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) != 0)
-            {
+            if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->watchGameBit)) != 0) {
                 Sfx_PlayFromObject(obj, SFXTRIG_mv_wickpickup16_194);
-            }
-            else
-            {
+            } else {
                 Sfx_StopObjectChannel(obj, 8);
             }
         }
-        state->flags.watchBitSet = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit)));
+        state->flags.watchBitSet = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->watchGameBit));
     }
-    ret = 0;
-    if (state->sequenceId == 0)
-    {
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) == 0)
-        {
-            ret = 1;
-        }
+
+    if (state->sequenceId == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->watchGameBit)) == 0) {
+        return 1;
     }
-    return ret;
+
+    return 0;
 }
 
-int DR_CageControl_getExtraSize(void)
-{
+int DR_CageControl_getExtraSize(void) {
     return sizeof(DRCageControlState);
 }
 
-int DR_CageControl_getObjectTypeId(void)
-{
+int DR_CageControl_getObjectTypeId(void) {
     return 0x0;
 }
 
-void DR_CageControl_free(void)
-{
+void DR_CageControl_free(void) {
 }
 
-void DR_CageControl_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, s8 visible)
-{
-    if (visible != 0)
-    {
+void DR_CageControl_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, s8 visible) {
+    if (visible != 0) {
         f32 scale = 1.0f;
         objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, scale);
     }
 }
 
-void DR_CageControl_hitDetect(void)
-{
+void DR_CageControl_hitDetect(void) {
 }
 
-void DR_CageControl_update(GameObject* obj)
-{
+void DR_CageControl_update(GameObject* obj) {
     CageControlPlacement* placement = (CageControlPlacement*)obj->anim.placementData;
     DRCageControlState* state = obj->extra;
-    if (state->flags.sequenceStarted != 0)
-    {
+    if (state->flags.sequenceStarted != 0) {
         return;
     }
-    if (state->sequenceId == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0)
-    {
+
+    if (state->sequenceId == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0) {
         state->flags.sequenceStarted = 1;
         state->sequenceId = 2;
     }
-    if (state->flags.initiallyArmed != 0)
-    {
-        state->flags.sequenceStarted = 1;
-        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x76c);
-        if (mainGetBit(GAMEBIT_DR_EnteredDrakorTower) != 0)
-        {
-            (*gObjectTriggerInterface)->runSequence(state->sequenceId, (void*)obj, 0x60);
-        }
-        else
-        {
-            (*gObjectTriggerInterface)->runSequence(state->sequenceId, (void*)obj, 0x70);
-        }
+
+    if (state->flags.initiallyArmed == 0) {
+        (*gObjectTriggerInterface)->runSequence(state->sequenceId, obj, -1);
+        return;
     }
-    else
-    {
-        (*gObjectTriggerInterface)->runSequence(state->sequenceId, (void*)obj, -1);
+
+    state->flags.sequenceStarted = 1;
+    (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x76c);
+    if (mainGetBit(GAMEBIT_DR_EnteredDrakorTower) != 0) {
+        (*gObjectTriggerInterface)->runSequence(state->sequenceId, obj, 0x60);
+    } else {
+        (*gObjectTriggerInterface)->runSequence(state->sequenceId, obj, 0x70);
     }
 }
 
-void DR_CageControl_init(GameObject* obj, CageControlPlacement* placement)
-{
+void DR_CageControl_init(GameObject* obj, CageControlPlacement* placement) {
     DRCageControlState* state = obj->extra;
+
     obj->animEventCallback = DR_CageControl_SeqFn;
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0)
-    {
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->armGameBit))) != 0) {
         state->flags.initiallyArmed = 1;
         state->sequenceId = 2;
-    }
-    else
-    {
+    } else {
         state->sequenceId = 0;
     }
 }
 
-void DR_CageControl_release(void)
-{
+void DR_CageControl_release(void) {
 }
 
-void DR_CageControl_initialise(void)
-{
+void DR_CageControl_initialise(void) {
 }
 
 ObjectDescriptor gDrCageControlObjDescriptor = {

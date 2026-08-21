@@ -6,7 +6,6 @@
  * keeps the vent sound alive.
  */
 #include "dlls/objects/387_MMP_gyserve.h"
-
 #include "game/objects/object.h"
 #include "main/audio/sfx_keep_alive_api.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -16,18 +15,6 @@
 #include "main/vecmath.h"
 
 #define MMP_GEYSER_VENT_PARTICLE_GEYSER     0x724
-#define MMP_GEYSER_VENT_PARTICLE_SPAWN_MODE 2
-#define MMP_GEYSER_VENT_PARTICLE_MODEL_NONE -1
-
-#define MMP_GEYSER_VENT_INITIAL_IDLE_MIN 10
-#define MMP_GEYSER_VENT_INITIAL_IDLE_MAX 200
-#define MMP_GEYSER_VENT_IDLE_MIN         70
-#define MMP_GEYSER_VENT_IDLE_MAX         240
-#define MMP_GEYSER_VENT_ACTIVE_MIN       30
-#define MMP_GEYSER_VENT_ACTIVE_MAX       60
-
-#define MMP_GEYSER_VENT_IDLE_TIMER(obj)   ((obj)->userData1)
-#define MMP_GEYSER_VENT_ACTIVE_TIMER(obj) ((obj)->userData2)
 
 int mmpGeyserVent_getExtraSize(void) {
     return 0;
@@ -47,34 +34,35 @@ void mmpGeyserVent_hitDetect(void) {
 }
 
 void mmpGeyserVent_update(GameObject* obj) {
-    const MMPGeyserVentPlacement* placement = (const MMPGeyserVentPlacement*)obj->anim.placementData;
+    MMPGeyserVentPlacement* placement = (MMPGeyserVentPlacement*)obj->anim.placementData;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->disableGameBit)) != 0) {
+        return;
+    }
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->disableGameBit))) != 0) {
+    obj->userData1 -= framesThisStep;
+    if (obj->userData1 < 0) {
+        obj->userData1 = randomGetRange(70, 240);
+        obj->userData2 = randomGetRange(30, 60);
+    }
+
+    if (obj->userData2 == 0) {
         return;
     }
-    MMP_GEYSER_VENT_IDLE_TIMER(obj) -= framesThisStep;
-    if (MMP_GEYSER_VENT_IDLE_TIMER(obj) < 0) {
-        MMP_GEYSER_VENT_IDLE_TIMER(obj) = randomGetRange(MMP_GEYSER_VENT_IDLE_MIN, MMP_GEYSER_VENT_IDLE_MAX);
-        MMP_GEYSER_VENT_ACTIVE_TIMER(obj) = randomGetRange(MMP_GEYSER_VENT_ACTIVE_MIN, MMP_GEYSER_VENT_ACTIVE_MAX);
-    }
-    if (MMP_GEYSER_VENT_ACTIVE_TIMER(obj) == 0) {
-        return;
-    }
-    MMP_GEYSER_VENT_ACTIVE_TIMER(obj) -= framesThisStep;
-    if (MMP_GEYSER_VENT_ACTIVE_TIMER(obj) <= 0) {
-        MMP_GEYSER_VENT_ACTIVE_TIMER(obj) = 0;
+
+    obj->userData2 -= framesThisStep;
+    if (obj->userData2 <= 0) {
+        obj->userData2 = 0;
     } else {
         (*gPartfxInterface)
-            ->spawnObject((void*)obj, MMP_GEYSER_VENT_PARTICLE_GEYSER, NULL, MMP_GEYSER_VENT_PARTICLE_SPAWN_MODE,
-                          MMP_GEYSER_VENT_PARTICLE_MODEL_NONE, NULL);
+            ->spawnObject(obj, MMP_GEYSER_VENT_PARTICLE_GEYSER, NULL, 2,
+                          -1, NULL);
         Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_en_diallp_c_450);
     }
 }
 
 void mmpGeyserVent_init(GameObject* obj) {
-    obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
-    MMP_GEYSER_VENT_IDLE_TIMER(obj) =
-        randomGetRange(MMP_GEYSER_VENT_INITIAL_IDLE_MIN, MMP_GEYSER_VENT_INITIAL_IDLE_MAX);
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
+    obj->userData1 = randomGetRange(10, 200);
     obj->anim.alpha = 0;
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
 }

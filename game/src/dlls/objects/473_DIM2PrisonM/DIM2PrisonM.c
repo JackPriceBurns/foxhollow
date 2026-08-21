@@ -4,6 +4,7 @@
  * reactions, sequence position override, and the EarthWarrior tail-chain hook.
  */
 #include "dlls/objects/473_DIM2PrisonM.h"
+#include "dlls/objects/599_DR_EarthWar.h"
 
 #include "dolphin/pad.h"
 #include "main/audio/sfx_play_api.h"
@@ -26,18 +27,6 @@
 
 typedef int (*Dim2PrisonMammothStateHandler)(GameObject* obj, Dim2PrisonMammothState* state);
 typedef int (*Dim2PrisonMammothDefaultStateHandler)(void);
-
-/*
- * The only proven consumer is DR_EarthWarrior. This callback reads that
- * object's 0x14FC-byte state, not this DLL's 0x604-byte allocation.
- */
-typedef struct EarthWarriorModelChainStateView {
-    u8 unknown00[0x14F8];
-    ObjModelChain* tailModelChain;
-} EarthWarriorModelChainStateView;
-
-STATIC_ASSERT(offsetof(EarthWarriorModelChainStateView, tailModelChain) == 0x14F8);
-STATIC_ASSERT(sizeof(EarthWarriorModelChainStateView) == 0x14FC);
 
 Dim2PrisonMammothStateHandler gDim2PrisonMammothStateHandlers[4];
 Dim2PrisonMammothDefaultStateHandler gDim2PrisonMammothDefaultStateHandler[2];
@@ -245,8 +234,8 @@ void dim2prisonmammoth_init(GameObject* obj, const Dim2PrisonMammothPlacement* p
     obj->animEventCallback = dim2prisonmammoth_SeqFn;
     state = obj->extra;
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= 0xA10;
-        obj->anim.modelState->flags |= 0x8020LL;
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010);
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_8000 | OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE);
     }
     (*gPlayerInterface)->init((void*)obj, (void*)state, 4, 1);
     state->baddie.physicsActive = 0;
@@ -265,9 +254,9 @@ void dim2prisonmammoth_initialise(void) {
 }
 
 void dim2prisonmammoth_updateModelChain(GameObject* obj, ObjModel* model) {
-    EarthWarriorModelChainStateView* state = obj->extra;
+    EarthWarriorState* state = obj->extra;
 
-    ObjModelChain_Update(model, model->file, state->tailModelChain, NULL);
+    ObjModelChain_Update(model, model->file, state->sub.modelChain, NULL);
 }
 
 ObjHitReactEntry gPrisonMammothHitReactEntry[] = {

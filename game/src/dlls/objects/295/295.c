@@ -12,12 +12,6 @@
 
 #define DLL_127_OBJECT_TYPE_ID            0x13
 #define DLL_127_HIT_REACT_COOLDOWN_FRAMES 100
-#define DLL_127_MINIMUM_SCALE             10.0f
-#define DLL_127_SCALE_FACTOR              0.015625f
-#define DLL_127_INITIAL_YAW_MASK          0x3F
-#define DLL_127_INITIAL_YAW_SHIFT         10
-
-#define DLL_127_HIT_REACT_COOLDOWN(obj) (*(s16*)&(obj)->userData2)
 
 int dll_127_getExtraSize(void) {
     return 0;
@@ -31,54 +25,54 @@ void dll_127_free(void) {
 }
 
 void dll_127_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    if (visible) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    if (!visible) {
+        return;
     }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
 void dll_127_hitDetect(void) {
 }
 
 void dll_127_update(GameObject* obj) {
-    ObjHitsPriorityState* hitState;
-
     if (obj->anim.hitReactState == 0) {
         return;
     }
-    if (DLL_127_HIT_REACT_COOLDOWN(obj) > 0) {
-        DLL_127_HIT_REACT_COOLDOWN(obj) -= framesThisStep;
+
+    if (obj->userData2 > 0) {
+        obj->userData2 -= framesThisStep;
     }
-    hitState = ObjAnim_GetPriorityHitState(&obj->anim);
+
+    ObjHitsPriorityState* hitState = ObjAnim_GetPriorityHitState(&obj->anim);
     if ((hitState->flags & OBJHITS_PRIORITY_STATE_PAIR_RESPONSE_APPLIED) == 0) {
         return;
     }
-    if (DLL_127_HIT_REACT_COOLDOWN(obj) > 0) {
+
+    if (obj->userData2 > 0) {
         return;
     }
-    DLL_127_HIT_REACT_COOLDOWN(obj) = DLL_127_HIT_REACT_COOLDOWN_FRAMES;
+
+    obj->userData2 = DLL_127_HIT_REACT_COOLDOWN_FRAMES;
 }
 
 void dll_127_init(GameObject* obj, Dll127Placement* placement) {
-    ObjAnimComponent* objAnim;
-    f32 scale;
-    u32 initialYaw;
-    u8 scaleByte;
-
-    objAnim = &obj->anim;
+    ObjAnimComponent* objAnim = &obj->anim;
     objAnim->flags |= 2;
-    scaleByte = placement->modelScale;
-    scale = (f32)(int)scaleByte;
-    if ((f32)(int)scaleByte < DLL_127_MINIMUM_SCALE) {
-        scale = DLL_127_MINIMUM_SCALE;
+
+    f32 scale = placement->modelScale;
+    if (placement->modelScale < 10.0f) {
+        scale = 10.0f;
     }
-    scale *= DLL_127_SCALE_FACTOR;
+    scale *= 0.015625f;
+
     objAnim->rootMotionScale = objAnim->modelInstance->rootMotionScaleBase * scale;
     if (objAnim->modelState != NULL) {
         objAnim->modelState->shadowScale = objAnim->modelInstance->shadowScaleBase * scale;
     }
+
     objAnim->bankIndex = placement->modelBankIndex;
-    initialYaw = placement->initialYaw & DLL_127_INITIAL_YAW_MASK;
-    objAnim->rotX = (s16)(initialYaw << DLL_127_INITIAL_YAW_SHIFT);
+    objAnim->rotX = (placement->initialYaw & 0x3F) << 10;
     if (objAnim->bankIndex >= objAnim->modelInstance->modelCount) {
         objAnim->bankIndex = 0;
     }

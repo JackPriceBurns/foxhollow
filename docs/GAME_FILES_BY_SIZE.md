@@ -203,31 +203,31 @@ All 855 non-header regular files under `game/`, ordered from smallest to largest
 - [x] `game/src/musyx/runtime/hw_volume.c` — 3154 bytes
 - [x] `game/src/dlls/objects/509_WM_LaserTar/WM_LaserTar.c` — 3155 bytes
 - [x] `game/src/dlls/objects/314_VisAnimator/VisAnimator.c` — 3170 bytes
-- [ ] `game/src/dlls/objects/674_ARWSpeedStr/ARWSpeedStr.c` — 3204 bytes
-- [ ] `game/src/dlls/objects/295/295.c` — 3236 bytes
-- [ ] `game/src/dlls/objects/498_SB_CageKyte/SB_CageKyte.c` — 3241 bytes
-- [ ] `game/src/dlls/objects/507/507.c` — 3283 bytes
-- [ ] `game/src/dlls/objects/258_StayPoint/StayPoint.c` — 3290 bytes
-- [ ] `game/src/dlls/objects/288_TrickyGuard/TrickyGuard.c` — 3296 bytes
-- [ ] `game/src/dlls/objects/676/676.c` — 3343 bytes
-- [ ] `game/src/dlls/objects/479/479.c` — 3364 bytes
-- [ ] `game/src/dlls/objects/572_DFP_PowerSl/DFP_PowerSl.c` — 3385 bytes
-- [ ] `game/src/musyx/runtime/sal_ai.c` — 3394 bytes
-- [ ] `game/src/dlls/objects/387_MMP_gyserve/MMP_gyserve.c` — 3431 bytes
-- [ ] `game/src/dlls/objects/528_WM_Planets/WM_Planets.c` — 3432 bytes
-- [ ] `game/src/dlls/objects/416_NW_geyser/NW_geyser.c` — 3457 bytes
-- [ ] `game/src/dlls/objects/619_DR_Chimmey/DR_Chimmey.c` — 3460 bytes
-- [ ] `game/src/dlls/objects/317_ExplodeAnim/ExplodeAnim.c` — 3518 bytes
+- [x] `game/src/dlls/objects/674_ARWSpeedStr/ARWSpeedStr.c` — 3204 bytes
+- [x] `game/src/dlls/objects/295/295.c` — 3236 bytes
+- [x] `game/src/dlls/objects/498_SB_CageKyte/SB_CageKyte.c` — 3241 bytes
+- [x] `game/src/dlls/objects/507/507.c` — 3283 bytes
+- [x] `game/src/dlls/objects/258_StayPoint/StayPoint.c` — 3290 bytes
+- [x] `game/src/dlls/objects/288_TrickyGuard/TrickyGuard.c` — 3296 bytes
+- [x] `game/src/dlls/objects/676/676.c` — 3343 bytes
+- [x] `game/src/dlls/objects/479/479.c` — 3364 bytes
+- [x] `game/src/dlls/objects/572_DFP_PowerSl/DFP_PowerSl.c` — 3385 bytes
+- [x] `game/src/musyx/runtime/sal_ai.c` — 3394 bytes
+- [x] `game/src/dlls/objects/387_MMP_gyserve/MMP_gyserve.c` — 3431 bytes
+- [x] `game/src/dlls/objects/528_WM_Planets/WM_Planets.c` — 3432 bytes
+- [x] `game/src/dlls/objects/416_NW_geyser/NW_geyser.c` — 3457 bytes
+- [x] `game/src/dlls/objects/619_DR_Chimmey/DR_Chimmey.c` — 3460 bytes
+- [x] `game/src/dlls/objects/317_ExplodeAnim/ExplodeAnim.c` — 3518 bytes
 - [ ] `game/src/main/trig_float_helpers.c` — 3580 bytes
-- [ ] `game/src/dlls/objects/641_DR_EarthCal/DR_EarthCal.c` — 3590 bytes
-- [ ] `game/src/dlls/objects/305/305.c` — 3613 bytes
-- [ ] `game/src/dlls/objects/633_DR_EnergyDi/DR_EnergyDi.c` — 3660 bytes
-- [ ] `game/src/dlls/engine/59/59.c` — 3682 bytes
-- [ ] `game/src/dlls/objects/675/675.c` — 3718 bytes
-- [ ] `game/src/dlls/objects/591_KT_RexLevel/KT_RexLevel.c` — 3796 bytes
-- [ ] `game/src/dlls/objects/451_DIMGate/DIMGate.c` — 3805 bytes
-- [ ] `game/src/dlls/objects/286_MagicCaveBo/MagicCaveBo.c` — 3813 bytes
-- [ ] `game/src/dlls/objects/680_ARWBlocker/ARWBlocker.c` — 3824 bytes
+- [x] `game/src/dlls/objects/641_DR_EarthCal/DR_EarthCal.c` — 3590 bytes
+- [x] `game/src/dlls/objects/305/305.c` — 3613 bytes
+- [x] `game/src/dlls/objects/633_DR_EnergyDi/DR_EnergyDi.c` — 3660 bytes
+- [x] `game/src/dlls/engine/59/59.c` — 3682 bytes
+- [x] `game/src/dlls/objects/675/675.c` — 3718 bytes
+- [x] `game/src/dlls/objects/591_KT_RexLevel/KT_RexLevel.c` — 3796 bytes
+- [x] `game/src/dlls/objects/451_DIMGate/DIMGate.c` — 3805 bytes
+- [x] `game/src/dlls/objects/286_MagicCaveBo/MagicCaveBo.c` — 3813 bytes
+- [x] `game/src/dlls/objects/680_ARWBlocker/ARWBlocker.c` — 3824 bytes
 - [ ] `game/src/main/lightmap_initmapblocks.c` — 3834 bytes
 - [ ] `game/src/dlls/objects/375/375.c` — 3858 bytes
 - [ ] `game/src/dlls/objects/552/552.c` — 3866 bytes

@@ -44,6 +44,15 @@ int dbholecontrol1_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
                 continue;
             childPlacement = (GroundBaddiePlacement*)Obj_AllocObjectSetup(DBHOLECONTROL1_CHILD_SETUP_SIZE, DBHOLECONTROL1_CHILD_OBJ);
             memcpy(childPlacement, res, DBHOLECONTROL1_CHILD_SETUP_SIZE);
+            childPlacement->gameBitA = fhReadBES16(&childPlacement->gameBitA);
+            childPlacement->gameBitC = fhReadBES16(&childPlacement->gameBitC);
+            childPlacement->gameBitD = fhReadBES16(&childPlacement->gameBitD);
+            childPlacement->soundIdB = fhReadBES16(&childPlacement->soundIdB);
+            childPlacement->soundIdA = fhReadBES16(&childPlacement->soundIdA);
+            childPlacement->triggerId = fhReadBES16(&childPlacement->triggerId);
+            childPlacement->unk24 = fhReadBES16(&childPlacement->unk24);
+            childPlacement->respawnDelay = fhReadBES16(&childPlacement->respawnDelay);
+            childPlacement->gameBitB = fhReadBES16(&childPlacement->gameBitB);
             childPlacement->base.posX = obj->anim.localPosX;
             childPlacement->base.posY = obj->anim.localPosY;
             childPlacement->base.posZ = obj->anim.localPosZ;

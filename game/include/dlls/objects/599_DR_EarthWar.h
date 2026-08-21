@@ -9,6 +9,7 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/dll/dll_005A_staffcollision.h"
+#include "main/dll/player_state.h"
 #include "main/model.h"
 #include "main/objprint_character_api.h"
 #include "main/objprint_sound_api.h"
@@ -27,104 +28,133 @@ typedef struct DREarthWarriorPlacement {
 } DREarthWarriorPlacement;
 
 /* EarthWarrior-specific runtime data at EarthWarriorState+0xB58. */
-typedef struct EarthWarriorSub {
-    u8 pad000[0x360];
-    u32 unk360;
-    u8 pad364[0x8C];
-    ByteFlags flags3F0;
-    ByteFlags flags3F1;
-    ByteFlags flags3F2;
-    u8 pad3F3[5];
-    const s16* moveTable;
-    const s16* prevMoveTable;
-    const EWSpeedRange* configRow;
-    f32 animSpeedMax;
-    f32 targetAnimSpeed;
-    u8 pad40C[4];
-    f32 footstepCooldown;
-    u8 pad414[0xC];
-    f32 yawStepRate;
-    u8 pad424[4];
-    f32 yawSmoothDivisor;
-    f32 yawStepScale;
-    f32 currentYawSmoothDivisor;
-    f32 currentYawStepRate;
-    f32 animSpeedSmoothing;
-    u8 pad43C[0x14];
-    u8* paramCurve0;
-    u8* paramCurve1;
-    u8* paramCurve2;
-    u8* paramCurve3;
-    u8* paramCurve4;
-    u8 pad464[0xC];
-    f32 unk470;
-    int unk474;
-    s16 appliedYaw;
-    u8 pad47A[2];
-    int yawTurnProgress;
-    int yawTurnDir;
-    s16 currentYaw;
-    u8 pad486[2];
-    int frameCounter;
-    int turnDegrees;
-    u8 pad490[4];
-    int savedYaw;
-    u8 pad498[0x3A];
-    s16 aimHalfY;
-    s16 aimAccumY;
-    s16 aimAccumX;
-    u8 pad4D8[0x308];
-    f32 unk7E0;
-    u8 pad7E4[0x48];
-    f32 animSpeedASmoothing;
-    f32 animSpeedSmoothingReload;
-    f32 unk834;
-    u8 pad838[8];
-    f32 animSpeedScale;
-    f32 animSpeedRate;
-    u8 pad848[0x10];
-    int leapStartYaw;
-    u8 pad85C[0x4A];
-    u8 soundId;
-    u8 soundIdReload;
-    u8 pad8A8[8];
-    u8 attackStage;
-    u8 pad8B1[0x1B];
-    s8 attackPhase;
-    u8 pad8CD[3];
-    u8 paramCurve0Count;
-    u8 paramCurve1Count;
-    u8 paramCurve2Count;
-    u8 paramCurve3Count;
-    u8 paramCurve4Count;
-    u8 pad8D5[3];
-    u16 flags8D8;
-    u8 pad8DA[6];
-    f32 riderPosX;
-    f32 riderPosY;
-    f32 riderPosZ;
-    f32 maxSpeed;
-    u8 pad8F0[0x90];
-    int savedControlMode;
-    u8 pad984[2];
-    s16 turnThreshold;
-    u8 pad988[2];
-    s16 energy;
-    u16 flags98C;
-    u8 mountState; /* enum VehicleMountState */
-    u8 pad98F;
-    u8 setupVariant;
-    u8 pad991;
-    u8 dismountSide;
-    u8 mountSide;
-    ByteFlags flags994;
-    u8 unk995;
-    u8 pad996[2];
-    f32 airMeterTimer;
-    s8 talkSequenceId;
-    u8 unk99D;
-    u8 pad99E[2];
-    ObjModelChain* modelChain;
+typedef union EarthWarriorSub {
+    PlayerState player;
+    struct {
+        u8 padToFlags360[offsetof(PlayerState, flags360)];
+        u32 unk360;
+    };
+    struct {
+        u8 padToFlags3F0[offsetof(PlayerState, flags3F0)];
+        ByteFlags flags3F0;
+        ByteFlags flags3F1;
+        ByteFlags flags3F2;
+        u8 pad3F3[5];
+        const s16* moveTable;
+        const s16* prevMoveTable;
+        const EWSpeedRange* configRow;
+        f32 animSpeedMax;
+        f32 targetAnimSpeed;
+        u8 pad40C[4];
+        f32 footstepCooldown;
+        u8 pad414[0xC];
+        f32 yawStepRate;
+        u8 pad424[4];
+        f32 yawSmoothDivisor;
+        f32 yawStepScale;
+        f32 currentYawSmoothDivisor;
+        f32 currentYawStepRate;
+        f32 animSpeedSmoothing;
+    };
+    struct {
+        u8 padToParamCurve0[offsetof(PlayerState, paramCurve0)];
+        u8* paramCurve0;
+        u8* paramCurve1;
+        u8* paramCurve2;
+        u8* paramCurve3;
+        u8* paramCurve4;
+    };
+    struct {
+        u8 padToInputMagnitude[offsetof(PlayerState, inputMagnitude)];
+        f32 unk470;
+        int unk474;
+        s16 appliedYaw;
+        u8 pad47A[2];
+        int yawTurnProgress;
+        int yawTurnDir;
+        s16 currentYaw;
+        u8 pad486[2];
+        int frameCounter;
+        int turnDegrees;
+        u8 pad490[4];
+        int savedYaw;
+    };
+    struct {
+        u8 padToBodyLeanHalf[offsetof(PlayerState, bodyLeanHalf)];
+        s16 aimHalfY;
+        s16 aimAccumY;
+        s16 aimAccumX;
+    };
+    struct {
+        u8 padToCurveSpeedScale[offsetof(PlayerState, curveSpeedScale)];
+        f32 unk7E0;
+    };
+    struct {
+        u8 padToTargetAnimSpeed[offsetof(PlayerState, targetAnimSpeed)];
+        f32 animSpeedASmoothing;
+        f32 animSpeedSmoothingReload;
+        f32 unk834;
+        u8 pad838[8];
+        f32 animSpeedScale;
+        f32 animSpeedRate;
+    };
+    struct {
+        u8 padToUnk858[offsetof(PlayerState, unk858)];
+        int leapStartYaw;
+    };
+    struct {
+        u8 padToAnimSoundId[offsetof(PlayerState, animSoundId)];
+        u8 soundId;
+        u8 soundIdReload;
+    };
+    struct {
+        u8 padToGaitStepLevel[offsetof(PlayerState, gaitStepLevel)];
+        u8 attackStage;
+    };
+    struct {
+        u8 padToGaitLevel[offsetof(PlayerState, gaitLevel)];
+        s8 attackPhase;
+    };
+    struct {
+        u8 padToParamCurve0Count[offsetof(PlayerState, paramCurve0Count)];
+        u8 paramCurve0Count;
+        u8 paramCurve1Count;
+        u8 paramCurve2Count;
+        u8 paramCurve3Count;
+        u8 paramCurve4Count;
+    };
+    struct {
+        u8 padToPendingFxFlags[offsetof(PlayerState, pendingFxFlags)];
+        u16 flags8D8;
+    };
+    struct {
+        u8 padToEarthWarriorTail[sizeof(PlayerState)];
+        f32 riderPosX;
+        f32 riderPosY;
+        f32 riderPosZ;
+        f32 maxSpeed;
+        u8 pad8F0[0x90];
+        int savedControlMode;
+        u8 pad984[2];
+        s16 turnThreshold;
+        u8 pad988[2];
+        s16 energy;
+        u16 flags98C;
+        u8 mountState;
+        u8 pad98F;
+        u8 setupVariant;
+        u8 pad991;
+        u8 dismountSide;
+        u8 mountSide;
+        ByteFlags flags994;
+        u8 unk995;
+        u8 pad996[2];
+        f32 airMeterTimer;
+        s8 talkSequenceId;
+        u8 unk99D;
+        u8 pad99E[2];
+        ObjModelChain* modelChain;
+    };
 } EarthWarriorSub;
 
 typedef struct EarthWarriorState {

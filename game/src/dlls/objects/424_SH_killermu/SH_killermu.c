@@ -37,7 +37,6 @@
 #define ENEMY_MUSHROOM_PARTICLE_EFFECT_STUN 0x51D
 
 #define ENEMY_MUSHROOM_CONTACT_HIT_TYPE        0x16
-#define ENEMY_MUSHROOM_MODEL_FLAGS             0x810
 #define ENEMY_MUSHROOM_MIN_RESPAWN_FRAME_LIMIT 0x708
 
 #define ENEMY_MUSHROOM_RISE_STEP_EPSILON          0.00001f
@@ -387,7 +386,7 @@ void EnemyMushroom_init(GameObject* obj, EnemyMushroomPlacement* placement, int 
     }
     obj->anim.localPosY = placement->base.posY - ENEMY_MUSHROOM_SPAWN_Y_OFFSET;
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= ENEMY_MUSHROOM_MODEL_FLAGS;
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     if (flags == 0) {
         EnemyMushroom_resetToSpawn(obj, state, 0);

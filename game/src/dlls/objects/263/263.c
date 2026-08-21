@@ -448,7 +448,7 @@ void windLift107_init(GameObject* obj, WindLift107Placement* placement) {
     }
     obj->userData1 = 0;
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= 0x8000LL;
+        obj->anim.modelState->flags |= OBJ_MODEL_STATE_UNREAD_8000;
     }
 }
 

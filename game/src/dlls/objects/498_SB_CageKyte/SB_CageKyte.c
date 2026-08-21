@@ -11,7 +11,6 @@
  * delay.
  */
 #include "dlls/objects/498_SB_CageKyte.h"
-
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
@@ -21,16 +20,11 @@
 #include "main/vecmath_distance_api.h"
 #include "sys/objects.h"
 
-#define SB_CAGE_KYTE_CHIRP_TIMER_MIN 400
-#define SB_CAGE_KYTE_CHIRP_TIMER_MAX 600
-
 int SB_CageKyte_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
-    int holdTimer = obj->userData1;
-
-    (void)unused;
-    if (holdTimer > 0) {
-        obj->userData1 = holdTimer - 1;
+    if (obj->userData1 > 0) {
+        obj->userData1--;
     }
+
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     animUpdate->flags = -2;
     animUpdate->movementState = 0;
@@ -49,15 +43,6 @@ void SB_CageKyte_free(void) {
 }
 
 void SB_CageKyte_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    (void)obj;
-    (void)renderArg2;
-    (void)renderArg3;
-    (void)renderArg4;
-    (void)renderArg5;
-
-    if (visible == 0) {
-        return;
-    }
 }
 
 void SB_CageKyte_hitDetect(void) {
@@ -65,29 +50,31 @@ void SB_CageKyte_hitDetect(void) {
 
 void SB_CageKyte_update(GameObject* obj) {
     SBCageKyteState* state = obj->extra;
-    GameObject* player;
-
     if (obj->userData1 > 0) {
-        obj->userData1 = obj->userData1 - 1;
+        obj->userData1--;
     }
 
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     state->chirpTimer -= framesThisStep;
-    player = Obj_GetPlayerObject();
-    (void)Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX);
 
-    if (state->chirpTimer <= 0) {
-        (void)randomGetRange(0, 10);
-        if (mainGetBit(GAMEBIT_SBRelated0A71) == 0u) {
-            Sfx_PlayFromObject(obj, SFXTRIG_wp_ice_freeze_316);
-        }
-        state->chirpTimer = randomGetRange(SB_CAGE_KYTE_CHIRP_TIMER_MIN, SB_CAGE_KYTE_CHIRP_TIMER_MAX);
+    GameObject* player = Obj_GetPlayerObject();
+    Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX); // unused?
+
+    if (state->chirpTimer > 0) {
+        return;
     }
+
+    randomGetRange(0, 10); // also unused?
+    if (mainGetBit(GAMEBIT_SBRelated0A71) == 0u) {
+        Sfx_PlayFromObject(obj, SFXTRIG_wp_ice_freeze_316);
+    }
+
+    state->chirpTimer = randomGetRange(400, 600);
 }
 
 void SB_CageKyte_init(GameObject* obj) {
     obj->animEventCallback = SB_CageKyte_SeqFn;
-    obj->objectFlags = (u16)((u32)obj->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
 void SB_CageKyte_release(void) {

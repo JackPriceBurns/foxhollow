@@ -102,7 +102,7 @@ void decoration11a_hitDetect(GameObject* obj) {
                 }
 
                 if (distanceSquared < candidateRadius * candidateRadius) {
-                    ((ObjHitsPriorityState*)(*objectCursor)->anim.hitReactState)->lastHitObject = (u32)obj;
+                    ((ObjHitsPriorityState*)(*objectCursor)->anim.hitReactState)->lastHitObject = (uintptr_t)obj;
                     ((ObjHitsPriorityState*)(*objectCursor)->anim.hitReactState)->contactFlags =
                         OBJHITS_CONTACT_FLAG_KIND0;
                 }

@@ -13,9 +13,7 @@
 #include "main/vecmath_distance_api.h"
 #include "sys/objects/lifecycle.h"
 
-#define TRICKY_GUARD_SPOT_GROUP             0x1E
-#define TRICKY_GUARD_SPOT_FRAMES_PER_SECOND 60
-
+#define TRICKY_GUARD_SPOT_GROUP 0x1E
 
 int TrickyGuardSpot_getExtraSize(void) {
     return sizeof(TrickyGuardSpotState);
@@ -29,47 +27,49 @@ void TrickyGuardSpot_render(void) {
 }
 
 void TrickyGuardSpot_update(GameObject* obj) {
-    TrickyGuardSpotState* state;
-    TrickyGuardSpotPlacement* placement;
-    GameObject* tricky;
-    TrickyGuardSpotStateFlags* stateFlags;
 
-    state = obj->extra;
-    placement = (TrickyGuardSpotPlacement*)obj->anim.placementData;
-    tricky = getTrickyObject();
-    stateFlags = &state->flags;
+    TrickyGuardSpotState* state = obj->extra;
+    TrickyGuardSpotPlacement* placement = (TrickyGuardSpotPlacement*)obj->anim.placementData;
+    GameObject* tricky = getTrickyObject();
     obj->anim.resetHitboxFlags = (u8)(obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED);
-    stateFlags->trickyInRange = 0;
-    if (tricky != NULL) {
-        if (TRICKY_INTERFACE(tricky)->isGuarding(tricky) != 0) {
-            if (Vec_xzDistance(&obj->anim.worldPosX, &tricky->anim.worldPosX) < (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerRadius))) {
-                state->guardTimer = state->guardTimer - framesThisStep;
-                stateFlags->trickyInRange = 1;
-            }
-        }
+    state->flags.trickyInRange = 0;
+
+    if (tricky == NULL) {
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->trickyInRangeGameBit), state->flags.trickyInRange);
+        return;
     }
-    if (state->guardTimer != 0) {
-        if (tricky != NULL && TRICKY_INTERFACE(tricky)->isGuarding(tricky) == 0) {
-            if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
-                TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, TRICKY_GUARD_COMMAND_KIND,
-                                                                    TRICKY_GUARD_COMMAND_TYPE);
-            }
-            obj->anim.resetHitboxFlags = (u8)(obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
-            objUpdateHitVolumeTransforms(obj);
-        }
-    } else if (tricky != NULL) {
+
+    if (TRICKY_INTERFACE(tricky)->isGuarding(tricky) != 0 &&
+        Vec_xzDistance(&obj->anim.worldPosX, &tricky->anim.worldPosX) <
+            ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerRadius)) {
+        state->guardTimer -= framesThisStep;
+        state->flags.trickyInRange = 1;
+    }
+
+    if (state->guardTimer == 0) {
         TRICKY_INTERFACE(tricky)->requestRecall(tricky);
-        state->guardTimer = placement->guardDurationSeconds * TRICKY_GUARD_SPOT_FRAMES_PER_SECOND;
+        state->guardTimer = placement->guardDurationSeconds * 60;
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->trickyInRangeGameBit), state->flags.trickyInRange);
+        return;
     }
-    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->trickyInRangeGameBit)), stateFlags->trickyInRange);
+
+    if (TRICKY_INTERFACE(tricky)->isGuarding(tricky) == 0) {
+        if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
+            TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, TRICKY_GUARD_COMMAND_KIND,
+                                                        TRICKY_GUARD_COMMAND_TYPE);
+        }
+        obj->anim.resetHitboxFlags = (u8)(obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED);
+        objUpdateHitVolumeTransforms(obj);
+    }
+
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->trickyInRangeGameBit), state->flags.trickyInRange);
 }
 
 void TrickyGuardSpot_init(GameObject* obj, TrickyGuardSpotPlacement* placement) {
     TrickyGuardSpotState* state = obj->extra;
-
     objAddObjectType(obj, TRICKY_GUARD_SPOT_GROUP);
-    state->guardTimer = placement->guardDurationSeconds * TRICKY_GUARD_SPOT_FRAMES_PER_SECOND;
-    obj->anim.rotX = (s16)(s32)placement->rotationX;
+    state->guardTimer = placement->guardDurationSeconds * 60;
+    obj->anim.rotX = placement->rotationX;
 }
 
 ObjectDescriptor gTrickyGuardSpotObjDescriptor = {

@@ -1034,7 +1034,7 @@ void ShopKeeper_init(GameObject* obj)
     ShopkeeperState* state = obj->extra;
     (obj)->objectFlags |= SHOPKEEPER_OBJFLAG_HITDETECT_DISABLED;
     (obj)->animEventCallback = ShopKeeper_SeqFn;
-    (obj)->anim.modelState->flags |= 0x810;
+    (obj)->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
     state->bobAmplitude = 0.1f * (f32)(s32)randomGetRange(0xF, 0x23);
     state->msgStack = Queue_Alloc(4, 4);
     state->opacity = 0xFF;

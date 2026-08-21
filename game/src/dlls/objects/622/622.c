@@ -26,6 +26,7 @@
 #include "main/model.h"
 #include "main/obj_path.h"
 #include "main/objprint_render_api.h"
+#include "sys/objects.h"
 #include "dolphin/mtx.h"
 
 int lbl_803DDD70;
@@ -33,10 +34,9 @@ int gDrShackleRotZOffset = -32768;
 
 #define DRSHACKLE_OBJGROUP  0x37
 
-static inline int* DrShackle_GetActiveModel(void* obj)
+static inline ObjModel* DrShackle_GetActiveModel(GameObject* obj)
 {
-    ObjAnimComponent* objAnim = (ObjAnimComponent*)obj;
-    return (int*)objAnim->banks[objAnim->bankIndex];
+    return Obj_GetActiveModel(obj);
 }
 
 int drshackle_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
@@ -71,16 +71,15 @@ int drshackle_getAttachSlot(GameObject* obj)
     return placement->attachSlot;
 }
 
-int drshackle_renderAtPathPoint(GameObject* obj, int a, int b, int c, int d, int e, int f)
+int drshackle_renderAtPathPoint(GameObject* obj, GameObject* owner, int b, int c, int d, int e, int f)
 {
-    int* model;
-    int* modelData;
+    ObjModel* model;
+    ObjAttachPoint* attachPoint;
     int joint1;
     u8* p = obj->extra;
     DrshacklePlacement* q = (DrshacklePlacement*)obj->anim.placementData;
     f32 jointPos[3];
     f32 parentPos[3];
-    char* mdPtr;
     int i;
     BitFlags8* bf = &((DrshackleState*)p)->flags1A;
     ObjAnimComponent* objAnim = &obj->anim;
@@ -94,19 +93,14 @@ int drshackle_renderAtPathPoint(GameObject* obj, int a, int b, int c, int d, int
     ((DrshackleState*)p)->savedPosY = obj->anim.localPosY;
     ((DrshackleState*)p)->savedPosZ = obj->anim.localPosZ;
 
-    {
-        s8* jp = (s8*)(*(int*)(*(int*)((char*)a + 0x50) + 0x2c) + b * 24);
-        jp += objAnim->bankIndex;
-        joint1 = jp[0x12];
-    }
-    model = DrShackle_GetActiveModel((void*)a);
-    modelData = *(int**)model;
-    mdPtr = (char*)modelData + 0x3c;
+    attachPoint = &owner->anim.modelInstance->attachPoints[b];
+    joint1 = attachPoint->joints[objAnim->bankIndex];
+    model = DrShackle_GetActiveModel(owner);
 
     obj->anim.rotZ = 0;
     obj->anim.rotY = 0;
     ObjModel_CopyJointTranslation((u8*)model, joint1, jointPos);
-    ObjModel_CopyJointTranslation((u8*)model, *(s8*)(*(int*)mdPtr + joint1 * 28), parentPos);
+    ObjModel_CopyJointTranslation((u8*)model, *(s8*)(model->file->jointData + joint1 * 28), parentPos);
     PSVECSubtract((Vec*)parentPos, (Vec*)jointPos, (Vec*)jointPos);
 
     quarterTurns = ObjAnim_ReadPlacementS16(&obj->anim, &q->quarterTurns);
@@ -124,21 +118,21 @@ int drshackle_renderAtPathPoint(GameObject* obj, int a, int b, int c, int d, int
         mag = PSVECMag((Vec*)jointPos);
         obj->anim.rotZ = (s16)(gDrShackleRotZOffset + getAngle(jointPos[0], jointPos[2]));
         obj->anim.rotY = (s16)(lbl_803DDD70 + getAngle(mag, savedY));
-        objSetCurrentMatrix((MtxPtr)ObjPath_GetPointModelMtx((GameObject*)a, b));
+        objSetCurrentMatrix((MtxPtr)ObjPath_GetPointModelMtx(owner, b));
     }
-    ObjPath_GetPointWorldPosition((GameObject*)a, b, &obj->anim.localPosX, &obj->anim.localPosY, &obj->anim.localPosZ,
+    ObjPath_GetPointWorldPosition(owner, b, &obj->anim.localPosX, &obj->anim.localPosY, &obj->anim.localPosZ,
                                   0);
     objRenderModelAndHitVolumes(obj, c, d, e, f, 1.0f);
 
-    for (i = 0, a = (int)p; i < ((DrshackleState*)p)->slotCount; i++)
+    for (i = 0; i < ((DrshackleState*)p)->slotCount; i++)
     {
-        GameObject* entry = (GameObject*)*(char**)a;
+        GameObject* entry = ((DrshackleState*)p)->pathSlots[i];
         if (entry != NULL)
         {
-            ObjPath_GetPointWorldPosition(obj, p[i + 0x1b], &entry->anim.localPosX,
+            int pathPoint = i == 0 ? ((DrshackleState*)p)->pathPointA : ((DrshackleState*)p)->pathPointB;
+            ObjPath_GetPointWorldPosition(obj, pathPoint, &entry->anim.localPosX,
                                           &entry->anim.localPosY, &entry->anim.localPosZ, 0);
         }
-        a += 4;
     }
     return 0;
 }
@@ -167,10 +161,11 @@ void drshackle_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visi
         objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
         for (i = 0; i < ((DrshackleState*)state)->slotCount; i++)
         {
-            GameObject* entry = (GameObject*)((int**)state)[i];
+            GameObject* entry = ((DrshackleState*)state)->pathSlots[i];
             if (entry != 0)
             {
-                ObjPath_GetPointWorldPosition(obj, state[i + 0x1b], &entry->anim.localPosX,
+                int pathPoint = i == 0 ? ((DrshackleState*)state)->pathPointA : ((DrshackleState*)state)->pathPointB;
+                ObjPath_GetPointWorldPosition(obj, pathPoint, &entry->anim.localPosX,
                                               &entry->anim.localPosY,
                                               &entry->anim.localPosZ, 0);
             }
@@ -199,24 +194,23 @@ void drshackle_update(GameObject* obj)
     DrshackleState* state = obj->extra;
     DrshacklePlacement* placement = (DrshacklePlacement*)obj->anim.placementData;
     int count;
-    int sub;
     int j;
-    u32* list;
+    GameObject** list;
     s16 pathObjGroupBase = ObjAnim_ReadPlacementS16(
         &obj->anim, &placement->pathObjGroupBase);
     s16 activeGameBit = ObjAnim_ReadPlacementS16(
         &obj->anim, &placement->activeGameBit);
-    if (pathObjGroupBase != 0 && *(void**)state == 0)
+    if (pathObjGroupBase != 0 && state->pathSlots[0] == 0)
     {
-        list = (u32*)objGetAllOfType(DFROPENODE_OBJECT_GROUP, &count);
+        list = objGetAllOfType(DFROPENODE_OBJECT_GROUP, &count);
         while (count-- != 0)
         {
-            sub = (int)((GameObject*)*list)->anim.placementData;
+            DrshacklePlacement* subPlacement = (DrshacklePlacement*)(*list)->anim.placementData;
             for (j = 0; j < state->slotCount; j++)
             {
-                if (*(u8*)(sub + 0x18) == pathObjGroupBase + j * 4)
+                if ((u8)subPlacement->startPathPoint == pathObjGroupBase + j * 4)
                 {
-                    state->pathSlots[j] = (GameObject*)*list;
+                    state->pathSlots[j] = *list;
                     (*gObjectTriggerInterface)->runSequence(0, state->pathSlots[j], -1);
                 }
             }

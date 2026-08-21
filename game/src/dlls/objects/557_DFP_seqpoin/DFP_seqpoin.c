@@ -1,5 +1,5 @@
 /*
- * DragonRock Palace sequence point (DLL 0x22D; "DFP_seqpoint") - a
+ * Ocean Force Point Temple sequence point (DLL 0x22D; "DFP_seqpoint") - a
  * trigger volume: when the player enters its radius and the gate gamebit
  * is set it fires a trigger sequence, latches done, and sets the done
  * gamebit.

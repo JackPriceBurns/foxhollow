@@ -76,7 +76,6 @@ extern f32 gMagicPlantBuzzStopDist;
 #define MAGICPLANT_GEM_COLOR_MASK          3
 #define MAGICPLANT_FADE_OUT_ALPHA_STEP     2
 #define MAGICPLANT_MAX_ALPHA               0xFF
-#define MAGICPLANT_MODEL_STATE_FLAGS       0x810
 
 #define MAGICPLANT_CHILD_SETUP_FLAGS 5
 #define MAGICPLANT_CHILD_UNK1A       0x14
@@ -417,7 +416,7 @@ void MagicPlant_init(GameObject* obj, MagicPlantPlacement* placement) {
         anim->bankIndex = 0;
     }
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->flags |= MAGICPLANT_MODEL_STATE_FLAGS;
+        obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     obj->animEventCallback = MagicPlant_SeqFn;
 }

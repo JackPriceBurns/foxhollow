@@ -1,14 +1,38 @@
 #include <dolphin/gx.h>
+#include <dolphin/vi.h>
 #include "shim_log.h"
 
 static u16 sDrawSyncToken;
+static u16 sPendingDrawSyncTokens[16];
+static u32 sPendingDrawSyncRead;
+static u32 sPendingDrawSyncWrite;
+static u32 sPendingDrawSyncCount;
 static GXDrawSyncCallback sDrawSyncCallback;
 static GXBreakPtCallback sBreakPtCallback;
+static int sBreakPtEnabled;
 
 void GXSetDrawSync(u16 token) {
-  sDrawSyncToken = token;
+  if (sPendingDrawSyncCount == 16) {
+    return;
+  }
+  sPendingDrawSyncTokens[sPendingDrawSyncWrite] = token;
+  sPendingDrawSyncWrite = (sPendingDrawSyncWrite + 1) & 15;
+  sPendingDrawSyncCount++;
+  VIWaitForRetrace();
+}
+
+void fhGXCompleteFrame(void) {
+  if (sPendingDrawSyncCount == 0) {
+    return;
+  }
+  if (sBreakPtEnabled && sBreakPtCallback) {
+    sBreakPtCallback();
+  }
+  sDrawSyncToken = sPendingDrawSyncTokens[sPendingDrawSyncRead];
+  sPendingDrawSyncRead = (sPendingDrawSyncRead + 1) & 15;
+  sPendingDrawSyncCount--;
   if (sDrawSyncCallback) {
-    sDrawSyncCallback(token);
+    sDrawSyncCallback(sDrawSyncToken);
   }
 }
 
@@ -20,8 +44,11 @@ GXBreakPtCallback GXSetBreakPtCallback(GXBreakPtCallback cb) {
   return prev;
 }
 
-void GXEnableBreakPt(void* break_pt) { (void)break_pt; }
-void GXDisableBreakPt(void) {}
+void GXEnableBreakPt(void* break_pt) {
+  (void)break_pt;
+  sBreakPtEnabled = 1;
+}
+void GXDisableBreakPt(void) { sBreakPtEnabled = 0; }
 void GXLoadTexObjPreLoaded(GXTexObj* obj, GXTexRegion* region, GXTexMapID id) {
   (void)region;
   GXLoadTexObj(obj, id);

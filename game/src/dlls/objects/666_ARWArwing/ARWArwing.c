@@ -1421,8 +1421,8 @@ void arwarwing_setVelocity(GameObject* arwing, const Vec3f* velocity)
 
 void arwarwing_addVelocity(GameObject* arwing, const Vec3f* velocity)
 {
-    int v = (int)&((ArwingState*)arwing->extra)->velX;
-    PSVECAdd((const Vec*)v, (const Vec*)velocity, (Vec*)v);
+    Vec* v = (Vec*)&((ArwingState*)arwing->extra)->velX;
+    PSVECAdd(v, (const Vec*)velocity, v);
 }
 
 void arwarwing_clearActiveBomb(GameObject* arwing)

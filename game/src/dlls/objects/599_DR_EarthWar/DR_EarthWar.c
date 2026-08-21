@@ -71,6 +71,10 @@ const EWColorTable gDREarthWarriorColors = {
     {{8, 255, 190, 120}, {8, 255, 255, 120}, {8, 180, 240, 255}, {8, 170, 255, 170}}
 };
 static const u8 gDREarthWarriorPathSetupParam[4] = {1, 1, 1, 1};
+static f32 gDREarthWarriorSegmentLocalPoints[12];
+static f32 gDREarthWarriorSegmentRadii[4];
+static f32 gDREarthWarriorLocalPointPositions[6];
+static f32 gDREarthWarriorLocalPointRadii[4];
 
 static void DR_EarthWarrior_setupPathState(u8* pathState, DREarthWarriorInitData* base, EarthWarriorSub* warrior)
 {
@@ -1098,12 +1102,11 @@ void DR_EarthWarrior_update(GameObject* obj)
 
 void DR_EarthWarrior_init(GameObject* obj, DREarthWarriorPlacement* def)
 {
-    DREarthWarriorInitData* base = (DREarthWarriorInitData*)gDREarthWarriorInitData;
     EarthWarriorState* state = obj->extra;
     u32 stk = *(const u32*)gDREarthWarriorPathSetupParam;
     EWPathRange r2 = gDREarthWarriorLookInitData1;
     EWPathRange r1 = gDREarthWarriorLookInitData2;
-    u8* pathState;
+    CurvesCollisionState* pathState;
     obj->anim.rotX = (s16)(def->spawnYaw << 8);
     obj->animEventCallback = DR_EarthWarrior_SeqFn;
     objAddObjectType(obj, DREARTHWARRIOR_OBJGROUP);
@@ -1113,11 +1116,12 @@ void DR_EarthWarrior_init(GameObject* obj, DREarthWarriorPlacement* def)
     (*gPlayerInterface)->init(obj, state, 4, 1);
     state->baddie.flags0 |= 0x4000;
     state->baddie.gravity = 0.17f;
-    pathState = (u8*)&state->baddie + 4;
+    pathState = &state->baddie.curvesCollision;
     (*gPathControlInterface)->init(pathState, 0, 0x48683, 1);
-    (*gPathControlInterface)->setup(pathState, 4, base->segmentLocalPoints, base->segmentRadii, &stk);
-    (*gPathControlInterface)->setLocalPointCollision(pathState, 1, base->localPointPositions, base->localPointRadii, 8);
-    pathState[0x264] = 0x28;
+    (*gPathControlInterface)->setup(pathState, 4, gDREarthWarriorSegmentLocalPoints, gDREarthWarriorSegmentRadii, &stk);
+    (*gPathControlInterface)->setLocalPointCollision(pathState, 1, gDREarthWarriorLocalPointPositions,
+                                                     gDREarthWarriorLocalPointRadii, 8);
+    pathState->activeTimer = 0x28;
     (*gPathControlInterface)->attachObject(obj, pathState);
     ObjHits_EnableObject(obj);
     ObjAnim_GetPriorityHitState(&obj->anim)->trackContactMask = 9;
@@ -1127,23 +1131,20 @@ void DR_EarthWarrior_init(GameObject* obj, DREarthWarriorPlacement* def)
     state->moveLib.modeBits |= 2;
     state->sub.maxSpeed = 4.32f;
     state->sub.energy = ObjAnim_ReadPlacementS16(&obj->anim, &(def->energyCapacity));
-    state->sub.moveTable = (const s16*)base->moveTable;
-    state->sub.configRow = base->configRow;
-    {
-        f32 v = 1.0f;
-        state->sub.unk834 = v;
-        state->sub.animSpeedASmoothing = v;
-    }
+    state->sub.moveTable = (const s16*)lbl_803352D0;
+    state->sub.configRow = gDREarthWarriorSpeedRows;
+    state->sub.unk834 = 1.0f;
+    state->sub.animSpeedASmoothing = 1.0f;
     state->sub.animSpeedSmoothingReload = 0.06f;
-    state->sub.paramCurve0 = base->paramCurve0Data;
+    state->sub.paramCurve0 = (u8*)&lbl_80335310[0];
     state->sub.paramCurve0Count = 0x29;
-    state->sub.paramCurve1 = base->paramCurve1Data;
+    state->sub.paramCurve1 = (u8*)&lbl_80335310[0x29];
     state->sub.paramCurve1Count = 0x29;
-    state->sub.paramCurve2 = base->paramCurve2Data;
+    state->sub.paramCurve2 = (u8*)&lbl_80335310[0x52];
     state->sub.paramCurve2Count = 0x2e;
-    state->sub.paramCurve3 = base->paramCurve1Data;
+    state->sub.paramCurve3 = (u8*)&lbl_80335310[0x29];
     state->sub.paramCurve3Count = 0x29;
-    state->sub.paramCurve4 = base->paramCurve2Data;
+    state->sub.paramCurve4 = (u8*)&lbl_80335310[0x52];
     state->sub.paramCurve4Count = 0x2e;
     state->sub.unk7E0 = 5.555f;
     {
@@ -1181,6 +1182,24 @@ void DR_EarthWarrior_release(void)
 
 void DR_EarthWarrior_initialise(void)
 {
+    int i;
+
+    for (i = 0; i < 12; i++)
+    {
+        gDREarthWarriorSegmentLocalPoints[i] = fhReadBEF32(&gDREarthWarriorInitData[0x0c + i * 4]);
+    }
+    for (i = 0; i < 4; i++)
+    {
+        gDREarthWarriorSegmentRadii[i] = fhReadBEF32(&gDREarthWarriorInitData[0x3c + i * 4]);
+    }
+    for (i = 0; i < 6; i++)
+    {
+        gDREarthWarriorLocalPointPositions[i] = fhReadBEF32(&gDREarthWarriorInitData[0x4c + i * 4]);
+    }
+    for (i = 0; i < 4; i++)
+    {
+        gDREarthWarriorLocalPointRadii[i] = fhReadBEF32(&gDREarthWarriorInitData[0x64 + i * 4]);
+    }
     gDREarthWarriorStateHandlers[0] = DR_EarthWarrior_stateHandler00;
     gDREarthWarriorStateHandlers[1] = DR_EarthWarrior_stateHandler01;
     gDREarthWarriorStateHandlers[2] = DR_EarthWarrior_stateHandler02;

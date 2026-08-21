@@ -237,8 +237,8 @@ void crrockfall_init(GameObject* obj, const CrRockfallPlacement* placement) {
 
     modelState = obj->anim.modelState;
     if (modelState != NULL) {
-        modelState->flags |= 0xb0;
-        modelState->flags |= 0xc00;
+        modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0080 | OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE | OBJ_MODEL_STATE_UNREAD_0010);
+        modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0400);
         modelState->overrideWorldPosX = obj->anim.localPosX;
         modelState->overrideWorldPosZ = obj->anim.localPosZ;
         modelState->shadowScale *= obj->anim.rootMotionScale;

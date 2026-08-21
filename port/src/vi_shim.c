@@ -9,12 +9,18 @@
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
 
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+void fhDebugOverlayDraw(void);
+#endif
+
 static VIRetraceCallback sPreRetraceCallback;
 static VIRetraceCallback sPostRetraceCallback;
 static void* sNextFrameBuffer;
 static u32 sRetraceCount;
 static int sFrameOpen;
 static Uint64 sNextRetraceNs;
+
+void fhGXCompleteFrame(void);
 
 enum { VI_RETRACE_HZ = 60 };
 
@@ -53,6 +59,10 @@ void foxhollowFramePumpInit(void) {
 
 void VIWaitForRetrace(void) {
   if (sFrameOpen) {
+#if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
+    fhDebugOverlayDraw();
+#endif
+    fhGXCompleteFrame();
     aurora_end_frame();
     sFrameOpen = 0;
   }
@@ -88,5 +98,6 @@ VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb) {
 void VISetNextFrameBuffer(void* fb) { sNextFrameBuffer = fb; }
 void* VIGetNextFrameBuffer(void) { return sNextFrameBuffer; }
 void VISetBlack(BOOL black) { (void)black; }
+u32 VIGetRetraceCount(void) { return sRetraceCount; }
 u32 VIGetNextField(void) { return 0; }
 u32 VIGetDTVStatus(void) { return 1; }

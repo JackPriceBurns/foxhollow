@@ -1464,7 +1464,7 @@ void DIMSnowHorn1_init(GameObject* obj, DIMSnowHorn1Placement* def, int spawnFla
     inner->airMeterValue = 0x3e8;
     if ((obj)->anim.modelState != NULL)
     {
-        (obj)->anim.modelState->flags |= 0xa10;
+        (obj)->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0200 | OBJ_MODEL_STATE_UNREAD_0010);
     }
     if ((obj)->anim.hitReactState != NULL)
     {

@@ -7,10 +7,116 @@
 #include <stdlib.h>
 #include "main/pad.h"
 
-int gFhAutoA;
-int gFhAutoAFrames;
 #include "dolphin/pad.h"
 #include "string.h"
+
+static FILE* gFhInputRecordFile;
+static FILE* gFhInputReplayFile;
+static u32 gFhInputTraceFrame;
+static int gFhInputTraceInitialized;
+static int gFhInputReplayEnded;
+
+static const u8 gFhInputTraceHeader[8] = {'F', 'H', 'P', 'A', 'D', 1, sizeof(PADStatus), 4};
+
+static void fhInputTraceInit(void)
+{
+    const char* recordPath;
+    const char* replayPath;
+
+    if (gFhInputTraceInitialized != 0)
+    {
+        return;
+    }
+    gFhInputTraceInitialized = 1;
+    recordPath = getenv("FOXHOLLOW_INPUT_RECORD");
+    replayPath = getenv("FOXHOLLOW_INPUT_REPLAY");
+    if (recordPath != NULL && recordPath[0] != '\0' && replayPath != NULL && replayPath[0] != '\0')
+    {
+        fprintf(stderr, "[FH] INPUT trace disabled: record and replay cannot be enabled together\n");
+        return;
+    }
+    if (recordPath != NULL && recordPath[0] != '\0')
+    {
+        gFhInputRecordFile = fopen(recordPath, "wb");
+        if (gFhInputRecordFile == NULL)
+        {
+            fprintf(stderr, "[FH] INPUT record could not open %s\n", recordPath);
+            return;
+        }
+        setvbuf(gFhInputRecordFile, NULL, _IONBF, 0);
+        if (fwrite(gFhInputTraceHeader, sizeof(gFhInputTraceHeader), 1, gFhInputRecordFile) != 1)
+        {
+            fprintf(stderr, "[FH] INPUT record could not write %s\n", recordPath);
+            fclose(gFhInputRecordFile);
+            gFhInputRecordFile = NULL;
+            return;
+        }
+        fprintf(stderr, "[FH] INPUT recording to %s\n", recordPath);
+    }
+    else if (replayPath != NULL && replayPath[0] != '\0')
+    {
+        u8 header[sizeof(gFhInputTraceHeader)];
+
+        gFhInputReplayFile = fopen(replayPath, "rb");
+        if (gFhInputReplayFile == NULL)
+        {
+            fprintf(stderr, "[FH] INPUT replay could not open %s\n", replayPath);
+            return;
+        }
+        if (fread(header, sizeof(header), 1, gFhInputReplayFile) != 1 ||
+            memcmp(header, gFhInputTraceHeader, sizeof(header)) != 0)
+        {
+            fprintf(stderr, "[FH] INPUT replay rejected invalid trace %s\n", replayPath);
+            fclose(gFhInputReplayFile);
+            gFhInputReplayFile = NULL;
+            return;
+        }
+        fprintf(stderr, "[FH] INPUT replaying %s\n", replayPath);
+    }
+}
+
+static int fhInputTraceReplay(PADStatus* statuses)
+{
+    int i;
+
+    if (gFhInputReplayFile == NULL)
+    {
+        return 0;
+    }
+    if (fread(statuses, sizeof(PADStatus), 4, gFhInputReplayFile) == 4)
+    {
+        gFhInputTraceFrame++;
+        return 1;
+    }
+    memset(statuses, 0, sizeof(PADStatus) * 4);
+    statuses[0].err = PAD_ERR_NONE;
+    for (i = 1; i < 4; i++)
+    {
+        statuses[i].err = PAD_ERR_NO_CONTROLLER;
+    }
+    if (gFhInputReplayEnded == 0)
+    {
+        fprintf(stderr, "[FH] INPUT replay ended after %u frames\n", gFhInputTraceFrame);
+        gFhInputReplayEnded = 1;
+    }
+    return 1;
+}
+
+static void fhInputTraceRecord(const PADStatus* statuses)
+{
+    if (gFhInputRecordFile == NULL)
+    {
+        return;
+    }
+    if (fwrite(statuses, sizeof(PADStatus), 4, gFhInputRecordFile) != 4)
+    {
+        fprintf(stderr, "[FH] INPUT recording stopped after %u frames\n", gFhInputTraceFrame);
+        fclose(gFhInputRecordFile);
+        gFhInputRecordFile = NULL;
+        return;
+    }
+    gFhInputTraceFrame++;
+}
 
 u8 gPadMenuStickRepeatDelay = 5;
 
@@ -310,39 +416,14 @@ void padUpdate(void)
     prevPad = gPadStatuses[gPadStatusBufferIndex];
     gPadStatusBufferIndex ^= 1;
     readPad = gPadStatuses[gPadStatusBufferIndex];
-    if (PADRead(readPad) == PAD_ERR_TRANSFER)
+    fhInputTraceInit();
+    if (PADRead(readPad) == PAD_ERR_TRANSFER && gFhInputReplayFile == NULL)
     {
         return;
     }
-    {
-        static int fhAutoInit, fhAutoTick;
-        if (fhAutoInit == 0)
-        {
-            const char* e = getenv("FOXHOLLOW_AUTO_A");
-            const char* f = getenv("FOXHOLLOW_AUTO_A_FRAMES");
-            gFhAutoA = (e != NULL && e[0] != '0');
-            gFhAutoAFrames = (f != NULL) ? atoi(f) : 0;
-            fhAutoInit = 1;
-            if (gFhAutoA)
-                fprintf(stderr, "[FH] AUTO_A enabled (frame cap %d)\n", gFhAutoAFrames);
-        }
-        if (gFhAutoA)
-        {
-            fhAutoTick++;
-            if (gFhAutoAFrames > 0 && fhAutoTick > gFhAutoAFrames)
-            {
-                gFhAutoA = 0;
-                fprintf(stderr, "[FH] AUTO_A stopped after %d frames\n", fhAutoTick);
-            }
-            else
-            {
-                readPad[0].err = PAD_ERR_NONE;
-                if ((fhAutoTick % 45) < 6)
-                    readPad[0].button |= PAD_BUTTON_A;
-            }
-        }
-    }
+    fhInputTraceReplay(readPad);
     PADClamp(readPad);
+    fhInputTraceRecord(readPad);
     if (rumbleEnabled != 0)
     {
         if (gRumbleTimer > 0.0f)

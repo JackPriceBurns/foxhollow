@@ -365,6 +365,7 @@ void waitNextFrame(void)
         (u64)OSCheckStopwatch(&gFrameStopwatch) / (f32)(u32)((OS_BUS_CLOCK >> 2) / 1000);
     OSResetStopwatch(&gFrameStopwatch);
     OSStartStopwatch(&gFrameStopwatch);
+    VIGetRetraceCount();
     timeDelta = 60.0f * (0.001f * gFrameElapsedMs);
     if (gDvdErrorPauseActive != 0)
     {

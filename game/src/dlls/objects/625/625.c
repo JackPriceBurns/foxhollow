@@ -190,12 +190,12 @@ int drakorhoverpad_canMount(GameObject* obj)
     return p->pathFlags.f04;
 }
 
-static void drakorhoverpad_setupPathCurve(GameObject* obj, u8* p)
+static void drakorhoverpad_setupPathCurve(GameObject* obj, DrakorHoverpadState* p)
 {
     int curveArg = 0x2a;
 
-    (*gRomCurveInterface)->initCurve(&((DrakorHoverpadState*)p)->curve, (void*)obj, 300.0f, &curveArg, -1);
-    Curve_AdvanceAlongPath((Curve*)(p + 4), 0.01f);
+    (*gRomCurveInterface)->initCurve(&p->curve, (void*)obj, 300.0f, &curveArg, -1);
+    Curve_AdvanceAlongPath(&p->curve.curve, 0.01f);
 }
 
 static f32 drakorhoverpad_nodeWobbleSpeed(RomCurveDef** slot, int angle)
@@ -746,12 +746,12 @@ void drakorhoverpad_hitDetect(void)
 {
 }
 
-static inline void drakorhoverpad_initPathCurve(GameObject* obj, u8* p)
+static inline void drakorhoverpad_initPathCurve(GameObject* obj, DrakorHoverpadState* p)
 {
     int curveArg = 0x2a;
 
-    (*gRomCurveInterface)->initCurve(&((DrakorHoverpadState*)p)->curve, (void*)obj, 300.0f, &curveArg, -1);
-    Curve_AdvanceAlongPath((Curve*)(p + 4), 0.01f);
+    (*gRomCurveInterface)->initCurve(&p->curve, (void*)obj, 300.0f, &curveArg, -1);
+    Curve_AdvanceAlongPath(&p->curve.curve, 0.01f);
 }
 
 void drakorhoverpad_updateMain(GameObject* obj)
@@ -787,7 +787,7 @@ void drakorhoverpad_updateMain(GameObject* obj)
         p->targetSpeed = 0.0f;
         if (f->bit20 != 0)
         {
-            drakorhoverpad_initPathCurve(obj, (u8*)p);
+            drakorhoverpad_initPathCurve(obj, p);
             (obj)->anim.localPosX = p->curve.posX;
             (obj)->anim.localPosY = p->curve.posY;
             (obj)->anim.localPosZ = p->curve.posZ;
@@ -842,11 +842,11 @@ void drakorhoverpad_updateMain(GameObject* obj)
     }
     if (p->speed < 0.0f)
     {
-        (*gRomCurveInterface)->setClosed((RomCurveWalker*)((u8*)p + 4), 1);
+        (*gRomCurveInterface)->setClosed(curve, 1);
     }
     else
     {
-        (*gRomCurveInterface)->setClosed((RomCurveWalker*)((u8*)p + 4), 0);
+        (*gRomCurveInterface)->setClosed(curve, 0);
     }
     p->targetSpeed = 0.0f;
     if (p->speed != 0.0f)

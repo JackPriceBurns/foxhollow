@@ -1,13 +1,10 @@
 /* Emits one placement-configured particle burst when its trigger bit is set. */
 #include "dlls/objects/317_ExplodeAnim.h"
-
 #include "game/objects/object.h"
 #include "main/dll/partfx_interface.h"
 #include "main/gamebits.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
-
-#define EXPLODE_ANIMATOR_PARTFX_SPAWN_FLAGS 2
 
 int ExplodeAnimator_getExtraSize(void) {
     return sizeof(ExplodeAnimatorState);
@@ -28,43 +25,46 @@ void ExplodeAnimator_hitDetect(void) {
 }
 
 void ExplodeAnimator_update(GameObject* obj) {
-    int i;
-    ExplodeAnimatorState* state;
-    ExplodeAnimatorPlacement* placement;
-    PartFxSpawnParams spawnParams;
-    f32 velocity[2];
-
-    state = obj->extra;
+    ExplodeAnimatorState* state = obj->extra;
     if ((state->flags & EXPLODE_ANIMATOR_STATE_FIRED) != 0) {
         return;
     }
-    placement = (ExplodeAnimatorPlacement*)obj->anim.placementData;
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) == 0) {
+
+    ExplodeAnimatorPlacement* placement = (ExplodeAnimatorPlacement*)obj->anim.placementData;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit)) == 0) {
         return;
     }
-    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resultGameBit)), 1);
-    state->flags = (u8)(state->flags | EXPLODE_ANIMATOR_STATE_FIRED);
-    for (i = 0; i < placement->particleCount; i++) {
-        velocity[0] = 0.01f * (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velXMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velXMax)));
-        velocity[1] = 0.01f * (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velYMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->velYMax)));
-        spawnParams.posX = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posXMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posXMax)));
-        spawnParams.posY = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posYMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posYMax)));
-        spawnParams.posZ = (f32)(s32)randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posZMin)), ObjAnim_ReadPlacementS16(&obj->anim, &(placement->posZMax)));
+
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->resultGameBit), 1);
+    state->flags |= EXPLODE_ANIMATOR_STATE_FIRED;
+
+    for (int i = 0; i < placement->particleCount; i++) {
+        f32 velocity[2];
+        velocity[0] = 0.01f * randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &placement->velXMin),
+                                             ObjAnim_ReadPlacementS16(&obj->anim, &placement->velXMax));
+        velocity[1] = 0.01f * randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &placement->velYMin),
+                                             ObjAnim_ReadPlacementS16(&obj->anim, &placement->velYMax));
+
+        PartFxSpawnParams spawnParams;
+        spawnParams.posX = randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &placement->posXMin),
+                                          ObjAnim_ReadPlacementS16(&obj->anim, &placement->posXMax));
+        spawnParams.posY = randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &placement->posYMin),
+                                          ObjAnim_ReadPlacementS16(&obj->anim, &placement->posYMax));
+        spawnParams.posZ = randomGetRange(ObjAnim_ReadPlacementS16(&obj->anim, &placement->posZMin),
+                                          ObjAnim_ReadPlacementS16(&obj->anim, &placement->posZMax));
+
         (*gPartfxInterface)
-            ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &(placement->effectId)), &spawnParams, EXPLODE_ANIMATOR_PARTFX_SPAWN_FLAGS, -1, velocity);
+            ->spawnObject(obj, ObjAnim_ReadPlacementS16(&obj->anim, &placement->effectId), &spawnParams,
+                          2, -1, velocity);
     }
 }
 
 void ExplodeAnimator_init(GameObject* obj, ExplodeAnimatorPlacement* placement) {
     ExplodeAnimatorState* state = obj->extra;
-    int fired;
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->resultGameBit))) != 0u) {
-        fired = EXPLODE_ANIMATOR_STATE_FIRED;
-    } else {
-        fired = 0;
-    }
-    state->flags = fired;
+    state->flags = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->resultGameBit)) != 0
+                       ? EXPLODE_ANIMATOR_STATE_FIRED
+                       : 0;
     objAddObjectType(obj, EXPLODE_ANIMATOR_OBJECT_GROUP);
 }
 
