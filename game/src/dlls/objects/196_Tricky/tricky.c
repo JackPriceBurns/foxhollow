@@ -6373,6 +6373,21 @@ int tricky_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             ObjModel_ClearBlendChannels(Obj_GetActiveModel(obj));
             ((TrickyState*)state)->blendActive = 0;
         }
+        if (fhConfigRevision() == 1 && (((TrickyState*)state)->stateFlags & 0x4000) != 0 &&
+            (((TrickyState*)state)->followObj->objectFlags & OBJECT_OBJFLAG_FREED) != 0) {
+            ((TrickyState*)state)->stateIndex = 1;
+            ((TrickyState*)state)->substate = 0;
+            ((TrickyState*)state)->cooldownA = 0.0f;
+            ((TrickyState*)state)->cooldownB.f = 0.0f;
+            ((TrickyState*)state)->stateFlags &= ~(u64)0x10;
+            ((TrickyState*)state)->stateFlags &= ~(u64)0x10000;
+            ((TrickyState*)state)->stateFlags &= ~(u64)0x20000;
+            ((TrickyState*)state)->stateFlags &= ~(u64)0x40000;
+            ((TrickyState*)state)->commandPhase = -1;
+            ((TrickyState*)state)->movementState = 0;
+            ((TrickyState*)state)->prevSpeed = 0.0f;
+            ((TrickyState*)state)->speed = 0.0f;
+        }
     }
 
     for (i = 0; i < sequence->eventCount; i++) {

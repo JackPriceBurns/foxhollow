@@ -173,6 +173,11 @@ void guardClaw_update(GameObject* obj, u8* state)
     GroundBaddiePlacement* def = *(GroundBaddiePlacement**)&(obj)->anim.placementData;
     u32 flags;
 
+    if (fhConfigRevision() == 1 && (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
+    {
+        setAButtonIcon(7);
+    }
+
     if (((EnemyState*)state)->userData1 == 2 &&
         mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitD))) == 0)
     {

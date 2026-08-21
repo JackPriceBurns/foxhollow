@@ -1204,6 +1204,7 @@ static void objfsaSetPlaneNormal(ObjfsaPatchPlane* pl, f32 dxn, f32 dzn)
 
 void Objfsa_UpdateWalkGroupPatches(void)
 {
+    static u8 rev1BlockFlags[0x78];
     char* slotPtr;
     u8 blockFlags[0x78];
     u8 pairs[364];
@@ -1262,22 +1263,33 @@ void Objfsa_UpdateWalkGroupPatches(void)
     patchBase[0] = gObjfsaPatches;
     mapGetLoadedMapFlags(blockFlags);
 
-    checksum = 1;
-    for (flagIndex = 0; flagIndex < 120; flagIndex++)
+    if (fhConfigRevision() == 1)
     {
-        if (blockFlags[flagIndex] != 0)
+        if (memcmp(rev1BlockFlags, blockFlags, sizeof(blockFlags)) == 0)
         {
-            checksum *= flagIndex;
+            return;
         }
-    }
-
-    if (checksum != gObjfsaBlockFlagsChecksum)
-    {
-        gObjfsaBlockFlagsChecksum = checksum;
+        memcpy(rev1BlockFlags, blockFlags, sizeof(blockFlags));
     }
     else
     {
-        return;
+        checksum = 1;
+        for (flagIndex = 0; flagIndex < 120; flagIndex++)
+        {
+            if (blockFlags[flagIndex] != 0)
+            {
+                checksum *= flagIndex;
+            }
+        }
+
+        if (checksum != gObjfsaBlockFlagsChecksum)
+        {
+            gObjfsaBlockFlagsChecksum = checksum;
+        }
+        else
+        {
+            return;
+        }
     }
 
     {

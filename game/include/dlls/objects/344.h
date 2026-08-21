@@ -78,6 +78,7 @@ typedef struct GunpowderBarrelState {
     s16 launchYaw;
     u8 pad52[0x02];
     f32 impactSoundCooldown;
+    s8 rev1LandingSoundCooldown;
 } GunpowderBarrelState;
 
 STATIC_ASSERT(offsetof(GunpowderBarrelPlacement, base) == 0x00);

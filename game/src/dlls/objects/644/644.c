@@ -274,6 +274,19 @@ int shopitem_getObjectTypeId(void)
 
 void shopitem_free(GameObject* obj)
 {
+    if (fhConfigRevision() == 1)
+    {
+        ShopItemState* state = obj->extra;
+        int i;
+        for (i = 0; i < 10; i++)
+        {
+            if (state->lightningHandles[i] != NULL)
+            {
+                mm_free_(state->lightningHandles[i]);
+                state->lightningHandles[i] = NULL;
+            }
+        }
+    }
     (*gExpgfxInterface)->freeSource((int)obj);
     switch ((obj)->anim.romDefNo)
     {

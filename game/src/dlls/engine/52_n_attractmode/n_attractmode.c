@@ -654,7 +654,8 @@ int TitleMenu_run(void)
     else
     {
         titleScreenSetMenuSelection(gTitleMenuSelection);
-        if ((menuId == 1) && (gTitleMenuSelectionFade == TITLE_MENU_SELECTION_FADE_MAX))
+        if ((menuId == 1 || (fhConfigRevision() == 1 && gTitleMenuSelection == 1)) &&
+            (gTitleMenuSelectionFade == TITLE_MENU_SELECTION_FADE_MAX))
         {
             titleScreenSetMenuActive(1);
             gTitleMenuLoadDelay = 1;

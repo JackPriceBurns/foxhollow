@@ -28,14 +28,16 @@ nearly everything is a faithful reproduction of retail behaviour.
   which needs the asset-derived loading-screen textures.
 - **Audio is native.** MusyX runs in-process with a software mixer feeding SDL audio; streamed
   music and voice work.
+- **Every retail disc is supported.** Japan 1.0, USA 1.0 and 1.1, and Europe 1.0 and 1.1 all
+  supply assets directly to the same native executable.
 
 Proven on **macOS (Apple Silicon)**. The shim layer under `port/` contains no platform-specific
 code and Aurora supports Windows and Linux, but neither has been built or run yet.
 
 ## Requirements
 
-- A disc image of your own retail copy. Currently the **US release (`GSAE01`, revision 0)**;
-  see [Remaining work](#remaining-work).
+- A disc image of your own retail copy: `GSAJ01` revision 0, `GSAE01` revision 0 or 1, or
+  `GSAP01` revision 0 or 1.
 - CMake 3.25+, Ninja, and a C++20 compiler.
 - Disc images are read through [nod](https://github.com/encounter/nod), so ISO/GCM, RVZ, WIA and
   the other formats nod supports all work as-is.
@@ -82,6 +84,7 @@ memory card with any GCI-capable tool and are shared with Dolphin as-is.
 | Variable                 | Effect                                                 |
 |--------------------------|--------------------------------------------------------|
 | `FOXHOLLOW_DISC`         | Disc image path, if not given as `argv[1]`.            |
+| `FOXHOLLOW_REV`          | USA game-code revision: `0` (default) or `1`.          |
 | `FOXHOLLOW_INPUT_RECORD` | Record every frame's `PADStatus` to a trace file.      |
 | `FOXHOLLOW_INPUT_REPLAY` | Replay a recorded trace instead of reading live input. |
 | `FOXHOLLOW_DUMP_NEAR`    | Dump the objects near the player each frame.           |
@@ -99,13 +102,9 @@ The port itself is largely done; what is left is mostly packaging, coverage, and
 - **Website.** A project page with setup instructions and releases.
 - **Regression testing.** Build out recorded-input traces into an automated suite that replays
   known sequences and checks for divergence, so a fix in one area cannot quietly break another.
-- **Any-ROM support.** The build currently pins `VERSION_GSAE01`. Asset lookup should resolve
-  against whatever disc is supplied — any region, any revision — rather than assuming one
-  release's layout. The disc header already gives the game ID and revision at runtime, so the
-  work is in making asset and data mapping version-aware instead of compile-time fixed.
-- **Revision 1 (`rev 1`) option.** Support for the changes made in the Player's Choice revision,
-  selectable at runtime, so the port has parity with both editions of the game rather than only
-  the original release.
+- **Regional game behavior.** Every disc can supply the runtime assets and `FOXHOLLOW_REV` selects
+  USA revision 0 or 1 game logic. Executable-only Japanese and European changes are not yet
+  selectable at runtime.
 
 ## Repository layout
 

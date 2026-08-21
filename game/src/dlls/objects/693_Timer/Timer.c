@@ -147,6 +147,12 @@ void timer_update(GameObject* obj)
             mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit)), 0);
             expiredThisFrame = 1;
         }
+        if (fhConfigRevision() == 1 && state->mode == TIMER_MODE_GLOBAL && isGameTimerDisabled() == 1)
+        {
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->expiredGameBit)), 1);
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->startGameBit)), 0);
+            expiredThisFrame = 1;
+        }
         if (expiredThisFrame != 0)
         {
             flags->expired = 1;

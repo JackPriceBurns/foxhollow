@@ -22,6 +22,8 @@
 #include "string.h"
 #include "sys/objects.h"
 #include "main/game_timer_control_api.h"
+#include "main/gametext_color_api.h"
+#include "main/gametext_show_api.h"
 
 #define WCLEVELCONT_OBJGROUP 0x9
 
@@ -733,7 +735,7 @@ void wclevelcont_tileAToWorldPos(GameObject* obj, s16 tileX, s16 tileY, f32* out
 
 int wclevelcont_getExtraSize(void)
 {
-    return 0x1c;
+    return sizeof(WcLevelControlState);
 }
 
 int wclevelcont_getObjectTypeId(void)
@@ -826,6 +828,17 @@ void wclevelcont_update(GameObject* obj)
     WcLevelControlState* state = obj->extra;
     f32 sunTime;
 
+    if (fhConfigRevision() == 1 && state->rev1MessageTimer > 0.0f)
+    {
+        gameTextSetColor(0xff, 0xff, 0xff, 0xff);
+        gameTextShow(1401);
+        state->rev1MessageTimer -= timeDelta;
+        if (state->rev1MessageTimer < 0.0f)
+        {
+            state->rev1MessageTimer = 0.0f;
+        }
+    }
+
     if (obj->userData1 == 0)
     {
         if (mainGetBit(GAMEBIT_WC_MagicCaveRelated0E05) == 0)
@@ -868,6 +881,10 @@ void wclevelcont_init(GameObject* obj)
     u16 flags;
 
     obj->animEventCallback = wclevelcont_seqFn;
+    if (fhConfigRevision() == 1)
+    {
+        state->rev1MessageTimer = 300.0f;
+    }
     mainSetBits(0x810, 0);
     memcpy(gWcTileGridA, gWcTileGridAInitial.g, 0x40);
     mainSetBits(0x811, 0);

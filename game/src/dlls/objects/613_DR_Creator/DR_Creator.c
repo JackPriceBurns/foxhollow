@@ -31,14 +31,18 @@ int DR_Creator_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
     {
         return 0;
     }
+    state = obj->extra;
     for (i = 0; i < animUpdate->eventCount; i++)
     {
+        if (fhConfigRevision() == 1 && animUpdate->eventIds[i] == 10 && mainGetBit(state->spawnGameBit) != 0)
+        {
+            mainSetBits(1585, 1);
+        }
         switch (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->behaviorMode)))
         {
         case DRCREATOR_BEHAVIOR_SEQUENCE_0:
         case DRCREATOR_BEHAVIOR_TIMED_PROJECTILES:
         case DRCREATOR_BEHAVIOR_SEQUENCE_4:
-            state = obj->extra;
             if (mainGetBit(state->spawnGameBit) != 0)
             {
                 setup = (DrcreatorSetup*)Obj_AllocObjectSetup(sizeof(DrcreatorSetup), DRCREATOR_CHILD_OBJ_DRHOMINGMIS);

@@ -848,7 +848,9 @@ void gameTimerRun(void* context) {
     if ((gModelEngineTimerFlags & 4) != 0) {
         f32 panByte;
         f32 volume;
-        Sfx_KeepAliveLoopedObjectSound(0, SFXTRIG_sc_commsbleep_28c);
+        if (fhConfigRevision() == 0 || dt != 0.0f) {
+            Sfx_KeepAliveLoopedObjectSound(0, SFXTRIG_sc_commsbleep_28c);
+        }
         if ((gModelEngineTimerFlags & 1) != 0) {
             panByte = (f32)(0x7F - ((int)(80.0f * (gModelEngineTimerValue / gModelEngineTimerDuration)) & 0xFF));
             volume = 1.3f - 0.6f * (gModelEngineTimerValue / gModelEngineTimerDuration);

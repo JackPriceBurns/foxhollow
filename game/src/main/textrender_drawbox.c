@@ -291,6 +291,12 @@ void gameTextDrawBox(struct GameTextDef* strPtr, intptr_t boxId, GameTextBox* bo
                                         &cornerMaxX, &cornerMinY, &cornerMaxY);
         }
         gameTextSetWindow(window);
+        if (fhConfigRevision() == 1) {
+            cornerMinX -= 4;
+            cornerMinY -= 4;
+            cornerMaxX += 8;
+            cornerMaxY += 8;
+        }
         cornerHalfWidth = (cornerMaxX - cornerMinX) >> 1;
         cornerHalfHeight = (cornerMaxY - cornerMinY) >> 1;
         cornerCenterX = cornerMinX + cornerHalfWidth;

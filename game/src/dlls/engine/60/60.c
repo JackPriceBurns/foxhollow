@@ -1,4 +1,5 @@
 #include "dlls/object_descriptor.h"
+#include "foxhollow_menu.h"
 #include "dolphin/os/OSReport.h"
 #include "main/dll/dll_003C_link.h"
 #include "string.h"
@@ -178,7 +179,11 @@ void Link_refreshOverlappingItemTimers(void)
     }
     else
     {
-        if (getCurLanguage() == 4)
+        if (fhConfigRevision() == 1)
+        {
+            iconHeight = gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight + 2;
+        }
+        else if (getCurLanguage() == 4)
         {
             iconHeight = gGameTextFontMetrics[0].lineHeight + 2;
         }
@@ -209,7 +214,11 @@ void Link_refreshOverlappingItemTimers(void)
             }
             else
             {
-                if (getCurLanguage() == 4)
+                if (fhConfigRevision() == 1)
+                {
+                    iconHeight = gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight + 2;
+                }
+                else if (getCurLanguage() == 4)
                 {
                     iconHeight = gGameTextFontMetrics[0].lineHeight + 2;
                 }
@@ -273,7 +282,11 @@ void Link_scanItemVerticalBounds(void)
         }
         else
         {
-            if (getCurLanguage() == 4)
+            if (fhConfigRevision() == 1)
+            {
+                iconHeight = gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight + 2;
+            }
+            else if (getCurLanguage() == 4)
             {
                 iconHeight = gGameTextFontMetrics[0].lineHeight + 2;
             }
@@ -402,6 +415,7 @@ void Link_render(void)
     s16 green;
     s16 blue;
     u16 textId;
+    const char* portText;
     int x;
     int y;
     s8 timer;
@@ -501,7 +515,12 @@ void Link_render(void)
                 }
 
                 textId = drawItem->textId;
-                if (textId > 0x14 && textId != 0xffff)
+                portText = fhMenuTextForId(textId);
+                if (portText != NULL)
+                {
+                    gameTextShowStr((char*)portText, drawItem->boxId, 0, 0);
+                }
+                else if (textId > 0x14 && textId != 0xffff)
                 {
                     gameTextShow(textId);
                 }

@@ -45,7 +45,8 @@ void Carryable_putDownAndSavePos(GameObject* obj)
     CarryableUpdateHeldState* state = obj->extra;
     state->carryState = CARRY_STATE_RESTING;
     state->isHeld = 0;
-    if ((state->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0)
+    if ((state->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0 &&
+        (fhConfigRevision() == 0 || obj->anim.romDefNo != 0x112))
     {
         obj->anim.localPosY += 10.0f;
         saveGame_saveObjectPos(obj);
@@ -267,7 +268,8 @@ int Carryable_updateHeld(GameObject* obj, void* state)
             CarryableUpdateHeldState* h2 = obj->extra;
             h2->carryState = CARRY_STATE_RESTING;
             h2->isHeld = 0;
-            if ((h2->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0)
+            if ((h2->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0 &&
+                (fhConfigRevision() == 0 || obj->anim.romDefNo != 0x112))
             {
                 obj->anim.localPosY += 10.0f;
                 saveGame_saveObjectPos(obj);

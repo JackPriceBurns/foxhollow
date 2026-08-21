@@ -565,12 +565,15 @@ int hightop_handleMotionEvent(GameObject* obj, u8 event)
         (*gObjectTriggerInterface)->runSequence(4, obj, -1);
         break;
     case 7:
-        mainSetBits(0x634, 0);
-        mainSetBits(0x631, 1);
-        obj->anim.modelInstance->runtimeSourceHitMask |= 1;
-        runtime->flagsC40 &= ~0x140;
-        runtime->lookController.modeBits &= ~2;
-        (*gPlayerInterface)->setState(obj, runtime, 7);
+        if (fhConfigRevision() == 0)
+        {
+            mainSetBits(0x634, 0);
+            mainSetBits(0x631, 1);
+            obj->anim.modelInstance->runtimeSourceHitMask |= 1;
+            runtime->flagsC40 &= ~0x140;
+            runtime->lookController.modeBits &= ~2;
+            (*gPlayerInterface)->setState(obj, runtime, 7);
+        }
         break;
     case 8:
         (*gObjectTriggerInterface)->runSequence(7, obj, -1);
@@ -637,6 +640,10 @@ int hightop_stateHandler02(GameObject* obj, HighTopRuntime* stateArg, f32 dt)
     f32 ang;
     f32 moveSpeed;
     s16* vec;
+    if (fhConfigRevision() == 1 && mainGetBit(1585) != 0)
+    {
+        return 8;
+    }
     *(u32*)stateArg = *(u32*)stateArg | 0x200000;
     if (stateArg->baddie.inputMagnitude < 0.05f)
     {
@@ -1049,6 +1056,10 @@ void HighTop_hitDetect(GameObject* obj)
         objfx_shakeCameraByDistance(obj, 1000.0f);
         if (runtime->airMeterRemaining <= 0)
         {
+            if (fhConfigRevision() == 1)
+            {
+                mainSetBits(3063, 0);
+            }
             (*gGameUIInterface)->airMeterShutdown();
             runtime->flagsC49.b7 = 0;
             mainSetBits(0x634, 0);

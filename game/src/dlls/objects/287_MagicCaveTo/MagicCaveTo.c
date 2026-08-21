@@ -184,6 +184,12 @@ void MagicCaveTop_update(GameObject* obj) {
             if (distanceSquared >= MAGIC_CAVE_TOP_RUMBLE_START_DISTANCE_SQ) {
                 state->rumbleTimer = 0.0f;
                 state->flags &= ~MAGIC_CAVE_TOP_FLAG_RUMBLE_COMPLETE;
+                if (fhConfigRevision() == 1 && player != NULL) {
+                    staff = Player_GetStaffObject(player);
+                    if (staff != NULL) {
+                        staffSetGlow(staff, MAGIC_CAVE_TOP_STAFF_GLOW_MODE, MAGIC_CAVE_TOP_STAFF_GLOW_DISABLED);
+                    }
+                }
             } else if ((state->flags & MAGIC_CAVE_TOP_FLAG_RUMBLE_COMPLETE) == 0) {
                 if ((state->flags & MAGIC_CAVE_TOP_FLAG_RUMBLE_ACTIVE) != 0) {
                     if (distanceSquared < MAGIC_CAVE_TOP_RUMBLE_STOP_DISTANCE_SQ) {

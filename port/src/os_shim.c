@@ -8,6 +8,7 @@
 static BOOL sInterruptsEnabled = 1;
 static u32 sSoundMode = 1;
 static u32 sProgressiveMode;
+static u8 sLanguage;
 
 BOOL OSDisableInterrupts(void) {
   BOOL prev = sInterruptsEnabled;
@@ -42,6 +43,8 @@ u32 OSGetSoundMode(void) { return sSoundMode; }
 void OSSetSoundMode(u32 mode) { sSoundMode = mode; }
 u32 OSGetProgressiveMode(void) { return sProgressiveMode; }
 void OSSetProgressiveMode(u32 mode) { sProgressiveMode = mode; }
+u8 OSGetLanguage(void) { return sLanguage; }
+void OSSetLanguage(u8 language) { sLanguage = language; }
 u32 OSGetResetCode(void) { return 0; }
 BOOL OSGetResetButtonState(void) { return 0; }
 

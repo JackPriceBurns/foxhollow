@@ -86,6 +86,9 @@ static inline void sidekickBall_throw(GameObject* obj, f32 velocityX, f32 veloci
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
     state->previousPosZ = obj->anim.localPosZ;
+    if (fhConfigRevision() == 1) {
+        (*gPathControlInterface)->attachObject(obj, state);
+    }
 }
 
 void sidekickBall_handlePlayerInteraction(GameObject* obj, SidekickBallState* state) {
@@ -209,6 +212,9 @@ void sidekickBall_launch(GameObject* obj, GameObject* source, f32 velocityX, f32
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
     state->previousPosZ = obj->anim.localPosZ;
+    if (fhConfigRevision() == 1) {
+        (*gPathControlInterface)->attachObject(obj, state);
+    }
 }
 
 int SidekickBall_getExtraSize(void) {
@@ -295,9 +301,13 @@ void SidekickBall_update(GameObject* obj) {
         break;
     }
 
-    (*gPathControlInterface)->update(obj, state, timeDelta);
-    (*gPathControlInterface)->apply(obj, state);
-    (*gPathControlInterface)->advance(obj, state, timeDelta);
+    if (fhConfigRevision() == 0 || state->hittableLatch == 1) {
+        (*gPathControlInterface)->update(obj, state, timeDelta);
+        (*gPathControlInterface)->apply(obj, state);
+        (*gPathControlInterface)->advance(obj, state, timeDelta);
+    } else {
+        (*gPathControlInterface)->attachObject(obj, state);
+    }
 }
 
 static inline int sidekickBall_updateFloorDepth(GameObject* obj, SidekickBallState* state) {
@@ -375,9 +385,13 @@ u8 trickyBallMove(GameObject* obj) {
     }
 
     objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
-    (*gPathControlInterface)->update(obj, state, timeDelta);
-    (*gPathControlInterface)->apply(obj, state);
-    (*gPathControlInterface)->advance(obj, state, timeDelta);
+    if (fhConfigRevision() == 0 || state->hittableLatch == 1) {
+        (*gPathControlInterface)->update(obj, state, timeDelta);
+        (*gPathControlInterface)->apply(obj, state);
+        (*gPathControlInterface)->advance(obj, state, timeDelta);
+    } else {
+        (*gPathControlInterface)->attachObject(obj, state);
+    }
 
     if (state->hasCollisionNormal != 0) {
         hasCollisionNormal = 1;

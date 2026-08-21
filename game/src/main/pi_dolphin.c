@@ -1181,11 +1181,15 @@ char sAssetIndexOverflowError[0x1D] = "ERROR: asset index overflow ";
 
 int getTableFileEntry(int fileId, int index, int* out) {
     int count = 0;
+    u32 waitMask = 0;
     void* table = NULL;
     switch (fileId) {
     case 0x2a:
         count = 0x800;
         table = MLDF_MERGE_MODELS;
+        if (fhConfigRevision() == 1) {
+            waitMask = 0xc;
+        }
         break;
     case 0x2f:
         count = 0xbb8;
@@ -1213,11 +1217,45 @@ int getTableFileEntry(int fileId, int index, int* out) {
     case 0xe:
         count = 0x1fd0;
         table = MLDF_MERGE_ANIMCURV;
+        if (fhConfigRevision() == 1) {
+            waitMask = 0xa0000000;
+        }
         break;
     }
     if (index < 0 || index >= count) {
-        debugPrintfxy(0x14, 0x28, sAssetIndexOverflowError);
+        if (fhConfigRevision() == 0) {
+            debugPrintfxy(0x14, 0x28, sAssetIndexOverflowError);
+        }
         return 0;
+    }
+    if (fhConfigRevision() == 1) {
+        u32 inFlight;
+        BOOL interrupts;
+        u8 needWait = 0;
+
+        for (;;) {
+            interrupts = OSDisableInterrupts();
+            inFlight = gAssetLoadInFlightFlags;
+            OSRestoreInterrupts(interrupts);
+            if ((inFlight & waitMask) == 0) {
+                break;
+            }
+            padUpdate();
+            checkReset();
+            if (needWait != 0) {
+                waitNextFrame();
+            }
+            loadDataFiles(0);
+            dvdCheckError();
+            if (needWait != 0) {
+                mmFreeTick(0);
+                gameTextRun();
+                GXFlush_(1, 0);
+            }
+            if (gDvdErrorPauseActive != 0) {
+                needWait = 1;
+            }
+        }
     }
     if (table != NULL) {
         *out = ((int*)table)[index];

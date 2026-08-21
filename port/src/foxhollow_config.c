@@ -12,6 +12,7 @@ static FhScreenStyle sScreenStyle;
 static int sFullscreen;
 static int sVsync = 1;
 static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
+static int sRevision;
 static char sMemoryCardPath[1024];
 static int sHasMemoryCardPath;
 
@@ -29,6 +30,7 @@ static int read_flag(const char* name, int fallback) {
 static void load(void) {
   const char* style;
   const char* frameLimit;
+  const char* revision;
 
   if (sLoaded) {
     return;
@@ -46,6 +48,17 @@ static void load(void) {
 
   sFullscreen = read_flag("FOXHOLLOW_FULLSCREEN", 0);
   sVsync = read_flag("FOXHOLLOW_VSYNC", 1);
+
+  revision = getenv("FOXHOLLOW_REV");
+  if (revision != NULL && revision[0] != '\0') {
+    if (strcmp(revision, "0") == 0) {
+      sRevision = 0;
+    } else if (strcmp(revision, "1") == 0) {
+      sRevision = 1;
+    } else {
+      sRevision = -1;
+    }
+  }
 
   {
     const char* cardPath = getenv("FOXHOLLOW_MEMORY_CARD");
@@ -103,6 +116,11 @@ int fhConfigVsync(void) {
 int fhConfigFrameLimit(void) {
   load();
   return sFrameLimit;
+}
+
+int fhConfigRevision(void) {
+  load();
+  return sRevision;
 }
 
 const char* fhConfigMemoryCardPath(void) {

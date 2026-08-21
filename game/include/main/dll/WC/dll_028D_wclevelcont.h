@@ -92,6 +92,7 @@ typedef struct WcLevelControlState
     u16 thorntailMusicId;
     u16 ambientMusicId;
     u16 completionFlags;
+    f32 rev1MessageTimer;
 } WcLevelControlState;
 
 STATIC_ASSERT(sizeof(WclevelcontFlags) == 1);

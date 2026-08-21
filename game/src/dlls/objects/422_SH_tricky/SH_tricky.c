@@ -55,6 +55,9 @@ void shTricky_update(GameObject* obj) {
 
 void shTricky_init(GameObject* obj) {
     ShTrickyState* state = obj->extra;
+    if (fhConfigRevision() == 1 && mainGetBit(GAMEBIT_Tricky_Usable) != 0) {
+        mainSetBits(GAMEBIT_SH_ReturnedToQueen, 0);
+    }
     if (mainGetBit(GAMEBIT_SH_ReturnedToQueen) != 0) {
         state->phase = SH_TRICKY_PHASE_COMPLETE;
     } else {

@@ -80,6 +80,7 @@ void fhSwapRomListSection(void* buf, unsigned int size);
 void fhSwapSaveGameSlot(void* data);
 void fhSwapSaveData(void* data);
 int fhTabIs16Bit(const char* name);
+int fhConfigRevision(void);
 unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
 

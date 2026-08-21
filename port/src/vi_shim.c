@@ -1,11 +1,13 @@
 #include <dolphin/types.h>
 #include <dolphin/vi.h>
 #include <aurora/aurora.h>
+#include <aurora/dvd.h>
 #include <aurora/event.h>
 #include <SDL3/SDL_timer.h>
 #include <stdlib.h>
 #include "foxhollow_compat.h"
 #include "foxhollow_config.h"
+#include "foxhollow_quit.h"
 #include "shim_log.h"
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
@@ -52,13 +54,24 @@ static void wait_for_retrace_deadline(void) {
   }
 }
 
+static void shutdown_and_exit(void) {
+  aurora_dvd_close();
+  aurora_shutdown();
+  exit(0);
+}
+
 static void pump_events(void) {
   const AuroraEvent* event = aurora_update();
+  int quitting = fhQuitRequested();
+
   while (event != NULL && event->type != AURORA_NONE) {
     if (event->type == AURORA_EXIT) {
-      exit(0);
+      quitting = 1;
     }
     ++event;
+  }
+  if (quitting) {
+    shutdown_and_exit();
   }
 }
 

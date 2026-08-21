@@ -219,7 +219,14 @@ void Tricky_resumeAfterCommand(GameObject* obj, EnemyState* state)
     {
         obj->anim.flags = obj->anim.flags & ~OBJANIM_FLAG_HIDDEN;
         moveId = state->moveId0;
-        state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale0);
+        if (fhConfigRevision() == 1 && state->moveSpeedScale0 == 0.0f)
+        {
+            state->animPlaySpeed = 0.0f;
+        }
+        else
+        {
+            state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale0);
+        }
         state->rootMotionFlags = 1;
         ObjAnim_SetCurrentMove(obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
         if (obj->anim.hitReactState != NULL)
@@ -294,7 +301,14 @@ void tricky_handleDefeat(GameObject* obj, EnemyState* state)
         ObjHits_DisableObject(obj);
         obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
         moveId = state->moveId1;
-        state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale1);
+        if (fhConfigRevision() == 1 && state->moveSpeedScale1 == 0.0f)
+        {
+            state->animPlaySpeed = 0.0f;
+        }
+        else
+        {
+            state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale1);
+        }
         state->rootMotionFlags = 1;
         ObjAnim_SetCurrentMove(obj, moveId, 0.0f, 0);
         if ((void*)(obj)->anim.hitReactState != NULL)
@@ -1368,8 +1382,14 @@ void enemyObjAnimUpdate(short* obj, EnemyState* state)
         if (((state->controlFlags & 0x100) != 0) && ((state->prevControlFlags & 0x100) == 0))
         {
             int moveId = state->moveId2;
-            state->animPlaySpeed =
-                1.0f / (60.0f * state->moveSpeedScale2);
+            if (fhConfigRevision() == 1 && state->moveSpeedScale2 == 0.0f)
+            {
+                state->animPlaySpeed = 0.0f;
+            }
+            else
+            {
+                state->animPlaySpeed = 1.0f / (60.0f * state->moveSpeedScale2);
+            }
             state->rootMotionFlags = 1;
             ObjAnim_SetCurrentMove(obj, moveId, 0.0f, OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN);
             if (*(void**)(obj + 0x2a) != 0)
@@ -2437,7 +2457,14 @@ void baddieSetMove(GameObject* obj, void* state, u8 moveId, f32 rateScale, u8 mo
 {
     ObjHitsPriorityState* hitState;
 
-    ((EnemyState*)state)->animPlaySpeed = 1.0f / (60.0f * rateScale);
+    if (fhConfigRevision() == 1 && rateScale == 0.0f)
+    {
+        ((EnemyState*)state)->animPlaySpeed = 0.0f;
+    }
+    else
+    {
+        ((EnemyState*)state)->animPlaySpeed = 1.0f / (60.0f * rateScale);
+    }
     ((EnemyState*)state)->rootMotionFlags = stateByte;
     ObjAnim_SetCurrentMove(obj, moveId, 0.0f, moveControlFlags);
     hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;

@@ -343,6 +343,9 @@ void gunpowderBarrel_triggerExplosion(GameObject* obj) {
         ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj, GUNPOWDER_BARREL_HIT_VOLUME_SLOT_BLAST, 4, 0);
         Sfx_PlayFromObject(obj, SFXTRIG_en_barrelblow11_d1);
         obj->anim.localPosY += 10.0f;
+        if (fhConfigRevision() == 1) {
+            ObjHits_MarkObjectPositionDirty(obj);
+        }
         spawnExplosion(obj, 0.0f, 1, 1, 0, 0, 0, 1, 0);
         if (state->heldByCarryInterface != 0) {
             (*gCarryableInterface)->stopCarrying(obj, state);
@@ -433,7 +436,8 @@ void gunpowderBarrel_updatePhysics(GameObject* obj) {
             if (result == 2) {
                 state->detonationTrigger = GUNPOWDER_BARREL_DETONATION_TRIGGER_IMPACT;
             } else {
-                if (!state->heldFlags.wasOnGround) {
+                if (!state->heldFlags.wasOnGround &&
+                    (fhConfigRevision() == 0 || state->rev1LandingSoundCooldown == 0)) {
                     if (state->heldFlags.landed) {
                         Sfx_PlayFromObject(obj, SFXTRIG_barrel_putdown);
                     } else {
@@ -479,6 +483,13 @@ void gunpowderBarrel_updatePhysics(GameObject* obj) {
         }
     }
     state->heldFlags.wasOnGround = state->heldFlags.onGround;
+    if (fhConfigRevision() == 1) {
+        if (state->heldFlags.onGround) {
+            state->rev1LandingSoundCooldown = 3;
+        } else if (--state->rev1LandingSoundCooldown < 0) {
+            state->rev1LandingSoundCooldown = 0;
+        }
+    }
 }
 
 int gunpowderBarrel_getExtraSize(void) {

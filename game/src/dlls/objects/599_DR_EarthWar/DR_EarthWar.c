@@ -240,14 +240,26 @@ int DR_EarthWarrior_stateHandler03(GameObject* obj, BaddieState* baddie)
     f32 fz;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     fz = 0.0f;
-    baddie->animSpeedC = fz;
-    baddie->animSpeedB = fz;
-    baddie->animSpeedA = fz;
-    obj->anim.velocityX = fz;
-    obj->anim.velocityY = fz;
-    obj->anim.velocityZ = fz;
+    if (fhConfigRevision() == 0)
+    {
+        baddie->animSpeedC = fz;
+        baddie->animSpeedB = fz;
+        baddie->animSpeedA = fz;
+        obj->anim.velocityX = fz;
+        obj->anim.velocityY = fz;
+        obj->anim.velocityZ = fz;
+    }
     if (baddie->moveJustStartedA != 0)
     {
+        if (fhConfigRevision() == 1)
+        {
+            baddie->animSpeedC = fz;
+            baddie->animSpeedB = fz;
+            baddie->animSpeedA = fz;
+            obj->anim.velocityX = fz;
+            obj->anim.velocityY = fz;
+            obj->anim.velocityZ = fz;
+        }
         if (state->sub.flags994.b80)
         {
             ObjAnim_SetCurrentMove(obj, 7, fz, 0);

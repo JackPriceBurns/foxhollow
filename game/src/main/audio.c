@@ -894,6 +894,10 @@ void audioFree(void* ptr)
 
 void* _audioAlloc(u32 size)
 {
+    if (fhConfigRevision() == 1 && size == 11712)
+    {
+        return (u8*)mmAlloc(size + 256, 0xb, 0) + 256;
+    }
     return mmAlloc(size, 0xb, 0);
 }
 

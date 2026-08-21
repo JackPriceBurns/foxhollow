@@ -27,6 +27,7 @@
  * hitDetect helper.
  */
 #include "main/dll/dll_0293_suntemple.h"
+#include "main/dll/tricky_api.h"
 #include "main/game_timer.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
@@ -183,6 +184,10 @@ void suntemple_update(GameObject* obj)
         if (gameObj->anim.romDefNo == SUNTEMPLE_SEQ_TIMER_LOCKOUT && gameTimerIsRunning() != 0)
         {
             gameObj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
+        }
+        else if (fhConfigRevision() == 1 && (gameObj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0)
+        {
+            setAButtonIcon(15);
         }
 
         if ((gameObj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)

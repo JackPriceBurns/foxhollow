@@ -1259,7 +1259,14 @@ void DIMSnowHorn1_update(GameObject* obj)
 
     data = obj->extra;
     data->advanceCountThreshold = 5;
-    (obj)->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
+    if (fhConfigRevision() == 1)
+    {
+        (obj)->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+    }
+    else
+    {
+        (obj)->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
+    }
     ((ObjHitsPriorityState*)(obj)->anim.hitReactState)->trackContactMask = 9;
     {
         u8* fp = base + 0x94;
@@ -1284,6 +1291,10 @@ void DIMSnowHorn1_update(GameObject* obj)
             characterDoEyeAnims(obj, &data->eyeAnimState);
             return;
         }
+    }
+    if (fhConfigRevision() == 1)
+    {
+        (obj)->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
     }
     if (data->mountMode == 2)
     {

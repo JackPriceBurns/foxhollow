@@ -375,7 +375,9 @@ void PressureSwitchFB_init(GameObject* obj, PressureSwitchFBPlacement* placement
             if (sequenceId != PRESSURESWITCHFB_SEQ_ID_SH_PRESSURE) {
                 if (sequenceId != PRESSURESWITCHFB_SEQ_ID_LINK_UNDERW) {
                     if (sequenceId != PRESSURESWITCHFB_SEQ_ID_CC_PRESSURE) {
-                        flags->autoPress = 1;
+                        if (fhConfigRevision() == 0 || placement->base.ident != 0x41996) {
+                            flags->autoPress = 1;
+                        }
                     }
                 }
             }

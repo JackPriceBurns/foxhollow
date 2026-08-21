@@ -352,9 +352,12 @@ void bossdrakor_spawnAttackObjects(GameObject* obj, BossDrakorState* state, int 
                             mstate = (f32*)missile->extra;
                             PSVECScale(&vecA, &vecC, PSVECDotProduct(&vecA, &vecB));
                             PSVECSubtract(&vecB, &vecC, &vecC);
-                            PSVECNormalize(&vecC, &vecC);
-                            PSVECScale(&vecC, &missile->anim.velocity,
-                                       s->missileBaseSpeed * gBossDrakorMissileInitialSpeedFactor);
+                            if (fhConfigRevision() == 0 || vecC.x != 0.0f || vecC.y != 0.0f || vecC.z != 0.0f)
+                            {
+                                PSVECNormalize(&vecC, &vecC);
+                                PSVECScale(&vecC, &missile->anim.velocity,
+                                           s->missileBaseSpeed * gBossDrakorMissileInitialSpeedFactor);
+                            }
                             *mstate = spd;
                             drakormissile_startActiveLaunch((GameObject*)(missile));
                             storeZeroToFloatParam(&s->jawAnimTimer);

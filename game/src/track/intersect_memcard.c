@@ -32,7 +32,9 @@
 #include "main/pi_flush_api.h"
 #include "track/intersect_api.h"
 #include "dolphin/os.h"
+#include "dolphin/os/OSRtc.h"
 #include "foxhollow_config.h"
+#include "main/gametext_api.h"
 
 typedef void (*GXSetAlphaCompareIntFn)(int comp0, int ref0, int op, int comp1, int ref1);
 
@@ -550,12 +552,22 @@ void showMemCardError(u8 err)
     int yy;
     GameTextDef* t;
     int v;
+    int minX;
+    int maxX;
+    int minY;
+    int maxY;
+    int lineHeight;
 
     sel = 0;
     submenu = 0;
     timer = 0;
     held = 0;
     gSaveCardRetry = 0;
+    if (fhConfigRevision() == 1 && OSGetLanguage() == OS_LANGUAGE_DUTCH && err != 0 &&
+        (gSaveCardState == 2 || gSaveCardState == 3))
+    {
+        return;
+    }
     if (gSaveCardState == 0xd || (err != 0 && gSaveCardState == 0xc))
     {
         return;
@@ -590,7 +602,20 @@ void showMemCardError(u8 err)
             for (j = 0; j < t->count; j++)
             {
                 gameTextShowStr(t->strings[j], 0, 0, yy);
-                yy += 0x18;
+                if (fhConfigRevision() == 1)
+                {
+                    gameTextMeasureStringBoundsAt(t->strings[j], 0, 0, 0, &minX, &maxX, &minY, &maxY);
+                    lineHeight = gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight;
+                    if (maxY - minY > lineHeight)
+                    {
+                        lineHeight = maxY - minY;
+                    }
+                    yy += lineHeight + 5;
+                }
+                else
+                {
+                    yy += 0x18;
+                }
             }
             if (i == sel)
             {

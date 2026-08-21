@@ -1,6 +1,11 @@
 #include "dlls/object_descriptor.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/FRONT/frontend_control.h"
+#include "foxhollow_menu.h"
+
+#define SAVE_SELECT_EXIT_TO_DESKTOP_INDEX 3
+#define SAVE_SELECT_CHOOSE_SLOT_COUNT 4
+#include "foxhollow_quit.h"
 #include "main/dll/dll_0035_saveselectscreen.h"
 #include "main/textrender_api.h"
 #include "track/intersect_hud_api.h"
@@ -179,6 +184,7 @@ void saveSelect_drawText(int unused, int alpha)
 extern u8 gSaveSelectChapter;
 extern u8 gSaveSelectQuitPending;
 extern u8 gSaveSelectLaunchPending;
+extern u8 gSaveSelectExitToDesktopPending;
 extern s8 gSaveSelectExitTimer;
 
 void saveSelectSetSlot(int slot, int value)
@@ -252,6 +258,7 @@ s8 gSaveSelectExitTimer;
 s8 gSaveSelectRefreshCounter;
 u8 gSaveSelectLaunchPending;
 u8 gSaveSelectQuitPending;
+u8 gSaveSelectExitToDesktopPending;
 void* gSaveSelectTexture;
 u8 gSaveSelectMenuItemActive;
 u8 gSaveSelectChapter;
@@ -334,7 +341,14 @@ static void saveFileSelect_init(int sel, int slot)
     }
     else if (sel != -1)
     {
-        if (sel == 1)
+        if (sel == 1 && slot == SAVE_SELECT_EXIT_TO_DESKTOP_INDEX)
+        {
+            Sfx_PlayFromObject(0, SFXTRIG_menu_pause_up);
+            (*gScreenTransitionInterface)->start(20, SCREEN_TRANSITION_BLACK);
+            gSaveSelectExitTimer = 0x23;
+            gSaveSelectExitToDesktopPending = 1;
+        }
+        else if (sel == 1)
         {
             saveFileSelect_currentSlotIndex = slot;
             i = (s8)(u8)(s8)slot;
@@ -373,7 +387,7 @@ static void saveSelectSetupMenuItems(SaveSelectPanel* p)
 {
     int i;
 
-    for (i = 0; i < p->count; i++)
+    for (i = 0; i < FRONTEND_SAVE_SLOT_COUNT; i++)
     {
         saveFileSelect_saveSlots = saveFileSelect_saveSlotsBase;
         if (saveFileSelect_saveSlots[i].isOccupied == 0)
@@ -605,6 +619,11 @@ void SaveSelectScreen_render(int param)
         infoTextIds = gSaveSelectInfoTextIds + (u8)(3 - slotCount);
         while (infoIndex < slotCount)
         {
+            if (fhConfigRevision() == 1)
+            {
+                gameTextSetColor(0xff, 0xff, 0xff, alpha);
+                gameTextShowStr("-", 147, 65, 52 + infoIndex * 42);
+            }
             gameTextAppendStr(slot->taskTexts[infoIndex], *infoTextIds);
             infoTextIds++;
             infoIndex++;
@@ -707,6 +726,14 @@ int SaveSelectScreen_run(void)
         gTitleMenuLinkInterface->vtable->resetTimers();
         gSaveSelectRefreshCounter = 4;
     }
+    if (gSaveSelectExitToDesktopPending != 0)
+    {
+        if ((timer <= 12 || gSaveSelectExitTimer > 12) && gSaveSelectExitTimer <= 0)
+        {
+            fhRequestQuit();
+        }
+        return gSaveSelectExitTimer <= 12;
+    }
     if (gSaveSelectLaunchPending != 0 || gSaveSelectQuitPending != 0)
     {
         if ((timer <= 12 || gSaveSelectExitTimer > 12) && gSaveSelectExitTimer <= 0)
@@ -743,6 +770,10 @@ int SaveSelectScreen_run(void)
                     if (data != NULL)
                     {
                         memcpy(gSaveGameWorkBuffer, data, 0x6ec);
+                        if (fhConfigRevision() == 1)
+                        {
+                            mm_free(data);
+                        }
                     }
                 }
                 else
@@ -912,6 +943,7 @@ void SaveSelectScreen_initialise(void)
 
     gSaveSelectQuitPending = 0;
     gSaveSelectLaunchPending = 0;
+    gSaveSelectExitToDesktopPending = 0;
     gSaveSelectExitTimer = 0;
     gSaveSelectRefreshCounter = 4;
     lbl_803DD6B4 = 0;
@@ -922,7 +954,7 @@ void SaveSelectScreen_initialise(void)
     }
 }
 
-TitleMenuTextEntry gSaveSelectChooseSlotEntries[3] = {
+TitleMenuTextEntry gSaveSelectChooseSlotEntries[SAVE_SELECT_CHOOSE_SLOT_COUNT] = {
     {
         0xFFFF,
         0x0018,
@@ -981,6 +1013,28 @@ TitleMenuTextEntry gSaveSelectChooseSlotEntries[3] = {
         0x0000,
         {0x00, 0x00},
         1,
+        SAVE_SELECT_EXIT_TO_DESKTOP_INDEX,
+        -1,
+        -1,
+        -1,
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        0,
+        {0, 0, 0},
+    },
+    {
+        FH_MENU_TEXT_ID_EXIT_TO_DESKTOP,
+        0x001D,
+        130,
+        308,
+        320,
+        89,
+        300,
+        {0, 0},
+        -1,
+        0x0140,
+        TITLE_MENU_TEXT_ENTRY_SELECTABLE,
+        {0x00, 0x00},
+        2,
         -1,
         -1,
         -1,
@@ -1224,7 +1278,7 @@ TitleMenuTextEntry gSaveSelectChapterSelectEntries[6] = {
 };
 
 SaveSelectPanel gSaveSelectPanels[] = {
-    {gSaveSelectChooseSlotEntries, 3, 0, 0x0379, 0x0367, {2, 0}}, {gSaveSelectOpenFileEntries, 2, 0, 0x0379, 0x0367, {2, 0}},
+    {gSaveSelectChooseSlotEntries, SAVE_SELECT_CHOOSE_SLOT_COUNT, 0, 0x0379, 0x0367, {2, 0}}, {gSaveSelectOpenFileEntries, 2, 0, 0x0379, 0x0367, {2, 0}},
     {gSaveSelectSlotActionEntries, 1, 0, 0x037A, 0xFFFF, {2, 0}}, {gSaveSelectConfirmEraseEntries, 1, 0, 0x0379, 0x0367, {2, 0}},
     {gSaveSelectChapterSelectEntries, 6, 0, 0x0450, 0x0367, {2, 0}},
 };
