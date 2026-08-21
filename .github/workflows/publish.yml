@@ -115,6 +115,7 @@ jobs:
       - name: Create the release and upload the binaries
         env:
           TAG: ${{ inputs.tag || github.event.release.tag_name }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
           COMMIT: ${{ github.sha }}
-        run: python3 .github/scripts/publish_release.py
+        run: |
+          export RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+          python3 .github/scripts/publish_release.py
