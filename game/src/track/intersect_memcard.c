@@ -416,7 +416,8 @@ void _initCardAndDsp(void)
 
     if (memoryCardPath != NULL)
     {
-        CARDSetBasePath(memoryCardPath, -1);
+        CARDSetLoadType(CARD_RAWIMAGE);
+        CARDSetCardImagePath(memoryCardPath, 0);
     }
 
     CARDInit("GSAE", "01");

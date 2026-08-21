@@ -52,14 +52,9 @@ static void load(void) {
     if (cardPath != NULL && cardPath[0] != '\0')
     {
       size_t length = strlen(cardPath);
-      if (length + 2 < sizeof(sMemoryCardPath))
+      if (length + 1 < sizeof(sMemoryCardPath))
       {
         memcpy(sMemoryCardPath, cardPath, length);
-        if (sMemoryCardPath[length - 1] != '/')
-        {
-          sMemoryCardPath[length] = '/';
-          length++;
-        }
         sMemoryCardPath[length] = '\0';
         sHasMemoryCardPath = 1;
       }
