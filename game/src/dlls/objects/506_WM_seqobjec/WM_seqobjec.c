@@ -9,11 +9,14 @@
 #include "main/object_render.h"
 #include "main/screen_transition.h"
 
-#define WM_SEQOBJECT_EVENT_TOGGLE         1
-#define WM_SEQOBJECT_MODE_GALLEON         0
-#define WM_SEQOBJECT_MODE_DISABLED        8
-#define WM_SEQOBJECT_TRANSITION_DURATION  0x50
-#define WM_SEQOBJECT_TRANSITION_COUNTDOWN 0x14
+typedef enum WMSeqObjectEvent {
+    WM_SEQOBJECT_EVENT_TOGGLE = 1,
+} WMSeqObjectEvent;
+
+typedef enum WMSeqObjectMode {
+    WM_SEQOBJECT_MODE_GALLEON = 0,
+    WM_SEQOBJECT_MODE_DISABLED = 8,
+} WMSeqObjectMode;
 
 u8 gWMSeqObjectToggleState;
 
@@ -33,7 +36,7 @@ int WM_seqobject_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
 }
 
 int WM_seqobject_getExtraSize(void) {
-    return sizeof(WMSeqObjectState);
+    return sizeof(u8);
 }
 
 int WM_seqobject_getObjectTypeId(void) {
@@ -53,17 +56,9 @@ void WM_seqobject_hitDetect(void) {
 }
 
 void WM_seqobject_update(GameObject* obj) {
-    int objectCount;
-    int transitionCountdown;
-    GameObject** objects;
-    int galleonFound;
-    int objectIndex;
-    int mode;
-    const WMSeqObjectPlacementView* placement;
+    const WMSeqObjectPlacement* placement = (const WMSeqObjectPlacement*)obj->anim.placementData;
 
-    placement = (const WMSeqObjectPlacementView*)obj->anim.placementData;
-    mode = placement->mode;
-    switch (mode) {
+    switch (placement->mode) {
     case WM_SEQOBJECT_MODE_DISABLED:
         break;
     case WM_SEQOBJECT_MODE_GALLEON:
@@ -77,9 +72,10 @@ void WM_seqobject_update(GameObject* obj) {
             return;
         }
 
-        objects = (GameObject**)objGetAllOfType(6, &objectCount);
-        galleonFound = 0;
-        for (objectIndex = 0; objectIndex < objectCount; objectIndex++) {
+        int objectCount;
+        GameObject** objects = (GameObject**)objGetAllOfType(6, &objectCount);
+        int galleonFound = 0;
+        for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
             if (objects[objectIndex]->anim.romDefNo == WM_GALLEON_OBJECT_ID) {
                 galleonFound = 1;
             }
@@ -91,29 +87,25 @@ void WM_seqobject_update(GameObject* obj) {
                 obj->userData1 = 1;
                 mainSetBits(GAMEBIT_WM_GalleonRelated00A4, 1);
             } else {
-                (*gScreenTransitionInterface)->step(WM_SEQOBJECT_TRANSITION_DURATION, SCREEN_TRANSITION_BLACK);
+                (*gScreenTransitionInterface)->step(0x50, SCREEN_TRANSITION_BLACK);
             }
         } else {
-            obj->userData2 = WM_SEQOBJECT_TRANSITION_COUNTDOWN;
-            (*gScreenTransitionInterface)->step(WM_SEQOBJECT_TRANSITION_DURATION, SCREEN_TRANSITION_BLACK);
+            obj->userData2 = 0x14;
+            (*gScreenTransitionInterface)->step(0x50, SCREEN_TRANSITION_BLACK);
         }
 
-        transitionCountdown = obj->userData2 - 1;
-        obj->userData2 = transitionCountdown;
-        if (transitionCountdown < 0) {
+        obj->userData2--;
+        if (obj->userData2 < 0) {
             obj->userData2 = 0;
         }
         break;
     }
 }
 
-void WM_seqobject_init(GameObject* obj, const WMSeqObjectPlacementView* placement) {
-    s16 angle;
-
-    angle = (s16)((s32)placement->rotationXByte << 8);
-    obj->anim.rotX = angle;
+void WM_seqobject_init(GameObject* obj, const WMSeqObjectPlacement* placement) {
+    obj->anim.rotX = (s16)((s32)placement->rotationXByte << 8);
     obj->animEventCallback = WM_seqobject_SeqFn;
-    obj->userData2 = WM_SEQOBJECT_TRANSITION_COUNTDOWN;
+    obj->userData2 = 0x14;
 }
 
 void WM_seqobject_release(void) {

@@ -245,7 +245,7 @@ void SH_LevelControl_setMusic(short* obj) {
                               obj[8]);
         GameBitLatch_Update((GameBitLatchState*)obj, 2, GAMEBIT_SH_WarpStoneRelated01A8, GAMEBIT_SH_Entered00C0,
                               GAMEBIT_KrazTest1Related0390, obj[9]);
-        GameBitLatch_Update((GameBitLatchState*)obj, 4, -1, -1, 0x393, 0x36);
+        GameBitLatch_Update((GameBitLatchState*)obj, 4, -1, -1, GAMEBIT_TELEPORT_MUSIC_LOCK, 0x36);
         GameBitLatch_Update((GameBitLatchState*)obj, 8, -1, -1, 0xa32, 0x98);
         GameBitLatch_Update((GameBitLatchState*)obj, 0x10, -1, -1, 0xbfe, 0xc3);
     }

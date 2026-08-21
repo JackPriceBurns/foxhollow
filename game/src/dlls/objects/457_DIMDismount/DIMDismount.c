@@ -1,11 +1,7 @@
-/*
- * DIMDismount (DLL 0x1C9) - dismount-point object for Dinosaur Island
- * Mission 2. Tracks the nearest mount and exposes a signed-distance plane test
- * so the mount can determine which side of the dismount point the player is on.
- */
 #include "dlls/objects/457_DIMDismount.h"
 
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "game/objects/object_setup.h"
 #include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/objprint_render_api.h"
@@ -14,35 +10,50 @@
 #include "main/object_render.h"
 #include "sys/objects.h"
 
-#define DIM_DISMOUNT_MOUNT_OBJECT_GROUP 0xA
+typedef enum DimDismountSide {
+    DIM_DISMOUNT_SIDE_POSITIVE,
+    DIM_DISMOUNT_SIDE_NEGATIVE
+} DimDismountSide;
 
-typedef struct DimDismountNeighborVTable {
-    void* unknown00[8];
-    int (*canUseDismountPoint)(GameObject* neighbor, GameObject* dismountPoint);
-} DimDismountNeighborVTable;
+struct DimDismountPlacement {
+    ObjPlacement base;
+    s8 rotationX;
+    u8 pad19[11];
+};
 
-STATIC_ASSERT(offsetof(DimDismountNeighborVTable, canUseDismountPoint) == 0x20);
+typedef struct DimDismountState {
+    Vec3f planeNormal;
+    f32 planeConstant;
+} DimDismountState;
 
-void DIMDismountPoint_func0B(GameObject* obj, int side) {
-    (*gObjectTriggerInterface)->runSequence((side ^ 1) + 2, (void*)obj, -1);
+typedef int (*DimDismountCanUsePointFn)(GameObject* mount, GameObject* dismountPoint);
+
+STATIC_ASSERT(offsetof(DimDismountPlacement, rotationX) == 0x18);
+STATIC_ASSERT(sizeof(DimDismountPlacement) == 0x24);
+STATIC_ASSERT(offsetof(DimDismountState, planeConstant) == 0x0C);
+STATIC_ASSERT(sizeof(DimDismountState) == 0x10);
+
+void DIMDismountPoint_runOppositeSideSequence(GameObject* obj, int side) {
+    (*gObjectTriggerInterface)->runSequence((side ^ 1) + 2, obj, -1);
 }
 
-int DIMDismountPoint_func0A(GameObject* obj) {
+int DIMDismountPoint_getPlayerSide(GameObject* obj) {
     GameObject* player = Obj_GetPlayerObject();
     DimDismountState* state = obj->extra;
     f32 signedDistance;
     int playerSide;
 
     signedDistance = state->planeConstant +
-                     (state->planeNormalZ * player->anim.localPosZ +
-                      (state->planeNormalX * player->anim.localPosX + state->planeNormalY * player->anim.localPosY));
+                     (state->planeNormal.z * player->anim.localPosZ +
+                      (state->planeNormal.x * player->anim.localPosX +
+                       state->planeNormal.y * player->anim.localPosY));
 
     if (signedDistance >= 0.0f) {
-        playerSide = 0;
+        playerSide = DIM_DISMOUNT_SIDE_POSITIVE;
     } else {
-        playerSide = 1;
+        playerSide = DIM_DISMOUNT_SIDE_NEGATIVE;
     }
-    (*gObjectTriggerInterface)->runSequence(playerSide, (void*)obj, -1);
+    (*gObjectTriggerInterface)->runSequence(playerSide, obj, -1);
     return playerSide;
 }
 
@@ -84,8 +95,8 @@ void DIMDismountPoint_update(GameObject* obj) {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
     } else {
         obj->hitVolumeIndex = 0;
-        if (nearestNeighbor != NULL &&
-            (*(DimDismountNeighborVTable**)nearestNeighbor->anim.dll)->canUseDismountPoint(nearestNeighbor, obj) != 0) {
+        if (nearestNeighbor != NULL && ((DimDismountCanUsePointFn)nearestNeighbor->anim.dll[0][8])(
+                                           nearestNeighbor, obj) != 0) {
             obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
         } else {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
@@ -96,17 +107,18 @@ void DIMDismountPoint_update(GameObject* obj) {
     }
 }
 
-void DIMDismountPoint_init(GameObject* obj, DimDismountPlacement* placement) {
+void DIMDismountPoint_init(GameObject* obj, const DimDismountPlacement* placement) {
     DimDismountState* state;
 
     objAddObjectType(obj, DIM_DISMOUNT_POINT_OBJECT_GROUP);
-    obj->anim.rotX = (s16)(placement->rotationXByte << 8);
+    obj->anim.rotX = placement->rotationX * 256;
     state = obj->extra;
-    state->planeNormalX = mathSinf(3.1415927f * (f32)(s32)obj->anim.rotX / 32768.0f);
-    state->planeNormalY = 0.0f;
-    state->planeNormalZ = mathCosf(3.1415927f * (f32)(s32)obj->anim.rotX / 32768.0f);
-    state->planeConstant = -(state->planeNormalX * obj->anim.localPosX + state->planeNormalY * obj->anim.localPosY +
-                             state->planeNormalZ * obj->anim.localPosZ);
+    state->planeNormal.x = mathSinf(3.1415927f * (f32)(s32)obj->anim.rotX / 32768.0f);
+    state->planeNormal.y = 0.0f;
+    state->planeNormal.z = mathCosf(3.1415927f * (f32)(s32)obj->anim.rotX / 32768.0f);
+    state->planeConstant =
+        -(state->planeNormal.x * obj->anim.localPosX + state->planeNormal.y * obj->anim.localPosY +
+          state->planeNormal.z * obj->anim.localPosZ);
     obj->userData2 = 1;
 }
 
@@ -131,6 +143,6 @@ ObjectDescriptor12 gDIMDismountPointObjDescriptor = {
     (ObjectDescriptorCallback)DIMDismountPoint_free,
     (ObjectDescriptorCallback)DIMDismountPoint_getObjectTypeId,
     DIMDismountPoint_getExtraSize,
-    (ObjectDescriptorCallback)DIMDismountPoint_func0A,
-    (ObjectDescriptorCallback)DIMDismountPoint_func0B,
+    (ObjectDescriptorCallback)DIMDismountPoint_getPlayerSide,
+    (ObjectDescriptorCallback)DIMDismountPoint_runOppositeSideSequence,
 };

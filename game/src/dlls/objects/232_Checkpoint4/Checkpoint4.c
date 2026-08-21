@@ -10,11 +10,29 @@
 #include "main/object_render.h"
 #include "main/vecmath.h"
 
-#define CHECKPOINT4_OBJECT_TYPE_ID     0x10
-#define CHECKPOINT4_MIN_RADIUS         5.0f
-#define CHECKPOINT4_RADIUS_SCALE       0.0078125f
-#define CHECKPOINT4_TRIGGER_SCALE      2.0f
-#define CHECKPOINT4_RANDOM_HEADING_MAX 0xF0
+enum {
+    CHECKPOINT4_RANDOM_HEADING_COUNT = 4,
+};
+
+typedef enum Checkpoint4ObjectTypeId {
+    CHECKPOINT4_OBJECT_TYPE_ID = 0x10,
+} Checkpoint4ObjectTypeId;
+
+typedef struct Checkpoint4State {
+    u8 pad00[0x10];
+    Vec3f planeNormal;
+    f32 planeDistance;
+    f32 triggerRadius;
+    u8 pad24[0x10];
+    s16 randomHeadings[CHECKPOINT4_RANDOM_HEADING_COUNT];
+    u8 pad3C[4];
+} Checkpoint4State;
+
+STATIC_ASSERT(sizeof(Checkpoint4State) == 0x40);
+STATIC_ASSERT(offsetof(Checkpoint4State, planeNormal) == 0x10);
+STATIC_ASSERT(offsetof(Checkpoint4State, planeDistance) == 0x1C);
+STATIC_ASSERT(offsetof(Checkpoint4State, triggerRadius) == 0x20);
+STATIC_ASSERT(offsetof(Checkpoint4State, randomHeadings) == 0x34);
 
 void checkpoint4_func0A(void) {
 }
@@ -45,42 +63,34 @@ void checkpoint4_update(GameObject* obj) {
     (void)obj;
 }
 
-void checkpoint4_init(GameObject* obj, Checkpoint4Placement* placement) {
-    f32 radius;
-    u32 heading;
-    int i;
-    f32 normalYContribution;
-    Checkpoint4State* state;
-    MatrixTransform transform;
+void checkpoint4_init(GameObject* obj, const Checkpoint4Placement* placement) {
+    Checkpoint4State* state = obj->extra;
     f32 matrix[16];
 
-    state = obj->extra;
-    radius = (f32)(int)placement->radius;
-    if ((f32)(int)placement->radius < CHECKPOINT4_MIN_RADIUS) {
-        radius = CHECKPOINT4_MIN_RADIUS;
+    f32 radius = placement->radius;
+    if (radius < 5.0f) {
+        radius = 5.0f;
     }
-    radius *= CHECKPOINT4_RADIUS_SCALE;
+    radius *= 0.0078125f;
     obj->anim.rootMotionScale = radius;
     obj->anim.rotX = (s16)((s16)placement->rotX << 8);
-    transform.rotX = obj->anim.rotX;
-    transform.rotY = obj->anim.rotY;
-    transform.rotZ = obj->anim.rotZ;
-    transform.scale = 1.0f;
-    transform.x = 0.0f;
-    transform.y = 0.0f;
-    transform.z = 0.0f;
+    MatrixTransform transform = {
+        .rotX = obj->anim.rotX,
+        .rotY = obj->anim.rotY,
+        .rotZ = obj->anim.rotZ,
+        .scale = 1.0f,
+    };
     setMatrixFromObjectPos(matrix, &transform);
-    Matrix_TransformPoint(matrix, 0.0f, 0.0f, 1.0f, &state->planeNormalX, &state->planeNormalY, &state->planeNormalZ);
-    normalYContribution = obj->anim.localPosY * state->planeNormalY;
+    Matrix_TransformPoint(matrix, 0.0f, 0.0f, 1.0f, &state->planeNormal.x,
+                          &state->planeNormal.y, &state->planeNormal.z);
+    f32 normalYContribution = obj->anim.localPosY * state->planeNormal.y;
     state->planeDistance =
-        -(normalYContribution + obj->anim.localPosX * state->planeNormalX + obj->anim.localPosZ * state->planeNormalZ);
-    state->triggerRadius = CHECKPOINT4_TRIGGER_SCALE * obj->anim.rootMotionScale;
-    i = 0;
-    do {
-        heading = randomGetRange(0, CHECKPOINT4_RANDOM_HEADING_MAX);
-        state->randomHeadings[i] = heading;
-        i++;
-    } while (i < CHECKPOINT4_RANDOM_HEADING_COUNT);
+        -(normalYContribution + obj->anim.localPosX * state->planeNormal.x +
+          obj->anim.localPosZ * state->planeNormal.z);
+    state->triggerRadius = 2.0f * obj->anim.rootMotionScale;
+    for (int i = 0; i < CHECKPOINT4_RANDOM_HEADING_COUNT; i++) {
+        state->randomHeadings[i] = (s16)randomGetRange(0, 0xF0);
+    }
     obj->userData1 = placement->checkpointIndex;
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_UPDATE_DISABLED;
 }

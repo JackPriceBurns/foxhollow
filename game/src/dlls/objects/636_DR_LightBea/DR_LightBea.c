@@ -1,21 +1,11 @@
-/*
- * DR_LightBea (DLL 636) - a lightning-beam effect that arcs from this
- * object to a target while its placement game bit (0x20) is set.
- *
- * The target is either another placed object (resolved by id via
- * dll_2E_getCurveActionTarget when the placement target byte at 0x19 is non-zero) or
- * the player. While active, render keeps the beam's endpoints synced to
- * the live source/target positions, advances its lifetime counter and
- * frees the beam once it expires. The extra state (0xc bytes) holds the
- * lightningCreate handle at offset 0 and the active/free bit flags at
- * offset 4.
- */
 #include "main/audio/sfx_play_api.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/gamebits_api.h"
+#include "main/lightningeffect.h"
 #include "main/mm.h"
 #include "main/newclouds.h"
 #include "main/vecmath.h"
+#include "game/objects/object_setup.h"
 #include "sys/objects.h"
 #include "dlls/object_descriptor.h"
 
@@ -24,10 +14,32 @@
 #include "main/dll/DR/dll_027C_drlightbea.h"
 #include "sys/objects/lifecycle.h"
 
+typedef enum DrLightBeamFlags {
+    DR_LIGHT_BEAM_ACTIVE = 0x80,
+    DR_LIGHT_BEAM_FREE_OBJECT = 0x40
+} DrLightBeamFlags;
+
+typedef struct DrLightBeamPlacement {
+    ObjPlacement base;
+    u8 pad18;
+    s8 targetId;
+    u8 pad1A[6];
+    s16 gameBit;
+    u8 pad22[6];
+} DrLightBeamPlacement;
+
+typedef struct DrLightBeamState {
+    LightningEffect* beam;
+    u8 flags;
+} DrLightBeamState;
+
+STATIC_ASSERT(offsetof(DrLightBeamPlacement, targetId) == 0x19);
+STATIC_ASSERT(offsetof(DrLightBeamPlacement, gameBit) == 0x20);
+STATIC_ASSERT(sizeof(DrLightBeamPlacement) == 0x28);
 
 int DR_LightBea_getExtraSize(void)
 {
-    return sizeof(DrLightBeaState);
+    return sizeof(DrLightBeamState);
 }
 
 int DR_LightBea_getObjectTypeId(void)
@@ -37,79 +49,77 @@ int DR_LightBea_getObjectTypeId(void)
 
 void DR_LightBea_free(GameObject* obj)
 {
-    DrLightBeaState* state = obj->extra;
-    LightningEffect* buffer = state->handle;
+    DrLightBeamState* state = obj->extra;
 
-    if (buffer != NULL)
+    if (state->beam != NULL)
     {
-        mm_free(buffer);
-        state->handle = NULL;
+        mm_free(state->beam);
+        state->beam = NULL;
     }
 }
 
 void DR_LightBea_render(GameObject* obj, int p2, int p3, int p4, int p5)
 {
-    DrLightBeaState* state = obj->extra;
-    DrlightbeaPlacement* setup = (DrlightbeaPlacement*)obj->anim.placementData;
+    DrLightBeamState* state = obj->extra;
+    const DrLightBeamPlacement* placement = (const DrLightBeamPlacement*)obj->anim.placementData;
     GameObject* player;
     MoveLibTarget target;
-    f32 sourcePos[3];
-    f32 targetPos[3];
+    Vec3f sourcePos;
+    Vec3f targetPos;
 
-    if (state->flags.bit80)
+    if ((state->flags & DR_LIGHT_BEAM_ACTIVE) != 0)
     {
-        state->handle->start[0] = (obj)->anim.localPosX;
-        state->handle->start[1] = (obj)->anim.localPosY;
-        state->handle->start[2] = (obj)->anim.localPosZ;
-        if (setup->targetId == 0)
+        state->beam->start[0] = obj->anim.localPosX;
+        state->beam->start[1] = obj->anim.localPosY;
+        state->beam->start[2] = obj->anim.localPosZ;
+        if (placement->targetId == 0)
         {
             player = Obj_GetPlayerObject();
-            state->handle->end[0] = player->anim.localPosX;
-            state->handle->end[1] = 15.0f + player->anim.localPosY;
-            state->handle->end[2] = player->anim.localPosZ;
+            state->beam->end[0] = player->anim.localPosX;
+            state->beam->end[1] = 15.0f + player->anim.localPosY;
+            state->beam->end[2] = player->anim.localPosZ;
         }
-        lightningRender(state->handle);
-        state->handle->timer += 1;
-        if (state->handle->timer >= state->handle->lifetime)
+        lightningRender(state->beam);
+        state->beam->timer += 1;
+        if (state->beam->timer >= state->beam->lifetime)
         {
-            mm_free(state->handle);
-            state->handle = NULL;
-            state->flags.bit80 = 0;
-            if ((u32)setup->base.ident == 0xffffffff)
+            mm_free(state->beam);
+            state->beam = NULL;
+            state->flags &= ~DR_LIGHT_BEAM_ACTIVE;
+            if (placement->base.ident == -1)
             {
-                state->flags.bit40 = 1;
+                state->flags |= DR_LIGHT_BEAM_FREE_OBJECT;
             }
         }
     }
     else
     {
-        if (state->handle != NULL)
+        if (state->beam != NULL)
         {
-            mm_free(state->handle);
-            state->handle = NULL;
+            mm_free(state->beam);
+            state->beam = NULL;
         }
-        state->flags.bit80 = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->gameBit)));
-        if (state->flags.bit80)
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit)) != 0)
         {
+            state->flags |= DR_LIGHT_BEAM_ACTIVE;
             Sfx_PlayFromObject(obj, SFXTRIG_id_30f);
-            sourcePos[0] = (obj)->anim.localPosX;
-            sourcePos[1] = (obj)->anim.localPosY;
-            sourcePos[2] = (obj)->anim.localPosZ;
-            if (setup->targetId != 0 && dll_2E_getCurveActionTarget(setup->targetId, &target) != 0)
+            sourcePos.x = obj->anim.localPosX;
+            sourcePos.y = obj->anim.localPosY;
+            sourcePos.z = obj->anim.localPosZ;
+            if (placement->targetId != 0 && dll_2E_getCurveActionTarget(placement->targetId, &target) != 0)
             {
-                targetPos[0] = target.x;
-                targetPos[1] = target.y;
-                targetPos[2] = target.z;
+                targetPos.x = target.x;
+                targetPos.y = target.y;
+                targetPos.z = target.z;
             }
             else
             {
                 player = Obj_GetPlayerObject();
-                targetPos[0] = player->anim.localPosX;
-                targetPos[1] = 15.0f + player->anim.localPosY;
-                targetPos[2] = player->anim.localPosZ;
+                targetPos.x = player->anim.localPosX;
+                targetPos.y = 15.0f + player->anim.localPosY;
+                targetPos.z = player->anim.localPosZ;
             }
-            state->handle = lightningCreate((const Vec3f*)sourcePos, (const Vec3f*)targetPos,
-                                                       0.05f, 0.1f, randomGetRange(5, 0xf), 0x60, 0);
+            state->beam = lightningCreate(&sourcePos, &targetPos, 0.05f, 0.1f, randomGetRange(5, 0xf), 0x60, 0);
         }
     }
 }
@@ -120,8 +130,8 @@ void DR_LightBea_hitDetect(void)
 
 void DR_LightBea_update(GameObject* obj)
 {
-    DrLightBeaState* state = obj->extra;
-    if (state->flags.bit40)
+    DrLightBeamState* state = obj->extra;
+    if ((state->flags & DR_LIGHT_BEAM_FREE_OBJECT) != 0)
     {
         Obj_FreeObject(obj);
     }
@@ -129,10 +139,9 @@ void DR_LightBea_update(GameObject* obj)
 
 void DR_LightBea_init(GameObject* obj)
 {
-    DrLightBeaState* state = obj->extra;
-    state->flags.bit80 = 0;
-    state->handle = NULL;
-    state->flags.bit40 = 0;
+    DrLightBeamState* state = obj->extra;
+    state->flags &= ~(DR_LIGHT_BEAM_ACTIVE | DR_LIGHT_BEAM_FREE_OBJECT);
+    state->beam = NULL;
 }
 
 void DR_LightBea_release(void)

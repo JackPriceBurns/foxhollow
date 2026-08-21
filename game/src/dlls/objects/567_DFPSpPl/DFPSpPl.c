@@ -1,128 +1,104 @@
-/*
- * Ocean Force Point Temple spellstone placement. It remains enabled while its
- * activation GameBit is set; when the placement sequence completes it sets
- * the completion GameBit, clears the activation bit, and disables itself.
- */
-#include "main/dll/CF/laser.h"
+#include "main/dll/spell_place.h"
+
+#include "game/objects/object.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits_api.h"
 #include "main/mapEventTypes.h"
 #include "main/objprint_render_api.h"
 
-int DFPSpPl_getExtraSize(void)
-{
-    return sizeof(LaserState);
+typedef enum DfpSpellPlaceUiEvent {
+    DFP_SPELL_PLACE_EVENT_SEQUENCE_A = 0x2E8,
+    DFP_SPELL_PLACE_EVENT_SEQUENCE_B = 0x83C,
+} DfpSpellPlaceUiEvent;
+
+typedef enum DfpSpellPlaceMapAct {
+    DFP_SPELL_PLACE_MAP_ACT_A = 7,
+    DFP_SPELL_PLACE_MAP_ACT_B = 0xD,
+} DfpSpellPlaceMapAct;
+
+static int dfpSpellPlace_getExtraSize(void) {
+    return sizeof(SpellPlaceState);
 }
 
-int DFPSpPl_getObjectTypeId(void)
-{
+static int dfpSpellPlace_getObjectTypeId(void) {
     return 0;
 }
 
-void DFPSpPl_free(void)
-{
+static void dfpSpellPlace_free(void) {
 }
 
-void DFPSpPl_render(void)
-{
+static void dfpSpellPlace_render(void) {
 }
 
-void DFPSpPl_hitDetect(void)
-{
+static void dfpSpellPlace_hitDetect(void) {
 }
 
-void DFPSpPl_update(GameObject* obj)
-{
-    LaserState* state;
-    u32 activationGameBitSet;
-    int eventReady;
-    int mode;
+static void dfpSpellPlace_complete(GameObject* obj, SpellPlaceState* state) {
+    mainSetBits(state->completionGameBit, 1);
+    mainSetBits(state->activationGameBit, 0);
+    state->completionLatched = 1;
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+}
 
-    if ((((LaserState*)obj->extra)->completionLatched == '\0') &&
-        (activationGameBitSet = mainGetBit((int)((LaserState*)obj->extra)->activationGameBit), activationGameBitSet != 0))
-    {
-        obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED;
+static void dfpSpellPlace_update(GameObject* obj) {
+    SpellPlaceState* state = obj->extra;
+
+    if (state->completionLatched == 0 && mainGetBit(state->activationGameBit) != 0) {
+        obj->anim.resetHitboxFlags &= (u8)~INTERACT_FLAG_DISABLED;
+    } else {
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
-    else
-    {
-        obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
-    }
+
     objUpdateHitVolumeTransforms(obj);
-    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0)
-    {
-        mode = (u8)(*gMapEventInterface)->getMapAct((int)obj->anim.mapEventSlot);
-        switch (mode)
-        {
-        case LASEROBJ_MODE_SEQUENCE_A:
-            state = obj->extra;
-            eventReady = (*gGameUIInterface)->isItemBeingUsed(LASEROBJ_SEQUENCE_A_EVENT);
-            if (eventReady != 0)
-            {
-                mainSetBits((int)state->completionGameBit, 1);
-                mainSetBits((int)state->activationGameBit, 0);
-                state->completionLatched = 1;
-                obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
-            }
-            break;
-        case LASEROBJ_MODE_SEQUENCE_B:
-            state = obj->extra;
-            eventReady = (*gGameUIInterface)->isItemBeingUsed(LASEROBJ_SEQUENCE_B_EVENT);
-            if (eventReady != 0)
-            {
-                mainSetBits((int)state->completionGameBit, 1);
-                mainSetBits((int)state->activationGameBit, 0);
-                state->completionLatched = 1;
-                obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
-                (*gMapEventInterface)->setMapAct(LASEROBJ_SEQUENCE_B_MODE_MAP_A, LASEROBJ_SEQUENCE_B_MODE_A);
-                (*gMapEventInterface)->setMapAct(LASEROBJ_SEQUENCE_B_MODE_MAP_B, LASEROBJ_SEQUENCE_B_MODE_B);
-            }
-            break;
+    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) == 0) {
+        return;
+    }
+
+    switch ((SpellPlaceMode)(u8)(*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot)) {
+    case SPELL_PLACE_MODE_SEQUENCE_A:
+        if ((*gGameUIInterface)->isItemBeingUsed(DFP_SPELL_PLACE_EVENT_SEQUENCE_A) != 0) {
+            dfpSpellPlace_complete(obj, state);
         }
+        break;
+    case SPELL_PLACE_MODE_SEQUENCE_B:
+        if ((*gGameUIInterface)->isItemBeingUsed(DFP_SPELL_PLACE_EVENT_SEQUENCE_B) != 0) {
+            dfpSpellPlace_complete(obj, state);
+            (*gMapEventInterface)->setMapAct(DFP_SPELL_PLACE_MAP_ACT_A, 8);
+            (*gMapEventInterface)->setMapAct(DFP_SPELL_PLACE_MAP_ACT_B, 2);
+        }
+        break;
     }
-    return;
 }
 
-void DFPSpPl_init(GameObject* obj, LaserObjectMapData* mapData)
-{
-    LaserState* state;
-    u32 completionGameBitSet;
+static void dfpSpellPlace_init(GameObject* obj, const SpellPlacePlacement* placement) {
+    SpellPlaceState* state = obj->extra;
 
-    state = obj->extra;
-    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->completionGameBit));
-    state->activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->activationGameBit));
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit);
+    state->activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activationGameBit);
     state->completionLatched = 0;
-    obj->anim.rotX = (s16)(mapData->yawByte << LASEROBJ_YAW_BYTE_SHIFT);
-    completionGameBitSet = mainGetBit((int)state->completionGameBit);
-    if (completionGameBitSet != 0)
-    {
+    obj->anim.rotX = (s16)placement->yawByte * 0x100;
+    if (mainGetBit(state->completionGameBit) != 0) {
         state->completionLatched = 1;
-        obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
-    obj->objectFlags = (u16)(obj->objectFlags | (OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN));
-    return;
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN;
 }
 
-void DFPSpPl_release(void)
-{
+static void dfpSpellPlace_release(void) {
 }
 
-void DFPSpPl_initialise(void)
-{
+static void dfpSpellPlace_initialise(void) {
 }
 
-ObjectDescriptor gLaserObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    DFPSpPl_initialise,
-    DFPSpPl_release,
-    0,
-    (ObjectDescriptorCallback)DFPSpPl_init,
-    (ObjectDescriptorCallback)DFPSpPl_update,
-    DFPSpPl_hitDetect,
-    DFPSpPl_render,
-    DFPSpPl_free,
-    (ObjectDescriptorCallback)DFPSpPl_getObjectTypeId,
-    DFPSpPl_getExtraSize,
+ObjectDescriptor gDfpSpellPlaceObjDescriptor = {
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)dfpSpellPlace_initialise,
+    .release = (ObjectDescriptorCallback)dfpSpellPlace_release,
+    .init = (ObjectDescriptorCallback)dfpSpellPlace_init,
+    .update = (ObjectDescriptorCallback)dfpSpellPlace_update,
+    .hitDetect = (ObjectDescriptorCallback)dfpSpellPlace_hitDetect,
+    .render = (ObjectDescriptorCallback)dfpSpellPlace_render,
+    .free = (ObjectDescriptorCallback)dfpSpellPlace_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)dfpSpellPlace_getObjectTypeId,
+    .getExtraSize = dfpSpellPlace_getExtraSize,
 };

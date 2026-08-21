@@ -76,20 +76,4 @@ void playerUpdateWhileTimeStopped(GameObject* obj);
 void objLoadPlayerFromSave(GameObject* obj);
 void playerReparentPreservingWorldTransform(GameObject* obj, GameObject* newParent);
 
-int Lightfoot_UpdateProximityInteractionState(GameObject* obj, BaddieState* state);
-int Lightfoot_UpdateCompletionInteraction(GameObject* obj, BaddieState* state);
-int Lightfoot_UpdateChallengeGateInteraction(GameObject* obj, BaddieState* state);
-int Lightfoot_UpdateWanderSteering(GameObject* obj, BaddieState* state, f32 fv);
-int Lightfoot_UpdateRandomTurn(GameObject* obj, BaddieState* state, f32 fv);
-int Lightfoot_UpdateTargetAnimationCycle(GameObject* obj, BaddieState* state, f32 fv);
-int Lightfoot_UpdateButtonTimingChallenge(GameObject* obj, BaddieState* state, f32 fv);
-int Lightfoot_UpdateAnimationCycle(GameObject* obj, BaddieState* state, f32 fv);
-void Lightfoot_RecordCompletedChallengeTargetHit(GameObject* obj, GroundBaddieState* inner,
-                                                 struct LightfootControlState* animState);
-void Lightfoot_ProcessHitResponseFlags(GameObject* obj, BaddieState* inner);
-void Lightfoot_ResetScriptedPosition(GameObject* obj);
-void Lightfoot_UpdateAttachedChild(GameObject* obj, GroundBaddieState* inner);
-void Lightfoot_UpdatePlayerInteraction(GameObject* obj, GroundBaddieState* inner, BaddieState* state);
-int Lightfoot_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate);
-
 #endif /* MAIN_DLL_PLAYER_API_H_ */

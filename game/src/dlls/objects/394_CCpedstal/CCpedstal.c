@@ -1,88 +1,89 @@
-/*
- * CCpedstal (DLL 0x18A) - Cape Claw Fire Gem pedestals.
- *
- * The placement map ID selects the Fire Gem source or one of two consuming
- * gates. Each variant controls its model and interaction state from a
- * persistent gamebit, then queues that gamebit update when its trigger fires.
- */
 #include "dlls/objects/394_CCpedstal.h"
 
 #include "game/objects/object.h"
+#include "game/objects/object_setup.h"
+#include "main/gameloop_gamebit_api.h"
 #include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/objseq.h"
-#include "main/gameloop_gamebit_api.h"
 #include "main/obj_trigger.h"
 #include "sys/objects.h"
 
-#define CC_PEDESTAL_GAMEBIT_0DC5             0xDC5
-#define CC_PEDESTAL_SOURCE_ACTIVATED_GAMEBIT 0xAA
-#define CC_PEDESTAL_GAMEBIT_0DF0             0xDF0
-#define CC_PEDESTAL_GATE_A_ACTIVATED_GAMEBIT 0xF1
-#define CC_PEDESTAL_GATE_B_ACTIVATED_GAMEBIT 0xFE
+enum CcPedestalPlacementId {
+    CC_PEDESTAL_FIRE_GEM_SOURCE = 0x45F1A,
+    CC_PEDESTAL_FIRE_GEM_GATE_A = 0x45F1B,
+    CC_PEDESTAL_FIRE_GEM_GATE_B = 0x45F1C,
+};
 
-#define CC_PEDESTAL_FIRE_GEM_TRIGGER_ID 0xA9
+enum CcPedestalSequence {
+    CC_PEDESTAL_GATE_SEQUENCE,
+    CC_PEDESTAL_SOURCE_SEQUENCE,
+};
 
-#define CC_PEDESTAL_FIRE_GEM_SOURCE_PLACEMENT_ID 0x45F1A
-#define CC_PEDESTAL_FIRE_GEM_GATE_A_PLACEMENT_ID 0x45F1B
-#define CC_PEDESTAL_FIRE_GEM_GATE_B_PLACEMENT_ID 0x45F1C
+enum CcPedestalModelIndex {
+    CC_PEDESTAL_GATE_INACTIVE_MODEL = 0,
+    CC_PEDESTAL_GATE_ACTIVE_MODEL = 1,
+    CC_PEDESTAL_SOURCE_ACTIVE_MODEL = 0,
+    CC_PEDESTAL_SOURCE_IDLE_MODEL = 1,
+};
 
-#define CC_PEDESTAL_PENDING_GAMEBIT_SET 0x01
+enum CcPedestalTriggerId {
+    CC_PEDESTAL_FIRE_GEM_TRIGGER = 0xA9,
+};
 
-#define CC_PEDESTAL_GATE_SEQUENCE           0
-#define CC_PEDESTAL_SOURCE_SEQUENCE         1
-#define CC_PEDESTAL_GATE_INACTIVE_MODEL     0
-#define CC_PEDESTAL_GATE_ACTIVE_MODEL       1
-#define CC_PEDESTAL_SOURCE_ACTIVE_MODEL     0
-#define CC_PEDESTAL_SOURCE_IDLE_MODEL       1
-#define CC_PEDESTAL_ROT_X_SHIFT             8
-#define CC_PEDESTAL_SOURCE_HIT_VOLUME_FLAGS 3
+enum CcPedestalPendingGameBitFlag {
+    CC_PEDESTAL_PENDING_GAMEBIT_SET = 1,
+};
 
-int ccPedestal_getExtraSize(void) {
-    return sizeof(CCPedestalState);
+typedef struct CcPedestalPlacement {
+    ObjPlacement base;
+    u8 pad18[2];
+    u8 rotXByte;
+    u8 pad1B[5];
+} CcPedestalPlacement;
+
+STATIC_ASSERT(sizeof(CcPedestalPlacement) == 0x20);
+STATIC_ASSERT(offsetof(CcPedestalPlacement, rotXByte) == 0x1A);
+
+typedef struct CcPedestalState CcPedestalState;
+typedef void (*CcPedestalVariantUpdate)(GameObject* obj, CcPedestalState* state);
+
+struct CcPedestalState {
+    CcPedestalVariantUpdate variantUpdate;
+    s16 activationGameBit;
+    u8 pendingGameBitFlags;
+    u8 pad0B[5];
+};
+
+STATIC_ASSERT(sizeof(CcPedestalState) == 0x10);
+STATIC_ASSERT(offsetof(CcPedestalState, activationGameBit) == 0x08);
+STATIC_ASSERT(offsetof(CcPedestalState, pendingGameBitFlags) == 0x0A);
+
+static int ccPedestal_getExtraSize(void) {
+    return sizeof(CcPedestalState);
 }
 
-/*
- * A gate consumes one Fire Gem when triggered. Its activation gamebit selects
- * the active model and disables further interaction; without a Fire Gem the
- * interaction prompt is suppressed.
- */
-void ccPedestal_updateFireGemGate(GameObject* obj, CCPedestalState* state) {
+static void ccPedestal_updateFireGemGate(GameObject* obj, CcPedestalState* state) {
     if (mainGetBit(state->activationGameBit) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         Obj_SetActiveModelIndex(obj, CC_PEDESTAL_GATE_ACTIVE_MODEL);
     } else {
-        int activationTriggered;
-
         Obj_SetActiveModelIndex(obj, CC_PEDESTAL_GATE_INACTIVE_MODEL);
-        do {
-            if (mainGetBit(GAMEBIT_ITEM_FireGem_Count) != 0) {
-                obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
-                if (ObjTrigger_IsSetById(obj, CC_PEDESTAL_FIRE_GEM_TRIGGER_ID) != 0) {
-                    (*gObjectTriggerInterface)->runSequence(CC_PEDESTAL_GATE_SEQUENCE, obj, -1);
-                    gameBitDecrement(GAMEBIT_ITEM_FireGem_Count);
-                    activationTriggered = 1;
-                    break;
-                }
-            } else {
-                obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
+        if (mainGetBit(GAMEBIT_ITEM_FireGem_Count) != 0) {
+            obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
+            if (ObjTrigger_IsSetById(obj, CC_PEDESTAL_FIRE_GEM_TRIGGER) != 0) {
+                (*gObjectTriggerInterface)->runSequence(CC_PEDESTAL_GATE_SEQUENCE, obj, -1);
+                gameBitDecrement(GAMEBIT_ITEM_FireGem_Count);
+                state->pendingGameBitFlags |= CC_PEDESTAL_PENDING_GAMEBIT_SET;
             }
-            activationTriggered = 0;
-        } while (0);
-
-        if (activationTriggered != 0) {
-            state->pendingGameBitFlags |= CC_PEDESTAL_PENDING_GAMEBIT_SET;
+        } else {
+            obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
         }
     }
 }
 
-/*
- * The source pedestal grants one Fire Gem when triggered. A separate gamebit
- * gates interaction, while the pedestal's activation gamebit selects its
- * active model and prevents repeat collection.
- */
-void ccPedestal_updateFireGemSource(GameObject* obj, CCPedestalState* state) {
-    if (mainGetBit(CC_PEDESTAL_GAMEBIT_0DC5) != 0) {
+static void ccPedestal_updateFireGemSource(GameObject* obj, CcPedestalState* state) {
+    if (mainGetBit(0xDC5) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     } else {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
@@ -91,74 +92,54 @@ void ccPedestal_updateFireGemSource(GameObject* obj, CCPedestalState* state) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         Obj_SetActiveModelIndex(obj, CC_PEDESTAL_SOURCE_ACTIVE_MODEL);
     } else {
-        int activationTriggered;
-
         Obj_SetActiveModelIndex(obj, CC_PEDESTAL_SOURCE_IDLE_MODEL);
         if (ObjTrigger_IsSet(obj) != 0) {
             (*gObjectTriggerInterface)->runSequence(CC_PEDESTAL_SOURCE_SEQUENCE, obj, -1);
             gameBitIncrement(GAMEBIT_ITEM_FireGem_Count);
-            activationTriggered = 1;
-        } else {
-            activationTriggered = 0;
-        }
-        if (activationTriggered != 0) {
             state->pendingGameBitFlags |= CC_PEDESTAL_PENDING_GAMEBIT_SET;
         }
     }
 }
 
-void ccPedestal_update(GameObject* obj) {
-    CCPedestalState* state = obj->extra;
+static void ccPedestal_update(GameObject* obj) {
+    CcPedestalState* state = obj->extra;
 
     if (state->pendingGameBitFlags != 0) {
-        if ((state->pendingGameBitFlags & CC_PEDESTAL_PENDING_GAMEBIT_SET) != 0) {
-            mainSetBits(state->activationGameBit, 1);
-        } else {
-            mainSetBits(state->activationGameBit, 0);
-        }
+        mainSetBits(state->activationGameBit,
+                    (state->pendingGameBitFlags & CC_PEDESTAL_PENDING_GAMEBIT_SET) != 0);
         state->pendingGameBitFlags = 0;
-        if (mainGetBit(CC_PEDESTAL_GAMEBIT_0DF0) == 0 && mainGetBit(CC_PEDESTAL_SOURCE_ACTIVATED_GAMEBIT) != 0) {
-            mainSetBits(CC_PEDESTAL_GAMEBIT_0DF0, 1);
+        if (mainGetBit(0xDF0) == 0 && mainGetBit(GAMEBIT_CC_FireGemSourceActivated) != 0) {
+            mainSetBits(0xDF0, 1);
         }
     }
     state->variantUpdate(obj, state);
 }
 
-void ccPedestal_init(GameObject* obj, const CCPedestalPlacement* placement) {
-    CCPedestalState* state = obj->extra;
+static void ccPedestal_init(GameObject* obj, const CcPedestalPlacement* placement) {
+    CcPedestalState* state = obj->extra;
 
-    obj->anim.rotX = (s16)((u32)placement->rotXByte << CC_PEDESTAL_ROT_X_SHIFT);
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
+    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
     switch (placement->base.ident) {
-    case CC_PEDESTAL_FIRE_GEM_SOURCE_PLACEMENT_ID:
+    case CC_PEDESTAL_FIRE_GEM_SOURCE:
         state->variantUpdate = ccPedestal_updateFireGemSource;
-        state->activationGameBit = CC_PEDESTAL_SOURCE_ACTIVATED_GAMEBIT;
-        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, CC_PEDESTAL_SOURCE_HIT_VOLUME_FLAGS);
+        state->activationGameBit = GAMEBIT_CC_FireGemSourceActivated;
+        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, 3);
         break;
-    case CC_PEDESTAL_FIRE_GEM_GATE_A_PLACEMENT_ID:
+    case CC_PEDESTAL_FIRE_GEM_GATE_A:
         state->variantUpdate = ccPedestal_updateFireGemGate;
-        state->activationGameBit = CC_PEDESTAL_GATE_A_ACTIVATED_GAMEBIT;
+        state->activationGameBit = GAMEBIT_CC_FireGemGateAActivated;
         break;
-    case CC_PEDESTAL_FIRE_GEM_GATE_B_PLACEMENT_ID:
+    case CC_PEDESTAL_FIRE_GEM_GATE_B:
         state->variantUpdate = ccPedestal_updateFireGemGate;
-        state->activationGameBit = CC_PEDESTAL_GATE_B_ACTIVATED_GAMEBIT;
+        state->activationGameBit = GAMEBIT_CC_FireGemGateBActivated;
         break;
     }
 }
 
 ObjectDescriptor gCCPedestalObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccPedestal_init,
-    (ObjectDescriptorCallback)ccPedestal_update,
-    0,
-    0,
-    0,
-    0,
-    ccPedestal_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .init = (ObjectDescriptorCallback)ccPedestal_init,
+    .update = (ObjectDescriptorCallback)ccPedestal_update,
+    .getExtraSize = ccPedestal_getExtraSize,
 };

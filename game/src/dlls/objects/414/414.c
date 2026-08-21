@@ -1,340 +1,339 @@
-/*
- * DLL 0x19E (generated slot 414).
- *
- * This unit controls a companion-related sparkle and egg-interaction effect.
- * Retail OBJECTS.bin and the root romlists do not associate its descriptor
- * with a named object, so the unit retains a numbered namespace.
- */
 #include "dlls/objects/414.h"
 
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/audio/sfx_ids.h"
 #include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx_stop_channel_api.h"
 #include "main/camera.h"
+#include "main/dll/dll_0069_modgfx.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
+#include "main/objhits.h"
 #include "main/resource.h"
+#include "main/shader_api.h"
 #include "main/vecmath.h"
 #include "main/voxmaps.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/objhits.h"
-#include "main/shader_api.h"
 
-#define DLL19E_LOS_MIN_DISTANCE       50.0f
-#define DLL19E_LOS_OBJECT_OFFSET      32.0f
-#define DLL19E_LOS_CAMERA_OFFSET      (-20.0f)
-#define DLL19E_PACKED_SCALE_DIVISOR   8192.0f
-#define DLL19E_IDLE_PARTICLE_ID       0x1F7
-#define DLL19E_ACTIVATION_PARTICLE_ID 0x1A3
-#define DLL19E_EFFECT_RESOURCE_ID     0x69
+enum Dll414Mode {
+    DLL414_MODE_PASSIVE_EFFECT,
+    DLL414_MODE_PUZZLE_STAGE,
+};
 
-#define DLL19E_IDLE_PARTICLE_MODE        0x12
-#define DLL19E_IDLE_DELAY_RANDOM_MIN     (-10)
-#define DLL19E_IDLE_DELAY_RANDOM_MAX     10
-#define DLL19E_IDLE_DELAY_BASE           60
-#define DLL19E_EFFECT_SCALE              (-2.0f)
-#define DLL19E_EFFECT_SPAWN_FLAGS        0x10004
-#define DLL19E_ACTIVATION_PARTICLE_COUNT 100
-#define DLL19E_ACTIVE_RESET_TIME         1000
-#define DLL19E_SEQUENCE_RESET_TIME       300
-#define DLL19E_SETTLE_TRIGGER_WINDOW     20
-#define DLL19E_SEQUENCE_SETTLE_BASE      0x398
-#define DLL19E_SEQUENCE_SETTLE_STEP      0x28
-#define DLL19E_EFFECT_PARAM1_BASE        0x19D
-#define DLL19E_EFFECT_PARAM2_BASE        0x19E
-#define DLL19E_ROTATION_INDEX_MASK       0x3F
-#define DLL19E_ROTATION_INDEX_SHIFT      10
-#define DLL19E_DEFAULT_SCALE             0.1f
-#define DLL19E_EFFECT_SFX_CHANNEL        0x40
+enum Dll414SequenceStage {
+    DLL414_SEQUENCE_STAGE_NONE,
+    DLL414_SEQUENCE_STAGE_FIRST,
+    DLL414_SEQUENCE_STAGE_SECOND,
+    DLL414_SEQUENCE_STAGE_COMPLETE,
+};
 
-typedef enum Dll19ESequenceStage {
-    DLL19E_SEQUENCE_STAGE_NONE = 0,
-    DLL19E_SEQUENCE_STAGE_FIRST = 1,
-    DLL19E_SEQUENCE_STAGE_SECOND = 2,
-    DLL19E_SEQUENCE_STAGE_COMPLETE = 3,
-} Dll19ESequenceStage;
+enum Dll414ParticleId {
+    DLL414_PARTICLE_ACTIVATION = 0x1A3,
+    DLL414_PARTICLE_IDLE = 0x1F7,
+};
 
-typedef struct Dll19ERenderScratch {
-    f32 cameraDelta[3];
-    PartFxSpawnParams particleParams;
-} Dll19ERenderScratch;
+enum Dll414EffectParamId {
+    DLL414_EFFECT_PARAM_STAGE_0_A = 0x19D,
+    DLL414_EFFECT_PARAM_STAGE_0_B = 0x19E,
+};
 
-typedef struct Dll19EEffectSpawnBuffer {
-    u8 args[16];
-    f32 scale;
-} Dll19EEffectSpawnBuffer;
+typedef struct Dll414Placement {
+    ObjPlacement base;
+    s8 rotationIndex;
+    u8 mode;
+    s16 scalePacked;
+    s16 sequenceIndex;
+    s16 gameBitId;
+} Dll414Placement;
 
-STATIC_ASSERT(sizeof(Dll19ERenderScratch) == 0x24);
-STATIC_ASSERT(offsetof(Dll19ERenderScratch, particleParams) == 0x0C);
-STATIC_ASSERT(sizeof(Dll19EEffectSpawnBuffer) == 0x14);
-STATIC_ASSERT(offsetof(Dll19EEffectSpawnBuffer, scale) == 0x10);
+typedef struct Dll414State {
+    s32 gameBitId;
+    s16 delayTimer;
+    s16 resetTimer;
+    s16 settleTimer;
+    u8 lineOfSightVisible;
+    u8 mode;
+    u8 active;
+    u8 needsOpenSfx;
+    u8 previousActive;
+    u8 sequenceIndex;
+} Dll414State;
 
-s8 gDll19ESequenceStage;
+typedef struct Dll414EffectSpawnParams {
+    u8 args[0x10];
+    f32 positionY;
+} Dll414EffectSpawnParams;
 
-const Dll69EffectParams gDll19EEffectParamsTemplate = {0x3E7, 0x8C, 0x8D, 0x28};
+STATIC_ASSERT(sizeof(Dll414Placement) == 0x20);
+STATIC_ASSERT(offsetof(Dll414Placement, rotationIndex) == 0x18);
+STATIC_ASSERT(offsetof(Dll414Placement, mode) == 0x19);
+STATIC_ASSERT(offsetof(Dll414Placement, scalePacked) == 0x1A);
+STATIC_ASSERT(offsetof(Dll414Placement, sequenceIndex) == 0x1C);
+STATIC_ASSERT(offsetof(Dll414Placement, gameBitId) == 0x1E);
 
-int dll414_getExtraSize(void) {
-    return sizeof(Dll19EState);
+STATIC_ASSERT(sizeof(Dll414State) == 0x10);
+STATIC_ASSERT(offsetof(Dll414State, gameBitId) == 0x00);
+STATIC_ASSERT(offsetof(Dll414State, delayTimer) == 0x04);
+STATIC_ASSERT(offsetof(Dll414State, resetTimer) == 0x06);
+STATIC_ASSERT(offsetof(Dll414State, settleTimer) == 0x08);
+STATIC_ASSERT(offsetof(Dll414State, lineOfSightVisible) == 0x0A);
+STATIC_ASSERT(offsetof(Dll414State, mode) == 0x0B);
+STATIC_ASSERT(offsetof(Dll414State, active) == 0x0C);
+STATIC_ASSERT(offsetof(Dll414State, needsOpenSfx) == 0x0D);
+STATIC_ASSERT(offsetof(Dll414State, previousActive) == 0x0E);
+STATIC_ASSERT(offsetof(Dll414State, sequenceIndex) == 0x0F);
+
+STATIC_ASSERT(sizeof(Dll414EffectSpawnParams) == 0x14);
+STATIC_ASSERT(offsetof(Dll414EffectSpawnParams, positionY) == 0x10);
+
+static const Dll69EffectParams sDll414EffectParams = {
+    .param0 = 0x3E7,
+    .param1 = 0x8C,
+    .param2 = 0x8D,
+    .param3 = 0x28,
+};
+
+static s8 sDll414SequenceStage;
+
+static int dll414_getExtraSize(void) {
+    return sizeof(Dll414State);
 }
 
-int dll414_getObjectTypeId(void) {
+static int dll414_getObjectTypeId(void) {
     return 1;
 }
 
-void dll414_free(GameObject* obj) {
+static void dll414_free(GameObject* obj) {
     (*gModgfxInterface)->detachSource(obj);
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
-void dll414_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    Dll19EState* state;
-    Camera* camera;
-    f32 distance;
-    f32 inverseDistance;
-    f32 objectOffsetZ, objectOffsetY, objectOffsetX;
-    f32 cameraOffsetZ, cameraOffsetY, cameraOffsetX;
-    f32 normalZ, normalY, normalX;
-    Dll19ERenderScratch scratch;
-    f32 objectTraceStart[3];
-    f32 cameraTraceEnd[3];
-    f32 objectGridStorage[2];
-    f32 cameraGridStorage[2];
-    int traceResultStorage[2];
+static void dll414_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+    Dll414State* state = obj->extra;
 
-    (void)renderArg2;
-    (void)renderArg3;
-    (void)renderArg4;
-    (void)renderArg5;
-
-    state = obj->extra;
     if (visible == 0) {
         state->delayTimer = 0;
         state->lineOfSightVisible = 0;
-    } else if (state->active != 0) {
-        state->lineOfSightVisible = 1;
-        camera = Camera_GetCurrent();
-        scratch.cameraDelta[0] = camera->x - obj->anim.localPosX;
-        scratch.cameraDelta[1] = camera->y - obj->anim.localPosY;
-        scratch.cameraDelta[2] = camera->z - obj->anim.localPosZ;
-        distance =
-            sqrtf(scratch.cameraDelta[2] * scratch.cameraDelta[2] +
-                  (scratch.cameraDelta[0] * scratch.cameraDelta[0] + scratch.cameraDelta[1] * scratch.cameraDelta[1]));
-        if (distance > DLL19E_LOS_MIN_DISTANCE) {
-            inverseDistance = 1.0f / distance;
-            normalX = scratch.cameraDelta[0] * inverseDistance;
-            scratch.cameraDelta[0] = normalX;
-            normalY = scratch.cameraDelta[1] * inverseDistance;
-            scratch.cameraDelta[1] = normalY;
-            normalZ = scratch.cameraDelta[2] * inverseDistance;
-            scratch.cameraDelta[2] = normalZ;
-            objectOffsetX = DLL19E_LOS_OBJECT_OFFSET * normalX;
-            objectTraceStart[0] = objectOffsetX;
-            objectOffsetY = DLL19E_LOS_OBJECT_OFFSET * normalY;
-            objectTraceStart[1] = objectOffsetY;
-            objectOffsetZ = DLL19E_LOS_OBJECT_OFFSET * normalZ;
-            objectTraceStart[2] = objectOffsetZ;
-            objectTraceStart[0] = objectOffsetX + obj->anim.localPosX;
-            objectTraceStart[1] = objectOffsetY + obj->anim.localPosY;
-            objectTraceStart[2] = objectOffsetZ + obj->anim.localPosZ;
-            cameraOffsetX = DLL19E_LOS_CAMERA_OFFSET * normalX;
-            cameraTraceEnd[0] = cameraOffsetX;
-            cameraOffsetY = DLL19E_LOS_CAMERA_OFFSET * normalY;
-            cameraTraceEnd[1] = cameraOffsetY;
-            cameraOffsetZ = DLL19E_LOS_CAMERA_OFFSET * normalZ;
-            cameraTraceEnd[2] = cameraOffsetZ;
-            cameraTraceEnd[0] = cameraOffsetX + camera->x;
-            cameraTraceEnd[1] = cameraOffsetY + camera->y;
-            cameraTraceEnd[2] = cameraOffsetZ + camera->z;
-            voxmaps_worldToGrid(objectTraceStart, (s16*)objectGridStorage);
-            voxmaps_worldToGrid(cameraTraceEnd, (s16*)cameraGridStorage);
-            if (voxmaps_traceLine((VoxPos*)objectGridStorage, (VoxPos*)cameraGridStorage, (VoxPos*)traceResultStorage,
-                                  NULL, 0) == 0) {
-                state->lineOfSightVisible = 0;
-                (*gExpgfxInterface)->freeSource((int)obj);
-            }
-        }
-        if (state->delayTimer > 0) {
-            state->delayTimer -= framesThisStep;
-        } else {
-            if (state->lineOfSightVisible != 0) {
-                scratch.particleParams.posX = 0.0f;
-                scratch.particleParams.posY = 5.0f;
-                scratch.particleParams.posZ = 0.0f;
-                (*gPartfxInterface)
-                    ->spawnObject(obj, DLL19E_IDLE_PARTICLE_ID, &scratch.particleParams, DLL19E_IDLE_PARTICLE_MODE, -1,
-                                  NULL);
-            }
-            state->delayTimer = (s16)(randomGetRange(DLL19E_IDLE_DELAY_RANDOM_MIN, DLL19E_IDLE_DELAY_RANDOM_MAX) +
-                                      DLL19E_IDLE_DELAY_BASE);
+        return;
+    }
+    if (state->active == 0) {
+        return;
+    }
+
+    state->lineOfSightVisible = 1;
+    Camera* camera = Camera_GetCurrent();
+    Vec3f cameraDelta = {
+        .x = camera->position.x - obj->anim.localPos.x,
+        .y = camera->position.y - obj->anim.localPos.y,
+        .z = camera->position.z - obj->anim.localPos.z,
+    };
+    f32 distance =
+        sqrtf(cameraDelta.z * cameraDelta.z + (cameraDelta.x * cameraDelta.x + cameraDelta.y * cameraDelta.y));
+
+    if (distance > 50.0f) {
+        f32 inverseDistance = 1.0f / distance;
+
+        cameraDelta.x *= inverseDistance;
+        cameraDelta.y *= inverseDistance;
+        cameraDelta.z *= inverseDistance;
+
+        Vec3f objectTraceStart = {
+            .x = 32.0f * cameraDelta.x + obj->anim.localPos.x,
+            .y = 32.0f * cameraDelta.y + obj->anim.localPos.y,
+            .z = 32.0f * cameraDelta.z + obj->anim.localPos.z,
+        };
+        Vec3f cameraTraceEnd = {
+            .x = -20.0f * cameraDelta.x + camera->position.x,
+            .y = -20.0f * cameraDelta.y + camera->position.y,
+            .z = -20.0f * cameraDelta.z + camera->position.z,
+        };
+        VoxPos startGrid;
+        VoxPos endGrid;
+        VoxPos traceOut;
+
+        voxmaps_worldToGrid(&objectTraceStart.x, &startGrid.x);
+        voxmaps_worldToGrid(&cameraTraceEnd.x, &endGrid.x);
+        if (voxmaps_traceLine(&startGrid, &endGrid, &traceOut, NULL, 0) == 0) {
+            state->lineOfSightVisible = 0;
+            (*gExpgfxInterface)->freeSource((uintptr_t)obj);
         }
     }
+
+    if (state->delayTimer > 0) {
+        state->delayTimer -= framesThisStep;
+        return;
+    }
+
+    if (state->lineOfSightVisible != 0) {
+        PartFxSpawnParams particleParams;
+
+        particleParams.pos = (Vec3f){0.0f, 5.0f, 0.0f};
+        (*gPartfxInterface)->spawnObject(obj, DLL414_PARTICLE_IDLE, &particleParams, 0x12, -1, NULL);
+    }
+    state->delayTimer = (s16)(randomGetRange(-10, 10) + 60);
 }
 
-void dll414_hitDetect(void) {
+static void dll414_hitDetect(void) {
 }
 
-void dll414_update(GameObject* obj) {
-    Dll19EState* state;
-    Dll69Interface** effectResource;
-    Dll19EEffectSpawnBuffer effectSpawn;
-    Dll69EffectParams effectParams;
-    int particleIndex;
+static void dll414_update(GameObject* obj) {
+    Dll414State* state = obj->extra;
+    Dll69EffectParams effectParams = sDll414EffectParams;
+    Dll414EffectSpawnParams effectSpawn;
 
-    state = obj->extra;
-    effectParams = gDll19EEffectParamsTemplate;
-
-    ((void (*)(void*, int))Sfx_PlayFromObject)(obj, SFXmn_eggylaugh216);
+    Sfx_PlayFromObject(obj, SFXmn_eggylaugh216);
     objUpdateOpacity(obj);
     if (state->settleTimer > 0) {
         state->settleTimer -= framesThisStep;
     }
+    if (state->mode != DLL414_MODE_PUZZLE_STAGE) {
+        return;
+    }
 
-    if (state->mode == DLL19E_MODE_EGG_INTERACTION) {
-        effectSpawn.scale = DLL19E_EFFECT_SCALE;
-        state->previousActive = state->active;
-        if ((ObjHits_GetPriorityHit(obj, NULL, NULL, NULL) != 0) ||
-            ((state->settleTimer != 0) && (state->settleTimer <= DLL19E_SETTLE_TRIGGER_WINDOW))) {
-            state->active = (u8)(1 - state->active);
-            if (state->active != 0) {
-                state->resetTimer = DLL19E_ACTIVE_RESET_TIME;
-            }
-            if (state->settleTimer != 0) {
-                state->settleTimer = 0;
-                gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_COMPLETE;
-                state->resetTimer = DLL19E_SEQUENCE_RESET_TIME;
-                if (state->sequenceIndex == 2) {
-                    mainSetBits(0x1d1, 1);
-                }
+    effectSpawn.positionY = -2.0f;
+    state->previousActive = state->active;
+    if (ObjHits_GetPriorityHit(obj, NULL, NULL, NULL) != 0 || (state->settleTimer != 0 && state->settleTimer <= 20)) {
+        state->active = 1 - state->active;
+        if (state->active != 0) {
+            state->resetTimer = 1000;
+        }
+        if (state->settleTimer != 0) {
+            state->settleTimer = 0;
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_COMPLETE;
+            state->resetTimer = 300;
+            if (state->sequenceIndex == 2) {
+                mainSetBits(GAMEBIT_WM_KrazTest1Passed, 1);
             }
         }
+    }
 
-        if ((state->active != 0) && (state->resetTimer != 0)) {
-            state->resetTimer -= framesThisStep;
-            if (state->resetTimer <= 0) {
-                state->resetTimer = 0;
-                state->active = 0;
-            }
+    if (state->active != 0 && state->resetTimer != 0) {
+        state->resetTimer -= framesThisStep;
+        if (state->resetTimer <= 0) {
+            state->resetTimer = 0;
+            state->active = 0;
+        }
+    }
+
+    if (state->active != 0 && state->delayTimer <= 0 && state->needsOpenSfx != 0) {
+        state->needsOpenSfx = 0;
+        Sfx_PlayFromObject(obj, SFXmn_sml_trex_snap1);
+    }
+    if (state->active == state->previousActive) {
+        return;
+    }
+
+    if (state->active != 0) {
+        Dll69Interface** effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+        int effectParamOffset = state->sequenceIndex * 2;
+
+        effectParams.param1 = effectParamOffset + DLL414_EFFECT_PARAM_STAGE_0_A;
+        effectParams.param2 = effectParamOffset + DLL414_EFFECT_PARAM_STAGE_0_B;
+        (*effectResource)->spawn(obj, 1, &effectSpawn, PARTFXFLAG_10000 | PARTFXFLAG_4, -1, &effectParams);
+        Resource_Release(effectResource);
+
+        for (int particleIndex = 0; particleIndex < 100; particleIndex++) {
+            (*gPartfxInterface)->spawnObject(obj, DLL414_PARTICLE_ACTIVATION, NULL, 0, -1, NULL);
         }
 
-        if ((state->active != 0) && (state->delayTimer <= 0) && (state->needsOpenSfx != 0)) {
-            state->needsOpenSfx = 0;
-            ((void (*)(void*, int))Sfx_PlayFromObject)(obj, SFXmn_sml_trex_snap1);
+        if (state->gameBitId != -1 && mainGetBit(state->gameBitId) == 0) {
+            mainSetBits(state->gameBitId, 1);
         }
-
-        if (state->active != state->previousActive) {
-            if (state->active != 0) {
-                effectResource = Resource_Acquire(DLL19E_EFFECT_RESOURCE_ID, 1);
-                effectParams.param1 = state->sequenceIndex * 2 + DLL19E_EFFECT_PARAM1_BASE;
-                effectParams.param2 = state->sequenceIndex * 2 + DLL19E_EFFECT_PARAM2_BASE;
-                (*effectResource)->spawn(obj, 1, effectSpawn.args, DLL19E_EFFECT_SPAWN_FLAGS, -1, &effectParams);
-                Resource_Release(effectResource);
-
-                particleIndex = 0;
-                do {
-                    (*gPartfxInterface)->spawnObject(obj, DLL19E_ACTIVATION_PARTICLE_ID, NULL, 0, -1, NULL);
-                    particleIndex++;
-                } while (particleIndex < DLL19E_ACTIVATION_PARTICLE_COUNT);
-
-                if ((state->gameBitId != -1) && (mainGetBit(state->gameBitId) == 0)) {
-                    mainSetBits(state->gameBitId, 1);
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_NONE) && (state->sequenceIndex == 0) &&
-                    (mainGetBit(state->gameBitId) != 0)) {
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_FIRST;
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_FIRST) && (state->sequenceIndex == 1) &&
-                    (mainGetBit(state->gameBitId) != 0)) {
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_SECOND;
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_SECOND) && (state->sequenceIndex == 2) &&
-                    (mainGetBit(state->gameBitId) != 0)) {
-                    mainSetBits(0x1d1, 1);
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_COMPLETE;
-                }
-                state->needsOpenSfx = 1;
-                state->delayTimer = 1;
-            } else {
-                Sfx_StopObjectChannel(obj, DLL19E_EFFECT_SFX_CHANNEL);
-                (*gModgfxInterface)->detachSource(obj);
-                (*gExpgfxInterface)->freeSource((u32)obj);
-                if ((state->gameBitId != -1) && (mainGetBit(state->gameBitId) != 0)) {
-                    mainSetBits(state->gameBitId, 0);
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_FIRST) && (state->sequenceIndex == 0)) {
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_NONE;
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_SECOND) && (state->sequenceIndex == 1)) {
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_NONE;
-                }
-                if ((gDll19ESequenceStage == DLL19E_SEQUENCE_STAGE_COMPLETE) && (state->sequenceIndex == 2) &&
-                    (mainGetBit(0x1d5) == 0)) {
-                    mainSetBits(0x1d1, 0);
-                    gDll19ESequenceStage = DLL19E_SEQUENCE_STAGE_NONE;
-                }
-            }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_NONE && state->sequenceIndex == 0 &&
+            mainGetBit(state->gameBitId) != 0) {
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_FIRST;
+        }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_FIRST && state->sequenceIndex == 1 &&
+            mainGetBit(state->gameBitId) != 0) {
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_SECOND;
+        }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_SECOND && state->sequenceIndex == 2 &&
+            mainGetBit(state->gameBitId) != 0) {
+            mainSetBits(GAMEBIT_WM_KrazTest1Passed, 1);
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_COMPLETE;
+        }
+        state->needsOpenSfx = 1;
+        state->delayTimer = 1;
+    } else {
+        Sfx_StopObjectChannel(obj, 0x40);
+        (*gModgfxInterface)->detachSource(obj);
+        (*gExpgfxInterface)->freeSource((uintptr_t)obj);
+        if (state->gameBitId != -1 && mainGetBit(state->gameBitId) != 0) {
+            mainSetBits(state->gameBitId, 0);
+        }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_FIRST && state->sequenceIndex == 0) {
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_NONE;
+        }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_SECOND && state->sequenceIndex == 1) {
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_NONE;
+        }
+        if (sDll414SequenceStage == DLL414_SEQUENCE_STAGE_COMPLETE && state->sequenceIndex == 2 &&
+            mainGetBit(GAMEBIT_WM_KrazTest1Related01D5) == 0) {
+            mainSetBits(GAMEBIT_WM_KrazTest1Passed, 0);
+            sDll414SequenceStage = DLL414_SEQUENCE_STAGE_NONE;
         }
     }
 }
 
-void dll414_init(GameObject* obj, const Dll19EPlacement* placement) {
-    Dll19EState* state;
-    Dll69Interface** effectResource;
-    Dll19EEffectSpawnBuffer effectSpawn;
+static void dll414_init(GameObject* obj, const Dll414Placement* placement) {
+    Dll414State* state = obj->extra;
+    Dll414EffectSpawnParams effectSpawn;
+    s16 scalePacked = ObjAnim_ReadPlacementS16(&obj->anim, &placement->scalePacked);
 
-    state = obj->extra;
-    obj->anim.rotX = (s16)(((s32)placement->rotationIndex & DLL19E_ROTATION_INDEX_MASK) << DLL19E_ROTATION_INDEX_SHIFT);
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scalePacked)) > 0) {
-        obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scalePacked)) / DLL19E_PACKED_SCALE_DIVISOR;
+    obj->anim.rotX = (s16)((placement->rotationIndex & 0x3F) << 10);
+    if (scalePacked > 0) {
+        obj->anim.rootMotionScale = scalePacked / 8192.0f;
     } else {
-        obj->anim.rootMotionScale = DLL19E_DEFAULT_SCALE;
+        obj->anim.rootMotionScale = 0.1f;
     }
 
     state->mode = placement->mode;
     state->active = 0;
     state->sequenceIndex = 0;
-    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBitId));
-    effectSpawn.scale = DLL19E_EFFECT_SCALE;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBitId);
+    effectSpawn.positionY = -2.0f;
 
     switch (state->mode) {
-    case DLL19E_MODE_SPARKLE:
+    case DLL414_MODE_PASSIVE_EFFECT: {
+        Dll69Interface** effectResource;
+
         state->active = 1;
-        effectResource = Resource_Acquire(DLL19E_EFFECT_RESOURCE_ID, 1);
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceIndex)) == 0) {
-            (*effectResource)->spawn(obj, 0, effectSpawn.args, DLL19E_EFFECT_SPAWN_FLAGS, -1, NULL);
+        effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceIndex) == 0) {
+            (*effectResource)->spawn(obj, 0, &effectSpawn, PARTFXFLAG_10000 | PARTFXFLAG_4, -1, NULL);
         }
         break;
-    case DLL19E_MODE_EGG_INTERACTION:
-        state->sequenceIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceIndex));
+    }
+    case DLL414_MODE_PUZZLE_STAGE:
+        state->sequenceIndex = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceIndex);
         state->needsOpenSfx = 0;
-        state->settleTimer = state->sequenceIndex * DLL19E_SEQUENCE_SETTLE_STEP + DLL19E_SEQUENCE_SETTLE_BASE;
+        state->settleTimer = (s16)(state->sequenceIndex * 0x28 + 0x398);
         state->previousActive = 0;
         break;
     }
     state->delayTimer = 0;
 }
 
-void dll414_release(void) {
+static void dll414_release(void) {
 }
 
-void dll414_initialise(void) {
+static void dll414_initialise(void) {
 }
 
 ObjectDescriptor gDll19EObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll414_initialise,
-    (ObjectDescriptorCallback)dll414_release,
-    NULL,
-    (ObjectDescriptorCallback)dll414_init,
-    (ObjectDescriptorCallback)dll414_update,
-    (ObjectDescriptorCallback)dll414_hitDetect,
-    (ObjectDescriptorCallback)dll414_render,
-    (ObjectDescriptorCallback)dll414_free,
-    (ObjectDescriptorCallback)dll414_getObjectTypeId,
-    dll414_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)dll414_initialise,
+    .release = (ObjectDescriptorCallback)dll414_release,
+    .init = (ObjectDescriptorCallback)dll414_init,
+    .update = (ObjectDescriptorCallback)dll414_update,
+    .hitDetect = (ObjectDescriptorCallback)dll414_hitDetect,
+    .render = (ObjectDescriptorCallback)dll414_render,
+    .free = (ObjectDescriptorCallback)dll414_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)dll414_getObjectTypeId,
+    .getExtraSize = dll414_getExtraSize,
 };

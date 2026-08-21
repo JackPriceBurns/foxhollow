@@ -1,118 +1,107 @@
-/*
- * KT_Torch object family (DLL slot 296 / 0x128).
- *
- * Shared by torches and other stationary animated props. Placement selects
- * the model, animation, scale, yaw, playback speed, and optional visibility
- * game bit.
- */
 #include "dlls/objects/296_KT_Torch.h"
 
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 
-#define KT_TORCH_GAME_BIT_NONE                     -1
-#define KT_TORCH_MINIMUM_SCALE                     10.0f
-#define KT_TORCH_SCALE_FACTOR                      0.015625f
-#define KT_TORCH_ANIMATION_SPEED_DIVISOR           10000.0f
-#define KT_TORCH_INITIAL_ANIMATION_PROGRESS_FACTOR 0.00390625f
-#define KT_TORCH_INITIAL_YAW_MASK                  0x3F
-#define KT_TORCH_INITIAL_YAW_SHIFT                 10
+typedef struct KTTorchPlacement {
+    ObjPlacement base;
+    u8 modelBankIndex;
+    u8 animationIndex;
+    u8 initialAnimationProgress;
+    u8 animationSpeed;
+    u8 scaleMultiplier;
+    u8 initialYaw;
+    u8 pad1E[2];
+    s16 visibilityGameBit;
+} KTTorchPlacement;
 
-int KT_Torch_getExtraSize(void) {
+STATIC_ASSERT(sizeof(KTTorchPlacement) == 0x24);
+STATIC_ASSERT(offsetof(KTTorchPlacement, modelBankIndex) == 0x18);
+STATIC_ASSERT(offsetof(KTTorchPlacement, animationIndex) == 0x19);
+STATIC_ASSERT(offsetof(KTTorchPlacement, initialAnimationProgress) == 0x1A);
+STATIC_ASSERT(offsetof(KTTorchPlacement, animationSpeed) == 0x1B);
+STATIC_ASSERT(offsetof(KTTorchPlacement, scaleMultiplier) == 0x1C);
+STATIC_ASSERT(offsetof(KTTorchPlacement, initialYaw) == 0x1D);
+STATIC_ASSERT(offsetof(KTTorchPlacement, visibilityGameBit) == 0x20);
+
+static void ktTorch_updateVisibility(GameObject* obj, const KTTorchPlacement* placement) {
+    s16 visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->visibilityGameBit);
+
+    if (visibilityGameBit != -1) {
+        obj->anim.alpha = mainGetBit(visibilityGameBit) != 0 ? 0xFF : 0;
+    }
+}
+
+static int ktTorch_getExtraSize(void) {
     return 0;
 }
 
-int KT_Torch_getObjectTypeId(void) {
+static int ktTorch_getObjectTypeId(void) {
     return 0;
 }
 
-void KT_Torch_free(void) {
+static void ktTorch_free(void) {
 }
 
-void KT_Torch_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    if (visible) {
+static void ktTorch_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                           s8 visible) {
+    if (visible != 0) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
 
-void KT_Torch_hitDetect(void) {
+static void ktTorch_hitDetect(void) {
 }
 
-void KT_Torch_update(GameObject* obj) {
-    KTTorchPlacement* placement;
-    int visibilityGameBit;
+static void ktTorch_update(GameObject* obj) {
+    const KTTorchPlacement* placement = (const KTTorchPlacement*)obj->anim.placementData;
 
-    placement = (KTTorchPlacement*)obj->anim.placementData;
-    ObjAnim_AdvanceCurrentMove(obj, (f32)placement->animationSpeed / KT_TORCH_ANIMATION_SPEED_DIVISOR, timeDelta,
-                               (ObjAnimEventList*)0);
-    visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibilityGameBit));
-    if (visibilityGameBit != KT_TORCH_GAME_BIT_NONE) {
-        if (mainGetBit(visibilityGameBit) != 0) {
-            obj->anim.alpha = 0xff;
-        } else {
-            obj->anim.alpha = 0;
-        }
-    }
+    ObjAnim_AdvanceCurrentMove(obj, placement->animationSpeed / 10000.0f, timeDelta, NULL);
+    ktTorch_updateVisibility(obj, placement);
 }
 
-void KT_Torch_init(GameObject* obj, KTTorchPlacement* placement) {
+static void ktTorch_init(GameObject* obj, const KTTorchPlacement* placement) {
     ObjAnimComponent* objAnim = &obj->anim;
-    f32 scale;
-    f32 initialAnimationProgress;
-    u8 scaleByte;
+    f32 scale = placement->scaleMultiplier;
 
     objAnim->flags |= 2;
-    scaleByte = placement->scaleMultiplier;
-    scale = (f32)(int)scaleByte;
-    if ((f32)(int)scaleByte < KT_TORCH_MINIMUM_SCALE) {
-        scale = KT_TORCH_MINIMUM_SCALE;
+    if (scale < 10.0f) {
+        scale = 10.0f;
     }
-    scale *= KT_TORCH_SCALE_FACTOR;
+    scale *= 0.015625f;
+
     objAnim->rootMotionScale = objAnim->modelInstance->rootMotionScaleBase * scale;
-    objAnim->rotX = (s16)((placement->initialYaw & KT_TORCH_INITIAL_YAW_MASK) << KT_TORCH_INITIAL_YAW_SHIFT);
+    objAnim->rotX = (s16)((placement->initialYaw & 0x3F) * 0x400);
     if (objAnim->modelState != NULL) {
         objAnim->modelState->shadowScale = objAnim->modelInstance->shadowScaleBase * scale;
     }
+
     objAnim->bankIndex = (s8)placement->modelBankIndex;
     if (objAnim->bankIndex >= objAnim->modelInstance->modelCount) {
         objAnim->bankIndex = 0;
     }
-    ObjAnim_SetCurrentMove(obj, placement->animationIndex,
-                           (initialAnimationProgress = placement->initialAnimationProgress,
-                            initialAnimationProgress *= KT_TORCH_INITIAL_ANIMATION_PROGRESS_FACTOR),
-                           0);
-    {
-        s16 visibilityGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->visibilityGameBit));
-        if (visibilityGameBit != KT_TORCH_GAME_BIT_NONE) {
-            if (mainGetBit(visibilityGameBit) != 0) {
-                objAnim->alpha = 0xff;
-            } else {
-                objAnim->alpha = 0;
-            }
-        }
-    }
+    ObjAnim_SetCurrentMove(obj, placement->animationIndex, placement->initialAnimationProgress * 0.00390625f, 0);
+    ktTorch_updateVisibility(obj, placement);
 }
 
-void KT_Torch_release(void) {
+static void ktTorch_release(void) {
 }
 
-void KT_Torch_initialise(void) {
+static void ktTorch_initialise(void) {
 }
 
 ObjectDescriptor gKT_TorchObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KT_Torch_initialise,
-    (ObjectDescriptorCallback)KT_Torch_release,
-    0,
-    (ObjectDescriptorCallback)KT_Torch_init,
-    (ObjectDescriptorCallback)KT_Torch_update,
-    (ObjectDescriptorCallback)KT_Torch_hitDetect,
-    (ObjectDescriptorCallback)KT_Torch_render,
-    (ObjectDescriptorCallback)KT_Torch_free,
-    (ObjectDescriptorCallback)KT_Torch_getObjectTypeId,
-    KT_Torch_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)ktTorch_initialise,
+    .release = (ObjectDescriptorCallback)ktTorch_release,
+    .init = (ObjectDescriptorCallback)ktTorch_init,
+    .update = (ObjectDescriptorCallback)ktTorch_update,
+    .hitDetect = (ObjectDescriptorCallback)ktTorch_hitDetect,
+    .render = (ObjectDescriptorCallback)ktTorch_render,
+    .free = (ObjectDescriptorCallback)ktTorch_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)ktTorch_getObjectTypeId,
+    .getExtraSize = ktTorch_getExtraSize,
 };

@@ -56,14 +56,6 @@ struct CamcontrolTriggeredAction {
 STATIC_ASSERT(sizeof(CamcontrolTriggeredAction) == 0x10);
 STATIC_ASSERT(offsetof(CamcontrolTriggeredAction, triggerMode) == 0x0D);
 
-typedef struct CamcontrolQueuedActionParam {
-    u32 actionIndex;
-    u8 noBlendFlag;
-} CamcontrolQueuedActionParam;
-
-STATIC_ASSERT(sizeof(CamcontrolQueuedActionParam) == 0x08);
-STATIC_ASSERT(offsetof(CamcontrolQueuedActionParam, noBlendFlag) == 0x04);
-
 enum CamcontrolTriggeredActionKind {
     CAMCONTROL_TRIGGERED_ACTION_KIND_DEFAULT,
     CAMCONTROL_TRIGGERED_ACTION_KIND_TRIGGERED

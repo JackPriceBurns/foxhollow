@@ -17,55 +17,43 @@
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
-#define PINPONSPIKE_HIT_VOLUME_SLOT 10
-
-#define PINPONSPIKE_PARTFX_IMPACT 0x715
-
-#define PINPONSPIKE_IMPACT_DESPAWN_DELAY  120
-#define PINPONSPIKE_IMPACT_PARTICLE_COUNT 25
-#define PINPONSPIKE_VERTICAL_ACCELERATION -0.2f
-#define PINPONSPIKE_TERMINAL_FALL_SPEED   -20.0f
-#define PINPONSPIKE_KILL_PLANE_Y          -2000.0f
-#define PINPONSPIKE_AIM_DISTANCE_SCALE    1.05f
-#define PINPONSPIKE_FALLBACK_LAUNCH_ANGLE 0x2000
-
-
-
 int pinponspike_calculateLaunchAngle(const f32* source, const f32* target, f32 speed, u8 useHighArc, f32 gravity) {
-    f32 gravityQuarterOrSpeedSquared;
-    f32 horizontalDistance;
-    f32 coefficientOrHorizontalVelocity;
-    f32 deltaX;
-    f32 deltaY;
-    f32 deltaZ;
-    f32 flightTime;
-    f32 discriminant;
+    f32 deltaX = source[0] - target[0];
+    f32 deltaZ = source[2] - target[2];
+    f32 horizontalDistance = sqrtf(deltaX * deltaX + deltaZ * deltaZ) * 1.05f;
+    f32 deltaY = source[1] - target[1];
+    f32 gravityQuarter = 0.25f * gravity;
+    f32 coefficient = gravityQuarter * gravity;
+    f32 speedSquared = speed * speed;
+    f32 linearTerm = -(gravity * deltaY) - speedSquared;
+    f32 discriminant = linearTerm * linearTerm -
+                       (4.0f * coefficient) * (deltaY * deltaY + horizontalDistance * horizontalDistance);
 
-    deltaX = source[0] - target[0];
-    deltaZ = source[2] - target[2];
-    horizontalDistance = sqrtf(deltaX * deltaX + deltaZ * deltaZ);
-    deltaY = source[1] - target[1];
-    horizontalDistance *= PINPONSPIKE_AIM_DISTANCE_SCALE;
-    gravityQuarterOrSpeedSquared = 0.25f * gravity;
-    coefficientOrHorizontalVelocity = gravityQuarterOrSpeedSquared * gravity;
-    {
-        f32 linearTerm = -(gravity * deltaY) - (gravityQuarterOrSpeedSquared = speed * speed);
-        discriminant = linearTerm * linearTerm - (4.0f * coefficientOrHorizontalVelocity) *
-                                                     (deltaY * deltaY + horizontalDistance * horizontalDistance);
-        if (discriminant >= 0.0f) {
-            if (useHighArc) {
-                flightTime = (0.5f * (-linearTerm + sqrtf(discriminant))) / coefficientOrHorizontalVelocity;
-            } else {
-                flightTime = (0.5f * (-linearTerm - sqrtf(discriminant))) / coefficientOrHorizontalVelocity;
-            }
-            flightTime = sqrtf(flightTime);
-            coefficientOrHorizontalVelocity = horizontalDistance / flightTime;
-            return getAngle(sqrtf(-(coefficientOrHorizontalVelocity * coefficientOrHorizontalVelocity -
-                                    gravityQuarterOrSpeedSquared)),
-                            coefficientOrHorizontalVelocity);
-        }
+    if (!(discriminant >= 0.0f)) {
+        return 0x2000;
     }
-    return PINPONSPIKE_FALLBACK_LAUNCH_ANGLE;
+
+    f32 root = sqrtf(discriminant);
+    f32 flightTimeSquared;
+    if (useHighArc != 0) {
+        flightTimeSquared = (0.5f * (-linearTerm + root)) / coefficient;
+    } else {
+        flightTimeSquared = (0.5f * (-linearTerm - root)) / coefficient;
+    }
+    f32 flightTime = sqrtf(flightTimeSquared);
+    f32 horizontalVelocity = horizontalDistance / flightTime;
+    f32 verticalVelocity = sqrtf(-(horizontalVelocity * horizontalVelocity - speedSquared));
+    return getAngle(verticalVelocity, horizontalVelocity);
+}
+
+static void pinponspike_impact(GameObject* obj, ObjHitsPriorityState* hitState) {
+    obj->anim.alpha = 0;
+    obj->userData1 = 120;
+    hitState->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;
+    for (int particleIndex = 0; particleIndex < 25; particleIndex++) {
+        (*gPartfxInterface)->spawnObject(obj, 0x715, NULL, 1, -1, &particleIndex);
+    }
+    Sfx_PlayFromObject(obj, SFXTRIG_lummy311);
 }
 
 int pinponspike_getExtraSize(void) {
@@ -77,7 +65,7 @@ int pinponspike_getObjectTypeId(void) {
 }
 
 void pinponspike_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void pinponspike_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int fwdArg5, s8 visible) {
@@ -94,51 +82,34 @@ void pinponspike_hitDetect(GameObject* obj) {
 }
 
 void pinponspike_update(GameObject* obj) {
-    f32 moveX;
-    f32 moveY;
-    f32 moveZ;
+    ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
 
     if (obj->userData1 > 0) {
-        obj->userData1 = (int)((f32)obj->userData1 - timeDelta);
+        obj->userData1 = (s32)((f32)obj->userData1 - timeDelta);
         if (obj->userData1 <= 0) {
             Obj_FreeObject(obj);
             return;
         }
     }
     if (obj->anim.alpha != 0) {
-        moveX = obj->anim.velocityX * timeDelta;
-        moveY = obj->anim.velocityY * timeDelta;
-        moveZ = obj->anim.velocityZ * timeDelta;
+        f32 moveX = obj->anim.velocityX * timeDelta;
+        f32 moveY = obj->anim.velocityY * timeDelta;
+        f32 moveZ = obj->anim.velocityZ * timeDelta;
         objMove(obj, moveX, moveY, moveZ);
-        obj->anim.velocityY += PINPONSPIKE_VERTICAL_ACCELERATION * timeDelta;
-        if (obj->anim.velocityY < PINPONSPIKE_TERMINAL_FALL_SPEED) {
-            obj->anim.velocityY = PINPONSPIKE_TERMINAL_FALL_SPEED;
+        obj->anim.velocityY += -0.2f * timeDelta;
+        if (obj->anim.velocityY < -20.0f) {
+            obj->anim.velocityY = -20.0f;
         }
         obj->anim.rotX = getAngle(moveX, moveZ) - 0x8000;
         obj->anim.rotY = 0x4000 - getAngle(sqrtf(moveX * moveX + moveZ * moveZ), moveY);
-        ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj, PINPONSPIKE_HIT_VOLUME_SLOT, 1, 0);
+        ObjHits_SetHitVolumeSlot(&obj->anim, 10, 1, 0);
         ObjHits_EnableObject(obj);
-        if (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject != 0 &&
-            (((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject() ||
-             ((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject == (uintptr_t)getTrickyObject())) {
-            int particleIndex;
-            obj->anim.alpha = 0;
-            obj->userData1 = PINPONSPIKE_IMPACT_DESPAWN_DELAY;
-            ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;
-            for (particleIndex = 0; particleIndex < PINPONSPIKE_IMPACT_PARTICLE_COUNT; particleIndex++) {
-                (*gPartfxInterface)->spawnObject((void*)obj, PINPONSPIKE_PARTFX_IMPACT, NULL, 1, -1, &particleIndex);
-            }
-            Sfx_PlayFromObject(obj, SFXTRIG_lummy311);
-        } else if (((ObjHitsPriorityState*)obj->anim.hitReactState)->contactFlags != 0) {
-            int particleIndex;
-            obj->anim.alpha = 0;
-            obj->userData1 = PINPONSPIKE_IMPACT_DESPAWN_DELAY;
-            ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags &= ~OBJHITS_PRIORITY_STATE_ENABLED;
-            for (particleIndex = 0; particleIndex < PINPONSPIKE_IMPACT_PARTICLE_COUNT; particleIndex++) {
-                (*gPartfxInterface)->spawnObject((void*)obj, PINPONSPIKE_PARTFX_IMPACT, NULL, 1, -1, &particleIndex);
-            }
-            Sfx_PlayFromObject(obj, SFXTRIG_lummy311);
-        } else if (obj->anim.localPosY < PINPONSPIKE_KILL_PLANE_Y) {
+        GameObject* lastHitObject = (GameObject*)hitState->lastHitObject;
+        if ((lastHitObject != NULL &&
+             (lastHitObject == Obj_GetPlayerObject() || lastHitObject == getTrickyObject())) ||
+            hitState->contactFlags != 0) {
+            pinponspike_impact(obj, hitState);
+        } else if (obj->anim.localPosY < -2000.0f) {
             Obj_FreeObject(obj);
         }
     }
@@ -149,7 +120,7 @@ void pinponspike_init(GameObject* obj) {
     ObjHits_DisableObject(obj);
     obj->anim.alpha = 0xff;
     Sfx_PlayFromObject(obj, SFXTRIG_whiz3_c);
-    obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
 void pinponspike_release(void) {

@@ -7,6 +7,7 @@
  */
 #include "dlls/objects/292.h"
 
+#include "game/objects/object_setup.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/pi_dolphin_api.h"
@@ -16,11 +17,36 @@
 #include "main/gamebits_api.h"
 #include "main/objhits.h"
 
-#define DEATH_GAS_AIR_METER_CAPACITY              6000
-#define DEATH_GAS_AIR_METER_FULL                  6000.0f
-#define DEATH_GAS_AIR_METER_BACKGROUND_TEXTURE_ID 0x603
-#define DEATH_GAS_DAMAGE_HIT_PRIORITY             0x16
-#define DEATH_GAS_NO_FOG_OBJECT_ID                0x837
+typedef enum DeathGasFlags {
+    DEATH_GAS_FLAG_SUPPRESS_FOG = 1 << 5,
+    DEATH_GAS_FLAG_AIR_METER_ACTIVE = 1 << 6,
+    DEATH_GAS_FLAG_FOG_STATE_ACTIVE = 1 << 7,
+} DeathGasFlags;
+
+typedef enum DeathGasObjectId {
+    DEATH_GAS_NO_FOG_OBJECT_ID = 0x837,
+} DeathGasObjectId;
+
+typedef struct DeathGasPlacement {
+    ObjPlacement base;
+    u8 drainRate;
+    u8 fillRate;
+    s16 activeGameBit;
+} DeathGasPlacement;
+
+typedef struct DeathGasState {
+    f32 airRemaining;
+    f32 damageTimer;
+    f32 effectRadius;
+    u8 flags;
+    u8 padding[3];
+} DeathGasState;
+
+STATIC_ASSERT(offsetof(DeathGasPlacement, drainRate) == 0x18);
+STATIC_ASSERT(offsetof(DeathGasPlacement, fillRate) == 0x19);
+STATIC_ASSERT(offsetof(DeathGasPlacement, activeGameBit) == 0x1A);
+STATIC_ASSERT(sizeof(DeathGasState) == 0x10);
+STATIC_ASSERT(offsetof(DeathGasState, flags) == 0x0C);
 
 int DeathGas_getExtraSize(void) {
     return sizeof(DeathGasState);
@@ -28,90 +54,80 @@ int DeathGas_getExtraSize(void) {
 
 void DeathGas_free(GameObject* obj) {
     DeathGasState* state = obj->extra;
-    if (state->flags.fogStateActive) {
-        if (!state->flags.suppressFog) {
-            disableHeavyFog();
-        }
+    if ((state->flags & DEATH_GAS_FLAG_FOG_STATE_ACTIVE) != 0 &&
+        (state->flags & DEATH_GAS_FLAG_SUPPRESS_FOG) == 0) {
+        disableHeavyFog();
     }
-    if (state->flags.airMeterActive) {
+    if ((state->flags & DEATH_GAS_FLAG_AIR_METER_ACTIVE) != 0) {
         (*gGameUIInterface)->airMeterShutdown();
     }
 }
 
 void DeathGas_update(GameObject* obj) {
-    DeathGasPlacement* placement = (DeathGasPlacement*)obj->anim.placementData;
+    const DeathGasPlacement* placement = (const DeathGasPlacement*)obj->anim.placementData;
     DeathGasState* state = obj->extra;
-    GameObject* player;
-    u8 isActive;
-    int activeGameBit;
-
-    activeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
-    if (activeGameBit == -1) {
-        isActive = 1;
-    } else {
-        isActive = mainGetBit(activeGameBit);
-    }
+    s16 activeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activeGameBit);
+    u8 isActive = activeGameBit == -1 || mainGetBit(activeGameBit) != 0;
 
     if (isActive == 0) {
-        if (state->flags.fogStateActive) {
-            if (!state->flags.suppressFog) {
+        if ((state->flags & DEATH_GAS_FLAG_FOG_STATE_ACTIVE) != 0) {
+            if ((state->flags & DEATH_GAS_FLAG_SUPPRESS_FOG) == 0) {
                 disableHeavyFog();
             }
-            state->flags.fogStateActive = 0;
+            state->flags &= (u8)~DEATH_GAS_FLAG_FOG_STATE_ACTIVE;
         }
-        if (state->flags.airMeterActive) {
+        if ((state->flags & DEATH_GAS_FLAG_AIR_METER_ACTIVE) != 0) {
             (*gGameUIInterface)->airMeterShutdown();
-            state->flags.airMeterActive = 0;
+            state->flags &= (u8)~DEATH_GAS_FLAG_AIR_METER_ACTIVE;
         }
         return;
     }
 
-    if (!state->flags.fogStateActive) {
-        if (!state->flags.suppressFog) {
+    if ((state->flags & DEATH_GAS_FLAG_FOG_STATE_ACTIVE) == 0) {
+        if ((state->flags & DEATH_GAS_FLAG_SUPPRESS_FOG) == 0) {
             enableHeavyFog(35.0f + obj->anim.worldPosY, obj->anim.worldPosY - 5.0f, 1000.0f, 0.1f, 0.0005f, 0);
         }
-        state->flags.fogStateActive = 1;
+        state->flags |= DEATH_GAS_FLAG_FOG_STATE_ACTIVE;
     }
 
-    player = Obj_GetPlayerObject();
+    GameObject* player = Obj_GetPlayerObject();
     if (!playerIsDisguised(player) && player->anim.worldPosY <= 30.0f + obj->anim.worldPosY &&
         Vec_distance(&player->anim.worldPosX, &obj->anim.worldPosX) <= state->effectRadius) {
-        if (!state->flags.airMeterActive) {
-            (*gGameUIInterface)->initAirMeter(DEATH_GAS_AIR_METER_CAPACITY, DEATH_GAS_AIR_METER_BACKGROUND_TEXTURE_ID);
-            state->airRemaining = DEATH_GAS_AIR_METER_FULL;
-            state->flags.airMeterActive = 1;
+        if ((state->flags & DEATH_GAS_FLAG_AIR_METER_ACTIVE) == 0) {
+            (*gGameUIInterface)->initAirMeter(6000, 0x603);
+            state->airRemaining = 6000.0f;
+            state->flags |= DEATH_GAS_FLAG_AIR_METER_ACTIVE;
         }
         state->airRemaining -= (timeDelta * placement->drainRate) / 10.0f;
         if (state->airRemaining <= 0.0f) {
-            f32 zero = 0.0f;
             state->airRemaining = 0.0f;
             state->damageTimer -= timeDelta;
-            if (state->damageTimer < zero) {
+            if (state->damageTimer < 0.0f) {
                 state->damageTimer += 120.0f;
-                ObjHits_RecordObjectHit(player, obj, DEATH_GAS_DAMAGE_HIT_PRIORITY, 1, 0);
+                ObjHits_RecordObjectHit(player, obj, 0x16, 1, 0);
             }
         }
-    } else if (state->flags.airMeterActive) {
+    } else if ((state->flags & DEATH_GAS_FLAG_AIR_METER_ACTIVE) != 0) {
         state->airRemaining += (timeDelta * placement->fillRate) / 10.0f;
-        if (state->airRemaining > DEATH_GAS_AIR_METER_FULL) {
+        if (state->airRemaining > 6000.0f) {
             (*gGameUIInterface)->airMeterSetShutdown();
-            state->flags.airMeterActive = 0;
+            state->flags &= (u8)~DEATH_GAS_FLAG_AIR_METER_ACTIVE;
         }
     }
 
-    if (state->flags.airMeterActive) {
+    if ((state->flags & DEATH_GAS_FLAG_AIR_METER_ACTIVE) != 0) {
         (*gGameUIInterface)->runAirMeter((int)state->airRemaining);
     }
 }
 
 void DeathGas_init(GameObject* obj) {
-    register DeathGasState* state = obj->extra;
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
+    DeathGasState* state = obj->extra;
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
     state->effectRadius = 10000.0f;
     if (obj->anim.romDefNo != DEATH_GAS_NO_FOG_OBJECT_ID) {
         return;
     }
-    state->flags.suppressFog = 1;
+    state->flags |= DEATH_GAS_FLAG_SUPPRESS_FOG;
     state->effectRadius = obj->anim.cullDistance2;
 }
 

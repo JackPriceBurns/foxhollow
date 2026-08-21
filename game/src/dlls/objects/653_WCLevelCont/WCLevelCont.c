@@ -817,8 +817,8 @@ void wclevelcont_syncProgressBits(WcLevelControlState* state)
     {
         flag = 1;
     }
-    mainSetBits(0xf31, flag);
-    GameBitLatch_Update(&state->gameBitLatch, 0x80, -1, -1, 0xf31, 0xaf);
+    mainSetBits(GAMEBIT_TIMER_MUSIC_LOCK, flag);
+    GameBitLatch_Update(&state->gameBitLatch, 0x80, -1, -1, GAMEBIT_TIMER_MUSIC_LOCK, 0xaf);
 }
 
 void wclevelcont_update(GameObject* obj)

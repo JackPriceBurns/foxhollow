@@ -3,6 +3,18 @@
 
 #include "game/objects/object.h"
 
+enum ObjMessageId {
+    OBJ_MESSAGE_PICKUP_IN_RANGE = 0x7000A,
+    OBJ_MESSAGE_PICKUP_COMPLETE = 0x7000B,
+};
+
+typedef struct ObjPickupOffer {
+    s16 gameBitId;
+    s16 value;
+} ObjPickupOffer;
+
+STATIC_ASSERT(sizeof(ObjPickupOffer) == 0x04);
+
 extern char sObjMsgOverflowInObjectWarning[];
 
 int ObjMsg_Peek(GameObject* obj, u32* outMessage, uintptr_t* outSender, u32* outParam);

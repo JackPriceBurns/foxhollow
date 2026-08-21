@@ -5,6 +5,10 @@
 #include "game/objects/object_fwd.h"
 #include "main/resource.h"
 
+enum Dll69ResourceId {
+    DLL_69_RESOURCE_ID = 0x69,
+};
+
 typedef struct Dll69EffectParams {
     int param0;
     int param1;

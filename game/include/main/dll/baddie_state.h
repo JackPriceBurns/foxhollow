@@ -295,6 +295,10 @@ typedef struct GroundBaddieState {
     void *control; /* per-family control/extra record (engine-allocated; treasurechest casts its slot to LandedArwingState*) */
 } GroundBaddieState;
 
+typedef enum GroundBaddieConfigFlags {
+    GROUND_BADDIE_CONFIG_DISABLE_CAMERA_TARGET = 0x20,
+} GroundBaddieConfigFlags;
+
 STATIC_ASSERT(sizeof(GroundBaddieState) == 0x410);
 STATIC_ASSERT(offsetof(GroundBaddieState, routeNav) == 0x35C);
 STATIC_ASSERT(offsetof(GroundBaddieState, routeState) == 0x384);

@@ -537,7 +537,7 @@ extern ResourceDescriptor gHighTopObjDescriptor;
 extern ResourceDescriptor gKtFallingrocksObjDescriptor;
 extern ResourceDescriptor gKtLazerlightObjDescriptor, gKtLazerwallObjDescriptor, gKtRexFloorSwitchObjDescriptor,
     gKtRexLevelObjDescriptor, gKtRexObjDescriptor, gKytesMumObjDescriptor;
-extern ResourceDescriptor gLaserObjDescriptor, gLaserUnsupportedObjDescriptor;
+extern ResourceDescriptor gDfpSpellPlaceObjDescriptor, gLaserUnsupportedObjDescriptor;
 extern ResourceDescriptor gMoonSeedPlantingSpotObjDescriptor;
 extern ResourceDescriptor gPlatform1ObjDescriptor, gPointLightObjDescriptor;
 extern ResourceDescriptor gProjectedLightObjDescriptor, gProximityMineObjDescriptor;
@@ -554,7 +554,7 @@ extern ResourceDescriptor gTitleScreenObjDescriptor, gTrickyCurveObjDescriptor;
 extern ResourceDescriptor gTrickyObjDescriptor, gTriggerObjDescriptor, gVFPDragHeadObjDescriptor, gVFPLiftObjDescriptor,
     gVFP_Block1ObjDescriptor;
 extern ResourceDescriptor gVFP_DoorSwitchObjDescriptor, gVFP_LaddersObjDescriptor, gVFP_LevelControlObjDescriptor,
-    gVFP_MiniFireObjDescriptor, gVFP_ObjCreatorObjDescriptor, gVFP_PlatformObjDescriptor, gVFP_SpellPlaceObjDescriptor,
+    gVFP_MiniFireObjDescriptor, gVFP_ObjCreatorObjDescriptor, gVFP_PlatformObjDescriptor, gVfpSpellPlaceObjDescriptor,
     gVFP_coreplatObjDescriptor, gVFP_flamepointObjDescriptor;
 extern ResourceDescriptor gVFP_lavapoolObjDescriptor, gVFP_lavastarObjDescriptor, gVFP_statueballObjDescriptor,
     gVortexObjDescriptor, gWCBouncyCraObjDescriptor;
@@ -590,7 +590,7 @@ extern ObjectDescriptor gDll15EObjDescriptor, gDll160ObjDescriptor, gDll161ObjDe
 extern ObjectDescriptor gDll165ObjDescriptor, gDll168ObjDescriptor, gDll176ObjDescriptor, gDll17CObjDescriptor;
 extern ObjectDescriptor gDll202ObjDescriptor, gDll203ObjDescriptor, gDll205ObjDescriptor, gDll208ObjDescriptor;
 extern ObjectDescriptor gDll212ObjDescriptor, gDll213ObjDescriptor, gDll214ObjDescriptor, gDll219ObjDescriptor;
-extern ObjectDescriptor gDll21BObjDescriptor, gDll224ObjDescriptor, gDll23DObjDescriptor, gDll23EObjDescriptor;
+extern ObjectDescriptor gDll21BObjDescriptor, gSpellStoneUseObjDescriptor, gDll23DObjDescriptor, gDll23EObjDescriptor;
 extern ObjectDescriptor gDll244ObjDescriptor, gDll245ObjDescriptor, gDll246ObjDescriptor, gDll247ObjDescriptor;
 extern ObjectDescriptor gDll248ObjDescriptor, gDll249ObjDescriptor, gDll24AObjDescriptor, gDll24BObjDescriptor;
 extern ObjectDescriptor gDll24CObjDescriptor, gDll264ObjDescriptor, gDll267ObjDescriptor, gDll26AObjDescriptor;
@@ -1607,11 +1607,11 @@ ResourceDescriptor* gResourceDescriptors[] = {
     RESOURCE_DESCRIPTOR_REF(gSeqPointObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gVFPDragHeadObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gVFP_coreplatObjDescriptor),
-    RESOURCE_DESCRIPTOR_REF(gDll224ObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gSpellStoneUseObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gVFP_flamepointObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gVFP_lavapoolObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gVFP_lavastarObjDescriptor),
-    RESOURCE_DESCRIPTOR_REF(gVFP_SpellPlaceObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gVfpSpellPlaceObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gDFP_LevelControlObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gDFP_ObjCreatorObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gDFP_TorchObjDescriptor),
@@ -1626,7 +1626,7 @@ ResourceDescriptor* gResourceDescriptors[] = {
     RESOURCE_DESCRIPTOR_REF(gDfperchwitchObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gDfptargetblockObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gLaserUnsupportedObjDescriptor),
-    RESOURCE_DESCRIPTOR_REF(gLaserObjDescriptor),
+    RESOURCE_DESCRIPTOR_REF(gDfpSpellPlaceObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gFireObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gTextBlockObjDescriptor),
     RESOURCE_DESCRIPTOR_REF(gPlatform1ObjDescriptor),

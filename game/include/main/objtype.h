@@ -5,6 +5,12 @@
 
 struct GameObject;
 
+typedef enum ObjectClassId {
+    OBJECT_CLASS_PLAYER = 1,
+    OBJECT_CLASS_KRAZOA_SHRINE = 0xB,
+    OBJECT_CLASS_SEQUENCE = 0x10,
+} ObjectClassId;
+
 int objIsObjectType(struct GameObject* obj, int group);
 struct GameObject* objGetNearestType(int group, f32* point, f32* maxDistance);
 struct GameObject* objGetNearestTypeToExcludingSelf(int group, struct GameObject* obj, f32* maxDistance);

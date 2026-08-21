@@ -10,6 +10,7 @@
 #include "dlls/objects/416_NW_geyser.h"
 
 #include "main/frame_timing.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
@@ -18,8 +19,6 @@
 #include "main/objhits.h"
 
 #define NW_GEYSER_DISABLE_GAMEBIT    0xA
-#define NW_GEYSER_COMPLETION_GAMEBIT 0x398
-
 #define NW_GEYSER_LOOP_SFX_A 0x372
 #define NW_GEYSER_LOOP_SFX_B 0x373
 
@@ -62,7 +61,7 @@ void nwGeyser_update(GameObject* obj) {
     Sfx_RemoveLoopedObjectSound(obj, NW_GEYSER_LOOP_SFX_A);
     Sfx_RemoveLoopedObjectSound(obj, NW_GEYSER_LOOP_SFX_B);
     ObjHits_DisableObject(obj);
-    mainSetBits(NW_GEYSER_COMPLETION_GAMEBIT, 1);
+    mainSetBits(GAMEBIT_NW_GeyserComplete, 1);
 }
 
 void nwGeyser_init(GameObject* obj) {

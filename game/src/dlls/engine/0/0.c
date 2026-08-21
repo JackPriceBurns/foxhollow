@@ -4475,7 +4475,6 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
     GameObject* player;
     ObjModel* model;
     s32 x;
-    s32 stringOffset;
     s32 randomWidth;
     s32 randomHeight;
     s32 panelAlpha;
@@ -4623,18 +4622,16 @@ void pauseMenuDraw(int boxDrawParamA, int boxDrawParamB, int boxDrawParamC)
                 {
                     textY = 0x96;
                     stringIndex = 1;
-                    stringOffset = 4;
                     while (stringIndex < gPauseMenuCurHintText->count)
                     {
-                        gameTextShowStr(*(void**)((u8*)gPauseMenuCurHintText->strings + stringOffset), 0x79, 0xf0, textY);
-                        gameTextMeasureStringBoundsAt(*(void**)((u8*)gPauseMenuCurHintText->strings + stringOffset), 0x79, 0,
-                                                      0, &measureLeft, &measureRight, &measureTop, &measureBottom);
+                        gameTextShowStr(gPauseMenuCurHintText->strings[stringIndex], 0x79, 0xf0, textY);
+                        gameTextMeasureStringBoundsAt(gPauseMenuCurHintText->strings[stringIndex], 0x79, 0, 0,
+                                                      &measureLeft, &measureRight, &measureTop, &measureBottom);
                         lineHeight = gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight;
                         textHeight = measureBottom - measureTop;
                         textY += (textHeight > lineHeight)
                                      ? textHeight
                                      : gGameTextFontMetrics[sLanguageNameTable[getCurLanguage()].fontId].lineHeight;
-                        stringOffset += 4;
                         stringIndex++;
                     }
                 }
@@ -4974,7 +4971,7 @@ void pauseMenuDrawStatusPage(GameObject* player)
         gameTextShowStr(buf, 0x93, 0x14a, 0xdc);
         if (gPauseMenuScarabCapacity != 0)
         {
-            sprintf(buf, lbl_803DBB78, hud->statusValue[HUD_STATUS_SCARABS]);
+            sprintf(buf, lbl_803DBB78, hud->statusValue[HUD_STATUS_SCARABS], gPauseMenuScarabCapacity);
             gameTextShowStr(buf, 0x93, 0x140, 0x10e);
         }
         sprintf(buf, lbl_803DBB80, hintCount);
@@ -5761,7 +5758,6 @@ static inline void pauseMenuFreeIconTextures(CMenuHud* hud)
 /* Pause menu master state machine. */
 void pauseMenuUpdate(void)
 {
-    PauseTbl* tbl = (PauseTbl*)lbl_8031AE20;
     CMenuHud* hud = (CMenuHud*)lbl_803A87F0;
     GameObject* player;
     u16 btn;
@@ -5874,14 +5870,14 @@ void pauseMenuUpdate(void)
             u8 i;
             for (i = 0; i < 0x2d; i++)
             {
-                if (cell == *(u16*)((u8*)&tbl->cellMap[0].cell + i * 4))
+                if (cell == fhReadBE16(&gHudButtonIcons[0x74 + i * 4]))
                 {
                     break;
                 }
             }
             if (i != 0x2d)
             {
-                int code = tbl->cellMap[i].code;
+                int code = fhReadBE16(&gHudButtonIcons[0x76 + i * 4]);
                 gPauseMenuPlayerMapCell = code;
                 mainSetBits(code + 0xf10, 1);
             }
@@ -6284,12 +6280,12 @@ void pauseMenuUpdate(void)
                     int bit;
                     i = 0;
                     k = 0;
-                    while ((bit = *(int*)((u8*)&tbl->list740[0] + (idx = k) * 4)) > -1)
+                    while ((bit = (s32)fhReadBE32(&lbl_8031B560[(idx = k) * 4])) > -1)
                     {
                         s16 texId = 0xbf0;
                         if (mainGetBit(bit))
                         {
-                            texId = *(s16*)((u8*)&tbl->alts[0].alt + idx * 16);
+                            texId = gCMenuTrickyAbilities[idx].iconTextureId;
                         }
                         hud->textures3A8[i] = textureLoadAsset(texId);
                         hud->texIds358[i] = texId;
@@ -6298,19 +6294,18 @@ void pauseMenuUpdate(void)
                     }
                 }
                 {
-                    s16* it;
                     int k;
                     s16 texId;
                     int i;
                     int id;
                     i = 0xa;
                     k = 0;
-                    while ((id = *(it = (s16*)((u8*)&tbl->items[0] + (u8)k * 16))) > -1)
+                    while ((id = gCMenuStaffAbilities[(u8)k].ownedGameBit) > -1)
                     {
                         texId = 0xbf0;
                         if (mainGetBit(id))
                         {
-                            texId = it[3];
+                            texId = gCMenuStaffAbilities[(u8)k].iconTextureId;
                         }
                         hud->textures3A8[i] = textureLoadAsset(texId);
                         hud->texIds358[i] = texId;

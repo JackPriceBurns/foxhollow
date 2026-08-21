@@ -1,23 +1,33 @@
-/*
- * SH_swaplift / warpstonelift (DLL 0x1AF) - the WarpStone lift platform.
- *
- * The platform tracks whether the player is standing in range by scanning its
- * contact-object list. It offers Rock Candy through the Y-button menu, records
- * when the candy has been given to the WarpStone, and disables its interaction
- * hit volume while the player is out of range.
- */
 #include "dlls/objects/431_SH_swaplift.h"
 
+#include "game/objects/object_setup.h"
 #include "main/dll/dll_0000_gameui_api.h"
 #include "main/dll/tricky_api.h"
 #include "main/gamebits.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
+#include "main/objtype.h"
 #include "sys/objects.h"
 
-#define WARP_STONE_LIFT_PLAYER_CLASS_ID 1
+typedef enum WarpStoneLiftStateId {
+    WARP_STONE_LIFT_STATE_WAITING_FOR_ROCK_CANDY,
+    WARP_STONE_LIFT_STATE_ROCK_CANDY_AVAILABLE,
+    WARP_STONE_LIFT_STATE_ROCK_CANDY_USED
+} WarpStoneLiftStateId;
 
-s32 gWarpStoneLiftStateGameBits[WARP_STONE_LIFT_STATE_GAMEBIT_COUNT] = {
+struct WarpStoneLiftPlacement {
+    ObjPlacement base;
+    s8 rotationX;
+};
+
+typedef struct WarpStoneLiftState {
+    u8 stateId;
+} WarpStoneLiftState;
+
+STATIC_ASSERT(offsetof(WarpStoneLiftPlacement, rotationX) == 0x18);
+STATIC_ASSERT(sizeof(WarpStoneLiftState) == 1);
+
+static const enum GameBitId sWarpStoneLiftStateGameBits[] = {
     GAMEBIT_ITEM_RockCandy_Got,
     GAMEBIT_ITEM_RockCandy_Used,
 };
@@ -34,9 +44,7 @@ void warpstonelift_free(void) {
 }
 
 void warpstonelift_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 visibleValue = visible;
-
-    if (visibleValue != 0) {
+    if (visible != 0) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
@@ -46,24 +54,19 @@ void warpstonelift_hitDetect(void) {
 
 void warpstonelift_update(GameObject* obj) {
     WarpStoneLiftState* state = obj->extra;
-    int objectOffset;
-    u8* contactState;
+    ObjHitboxTransformState* contactState;
     int foundPlayer = 0;
     int count;
-    int i;
     s16 item;
 
-    contactState = (u8*)obj->anim.hitboxTransformState;
-    count = *(s8*)(contactState + offsetof(ObjHitboxTransformState, contactObjectCount));
+    contactState = obj->anim.hitboxTransformState;
+    count = contactState->contactObjectCount;
     if (count > 0) {
-        objectOffset = 0;
-        for (i = 0; i < count; i++) {
-            GameObject* other =
-                *(GameObject**)(contactState + objectOffset + offsetof(ObjHitboxTransformState, contactObjects));
-            if (other->anim.classId == WARP_STONE_LIFT_PLAYER_CLASS_ID) {
+        for (s32 contactIndex = 0; contactIndex < count; contactIndex++) {
+            GameObject* other = contactState->contactObjects[contactIndex];
+            if (other->anim.classId == OBJECT_CLASS_PLAYER) {
                 foundPlayer = 1;
             }
-            objectOffset += 4;
         }
     }
     if (foundPlayer != 0) {
@@ -100,13 +103,12 @@ void warpstonelift_update(GameObject* obj) {
 
 void warpstonelift_init(GameObject* obj, const WarpStoneLiftPlacement* placement) {
     WarpStoneLiftState* stateStorage = obj->extra;
-    int i;
 
-    obj->anim.rotX = (s16)((s32)placement->rotXByte << 8);
+    obj->anim.rotX = placement->rotationX * 256;
     obj->userData1 = 0;
-    for (i = 0; i < WARP_STONE_LIFT_STATE_GAMEBIT_COUNT; i++) {
-        if (mainGetBit(gWarpStoneLiftStateGameBits[i]) != 0) {
-            stateStorage->stateId = (u8)(i + 1);
+    for (s32 gameBitIndex = 0; gameBitIndex < ARRAY_COUNT(sWarpStoneLiftStateGameBits); gameBitIndex++) {
+        if (mainGetBit(sWarpStoneLiftStateGameBits[gameBitIndex]) != 0) {
+            stateStorage->stateId = gameBitIndex + 1;
         }
     }
     switch (stateStorage->stateId) {

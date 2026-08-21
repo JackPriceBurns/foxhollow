@@ -25,7 +25,6 @@
 #include "main/object_render.h"
 #include "main/debug.h"
 #include "main/dll/dll22cstate_struct.h"
-#include "main/dll/dfpobjcreatorstate_struct.h"
 #include "main/dll/dfptorchstate_struct.h"
 #include "main/dll/dbeggstate_struct.h"
 #include "main/dll/drakorenergystate_struct.h"
@@ -73,8 +72,6 @@ extern f32 gDbStealerwormKillAvoidWeights[];
 STATIC_ASSERT(sizeof(DbStealerwormControl) == 0x50);
 
 STATIC_ASSERT(sizeof(DfpLevelControlState) == 0xC);
-
-STATIC_ASSERT(sizeof(DfpObjCreatorState) == 0x1C);
 
 STATIC_ASSERT(sizeof(DfpTorchState) == 0x10);
 

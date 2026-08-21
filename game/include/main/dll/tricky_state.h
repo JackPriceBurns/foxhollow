@@ -234,9 +234,7 @@ typedef struct TrickyState {
     f32 sparkPos1Y;
     f32 sparkPos1Z;
     u8 pad3F0[0x408 - 0x3F0];
-    f32 renderPosX; /* copied to a child object's localPos during Tricky_render */
-    f32 renderPosY;
-    f32 renderPosZ;
+    Vec3f renderPos;
     s16 modelAnchorRotY;
     u8 pad416[0x418 - 0x416];
     struct RomCurveDef* routeSeedNode; /* candidate route node chosen before seeding route */

@@ -209,7 +209,7 @@ void AppleOnTree_func0A(void) {
 }
 
 int AppleOnTree_getExtraSize(void) {
-    return APPLE_ON_TREE_STATE_SIZE;
+    return sizeof(AppleOnTreeState);
 }
 
 void AppleOnTree_free(GameObject* obj) {

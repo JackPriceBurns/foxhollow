@@ -1,37 +1,40 @@
-/*
- * CCgasvent (DLL 0x185) - Crystal Caves gas vent.
- *
- * The vent emits gas while the room gas is active and no group-5 blocker is
- * within its distance threshold. The neighboring controller supervises the
- * complete vent group.
- */
 #include "dlls/objects/389_CCgasvent.h"
+
+#include <float.h>
 
 #include "game/objects/object.h"
 #include "main/dll/partfx_interface.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/objtype.h"
 
-#define CC_GAS_VENT_PARTICLE_GAS  0x3DF
-#define CC_GAS_VENT_PHASE_BLOCKED 0
-#define CC_GAS_VENT_PHASE_CLEAR   1
+enum CcGasVentPhase {
+    CC_GAS_VENT_PHASE_BLOCKED,
+    CC_GAS_VENT_PHASE_CLEAR,
+};
 
-int ccGasVent_getExtraSize(void) {
-    return sizeof(CCGasVentState);
+typedef struct CcGasVentState {
+    u8 phase;
+} CcGasVentState;
+
+STATIC_ASSERT(sizeof(CcGasVentState) == 1);
+
+static int ccGasVent_getExtraSize(void) {
+    return sizeof(CcGasVentState);
 }
 
-void ccGasVent_free(GameObject* obj) {
+static void ccGasVent_free(GameObject* obj) {
     objFreeObjectType(obj, CC_GAS_VENT_OBJECT_GROUP);
 }
 
-void ccGasVent_render(void) {
+static void ccGasVent_render(void) {
 }
 
-void ccGasVent_update(GameObject* obj) {
-    f32 blockerDistance = 3.4028235e38f;
-    CCGasVentState* state = obj->extra;
+static void ccGasVent_update(GameObject* obj) {
+    CcGasVentState* state = obj->extra;
+    f32 blockerDistance = FLT_MAX;
 
-    if (mainGetBit(CC_GAS_VENT_ACTIVE_GAMEBIT) == 0) {
+    if (mainGetBit(GAMEBIT_CC_GasVentActive) == 0) {
         return;
     }
 
@@ -46,29 +49,21 @@ void ccGasVent_update(GameObject* obj) {
         if (blockerDistance < 10.0f) {
             state->phase = CC_GAS_VENT_PHASE_BLOCKED;
         } else {
-            (*gPartfxInterface)->spawnObject(obj, CC_GAS_VENT_PARTICLE_GAS, NULL, 1, -1, NULL);
+            (*gPartfxInterface)->spawnObject(obj, 0x3DF, NULL, 0, -1, NULL);
         }
         break;
     }
 }
 
-void ccGasVent_init(GameObject* obj) {
+static void ccGasVent_init(GameObject* obj) {
     objAddObjectType(obj, CC_GAS_VENT_OBJECT_GROUP);
 }
 
 ObjectDescriptor gCCGasVentObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccGasVent_init,
-    (ObjectDescriptorCallback)ccGasVent_update,
-    0,
-    (ObjectDescriptorCallback)ccGasVent_render,
-    (ObjectDescriptorCallback)ccGasVent_free,
-    0,
-    ccGasVent_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .init = (ObjectDescriptorCallback)ccGasVent_init,
+    .update = (ObjectDescriptorCallback)ccGasVent_update,
+    .render = (ObjectDescriptorCallback)ccGasVent_render,
+    .free = (ObjectDescriptorCallback)ccGasVent_free,
+    .getExtraSize = ccGasVent_getExtraSize,
 };

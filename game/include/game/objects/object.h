@@ -7,6 +7,11 @@
 
 typedef struct ObjMsgQueue ObjMsgQueue;
 
+enum ObjectSequenceIndexSentinel {
+    OBJECT_SEQUENCE_INDEX_PENDING = -2,
+    OBJECT_SEQUENCE_INDEX_NONE = -1,
+};
+
 /*
  * GameObject - the engine-wide object record passed around as "obj" /
  * "int obj" / "u8 *obj" throughout src/main and the DLLs. Its head
@@ -45,12 +50,12 @@ struct GameObject {
     void* extra;             /* per-class state block */
     void* animEventCallback; /* obj+0xBC anim-event callback slot;
         LinkALevelControlObject/EarthWalkerObject STATIC_ASSERT this at 0xBC */
-    void* pendingParentObj;  /* obj+0xC0: object whose anim.parent this object
+    GameObject* pendingParentObj;  /* obj+0xC0: object whose anim.parent this object
         inherits in Obj_ApplyPendingParentLinks (set by objseq, cleared after) */
-    void* ownerObj;          /* obj+0xC4 owner-ward chain link (newObj->ownerObj = obj at
+    GameObject* ownerObj;          /* obj+0xC4 owner-ward chain link (newObj->ownerObj = obj at
         spawn; objprint walks it to the chain root for shadow state; some DLL
         classes reuse the slot as f32 scratch via launders) */
-    void* childObjs[5];      /* obj+0xC8..0xD8 child-object slots, childCount used;
+    GameObject* childObjs[5];      /* obj+0xC8..0xD8 child-object slots, childCount used;
         Obj_*ModelColorFadeRecursive walks them (childScan += 4 loop) */
     ObjMsgQueue* msgQueue; /* obj+0xDC per-object message queue, allocated by
         ObjMsg_AllocQueue and released in the object free path */

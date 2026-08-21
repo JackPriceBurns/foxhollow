@@ -7,6 +7,8 @@
 #include "dlls/objects/398_MMSH_WaterS.h"
 
 #include "dlls/objects/316_XYZAnimator.h"
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/debug.h"
 #include "main/dll/player_state.h"
 #include "main/dll/waterfx_interface.h"
@@ -16,81 +18,71 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
-#define MMSH_WATER_SPIKE_HIT_VOLUME_SLOT 9
-#define MMSH_WATER_SPIKE_HIT_SOURCE_SLOT 0
+typedef struct MmshWaterSpikePlacement {
+    ObjPlacement base;
+    u8 pad18[2];
+    s16 xyzAnimatorObjectIdLow;
+    s16 xyzAnimatorObjectIdHigh;
+    u8 pad1E[6];
+} MmshWaterSpikePlacement;
 
-#define MMSH_WATER_SPIKE_MIN_SURFACE_DELTA -9999.0f
+STATIC_ASSERT(sizeof(MmshWaterSpikePlacement) == 0x24);
+STATIC_ASSERT(offsetof(MmshWaterSpikePlacement, xyzAnimatorObjectIdLow) == 0x1A);
+STATIC_ASSERT(offsetof(MmshWaterSpikePlacement, xyzAnimatorObjectIdHigh) == 0x1C);
 
-#define MMSH_WATER_SPIKE_RIPPLE_DELAY_MIN 0x3C
-#define MMSH_WATER_SPIKE_RIPPLE_DELAY_MAX 0xF0
-#define MMSH_WATER_SPIKE_RIPPLE_SOURCE_ID 0
-#define MMSH_WATER_SPIKE_RIPPLE_RADIUS    0.5f
-#define MMSH_WATER_SPIKE_RIPPLE_INTENSITY 3
+static char sMmshWaterSpikeInvalidXyzAnimatorIdWarning[] = "WARNING Water Spike [%d] as invalid xyzAnim ID\n";
 
-#define MMSH_WATER_SPIKE_GROUND_QUERY_MODE    0
-#define MMSH_WATER_SPIKE_GROUND_QUERY_SUBMODE 0
-
-#define MMSH_WATER_SPIKE_RIPPLE_TIMER(obj)    ((obj)->userData1)
-#define MMSH_WATER_SPIKE_XYZ_ANIMATOR_ID(obj) ((obj)->userData2)
-
-extern char sMMSHWaterSpikeInvalidXyzAnimatorIdWarning[];
-
-int mmshWaterSpike_getExtraSize(void) {
+static int mmshWaterSpike_getExtraSize(void) {
     return 0;
 }
 
-int mmshWaterSpike_getObjectTypeId(void) {
+static int mmshWaterSpike_getObjectTypeId(void) {
     return 0;
 }
 
-void mmshWaterSpike_free(GameObject* obj) {
+static void mmshWaterSpike_free(GameObject* obj) {
 }
 
-void mmshWaterSpike_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
-                           s8 visible) {
+static void mmshWaterSpike_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                                  s8 visible) {
     if (visible == 0) {
         return;
     }
 }
 
-void mmshWaterSpike_hitDetect(void) {
+static void mmshWaterSpike_hitDetect(void) {
 }
 
-void mmshWaterSpike_update(GameObject* obj) {
+static void mmshWaterSpike_update(GameObject* obj) {
     GameObject* xyzAnimator;
-    TrackGroundHit** hitCursor;
-    TrackGroundHit* hit;
     int hitCount;
-    int hitIndex;
     f32 surfaceDelta;
     f32 targetY;
     f32 maxHeight;
     f32 riseDelta;
     TrackGroundHit** hitList;
-    const MMSHWaterSpikePlacement* placement;
+    const MmshWaterSpikePlacement* placement;
 
-    placement = (const MMSHWaterSpikePlacement*)obj->anim.placementData;
-    ObjHits_SetHitVolumeSlot(&obj->anim, MMSH_WATER_SPIKE_HIT_VOLUME_SLOT, OBJHITS_ACTIVE_HITBOX_MODE,
-                             MMSH_WATER_SPIKE_HIT_SOURCE_SLOT);
-    xyzAnimator = ObjList_FindObjectById(MMSH_WATER_SPIKE_XYZ_ANIMATOR_ID(obj));
+    placement = (const MmshWaterSpikePlacement*)obj->anim.placementData;
+    ObjHits_SetHitVolumeSlot(&obj->anim, 9, OBJHITS_ACTIVE_HITBOX_MODE, 0);
+    xyzAnimator = ObjList_FindObjectById((u32)obj->userData2);
     if (xyzAnimator != NULL) {
         riseDelta = XyzAnimator_getCoordinate(xyzAnimator, XYZ_ANIMATOR_COORD_WORLD_Y) - obj->anim.localPosY;
     } else {
-        logPrintf(sMMSHWaterSpikeInvalidXyzAnimatorIdWarning, placement->base.ident);
-        hitCount = trackGetHeight(obj, obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ, &hitList,
-                                        MMSH_WATER_SPIKE_GROUND_QUERY_MODE, MMSH_WATER_SPIKE_GROUND_QUERY_SUBMODE);
+        logPrintf(sMmshWaterSpikeInvalidXyzAnimatorIdWarning, placement->base.ident);
+        hitCount =
+            trackGetHeight(obj, obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ, &hitList, 0, 0);
         if (hitCount != 0) {
-            riseDelta = MMSH_WATER_SPIKE_MIN_SURFACE_DELTA;
-            hitCursor = hitList;
-            for (hitIndex = 0; hitIndex < hitCount; hitIndex++) {
-                hit = *hitCursor;
+            riseDelta = -9999.0f;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++) {
+                TrackGroundHit* hit = hitList[hitIndex];
+
                 if ((s8)hit->surfaceType == SURFACE_WATER) {
                     surfaceDelta = hit->height - obj->anim.localPosY;
                     if (surfaceDelta > riseDelta) {
                         riseDelta = surfaceDelta;
                     }
                 }
-                hitCursor++;
             }
         }
     }
@@ -100,55 +92,43 @@ void mmshWaterSpike_update(GameObject* obj) {
         obj->anim.localPosY = maxHeight;
     } else {
         obj->anim.localPosY = targetY;
-        MMSH_WATER_SPIKE_RIPPLE_TIMER(obj) -= framesThisStep;
-        if (MMSH_WATER_SPIKE_RIPPLE_TIMER(obj) <= 0) {
-            MMSH_WATER_SPIKE_RIPPLE_TIMER(obj) =
-                randomGetRange(MMSH_WATER_SPIKE_RIPPLE_DELAY_MIN, MMSH_WATER_SPIKE_RIPPLE_DELAY_MAX);
+        obj->userData1 -= framesThisStep;
+        if (obj->userData1 <= 0) {
+            obj->userData1 = randomGetRange(0x3C, 0xF0);
             if (riseDelta == 0.0f) {
-                (*gWaterfxInterface)
-                    ->spawnRipple(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ,
-                                  MMSH_WATER_SPIKE_RIPPLE_SOURCE_ID, MMSH_WATER_SPIKE_RIPPLE_RADIUS,
-                                  MMSH_WATER_SPIKE_RIPPLE_INTENSITY);
+                (*gWaterfxInterface)->spawnRipple(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ, 0,
+                                                  0.5f, 3);
             }
         }
     }
 }
 
-void mmshWaterSpike_init(GameObject* obj, const MMSHWaterSpikePlacement* placement) {
-    register u32 packedXyzAnimatorObjectId;
-    register u32 lowXyzAnimatorObjectId;
+static void mmshWaterSpike_init(GameObject* obj, const MmshWaterSpikePlacement* placement) {
+    u32 xyzAnimatorObjectIdHigh;
+    u32 xyzAnimatorObjectIdLow;
 
     ObjHits_EnableObject(obj);
-    MMSH_WATER_SPIKE_RIPPLE_TIMER(obj) = 0;
-    packedXyzAnimatorObjectId = (u32)(u16)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->xyzAnimatorObjectIdHigh)) << 16;
-    lowXyzAnimatorObjectId = (u32)(u16)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->xyzAnimatorObjectIdLow));
-    packedXyzAnimatorObjectId |= lowXyzAnimatorObjectId;
-    MMSH_WATER_SPIKE_XYZ_ANIMATOR_ID(obj) = packedXyzAnimatorObjectId;
+    obj->userData1 = 0;
+    xyzAnimatorObjectIdHigh = (u16)ObjAnim_ReadPlacementS16(&obj->anim, &placement->xyzAnimatorObjectIdHigh);
+    xyzAnimatorObjectIdLow = (u16)ObjAnim_ReadPlacementS16(&obj->anim, &placement->xyzAnimatorObjectIdLow);
+    obj->userData2 = (xyzAnimatorObjectIdHigh << 16) | xyzAnimatorObjectIdLow;
 }
 
-void mmshWaterSpike_release(void) {
+static void mmshWaterSpike_release(void) {
 }
 
-void mmshWaterSpike_initialise(void) {
+static void mmshWaterSpike_initialise(void) {
 }
-
-
-
-char sMMSHWaterSpikeInvalidXyzAnimatorIdWarning[] = "WARNING Water Spike [%d] as invalid xyzAnim ID\n";
 
 ObjectDescriptor gMMSHWaterSpikeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmshWaterSpike_initialise,
-    (ObjectDescriptorCallback)mmshWaterSpike_release,
-    0,
-    (ObjectDescriptorCallback)mmshWaterSpike_init,
-    (ObjectDescriptorCallback)mmshWaterSpike_update,
-    (ObjectDescriptorCallback)mmshWaterSpike_hitDetect,
-    (ObjectDescriptorCallback)mmshWaterSpike_render,
-    (ObjectDescriptorCallback)mmshWaterSpike_free,
-    (ObjectDescriptorCallback)mmshWaterSpike_getObjectTypeId,
-    mmshWaterSpike_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)mmshWaterSpike_initialise,
+    .release = (ObjectDescriptorCallback)mmshWaterSpike_release,
+    .init = (ObjectDescriptorCallback)mmshWaterSpike_init,
+    .update = (ObjectDescriptorCallback)mmshWaterSpike_update,
+    .hitDetect = (ObjectDescriptorCallback)mmshWaterSpike_hitDetect,
+    .render = (ObjectDescriptorCallback)mmshWaterSpike_render,
+    .free = (ObjectDescriptorCallback)mmshWaterSpike_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)mmshWaterSpike_getObjectTypeId,
+    .getExtraSize = mmshWaterSpike_getExtraSize,
 };

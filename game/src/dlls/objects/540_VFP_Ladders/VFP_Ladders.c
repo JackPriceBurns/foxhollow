@@ -17,19 +17,35 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/VF/dll_021C_vfpladders.h"
 
-#define VFPLADDERS_TRIGGER_SEQID 0x548
-#define VFPLADDERS_DROP_DELAY    0x5a /* frames between trigger and drop */
+typedef enum VfpLaddersSequenceId {
+    VFP_LADDERS_SEQUENCE_TRIGGER = 0x548,
+} VfpLaddersSequenceId;
 
-enum
-{
-    VFPLADDERS_PHASE_WAIT = 0,
-    VFPLADDERS_PHASE_DROPPING = 1,
-    VFPLADDERS_PHASE_SETTLED = 2
-};
+typedef enum VfpLaddersPhase {
+    VFP_LADDERS_PHASE_WAIT,
+    VFP_LADDERS_PHASE_DROPPING,
+    VFP_LADDERS_PHASE_SETTLED,
+} VfpLaddersPhase;
+
+typedef struct VfpLaddersState {
+    s16 baseGameBit;
+    s16 triggerGameBit;
+    s16 phase;
+    s16 delayTimer;
+} VfpLaddersState;
+
+STATIC_ASSERT(sizeof(VfpLaddersState) == 0x08);
+STATIC_ASSERT(offsetof(VfpLaddersState, baseGameBit) == 0x00);
+STATIC_ASSERT(offsetof(VfpLaddersState, triggerGameBit) == 0x02);
+STATIC_ASSERT(offsetof(VfpLaddersState, phase) == 0x04);
+STATIC_ASSERT(offsetof(VfpLaddersState, delayTimer) == 0x06);
 
 int vfpladders_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 {
-    return 0x0;
+    (void)obj;
+    (void)unused;
+    (void)animUpdate;
+    return 0;
 }
 
 int VFP_Ladders_getExtraSize(void)
@@ -39,12 +55,12 @@ int VFP_Ladders_getExtraSize(void)
 
 int VFP_Ladders_getObjectTypeId(void)
 {
-    return 0x0;
+    return 0;
 }
 
 void VFP_Ladders_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void VFP_Ladders_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -57,27 +73,18 @@ void VFP_Ladders_hitDetect(GameObject* obj)
 
 void VFP_Ladders_update(GameObject* obj)
 {
-    VfpLaddersState* state;
-    VfpLaddersSetup* setup;
+    const VfpLaddersPlacement* placement = (const VfpLaddersPlacement*)obj->anim.placementData;
+    VfpLaddersState* state = obj->extra;
 
-    setup = (VfpLaddersSetup*)(obj)->anim.placementData;
-    state = (obj)->extra;
-
-    if ((obj)->anim.romDefNo == VFPLADDERS_TRIGGER_SEQID)
+    if (obj->anim.romDefNo == VFP_LADDERS_SEQUENCE_TRIGGER)
     {
-        if (mainGetBit(state->triggerGameBit) != 0)
+        if (mainGetBit(state->triggerGameBit) != 0 && mainGetBit(state->baseGameBit) == 0)
         {
-            if (mainGetBit(state->baseGameBit) == 0)
-            {
-                (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
-            }
+            (*gObjectTriggerInterface)->runSequence(0, obj, -1);
         }
-        if (mainGetBit(state->triggerGameBit) == 0)
+        if (mainGetBit(state->triggerGameBit) == 0 && mainGetBit(state->baseGameBit) != 0)
         {
-            if (mainGetBit(state->baseGameBit) != 0)
-            {
-                (*gObjectTriggerInterface)->runSequence(1, (void*)obj, -1);
-            }
+            (*gObjectTriggerInterface)->runSequence(1, obj, -1);
         }
     }
     else
@@ -87,36 +94,37 @@ void VFP_Ladders_update(GameObject* obj)
             state->delayTimer -= (s16)timeDelta;
             if (state->delayTimer <= 0)
             {
-                state->phase = VFPLADDERS_PHASE_DROPPING;
+                state->phase = VFP_LADDERS_PHASE_DROPPING;
                 Sfx_PlayFromObject(obj, SFXTRIG_mv_bodyf4_c);
                 state->delayTimer = 0;
             }
         }
         else
         {
-            if (state->phase == VFPLADDERS_PHASE_WAIT && mainGetBit(state->triggerGameBit) != 0)
+            if (state->phase == VFP_LADDERS_PHASE_WAIT && mainGetBit(state->triggerGameBit) != 0)
             {
-                state->delayTimer = VFPLADDERS_DROP_DELAY;
+                state->delayTimer = 90;
             }
-            if (state->phase == VFPLADDERS_PHASE_DROPPING && obj->anim.localPosY > setup->base.posY - 150.0f)
+            f32 settledY = placement->base.posY - 150.0f;
+            if (state->phase == VFP_LADDERS_PHASE_DROPPING && obj->anim.localPosY > settledY)
             {
-                obj->anim.localPosY = obj->anim.localPosY - 2.0f * timeDelta;
-                if (obj->anim.localPosY < setup->base.posY - 150.0f)
+                obj->anim.localPosY -= 2.0f * timeDelta;
+                if (obj->anim.localPosY < settledY)
                 {
-                    obj->anim.localPosY = setup->base.posY - 150.0f;
-                    state->phase = VFPLADDERS_PHASE_SETTLED;
+                    obj->anim.localPosY = settledY;
+                    state->phase = VFP_LADDERS_PHASE_SETTLED;
                 }
             }
         }
     }
 }
 
-void VFP_Ladders_init(GameObject* obj, VfpLaddersSetup* setup)
+void VFP_Ladders_init(GameObject* obj, const VfpLaddersPlacement* placement)
 {
     VfpLaddersState* state = obj->extra;
-    obj->anim.rotX = (s16)(setup->rotXByte << 8);
-    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->triggerGameBit));
-    state->baseGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->baseGameBit));
+    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    state->triggerGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit);
+    state->baseGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->baseGameBit);
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     obj->animEventCallback = vfpladders_SeqFn;
 }

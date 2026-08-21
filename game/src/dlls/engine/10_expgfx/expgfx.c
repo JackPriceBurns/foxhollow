@@ -290,8 +290,8 @@ const ObjFxRandomBurstTable gObjFxRandomBurstTbl = {
 
 #define OBJFX_OBJFLAG_PARENT_SLACK 0x1000
 
-void objfx_spawnCrystalOrbitEffects(GameObject* obj, s16* work, f32 period, f32 xMul, f32 yMul, f32 xOff,
-                                    f32 yOff, u8 flags)
+void objfx_spawnCrystalOrbitEffects(GameObject* obj, ObjFxCrystalOrbitState* state, f32 period, f32 xMul, f32 yMul,
+                                    f32 xOff, f32 yOff, u8 flags)
 {
     ObjFxParticleParams params;
     int crystalIdx;
@@ -301,27 +301,24 @@ void objfx_spawnCrystalOrbitEffects(GameObject* obj, s16* work, f32 period, f32 
 
     for (crystalIdx = 0; crystalIdx < 4; crystalIdx++)
     {
-        work[0x12 + crystalIdx] = (65535.0f / period + (f32)(crystalIdx * randomGetRange(120, 127)));
-        wave = work[0x12 + crystalIdx];
-        work[0xe + crystalIdx] = (wave * timeDelta + work[0xe + crystalIdx]);
-        wave = fsin16((u16)work[0xe + crystalIdx]);
+        state->waveSpeeds[crystalIdx] = 65535.0f / period + (f32)(crystalIdx * randomGetRange(120, 127));
+        wave = state->waveSpeeds[crystalIdx];
+        state->waveAngles[crystalIdx] = wave * timeDelta + state->waveAngles[crystalIdx];
+        wave = fsin16((u16)state->waveAngles[crystalIdx]);
         wave = (1.0f + wave) / 2.0f;
-        {
-            f32 amp = gObjFxCrystalAmpTbl.amps[crystalIdx];
-            *(f32*)((char*)work + 0xc + crystalIdx * 4) = amp * wave;
-        }
+        state->amplitudes[crystalIdx] = gObjFxCrystalAmpTbl.amps[crystalIdx] * wave;
 
-        work[0x16 + crystalIdx] = (timeDelta * gObjFxCrystalSpinSpeed[crystalIdx] + work[0x16 + crystalIdx]);
-        *(u16*)work = work[0x16 + crystalIdx];
-        *(f32*)((char*)work + 8) = *(f32*)((char*)work + 0xc + crystalIdx * 4);
+        state->spinAngles[crystalIdx] = timeDelta * gObjFxCrystalSpinSpeed[crystalIdx] + state->spinAngles[crystalIdx];
+        state->rotation.x = state->spinAngles[crystalIdx];
+        state->radius = state->amplitudes[crystalIdx];
 
         for (angleStep = 0; angleStep < 0xffff; angleStep += 0x7fff)
         {
-            params.position[0] = *(f32*)((char*)work + 8) * xMul + xOff;
-            params.position[1] = *(f32*)((char*)work + 8) * yMul + yOff;
+            params.position[0] = state->radius * xMul + xOff;
+            params.position[1] = state->radius * yMul + yOff;
             params.position[2] = 0.0f;
-            *(u16*)work += 0x7fff;
-            vecRotateZXY(work, params.position);
+            state->rotation.x += 0x7fff;
+            vecRotateZXY(&state->rotation.x, params.position);
             params.position[0] += (obj)->anim.localPosX;
             params.position[1] += (obj)->anim.localPosY;
             params.position[2] += (obj)->anim.localPosZ;

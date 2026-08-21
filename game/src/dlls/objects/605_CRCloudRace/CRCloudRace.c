@@ -14,7 +14,7 @@
 #include "sys/objects.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "dlls/objects/440_SC_totempol.h"
+#include "dlls/objects/438_SC_levelcon.h"
 
 
 
@@ -46,7 +46,7 @@ void crcloudrace_updateCompletionState(GameObject* obj, CrCloudRaceState* state)
             near = objGetNearestTypeTo(CRCLOUDRACE_NEARBY_TOTEM_GROUP, obj, &dist);
             if (near != NULL)
             {
-                ((ScTotemPoleInterfaceVTable*)*near->anim.dll)->handleEvent(near, 1);
+                sc_levelcontrol_setAnimEventState(near, SC_LEVEL_CONTROL_ANIM_STATE_1);
             }
             state->phase = CRCLOUDRACE_PHASE_RESET_TO_START;
         }

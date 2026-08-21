@@ -1,16 +1,6 @@
-/*
- * WCTrexStatu (DLL 658) - a T-Rex statue prop in the Walled City (WC).
- *
- * The statue starts lowered and is "raised" by a map event: at init, if
- * the object's map-event act is already RAISED (and we are not restoring
- * from a save), it is nudged up by a fixed height. Once triggered - either
- * because its raisedBit game bit is already set at init, or via anim event
- * WCTREXSTATU_CALLBACK_TRIGGER - it swaps to the triggered texture and sets
- * userData1, after which hitDetect periodically emits a dust particle effect.
- * getObjectTypeId picks the render model from the placement's modelIndex.
- */
 #include "main/dll/partfx_interface.h"
 #include "main/dll/WC/dll_0292_wctrexstatu.h"
+#include "game/objects/object_setup.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objtexture.h"
@@ -18,34 +8,53 @@
 #include "main/vecmath.h"
 #include "main/objseq.h"
 
-#define WCTREXSTATU_CALLBACK_TRIGGER 1
+typedef enum WcTrexStatueEvent {
+    WC_TREX_STATUE_EVENT_TRIGGER = 1
+} WcTrexStatueEvent;
 
-#define WCTREXSTATU_RENDER_TYPE_BASE      0x400
-#define WCTREXSTATU_RENDER_TYPE_SHIFT     0xb
-#define WCTREXSTATU_TEXTURE_TRIGGERED     0x100
-#define WCTREXSTATU_PARTFX_VARIANT_0      0x73f
-#define WCTREXSTATU_PARTFX_VARIANT_1      0x740
-#define WCTREXSTATU_PARTFX_CHANCE         5
-#define WCTREXSTATU_PARTFX_KIND           2
-#define WCTREXSTATU_PARTFX_INVALID_HANDLE -1
+typedef enum WcTrexStatueTextureId {
+    WC_TREX_STATUE_TEXTURE_TRIGGERED = 0x100
+} WcTrexStatueTextureId;
 
-#define WCTREXSTATU_MAPEVENT_RAISED 2
+typedef enum WcTrexStatueParticleId {
+    WC_TREX_STATUE_PARTICLE_BANK_0 = 0x73F,
+    WC_TREX_STATUE_PARTICLE_BANK_1 = 0x740
+} WcTrexStatueParticleId;
+
+typedef enum WcTrexStatueMapAct {
+    WC_TREX_STATUE_MAP_ACT_RAISED = 2
+} WcTrexStatueMapAct;
+
+struct WcTrexStatuePlacement {
+    ObjPlacement base;
+    s8 rotationX;
+    s8 modelIndex;
+    u8 pad1A[4];
+    s16 raisedGameBit;
+    u8 pad20[4];
+};
+
+STATIC_ASSERT(offsetof(WcTrexStatuePlacement, rotationX) == 0x18);
+STATIC_ASSERT(offsetof(WcTrexStatuePlacement, modelIndex) == 0x19);
+STATIC_ASSERT(offsetof(WcTrexStatuePlacement, raisedGameBit) == 0x1E);
+STATIC_ASSERT(sizeof(WcTrexStatuePlacement) == 0x24);
+
+static void wctrexstatu_setTriggered(GameObject* obj) {
+    ObjTextureRuntimeSlot* texture = objFindTexture(obj, 0, 0);
+
+    if (texture != NULL) {
+        texture->textureId = WC_TREX_STATUE_TEXTURE_TRIGGERED;
+    }
+    obj->userData1 = 1;
+}
 
 int wctrexstatu_interactCallback(GameObject* obj, int unused, ObjSeqState* animUpdate)
 {
-    int i;
-
-    for (i = 0; i < animUpdate->eventCount; i++)
+    for (s32 eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++)
     {
-        if (animUpdate->eventIds[i] == WCTREXSTATU_CALLBACK_TRIGGER)
+        if (animUpdate->eventIds[eventIndex] == WC_TREX_STATUE_EVENT_TRIGGER)
         {
-            ObjTextureRuntimeSlot* texture = objFindTexture(obj, 0, 0);
-
-            if (texture != NULL)
-            {
-                texture->textureId = WCTREXSTATU_TEXTURE_TRIGGERED;
-            }
-            obj->userData1 = 1;
+            wctrexstatu_setTriggered(obj);
         }
     }
 
@@ -59,15 +68,15 @@ int wctrexstatu_getExtraSize(void)
 
 int wctrexstatu_getObjectTypeId(GameObject* obj)
 {
-    ObjAnimComponent* objAnim = &obj->anim;
-    int modelIndex = ((WCTrexStatueSetup*)obj->anim.placementData)->modelIndex;
-    int modelCount = objAnim->modelInstance->modelCount;
+    const WcTrexStatuePlacement* placement = (const WcTrexStatuePlacement*)obj->anim.placementData;
+    int modelIndex = placement->modelIndex;
+    int modelCount = obj->anim.modelInstance->modelCount;
 
     if (modelIndex >= modelCount)
     {
         modelIndex = 0;
     }
-    return (modelIndex << WCTREXSTATU_RENDER_TYPE_SHIFT) | WCTREXSTATU_RENDER_TYPE_BASE;
+    return modelIndex * 0x800 | 0x400;
 }
 
 void wctrexstatu_free(void)
@@ -84,23 +93,11 @@ void wctrexstatu_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visi
 
 void wctrexstatu_hitDetect(GameObject* obj)
 {
-    ObjAnimComponent* objAnim = &obj->anim;
-    GameObject* gameObj = obj;
-
-    if (gameObj->userData1 != 0 && randomGetRange(0, WCTREXSTATU_PARTFX_CHANCE) == 0)
+    if (obj->userData1 != 0 && randomGetRange(0, 5) == 0)
     {
-        if (objAnim->bankIndex == 0)
-        {
-            (*gPartfxInterface)
-                ->spawnObject(obj, WCTREXSTATU_PARTFX_VARIANT_0, NULL, WCTREXSTATU_PARTFX_KIND,
-                              WCTREXSTATU_PARTFX_INVALID_HANDLE, obj);
-        }
-        else
-        {
-            (*gPartfxInterface)
-                ->spawnObject(obj, WCTREXSTATU_PARTFX_VARIANT_1, NULL, WCTREXSTATU_PARTFX_KIND,
-                              WCTREXSTATU_PARTFX_INVALID_HANDLE, obj);
-        }
+        WcTrexStatueParticleId particleId = obj->anim.bankIndex == 0 ? WC_TREX_STATUE_PARTICLE_BANK_0
+                                                                    : WC_TREX_STATUE_PARTICLE_BANK_1;
+        (*gPartfxInterface)->spawnObject(obj, particleId, NULL, 2, -1, obj);
     }
 }
 
@@ -108,34 +105,27 @@ void wctrexstatu_update(void)
 {
 }
 
-void wctrexstatu_init(GameObject* obj, WCTrexStatueSetup* setup, int fromLoad)
+void wctrexstatu_init(GameObject* obj, const WcTrexStatuePlacement* placement, int fromLoad)
 {
-    ObjAnimComponent* objAnim = &obj->anim;
     obj->animEventCallback = wctrexstatu_interactCallback;
-    objAnim->bankIndex = setup->modelIndex;
-    if (objAnim->bankIndex >= objAnim->modelInstance->modelCount)
+    obj->anim.bankIndex = placement->modelIndex;
+    if (obj->anim.bankIndex >= obj->anim.modelInstance->modelCount)
     {
-        objAnim->bankIndex = 0;
+        obj->anim.bankIndex = 0;
     }
 
-    obj->anim.rotX = (s16)(setup->type << 8);
+    obj->anim.rotX = placement->rotationX * 256;
     if (fromLoad == 0)
     {
-        if ((*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot) == WCTREXSTATU_MAPEVENT_RAISED)
+        if ((*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot) == WC_TREX_STATUE_MAP_ACT_RAISED)
         {
             obj->anim.localPosY += 30.0f;
         }
     }
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->raisedBit))) != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->raisedGameBit)) != 0)
     {
-        ObjTextureRuntimeSlot* texture = objFindTexture(obj, 0, 0);
-
-        if (texture != NULL)
-        {
-            texture->textureId = WCTREXSTATU_TEXTURE_TRIGGERED;
-        }
-        obj->userData1 = 1;
+        wctrexstatu_setTriggered(obj);
     }
 }
 

@@ -1,33 +1,46 @@
-/*
- * DustMoteSou (DLL 0x02B2) - an ambient particle-effect emitter object.
- *
- * A placement-only object: it carries no per-instance extra state
- * (getExtraSize == 0) and does no rendering or hit detection. Its init
- * sets the model orientation from the placement bytes and flags the
- * object to spawn effects; its update spawns a particle effect every
- * tick, gated on an optional game bit.
- *
- * The effect spawned depends on the animation sequence the placement
- * selected:
- *   - DUSTMOTESOU_SEQ_TAIL_LIGHT -> a masked hit effect (trailing light),
- *   - DUSTMOTESOU_SEQ_FIREWORK   -> the firework hit-detect spawner,
- *   - otherwise (dust mote)      -> one of three burst styles chosen by
- *     mapData->burstMode (box / arced / directional), seeded with the
- *     placement's per-axis spread.
- *
- * The effectId / paramA / paramB fields gate each per-branch spawn: a zero
- * id or required param skips that branch. The gameBit field gates all
- * spawning when non-(-1) and clear.
- */
 #include "main/dll_000A_expgfx.h"
 #include "main/dll/dll_02B2_dustmotesou.h"
+#include "game/objects/object_setup.h"
 #include "main/gamebits.h"
 #include "main/objfx.h"
-static f32 dustmotesou_getScale(const GameObject* source,
-                                const DustMoteSouMapData* mapData)
-{
-    return ObjAnim_ReadPlacementF32(&source->anim, &mapData->scale);
-}
+
+typedef enum DustMoteSourceVariant {
+    DUST_MOTE_SOURCE_TAIL_LIGHT = 0x807,
+    DUST_MOTE_SOURCE_FIREWORK = 0x80E
+} DustMoteSourceVariant;
+
+typedef enum DustMoteSourceBurstMode {
+    DUST_MOTE_BURST_BOX,
+    DUST_MOTE_BURST_ARCED
+} DustMoteSourceBurstMode;
+
+struct DustMoteSourcePlacement {
+    ObjPlacement base;
+    u8 rotationZ;
+    u8 rotationY;
+    u8 rotationX;
+    u8 effectId;
+    u8 effectParamA;
+    u8 effectParamB;
+    u8 pad1E[2];
+    f32 scale;
+    s16 gameBit;
+    u8 spreadX;
+    u8 spreadY;
+    u8 spreadZ;
+    u8 spawnChance;
+    u8 burstMode;
+    u8 pad2B[5];
+};
+
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, rotationZ) == 0x18);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, effectId) == 0x1B);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, scale) == 0x20);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, gameBit) == 0x24);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, spreadX) == 0x26);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, spawnChance) == 0x29);
+STATIC_ASSERT(offsetof(DustMoteSourcePlacement, burstMode) == 0x2A);
+STATIC_ASSERT(sizeof(DustMoteSourcePlacement) == 0x30);
 
 int dustmotesou_getExtraSize(void)
 {
@@ -58,64 +71,62 @@ void dustmotesou_hitDetect(void)
 
 void dustmotesou_update(GameObject* source)
 {
-    DustMoteSouMapData* mapData = (DustMoteSouMapData*)source->anim.placementData;
-    f32 scale = dustmotesou_getScale(source, mapData);
-    s16 gameBit = ObjAnim_ReadPlacementS16(&source->anim, &mapData->gameBit);
+    const DustMoteSourcePlacement* placement = (const DustMoteSourcePlacement*)source->anim.placementData;
+    f32 scale = ObjAnim_ReadPlacementF32(&source->anim, &placement->scale);
+    s16 gameBit = ObjAnim_ReadPlacementS16(&source->anim, &placement->gameBit);
 
     if (gameBit != -1 && mainGetBit(gameBit) == 0)
     {
         return;
     }
-    if (source->anim.romDefNo == DUSTMOTESOU_SEQ_TAIL_LIGHT)
+    if (source->anim.romDefNo == DUST_MOTE_SOURCE_TAIL_LIGHT)
     {
-        if (mapData->effectId == 0 || mapData->effectParamA == 0)
+        if (placement->effectId == 0 || placement->effectParamA == 0)
         {
             return;
         }
-        objfx_spawnMaskedHitEffect(source, scale, mapData->effectId, mapData->effectParamA,
-                                   mapData->effectParamB, 0);
+        objfx_spawnMaskedHitEffect(source, scale, placement->effectId, placement->effectParamA,
+                                   placement->effectParamB, NULL);
         return;
     }
-    if (source->anim.romDefNo == DUSTMOTESOU_SEQ_FIREWORK)
+    if (source->anim.romDefNo == DUST_MOTE_SOURCE_FIREWORK)
     {
-        if (mapData->effectId == 0 || mapData->effectParamA == 0)
+        if (placement->effectId == 0 || placement->effectParamA == 0)
         {
             return;
         }
-        objfx_spawnHitEffectBurst(source, scale, mapData->effectId, mapData->effectParamA,
-                            mapData->effectParamB, NULL);
+        objfx_spawnHitEffectBurst(source, scale, placement->effectId, placement->effectParamA,
+                                  placement->effectParamB, NULL);
         return;
     }
-    if (mapData->effectId == 0 || mapData->effectParamA == 0 || mapData->effectParamB == 0)
+    if (placement->effectId == 0 || placement->effectParamA == 0 || placement->effectParamB == 0)
     {
         return;
     }
-    if (mapData->burstMode == DUSTMOTESOU_BURST_BOX)
+    if (placement->burstMode == DUST_MOTE_BURST_BOX)
     {
-        objfx_spawnBoxBurst(source, mapData->effectId, scale, mapData->effectParamA,
-                            mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
-                            (f32)(u32)mapData->spreadY, (f32)(u32)mapData->spreadZ, NULL, 0);
+        objfx_spawnBoxBurst(source, placement->effectId, scale, placement->effectParamA,
+                            placement->effectParamB, placement->spawnChance, placement->spreadX,
+                            placement->spreadY, placement->spreadZ, NULL, 0);
     }
-    else if (mapData->burstMode == DUSTMOTESOU_BURST_ARCED)
+    else if (placement->burstMode == DUST_MOTE_BURST_ARCED)
     {
-        objfx_spawnArcedBurst(source, mapData->effectId, scale, mapData->effectParamA,
-                             mapData->effectParamB, mapData->effectFlags, (f32)(u32)mapData->spreadX,
-                             (f32)(u32)mapData->spreadY,
-                              (f32)(u32)mapData->spreadZ, 0, 0);
+        objfx_spawnArcedBurst(source, placement->effectId, scale, placement->effectParamA,
+                             placement->effectParamB, placement->spawnChance, placement->spreadX,
+                             placement->spreadY, placement->spreadZ, NULL, 0);
     }
     else
     {
-        objfx_spawnDirectionalBurst(source, mapData->effectId, scale, mapData->effectParamA,
-                                    mapData->effectParamB, mapData->effectFlags,
-                                    (f32)(u32)mapData->spreadX, NULL, 0);
+        objfx_spawnDirectionalBurst(source, placement->effectId, scale, placement->effectParamA,
+                                    placement->effectParamB, placement->spawnChance, placement->spreadX, NULL, 0);
     }
 }
 
-void dustmotesou_init(GameObject* source, DustMoteSouMapData* mapData)
+void dustmotesou_init(GameObject* source, const DustMoteSourcePlacement* placement)
 {
-    source->anim.rotZ = (s16)(mapData->rotZ << 8);
-    source->anim.rotY = (s16)(mapData->rotY << 8);
-    source->anim.rotX = (s16)(mapData->rotX << 8);
+    source->anim.rotZ = placement->rotationZ * 256;
+    source->anim.rotY = placement->rotationY * 256;
+    source->anim.rotX = placement->rotationX * 256;
     source->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 

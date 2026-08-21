@@ -11,7 +11,7 @@
 #include "main/object_render.h"
 #include "main/objtexture.h"
 
-#define DLL_177_TEXTURE_VALUE_MAXIMUM  256.0f
+#define DLL_177_TEXTURE_VALUE_MAXIMUM   256.0f
 #define DLL_177_TEXTURE_PULSE_AMPLITUDE 50.0f
 #define DLL_177_UNIT_VALUE              1.0f
 #define DLL_177_PI                      3.1415927f
@@ -29,7 +29,7 @@ int dll_177_updateTextureAnimation(GameObject* obj) {
     placement = (const Dll177Placement*)obj->anim.placementData;
     switch (state->textureState) {
     case DLL_177_TEXTURE_STATE_WAIT_FOR_GAME_BIT:
-        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0) {
+        if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit)) != 0) {
             state->textureState = DLL_177_TEXTURE_STATE_FADE_IN;
         }
         break;

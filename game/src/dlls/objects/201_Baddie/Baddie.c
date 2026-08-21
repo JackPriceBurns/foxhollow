@@ -565,7 +565,8 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
                     hoodedZyckUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 case 0x427:
-                    battleDroidUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    battleDroidUpdateWhileFrozen(obj, (EnemyState*)state, attacker, hit, hitArg, hitCount, &hitPos,
+                                                 sector);
                     break;
                 case 0x6a2:
                 case 0x6a3:
@@ -577,7 +578,8 @@ void baddie_updateWhileFrozen(GameObject* obj, u8* state, u8 fromHit)
                     hagabonMK2_updateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
                     break;
                 default:
-                    battleDroidUpdateWhileFrozen(obj, state, attacker, hit, hitArg, hitCount, &hitPos, sector);
+                    battleDroidUpdateWhileFrozen(obj, (EnemyState*)state, attacker, hit, hitArg, hitCount, &hitPos,
+                                                 sector);
                     break;
                 }
             }
@@ -2985,7 +2987,7 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
             mutatedEbaInit(obj, state);
             break;
         case ENEMY_WHIRLPOOL_OBJ:
-            baddie_initWhirlpoolState((int*)obj, (EnemyState*)state);
+            baddie_initWhirlpoolState(obj, state);
             break;
         case ENEMY_SNOWWORM_OBJ:
         case ENEMY_SNOWWORM_BABY_OBJ:
@@ -2995,7 +2997,7 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
             hoodedZyck_init(obj, (struct EnemyState*)state);
             break;
         case ENEMY_BATTLEDROID_OBJ:
-            battleDroidInit(obj, (char*)state);
+            battleDroidInit(obj, (EnemyState*)state);
             break;
         case ENEMY_FIRECRAWLER_OBJ:
         case ENEMY_REDEYE_OBJ:
@@ -3007,7 +3009,7 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
             hagabonMK2_init(obj, (struct EnemyState*)state);
             break;
         default:
-            battleDroidInit(obj, (char*)state);
+            battleDroidInit(obj, (EnemyState*)state);
             break;
         }
         ((EnemyState*)state)->max = ((EnemyState*)state)->current;

@@ -1,126 +1,97 @@
-/* DLL 0x0228 */
-#include "main/dll/CF/laser.h"
+#include "main/dll/spell_place.h"
+
+#include "game/objects/object.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objprint_render_api.h"
 
-int VFP_SpellPlace_getExtraSize(void);
-int VFP_SpellPlace_getObjectTypeId(void);
-void VFP_SpellPlace_free(void);
-void VFP_SpellPlace_render(void);
-void VFP_SpellPlace_hitDetect(void);
-void VFP_SpellPlace_update(GameObject* spellPlace);
-void VFP_SpellPlace_init(GameObject* spellPlace, s8* def);
-void VFP_SpellPlace_release(void);
-void VFP_SpellPlace_initialise(void);
+typedef enum VfpSpellPlaceUiEvent {
+    VFP_SPELL_PLACE_EVENT_SEQUENCE_A = 0x123,
+    VFP_SPELL_PLACE_EVENT_SEQUENCE_B = 0x83B,
+} VfpSpellPlaceUiEvent;
 
-int VFP_SpellPlace_getExtraSize(void)
-{
-    return sizeof(LaserState);
+static int vfpSpellPlace_getExtraSize(void) {
+    return sizeof(SpellPlaceState);
 }
 
-int VFP_SpellPlace_getObjectTypeId(void)
-{
-    return 0x0;
+static int vfpSpellPlace_getObjectTypeId(void) {
+    return 0;
 }
 
-void VFP_SpellPlace_free(void)
-{
+static void vfpSpellPlace_free(void) {
 }
 
-void VFP_SpellPlace_render(void)
-{
+static void vfpSpellPlace_render(void) {
 }
 
-void VFP_SpellPlace_hitDetect(void)
-{
+static void vfpSpellPlace_hitDetect(void) {
 }
 
-void VFP_SpellPlace_update(GameObject* spellPlace)
-{
-    LaserState* state;
-    u8 mode;
+static void vfpSpellPlace_complete(GameObject* obj, SpellPlaceState* state) {
+    mainSetBits(state->completionGameBit, 1);
+    mainSetBits(state->activationGameBit, 0);
+    state->completionLatched = 1;
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+}
 
-    if (((LaserState*)spellPlace->extra)->completionLatched == 0 &&
-        mainGetBit((int)((LaserState*)spellPlace->extra)->activationGameBit) != 0)
-    {
-        spellPlace->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
+static void vfpSpellPlace_update(GameObject* obj) {
+    SpellPlaceState* state = obj->extra;
+
+    if (state->completionLatched == 0 && mainGetBit(state->activationGameBit) != 0) {
+        obj->anim.resetHitboxFlags &= (u8)~INTERACT_FLAG_DISABLED;
+    } else {
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
-    else
-    {
-        spellPlace->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+
+    objUpdateHitVolumeTransforms(obj);
+    if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) == 0) {
+        return;
     }
-    objUpdateHitVolumeTransforms(spellPlace);
-    if (spellPlace->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED)
-    {
-        mode = (*gMapEventInterface)->getMapAct((int)spellPlace->anim.mapEventSlot);
-        switch (mode)
-        {
-        case LASEROBJ_MODE_SEQUENCE_A:
-            state = spellPlace->extra;
-            if ((*gGameUIInterface)->isItemBeingUsed(LASEROBJ_MAIN_SEQUENCE_A_EVENT) != 0)
-            {
-                mainSetBits(state->completionGameBit, 1);
-                mainSetBits(state->activationGameBit, 0);
-                state->completionLatched = 1;
-                spellPlace->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-            }
-            break;
-        case LASEROBJ_MODE_SEQUENCE_B:
-            state = spellPlace->extra;
-            if ((*gGameUIInterface)->isItemBeingUsed(LASEROBJ_MAIN_SEQUENCE_B_EVENT) != 0)
-            {
-                mainSetBits(state->completionGameBit, 1);
-                mainSetBits(state->activationGameBit, 0);
-                state->completionLatched = 1;
-                spellPlace->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-            }
-            break;
+
+    switch ((SpellPlaceMode)(u8)(*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot)) {
+    case SPELL_PLACE_MODE_SEQUENCE_A:
+        if ((*gGameUIInterface)->isItemBeingUsed(VFP_SPELL_PLACE_EVENT_SEQUENCE_A) != 0) {
+            vfpSpellPlace_complete(obj, state);
         }
+        break;
+    case SPELL_PLACE_MODE_SEQUENCE_B:
+        if ((*gGameUIInterface)->isItemBeingUsed(VFP_SPELL_PLACE_EVENT_SEQUENCE_B) != 0) {
+            vfpSpellPlace_complete(obj, state);
+        }
+        break;
     }
 }
 
-void VFP_SpellPlace_init(GameObject* spellPlace, s8* def)
-{
-    LaserObjectMapData* mapData;
-    LaserState* state;
+static void vfpSpellPlace_init(GameObject* obj, const SpellPlacePlacement* placement) {
+    SpellPlaceState* state = obj->extra;
 
-    mapData = (LaserObjectMapData*)def;
-    state = spellPlace->extra;
-    state->completionGameBit = ObjAnim_ReadPlacementS16(&spellPlace->anim, &(mapData->completionGameBit));
-    state->activationGameBit = ObjAnim_ReadPlacementS16(&spellPlace->anim, &(mapData->activationGameBit));
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit);
+    state->activationGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->activationGameBit);
     state->completionLatched = 0;
-    spellPlace->anim.rotX = (s16)(mapData->yawByte << LASEROBJ_YAW_BYTE_SHIFT);
-    if (mainGetBit(state->completionGameBit) != 0)
-    {
+    obj->anim.rotX = (s16)placement->yawByte * 0x100;
+    if (mainGetBit(state->completionGameBit) != 0) {
         state->completionLatched = 1;
-        spellPlace->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
-    spellPlace->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN;
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN;
 }
 
-void VFP_SpellPlace_release(void)
-{
+static void vfpSpellPlace_release(void) {
 }
 
-void VFP_SpellPlace_initialise(void)
-{
+static void vfpSpellPlace_initialise(void) {
 }
 
-ObjectDescriptor gVFP_SpellPlaceObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_SpellPlace_initialise,
-    (ObjectDescriptorCallback)VFP_SpellPlace_release,
-    0,
-    (ObjectDescriptorCallback)VFP_SpellPlace_init,
-    (ObjectDescriptorCallback)VFP_SpellPlace_update,
-    (ObjectDescriptorCallback)VFP_SpellPlace_hitDetect,
-    (ObjectDescriptorCallback)VFP_SpellPlace_render,
-    (ObjectDescriptorCallback)VFP_SpellPlace_free,
-    (ObjectDescriptorCallback)VFP_SpellPlace_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_SpellPlace_getExtraSize,
+ObjectDescriptor gVfpSpellPlaceObjDescriptor = {
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)vfpSpellPlace_initialise,
+    .release = (ObjectDescriptorCallback)vfpSpellPlace_release,
+    .init = (ObjectDescriptorCallback)vfpSpellPlace_init,
+    .update = (ObjectDescriptorCallback)vfpSpellPlace_update,
+    .hitDetect = (ObjectDescriptorCallback)vfpSpellPlace_hitDetect,
+    .render = (ObjectDescriptorCallback)vfpSpellPlace_render,
+    .free = (ObjectDescriptorCallback)vfpSpellPlace_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)vfpSpellPlace_getObjectTypeId,
+    .getExtraSize = vfpSpellPlace_getExtraSize,
 };

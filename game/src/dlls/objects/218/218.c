@@ -29,61 +29,97 @@
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 
-f32 gPollenFragmentSpinRateX = 1024.0f;
-f32 gPollenFragmentSpinRateY = 512.0f;
-
-PollenFragmentConfig gPollenFragmentConfig0 = {
-    0x0000, 0x049F, 0x00B9, 0x04BA, 0x04BA, -1, 0.2f, 0x0000, 1, 1, 0, 0,
-};
-
-PollenFragmentConfig gPollenFragmentConfig1 = {
-    0x02FA, 0x02FB, 0x0496, 0x068F, 0x068F, 0x068F, 0.4f, 0x0026, 0, 1, 1, 1,
-};
-
-PollenFragmentConfig gPollenFragmentConfig2 = {
-    0x02FA, 0x02FB, 0x0496, 0x068F, 0x068F, 0x068F, 0.4f, 0x0026, 0, 0, 1, 0,
-};
-
-PollenFragmentConfig gPollenFragmentConfig3 = {
-    0x02FA, 0x02FB, 0x0496, 0x068F, 0x068F, -1, 0.2f, 0x0000, 0, 0, 1, 0,
-};
-
-PollenFragmentConfig gPollenFragmentConfig4 = {
-    0x02FA, 0x02FB, 0x0496, 0x068F, 0x068F, 0x068F, 0.4f, 0x0026, 0, 0, 1, 1,
-};
-
-PollenFragmentConfig* gPollenFragmentConfigs[] = {
-    &gPollenFragmentConfig0, &gPollenFragmentConfig1, &gPollenFragmentConfig2, &gPollenFragmentConfig3, &gPollenFragmentConfig4,
-};
-
-struct PollenFragmentPlacement
+typedef enum PollenFragmentConfigFlag
 {
-    ObjPlacement base;
-    u8 unk18;
-    s8 pollenType;
-    u8 unk1A[10];
+    POLLEN_FRAGMENT_CONFIG_NO_VERTICAL = 1 << 0,
+    POLLEN_FRAGMENT_CONFIG_TIMED = 1 << 1,
+    POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN = 1 << 2,
+    POLLEN_FRAGMENT_CONFIG_USE_PATH = 1 << 3,
+} PollenFragmentConfigFlag;
+
+typedef struct PollenFragmentConfig
+{
+    s16 spawnSfxId;
+    s16 loopSfxId;
+    s16 explodeSfxId;
+    s16 initFxId;
+    s16 burstFxId;
+    s16 auraFxId;
+    f32 steerSpeed;
+    s16 targetGroup;
+    u8 flags;
+} PollenFragmentConfig;
+
+static const PollenFragmentConfig sPollenFragmentConfigs[] = {
+    {
+        .spawnSfxId = 0x0000,
+        .loopSfxId = 0x049F,
+        .explodeSfxId = 0x00B9,
+        .initFxId = 0x04BA,
+        .burstFxId = 0x04BA,
+        .auraFxId = -1,
+        .steerSpeed = 0.2f,
+        .targetGroup = 0x0000,
+        .flags = POLLEN_FRAGMENT_CONFIG_NO_VERTICAL | POLLEN_FRAGMENT_CONFIG_TIMED,
+    },
+    {
+        .spawnSfxId = 0x02FA,
+        .loopSfxId = 0x02FB,
+        .explodeSfxId = 0x0496,
+        .initFxId = 0x068F,
+        .burstFxId = 0x068F,
+        .auraFxId = 0x068F,
+        .steerSpeed = 0.4f,
+        .targetGroup = 0x0026,
+        .flags = POLLEN_FRAGMENT_CONFIG_TIMED | POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN |
+                 POLLEN_FRAGMENT_CONFIG_USE_PATH,
+    },
+    {
+        .spawnSfxId = 0x02FA,
+        .loopSfxId = 0x02FB,
+        .explodeSfxId = 0x0496,
+        .initFxId = 0x068F,
+        .burstFxId = 0x068F,
+        .auraFxId = 0x068F,
+        .steerSpeed = 0.4f,
+        .targetGroup = 0x0026,
+        .flags = POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN,
+    },
+    {
+        .spawnSfxId = 0x02FA,
+        .loopSfxId = 0x02FB,
+        .explodeSfxId = 0x0496,
+        .initFxId = 0x068F,
+        .burstFxId = 0x068F,
+        .auraFxId = -1,
+        .steerSpeed = 0.2f,
+        .targetGroup = 0x0000,
+        .flags = POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN,
+    },
+    {
+        .spawnSfxId = 0x02FA,
+        .loopSfxId = 0x02FB,
+        .explodeSfxId = 0x0496,
+        .initFxId = 0x068F,
+        .burstFxId = 0x068F,
+        .auraFxId = 0x068F,
+        .steerSpeed = 0.4f,
+        .targetGroup = 0x0026,
+        .flags = POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN | POLLEN_FRAGMENT_CONFIG_USE_PATH,
+    },
 };
 
 typedef struct PollenFragmentExtra
 {
-    int ownerObj; /* 0x00: owner captured on first update */
-    f32 speed;    /* 0x04: steering speed factor */
-    f32 timer;    /* 0x08: lifetime/strength timer */
-    union {
-        struct {
-            f32 velX; /* 0x0C */
-            f32 velY; /* 0x10 */
-            f32 velZ; /* 0x14 */
-        };
-        Vec velocity;
-    };
-    ModelLightStruct* modelLight; /* 0x18 */
-    PollenFragmentConfig* def; /* 0x1C */
-    f32 deathTimer;         /* 0x20 */
-    f32 lifetimeTimer;      /* 0x24 */
+    GameObject* ownerObj;
+    f32 speed;
+    f32 timer;
+    Vec direction;
+    ModelLightStruct* modelLight;
+    const PollenFragmentConfig* config;
+    f32 deathTimer;
+    f32 lifetimeTimer;
 } PollenFragmentExtra;
-
-#define POLLENFRAGMENT_HIT_VOLUME_SLOT 0x16
 
 int pollenfragment_getExtraSize(void)
 {
@@ -103,7 +139,7 @@ void pollenfragment_free(GameObject* obj)
         ModelLightStruct_free(state->modelLight);
         state->modelLight = NULL;
     }
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void pollenfragment_render(GameObject* obj, int p2, int p3, int p4, int p5)
@@ -116,92 +152,86 @@ void pollenfragment_render(GameObject* obj, int p2, int p3, int p4, int p5)
 
 void pollenfragment_hitDetect(GameObject* obj)
 {
-    PollenFragmentExtra* extra;
+    PollenFragmentExtra* state = obj->extra;
+    ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     int hitType;
     GameObject* hitObject;
 
-    extra = obj->extra;
-    if (timerIsActive(&extra->deathTimer) == 0)
+    if (timerIsActive(&state->deathTimer) == 0)
     {
         hitType = ObjHits_GetPriorityHit(obj, &hitObject, 0, 0);
         if (hitType == 0xe || hitType == 0xf)
         {
-            if ((extra->def)->explodeSfxId != -1)
+            if (state->config->explodeSfxId != -1)
             {
-                spawnExplosion((GameObject*)obj, 30.0f, 0, 1, 0, 1, 0, 1, 0);
-                Sfx_PlayFromObjectLimited(
-                    obj, (u16)(extra->def)->explodeSfxId, 3);
+                spawnExplosion(obj, 30.0f, 0, 1, 0, 1, 0, 1, 0);
+                Sfx_PlayFromObjectLimited(obj, (u16)state->config->explodeSfxId, 3);
             }
             ObjHits_DisableObject(obj);
-            s16toFloat(&extra->deathTimer, 0x78);
+            s16toFloat(&state->deathTimer, 0x78);
         }
-        if (((ObjHitsPriorityState*)(obj)->anim.hitReactState)->contactFlags != 0)
+        if (hitState->contactFlags != 0)
         {
             ObjHits_DisableObject(obj);
-            extra->timer = 0.0f;
-            if ((extra->def)->explodeSfxId != -1)
+            state->timer = 0.0f;
+            if (state->config->explodeSfxId != -1)
             {
-                spawnExplosion((GameObject*)obj, 30.0f, 0, 1, 0, 1, 0, 1, 0);
-                Sfx_PlayFromObjectLimited(
-                    obj, (u16)(extra->def)->explodeSfxId, 3);
+                spawnExplosion(obj, 30.0f, 0, 1, 0, 1, 0, 1, 0);
+                Sfx_PlayFromObjectLimited(obj, (u16)state->config->explodeSfxId, 3);
             }
-            s16toFloat(&extra->deathTimer, 0x78);
+            s16toFloat(&state->deathTimer, 0x78);
         }
     }
 }
 
 void pollenfragment_update(GameObject* obj)
 {
-    PollenFragmentExtra* extra;
+    PollenFragmentExtra* state = obj->extra;
+    const PollenFragmentConfig* config = state->config;
+    ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     GameObject* nearObj;
-    PollenFragmentConfig* def;
     GameObject* hit;
-    int i;
     f32 horizDamping;
     f32 t;
     Vec dir;
     Vec sc;
     Vec pos;
 
-    extra = obj->extra;
     if (getCurSeqNo() != 0)
     {
         Obj_FreeObject(obj);
         return;
     }
-    if (timerIsActive(&extra->deathTimer) != 0)
+    if (timerIsActive(&state->deathTimer) != 0)
     {
-        if (timerCountDown(&extra->deathTimer) != 0)
+        if (timerCountDown(&state->deathTimer) != 0)
         {
             Obj_FreeObject(obj);
         }
         return;
     }
-    if (timerCountDown(&extra->lifetimeTimer) != 0)
+    if (timerCountDown(&state->lifetimeTimer) != 0)
     {
-        s16toFloat(&extra->deathTimer, 0x78);
+        s16toFloat(&state->deathTimer, 0x78);
     }
     if (obj->ownerObj != NULL)
     {
-        extra->ownerObj = (int)obj->ownerObj;
+        state->ownerObj = obj->ownerObj;
         obj->ownerObj = NULL;
     }
-    if ((extra->def)->timed)
+    if ((config->flags & POLLEN_FRAGMENT_CONFIG_TIMED) != 0)
     {
-        extra->timer -= timeDelta;
-        if (extra->timer <= 0.0f)
+        state->timer -= timeDelta;
+        if (state->timer <= 0.0f)
         {
             if (obj->anim.alpha == 0xff)
             {
-                i = 2;
-                do
+                for (int i = 0; i < 3; i++)
                 {
-                    (*gPartfxInterface)
-                        ->spawnObject((void*)obj, (int)(extra->def)->burstFxId, NULL, 1, -1,
-                                      NULL);
-                } while (i-- != 0);
+                    (*gPartfxInterface)->spawnObject(obj, (int)config->burstFxId, NULL, 1, -1, NULL);
+                }
             }
-            extra->timer = 0.0f;
+            state->timer = 0.0f;
             if (obj->anim.alpha >= framesThisStep << 3)
             {
                 obj->anim.alpha -= framesThisStep << 3;
@@ -214,16 +244,16 @@ void pollenfragment_update(GameObject* obj)
             }
         }
     }
-    if ((extra->def)->auraFxId != -1)
+    if (config->auraFxId != -1)
     {
         (*gPartfxInterface)
-            ->spawnObject((void*)obj, (int)(extra->def)->auraFxId, NULL, 1, -1, NULL);
+            ->spawnObject(obj, (int)config->auraFxId, NULL, 1, -1, NULL);
     }
-    nearObj = (GameObject*)((u8*)objGetNearestTypeTo((int)(extra->def)->targetGroup, obj, 0));
+    nearObj = objGetNearestTypeTo((int)config->targetGroup, obj, NULL);
     if (nearObj != NULL &&
-        (!(def = extra->def)->timed || extra->timer < 210.0f))
+        ((config->flags & POLLEN_FRAGMENT_CONFIG_TIMED) == 0 || state->timer < 210.0f))
     {
-        if (def->usePath)
+        if ((config->flags & POLLEN_FRAGMENT_CONFIG_USE_PATH) != 0)
         {
             ObjPath_GetPointWorldPosition(nearObj, 0, &pos.x, &pos.y, &pos.z, 0);
         }
@@ -239,38 +269,36 @@ void pollenfragment_update(GameObject* obj)
         PSVECSubtract(&pos, &obj->anim.worldPos, &dir);
         PSVECMag(&dir);
         PSVECNormalize(&dir, &dir);
-        PSVECSubtract(&dir, &extra->velocity, &sc);
-        extra->velX = dir.x;
-        extra->velY = dir.y;
-        extra->velZ = dir.z;
+        PSVECSubtract(&dir, &state->direction, &sc);
+        state->direction = dir;
         PSVECScale(&sc, &sc, 30.0f);
         PSVECAdd(&dir, &sc, &dir);
         obj->anim.velocityX =
             obj->anim.velocityX +
-            ((30.0f + extra->timer) * (dir.x * extra->speed)) /
+            ((30.0f + state->timer) * (dir.x * state->speed)) /
                 210.0f;
         obj->anim.velocityZ =
             obj->anim.velocityZ +
-            ((30.0f + extra->timer) * (dir.z * extra->speed)) /
+            ((30.0f + state->timer) * (dir.z * state->speed)) /
                 210.0f;
-        if (!(extra->def)->noVertical)
+        if ((config->flags & POLLEN_FRAGMENT_CONFIG_NO_VERTICAL) == 0)
         {
             obj->anim.velocityY =
-                obj->anim.velocityY + ((30.0f + extra->timer) *
-                                                      (2.0f * (dir.y * extra->speed))) /
+                obj->anim.velocityY + ((30.0f + state->timer) *
+                                                      (2.0f * (dir.y * state->speed))) /
                                                          210.0f;
         }
     }
     obj->anim.velocityX = obj->anim.velocityX * (horizDamping = 0.97f);
     obj->anim.velocityZ = obj->anim.velocityZ * horizDamping;
     obj->anim.velocityY *= 0.95f;
-    if ((extra->def)->noVertical)
+    if ((config->flags & POLLEN_FRAGMENT_CONFIG_NO_VERTICAL) != 0)
     {
         t = 0.04f * timeDelta;
         obj->anim.velocityY =
-            obj->anim.velocityY - (t * extra->timer) / 300.0f;
+            obj->anim.velocityY - (t * state->timer) / 300.0f;
     }
-    if ((extra->def)->smoothTurn)
+    if ((config->flags & POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN) != 0)
     {
         Obj_SmoothTurnAnglesTowardVelocity(obj, &obj->anim.velocity, 10, 0.0f,
                                            1.0f);
@@ -278,29 +306,28 @@ void pollenfragment_update(GameObject* obj)
     }
     else if (obj->anim.romDefNo == POLLEN_FRAGMENT_OBJECT_ID)
     {
-        t = 5.0f * gPollenFragmentSpinRateX;
+        t = 5.0f * 1024.0f;
         obj->anim.rotX = t * (f32)(u32)framesThisStep + (f32)(int)obj->anim.rotX;
         obj->anim.rotY =
-            gPollenFragmentSpinRateY * (f32)(u32)framesThisStep + (f32)(int)obj->anim.rotY;
+            512.0f * (f32)(u32)framesThisStep + (f32)(int)obj->anim.rotY;
     }
-    Sfx_KeepAliveLoopedObjectSound(obj, (u16)(extra->def)->loopSfxId);
+    Sfx_KeepAliveLoopedObjectSound(obj, (u16)config->loopSfxId);
     objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta,
             obj->anim.velocityZ * timeDelta);
-    ObjHits_SetHitVolumeSlot(&obj->anim, POLLENFRAGMENT_HIT_VOLUME_SLOT, 1, 0);
+    ObjHits_SetHitVolumeSlot(&obj->anim, 0x16, 1, 0);
     ObjHits_EnableObject(obj);
-    hit = (GameObject*)((ObjHitsPriorityState*)obj->anim.hitReactState)->lastHitObject;
+    hit = (GameObject*)hitState->lastHitObject;
     if (hit != NULL && hit->anim.romDefNo != obj->anim.romDefNo &&
-        hit != (void*)extra->ownerObj)
+        hit != state->ownerObj)
     {
-        extra->timer = 0.0f;
+        state->timer = 0.0f;
         ObjHits_DisableObject(obj);
-        if ((extra->def)->explodeSfxId != -1)
+        if (config->explodeSfxId != -1)
         {
             spawnExplosion(obj, 30.0f, 0, 1, 0, 1, 0, 1, 0);
-            Sfx_PlayFromObjectLimited(
-                obj, (u16)(extra->def)->explodeSfxId, 3);
+            Sfx_PlayFromObjectLimited(obj, (u16)config->explodeSfxId, 3);
         }
-        s16toFloat(&extra->deathTimer, 0x78);
+        s16toFloat(&state->deathTimer, 0x78);
     }
 }
 
@@ -308,7 +335,6 @@ void pollenfragment_init(GameObject* obj, PollenFragmentPlacement* setup)
 {
     s8 pollenType;
     u32 randomValue;
-    int spawnCount;
     PollenFragmentExtra* state;
 
     state = obj->extra;
@@ -324,24 +350,23 @@ void pollenfragment_init(GameObject* obj, PollenFragmentPlacement* setup)
     pollenType = setup->pollenType;
     pollenType = (pollenType < 0) ? 0 : ((pollenType > 5u) ? 5 : pollenType);
     setup->pollenType = pollenType;
-    state->def = gPollenFragmentConfigs[setup->pollenType];
-    if (state->def->spawnSfxId != 0)
+    state->config = &sPollenFragmentConfigs[setup->pollenType];
+    if (state->config->spawnSfxId != 0)
     {
-        Sfx_PlayFromObjectLimited(obj, (u16)state->def->spawnSfxId, 3);
+        Sfx_PlayFromObjectLimited(obj, (u16)state->config->spawnSfxId, 3);
     }
-    spawnCount = 4;
-    do
+    for (int i = 0; i < 5; i++)
     {
-        (*gPartfxInterface)->spawnObject((void*)obj, state->def->initFxId, NULL, 1, -1, NULL);
-    } while (spawnCount-- != 0);
-    if (!state->def->timed)
+        (*gPartfxInterface)->spawnObject(obj, state->config->initFxId, NULL, 1, -1, NULL);
+    }
+    if ((state->config->flags & POLLEN_FRAGMENT_CONFIG_TIMED) == 0)
     {
         state->timer = 60.0f;
     }
     ObjHits_SetTargetMask(obj, 4);
     state->modelLight = NULL;
-    state->speed = state->def->steerSpeed;
-    state->ownerObj = 0;
+    state->speed = state->config->steerSpeed;
+    state->ownerObj = NULL;
     s16toFloat(&state->lifetimeTimer, 0xe10);
     storeZeroToFloatParam(&state->deathTimer);
 }

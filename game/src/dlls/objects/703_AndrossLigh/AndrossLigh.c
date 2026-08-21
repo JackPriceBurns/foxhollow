@@ -1,18 +1,6 @@
-/*
- * AndrossLigh (DLL 703 / 0x2BF) - the lightning beam between Andross's hands in
- * the final boss fight. It locks onto a light-anchor object (0x47dd9),
- * mirroring that object's position each frame, and in its active state
- * (ANDROSSLIGH_ACTIVE) builds a screen-space lightning bolt that arcs
- * across the gap between the two hands. The bolt is rebuilt via
- * lightningCreate the first frame and aged each frame until its phase
- * counter reaches the end, then freed. State is driven externally through
- * androssligh_setState (called by androssbrain on defeat).
- *
- * This DLL has no initialise/release entry points (none exist in the retail
- * symbol table); it is a sub-object whose lifetime is driven externally.
- */
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
+#include "main/lightningeffect.h"
 #include "main/mm.h"
 #include "sys/objects.h"
 #include "main/newclouds.h"
@@ -26,49 +14,46 @@ enum
     ANDROSSLIGH_ANCHOR_OBJ_ID = 0x47dd9
 };
 
-f32 gAndrossLighRadiusX = 0.025f;
-f32 gAndrossLighRadiusY = 0.1f;
-f32 gAndrossLighLifetime = 10.0f;
-f32 gAndrossLighWidth = 100.0f;
-f32 gAndrossLighHalfLength = 300.0f;
-f32 gAndrossLighViewOffsetScale = 0.05f;
+typedef struct AndrossLighState {
+    GameObject* anchor;
+    LightningEffect* bolt;
+    f32 boltAge;
+    s8 mode;
+    u8 previousMode;
+} AndrossLighState;
 
-void androssligh_updateBeam(GameObject* obj, AndrossLighState* state)
+static void androssligh_applyViewOffset(Vec3f* endpoint)
 {
-    Vec start;
-    Vec end;
-    Vec offset;
+    Vec3f offset;
 
-    start.x = obj->anim.localPosX - gAndrossLighHalfLength;
+    offset.x = endpoint->x - playerMapOffsetX;
+    offset.y = endpoint->y;
+    offset.z = endpoint->x - playerMapOffsetZ;
+    PSMTXMultVec((MtxP)Camera_GetViewMatrix(), &offset, &offset);
+    offset.x = -offset.x;
+    offset.y = -offset.y;
+    offset.z = -offset.z;
+    PSVECScale(&offset, &offset, 0.05f);
+    PSMTXMultVec((MtxP)Camera_GetInverseViewRotationMatrix(), &offset, &offset);
+    PSVECAdd(endpoint, &offset, endpoint);
+}
+
+static void androssligh_updateBeam(GameObject* obj, AndrossLighState* state)
+{
+    Vec3f start;
+    Vec3f end;
+
+    start.x = obj->anim.localPosX - 300.0f;
     start.y = obj->anim.localPosY;
     start.z = obj->anim.localPosZ;
-    end.x = obj->anim.localPosX + gAndrossLighHalfLength;
+    end.x = obj->anim.localPosX + 300.0f;
     end.y = start.y;
     end.z = start.z;
-    offset.x = start.x - playerMapOffsetX;
-    offset.y = start.y;
-    offset.z = start.x - playerMapOffsetZ;
-    PSMTXMultVec((MtxP)Camera_GetViewMatrix(), &offset, &offset);
-    offset.x = -offset.x;
-    offset.y = -offset.y;
-    offset.z = -offset.z;
-    PSVECScale(&offset, &offset, gAndrossLighViewOffsetScale);
-    PSMTXMultVec((MtxP)Camera_GetInverseViewRotationMatrix(), &offset, &offset);
-    PSVECAdd(&start, &offset, &start);
-    offset.x = end.x - playerMapOffsetX;
-    offset.y = end.y;
-    offset.z = end.x - playerMapOffsetZ;
-    PSMTXMultVec((MtxP)Camera_GetViewMatrix(), &offset, &offset);
-    offset.x = -offset.x;
-    offset.y = -offset.y;
-    offset.z = -offset.z;
-    PSVECScale(&offset, &offset, gAndrossLighViewOffsetScale);
-    PSMTXMultVec((MtxP)Camera_GetInverseViewRotationMatrix(), &offset, &offset);
-    PSVECAdd(&end, &offset, &end);
+    androssligh_applyViewOffset(&start);
+    androssligh_applyViewOffset(&end);
     if (state->bolt == NULL)
     {
-        state->bolt = lightningCreate((const Vec3f*)&start, (const Vec3f*)&end, gAndrossLighRadiusX,
-                                      gAndrossLighRadiusY, gAndrossLighLifetime, gAndrossLighWidth, 0);
+        state->bolt = lightningCreate(&start, &end, 0.025f, 0.1f, 10, 100, 0);
         state->boltAge = 0.0f;
     }
     else
@@ -87,19 +72,19 @@ void androssligh_setState(GameObject* obj, AndrossLighMode newState, u8 force)
 {
     AndrossLighState* state;
 
-    if ((void*)obj == NULL)
+    if (obj == NULL)
     {
         return;
     }
     state = (obj)->extra;
-    if (state->state == ANDROSSLIGH_DONE)
+    if (state->mode == ANDROSSLIGH_DONE)
     {
         if (force == 0)
         {
             return;
         }
     }
-    state->state = newState;
+    state->mode = newState;
 }
 
 int androssligh_getExtraSize(void)
@@ -118,7 +103,7 @@ void androssligh_free(void)
 
 void androssligh_render(GameObject* obj)
 {
-    void* bolt = ((AndrossLighState*)obj->extra)->bolt;
+    LightningEffect* bolt = ((AndrossLighState*)obj->extra)->bolt;
 
     if (bolt != NULL)
     {
@@ -132,7 +117,7 @@ void androssligh_hitDetect(void)
 
 void androssligh_update(GameObject* obj)
 {
-    AndrossLighState* state = (obj)->extra;
+    AndrossLighState* state = obj->extra;
 
     if (state->anchor == NULL)
     {
@@ -140,12 +125,10 @@ void androssligh_update(GameObject* obj)
     }
     if (state->anchor != NULL)
     {
-        (obj)->anim.localPosX = state->anchor->anim.localPosX;
-        (obj)->anim.localPosY = state->anchor->anim.localPosY;
-        (obj)->anim.localPosZ = state->anchor->anim.localPosZ;
+        obj->anim.localPos = state->anchor->anim.localPos;
     }
-    state->prevState = state->state;
-    switch (state->state)
+    state->previousMode = state->mode;
+    switch (state->mode)
     {
     case ANDROSSLIGH_IDLE:
         break;

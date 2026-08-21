@@ -37,7 +37,6 @@
 #include "dlls/objects/488_SB_Galleon.h"
 #include "dlls/objects/common/vehicle.h"
 #include "main/dll/dll_000D_playershadow.h"
-#include "main/dll/dll_01B5_lightfoot.h"
 #include "main/dll/dll_00E2_staff_api.h"
 #include "main/dll/viewfinder.h"
 #include "main/sky_api.h"
@@ -10603,7 +10602,6 @@ void playerRestoreAfterSequence(GameObject* obj, int p2, ObjSeqState* seq) {
 }
 
 void playerCastIceSpell(GameObject* unused) {
-    ObjPlacement* setup;
     s8 i;
 
     if (!Obj_IsLoadingLocked()) {
@@ -10611,14 +10609,16 @@ void playerCastIceSpell(GameObject* unused) {
     }
     for (i = 0; i < 7; i++) {
         if (gPlayerSpawnedObjects[i] == NULL) {
-            setup = Obj_AllocObjectSetup(0x24, 0x4ec);
-            ObjPath_GetPointWorldPosition(gPlayerPathObject, 0, &setup->posX, &setup->posY, &setup->posZ, 0);
-            setup->color[0] = 2;
-            setup->color[1] = 1;
-            setup->color[2] = 0xff;
-            setup->color[3] = 0xff;
-            ((IceblastPlacement*)setup)->initialLaunchTimer = (s16)(i * 3);
-            ((IceblastPlacement*)setup)->unk1C = 0;
+            IceblastPlacement* setup = Obj_AllocObjectSetup(sizeof(*setup), ICEBLAST_OBJECT_ID);
+
+            ObjPath_GetPointWorldPosition(gPlayerPathObject, 0, &setup->base.posX, &setup->base.posY,
+                                          &setup->base.posZ, 0);
+            setup->base.color[0] = 2;
+            setup->base.color[1] = 1;
+            setup->base.color[2] = 0xff;
+            setup->base.color[3] = 0xff;
+            setup->initialLaunchTimer = (s16)(i * 3);
+            setup->unknown1C = 0;
             gPlayerSpawnedObjects[i] = objSetupObject(setup, 5, -1, -1, NULL);
         }
     }

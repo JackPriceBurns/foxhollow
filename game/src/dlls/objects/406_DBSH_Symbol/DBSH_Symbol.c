@@ -6,8 +6,8 @@
  */
 #include "dlls/objects/406_DBSH_Symbol.h"
 
-#include "dlls/objects/405_DBSH_Shrine.h"
 #include "dolphin/pad.h"
+#include "game/objects/object.h"
 #include "main/audio/sfx_keep_alive_api.h"
 #include "main/audio/sfx_object_volume_api.h"
 #include "main/audio/sfx_play_api.h"
@@ -15,6 +15,7 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/game_timer_control_api.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/object_render.h"
 #include "main/obj_list.h"
@@ -23,30 +24,19 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
-#define DBSH_SYMBOL_PARTNER_SEQUENCE_ID 0x20F
-#define DBSH_SYMBOL_SPIN_COMPLETE       0x7EF4
-
-#define DBSH_SYMBOL_TIMER_ID       0x1D
-#define DBSH_SYMBOL_TIMER_DURATION 0x3C
-#define DBSH_SYMBOL_YIELD_REASON   0xBD
-
-#define DBSH_SYMBOL_INPUT_PORT 0
-
-#define DBSH_SYMBOL_SPIN_IMPULSE         14.8f
-#define DBSH_SYMBOL_MAX_FORWARD_SPEED    80.0f
-#define DBSH_SYMBOL_MAX_REVERSE_SPEED    -300.0f
-#define DBSH_SYMBOL_FORWARD_DECELERATION 1.6f
-#define DBSH_SYMBOL_REVERSE_DECELERATION 10.1f
-#define DBSH_SYMBOL_ANIMATION_STEP_SCALE 7500.0f
-#define DBSH_SYMBOL_VOLUME_SPEED_SCALE   4.0f
-#define DBSH_SYMBOL_MAX_SFX_VOLUME       100
-#define DBSH_SYMBOL_INITIAL_Y_OFFSET     50.0f
-#define DBSH_SYMBOL_SFX_TIMER_SHORT_MIN  0x28
-#define DBSH_SYMBOL_SFX_TIMER_SHORT_MAX  0x64
-#define DBSH_SYMBOL_SFX_TIMER_LONG_MIN   0x78
-#define DBSH_SYMBOL_SFX_TIMER_LONG_MAX   0xF0
-#define DBSH_SYMBOL_SFX_VOLUME_SCALE     127.0f
-#define DBSH_SYMBOL_SFX_CHANNEL          0x7F
+typedef struct DBSHSymbolState {
+    GameObject* partnerSymbol;
+    f32 spinSpeed;
+    f32 objectSfxTimer;
+    f32 playerSfxTimer;
+    s32 spinProgress;
+    s32 previousSpinProgress;
+    s32 sequenceHandle;
+    u8 unk20[2];
+    s16 phase;
+    u8 flags;
+    u8 unk25[3];
+} DBSHSymbolState;
 
 typedef enum DBSHSymbolPhase {
     DBSH_SYMBOL_PHASE_HIDE = 0,
@@ -55,13 +45,26 @@ typedef enum DBSHSymbolPhase {
     DBSH_SYMBOL_PHASE_RESOLVE = 3,
 } DBSHSymbolPhase;
 
-enum {
+typedef enum DBSHSymbolFlags {
+    DBSH_SYMBOL_SPIN_COMPLETED = 1 << 0,
+    DBSH_SYMBOL_SEQUENCE_INACTIVE = 1 << 1,
+} DBSHSymbolFlags;
+
+typedef enum DBSHSymbolAnimEvent {
     DBSH_SYMBOL_ANIM_EVENT_START = 1,
-};
+} DBSHSymbolAnimEvent;
 
-u8 gDBSHSymbolScuffSfxEnabled = 1;
+STATIC_ASSERT(sizeof(DBSHSymbolState) == 0x28);
+STATIC_ASSERT(offsetof(DBSHSymbolState, partnerSymbol) == 0x00);
+STATIC_ASSERT(offsetof(DBSHSymbolState, spinSpeed) == 0x08);
+STATIC_ASSERT(offsetof(DBSHSymbolState, spinProgress) == 0x14);
+STATIC_ASSERT(offsetof(DBSHSymbolState, sequenceHandle) == 0x1C);
+STATIC_ASSERT(offsetof(DBSHSymbolState, phase) == 0x22);
+STATIC_ASSERT(offsetof(DBSHSymbolState, flags) == 0x24);
 
-int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+static u8 gDBSHSymbolScuffSfxEnabled = 1;
+
+static int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     int volume;
     GameObject** objectList;
     int objectIndex;
@@ -74,25 +77,25 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
     (void)unused;
     state = obj->extra;
     player = Obj_GetPlayerObject();
-    Sfx_SetObjectSfxVolume(obj, SFXTRIG_blockscrape_lp, 10, DBSH_SYMBOL_SFX_VOLUME_SCALE);
+    Sfx_SetObjectSfxVolume(obj, SFXTRIG_blockscrape_lp, 10, 127.0f);
     Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_blockscrape_lp);
     animUpdate->movementState = 0;
     for (i = 0; i < animUpdate->eventCount; i++) {
         if (animUpdate->eventIds[i] == DBSH_SYMBOL_ANIM_EVENT_START) {
-            gameTimerInit(DBSH_SYMBOL_TIMER_ID, DBSH_SYMBOL_TIMER_DURATION);
+            gameTimerInit(0x1D, 0x3C);
             timerSetToCountUp();
-            state->flags.sequenceInactive = 0;
+            state->flags &= ~DBSH_SYMBOL_SEQUENCE_INACTIVE;
             obj->anim.modelState->flags |= OBJ_MODEL_STATE_SHADOW_VISIBLE;
         }
     }
-    if (state->flags.sequenceInactive != 0) {
+    if ((state->flags & DBSH_SYMBOL_SEQUENCE_INACTIVE) != 0) {
         return 0;
     }
     if (state->partnerSymbol == NULL) {
         objectList = ObjList_GetObjects(&objectIndex, &objectCount);
         while (objectIndex < objectCount) {
-            state->partnerSymbol = (void*)objectList[objectIndex];
-            if (state->partnerSymbol->anim.romDefNo == DBSH_SYMBOL_PARTNER_SEQUENCE_ID) {
+            state->partnerSymbol = objectList[objectIndex];
+            if (state->partnerSymbol->anim.romDefNo == 0x20F) {
                 break;
             }
             objectIndex++;
@@ -104,26 +107,25 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
     for (i = 0; i < framesThisStep; i++) {
         if (isGameTimerDisabled() != 0) {
             Sfx_PlayFromObject(obj, SFXTRIG_wp_iceywindlp16);
-            state->flags.spinCompleted = 0;
-            state->flags.sequenceInactive = 1;
-            (*gObjectTriggerInterface)->yield(animUpdate, DBSH_SYMBOL_YIELD_REASON);
+            state->flags &= ~DBSH_SYMBOL_SPIN_COMPLETED;
+            state->flags |= DBSH_SYMBOL_SEQUENCE_INACTIVE;
+            (*gObjectTriggerInterface)->yield(animUpdate, 0xBD);
         }
-        buttons = getButtonsJustPressedIfNotBusy(DBSH_SYMBOL_INPUT_PORT);
+        buttons = getButtonsJustPressedIfNotBusy(0);
         if ((buttons & PAD_BUTTON_A) != 0) {
-            state->spinSpeed += DBSH_SYMBOL_SPIN_IMPULSE;
+            state->spinSpeed += 14.8f;
         }
-        if (state->spinSpeed > DBSH_SYMBOL_MAX_FORWARD_SPEED) {
-            state->spinSpeed = DBSH_SYMBOL_MAX_FORWARD_SPEED;
+        if (state->spinSpeed > 80.0f) {
+            state->spinSpeed = 80.0f;
         }
         state->spinProgress = (int)((f32)state->spinProgress + state->spinSpeed);
-        if (state->spinProgress >= DBSH_SYMBOL_SPIN_COMPLETE) {
+        if (state->spinProgress >= 0x7EF4) {
             gameTimerStop();
             Sfx_PlayFromObject(obj, SFXTRIG_wp_iceywindlp16);
             ObjAnim_SetCurrentMove(player, 0, 0.0f, 0);
-            state->flags.spinCompleted = 1;
-            state->flags.sequenceInactive = 1;
-            state->spinProgress = DBSH_SYMBOL_SPIN_COMPLETE;
-            (*gObjectTriggerInterface)->yield(animUpdate, DBSH_SYMBOL_YIELD_REASON);
+            state->flags |= DBSH_SYMBOL_SPIN_COMPLETED | DBSH_SYMBOL_SEQUENCE_INACTIVE;
+            state->spinProgress = 0x7EF4;
+            (*gObjectTriggerInterface)->yield(animUpdate, 0xBD);
             return 0;
         }
         (*gObjectTriggerInterface)->setXrot(state->sequenceHandle, state->spinProgress);
@@ -133,17 +135,16 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
                 state->spinSpeed = 0.0f;
             }
             state->previousSpinProgress = state->spinProgress;
-            if (state->spinSpeed > DBSH_SYMBOL_MAX_REVERSE_SPEED) {
-                state->spinSpeed = state->spinSpeed - DBSH_SYMBOL_REVERSE_DECELERATION;
+            if (state->spinSpeed > -300.0f) {
+                state->spinSpeed -= 10.1f;
             }
             return 0;
         }
-        if (state->spinSpeed > -DBSH_SYMBOL_MAX_FORWARD_SPEED) {
-            state->spinSpeed = state->spinSpeed - DBSH_SYMBOL_FORWARD_DECELERATION;
+        if (state->spinSpeed > -80.0f) {
+            state->spinSpeed -= 1.6f;
         }
         if (ObjAnim_AdvanceCurrentMove(
-                player, ((f32)state->spinProgress - state->previousSpinProgress) / DBSH_SYMBOL_ANIMATION_STEP_SCALE,
-                timeDelta, NULL) != 0) {
+                player, ((f32)state->spinProgress - state->previousSpinProgress) / 7500.0f, timeDelta, NULL) != 0) {
             if (player->anim.currentMoveProgress < 0.0f) {
                 player->anim.currentMoveProgress =
                     1.0f + player->anim.currentMoveProgress;
@@ -151,8 +152,7 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
         }
         if (state->partnerSymbol != NULL) {
             if (ObjAnim_AdvanceCurrentMove(state->partnerSymbol,
-                                           -((f32)state->spinProgress - state->previousSpinProgress) /
-                                               DBSH_SYMBOL_ANIMATION_STEP_SCALE,
+                                           -((f32)state->spinProgress - state->previousSpinProgress) / 7500.0f,
                                            timeDelta, NULL) != 0) {
                 f32 partnerProgress = state->partnerSymbol->anim.currentMoveProgress;
                 if (partnerProgress < 0.0f) {
@@ -162,68 +162,66 @@ int dbshSymbol_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animU
         }
         state->previousSpinProgress = state->spinProgress;
     }
-    state->playerSfxTimer = state->playerSfxTimer - timeDelta;
+    state->playerSfxTimer -= timeDelta;
     if (state->playerSfxTimer < 0.0f) {
         if (state->spinSpeed < 0.0f) {
             state->playerSfxTimer =
-                (f32)randomGetRange(DBSH_SYMBOL_SFX_TIMER_SHORT_MIN, DBSH_SYMBOL_SFX_TIMER_SHORT_MAX);
+                (f32)randomGetRange(0x28, 0x64);
         } else {
             state->playerSfxTimer =
-                (f32)randomGetRange(DBSH_SYMBOL_SFX_TIMER_LONG_MIN, DBSH_SYMBOL_SFX_TIMER_LONG_MAX);
+                (f32)randomGetRange(0x78, 0xF0);
         }
         Sfx_PlayFromObject(player, SFXTRIG_literun116_var);
     }
-    state->objectSfxTimer = state->objectSfxTimer - timeDelta;
+    state->objectSfxTimer -= timeDelta;
     if (state->objectSfxTimer < 0.0f) {
         if (state->spinSpeed > 0.0f) {
             state->objectSfxTimer =
-                (f32)randomGetRange(DBSH_SYMBOL_SFX_TIMER_SHORT_MIN, DBSH_SYMBOL_SFX_TIMER_SHORT_MAX);
+                (f32)randomGetRange(0x28, 0x64);
         } else {
             state->objectSfxTimer =
-                (f32)randomGetRange(DBSH_SYMBOL_SFX_TIMER_LONG_MIN, DBSH_SYMBOL_SFX_TIMER_LONG_MAX);
+                (f32)randomGetRange(0x78, 0xF0);
         }
         Sfx_PlayFromObject(obj, SFXTRIG_spotfox03);
     }
     {
-        f32 absoluteSpeed = (DBSH_SYMBOL_VOLUME_SPEED_SCALE * state->spinSpeed >= 0.0f)
-                                ? DBSH_SYMBOL_VOLUME_SPEED_SCALE * state->spinSpeed
-                                : -(DBSH_SYMBOL_VOLUME_SPEED_SCALE * state->spinSpeed);
+        f32 absoluteSpeed =
+            (4.0f * state->spinSpeed >= 0.0f) ? 4.0f * state->spinSpeed : -(4.0f * state->spinSpeed);
 
         volume = (int)absoluteSpeed;
-        if (volume > DBSH_SYMBOL_MAX_SFX_VOLUME) {
-            volume = DBSH_SYMBOL_MAX_SFX_VOLUME;
+        if (volume > 100) {
+            volume = 100;
         }
-        Sfx_SetObjectSfxVolume(obj, SFXTRIG_blockscrape_lp, volume, DBSH_SYMBOL_SFX_VOLUME_SCALE);
+        Sfx_SetObjectSfxVolume(obj, SFXTRIG_blockscrape_lp, volume, 127.0f);
     }
     return 0;
 }
 
-int dbshSymbol_getExtraSize(void) {
+static int dbshSymbol_getExtraSize(void) {
     return sizeof(DBSHSymbolState);
 }
 
-void dbshSymbol_free(void) {
+static void dbshSymbol_free(void) {
     gameTimerStop();
 }
 
-void dbshSymbol_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+static void dbshSymbol_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                              s8 visible) {
     (void)visible;
     objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
 }
 
-void dbshSymbol_update(GameObject* obj) {
-    s16 phase;
-    u32 symbolsRaised;
-    DBSHSymbolState* state;
+static void dbshSymbol_update(GameObject* obj) {
+    DBSHSymbolState* state = obj->extra;
+    u32 symbolsRaised = mainGetBit(GAMEBIT_DBSH_SymbolRiseComplete);
 
-    state = obj->extra;
-    symbolsRaised = mainGetBit(DBSH_GAMEBIT_SYMBOL_RISE_COMPLETE);
     if (symbolsRaised == 0) {
         state->phase = DBSH_SYMBOL_PHASE_HIDE;
         state->partnerSymbol = NULL;
-        mainSetBits(DBSH_GAMEBIT_SYMBOL_SPIN_FAILED, 0);
+        mainSetBits(GAMEBIT_DBSH_SymbolSpinFailed, 0);
     } else {
-        phase = state->phase;
+        s16 phase = state->phase;
+
         if (phase == DBSH_SYMBOL_PHASE_HIDE) {
             obj->anim.modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
             state->phase = DBSH_SYMBOL_PHASE_PLAY_SCUFF;
@@ -239,18 +237,18 @@ void dbshSymbol_update(GameObject* obj) {
             gDBSHSymbolScuffSfxEnabled = 1;
         } else if (phase == DBSH_SYMBOL_PHASE_RESOLVE) {
             obj->anim.modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
-            if (state->flags.spinCompleted != 0) {
-                mainSetBits(DBSH_GAMEBIT_SYMBOL_SPIN_SUCCEEDED, 1);
+            if ((state->flags & DBSH_SYMBOL_SPIN_COMPLETED) != 0) {
+                mainSetBits(GAMEBIT_DBSH_SymbolSpinSucceeded, 1);
             } else {
-                mainSetBits(DBSH_GAMEBIT_SYMBOL_SPIN_FAILED, 1);
+                mainSetBits(GAMEBIT_DBSH_SymbolSpinFailed, 1);
             }
-            Sfx_StopObjectChannel(obj, DBSH_SYMBOL_SFX_CHANNEL);
-            state->flags.sequenceInactive = 1;
+            Sfx_StopObjectChannel(obj, 0x7F);
+            state->flags |= DBSH_SYMBOL_SEQUENCE_INACTIVE;
         }
     }
 }
 
-void dbshSymbol_init(GameObject* obj) {
+static void dbshSymbol_init(GameObject* obj) {
     DBSHSymbolState* state = obj->extra;
 
     state->spinSpeed = 0.0f;
@@ -258,28 +256,20 @@ void dbshSymbol_init(GameObject* obj) {
     state->previousSpinProgress = 0;
     state->phase = DBSH_SYMBOL_PHASE_HIDE;
     state->partnerSymbol = NULL;
-    state->flags.spinCompleted = 0;
-    state->flags.sequenceInactive = 1;
+    state->flags &= ~DBSH_SYMBOL_SPIN_COMPLETED;
+    state->flags |= DBSH_SYMBOL_SEQUENCE_INACTIVE;
 
-    obj->anim.localPosY -= DBSH_SYMBOL_INITIAL_Y_OFFSET;
+    obj->anim.localPosY -= 50.0f;
     obj->animEventCallback = dbshSymbol_processAnimEvents;
 
     obj->anim.modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
 }
 
 ObjectDescriptor gDBSHSymbolObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dbshSymbol_init,
-    (ObjectDescriptorCallback)dbshSymbol_update,
-    0,
-    (ObjectDescriptorCallback)dbshSymbol_render,
-    (ObjectDescriptorCallback)dbshSymbol_free,
-    0,
-    dbshSymbol_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .init = (ObjectDescriptorCallback)dbshSymbol_init,
+    .update = (ObjectDescriptorCallback)dbshSymbol_update,
+    .render = (ObjectDescriptorCallback)dbshSymbol_render,
+    .free = (ObjectDescriptorCallback)dbshSymbol_free,
+    .getExtraSize = dbshSymbol_getExtraSize,
 };

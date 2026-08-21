@@ -69,6 +69,14 @@ enum CamcontrolActionEncoding {
     CAMCONTROL_QUEUE_SENTINEL = 0xFF
 };
 
+typedef struct CamcontrolQueuedActionParam {
+    u32 actionIndex;
+    u8 noBlendFlag;
+} CamcontrolQueuedActionParam;
+
+STATIC_ASSERT(sizeof(CamcontrolQueuedActionParam) == 0x08);
+STATIC_ASSERT(offsetof(CamcontrolQueuedActionParam, noBlendFlag) == 0x04);
+
 extern CamcontrolResourceDescriptor gCamcontrolResourceDescriptor;
 
 int Camera_getTargetKind(void);

@@ -3,7 +3,7 @@
  * object is no longer supported.
  */
 #include "dolphin/os.h"
-#include "main/dll/CF/laser.h"
+#include "dlls/object_descriptor.h"
 
 int laser_getExtraSize(void) {
     return 0;

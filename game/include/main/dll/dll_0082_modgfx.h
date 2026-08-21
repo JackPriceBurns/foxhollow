@@ -6,6 +6,10 @@
 #include "main/dll/partfx_interface.h"
 #include "main/resource.h"
 
+typedef enum Dll82ResourceId {
+    DLL_82_RESOURCE_ID = 0x82,
+} Dll82ResourceId;
+
 typedef void (*Dll82SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags,
                              int modelId, void* extraArg);
 

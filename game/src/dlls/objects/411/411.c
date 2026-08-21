@@ -199,16 +199,16 @@ void dll411_update(GameObject* obj) {
     int value;
     f32 positionDelta;
     f32 distance;
-    int messageFlags;
-    int messageId;
-    int messageParam;
+    u32 messageId;
+    uintptr_t messageSender;
+    u32 messageParam;
 
     state = obj->extra;
     player = Obj_GetPlayerObject();
     distance = DLL19B_NEAREST_DISTANCE_INITIAL;
     messageState = obj->extra;
-    messageFlags = 0;
-    while (ObjMsg_Pop(obj, (u32*)&messageId, (u32*)&messageParam, (u32*)&messageFlags) != 0) {
+    messageParam = 0;
+    while (ObjMsg_Pop(obj, &messageId, &messageSender, &messageParam) != 0) {
         switch (messageId) {
         case DLL19B_MESSAGE_FADE:
             messageState->brightnessAVelocity = DLL19B_BRIGHTNESS_FADE_RATE;
@@ -313,7 +313,7 @@ void dll411_update(GameObject* obj) {
             state->countdown -= (s16)timeDelta;
             logPrintf(sDll411CountdownFormat, state->countdown);
             if (state->countdown <= 0) {
-                mainSetBits(0x1d4, 1);
+                mainSetBits(GAMEBIT_WM_KrazTest1ResetTorches, 1);
                 (*gObjectTriggerInterface)->runSequence(DLL19B_SEQUENCE_TIMEOUT, obj, -1);
                 state->timer = DLL19B_TIMEOUT_DELAY;
                 state->phase = DLL19B_PHASE_RESET;
@@ -327,7 +327,7 @@ void dll411_update(GameObject* obj) {
             }
             break;
         case DLL19B_PHASE_RESOLVE:
-            if (mainGetBit(0x1d1) != 0) {
+            if (mainGetBit(GAMEBIT_WM_KrazTest1Passed) != 0) {
                 state->brightnessB = 1;
                 gTitleMenuControlInterface->vtable->onSelectSave(3, 0x2c, 0x50, state->brightnessB & 0xff, 0);
                 state->brightnessBVelocity = DLL19B_BRIGHTNESS_RISE_RATE;
@@ -366,7 +366,7 @@ void dll411_update(GameObject* obj) {
             mainSetBits(0x1d8, 0);
             state->unlockCount = 0;
             state->countdown = DLL19B_COUNTDOWN_START;
-            mainSetBits(0x1d4, 0);
+            mainSetBits(GAMEBIT_WM_KrazTest1ResetTorches, 0);
             break;
         }
     }

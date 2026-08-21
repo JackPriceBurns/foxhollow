@@ -47,7 +47,7 @@ int DFP_Torch_getObjectTypeId(void)
 void DFP_Torch_free(GameObject* obj)
 {
     (*gModgfxInterface)->detachSource((void*)obj);
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void DFP_Torch_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
@@ -116,7 +116,7 @@ void DFP_Torch_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visibl
                 if (voxmaps_traceLine((VoxPos*)stk2.gridStart, (VoxPos*)stk2.gridEnd, (VoxPos*)stk2.out, NULL, 0) == 0)
                 {
                     state->visibleLatch = 0;
-                    (*gExpgfxInterface)->freeSource((u32)obj);
+                    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
                 }
             }
             if (state->flickerTimer > 0)
@@ -189,7 +189,7 @@ void DFP_Torch_update(GameObject* obj)
         {
             if (state->lit != 0)
             {
-                res = Resource_Acquire(0x69, 1);
+                res = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
                 prm.param1 = state->colorIdx * 2 + 0x19d;
                 prm.param2 = state->colorIdx * 2 + 0x19e;
                 (*res)->spawn(obj, 1, buf, 0x10004, -1, &prm);
@@ -221,7 +221,7 @@ void DFP_Torch_update(GameObject* obj)
             {
                 Sfx_StopObjectChannel(obj, 0x40);
                 (*gModgfxInterface)->detachSource((void*)obj);
-                (*gExpgfxInterface)->freeSource((u32)obj);
+                (*gExpgfxInterface)->freeSource((uintptr_t)obj);
                 if (state->gameBit != -1)
                 {
                     if (mainGetBit(state->gameBit) != 0)
@@ -272,7 +272,7 @@ void DFP_Torch_init(GameObject* obj, DfpTorchPlacement* def)
     {
     case DFPTORCH_MODE_ALWAYS_LIT:
         state->lit = 1;
-        res = Resource_Acquire(0x69, 1);
+        res = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
         if (ObjAnim_ReadPlacementS16(&obj->anim, &(place->colorIdx)) == 0)
         {
             (*res)->spawn(obj, 0, &spawnArg, 0x10004, -1, NULL);

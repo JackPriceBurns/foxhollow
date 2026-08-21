@@ -21,16 +21,6 @@ extern GameObject* gPlayerSpawnedObjects[];
 extern StaffCollisionInterface** gPlayerResource;
 extern int gPlayerPendingHealth;
 extern GameObject* gPlayerStaffObject;
-typedef struct PlayerLightfootMoveSpeeds
-{
-    f32 speeds[7];
-    u16 challengeGameBits[8];
-    f32 challengeMeterScales[8];
-} PlayerLightfootMoveSpeeds;
-STATIC_ASSERT(sizeof(PlayerLightfootMoveSpeeds) == 0x4C);
-
-extern s16 gPlayerMoveTableC[];
-extern PlayerLightfootMoveSpeeds gPlayerMoveSpeedTable;
 extern s16 gPlayerCurrentMoveId;
 extern s16 gPlayerPrevMoveId;
 extern u16 gPlayerHeldButtonMask;

@@ -1,149 +1,139 @@
-/* CRFuelTank (DLL 607): CloudRunner fuel-tank object callbacks. */
-
-#include "main/audio/sfx_trigger_ids.h"
 #include "main/crfueltank.h"
-#include "main/gamebits.h"
+
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/gamebits.h"
 #include "main/maketex_timer_api.h"
 #include "main/objhits.h"
 #include "sys/objects.h"
 
-#define CRFUELTANK_HIT_VOLUME_SLOT 0x1d
+typedef enum CrFuelTankObjectId {
+    CR_FUEL_TANK_TRIGGER_OBJECT_ID = 0x38C,
+} CrFuelTankObjectId;
 
-/* only the CloudRunner snowbike detonates a fuel tank; retail OBJECTS.bin name
-   "CRSnowBike" (DLL 0x255) */
-#define CRFUELTANK_TRIGGER_OBJ 0x38c
+typedef enum CrFuelTankHitVolume {
+    CR_FUEL_TANK_HIT_VOLUME_SLOT = 0x1D,
+} CrFuelTankHitVolume;
 
-static inline int crfueltank_animFrame(GameObject* obj, CrFuelTankDef* def)
-{
-    return ObjAnim_ReadPlacementS16(&obj->anim, &def->idleFrameCount) / 10;
+typedef enum CrFuelTankTiming {
+    CR_FUEL_TANK_RESPAWN_DURATION = 0x708,
+} CrFuelTankTiming;
+
+typedef struct CrFuelTankPlacement {
+    ObjPlacement base;
+    u8 pad18[2];
+    s16 idleFrameCount;
+    u8 pad1C[2];
+    s16 destructionGameBit;
+} CrFuelTankPlacement;
+
+typedef struct CrFuelTankState {
+    u8 pad00[0x0C];
+    f32 respawnTimer;
+} CrFuelTankState;
+
+STATIC_ASSERT(sizeof(CrFuelTankPlacement) == 0x20);
+STATIC_ASSERT(offsetof(CrFuelTankPlacement, idleFrameCount) == 0x1A);
+STATIC_ASSERT(offsetof(CrFuelTankPlacement, destructionGameBit) == 0x1E);
+
+STATIC_ASSERT(sizeof(CrFuelTankState) == 0x10);
+STATIC_ASSERT(offsetof(CrFuelTankState, respawnTimer) == 0x0C);
+
+static int crFuelTank_hitVolumeMode(GameObject* obj, const CrFuelTankPlacement* placement) {
+    return ObjAnim_ReadPlacementS16(&obj->anim, &placement->idleFrameCount) / 10;
 }
 
-int crfueltank_getExtraSize(void)
-{
+static int crFuelTank_getExtraSize(void) {
     return sizeof(CrFuelTankState);
 }
 
-int crfueltank_getObjectTypeId(void)
-{
+static int crFuelTank_getObjectTypeId(void) {
     return 0;
 }
 
-void crfueltank_free(void)
-{
-    return;
+static void crFuelTank_free(void) {
 }
 
-void crfueltank_render(void)
-{
-    return;
+static void crFuelTank_render(void) {
 }
 
-void crfueltank_hitDetect(GameObject* obj)
-{
-    CrFuelTankDef* def;
-    ObjHitsPriorityState* hitState;
-    GameObject* hitObj;
-    s16 hitEvent;
+static void crFuelTank_hitDetect(GameObject* obj) {
+    const CrFuelTankPlacement* placement = (const CrFuelTankPlacement*)obj->anim.placementData;
+    ObjHitsPriorityState* hitState = ObjAnim_GetPriorityHitState(&obj->anim);
+    s16 destructionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->destructionGameBit);
 
-    hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
-    def = (CrFuelTankDef*)obj->anim.placementData;
-    hitEvent = ObjAnim_ReadPlacementS16(&obj->anim, &def->hitEvent);
-    if ((hitState != NULL) && (hitState->lastHitObject != 0))
-    {
-        hitObj = (GameObject*)hitState->lastHitObject;
-        if (hitObj->anim.romDefNo == CRFUELTANK_TRIGGER_OBJ)
-        {
-            ObjHits_DisableObject(obj);
-            Sfx_PlayFromObject(Obj_GetPlayerObject(), SFXTRIG_ar_barrel16);
-            obj->anim.alpha = 0xfa;
-            obj->userData2 = 1;
-            if (hitEvent != -1)
-            {
-                mainSetBits(hitEvent, 1);
-            }
-            obj->anim.velocityX = hitObj->anim.velocityX;
-            obj->anim.velocityY = 0.07f + hitObj->anim.velocityY;
-            obj->anim.velocityZ = hitObj->anim.velocityZ;
-        }
+    if (hitState == NULL || hitState->lastHitObject == 0) {
+        return;
     }
-    return;
+
+    GameObject* hitObj = (GameObject*)hitState->lastHitObject;
+    if (hitObj->anim.romDefNo != CR_FUEL_TANK_TRIGGER_OBJECT_ID) {
+        return;
+    }
+
+    ObjHits_DisableObject(obj);
+    Sfx_PlayFromObject(Obj_GetPlayerObject(), SFXTRIG_ar_barrel16);
+    obj->anim.alpha = 0xFA;
+    obj->userData2 = 1;
+    if (destructionGameBit != -1) {
+        mainSetBits(destructionGameBit, 1);
+    }
+    obj->anim.velocity = hitObj->anim.velocity;
+    obj->anim.velocity.y += 0.07f;
 }
 
-void crfueltank_update(GameObject* obj)
-{
-    CrFuelTankDef* def;
-    CrFuelTankState* state;
+static void crFuelTank_update(GameObject* obj) {
+    const CrFuelTankPlacement* placement = (const CrFuelTankPlacement*)obj->anim.placementData;
+    CrFuelTankState* state = obj->extra;
 
-    def = (CrFuelTankDef*)obj->anim.placementData;
-    state = obj->extra;
-    if (timerIsActive(&state->timer) != 0)
-    {
-        if (timerCountDown(&state->timer) != 0)
-        {
+    if (timerIsActive(&state->respawnTimer) != 0) {
+        if (timerCountDown(&state->respawnTimer) != 0) {
             ObjHits_EnableObject(obj);
-            obj->anim.flags = (s16)(obj->anim.flags & ~OBJANIM_FLAG_HIDDEN);
-            obj->anim.alpha = 0xff;
+            obj->anim.flags &= (s16)~OBJANIM_FLAG_HIDDEN;
+            obj->anim.alpha = 0xFF;
         }
+    } else if (obj->anim.alpha < 0xFF) {
+        obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
+        s16toFloat(&state->respawnTimer, CR_FUEL_TANK_RESPAWN_DURATION);
+    } else {
+        ObjHits_SetHitVolumeSlot(&obj->anim, CR_FUEL_TANK_HIT_VOLUME_SLOT,
+                                 crFuelTank_hitVolumeMode(obj, placement), 0);
     }
-    else
-    {
-        if (obj->anim.alpha < 0xff)
-        {
-            obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
-            s16toFloat(&state->timer, 0x708);
-        }
-        else
-        {
-            ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(obj, def), 0);
-        }
-    }
-    return;
 }
 
-void crfueltank_init(GameObject* obj, CrFuelTankDef* def)
-{
-    CrFuelTankState* state;
-    s16 hitEvent;
+static void crFuelTank_init(GameObject* obj, const CrFuelTankPlacement* placement) {
+    CrFuelTankState* state = obj->extra;
+    s16 destructionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->destructionGameBit);
 
-    state = obj->extra;
-    hitEvent = ObjAnim_ReadPlacementS16(&obj->anim, &def->hitEvent);
     ObjHits_EnableObject(obj);
-    ObjHits_SetHitVolumeSlot(&obj->anim, CRFUELTANK_HIT_VOLUME_SLOT, crfueltank_animFrame(obj, def), 0);
-    storeZeroToFloatParam(&state->timer);
-    if ((hitEvent != -1) && (mainGetBit(hitEvent) != 0))
-    {
-        s16toFloat(&state->timer, 0x708);
+    ObjHits_SetHitVolumeSlot(&obj->anim, CR_FUEL_TANK_HIT_VOLUME_SLOT,
+                             crFuelTank_hitVolumeMode(obj, placement), 0);
+    storeZeroToFloatParam(&state->respawnTimer);
+    if (destructionGameBit != -1 && mainGetBit(destructionGameBit) != 0) {
+        s16toFloat(&state->respawnTimer, CR_FUEL_TANK_RESPAWN_DURATION);
         ObjHits_DisableObject(obj);
-        obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
+        obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         obj->anim.alpha = 0;
     }
-    return;
 }
 
-void crfueltank_release(void)
-{
-    return;
+static void crFuelTank_release(void) {
 }
 
-void crfueltank_initialise(void)
-{
-    return;
+static void crFuelTank_initialise(void) {
 }
 
 ObjectDescriptor gCrFuelTankObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)crfueltank_initialise,
-    (ObjectDescriptorCallback)crfueltank_release,
-    0,
-    (ObjectDescriptorCallback)crfueltank_init,
-    (ObjectDescriptorCallback)crfueltank_update,
-    (ObjectDescriptorCallback)crfueltank_hitDetect,
-    (ObjectDescriptorCallback)crfueltank_render,
-    (ObjectDescriptorCallback)crfueltank_free,
-    (ObjectDescriptorCallback)crfueltank_getObjectTypeId,
-    crfueltank_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)crFuelTank_initialise,
+    .release = (ObjectDescriptorCallback)crFuelTank_release,
+    .init = (ObjectDescriptorCallback)crFuelTank_init,
+    .update = (ObjectDescriptorCallback)crFuelTank_update,
+    .hitDetect = (ObjectDescriptorCallback)crFuelTank_hitDetect,
+    .render = (ObjectDescriptorCallback)crFuelTank_render,
+    .free = (ObjectDescriptorCallback)crFuelTank_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)crFuelTank_getObjectTypeId,
+    .getExtraSize = crFuelTank_getExtraSize,
 };

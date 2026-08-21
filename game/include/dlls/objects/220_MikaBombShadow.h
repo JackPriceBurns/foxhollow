@@ -3,6 +3,18 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
+#include "game/objects/object_setup.h"
+
+typedef enum MikaBombObjectId {
+    MIKA_BOMB_SHADOW_OBJECT_ID = 0xC,
+} MikaBombObjectId;
+
+typedef struct MikaBombShadowPlacement {
+    ObjPlacement base;
+    u8 unk18[8];
+} MikaBombShadowPlacement;
+
+STATIC_ASSERT(sizeof(MikaBombShadowPlacement) == 0x20);
 
 typedef struct MikaBombShadowState {
     f32 groundOffset; /* 0x00 */
@@ -22,11 +34,5 @@ void MikaBombShadow_release(void);
 void MikaBombShadow_initialise(void);
 
 extern ObjectDescriptor gMikaBombShadowObjDescriptor;
-extern const f32 gMikaBombRenderScale;
-extern const f32 gMikaBombFadeRate;
-extern const f32 gMikaBombZero;
-extern const f32 gMikaBombGravityAccel;
-extern const f32 gMikaBombMinFallVelocity;
-extern const f32 gMikaBombInitialVelocityY;
 
 #endif /* DLLS_OBJECTS_220_MIKABOMBSHADOW_H_ */

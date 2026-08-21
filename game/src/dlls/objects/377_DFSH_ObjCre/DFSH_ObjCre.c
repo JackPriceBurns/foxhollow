@@ -13,6 +13,7 @@
 #include "main/dll/baddie_placement.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
 #include "main/object_render.h"
 #include "main/resource.h"
@@ -20,11 +21,9 @@
 #include "sys/objects/lifecycle.h"
 
 #define DFSH_OBJ_CREATOR_SHARPCLAW_OBJECT_ID       0x11
-#define DFSH_OBJ_CREATOR_EFFECT_RESOURCE_ID        0x82
 #define DFSH_OBJ_CREATOR_DISABLE_GAME_BIT          0x589
 #define DFSH_OBJ_CREATOR_TRIGGER_GAME_BIT_BASE     0xF6
 #define DFSH_OBJ_CREATOR_DROPPED_ITEM_GAME_BIT     0xFC
-#define DFSH_OBJ_CREATOR_SHARPCLAW_GAME_BIT        0x1E7
 #define DFSH_OBJ_CREATOR_SHARPCLAW_DROPPED_ITEM_ID 0x49
 #define DFSH_OBJ_CREATOR_SHARPCLAW_INITIAL_WEAPON  3
 #define DFSH_OBJ_CREATOR_SHARPCLAW_FLAGS           2
@@ -69,7 +68,7 @@ void dfshObjCreator_update(GameObject* obj) {
 
     if (obj->userData2 == 0 &&
         mainGetBit(placement->triggerGameBitOffset + DFSH_OBJ_CREATOR_TRIGGER_GAME_BIT_BASE) != 0) {
-        effectResource = Resource_Acquire(DFSH_OBJ_CREATOR_EFFECT_RESOURCE_ID, 1);
+        effectResource = Resource_Acquire(DLL_82_RESOURCE_ID, 1);
         (*effectResource)->spawn(obj, 0, NULL, 1, -1, NULL);
         (*effectResource)->spawn(obj, 1, NULL, 1, -1, NULL);
         Sfx_PlayFromObject(obj, SFXTRIG_hitpos_6);
@@ -94,7 +93,7 @@ void dfshObjCreator_update(GameObject* obj) {
         sharpClawSetup->base.color[2] = placement->base.color[2];
         sharpClawSetup->base.color[3] = placement->base.color[3];
         sharpClawSetup->initialWeaponId = DFSH_OBJ_CREATOR_SHARPCLAW_INITIAL_WEAPON;
-        sharpClawSetup->gameBit = DFSH_OBJ_CREATOR_SHARPCLAW_GAME_BIT;
+        sharpClawSetup->gameBit = GAMEBIT_SHARPCLAW_STATE_01E7;
         sharpClawSetup->unk30 = -1;
         sharpClawSetup->gameBit2 = -1;
         sharpClawSetup->unk1C = -1;

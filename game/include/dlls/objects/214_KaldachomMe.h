@@ -5,14 +5,6 @@
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 
-typedef struct KaldachomMeState {
-    f32 progress;       /* 0x00 */
-    f32 step;           /* 0x04 */
-    f32 targetProgress; /* 0x08 */
-    u8 moveId;          /* 0x0C */
-    u8 pad0D[3];        /* 0x0D */
-} KaldachomMeState;
-
 typedef struct KaldachomMePlacement {
     ObjPlacement base; /* 0x00 */
     u8 rotZByte;       /* 0x18 */
@@ -21,18 +13,10 @@ typedef struct KaldachomMePlacement {
     u8 pad1B;          /* 0x1B */
 } KaldachomMePlacement;
 
-typedef u8 KaldachomMeLinkedMode;
-
-enum {
+typedef enum KaldachomMeLinkedMode {
     KALDACHOMME_LINKED_MODE_MOVE_0 = 1,
-    KALDACHOMME_LINKED_MODE_MOVE_1 = 2
-};
-
-STATIC_ASSERT(offsetof(KaldachomMeState, progress) == 0x0);
-STATIC_ASSERT(offsetof(KaldachomMeState, step) == 0x4);
-STATIC_ASSERT(offsetof(KaldachomMeState, targetProgress) == 0x8);
-STATIC_ASSERT(offsetof(KaldachomMeState, moveId) == 0xC);
-STATIC_ASSERT(sizeof(KaldachomMeState) == 0x10);
+    KALDACHOMME_LINKED_MODE_MOVE_1 = 2,
+} KaldachomMeLinkedMode;
 
 STATIC_ASSERT(offsetof(KaldachomMePlacement, base) == 0x0);
 STATIC_ASSERT(offsetof(KaldachomMePlacement, rotZByte) == 0x18);

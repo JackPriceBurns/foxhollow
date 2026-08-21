@@ -4,42 +4,53 @@
  */
 #include "dlls/objects/397_MMSH_Scales.h"
 
-#include "dlls/objects/298_CFCrate.h"
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/dll/dll_0004_dummy04.h"
+#include "main/frame_timing.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
+#include "main/objseq.h"
+#include "main/objtype.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
-#include "main/frame_timing.h"
-#include "main/objseq.h"
-#define MMSH_SCALES_OBJECT_TYPE_ID          0xB
-#define MMSH_SCALES_CLASS_ID                0x10
-#define MMSH_SCALES_CHILD_SETUP_FLAGS       5
-#define MMSH_SCALES_CHILD_COLOR_RED         0x20
-#define MMSH_SCALES_CHILD_COLOR_GREEN       0x04
-#define MMSH_SCALES_CHILD_COLOR_ALPHA       0xFF
-#define MMSH_SCALES_CHILD_SCALE             2.0f
-#define MMSH_SCALES_RENDER_SCALE            1.0f
-#define MMSH_SCALES_SEQUENCE_PENDING        -2
-#define MMSH_SCALES_SEQUENCE_NONE           -1
-#define MMSH_SCALES_SEQUENCE_FLAGS          -1
-#define MMSH_SCALES_CURVE_NONE              -1
-#define MMSH_SCALES_ANIM_DATA_NONE          -1
-#define MMSH_SCALES_DEFAULT_ANIM_DATA_INDEX 1
-#define MMSH_SCALES_NO_MAP_LAYER            -1
-#define MMSH_SCALES_NO_OBJECT_INDEX         -1
+typedef struct MmshScalesPlacement {
+    ObjPlacement base;
+    s16 animDataIndex;
+    s16 sequenceGameBit;
+    u8 pad1C[8];
+    u8 positionDamping;
+} MmshScalesPlacement;
 
+STATIC_ASSERT(offsetof(MmshScalesPlacement, animDataIndex) == 0x18);
+STATIC_ASSERT(offsetof(MmshScalesPlacement, sequenceGameBit) == 0x1A);
+STATIC_ASSERT(offsetof(MmshScalesPlacement, positionDamping) == 0x24);
 
-int mmshScales_getExtraSize(void) {
-    return sizeof(MMSHScalesState);
+typedef struct MmshScalesState {
+    ObjSeqState sequence;
+    u8 trailingState[8];
+} MmshScalesState;
+
+STATIC_ASSERT(sizeof(MmshScalesState) == 0x168);
+STATIC_ASSERT(offsetof(MmshScalesState, trailingState) == 0x160);
+
+typedef struct MmshScalesChildSetup {
+    ObjPlacement base;
+    u8 pad18[12];
+} MmshScalesChildSetup;
+
+STATIC_ASSERT(sizeof(MmshScalesChildSetup) == 0x24);
+
+static int mmshScales_getExtraSize(void) {
+    return sizeof(MmshScalesState);
 }
 
-int mmshScales_getObjectTypeId(void) {
-    return MMSH_SCALES_OBJECT_TYPE_ID;
+static int mmshScales_getObjectTypeId(void) {
+    return 0xB;
 }
 
-void mmshScales_free(GameObject* obj, int keepChild) {
+static void mmshScales_free(GameObject* obj, int keepChild) {
     GameObject* child;
 
     (*gObjectTriggerInterface)->freeState(obj->extra);
@@ -50,112 +61,108 @@ void mmshScales_free(GameObject* obj, int keepChild) {
     }
 }
 
-void mmshScales_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 isVisible = visible;
-
-    if (isVisible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, MMSH_SCALES_RENDER_SCALE);
+static void mmshScales_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                              s8 visible) {
+    if (visible != 0) {
+        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
 
-void mmshScales_hitDetect(void) {
+static void mmshScales_hitDetect(void) {
 }
 
-void mmshScales_update(GameObject* obj) {
-    int slot;
+static void mmshScales_update(GameObject* obj) {
+    const MmshScalesPlacement* placement = (const MmshScalesPlacement*)obj->anim.placementData;
+    MmshScalesState* state = obj->extra;
     GameObject** objects;
-    GameObject* otherObj;
     GameObject* sequenceOwner;
-    int groupSlot;
+    int sequenceResult;
+    int sequenceSlot;
     int siblingCount;
-    int objectIndex;
+    int firstObjectIndex;
     int objectCount;
 
-    if ((obj->anim.placementData != NULL) &&
-        (((MMSHScalesPlacement*)obj->anim.placementData)->animDataIndex != MMSH_SCALES_ANIM_DATA_NONE)) {
-        objectIndex = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStepUnclamped);
-        if (objectIndex != 0 && obj->seqIndex == MMSH_SCALES_SEQUENCE_PENDING) {
-            slot = ((MMSHScalesState*)obj->extra)->sequence.slot;
+    if (placement != NULL && ObjAnim_ReadPlacementS16(&obj->anim, &placement->animDataIndex) != -1) {
+        sequenceResult = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStepUnclamped);
+        if (sequenceResult != 0 && obj->seqIndex == OBJECT_SEQUENCE_INDEX_PENDING) {
+            sequenceSlot = state->sequence.slot;
             sequenceOwner = NULL;
-            objects = ObjList_GetObjects(&objectIndex, &objectCount);
+            objects = ObjList_GetObjects(&firstObjectIndex, &objectCount);
             siblingCount = 0;
-            for (objectIndex = 0, groupSlot = (int)(s8)slot; objectIndex < objectCount; objectIndex++) {
-                otherObj = *objects;
-                if (otherObj->seqIndex == slot) {
-                    sequenceOwner = otherObj;
+            for (int objectIndex = firstObjectIndex; objectIndex < objectCount; objectIndex++) {
+                GameObject* other = objects[objectIndex];
+
+                if (other->seqIndex == sequenceSlot) {
+                    sequenceOwner = other;
                 }
-                if ((otherObj->seqIndex == MMSH_SCALES_SEQUENCE_PENDING &&
-                     otherObj->anim.classId == MMSH_SCALES_CLASS_ID) &&
-                    groupSlot == ((MMSHScalesState*)otherObj->extra)->sequence.slot) {
+                if (other->seqIndex == OBJECT_SEQUENCE_INDEX_PENDING &&
+                    other->anim.classId == OBJECT_CLASS_SEQUENCE &&
+                    sequenceSlot == ((MmshScalesState*)other->extra)->sequence.slot) {
                     siblingCount++;
                 }
-                objects++;
             }
-            if ((siblingCount <= 1 && sequenceOwner != NULL) && sequenceOwner->seqIndex != MMSH_SCALES_SEQUENCE_NONE) {
-                sequenceOwner->seqIndex = MMSH_SCALES_SEQUENCE_NONE;
-                (*gObjectTriggerInterface)->endSequence(groupSlot);
+            if (siblingCount <= 1 && sequenceOwner != NULL &&
+                sequenceOwner->seqIndex != OBJECT_SEQUENCE_INDEX_NONE) {
+                sequenceOwner->seqIndex = OBJECT_SEQUENCE_INDEX_NONE;
+                (*gObjectTriggerInterface)->endSequence(sequenceSlot);
             }
-            obj->seqIndex = MMSH_SCALES_SEQUENCE_NONE;
+            obj->seqIndex = OBJECT_SEQUENCE_INDEX_NONE;
             Obj_FreeObject(obj);
         }
     }
 }
 
-void mmshScales_init(GameObject* obj, const MMSHScalesPlacement* placement) {
-    MMSHScalesState* state = obj->extra;
-    MMSHScalesChildSetup* childSetup;
-    int cachedAnimDataIndexPlusOne;
+static void mmshScales_init(GameObject* obj, const MmshScalesPlacement* placement) {
+    MmshScalesState* state = obj->extra;
+    MmshScalesChildSetup* childSetup;
+    intptr_t cachedAnimDataIndexPlusOne;
+    s16 animDataIndex;
 
-    state->sequence.gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
-    state->sequence.flags = MMSH_SCALES_SEQUENCE_FLAGS;
-    state->sequence.posOffsetDecay = 1.0f / (1.0f + (f32)(u32)placement->positionDamping);
-    state->sequence.curveId = MMSH_SCALES_CURVE_NONE;
+    state->sequence.gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceGameBit);
+    state->sequence.flags = -1;
+    state->sequence.posOffsetDecay = 1.0f / (1.0f + placement->positionDamping);
+    state->sequence.curveId = -1;
+    animDataIndex = ObjAnim_ReadPlacementS16(&obj->anim, &placement->animDataIndex);
     cachedAnimDataIndexPlusOne = obj->userData1;
-    if (cachedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != MMSH_SCALES_DEFAULT_ANIM_DATA_INDEX) {
+    if (cachedAnimDataIndexPlusOne == 0 && animDataIndex != 1) {
         (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement, &obj->anim);
-        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
-    } else if (cachedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != cachedAnimDataIndexPlusOne - 1) {
+        obj->userData1 = animDataIndex + 1;
+    } else if (cachedAnimDataIndexPlusOne != 0 && animDataIndex != cachedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)state);
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != MMSH_SCALES_ANIM_DATA_NONE) {
+        if (animDataIndex != -1) {
             (*gObjectTriggerInterface)->loadAnimData((u8*)state, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+        obj->userData1 = animDataIndex + 1;
     }
     if (Obj_IsLoadingLocked() == 0) {
         return;
     }
-    childSetup =
-        (MMSHScalesChildSetup*)Obj_AllocObjectSetup(sizeof(MMSHScalesChildSetup), CFCRATE_OBJ_SCALESSWORD);
+    childSetup = (MmshScalesChildSetup*)Obj_AllocObjectSetup(sizeof(MmshScalesChildSetup), 0x1B8);
     childSetup->base.posX = obj->anim.localPosX;
     childSetup->base.posY = obj->anim.localPosY;
     childSetup->base.posZ = obj->anim.localPosZ;
-    childSetup->base.color[0] = MMSH_SCALES_CHILD_COLOR_RED;
-    childSetup->base.color[1] = MMSH_SCALES_CHILD_COLOR_GREEN;
-    childSetup->base.color[3] = MMSH_SCALES_CHILD_COLOR_ALPHA;
-    obj->childObjs[0] = objSetupObject(&childSetup->base, MMSH_SCALES_CHILD_SETUP_FLAGS, MMSH_SCALES_NO_MAP_LAYER,
-                                        MMSH_SCALES_NO_OBJECT_INDEX, NULL);
-    ((GameObject*)obj->childObjs[0])->anim.rootMotionScale *= MMSH_SCALES_CHILD_SCALE;
+    childSetup->base.color[0] = 0x20;
+    childSetup->base.color[1] = 0x04;
+    childSetup->base.color[3] = 0xFF;
+    obj->childObjs[0] = objSetupObject(&childSetup->base, 5, -1, -1, NULL);
+    obj->childObjs[0]->anim.rootMotionScale *= 2.0f;
 }
 
-void mmshScales_release(void) {
+static void mmshScales_release(void) {
 }
 
-void mmshScales_initialise(void) {
+static void mmshScales_initialise(void) {
 }
 
 ObjectDescriptor gMMSHScalesObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmshScales_initialise,
-    (ObjectDescriptorCallback)mmshScales_release,
-    0,
-    (ObjectDescriptorCallback)mmshScales_init,
-    (ObjectDescriptorCallback)mmshScales_update,
-    (ObjectDescriptorCallback)mmshScales_hitDetect,
-    (ObjectDescriptorCallback)mmshScales_render,
-    (ObjectDescriptorCallback)mmshScales_free,
-    (ObjectDescriptorCallback)mmshScales_getObjectTypeId,
-    mmshScales_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)mmshScales_initialise,
+    .release = (ObjectDescriptorCallback)mmshScales_release,
+    .init = (ObjectDescriptorCallback)mmshScales_init,
+    .update = (ObjectDescriptorCallback)mmshScales_update,
+    .hitDetect = (ObjectDescriptorCallback)mmshScales_hitDetect,
+    .render = (ObjectDescriptorCallback)mmshScales_render,
+    .free = (ObjectDescriptorCallback)mmshScales_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)mmshScales_getObjectTypeId,
+    .getExtraSize = mmshScales_getExtraSize,
 };

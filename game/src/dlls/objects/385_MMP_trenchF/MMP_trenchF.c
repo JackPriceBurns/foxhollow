@@ -1,9 +1,3 @@
-/*
- * MMP_trenchF (DLL 0x181) - Moon Mountain Pass trench particle emitter.
- *
- * This object emits particles at randomized offsets while its placement
- * gate is enabled.
- */
 #include "dlls/objects/385_MMP_trenchF.h"
 
 #include "game/objects/object.h"
@@ -13,12 +7,24 @@
 #include "main/gamebits_api.h"
 #include "main/vecmath.h"
 
-#define MMP_TRENCH_FX_PARTICLE_BURST      0x71F
-#define MMP_TRENCH_FX_PARTICLE_AMBIENT    0x720
-#define MMP_TRENCH_FX_PARTICLE_SPAWN_MODE 0x200001
-#define MMP_TRENCH_FX_MODEL_NONE          -1
+typedef enum MMPTrenchFxParticleId {
+    MMP_TRENCH_FX_PARTICLE_BURST = 0x71F,
+    MMP_TRENCH_FX_PARTICLE_AMBIENT
+} MMPTrenchFxParticleId;
 
-PartFxSpawnParams gMMPTrenchFxAmbientSpawnParams;
+typedef struct MMPTrenchFxState {
+    s16 enableGameBit;
+    u16 extentX;
+    u16 extentZ;
+    u16 extentY;
+    Vec3s emitAngles;
+    u8 unknown0E[2];
+    PartFxSpawnParams burstSpawnParams;
+    f32 burstCooldown;
+    f32 burstTimer;
+} MMPTrenchFxState;
+
+static PartFxSpawnParams gMMPTrenchFxAmbientSpawnParams;
 
 int mmpTrenchFx_getExtraSize(void) {
     return sizeof(MMPTrenchFxState);
@@ -29,7 +35,7 @@ int mmpTrenchFx_getObjectTypeId(void) {
 }
 
 void mmpTrenchFx_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void mmpTrenchFx_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
@@ -51,7 +57,7 @@ void mmpTrenchFx_update(GameObject* obj) {
             state->burstSpawnParams.posX = (f32)randomGetRange(-state->extentX, state->extentX);
             state->burstSpawnParams.posY = (f32)randomGetRange(-state->extentY, state->extentY);
             state->burstSpawnParams.posZ = (f32)randomGetRange(-state->extentZ, state->extentZ);
-            vecRotateZXY(state->emitAngles, &state->burstSpawnParams.posX);
+            vecRotateZXY(&state->emitAngles.x, &state->burstSpawnParams.posX);
             state->burstSpawnParams.posX += obj->anim.localPosX;
             state->burstSpawnParams.posY += obj->anim.localPosY;
             state->burstSpawnParams.posZ += obj->anim.localPosZ;
@@ -61,20 +67,18 @@ void mmpTrenchFx_update(GameObject* obj) {
         state->burstTimer -= timeDelta;
         if (state->burstTimer > 0.0f) {
             (*gPartfxInterface)
-                ->spawnObject((void*)obj, MMP_TRENCH_FX_PARTICLE_BURST, &state->burstSpawnParams,
-                              MMP_TRENCH_FX_PARTICLE_SPAWN_MODE, MMP_TRENCH_FX_MODEL_NONE, NULL);
+                ->spawnObject(obj, MMP_TRENCH_FX_PARTICLE_BURST, &state->burstSpawnParams, 0x200001, -1, NULL);
         }
         gMMPTrenchFxAmbientSpawnParams.scale = 1.0f;
         gMMPTrenchFxAmbientSpawnParams.posX = (f32)randomGetRange(-state->extentX, state->extentX);
         gMMPTrenchFxAmbientSpawnParams.posY = (f32)randomGetRange(-state->extentY, state->extentY);
         gMMPTrenchFxAmbientSpawnParams.posZ = (f32)randomGetRange(-state->extentZ, state->extentZ);
-        vecRotateZXY(state->emitAngles, &gMMPTrenchFxAmbientSpawnParams.posX);
+        vecRotateZXY(&state->emitAngles.x, &gMMPTrenchFxAmbientSpawnParams.posX);
         gMMPTrenchFxAmbientSpawnParams.posX += obj->anim.localPosX;
         gMMPTrenchFxAmbientSpawnParams.posY += obj->anim.localPosY;
         gMMPTrenchFxAmbientSpawnParams.posZ += obj->anim.localPosZ;
         (*gPartfxInterface)
-            ->spawnObject((void*)obj, MMP_TRENCH_FX_PARTICLE_AMBIENT, &gMMPTrenchFxAmbientSpawnParams,
-                          MMP_TRENCH_FX_PARTICLE_SPAWN_MODE, MMP_TRENCH_FX_MODEL_NONE, NULL);
+            ->spawnObject(obj, MMP_TRENCH_FX_PARTICLE_AMBIENT, &gMMPTrenchFxAmbientSpawnParams, 0x200001, -1, NULL);
     }
 }
 
@@ -86,14 +90,14 @@ void mmpTrenchFx_init(GameObject* obj, const MMPTrenchFxPlacement* placement) {
     state->extentX = (u16)(placement->extentX << 2);
     state->extentZ = (u16)(placement->extentZ << 2);
     state->extentY = (u16)(placement->extentY << 2);
-    angle = (s16)(((s32)placement->emitAngleZ) << 8);
-    state->emitAngles[2] = angle;
+    angle = (s16)((s32)placement->emitAngleZ * 256);
+    state->emitAngles.z = angle;
     obj->anim.rotZ = angle;
-    angle = (s16)(((s32)placement->emitAngleY) << 8);
-    state->emitAngles[1] = angle;
+    angle = (s16)((s32)placement->emitAngleY * 256);
+    state->emitAngles.y = angle;
     obj->anim.rotY = angle;
-    angle = (s16)(((s32)placement->emitAngleX) << 8);
-    state->emitAngles[0] = angle;
+    angle = (s16)((s32)placement->emitAngleX * 256);
+    state->emitAngles.x = angle;
     obj->anim.rotX = angle;
     obj->anim.rootMotionScale = 0.1f;
 }

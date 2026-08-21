@@ -1,5 +1,8 @@
 #include "dlls/objects/412.h"
 
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
+#include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
@@ -9,117 +12,120 @@
 #include "main/resource.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
 
-#define DLL19C_EFFECT_RESOURCE_ID 0x82
-#define DLL19C_CHILD_OBJECT_ID    0x248
-#define DLL19C_REARM_GAMEBIT      0x1D4
+enum Dll412ObjectId {
+    DLL412_CHILD_OBJECT = 0x248,
+};
 
-#define DLL19C_SPAWN_TIMER         100
-#define DLL19C_CHILD_HEIGHT_OFFSET 50.0f
-#define DLL19C_FULL_ALPHA          0xFF
-#define DLL19C_RENDER_SCALE        1.0f
-#define DLL19C_OBJECT_SETUP_FLAGS  5
-#define DLL19C_EFFECT_SPAWN_FLAGS  1
+typedef struct Dll412Placement {
+    ObjPlacement base;
+    u8 pad18[6];
+    s8 rotationX;
+    s8 disableChildSpawn;
+} Dll412Placement;
 
-int dll412_getExtraSize(void) {
-    return sizeof(Dll19CState);
+typedef struct Dll412State {
+    s32 unused0;
+    s16 spawnTimer;
+    s16 spawnTimerRate;
+} Dll412State;
+
+STATIC_ASSERT(sizeof(Dll412Placement) == 0x20);
+STATIC_ASSERT(offsetof(Dll412Placement, rotationX) == 0x1E);
+STATIC_ASSERT(offsetof(Dll412Placement, disableChildSpawn) == 0x1F);
+
+STATIC_ASSERT(sizeof(Dll412State) == 0x08);
+STATIC_ASSERT(offsetof(Dll412State, unused0) == 0x00);
+STATIC_ASSERT(offsetof(Dll412State, spawnTimer) == 0x04);
+STATIC_ASSERT(offsetof(Dll412State, spawnTimerRate) == 0x06);
+
+static int dll412_getExtraSize(void) {
+    return sizeof(Dll412State);
 }
 
-int dll412_getObjectTypeId(void) {
+static int dll412_getObjectTypeId(void) {
     return 0;
 }
 
-void dll412_free(void) {
+static void dll412_free(void) {
 }
 
-void dll412_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    s32 isVisible = visible;
-
-    if (isVisible != 0) {
-        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, DLL19C_RENDER_SCALE);
+static void dll412_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+    if (visible != 0) {
+        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
 
-void dll412_hitDetect(void) {
+static void dll412_hitDetect(void) {
 }
 
-void dll412_update(GameObject* obj) {
-    const Dll19CPlacement* placement;
-    Dll19CState* state;
-    Dll82Interface** effectResource;
-    ObjPlacement* childSetup;
+static void dll412_update(GameObject* obj) {
+    const Dll412Placement* placement = (const Dll412Placement*)obj->anim.placementData;
+    Dll412State* state = obj->extra;
 
-    placement = (const Dll19CPlacement*)obj->anim.placementData;
-    state = obj->extra;
-    if (obj->userData2 != 0) {
-        if (mainGetBit(DLL19C_REARM_GAMEBIT) != 0) {
-            obj->userData2 = 0;
-        }
+    if (obj->userData2 != 0 && mainGetBit(GAMEBIT_WM_KrazTest1ResetTorches) != 0) {
+        obj->userData2 = 0;
     }
-    if (obj->userData2 == 0) {
-        if (mainGetBit(GAMEBIT_WM_KrazTest1TorchesActive) != 0) {
-            effectResource = Resource_Acquire(DLL19C_EFFECT_RESOURCE_ID, 1);
-            (*effectResource)->spawn(obj, 0, NULL, DLL19C_EFFECT_SPAWN_FLAGS, -1, NULL);
-            (*effectResource)->spawn(obj, 1, NULL, DLL19C_EFFECT_SPAWN_FLAGS, -1, NULL);
-            Sfx_PlayFromObject(0, SFXTRIG_hitpos_6);
-            Resource_Release(effectResource);
-            state->spawnTimerRate = 1;
-            obj->userData2 = 1;
-        }
+    if (obj->userData2 == 0 && mainGetBit(GAMEBIT_WM_KrazTest1TorchesActive) != 0) {
+        Dll82Interface** effectResource = Resource_Acquire(DLL_82_RESOURCE_ID, 1);
+
+        (*effectResource)->spawn(obj, 0, NULL, 1, -1, NULL);
+        (*effectResource)->spawn(obj, 1, NULL, 1, -1, NULL);
+        Sfx_PlayFromObject(NULL, SFXTRIG_hitpos_6);
+        Resource_Release(effectResource);
+        state->spawnTimerRate = 1;
+        obj->userData2 = 1;
     }
+
     if (state->spawnTimerRate != 0) {
         state->spawnTimer = (s16)(state->spawnTimer - state->spawnTimerRate * framesThisStep);
     }
-    if (state->spawnTimer <= 0 && placement->disableChildSpawn == 0 && Obj_IsLoadingLocked() != 0) {
-        childSetup = Obj_AllocObjectSetup(sizeof(ObjPlacement), DLL19C_CHILD_OBJECT_ID);
-        childSetup->posX = placement->base.posX;
-        childSetup->posY = DLL19C_CHILD_HEIGHT_OFFSET + placement->base.posY;
-        childSetup->posZ = placement->base.posZ;
-        childSetup->objectId = DLL19C_CHILD_OBJECT_ID;
-        childSetup->ident = -1;
-        childSetup->color[0] = placement->base.color[0];
-        childSetup->color[1] = placement->base.color[1];
-        childSetup->color[2] = placement->base.color[2];
-        childSetup->color[3] = placement->base.color[3];
-        objSetupObject(childSetup, DLL19C_OBJECT_SETUP_FLAGS, obj->anim.mapEventSlot, -1, obj->anim.parent);
-        state->spawnTimer = DLL19C_SPAWN_TIMER;
-        state->spawnTimerRate = 0;
+    if (state->spawnTimer > 0 || placement->disableChildSpawn != 0 || Obj_IsLoadingLocked() == 0) {
+        return;
     }
+
+    ObjPlacement* childSetup = Obj_AllocObjectSetup(sizeof(ObjPlacement), DLL412_CHILD_OBJECT);
+
+    childSetup->posX = placement->base.posX;
+    childSetup->posY = placement->base.posY + 50.0f;
+    childSetup->posZ = placement->base.posZ;
+    childSetup->objectId = DLL412_CHILD_OBJECT;
+    childSetup->ident = -1;
+    for (int channel = 0; channel < ARRAY_COUNT(childSetup->color); channel++) {
+        childSetup->color[channel] = placement->base.color[channel];
+    }
+    objSetupObject(childSetup, 5, obj->anim.mapEventSlot, -1, obj->anim.parent);
+    state->spawnTimer = 100;
+    state->spawnTimerRate = 0;
 }
 
-void dll412_init(GameObject* obj, const Dll19CPlacement* placement) {
-    register uintptr_t objectAddress = (uintptr_t)obj;
-    register int stateAddress = (int)((GameObject*)objectAddress)->extra;
+static void dll412_init(GameObject* obj, const Dll412Placement* placement) {
+    Dll412State* state = obj->extra;
 
-    ((GameObject*)objectAddress)->anim.rotX = (s16)((int)placement->initialYaw << 8);
-    ((GameObject*)objectAddress)->userData2 = 0;
-    ((Dll19CState*)stateAddress)->spawnTimer = DLL19C_SPAWN_TIMER;
-    ((Dll19CState*)stateAddress)->spawnTimerRate = 0;
-    ((Dll19CState*)stateAddress)->unknown0 = 0;
-    ((GameObject*)objectAddress)->anim.renderAlpha = DLL19C_FULL_ALPHA;
-    ((GameObject*)objectAddress)->anim.alpha = DLL19C_FULL_ALPHA;
+    obj->anim.rotX = (s16)(placement->rotationX * 0x100);
+    obj->userData2 = 0;
+    state->spawnTimer = 100;
+    state->spawnTimerRate = 0;
+    state->unused0 = 0;
+    obj->anim.renderAlpha = 0xFF;
+    obj->anim.alpha = 0xFF;
 }
 
-void dll412_release(void) {
+static void dll412_release(void) {
 }
 
-void dll412_initialise(void) {
+static void dll412_initialise(void) {
 }
 
 ObjectDescriptor gDll19CObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll412_initialise,
-    (ObjectDescriptorCallback)dll412_release,
-    0,
-    (ObjectDescriptorCallback)dll412_init,
-    (ObjectDescriptorCallback)dll412_update,
-    (ObjectDescriptorCallback)dll412_hitDetect,
-    (ObjectDescriptorCallback)dll412_render,
-    (ObjectDescriptorCallback)dll412_free,
-    (ObjectDescriptorCallback)dll412_getObjectTypeId,
-    dll412_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)dll412_initialise,
+    .release = (ObjectDescriptorCallback)dll412_release,
+    .init = (ObjectDescriptorCallback)dll412_init,
+    .update = (ObjectDescriptorCallback)dll412_update,
+    .hitDetect = (ObjectDescriptorCallback)dll412_hitDetect,
+    .render = (ObjectDescriptorCallback)dll412_render,
+    .free = (ObjectDescriptorCallback)dll412_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)dll412_getObjectTypeId,
+    .getExtraSize = dll412_getExtraSize,
 };

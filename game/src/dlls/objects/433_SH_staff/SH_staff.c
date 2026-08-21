@@ -1,22 +1,9 @@
-/*
- * shstaff (DLL 0x1B1) - the Krazoa Staff pickup object and its ring of
- * sh_staffhaze flames (the shimmering blue "haze" spawned as child objects,
- * model 0x659 -> SH_StaffHaze_update; live-verified in ThornTail Hollow by
- * hiding a slot child and watching the flame vanish).
- *
- * sh_staff_render positions the staff (carried, attached to the player's
- * hand matrix in the carry phases) and animates up to ten staff-haze child
- * flames spread along the staff's two path points; before pickup a single
- * flame climbs the staff from base to tip on a loop (hazeClimbT) as an
- * attract effect. sh_staff_sequenceCallback spawns the flames on demand and
- * consumes the carry/HUD animation events; sh_staff_update runs the pickup
- * proximity/map-load state machine (phase 0 idle -> 1 armed -> 2 pickup ->
- * 3/4/5 carry -> 6 done). sh_staff_deactivate hides the staff, releases the
- * flames, and ends the player's carry.
- */
 #include "dlls/objects/433_SH_staff.h"
+
 #include "dolphin/mtx.h"
 
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/player_objects.h"
 #include "main/frame_timing.h"
@@ -38,130 +25,187 @@
 #include "main/dll/tricky_api.h"
 #include "main/map_load.h"
 
-/* ShStaffState.phase pickup / carry state machine (see file header) */
-#define SHSTAFF_PHASE_IDLE           0     /* wait for the staff object / acquired game bit */
-#define SHSTAFF_PHASE_ARMED          1     /* proximity map load; wait for the pickup trigger */
-#define SHSTAFF_PHASE_PICKUP         2     /* acquired; fade in and unload the pickup map */
-#define SHSTAFF_PHASE_CARRY_ATTACH   3     /* build the carry matrix from the world transform */
-#define SHSTAFF_PHASE_CARRY_LOCAL    4     /* build the carry matrix from the hand's local matrix */
-#define SHSTAFF_PHASE_CARRY_RENDER   5     /* settled carry: render attached to the hand */
-#define SHSTAFF_PHASE_DONE           6     /* deactivated */
-#define SHSTAFF_CHILD_OBJ_HAZE_FLAME 0x659 /* staff-haze child flame (SH_StaffHaze_update), spawned by the callback */
-#define SHSTAFF_TARGET_OBJGROUP      0xf   /* player-target group; the nearest object gets the pickup sequence */
+enum ShStaffPhase {
+    SH_STAFF_PHASE_IDLE,
+    SH_STAFF_PHASE_ARMED,
+    SH_STAFF_PHASE_PICKUP,
+    SH_STAFF_PHASE_ATTACH_WORLD,
+    SH_STAFF_PHASE_ATTACH_LOCAL,
+    SH_STAFF_PHASE_RENDER_ATTACHED,
+    SH_STAFF_PHASE_DONE,
+};
 
-#define SHSTAFF_HAZE_FLAG_SPAWN_EVEN    0x01
-#define SHSTAFF_HAZE_FLAG_EVEN_COMPLETE 0x02
-#define SHSTAFF_HAZE_FLAG_SPAWN_ODD     0x04
-#define SHSTAFF_HAZE_FLAG_ODD_COMPLETE  0x08
-#define SHSTAFF_HAZE_FLAG_FADE_OUT      0x10
-#define SHSTAFF_HAZE_FLAG_CONVERGE      0x20
+enum ShStaffHazeFlag {
+    SH_STAFF_HAZE_SPAWN_EVEN = 1 << 0,
+    SH_STAFF_HAZE_EVEN_COMPLETE = 1 << 1,
+    SH_STAFF_HAZE_SPAWN_ODD = 1 << 2,
+    SH_STAFF_HAZE_ODD_COMPLETE = 1 << 3,
+    SH_STAFF_HAZE_FADE_OUT = 1 << 4,
+    SH_STAFF_HAZE_CONVERGE = 1 << 5,
+};
 
-#define SHSTAFF_EVENT_ATTACH_WORLD       2
-#define SHSTAFF_EVENT_SHOW_HELP_TEXT     3
-#define SHSTAFF_EVENT_HIDE_HELP_TEXT     4
-#define SHSTAFF_EVENT_DEACTIVATE         5
-#define SHSTAFF_EVENT_ATTACH_LOCAL       6
-#define SHSTAFF_EVENT_SHOW_STAFF_HUD     7
-#define SHSTAFF_EVENT_SPAWN_EVEN_HAZE    8
-#define SHSTAFF_EVENT_SPAWN_ODD_HAZE     9
-#define SHSTAFF_EVENT_FADE_HAZE_OUT      0xA
-#define SHSTAFF_EVENT_CONVERGE_HAZE      0xB
-#define SHSTAFF_EVENT_FINISH_HAZE_EFFECT 0xC
+enum ShStaffSequenceEvent {
+    SH_STAFF_EVENT_ATTACH_WORLD = 2,
+    SH_STAFF_EVENT_SHOW_HELP_TEXT,
+    SH_STAFF_EVENT_HIDE_HELP_TEXT,
+    SH_STAFF_EVENT_DEACTIVATE,
+    SH_STAFF_EVENT_ATTACH_LOCAL,
+    SH_STAFF_EVENT_SHOW_STAFF_HUD,
+    SH_STAFF_EVENT_SPAWN_EVEN_HAZE,
+    SH_STAFF_EVENT_SPAWN_ODD_HAZE,
+    SH_STAFF_EVENT_FADE_HAZE_OUT,
+    SH_STAFF_EVENT_CONVERGE_HAZE,
+    SH_STAFF_EVENT_FINISH_HAZE_EFFECT,
+};
 
-#define SHSTAFF_HAZE_SETUP_SIZE       0x20
-#define SHSTAFF_PICKUP_MAP_ID         8
-#define SHSTAFF_PICKUP_MAP_CELL       0x13
-#define SHSTAFF_PICKUP_MAP_LOAD_FLAGS 0x20000000
+enum ShStaffObjectId {
+    SH_STAFF_HAZE_OBJECT_ID = 0x659,
+};
 
+enum ShStaffObjectGroup {
+    SH_STAFF_SEQUENCE_TARGET_GROUP = 0xF,
+};
 
+enum ShStaffHazeCount {
+    SH_STAFF_HAZE_COUNT = 10,
+};
 
-int sh_staff_getExtraSize(void) {
+typedef struct ShStaffPlacement {
+    ObjPlacement base;
+    u8 initialRotationZ;
+    u8 initialRotationY;
+} ShStaffPlacement;
+
+typedef struct ShStaffHazePlacement {
+    ObjPlacement base;
+    u8 unused18[8];
+} ShStaffHazePlacement;
+
+typedef struct ShStaffState {
+    u8 phase;
+    u8 helpTextVisible;
+    u8 hazeFlags;
+    u8 pickupMapLoaded;
+    f32 hazeFadeTimer;
+    Mtx carryMatrix;
+    GameObject* hazeChildren[SH_STAFF_HAZE_COUNT];
+    u8 hazeSpawnPending[SH_STAFF_HAZE_COUNT];
+    u8 unused92[2];
+    f32 hazeClimbProgress;
+    f32 fizzSfxTimer;
+} ShStaffState;
+
+STATIC_ASSERT(offsetof(ShStaffPlacement, initialRotationZ) == sizeof(ObjPlacement));
+STATIC_ASSERT(offsetof(ShStaffPlacement, initialRotationY) == sizeof(ObjPlacement) + 1);
+STATIC_ASSERT(sizeof(ShStaffHazePlacement) == 0x20);
+STATIC_ASSERT(offsetof(ShStaffState, carryMatrix) == 8);
+STATIC_ASSERT(offsetof(ShStaffState, hazeChildren) ==
+              offsetof(ShStaffState, carryMatrix) + sizeof(((ShStaffState*)0)->carryMatrix));
+STATIC_ASSERT(offsetof(ShStaffState, hazeSpawnPending) ==
+              offsetof(ShStaffState, hazeChildren) + sizeof(((ShStaffState*)0)->hazeChildren));
+STATIC_ASSERT(offsetof(ShStaffState, hazeClimbProgress) ==
+              offsetof(ShStaffState, hazeSpawnPending) + sizeof(((ShStaffState*)0)->hazeSpawnPending) + 2);
+STATIC_ASSERT(sizeof(ShStaffState) == 0xA0);
+
+static void sh_staff_deactivate(GameObject* obj, ShStaffState* state, int clearChildren);
+
+static GameObject* shStaff_spawnHaze(GameObject* obj) {
+    if (Obj_IsLoadingLocked() == 0) {
+        return NULL;
+    }
+
+    ShStaffHazePlacement* placement =
+        (ShStaffHazePlacement*)Obj_AllocObjectSetup(sizeof(ShStaffHazePlacement), SH_STAFF_HAZE_OBJECT_ID);
+    placement->base.color[0] = 2;
+    placement->base.color[3] = 0xFF;
+    return loadObjectAtObject(obj, &placement->base);
+}
+
+static int sh_staff_getExtraSize(void) {
     return sizeof(ShStaffState);
 }
 
-void sh_staff_free(GameObject* obj, int freeArg) {
+static void sh_staff_free(GameObject* obj, int freeArg) {
     ShStaffState* state = obj->extra;
 
     if (freeArg != 0) {
         return;
     }
 
-    for (int i = 0; i < SHSTAFF_HAZE_CHILD_COUNT; i++) {
+    for (int i = 0; i < SH_STAFF_HAZE_COUNT; i++) {
         if (state->hazeChildren[i] != NULL) {
             state->hazeChildren[i]->anim.flags |= OBJANIM_FLAG_HIDDEN;
         }
     }
 }
 
-#define SHSTAFF_FADE_OUT_TIMER_INIT 1500.0f
-#define SHSTAFF_FIZZ_SFX_TIMER_INIT 0.9f
-#define SHSTAFF_MAP_LOAD_DIST_SQ    250000.0f
-#define SHSTAFF_MAP_UNLOAD_DIST_SQ  490000.0f
-
-void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+static void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                            s8 visible) {
     if (visible == 0) {
         return;
     }
 
     ShStaffState* state = obj->extra;
     GameObject* player = Obj_GetPlayerObject();
-    int i;
-    int j;
-    f32 mtxB[12];
-    f32 mtxA[12];
+    Mtx worldMatrix;
+    Mtx inverseHandMatrix;
 
-    if (state->phase == SHSTAFF_PHASE_CARRY_ATTACH) {
-        Obj_BuildWorldTransformMatrix(obj, mtxB, 0);
-        PSMTXInverse((MtxPtr)ObjPath_GetPointModelMtx(player, 0), (MtxPtr)mtxA);
-        PSMTXConcat((MtxPtr)mtxA, (MtxPtr)mtxB, (MtxPtr)state->carryMatrix);
-        state->phase = SHSTAFF_PHASE_CARRY_RENDER;
+    if (state->phase == SH_STAFF_PHASE_ATTACH_WORLD) {
+        Obj_BuildWorldTransformMatrix(obj, &worldMatrix[0][0], 0);
+        MtxPtr handMatrix = (MtxPtr)ObjPath_GetPointModelMtx(player, 0);
+        PSMTXInverse(handMatrix, inverseHandMatrix);
+        PSMTXConcat(inverseHandMatrix, worldMatrix, state->carryMatrix);
+        state->phase = SH_STAFF_PHASE_RENDER_ATTACHED;
     }
 
-    if (state->phase == SHSTAFF_PHASE_CARRY_LOCAL) {
-        ObjPath_GetPointLocalMtx(player, 0, state->carryMatrix);
-        state->phase = SHSTAFF_PHASE_CARRY_RENDER;
+    if (state->phase == SH_STAFF_PHASE_ATTACH_LOCAL) {
+        ObjPath_GetPointLocalMtx(player, 0, &state->carryMatrix[0][0]);
+        state->phase = SH_STAFF_PHASE_RENDER_ATTACHED;
     }
 
-    if (state->phase == SHSTAFF_PHASE_CARRY_RENDER) {
-        PSMTXConcat((MtxPtr)ObjPath_GetPointModelMtx(player, 0), (MtxPtr)state->carryMatrix, (MtxPtr)mtxB);
-        objSetCurrentMatrix((MtxPtr)mtxB);
+    if (state->phase == SH_STAFF_PHASE_RENDER_ATTACHED) {
+        MtxPtr handMatrix = (MtxPtr)ObjPath_GetPointModelMtx(player, 0);
+        PSMTXConcat(handMatrix, state->carryMatrix, worldMatrix);
+        objSetCurrentMatrix(worldMatrix);
         objRenderModel(obj);
     } else {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 
-    if ((state->hazeFlags & SHSTAFF_HAZE_FLAG_SPAWN_EVEN) != 0 &&
-        (state->hazeFlags & SHSTAFF_HAZE_FLAG_EVEN_COMPLETE) == 0) {
-        for (i = 2; i < SHSTAFF_HAZE_CHILD_COUNT; i += 2) {
+    Vec3f pathStart;
+    Vec3f pathEnd;
+    ObjPath_GetPointWorldPosition(obj, 0, &pathStart.x, &pathStart.y, &pathStart.z, 0);
+    ObjPath_GetPointWorldPosition(obj, 1, &pathEnd.x, &pathEnd.y, &pathEnd.z, 0);
+    Vec3f pathDelta = {
+        pathEnd.x - pathStart.x,
+        pathEnd.y - pathStart.y,
+        pathEnd.z - pathStart.z,
+    };
+
+    int i;
+    if ((state->hazeFlags & SH_STAFF_HAZE_SPAWN_EVEN) != 0 && (state->hazeFlags & SH_STAFF_HAZE_EVEN_COMPLETE) == 0) {
+        for (i = 2; i < SH_STAFF_HAZE_COUNT; i += 2) {
             if (state->hazeChildren[i] == NULL) {
                 state->hazeSpawnPending[i] = 1;
                 break;
             }
         }
-        if (i >= SHSTAFF_HAZE_CHILD_COUNT) {
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_EVEN_COMPLETE;
+        if (i >= SH_STAFF_HAZE_COUNT) {
+            state->hazeFlags |= SH_STAFF_HAZE_EVEN_COMPLETE;
         }
     }
 
-    if ((state->hazeFlags & SHSTAFF_HAZE_FLAG_SPAWN_ODD) != 0 &&
-        (state->hazeFlags & SHSTAFF_HAZE_FLAG_ODD_COMPLETE) == 0) {
-        for (i = 1; i < SHSTAFF_HAZE_CHILD_COUNT; i += 2) {
+    if ((state->hazeFlags & SH_STAFF_HAZE_SPAWN_ODD) != 0 && (state->hazeFlags & SH_STAFF_HAZE_ODD_COMPLETE) == 0) {
+        for (i = 1; i < SH_STAFF_HAZE_COUNT; i += 2) {
             if (state->hazeChildren[i] == NULL) {
                 state->hazeSpawnPending[i] = 1;
                 break;
             }
         }
-        if (i >= SHSTAFF_HAZE_CHILD_COUNT) {
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_ODD_COMPLETE;
+        if (i >= SH_STAFF_HAZE_COUNT) {
+            state->hazeFlags |= SH_STAFF_HAZE_ODD_COMPLETE;
         }
     }
-
-    f32 z0, y0, x0, z1, y1, x1;
-    ObjPath_GetPointWorldPosition(obj, 0, &x0, &y0, &z0, 0);
-    ObjPath_GetPointWorldPosition(obj, 1, &x1, &y1, &z1, 0);
-    f32 dx = x1 - x0;
-    f32 dy = y1 - y0;
-    f32 dz = z1 - z0;
     if (state->hazeFlags == 0) {
         f32 scale = 0.5f;
         if (state->hazeFadeTimer != 0.0f) {
@@ -170,7 +214,7 @@ void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int render
                 GameObject* hazeChild = state->hazeChildren[0];
                 if (hazeChild != NULL) {
                     hazeChild->anim.flags |= OBJANIM_FLAG_HIDDEN;
-                    state->hazeChildren[0] = 0;
+                    state->hazeChildren[0] = NULL;
                     state->hazeFadeTimer = 0.0f;
                 }
             } else {
@@ -179,33 +223,33 @@ void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int render
         }
 
         if (state->hazeChildren[0] != NULL) {
-            state->hazeChildren[0]->anim.localPosX = dx * state->hazeClimbT + x0;
-            state->hazeChildren[0]->anim.localPosY = dy * state->hazeClimbT + y0;
-            state->hazeChildren[0]->anim.localPosZ = dz * state->hazeClimbT + z0;
+            state->hazeChildren[0]->anim.localPosX = pathDelta.x * state->hazeClimbProgress + pathStart.x;
+            state->hazeChildren[0]->anim.localPosY = pathDelta.y * state->hazeClimbProgress + pathStart.y;
+            state->hazeChildren[0]->anim.localPosZ = pathDelta.z * state->hazeClimbProgress + pathStart.z;
             state->hazeChildren[0]->anim.rootMotionScale = scale;
         }
 
         return;
     }
 
-    if ((state->hazeFlags & SHSTAFF_HAZE_FLAG_CONVERGE) == 0) {
+    if ((state->hazeFlags & SH_STAFF_HAZE_CONVERGE) == 0) {
         f32 scatterScale = 0.01f;
-        if ((state->hazeFlags & SHSTAFF_HAZE_FLAG_FADE_OUT) != 0) {
-            state->hazeFadeTimer = state->hazeFadeTimer - timeDelta;
+        if ((state->hazeFlags & SH_STAFF_HAZE_FADE_OUT) != 0) {
+            state->hazeFadeTimer -= timeDelta;
             if (state->hazeFadeTimer <= 0.0f) {
-                state->hazeFlags &= ~SHSTAFF_HAZE_FLAG_FADE_OUT;
+                state->hazeFlags &= ~SH_STAFF_HAZE_FADE_OUT;
             } else {
                 scatterScale = 1.0f / 120.0f * state->hazeFadeTimer;
             }
         }
 
-        for (j = 0; j < SHSTAFF_HAZE_CHILD_COUNT; j++) {
+        for (int j = 0; j < SH_STAFF_HAZE_COUNT; j++) {
             if (state->hazeChildren[j] != NULL) {
                 f32 t = 1.0f / 9.0f * j;
-                t = t + (f32)randomGetRange(-0x32, 0x32) / 1000.0f;
-                state->hazeChildren[j]->anim.localPosX = dx * t + x0;
-                state->hazeChildren[j]->anim.localPosY = dy * t + y0;
-                state->hazeChildren[j]->anim.localPosZ = dz * t + z0;
+                t += (f32)randomGetRange(-0x32, 0x32) / 1000.0f;
+                state->hazeChildren[j]->anim.localPosX = pathDelta.x * t + pathStart.x;
+                state->hazeChildren[j]->anim.localPosY = pathDelta.y * t + pathStart.y;
+                state->hazeChildren[j]->anim.localPosZ = pathDelta.z * t + pathStart.z;
                 state->hazeChildren[j]->anim.rootMotionScale = scatterScale;
             }
         }
@@ -214,13 +258,7 @@ void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int render
     }
 
     f32 foldScale;
-    for (i = 5; i < 5; i++) {
-        if (state->hazeChildren[i] != NULL) {
-            state->hazeChildren[i]->anim.flags |= OBJANIM_FLAG_HIDDEN;
-            state->hazeChildren[i] = 0;
-        }
-    }
-    if ((state->hazeFlags & SHSTAFF_HAZE_FLAG_FADE_OUT) != 0) {
+    if ((state->hazeFlags & SH_STAFF_HAZE_FADE_OUT) != 0) {
         state->hazeFadeTimer -= timeDelta;
         if (state->hazeFadeTimer <= 0.0f) {
             foldScale = 0.01f;
@@ -236,90 +274,85 @@ void sh_staff_render(GameObject* obj, int renderArg2, int renderArg3, int render
         foldScale = (1.0f / 120.0f) * state->hazeFadeTimer;
     }
 
-    for (j = 0; j < 5; j++) {
-        if (state->hazeChildren[j] != NULL && state->hazeChildren[4] != NULL) {
+    GameObject* startAnchor = state->hazeChildren[4];
+    for (int j = 0; j < 5; j++) {
+        if (state->hazeChildren[j] != NULL && startAnchor != NULL) {
             f32 t = 0.2f + j / 5.0f;
             state->hazeChildren[j]->anim.localPosX =
-                t * (x0 - state->hazeChildren[4]->anim.localPosX) + state->hazeChildren[4]->anim.localPosX;
+                t * (pathStart.x - startAnchor->anim.localPosX) + startAnchor->anim.localPosX;
             state->hazeChildren[j]->anim.localPosY =
-                t * (y0 - state->hazeChildren[4]->anim.localPosY) + state->hazeChildren[4]->anim.localPosY;
+                t * (pathStart.y - startAnchor->anim.localPosY) + startAnchor->anim.localPosY;
             state->hazeChildren[j]->anim.localPosZ =
-                t * (z0 - state->hazeChildren[4]->anim.localPosZ) + state->hazeChildren[4]->anim.localPosZ;
+                t * (pathStart.z - startAnchor->anim.localPosZ) + startAnchor->anim.localPosZ;
             state->hazeChildren[j]->anim.rootMotionScale = foldScale;
         }
     }
 
-    for (j = 9; j > 4; j--) {
-        if (state->hazeChildren[j] != NULL && state->hazeChildren[5] != NULL) {
+    GameObject* endAnchor = state->hazeChildren[5];
+    for (int j = 9; j > 4; j--) {
+        if (state->hazeChildren[j] != NULL && endAnchor != NULL) {
             f32 t = 0.2f + (9.0f - j) / 5.0f;
             state->hazeChildren[j]->anim.localPosX =
-                t * (x1 - state->hazeChildren[5]->anim.localPosX) + state->hazeChildren[5]->anim.localPosX;
+                t * (pathEnd.x - endAnchor->anim.localPosX) + endAnchor->anim.localPosX;
             state->hazeChildren[j]->anim.localPosY =
-                t * (y1 - state->hazeChildren[5]->anim.localPosY) + state->hazeChildren[5]->anim.localPosY;
+                t * (pathEnd.y - endAnchor->anim.localPosY) + endAnchor->anim.localPosY;
             state->hazeChildren[j]->anim.localPosZ =
-                t * (z1 - state->hazeChildren[5]->anim.localPosZ) + state->hazeChildren[5]->anim.localPosZ;
+                t * (pathEnd.z - endAnchor->anim.localPosZ) + endAnchor->anim.localPosZ;
             state->hazeChildren[j]->anim.rootMotionScale = foldScale;
         }
     }
 }
 
-int sh_staff_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+static int sh_staff_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     ShStaffState* state = obj->extra;
 
-    for (int i = 0; i < SHSTAFF_HAZE_CHILD_COUNT; i++) {
+    (void)unused;
+
+    for (int i = 0; i < SH_STAFF_HAZE_COUNT; i++) {
         if (state->hazeSpawnPending[i] != 0) {
-            GameObject* loadResult;
-            if (Obj_IsLoadingLocked() == 0) {
-                loadResult = NULL;
-            } else {
-                ObjPlacement* newSetup = Obj_AllocObjectSetup(SHSTAFF_HAZE_SETUP_SIZE, SHSTAFF_CHILD_OBJ_HAZE_FLAME);
-                newSetup->color[0] = 2;
-                newSetup->color[3] = 0xff;
-                loadResult = loadObjectAtObject(obj, newSetup);
-            }
-            state->hazeChildren[i] = loadResult;
+            state->hazeChildren[i] = shStaff_spawnHaze(obj);
             state->hazeSpawnPending[i] = 0;
         }
     }
 
     for (int i = 0; i < animUpdate->eventCount; i++) {
         switch (animUpdate->eventIds[i]) {
-        case SHSTAFF_EVENT_ATTACH_WORLD:
-            state->phase = SHSTAFF_PHASE_CARRY_ATTACH;
+        case SH_STAFF_EVENT_ATTACH_WORLD:
+            state->phase = SH_STAFF_PHASE_ATTACH_WORLD;
             break;
-        case SHSTAFF_EVENT_SHOW_HELP_TEXT:
+        case SH_STAFF_EVENT_SHOW_HELP_TEXT:
             state->helpTextVisible = 1;
             break;
-        case SHSTAFF_EVENT_HIDE_HELP_TEXT:
+        case SH_STAFF_EVENT_HIDE_HELP_TEXT:
             state->helpTextVisible = 0;
             break;
-        case SHSTAFF_EVENT_DEACTIVATE:
+        case SH_STAFF_EVENT_DEACTIVATE:
             sh_staff_deactivate(obj, state, 1);
             break;
-        case SHSTAFF_EVENT_ATTACH_LOCAL:
-            state->phase = SHSTAFF_PHASE_CARRY_LOCAL;
+        case SH_STAFF_EVENT_ATTACH_LOCAL:
+            state->phase = SH_STAFF_PHASE_ATTACH_LOCAL;
             break;
-        case SHSTAFF_EVENT_SHOW_STAFF_HUD:
+        case SH_STAFF_EVENT_SHOW_STAFF_HUD:
             setHudForceShowMask(1);
             break;
-        case SHSTAFF_EVENT_SPAWN_EVEN_HAZE:
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_SPAWN_EVEN;
+        case SH_STAFF_EVENT_SPAWN_EVEN_HAZE:
+            state->hazeFlags |= SH_STAFF_HAZE_SPAWN_EVEN;
             break;
-        case SHSTAFF_EVENT_SPAWN_ODD_HAZE:
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_SPAWN_ODD;
+        case SH_STAFF_EVENT_SPAWN_ODD_HAZE:
+            state->hazeFlags |= SH_STAFF_HAZE_SPAWN_ODD;
             break;
-        case SHSTAFF_EVENT_FADE_HAZE_OUT:
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_FADE_OUT;
+        case SH_STAFF_EVENT_FADE_HAZE_OUT:
+            state->hazeFlags |= SH_STAFF_HAZE_FADE_OUT;
             state->hazeFadeTimer = 60.0f;
             break;
-        case SHSTAFF_EVENT_CONVERGE_HAZE:
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_CONVERGE;
+        case SH_STAFF_EVENT_CONVERGE_HAZE:
+            state->hazeFlags |= SH_STAFF_HAZE_CONVERGE;
             state->hazeFadeTimer = 0.0f;
             break;
-        case SHSTAFF_EVENT_FINISH_HAZE_EFFECT:
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_FADE_OUT;
-            state->hazeFlags |= SHSTAFF_HAZE_FLAG_EVEN_COMPLETE | SHSTAFF_HAZE_FLAG_ODD_COMPLETE;
-            state->hazeFadeTimer = SHSTAFF_FADE_OUT_TIMER_INIT;
+        case SH_STAFF_EVENT_FINISH_HAZE_EFFECT:
+            state->hazeFlags |= SH_STAFF_HAZE_FADE_OUT;
+            state->hazeFlags |= SH_STAFF_HAZE_EVEN_COMPLETE | SH_STAFF_HAZE_ODD_COMPLETE;
+            state->hazeFadeTimer = 1500.0f;
             break;
         case 0:
         case 1:
@@ -330,118 +363,99 @@ int sh_staff_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpda
     if (state->helpTextVisible != 0) {
         (*gGameUIInterface)->showMinimapInfoText(obj->anim.modelInstance->helpTextIds[1], 0xa0, 0x8c);
     }
-    state->hazeClimbT += 0.01f * timeDelta;
-    if (state->hazeClimbT > 1.0f) {
-        state->hazeClimbT = 0.0f;
+    state->hazeClimbProgress += 0.01f * timeDelta;
+    if (state->hazeClimbProgress > 1.0f) {
+        state->hazeClimbProgress = 0.0f;
     }
     return 0;
 }
 
-void sh_staff_deactivate(GameObject* obj, ShStaffState* state, int clearChildren) {
+static void sh_staff_deactivate(GameObject* obj, ShStaffState* state, int clearChildren) {
     ObjHits_DisableObject(obj);
     obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
 
     if (clearChildren == 0) {
-        state->phase = SHSTAFF_PHASE_DONE;
+        state->phase = SH_STAFF_PHASE_DONE;
         return;
     }
 
     GameObject* player = Obj_GetPlayerObject();
     staffToggle(player, 1);
     playerPutAwayStaff(player, 1);
-    for (int i = 0; i < SHSTAFF_HAZE_CHILD_COUNT; i++) {
+    for (int i = 0; i < SH_STAFF_HAZE_COUNT; i++) {
         if (state->hazeChildren[i] != NULL) {
             state->hazeChildren[i]->anim.flags |= OBJANIM_FLAG_HIDDEN;
-            state->hazeChildren[i] = 0;
+            state->hazeChildren[i] = NULL;
         }
     }
 
-    state->phase = SHSTAFF_PHASE_DONE;
+    state->phase = SH_STAFF_PHASE_DONE;
 }
 
-void sh_staff_update(GameObject* obj) {
+static void sh_staff_update(GameObject* obj) {
     ShStaffState* state = obj->extra;
-    ShStaffPlacement* placement = (ShStaffPlacement*)obj->anim.placementData;
+    const ShStaffPlacement* placement = (const ShStaffPlacement*)obj->anim.placementData;
     GameObject* player = Obj_GetPlayerObject();
     f32 distanceSq = getXZDistanceSquared(&obj->anim.worldPosX, &player->anim.worldPosX);
     u8 currentPhase = state->phase;
 
-    if (currentPhase == SHSTAFF_PHASE_IDLE) {
+    if (currentPhase == SH_STAFF_PHASE_IDLE) {
         if (player != NULL && Player_GetStaffObject(player) != NULL) {
             if (mainGetBit(GAMEBIT_STAFF_ACQUIRED) != 0) {
-                sh_staff_deactivate(obj, obj->extra, 0);
+                sh_staff_deactivate(obj, state, 0);
             } else {
-                GameObject* loadResult;
                 staffToggle(player, 0);
-                ObjAnim_SetMoveProgress((ObjAnimComponent*)obj, 1.0f);
-                obj->anim.rotY = (s16)(placement->rotYByte << 8);
-                obj->anim.rotZ = (s16)(placement->rotZByte << 8);
+                ObjAnim_SetMoveProgress(&obj->anim, 1.0f);
+                obj->anim.rotY = (s16)((u16)placement->initialRotationY * 0x100);
+                obj->anim.rotZ = (s16)((u16)placement->initialRotationZ * 0x100);
                 obj->animEventCallback = sh_staff_sequenceCallback;
-                state->phase = SHSTAFF_PHASE_ARMED;
-                if (Obj_IsLoadingLocked() == 0) {
-                    loadResult = NULL;
-                } else {
-                    ObjPlacement* newSetup =
-                        Obj_AllocObjectSetup(SHSTAFF_HAZE_SETUP_SIZE, SHSTAFF_CHILD_OBJ_HAZE_FLAME);
-                    newSetup->color[0] = 2;
-                    newSetup->color[3] = 0xff;
-                    loadResult = loadObjectAtObject(obj, newSetup);
-                }
-                state->hazeChildren[0] = loadResult;
-                state->fizzSfxTimer = SHSTAFF_FIZZ_SFX_TIMER_INIT;
+                state->phase = SH_STAFF_PHASE_ARMED;
+                state->hazeChildren[0] = shStaff_spawnHaze(obj);
+                state->fizzSfxTimer = 0.9f;
             }
         }
-    } else if (currentPhase == SHSTAFF_PHASE_ARMED) {
+    } else if (currentPhase == SH_STAFF_PHASE_ARMED) {
         if (ObjTrigger_IsSet(obj) != 0) {
-            GameObject* target = objGetNearestTypeTo(SHSTAFF_TARGET_OBJGROUP, obj, 0);
-            (*gObjectTriggerInterface)->runSequence(0, (void*)target, -1);
-            state->phase = SHSTAFF_PHASE_PICKUP;
+            GameObject* target = objGetNearestTypeTo(SH_STAFF_SEQUENCE_TARGET_GROUP, obj, 0);
+            (*gObjectTriggerInterface)->runSequence(0, target, -1);
+            state->phase = SH_STAFF_PHASE_PICKUP;
             state->hazeFadeTimer = 60.0f;
             mainSetBits(GAMEBIT_STAFF_ACQUIRED, 1);
-        } else if (distanceSq > SHSTAFF_MAP_UNLOAD_DIST_SQ) {
+        } else if (distanceSq > 490000.0f) {
             if (state->pickupMapLoaded != 0) {
                 state->pickupMapLoaded = 0;
-                mapUnload(SHSTAFF_PICKUP_MAP_CELL, SHSTAFF_PICKUP_MAP_LOAD_FLAGS);
+                mapUnload(0x13, 0x20000000);
             }
-        } else if (distanceSq < SHSTAFF_MAP_LOAD_DIST_SQ) {
+        } else if (distanceSq < 250000.0f) {
             if (state->pickupMapLoaded == 0) {
                 state->pickupMapLoaded = 1;
-                loadMapAndParent(SHSTAFF_PICKUP_MAP_ID);
+                loadMapAndParent(8);
             }
         }
     } else if (state->pickupMapLoaded != 0) {
         state->pickupMapLoaded = 0;
-        mapUnload(SHSTAFF_PICKUP_MAP_CELL, SHSTAFF_PICKUP_MAP_LOAD_FLAGS);
+        mapUnload(0x13, 0x20000000);
         mainSetBits(GAMEBIT_STAFF_PICKUP_MAP_UNLOADED, 1);
     }
     setHudForceShowMask(0);
-    state->hazeClimbT = 0.01f * timeDelta + state->hazeClimbT;
-    if (state->hazeClimbT > 1.0f) {
-        state->hazeClimbT = 0.0f;
+    state->hazeClimbProgress += 0.01f * timeDelta;
+    if (state->hazeClimbProgress > 1.0f) {
+        state->hazeClimbProgress = 0.0f;
     }
-    state->fizzSfxTimer = 0.01f * timeDelta + state->fizzSfxTimer;
+    state->fizzSfxTimer += 0.01f * timeDelta;
     if (state->fizzSfxTimer > 1.0f) {
         state->fizzSfxTimer = 0.0f;
-        if (state->phase == SHSTAFF_PHASE_ARMED) {
+        if (state->phase == SH_STAFF_PHASE_ARMED) {
             Sfx_PlayFromObject(obj, SFXTRIG_pk_staff_fizz);
         }
     }
 }
 
 ObjectDescriptor gSH_staffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)sh_staff_update,
-    0,
-    (ObjectDescriptorCallback)sh_staff_render,
-    (ObjectDescriptorCallback)sh_staff_free,
-    0,
-    sh_staff_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .update = (ObjectDescriptorCallback)sh_staff_update,
+    .render = (ObjectDescriptorCallback)sh_staff_render,
+    .free = (ObjectDescriptorCallback)sh_staff_free,
+    .getExtraSize = sh_staff_getExtraSize,
 };

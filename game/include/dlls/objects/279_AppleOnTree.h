@@ -5,9 +5,9 @@
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 
-#define APPLE_ON_TREE_OBJECT_ID      0x210
-#define APPLE_ON_TREE_PLACEMENT_SIZE 0x28
-#define APPLE_ON_TREE_STATE_SIZE     0x64
+enum AppleOnTreeObjectId {
+    APPLE_ON_TREE_OBJECT_ID = 0x210,
+};
 
 typedef struct AppleOnTreePlacement {
     ObjPlacement base;      /* 0x00 */
@@ -69,7 +69,7 @@ STATIC_ASSERT(offsetof(AppleOnTreePlacement, landedEndFraction) == 0x23);
 STATIC_ASSERT(offsetof(AppleOnTreePlacement, fadeEndFraction) == 0x24);
 STATIC_ASSERT(offsetof(AppleOnTreePlacement, waterAccelerationPercent) == 0x25);
 STATIC_ASSERT(offsetof(AppleOnTreePlacement, despawnGameBit) == 0x26);
-STATIC_ASSERT(sizeof(AppleOnTreePlacement) == APPLE_ON_TREE_PLACEMENT_SIZE);
+STATIC_ASSERT(sizeof(AppleOnTreePlacement) == 0x28);
 
 STATIC_ASSERT(offsetof(AppleOnTreeState, unk00) == 0x0);
 STATIC_ASSERT(offsetof(AppleOnTreeState, phaseDuration) == 0x4);
@@ -103,7 +103,7 @@ STATIC_ASSERT(offsetof(AppleOnTreeState, pad5B) == 0x5B);
 STATIC_ASSERT(offsetof(AppleOnTreeState, triggerGameBit) == 0x5C);
 STATIC_ASSERT(offsetof(AppleOnTreeState, pickupMessageValue) == 0x5E);
 STATIC_ASSERT(offsetof(AppleOnTreeState, pickupMessageArgument) == 0x60);
-STATIC_ASSERT(sizeof(AppleOnTreeState) == APPLE_ON_TREE_STATE_SIZE);
+STATIC_ASSERT(sizeof(AppleOnTreeState) == 0x64);
 
 /* gAppleOnTreeObjDescriptor from slot02 onwards: the export table other
    objects reach through obj->anim.dll. */

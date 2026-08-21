@@ -9,9 +9,31 @@
 #include "main/shader_api.h"
 #include "main/shader_map_api.h"
 
-
-
 char sTexFrameAnimDebugFormat[] = " TEXFRAMEANIM %i ";
+
+typedef enum TexFrameAnimatorFlags {
+    TEX_FRAME_ANIMATOR_FLAG_ACTIVE = 1 << 5,
+    TEX_FRAME_ANIMATOR_FLAG_DONE = 1 << 6,
+} TexFrameAnimatorFlags;
+
+typedef struct TexFrameAnimatorState {
+    int textureSlot;
+    u8 speed;
+    u8 pad05[3];
+    int endFrame;
+    int wrapFrame;
+    int frame;
+    u8 flags;
+    u8 pad15[3];
+} TexFrameAnimatorState;
+
+STATIC_ASSERT(sizeof(TexFrameAnimatorState) == 0x18);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, textureSlot) == 0x00);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, speed) == 0x04);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, endFrame) == 0x08);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, wrapFrame) == 0x0C);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, frame) == 0x10);
+STATIC_ASSERT(offsetof(TexFrameAnimatorState, flags) == 0x14);
 
 int TexFrameAnimator_getExtraSize(void) {
     return sizeof(TexFrameAnimatorState);
@@ -26,9 +48,7 @@ void TexFrameAnimator_free(void) {
 
 void TexFrameAnimator_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
                              s8 visible) {
-    s32 isVisible = visible;
-
-    if (isVisible != 0) {
+    if (visible != 0) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
@@ -37,37 +57,36 @@ void TexFrameAnimator_hitDetect(void) {
 }
 
 void TexFrameAnimator_update(GameObject* obj) {
-    TexFrameAnimatorState* state;
-    TexFrameAnimatorPlacement* placement;
-    MapBlockData* mapBlock;
-    s16* textureOverrideIndex;
-    MapTextureOverride* textureOverride;
+    TexFrameAnimatorState* state = obj->extra;
+    const TexFrameAnimatorPlacement* placement =
+        (const TexFrameAnimatorPlacement*)obj->anim.placementData;
 
-    state = obj->extra;
-    placement = (TexFrameAnimatorPlacement*)obj->anim.placementData;
-
-    if ((state->active == 0) && (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->triggerGameBit))) != 0) && (state->done == 0)) {
-        state->active = 1;
+    if ((state->flags & (TEX_FRAME_ANIMATOR_FLAG_ACTIVE | TEX_FRAME_ANIMATOR_FLAG_DONE)) == 0 &&
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit)) != 0) {
+        state->flags |= TEX_FRAME_ANIMATOR_FLAG_ACTIVE;
         state->frame = 0;
     }
 
-    if ((state->active != 0) && (state->textureSlot != 0)) {
-        mapBlock = mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
+    if ((state->flags & TEX_FRAME_ANIMATOR_FLAG_ACTIVE) != 0 && state->textureSlot != 0) {
+        MapBlockData* mapBlock =
+            mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
         if (mapBlock == NULL || !(mapBlock->flags4 & MAP_BLOCK_FLAG_LOADED)) {
             return;
         }
-        textureOverrideIndex = mapBlockFindTextureOverrideIndex(mapBlock, state->textureSlot);
+        s16* textureOverrideIndex = mapBlockFindTextureOverrideIndex(mapBlock, state->textureSlot);
         if (textureOverrideIndex != NULL) {
-            textureOverride = mapTextureOverrideGetEntry(*textureOverrideIndex);
+            MapTextureOverride* textureOverride = mapTextureOverrideGetEntry(*textureOverrideIndex);
             state->frame += state->speed * framesThisStep;
             logPrintf(sTexFrameAnimDebugFormat, state->frame);
             if (state->frame < 0) {
                 state->frame = 0;
             } else if (state->frame > state->endFrame) {
-                if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)) != -1) {
-                    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
-                    state->active = 0;
-                    state->done = 1;
+                s16 completionGameBit =
+                    ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit);
+                if (completionGameBit != -1) {
+                    mainSetBits(completionGameBit, 1);
+                    state->flags &= (u8)~TEX_FRAME_ANIMATOR_FLAG_ACTIVE;
+                    state->flags |= TEX_FRAME_ANIMATOR_FLAG_DONE;
                     state->frame = state->endFrame;
                 } else {
                     state->frame = state->wrapFrame;
@@ -78,22 +97,18 @@ void TexFrameAnimator_update(GameObject* obj) {
     }
 }
 
-void TexFrameAnimator_init(GameObject* obj, TexFrameAnimatorPlacement* placement) {
-    TexFrameAnimatorState* state;
-    u8 completionBitValue;
-
-    state = obj->extra;
+void TexFrameAnimator_init(GameObject* obj, const TexFrameAnimatorPlacement* placement) {
+    TexFrameAnimatorState* state = obj->extra;
     state->textureSlot = placement->textureSlot;
-    state->endFrame = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->endFrame)) << 8;
-    state->speed = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->speed));
-    state->wrapFrame = placement->wrapFrame << 8;
-    completionBitValue = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)));
-    if ((state->done = completionBitValue) != 0) {
+    state->endFrame = ObjAnim_ReadPlacementS16(&obj->anim, &placement->endFrame) * 256;
+    state->speed = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->speed);
+    state->wrapFrame = (int)placement->wrapFrame * 256;
+    state->flags = 0;
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit)) != 0) {
+        state->flags = TEX_FRAME_ANIMATOR_FLAG_DONE | TEX_FRAME_ANIMATOR_FLAG_ACTIVE;
         state->frame = state->endFrame;
-        state->active = 1;
     }
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HIDDEN);
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN;
 }
 
 void TexFrameAnimator_release(void) {

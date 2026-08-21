@@ -1,16 +1,7 @@
-/*
- * SH_queenear (DLL 0x1AC) - the Queen EarthWalker in ThornTail
- * Hollow, the giant matriarch dinosaur the player tends.
- *
- * update() is driven by the area's map-event act: it picks the queen's
- * trigger-sequence event table for the current act, walks her toward the
- * player and runs idle/attention sequences. The feeding and open-portal
- * sub-handlers cover the berry-feeding interaction (Y-button item 0x66d)
- * and the spell-portal opening. stateIndex selects the locomotion move
- * and speed tables; the flags byte tracks the per-frame mode.
- */
 #include "dlls/objects/428_SH_queenear.h"
 
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_stop_channel_api.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -20,396 +11,442 @@
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEvent.h"
+#include "main/mapEventTypes.h"
+#include "main/obj_trigger.h"
+#include "main/objprint_anim_api.h"
 #include "main/objprint_character_api.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/objprint_anim_api.h"
-#include "main/obj_trigger.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/mapEventTypes.h"
 
-#define QUEEN_EARTH_WALKER_TARGET_OBJECT_GROUP 0xF
+enum QueenEarthWalkerStateId {
+    QUEEN_EARTH_WALKER_WAITING_FOR_RETURN,
+    QUEEN_EARTH_WALKER_READY_TO_FEED,
+    QUEEN_EARTH_WALKER_FINISHING_FEED,
+    QUEEN_EARTH_WALKER_FED,
+    QUEEN_EARTH_WALKER_DEPARTING,
+};
 
-#define QUEEN_EARTH_WALKER_REQUIRED_FEED_COUNT   6
-#define QUEEN_EARTH_WALKER_LOOPING_SFX_CHANNEL   0x7F
-#define QUEEN_EARTH_WALKER_PORTAL_SPELL_ID       3
-#define QUEEN_EARTH_WALKER_PORTAL_SPELL_DISTANCE 1e+04f
-#define QUEEN_EARTH_WALKER_TRICKY_FEED_DISTANCE  2.25e+04f
-#define QUEEN_EARTH_WALKER_ATTACK_TIMER_MIN      2.0f
-#define QUEEN_EARTH_WALKER_ATTACK_TIMER_MAX      5.0f
+enum QueenEarthWalkerFlag {
+    QUEEN_EARTH_WALKER_STARTED = 1 << 0,
+    QUEEN_EARTH_WALKER_TARGETING_PLAYER = 1 << 1,
+    QUEEN_EARTH_WALKER_LOOK_LATCHED = 1 << 2,
+    QUEEN_EARTH_WALKER_EYES_CLOSED = 1 << 3,
+    QUEEN_EARTH_WALKER_SUPPRESS_IDLE_SEQUENCE = 1 << 4,
+    QUEEN_EARTH_WALKER_EVENTS_INITIALIZED = 1 << 5,
+};
 
-/* QueenEarthWalkerState::flags bits */
-#define QUEEN_EARTH_WALKER_FLAG_STARTED   0x01 /* First update ran; per-act logic engaged. */
-#define QUEEN_EARTH_WALKER_FLAG_TARGETING 0x02 /* Targeting the player. */
-#define QUEEN_EARTH_WALKER_FLAG_LATCHED   0x04 /* Player position captured. */
-#define QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS 0x08 /* Run characterDoEyeAnims instead of the bite. */
-#define QUEEN_EARTH_WALKER_FLAG_ACTIVE    0x10 /* Feeding completed; suppress idle attacks. */
-#define QUEEN_EARTH_WALKER_FLAG_INIT_DONE 0x20 /* Per-frame animation-event handshake. */
+enum QueenEarthWalkerAnimEvent {
+    QUEEN_EARTH_WALKER_EVENT_CLOSE_EYES,
+    QUEEN_EARTH_WALKER_EVENT_OPEN_EYES,
+    QUEEN_EARTH_WALKER_EVENT_BEGIN_TARGETING,
+    QUEEN_EARTH_WALKER_EVENT_END_TARGETING,
+};
 
-typedef enum QueenEarthWalkerAnimEvent {
-    QUEEN_EARTH_WALKER_ANIM_EVENT_ENABLE_EYE_ANIMS = 0,
-    QUEEN_EARTH_WALKER_ANIM_EVENT_DISABLE_EYE_ANIMS = 1,
-    QUEEN_EARTH_WALKER_ANIM_EVENT_BEGIN_TARGETING = 2,
-    QUEEN_EARTH_WALKER_ANIM_EVENT_END_TARGETING = 3,
-} QueenEarthWalkerAnimEvent;
+enum QueenEarthWalkerMapAct {
+    QUEEN_EARTH_WALKER_ACT_RETURN = 1,
+    QUEEN_EARTH_WALKER_ACT_FEED,
+    QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_A,
+    QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_B,
+    QUEEN_EARTH_WALKER_ACT_PORTAL,
+    QUEEN_EARTH_WALKER_ACT_SPELL,
+    QUEEN_EARTH_WALKER_ACT_BERRY,
+    QUEEN_EARTH_WALKER_ACT_DEPARTURE,
+};
 
-u8 gQueenEarthWalkerEventTableAct1[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0, 0, 0};
-u8 gQueenEarthWalkerEventTableAct2[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x14, 0, 0};
-u8 gQueenEarthWalkerEventTableFed[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {2, 0x0C, 0x0A, 0};
-u8 gQueenEarthWalkerEventTableFeed[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x0E, 0, 0};
-u8 gQueenEarthWalkerEventTablePortalDefault[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x0F, 0, 0};
-u8 gQueenEarthWalkerEventTablePortalReady[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x10, 0, 0};
-u8 gQueenEarthWalkerEventTableSpell[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x11, 0, 0};
-u8 gQueenEarthWalkerEventTableBerry[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x12, 0, 0};
-u8 gQueenEarthWalkerEventTableDeparture[QUEEN_EARTH_WALKER_EVENT_TABLE_SIZE] = {1, 0x13, 0, 0};
-u8 gQueenEarthWalkerEventTableComplete[QUEEN_EARTH_WALKER_COMPLETE_EVENT_TABLE_SIZE] = {5, 7, 8, 9, 0x0A, 0x0B, 0, 0};
+enum QueenEarthWalkerObjectGroup {
+    QUEEN_EARTH_WALKER_TARGET_GROUP = 0xF,
+};
 
-s16 gQueenEarthWalkerMoveTable[QUEEN_EARTH_WALKER_MOVE_COUNT] = {34, 34, 34, 5, 28, 0};
-f32 gQueenEarthWalkerMoveSpeedTable[QUEEN_EARTH_WALKER_MOVE_SPEED_COUNT] = {0.005f, 0.005f, 0.005f, 0.01f, 0.005f};
+enum QueenEarthWalkerSequence {
+    QUEEN_EARTH_WALKER_SEQUENCE_ACT_1 = 0,
+    QUEEN_EARTH_WALKER_SEQUENCE_RETURNED = 1,
+    QUEEN_EARTH_WALKER_SEQUENCE_FEED_REACTION_A = 3,
+    QUEEN_EARTH_WALKER_SEQUENCE_FEED_REACTION_B = 4,
+    QUEEN_EARTH_WALKER_SEQUENCE_FEED_COMPLETE = 5,
+    QUEEN_EARTH_WALKER_SEQUENCE_FED = 6,
+    QUEEN_EARTH_WALKER_SEQUENCE_DEPARTURE = 7,
+};
 
+enum QueenEarthWalkerSequenceTarget {
+    QUEEN_EARTH_WALKER_ACT_1_TARGET = 0x1324,
+    QUEEN_EARTH_WALKER_QUEEN_TARGET = 0x18F6,
+    QUEEN_EARTH_WALKER_DEPARTURE_TARGET = 0x6A4,
+};
 
+enum QueenEarthWalkerSequenceFlag {
+    QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS = -1,
+    QUEEN_EARTH_WALKER_SEQUENCE_QUEEN_FLAGS = 1,
+    QUEEN_EARTH_WALKER_SEQUENCE_DEPARTURE_FLAGS = 8,
+    QUEEN_EARTH_WALKER_SEQUENCE_ACT_1_FLAGS = 0x10,
+};
 
-/*
- * Processes animation events that drive the Queen's attack and feeding
- * behaviour. Event IDs 0/1 enable and disable the eye-animation branch;
- * events 2/3 enter and leave targeting, with event 3 also arming two
- * hit-volume pair bits.
- *
- * While targeting, the Queen latches the player's position once and then
- * either runs the bite or eye tracking according to
- * QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS.
- * QUEEN_EARTH_WALKER_FLAG_INIT_DONE is a one-shot guard that stops the
- * looping object sound.
- */
-int sh_queenearthwalker_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqState* animUpdate) {
-    QueenEarthWalkerState* state = obj->extra;
-    int i;
+enum QueenEarthWalkerHitVolumeMode {
+    QUEEN_EARTH_WALKER_HIT_VOLUME_NEAR_TRICKY = 2,
+    QUEEN_EARTH_WALKER_HIT_VOLUME_FEED = 4,
+};
+
+enum QueenEarthWalkerSpell {
+    QUEEN_EARTH_WALKER_OPEN_PORTAL_SPELL = 3,
+};
+
+enum QueenEarthWalkerAudioChannel {
+    QUEEN_EARTH_WALKER_LOOPING_SFX_CHANNEL = 0x7F,
+};
+
+typedef struct QueenEarthWalkerAnimation {
+    s16 moveId;
+    f32 stepScale;
+} QueenEarthWalkerAnimation;
+
+typedef struct QueenEarthWalkerEventTable {
+    u8 count;
+    u8 sequenceIds[5];
+} QueenEarthWalkerEventTable;
+
+typedef struct QueenEarthWalkerPlacement {
+    ObjPlacement base;
+    s8 yawByte;
+} QueenEarthWalkerPlacement;
+
+typedef struct QueenEarthWalkerState {
+    u8 stateId;
+    u8 unused01;
     u8 flags;
+    u8 unused03[5];
+    CharacterEyeAnimState eyeAnimState;
+    u8 unused30[8];
+    const QueenEarthWalkerEventTable* eventTable;
+    f32 attackTimer;
+} QueenEarthWalkerState;
+
+STATIC_ASSERT(offsetof(QueenEarthWalkerPlacement, yawByte) == 0x18);
+STATIC_ASSERT(offsetof(QueenEarthWalkerState, stateId) == 0x00);
+STATIC_ASSERT(offsetof(QueenEarthWalkerState, flags) == 0x02);
+STATIC_ASSERT(offsetof(QueenEarthWalkerState, eyeAnimState) == 0x08);
+STATIC_ASSERT(offsetof(QueenEarthWalkerState, eventTable) ==
+              offsetof(QueenEarthWalkerState, eyeAnimState) + sizeof(CharacterEyeAnimState) + 8);
+STATIC_ASSERT(offsetof(QueenEarthWalkerState, attackTimer) ==
+              offsetof(QueenEarthWalkerState, eventTable) + sizeof(void*));
+
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableAct1 = {1, {0}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableAct2 = {1, {0x14}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableFed = {2, {0x0C, 0x0A}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableFeed = {1, {0x0E}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTablePortalDefault = {1, {0x0F}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTablePortalReady = {1, {0x10}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableSpell = {1, {0x11}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableBerry = {1, {0x12}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableDeparture = {1, {0x13}};
+static const QueenEarthWalkerEventTable sQueenEarthWalkerEventTableComplete = {5, {7, 8, 9, 0x0A, 0x0B}};
+
+static const QueenEarthWalkerAnimation sQueenEarthWalkerAnimations[] = {
+    [QUEEN_EARTH_WALKER_WAITING_FOR_RETURN] = {34, 0.005f}, [QUEEN_EARTH_WALKER_READY_TO_FEED] = {34, 0.005f},
+    [QUEEN_EARTH_WALKER_FINISHING_FEED] = {34, 0.005f},     [QUEEN_EARTH_WALKER_FED] = {5, 0.01f},
+    [QUEEN_EARTH_WALKER_DEPARTING] = {28, 0.005f},
+};
+
+static f32 queenEarthWalker_xzDistanceSquared(const Vec3f* a, const Vec3f* b) {
+    f32 dx = a->x - b->x;
+    f32 dz = a->z - b->z;
+
+    return dx * dx + dz * dz;
+}
+
+static void queenEarthWalker_lookAtPlayer(GameObject* obj, QueenEarthWalkerState* state) {
+    GameObject* player = Obj_GetPlayerObject();
+
+    state->eyeAnimState.lookAtActive = 1;
+    state->eyeAnimState.lookAtPosX = player->anim.localPos.x;
+    state->eyeAnimState.lookAtPosY = player->anim.localPos.y;
+    state->eyeAnimState.lookAtPosZ = player->anim.localPos.z;
+    characterHeadLookCalm(obj, (s16*)&state->eyeAnimState, 0.0f);
+}
+
+static void queenEarthWalker_updateEyes(GameObject* obj, QueenEarthWalkerState* state) {
+    if (state->flags & QUEEN_EARTH_WALKER_EYES_CLOSED) {
+        characterCloseEyes(obj, &state->eyeAnimState);
+    } else {
+        characterDoEyeAnims(obj, &state->eyeAnimState);
+    }
+}
+
+static int queenEarthWalker_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqState* animUpdate) {
+    QueenEarthWalkerState* state = obj->extra;
 
     (void)unusedArg;
 
-    if ((state->flags & QUEEN_EARTH_WALKER_FLAG_INIT_DONE) == 0) {
+    if (!(state->flags & QUEEN_EARTH_WALKER_EVENTS_INITIALIZED)) {
         Sfx_StopObjectChannel(obj, QUEEN_EARTH_WALKER_LOOPING_SFX_CHANNEL);
-        state->flags &= ~QUEEN_EARTH_WALKER_FLAG_ACTIVE;
-        state->flags |= QUEEN_EARTH_WALKER_FLAG_INIT_DONE;
+        state->flags &= ~QUEEN_EARTH_WALKER_SUPPRESS_IDLE_SEQUENCE;
+        state->flags |= QUEEN_EARTH_WALKER_EVENTS_INITIALIZED;
     }
 
-    for (i = 0; i < animUpdate->eventCount; i++) {
+    for (int i = 0; i < animUpdate->eventCount; i++) {
         switch (animUpdate->eventIds[i]) {
-        case QUEEN_EARTH_WALKER_ANIM_EVENT_ENABLE_EYE_ANIMS:
-            state->flags |= QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS;
+        case QUEEN_EARTH_WALKER_EVENT_CLOSE_EYES:
+            state->flags |= QUEEN_EARTH_WALKER_EYES_CLOSED;
             break;
-        case QUEEN_EARTH_WALKER_ANIM_EVENT_DISABLE_EYE_ANIMS:
-            state->flags &= ~QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS;
+        case QUEEN_EARTH_WALKER_EVENT_OPEN_EYES:
+            state->flags &= ~QUEEN_EARTH_WALKER_EYES_CLOSED;
             break;
-        case QUEEN_EARTH_WALKER_ANIM_EVENT_BEGIN_TARGETING:
-            state->flags |= QUEEN_EARTH_WALKER_FLAG_TARGETING;
+        case QUEEN_EARTH_WALKER_EVENT_BEGIN_TARGETING:
+            state->flags |= QUEEN_EARTH_WALKER_TARGETING_PLAYER;
             break;
-        case QUEEN_EARTH_WALKER_ANIM_EVENT_END_TARGETING:
-            state->flags &= ~QUEEN_EARTH_WALKER_FLAG_TARGETING;
-            animUpdate->flags |= 0x8;
-            animUpdate->flags |= 0x40;
+        case QUEEN_EARTH_WALKER_EVENT_END_TARGETING:
+            state->flags &= ~QUEEN_EARTH_WALKER_TARGETING_PLAYER;
+            animUpdate->flags |= OBJSEQ_APPLY_JOINT_ROTATION_TRACKS | OBJSEQ_APPLY_TEXTURE_SCROLL_TRACK;
             break;
         }
     }
 
-    flags = state->flags;
-    if ((flags & QUEEN_EARTH_WALKER_FLAG_TARGETING) != 0) {
-        if ((flags & QUEEN_EARTH_WALKER_FLAG_LATCHED) == 0) {
-            GameObject* player;
-
-            animUpdate->flags &= ~0x8;
-            player = Obj_GetPlayerObject();
-            state->look.enabled = 1;
-            state->look.targetX = player->anim.localPosX;
-            state->look.targetY = player->anim.localPosY;
-            state->look.targetZ = player->anim.localPosZ;
-            characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
+    u8 flags = state->flags;
+    if (flags & QUEEN_EARTH_WALKER_TARGETING_PLAYER) {
+        if (!(flags & QUEEN_EARTH_WALKER_LOOK_LATCHED)) {
+            animUpdate->flags &= ~OBJSEQ_APPLY_JOINT_ROTATION_TRACKS;
+            queenEarthWalker_lookAtPlayer(obj, state);
         }
-        animUpdate->flags &= ~0x40;
-        if ((state->flags & QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS) != 0) {
-            characterCloseEyes(obj, &state->look);
-        } else {
-            characterDoEyeAnims(obj, &state->look);
-        }
+        animUpdate->flags &= ~OBJSEQ_APPLY_TEXTURE_SCROLL_TRACK;
+        queenEarthWalker_updateEyes(obj, state);
     }
+
     return 0;
 }
 
-void sh_queenearthwalker_updatePortal(GameObject* obj, QueenEarthWalkerState* state) {
-    GameObject* player;
+static void queenEarthWalker_updatePortal(GameObject* obj, QueenEarthWalkerState* state) {
+    GameObject* player = Obj_GetPlayerObject();
 
-    player = Obj_GetPlayerObject();
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
-    if (mainGetBit(0xc48) != 0) {
-        state->eventTable = gQueenEarthWalkerEventTableComplete;
+    if (mainGetBit(GAMEBIT_SH_QueenPortalComplete) != 0) {
+        state->eventTable = &sQueenEarthWalkerEventTableComplete;
     } else if (mainGetBit(GAMEBIT_SH_Related023C) != 0) {
-        state->eventTable = gQueenEarthWalkerEventTablePortalReady;
+        state->eventTable = &sQueenEarthWalkerEventTablePortalReady;
     } else if (mainGetBit(GAMEBIT_STAFF_ABILITY_OPEN_PORTAL) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-        if (playerHasSpell(player, QUEEN_EARTH_WALKER_PORTAL_SPELL_ID) != 0 &&
-            getXZDistanceSquared(&player->anim.worldPosX, &obj->anim.worldPosX) < QUEEN_EARTH_WALKER_PORTAL_SPELL_DISTANCE) {
-            mainSetBits(0x23b, 1);
+        if (playerHasSpell(player, QUEEN_EARTH_WALKER_OPEN_PORTAL_SPELL) != 0 &&
+            queenEarthWalker_xzDistanceSquared(&player->anim.worldPos, &obj->anim.worldPos) < 10000.0f) {
+            mainSetBits(GAMEBIT_SH_OpenPortalRequested, 1);
         }
     } else if (mainGetBit(GAMEBIT_SH_RescuedEggs) != 0) {
-        state->eventTable = gQueenEarthWalkerEventTableComplete;
+        state->eventTable = &sQueenEarthWalkerEventTableComplete;
     } else {
-        state->eventTable = gQueenEarthWalkerEventTablePortalDefault;
+        state->eventTable = &sQueenEarthWalkerEventTablePortalDefault;
     }
 
-    player = Obj_GetPlayerObject();
-    state->look.enabled = 1;
-    state->look.targetX = player->anim.localPosX;
-    state->look.targetY = player->anim.localPosY;
-    state->look.targetZ = player->anim.localPosZ;
-    characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
+    queenEarthWalker_lookAtPlayer(obj, state);
 }
 
-void sh_queenearthwalker_updateFeeding(GameObject* obj, QueenEarthWalkerState* state) {
-    s16 triggerId;
-    s32 total;
-    GameObject* tricky;
-    GameObject* player;
-
-    switch (state->stateIndex) {
-    case 0:
+static void queenEarthWalker_updateFeeding(GameObject* obj, QueenEarthWalkerState* state) {
+    switch (state->stateId) {
+    case QUEEN_EARTH_WALKER_WAITING_FOR_RETURN:
         if (mainGetBit(GAMEBIT_SH_ReturnedToQueen) != 0) {
-            (*gObjectTriggerInterface)->runSequence(1, obj, -1);
-            state->stateIndex = 1;
+            (*gObjectTriggerInterface)
+                ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_RETURNED, obj, QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS);
+            state->stateId = QUEEN_EARTH_WALKER_READY_TO_FEED;
         }
         break;
-    case 1:
+    case QUEEN_EARTH_WALKER_READY_TO_FEED: {
+        s16 triggerId;
+
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
-        if (cMenuGetSelectedItem() == -1) {
-            if (getYButtonItem(&triggerId) == 0 || triggerId != GAMEBIT_ITEM_WhiteShroom_Count) {
-                tricky = getTrickyObject();
-                if (tricky != NULL && getXZDistanceSquared(&tricky->anim.worldPosX, &obj->anim.worldPosX) <
-                                          QUEEN_EARTH_WALKER_TRICKY_FEED_DISTANCE) {
-                    Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, 2);
-                } else {
-                    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-                }
-                break;
+        if (cMenuGetSelectedItem() == -1 &&
+            (getYButtonItem(&triggerId) == 0 || triggerId != GAMEBIT_ITEM_WhiteShroom_Count)) {
+            GameObject* tricky = getTrickyObject();
+
+            if (tricky != NULL &&
+                queenEarthWalker_xzDistanceSquared(&tricky->anim.worldPos, &obj->anim.worldPos) < 22500.0f) {
+                Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, QUEEN_EARTH_WALKER_HIT_VOLUME_NEAR_TRICKY);
+            } else {
+                obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
             }
+            break;
         }
-        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, 4);
+
+        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, QUEEN_EARTH_WALKER_HIT_VOLUME_FEED);
         if (ObjTrigger_IsSetById(obj, GAMEBIT_ITEM_WhiteShroom_Count) != 0) {
-            state->flags |= QUEEN_EARTH_WALKER_FLAG_ACTIVE;
-            total = mainGetBit(GAMEBIT_ITEM_WhiteShroom_Count);
+            state->flags |= QUEEN_EARTH_WALKER_SUPPRESS_IDLE_SEQUENCE;
+            s32 total = mainGetBit(GAMEBIT_ITEM_WhiteShroom_Count);
             total += mainGetBit(GAMEBIT_ITEM_WhiteGrubTub_Used);
             mainSetBits(GAMEBIT_ITEM_WhiteShroom_Count, 0);
             mainSetBits(GAMEBIT_ITEM_WhiteGrubTub_Used, total);
-            if (total != QUEEN_EARTH_WALKER_REQUIRED_FEED_COUNT) {
-                state->flags |= QUEEN_EARTH_WALKER_FLAG_TARGETING;
-                if (randomGetRange(0, 1) != 0) {
-                    (*gObjectTriggerInterface)->runSequence(3, obj, -1);
-                } else {
-                    (*gObjectTriggerInterface)->runSequence(4, obj, -1);
-                }
+            if (total != 6) {
+                state->flags |= QUEEN_EARTH_WALKER_TARGETING_PLAYER;
+                int sequence = randomGetRange(0, 1) != 0 ? QUEEN_EARTH_WALKER_SEQUENCE_FEED_REACTION_A
+                                                         : QUEEN_EARTH_WALKER_SEQUENCE_FEED_REACTION_B;
+                (*gObjectTriggerInterface)->runSequence(sequence, obj, QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS);
             } else {
-                (*gObjectTriggerInterface)->runSequence(5, obj, -1);
-                state->stateIndex = 2;
+                (*gObjectTriggerInterface)
+                    ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_FEED_COMPLETE, obj,
+                                  QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS);
+                state->stateId = QUEEN_EARTH_WALKER_FINISHING_FEED;
             }
         }
         break;
-    case 2:
-        (*gObjectTriggerInterface)->runSequence(6, obj, -1);
-        mainSetBits(0x9e, 1);
-        state->stateIndex = 3;
+    }
+    case QUEEN_EARTH_WALKER_FINISHING_FEED:
+        (*gObjectTriggerInterface)
+            ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_FED, obj, QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS);
+        mainSetBits(GAMEBIT_SH_QueenFed, 1);
+        state->stateId = QUEEN_EARTH_WALKER_FED;
         break;
-    case 3:
-        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, 2);
-        state->flags &= ~QUEEN_EARTH_WALKER_FLAG_LATCHED;
-        state->flags &= ~QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS;
-        state->eventTable = gQueenEarthWalkerEventTableFed;
-        player = Obj_GetPlayerObject();
-        state->look.enabled = 1;
-        state->look.targetX = player->anim.localPosX;
-        state->look.targetY = player->anim.localPosY;
-        state->look.targetZ = player->anim.localPosZ;
-        characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
+    case QUEEN_EARTH_WALKER_FED:
+        Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, QUEEN_EARTH_WALKER_HIT_VOLUME_NEAR_TRICKY);
+        state->flags &= ~QUEEN_EARTH_WALKER_LOOK_LATCHED;
+        state->flags &= ~QUEEN_EARTH_WALKER_EYES_CLOSED;
+        state->eventTable = &sQueenEarthWalkerEventTableFed;
+        queenEarthWalker_lookAtPlayer(obj, state);
         break;
     default:
         break;
     }
 }
 
-int sh_queenearthwalker_getExtraSize(void) {
+static int queenEarthWalker_getExtraSize(void) {
     return sizeof(QueenEarthWalkerState);
 }
 
-void sh_queenearthwalker_update(GameObject* obj) {
-    QueenEarthWalkerState* state;
-    GameObject* player;
-    GameObject* target;
-    u8 action;
-    s8 mapSlot;
-    u8 stateFlags;
-    u8 eventIndex;
-    int currentMove;
-    s16 targetMove;
+static void queenEarthWalker_selectEventTable(GameObject* obj, QueenEarthWalkerState* state, u8 action) {
+    switch (action) {
+    case QUEEN_EARTH_WALKER_ACT_FEED:
+        queenEarthWalker_updateFeeding(obj, state);
+        break;
+    case QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_A:
+    case QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_B:
+        state->eventTable = mainGetBit(GAMEBIT_ITEM_MoonPassKey_Got) != 0 ? &sQueenEarthWalkerEventTableComplete
+                                                                          : &sQueenEarthWalkerEventTableFeed;
+        queenEarthWalker_lookAtPlayer(obj, state);
+        break;
+    case QUEEN_EARTH_WALKER_ACT_PORTAL:
+        queenEarthWalker_updatePortal(obj, state);
+        break;
+    case QUEEN_EARTH_WALKER_ACT_SPELL:
+        state->eventTable = mainGetBit(GAMEBIT_ITEM_BigScarabBag_Got) != 0 ? &sQueenEarthWalkerEventTableComplete
+                                                                           : &sQueenEarthWalkerEventTableSpell;
+        queenEarthWalker_lookAtPlayer(obj, state);
+        break;
+    case QUEEN_EARTH_WALKER_ACT_BERRY:
+        state->eventTable = mainGetBit(GAMEBIT_SH_ThornTailRelated0199) != 0 ? &sQueenEarthWalkerEventTableComplete
+                                                                             : &sQueenEarthWalkerEventTableBerry;
+        queenEarthWalker_lookAtPlayer(obj, state);
+        break;
+    case QUEEN_EARTH_WALKER_ACT_DEPARTURE:
+        queenEarthWalker_lookAtPlayer(obj, state);
+        break;
+    default:
+        break;
+    }
+}
 
-    state = obj->extra;
-    state->flags &= ~QUEEN_EARTH_WALKER_FLAG_INIT_DONE;
-    mapSlot = obj->anim.mapEventSlot;
-    action = (*gMapEventInterface)->getMapAct(mapSlot);
+static void queenEarthWalker_startAct(GameObject* obj, QueenEarthWalkerState* state, u8 action) {
+    switch (action) {
+    case QUEEN_EARTH_WALKER_ACT_RETURN: {
+        GameObject* target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_GROUP, obj, NULL);
 
-    if ((state->flags & QUEEN_EARTH_WALKER_FLAG_STARTED) != 0) {
-        switch (action) {
-        case 2:
-            sh_queenearthwalker_updateFeeding(obj, state);
-            break;
-        case 3:
-        case 4:
-            if (mainGetBit(GAMEBIT_ITEM_MoonPassKey_Got) != 0) {
-                state->eventTable = gQueenEarthWalkerEventTableComplete;
-            } else {
-                state->eventTable = gQueenEarthWalkerEventTableFeed;
+        (*gObjectTriggerInterface)->preempt((uintptr_t)target, QUEEN_EARTH_WALKER_ACT_1_TARGET);
+        (*gObjectTriggerInterface)
+            ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_RETURNED, target, QUEEN_EARTH_WALKER_SEQUENCE_ACT_1_FLAGS);
+        state->flags |= QUEEN_EARTH_WALKER_LOOK_LATCHED | QUEEN_EARTH_WALKER_EYES_CLOSED;
+        state->eventTable = &sQueenEarthWalkerEventTableAct1;
+        break;
+    }
+    case QUEEN_EARTH_WALKER_ACT_FEED:
+        if (mainGetBit(GAMEBIT_ITEM_WhiteGrubTub_Used) == 6) {
+            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, QUEEN_EARTH_WALKER_QUEEN_TARGET);
+            (*gObjectTriggerInterface)
+                ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_FED, obj, QUEEN_EARTH_WALKER_SEQUENCE_QUEEN_FLAGS);
+            state->stateId = QUEEN_EARTH_WALKER_FED;
+        } else {
+            if (mainGetBit(GAMEBIT_SH_ReturnedToQueen) != 0) {
+                state->stateId = QUEEN_EARTH_WALKER_READY_TO_FEED;
             }
-            player = Obj_GetPlayerObject();
-            state->look.enabled = 1;
-            state->look.targetX = player->anim.localPosX;
-            state->look.targetY = player->anim.localPosY;
-            state->look.targetZ = player->anim.localPosZ;
-            characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
-            break;
-        case 5:
-            sh_queenearthwalker_updatePortal(obj, state);
-            break;
-        case 6:
-            if (mainGetBit(GAMEBIT_ITEM_BigScarabBag_Got) != 0) {
-                state->eventTable = gQueenEarthWalkerEventTableComplete;
-            } else {
-                state->eventTable = gQueenEarthWalkerEventTableSpell;
-            }
-            player = Obj_GetPlayerObject();
-            state->look.enabled = 1;
-            state->look.targetX = player->anim.localPosX;
-            state->look.targetY = player->anim.localPosY;
-            state->look.targetZ = player->anim.localPosZ;
-            characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
-            break;
-        case 7:
-            if (mainGetBit(0x199) != 0) {
-                state->eventTable = gQueenEarthWalkerEventTableComplete;
-            } else {
-                state->eventTable = gQueenEarthWalkerEventTableBerry;
-            }
-            player = Obj_GetPlayerObject();
-            state->look.enabled = 1;
-            state->look.targetX = player->anim.localPosX;
-            state->look.targetY = player->anim.localPosY;
-            state->look.targetZ = player->anim.localPosZ;
-            characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
-            break;
-        case 8:
-            player = Obj_GetPlayerObject();
-            state->look.enabled = 1;
-            state->look.targetX = player->anim.localPosX;
-            state->look.targetY = player->anim.localPosY;
-            state->look.targetZ = player->anim.localPosZ;
-            characterHeadLookCalm(obj, (s16*)&state->look, 0.0f);
-            break;
-        case 0:
-        case 1:
-        default:
-            break;
+            state->flags |= QUEEN_EARTH_WALKER_LOOK_LATCHED | QUEEN_EARTH_WALKER_EYES_CLOSED;
+            state->eventTable = &sQueenEarthWalkerEventTableAct2;
         }
-    } else {
-        switch (action) {
-        case 1:
-            target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_OBJECT_GROUP, obj, NULL);
-            (*gObjectTriggerInterface)->preempt((uintptr_t)target, 0x1324);
-            (*gObjectTriggerInterface)->runSequence(1, target, 0x10);
-            state->flags |= (QUEEN_EARTH_WALKER_FLAG_LATCHED | QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS);
-            state->eventTable = gQueenEarthWalkerEventTableAct1;
-            break;
-        case 2:
-            if (mainGetBit(GAMEBIT_ITEM_WhiteGrubTub_Used) == QUEEN_EARTH_WALKER_REQUIRED_FEED_COUNT) {
-                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x18f6);
-                (*gObjectTriggerInterface)->runSequence(6, obj, 1);
-                state->stateIndex = 3;
-            } else {
-                if (mainGetBit(GAMEBIT_SH_ReturnedToQueen) != 0) {
-                    state->stateIndex = 1;
-                }
-                state->flags |= (QUEEN_EARTH_WALKER_FLAG_LATCHED | QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS);
-                state->eventTable = gQueenEarthWalkerEventTableAct2;
-            }
-            break;
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-            (*gObjectTriggerInterface)->preempt((uintptr_t)obj, 0x18f6);
-            (*gObjectTriggerInterface)->runSequence(6, obj, 1);
-            state->stateIndex = 3;
-            break;
-        case 8:
-            target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_OBJECT_GROUP, obj, NULL);
-            (*gObjectTriggerInterface)->preempt((uintptr_t)target, 0x6a4);
-            (*gObjectTriggerInterface)->runSequence(7, target, 8);
-            state->stateIndex = 4;
-            state->eventTable = gQueenEarthWalkerEventTableDeparture;
-            break;
-        default:
-            break;
-        }
-        state->flags |= QUEEN_EARTH_WALKER_FLAG_STARTED;
+        break;
+    case QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_A:
+    case QUEEN_EARTH_WALKER_ACT_MOON_PASS_KEY_B:
+    case QUEEN_EARTH_WALKER_ACT_PORTAL:
+    case QUEEN_EARTH_WALKER_ACT_SPELL:
+    case QUEEN_EARTH_WALKER_ACT_BERRY:
+        (*gObjectTriggerInterface)->preempt((uintptr_t)obj, QUEEN_EARTH_WALKER_QUEEN_TARGET);
+        (*gObjectTriggerInterface)
+            ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_FED, obj, QUEEN_EARTH_WALKER_SEQUENCE_QUEEN_FLAGS);
+        state->stateId = QUEEN_EARTH_WALKER_FED;
+        break;
+    case QUEEN_EARTH_WALKER_ACT_DEPARTURE: {
+        GameObject* target = objGetNearestTypeTo(QUEEN_EARTH_WALKER_TARGET_GROUP, obj, NULL);
+
+        (*gObjectTriggerInterface)->preempt((uintptr_t)target, QUEEN_EARTH_WALKER_DEPARTURE_TARGET);
+        (*gObjectTriggerInterface)
+            ->runSequence(QUEEN_EARTH_WALKER_SEQUENCE_DEPARTURE, target, QUEEN_EARTH_WALKER_SEQUENCE_DEPARTURE_FLAGS);
+        state->stateId = QUEEN_EARTH_WALKER_DEPARTING;
+        state->eventTable = &sQueenEarthWalkerEventTableDeparture;
+        break;
+    }
+    default:
+        break;
+    }
+
+    state->flags |= QUEEN_EARTH_WALKER_STARTED;
+}
+
+static void queenEarthWalker_update(GameObject* obj) {
+    QueenEarthWalkerState* state = obj->extra;
+
+    state->flags &= ~QUEEN_EARTH_WALKER_EVENTS_INITIALIZED;
+    u8 action = (*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot);
+    if (!(state->flags & QUEEN_EARTH_WALKER_STARTED)) {
+        queenEarthWalker_startAct(obj, state, action);
         return;
     }
 
-    if ((state->flags & QUEEN_EARTH_WALKER_FLAG_EYE_ANIMS) != 0) {
-        characterCloseEyes(obj, &state->look);
-    } else {
-        characterDoEyeAnims(obj, &state->look);
-    }
+    queenEarthWalker_selectEventTable(obj, state, action);
+    queenEarthWalker_updateEyes(obj, state);
 
-    currentMove = obj->anim.currentMove;
-    targetMove = gQueenEarthWalkerMoveTable[state->stateIndex];
-    if (currentMove != targetMove) {
-        ObjAnim_SetCurrentMove(obj, targetMove, 0.0f, 0);
+    const QueenEarthWalkerAnimation* animation = &sQueenEarthWalkerAnimations[state->stateId];
+    if (obj->anim.currentMove != animation->moveId) {
+        ObjAnim_SetCurrentMove(obj, animation->moveId, 0.0f, 0);
     }
-    ObjAnim_AdvanceCurrentMove(obj, gQueenEarthWalkerMoveSpeedTable[state->stateIndex], timeDelta, NULL);
+    ObjAnim_AdvanceCurrentMove(obj, animation->stepScale, timeDelta, NULL);
 
-    stateFlags = state->flags;
-    if ((stateFlags & QUEEN_EARTH_WALKER_FLAG_ACTIVE) == 0) {
-        state->flags &= ~QUEEN_EARTH_WALKER_FLAG_TARGETING;
-        if (ObjTrigger_IsSet(obj) != 0 && obj->anim.hitVolumeBounds->flags != 4) {
-            eventIndex = randomGetRange(1, *state->eventTable);
-            state->flags |= QUEEN_EARTH_WALKER_FLAG_TARGETING;
-            (*gObjectTriggerInterface)->runSequence(state->eventTable[eventIndex], obj, -1);
+    u8 flags = state->flags;
+    if (!(flags & QUEEN_EARTH_WALKER_SUPPRESS_IDLE_SEQUENCE)) {
+        state->flags &= ~QUEEN_EARTH_WALKER_TARGETING_PLAYER;
+        if (ObjTrigger_IsSet(obj) != 0 && obj->anim.hitVolumeBounds->flags != QUEEN_EARTH_WALKER_HIT_VOLUME_FEED) {
+            u8 eventIndex = randomGetRange(1, state->eventTable->count);
+            state->flags |= QUEEN_EARTH_WALKER_TARGETING_PLAYER;
+            (*gObjectTriggerInterface)
+                ->runSequence(state->eventTable->sequenceIds[eventIndex - 1], obj,
+                              QUEEN_EARTH_WALKER_SEQUENCE_DEFAULT_FLAGS);
         }
     }
 
-    if (RandomTimer_UpdateRangeTrigger(&state->attackTimer, QUEEN_EARTH_WALKER_ATTACK_TIMER_MIN,
-                                       QUEEN_EARTH_WALKER_ATTACK_TIMER_MAX) != 0) {
+    if (RandomTimer_UpdateRangeTrigger(&state->attackTimer, 2.0f, 5.0f) != 0) {
         Sfx_PlayFromObject(obj, SFXTRIG_thorntail);
     }
 }
 
-void sh_queenearthwalker_init(GameObject* obj, QueenEarthWalkerPlacement* placement) {
-    obj->anim.rotX = (s16)(placement->yawByte << 8);
-    obj->animEventCallback = sh_queenearthwalker_processAnimEvents;
+static void queenEarthWalker_init(GameObject* obj, QueenEarthWalkerPlacement* placement) {
+    obj->anim.rotX = (s16)((s32)placement->yawByte * 0x100);
+    obj->animEventCallback = queenEarthWalker_processAnimEvents;
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
 ObjectDescriptor gSH_queenearthwalkerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)sh_queenearthwalker_init,
-    (ObjectDescriptorCallback)sh_queenearthwalker_update,
-    0,
-    0,
-    0,
-    0,
-    sh_queenearthwalker_getExtraSize,
+    .reserved0 = 0,
+    .reserved1 = 0,
+    .reserved2 = 0,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = NULL,
+    .release = NULL,
+    .slot02 = NULL,
+    .init = (ObjectDescriptorCallback)queenEarthWalker_init,
+    .update = (ObjectDescriptorCallback)queenEarthWalker_update,
+    .hitDetect = NULL,
+    .render = NULL,
+    .free = NULL,
+    .getObjectTypeId = NULL,
+    .getExtraSize = queenEarthWalker_getExtraSize,
 };

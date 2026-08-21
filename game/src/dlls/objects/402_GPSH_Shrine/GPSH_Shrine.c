@@ -38,7 +38,6 @@
 #define GPSH_SHRINE_ENVFX_B 0xCD
 #define GPSH_SHRINE_ENVFX_C 0x222
 
-#define GPSH_SHRINE_OBJ_GROUP         0xB
 #define GPSH_SHRINE_MAP_ID            0xB
 #define GPSH_SHRINE_SPAWNED_OBJ_GROUP 0x10
 
@@ -201,7 +200,7 @@ void gpshShrine_free(GameObject* obj) {
         state->light = NULL;
     }
     gameTimerStop();
-    objFreeObjectType(obj, GPSH_SHRINE_OBJ_GROUP);
+    objFreeObjectType(obj, OBJECT_CLASS_KRAZOA_SHRINE);
     Music_Trigger(MUSICTRIG_DIM_Snow, 0);
     Music_Trigger(MUSICTRIG_CC_Visit1, 0);
     Music_Trigger(MUSICTRIG_vfp_walkabout, 0);
@@ -310,7 +309,7 @@ void gpshShrine_update(GameObject* obj) {
                 if (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) {
                     state->phase = GPSH_SHRINE_PHASE_BEGIN;
                     mainSetBits(GAMEBIT_WM_EnteredKrazoaTest1_0129, 0);
-                    mainSetBits(GPSH_SHRINE_RESET_SYMBOL_CREATORS_GAMEBIT, 0);
+                    mainSetBits(GAMEBIT_GPSH_ResetSymbolCreators, 0);
                     mainSetBits(GAMEBIT_GPSH_TestKnowledgeRunning, 1);
                     (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
                     Music_Trigger(MUSICTRIG_DIM_Snow, 1);
@@ -324,7 +323,7 @@ void gpshShrine_update(GameObject* obj) {
                 break;
             case GPSH_SHRINE_PHASE_WAIT_FOR_PUZZLE:
                 if (state->puzzleFlags.activated == 1) {
-                    mainSetBits(GPSH_SHRINE_ACTIVATE_SYMBOL_SPAWNS_GAMEBIT, 1);
+                    mainSetBits(GAMEBIT_GPSH_ActivateSymbolSpawns, 1);
                     state->phase = GPSH_SHRINE_PHASE_PUZZLE_ACTIVE;
                     gameTimerInit(0x1d, 0x4e);
                     timerSetToCountUp();
@@ -390,7 +389,7 @@ void gpshShrine_update(GameObject* obj) {
                     (*gMapEventInterface)->setObjGroupStatus(0xd, 1, 1);
                     (*gMapEventInterface)->setObjGroupStatus(0xd, 5, 1);
                     (*gMapEventInterface)->setObjGroupStatus(0xd, 10, 1);
-                    (*gMapEventInterface)->setObjGroupStatus(0xd, GPSH_SHRINE_OBJ_GROUP, 1);
+                    (*gMapEventInterface)->setObjGroupStatus(0xd, OBJECT_CLASS_KRAZOA_SHRINE, 1);
                     mainSetBits(0xc91, 1);
                     mainSetBits(GAMEBIT_WC_MagicCaveRelated0E05, 0);
                 }
@@ -407,8 +406,8 @@ void gpshShrine_update(GameObject* obj) {
                 mainSetBits(0x14a, 0);
                 mainSetBits(0x14b, 0);
                 mainSetBits(0x14b, 0);
-                mainSetBits(GPSH_SHRINE_RESET_SYMBOL_CREATORS_GAMEBIT, 1);
-                mainSetBits(GPSH_SHRINE_ACTIVATE_SYMBOL_SPAWNS_GAMEBIT, 0);
+                mainSetBits(GAMEBIT_GPSH_ResetSymbolCreators, 1);
+                mainSetBits(GAMEBIT_GPSH_ActivateSymbolSpawns, 0);
                 mainSetBits(0xe37, 0);
                 mainSetBits(0xe3a, 0);
                 state->puzzleFlags.gameBit0149Latched = 0;

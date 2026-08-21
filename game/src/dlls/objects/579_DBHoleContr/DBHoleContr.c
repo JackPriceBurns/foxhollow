@@ -1,75 +1,90 @@
-/* DBHoleContr (DLL 0x243) */
+#include "main/dll/dll_0243_dbholecontrol1.h"
+#include "main/dll/baddie_state.h"
+#include "main/dll/dbholecontrol1state_struct.h"
+#include "main/gamebit_ids.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
 #include "main/obj_message.h"
 #include "main/object_render.h"
 #include "main/object_update_list.h"
+#include "main/objseq.h"
 #include "main/objtype.h"
 #include "string.h"
-#include "sys/objects/lifecycle.h"
-#include "main/dll/dbholecontrol1state_struct.h"
-#include "main/objseq.h"
-#include "main/gamebits.h"
 #include "sys/objects.h"
-#include "main/dll/dll_0243_dbholecontrol1.h"
-#include "main/dll/baddie_state.h"
-#include "main/lightmap.h"
+#include "sys/objects/lifecycle.h"
 
-STATIC_ASSERT(sizeof(DbHoleControl1State) == 0xC);
+typedef enum DbHoleControlSequenceEvent {
+    DB_HOLE_CONTROL_SEQUENCE_EVENT_SPAWN_CHILD = 1
+} DbHoleControlSequenceEvent;
 
-#define DBEGG_OBJGROUP           0x24
-#define DBHOLECONTROL1_CHILD_OBJ        1337
-#define DBHOLECONTROL1_CHILD_SETUP_SIZE 56
+typedef enum DbHoleControlObjectId {
+    DB_HOLE_CONTROL_CHILD_OBJECT_ID = 1337
+} DbHoleControlObjectId;
+
+typedef enum DbHoleControlEggObjectGroup {
+    DB_HOLE_CONTROL_EGG_OBJECT_GROUP = 0x24
+} DbHoleControlEggObjectGroup;
+
+typedef struct DbHoleControlChildPlacement {
+    GroundBaddiePlacement placement;
+    u8 unknown34[4];
+} DbHoleControlChildPlacement;
+
+STATIC_ASSERT(sizeof(DbHoleControlChildPlacement) == 0x38);
 
 int lbl_803DDCE0;
 
 int dbholecontrol1_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 {
-    GroundBaddiePlacement* childPlacement;
-    void* res;
-    GameObject** objs;
-    int count;
-    Dbholecontrol1Placement* data = (Dbholecontrol1Placement*)obj->anim.placementData;
-    int i;
+    const DbHoleControl1Placement* placement = obj->anim.placementData;
 
-    for (i = 0; i < animUpdate->eventCount; i++)
+    for (s32 eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++)
     {
-        switch (animUpdate->eventIds[i])
+        switch (animUpdate->eventIds[eventIndex])
         {
-        case 1:
-            if (mainGetBit((s32)data->triggerSeqId + 2601) != 0)
+        case DB_HOLE_CONTROL_SEQUENCE_EVENT_SPAWN_CHILD:
+        {
+            const DbHoleControlChildPlacement* childTemplate;
+            DbHoleControlChildPlacement* childPlacement;
+
+            if (mainGetBit((s32)placement->triggerSequenceId + 2601) != 0)
                 continue;
             if (Obj_IsLoadingLocked() == 0)
                 continue;
-            res = mapRomListFindItem(0x4658A, 0, 0, 0, 0);
-            if (res == NULL)
+            childTemplate = mapRomListFindItem(0x4658A, 0, 0, 0, 0);
+            if (childTemplate == NULL)
                 continue;
-            childPlacement = (GroundBaddiePlacement*)Obj_AllocObjectSetup(DBHOLECONTROL1_CHILD_SETUP_SIZE, DBHOLECONTROL1_CHILD_OBJ);
-            memcpy(childPlacement, res, DBHOLECONTROL1_CHILD_SETUP_SIZE);
-            childPlacement->gameBitA = fhReadBES16(&childPlacement->gameBitA);
-            childPlacement->gameBitC = fhReadBES16(&childPlacement->gameBitC);
-            childPlacement->gameBitD = fhReadBES16(&childPlacement->gameBitD);
-            childPlacement->soundIdB = fhReadBES16(&childPlacement->soundIdB);
-            childPlacement->soundIdA = fhReadBES16(&childPlacement->soundIdA);
-            childPlacement->triggerId = fhReadBES16(&childPlacement->triggerId);
-            childPlacement->unk24 = fhReadBES16(&childPlacement->unk24);
-            childPlacement->respawnDelay = fhReadBES16(&childPlacement->respawnDelay);
-            childPlacement->gameBitB = fhReadBES16(&childPlacement->gameBitB);
-            childPlacement->base.posX = obj->anim.localPosX;
-            childPlacement->base.posY = obj->anim.localPosY;
-            childPlacement->base.posZ = obj->anim.localPosZ;
-            childPlacement->base.ident = -1;
-            childPlacement->gameBitC = 149;
-            loadObjectAtObject(obj, &childPlacement->base);
+            childPlacement = Obj_AllocObjectSetup(sizeof(*childPlacement), DB_HOLE_CONTROL_CHILD_OBJECT_ID);
+            memcpy(childPlacement, childTemplate, sizeof(*childPlacement));
+            childPlacement->placement.gameBitA = fhReadBES16(&childPlacement->placement.gameBitA);
+            childPlacement->placement.gameBitC = fhReadBES16(&childPlacement->placement.gameBitC);
+            childPlacement->placement.gameBitD = fhReadBES16(&childPlacement->placement.gameBitD);
+            childPlacement->placement.soundIdB = fhReadBES16(&childPlacement->placement.soundIdB);
+            childPlacement->placement.soundIdA = fhReadBES16(&childPlacement->placement.soundIdA);
+            childPlacement->placement.triggerId = fhReadBES16(&childPlacement->placement.triggerId);
+            childPlacement->placement.unk24 = fhReadBES16(&childPlacement->placement.unk24);
+            childPlacement->placement.respawnDelay = fhReadBES16(&childPlacement->placement.respawnDelay);
+            childPlacement->placement.gameBitB = fhReadBES16(&childPlacement->placement.gameBitB);
+            childPlacement->placement.base.posX = obj->anim.localPosX;
+            childPlacement->placement.base.posY = obj->anim.localPosY;
+            childPlacement->placement.base.posZ = obj->anim.localPosZ;
+            childPlacement->placement.base.ident = -1;
+            childPlacement->placement.gameBitC = GAMEBIT_Always1;
+            loadObjectAtObject(obj, &childPlacement->placement.base);
             break;
+        }
         }
     }
 
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(data->hideGameBit))) != 0 || lbl_803DDCE0 != 0)
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->hideGameBit)) != 0 || lbl_803DDCE0 != 0)
     {
-        objs = objGetAllOfType(DBEGG_OBJGROUP, &count);
+        s32 objectCount;
+        GameObject** objects = objGetAllOfType(DB_HOLE_CONTROL_EGG_OBJECT_GROUP, &objectCount);
+
         ObjMsg_SendToObjects(0, 3, obj, 17, 0);
-        while (count-- != 0)
+        for (s32 objectIndex = 0; objectIndex < objectCount; objectIndex++)
         {
-            objFreeObjectType(*objs++, DBEGG_OBJGROUP);
+            objFreeObjectType(objects[objectIndex], DB_HOLE_CONTROL_EGG_OBJECT_GROUP);
         }
         return 4;
     }
@@ -78,11 +93,11 @@ int dbholecontrol1_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
 
 int dbholecontrol1_getExtraSize(void)
 {
-    return 0xc;
+    return sizeof(DbHoleControl1State);
 }
 int dbholecontrol1_getObjectTypeId(void)
 {
-    return 0x0;
+    return 0;
 }
 
 void dbholecontrol1_free(GameObject* obj)
@@ -92,9 +107,8 @@ void dbholecontrol1_free(GameObject* obj)
 
 void dbholecontrol1_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
-    s32 enabled = visible;
-    if (enabled != 0)
-        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, (1.0f));
+    if (visible != 0)
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
 
 void dbholecontrol1_hitDetect(void)
@@ -104,25 +118,25 @@ void dbholecontrol1_hitDetect(void)
 void dbholecontrol1_update(GameObject* obj)
 {
 
-    Dbholecontrol1Placement* def;
-    def = (Dbholecontrol1Placement*)obj->anim.placementData;
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->hideGameBit))) != 0)
+    const DbHoleControl1Placement* placement = obj->anim.placementData;
+
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->hideGameBit)) != 0)
     {
         Obj_RemoveFromUpdateList(obj);
-        obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
+        obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
     }
-    else if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(def->triggerGameBit))) != 0)
+    else if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->triggerGameBit)) != 0)
     {
-        (*gObjectTriggerInterface)->runSequence(def->triggerSeqId, obj, -1);
+        (*gObjectTriggerInterface)->runSequence(placement->triggerSequenceId, obj, -1);
     }
 }
 
-void dbholecontrol1_init(GameObject* obj, u8* params)
+void dbholecontrol1_init(GameObject* obj, const DbHoleControl1Placement* placement)
 {
     DbHoleControl1State* state = obj->extra;
-    Dbholecontrol1Placement* placement = (Dbholecontrol1Placement*)params;
+
     objAddObjectType(obj, DBHOLE_CONTROL1_OBJECT_GROUP);
-    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->anim.rotX = (s16)((s32)placement->rotXByte * 256);
     obj->animEventCallback = dbholecontrol1_SeqFn;
     state->gameBitA = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBitA);
     state->gameBitB = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBitB);

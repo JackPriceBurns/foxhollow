@@ -1,243 +1,227 @@
-/*
- * DLL 445 (0x1BD) - the shared SC_paypoint and SPWell payment-kiosk
- * implementation.
- *
- * The kiosk gates a sequence (and its game bit) behind the player having
- * enough money. On interact (A-button / button 0x100) the test-event
- * callback checks playerGetMoney against the placement price; condition
- * events 0x14/0x15 select the affordable/unaffordable branch. When the
- * sequence pays out it sets the placement game bit, deducts the price,
- * and latches payState to "paid" (2). gameTextShow displays approach
- * (promptState 1) or "cannot afford" (promptState 2) text from the unit's
- * two-row text table. Sequence id 0x476 selects the SPWell row.
- */
 #include "dlls/objects/445.h"
 
 #include "dolphin/pad.h"
-#include "main/gamebits_api.h"
-#include "main/objseq.h"
-#include "sys/objects.h"
+#include "game/objects/object_setup.h"
 #include "main/dll/player_api.h"
+#include "main/gamebits_api.h"
 #include "main/gametext_color_api.h"
 #include "main/gametext_show_api.h"
 #include "main/objprint_render_api.h"
+#include "main/objseq.h"
 #include "main/pad.h"
+#include "sys/objects.h"
 
-typedef struct PaymentKioskTextPair {
-    int approachTextId;
-    int cannotAffordTextId;
-} PaymentKioskTextPair;
-
-STATIC_ASSERT(offsetof(PaymentKioskTextPair, approachTextId) == 0x00);
-STATIC_ASSERT(offsetof(PaymentKioskTextPair, cannotAffordTextId) == 0x04);
-STATIC_ASSERT(sizeof(PaymentKioskTextPair) == 0x08);
-
-#define PAYMENT_KIOSK_TEXT_VARIANT_COUNT 2
-
-#define PAYMENT_KIOSK_PAYPOINT_APPROACH_TEXT_ID      0x312
-#define PAYMENT_KIOSK_PAYPOINT_CANNOT_AFFORD_TEXT_ID 0x34A
-#define PAYMENT_KIOSK_SP_WELL_APPROACH_TEXT_ID       0x527
-#define PAYMENT_KIOSK_TEXT_ID_NONE                   -1
-
-/* condition-event opcodes resolved by PaymentKiosk_testEvent */
-enum {
-    PAYMENT_KIOSK_COND_CAN_AFFORD = 0x14,
-    PAYMENT_KIOSK_COND_CANNOT_AFFORD = 0x15
+enum PaymentKioskConditionEvent {
+    PAYMENT_KIOSK_CONDITION_CAN_AFFORD = 0x14,
+    PAYMENT_KIOSK_CONDITION_CANNOT_AFFORD = 0x15,
 };
 
-/* sequence-event opcodes consumed by PaymentKiosk_SeqFn */
-enum {
-    PAYMENT_KIOSK_SEQEV_SHOW_PROMPT = 1,
-    PAYMENT_KIOSK_SEQEV_PAY = 2
+enum PaymentKioskSequenceEvent {
+    PAYMENT_KIOSK_SEQUENCE_EVENT_SHOW_PROMPT = 1,
+    PAYMENT_KIOSK_SEQUENCE_EVENT_PAY = 2,
 };
 
-enum {
-    PAYMENT_KIOSK_STATE_RESOLVE,
-    PAYMENT_KIOSK_STATE_ACTIVE,
-    PAYMENT_KIOSK_STATE_PAID
+enum PaymentKioskPaymentState {
+    PAYMENT_KIOSK_PAYMENT_STATE_RESOLVE,
+    PAYMENT_KIOSK_PAYMENT_STATE_ACTIVE,
+    PAYMENT_KIOSK_PAYMENT_STATE_PAID,
 };
 
-enum {
+enum PaymentKioskTextVariant {
     PAYMENT_KIOSK_TEXT_VARIANT_PAYPOINT,
-    PAYMENT_KIOSK_TEXT_VARIANT_SP_WELL
+    PAYMENT_KIOSK_TEXT_VARIANT_SP_WELL,
 };
 
-enum {
+enum PaymentKioskPromptState {
     PAYMENT_KIOSK_PROMPT_NONE,
     PAYMENT_KIOSK_PROMPT_APPROACH,
-    PAYMENT_KIOSK_PROMPT_CANNOT_AFFORD
+    PAYMENT_KIOSK_PROMPT_CANNOT_AFFORD,
 };
 
-#define PAYMENT_KIOSK_SP_WELL_SEQUENCE_ID 0x476
-#define PAYMENT_KIOSK_OBJECT_TYPE_ID      1
-#define PAYMENT_KIOSK_NO_GAME_BIT         -1
-
-PaymentKioskTextPair gPaymentKioskTextPairs[PAYMENT_KIOSK_TEXT_VARIANT_COUNT] = {
-    {PAYMENT_KIOSK_PAYPOINT_APPROACH_TEXT_ID, PAYMENT_KIOSK_PAYPOINT_CANNOT_AFFORD_TEXT_ID},
-    {PAYMENT_KIOSK_SP_WELL_APPROACH_TEXT_ID, PAYMENT_KIOSK_TEXT_ID_NONE},
+enum PaymentKioskRomDefNo {
+    PAYMENT_KIOSK_SP_WELL_ROM_DEF_NO = 0x476,
 };
 
-STATIC_ASSERT(sizeof(gPaymentKioskTextPairs) == 0x10);
+typedef struct PaymentKioskPlacement {
+    ObjPlacement base;
+    s8 rotationXByte;
+    u8 unused19;
+    s16 price;
+    u8 unused1C[2];
+    s16 completionGameBit;
+    u8 unused20[4];
+} PaymentKioskPlacement;
 
-u32 PaymentKiosk_testEvent(GameObject* obj, int unused, int eventId) {
+typedef struct PaymentKioskState {
+    u8 paymentState;
+    u8 textVariant;
+    u8 promptState;
+} PaymentKioskState;
+
+typedef struct PaymentKioskTextPair {
+    int approach;
+    int cannotAfford;
+} PaymentKioskTextPair;
+
+STATIC_ASSERT(sizeof(PaymentKioskPlacement) == 0x24);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, base) == 0x00);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, rotationXByte) == 0x18);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, unused19) == 0x19);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, price) == 0x1A);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, unused1C) == 0x1C);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, completionGameBit) == 0x1E);
+STATIC_ASSERT(offsetof(PaymentKioskPlacement, unused20) == 0x20);
+
+STATIC_ASSERT(sizeof(PaymentKioskState) == 0x03);
+STATIC_ASSERT(offsetof(PaymentKioskState, paymentState) == 0x00);
+STATIC_ASSERT(offsetof(PaymentKioskState, textVariant) == 0x01);
+STATIC_ASSERT(offsetof(PaymentKioskState, promptState) == 0x02);
+
+static const PaymentKioskTextPair sPaymentKioskTextPairs[] = {
+    [PAYMENT_KIOSK_TEXT_VARIANT_PAYPOINT] = {.approach = 0x312, .cannotAfford = 0x34A},
+    [PAYMENT_KIOSK_TEXT_VARIANT_SP_WELL] = {.approach = 0x527, .cannotAfford = -1},
+};
+
+static int paymentkiosk_testEvent(void* context, u8* unusedObject, int conditionEvent) {
+    GameObject* obj = context;
     const PaymentKioskPlacement* placement = (const PaymentKioskPlacement*)obj->anim.placementData;
     PaymentKioskState* state = obj->extra;
-    GameObject* player;
-    u32 result;
+    GameObject* player = Obj_GetPlayerObject();
+    int canAfford;
 
-    (void)unused;
+    (void)unusedObject;
 
-    player = Obj_GetPlayerObject();
-    result = getButtonsJustPressed(0);
-    if ((result & PAD_BUTTON_A) == 0) {
-        result = 0;
-    } else {
-        state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
-        if (playerGetMoney(player) >= ObjAnim_ReadPlacementS16(&obj->anim, &(placement->price))) {
-            result = 1;
-            state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
-        } else {
-            result = 0;
-            state->promptState = PAYMENT_KIOSK_PROMPT_CANNOT_AFFORD;
-        }
-        switch (eventId) {
-        case PAYMENT_KIOSK_COND_CAN_AFFORD:
-            result = !(1 - result);
-            break;
-        case PAYMENT_KIOSK_COND_CANNOT_AFFORD:
-            result = !result;
-            break;
-        default:
-            result = 0;
-            break;
-        }
+    if ((getButtonsJustPressed(0) & PAD_BUTTON_A) == 0) {
+        return 0;
     }
-    return result;
+
+    state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
+    canAfford = playerGetMoney(player) >= ObjAnim_ReadPlacementS16(&obj->anim, &placement->price);
+    if (!canAfford) {
+        state->promptState = PAYMENT_KIOSK_PROMPT_CANNOT_AFFORD;
+    }
+
+    switch (conditionEvent) {
+    case PAYMENT_KIOSK_CONDITION_CAN_AFFORD:
+        return canAfford;
+    case PAYMENT_KIOSK_CONDITION_CANNOT_AFFORD:
+        return !canAfford;
+    default:
+        return 0;
+    }
 }
 
-int PaymentKiosk_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+static int paymentkiosk_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     PaymentKioskState* state = obj->extra;
     const PaymentKioskPlacement* placement = (const PaymentKioskPlacement*)obj->anim.placementData;
-    GameObject* player;
-    int eventIndex;
-    u8 eventId;
+    GameObject* player = Obj_GetPlayerObject();
 
     (void)unused;
 
-    player = Obj_GetPlayerObject();
-    animUpdate->conditionCallback = (ObjAnimSequenceConditionCallback)PaymentKiosk_testEvent;
-    for (eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++) {
-        eventId = animUpdate->eventIds[eventIndex];
-        switch (eventId) {
-        case PAYMENT_KIOSK_SEQEV_PAY:
-            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)), 1);
-            playerAddMoney(player, -ObjAnim_ReadPlacementS16(&obj->anim, &(placement->price)));
-            state->payState = PAYMENT_KIOSK_STATE_PAID;
+    animUpdate->conditionCallback = paymentkiosk_testEvent;
+    for (int eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++) {
+        switch (animUpdate->eventIds[eventIndex]) {
+        case PAYMENT_KIOSK_SEQUENCE_EVENT_PAY:
+            mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit), 1);
+            playerAddMoney(player, -ObjAnim_ReadPlacementS16(&obj->anim, &placement->price));
+            state->paymentState = PAYMENT_KIOSK_PAYMENT_STATE_PAID;
             break;
-        case PAYMENT_KIOSK_SEQEV_SHOW_PROMPT:
+        case PAYMENT_KIOSK_SEQUENCE_EVENT_SHOW_PROMPT:
             state->promptState = PAYMENT_KIOSK_PROMPT_APPROACH;
             break;
         }
     }
-    gameTextSetColor(0xff, 0xff, 0xff, 0xff);
+
+    gameTextSetColor(0xFF, 0xFF, 0xFF, 0xFF);
     if (state->promptState == PAYMENT_KIOSK_PROMPT_APPROACH) {
-        gameTextShow(gPaymentKioskTextPairs[state->textVariant].approachTextId);
+        gameTextShow(sPaymentKioskTextPairs[state->textVariant].approach);
     } else if (state->promptState == PAYMENT_KIOSK_PROMPT_CANNOT_AFFORD) {
-        gameTextShow(gPaymentKioskTextPairs[state->textVariant].cannotAffordTextId);
+        gameTextShow(sPaymentKioskTextPairs[state->textVariant].cannotAfford);
     }
     return 0;
 }
 
-int PaymentKiosk_getExtraSize(void) {
+static int paymentkiosk_getExtraSize(void) {
     return sizeof(PaymentKioskState);
 }
 
-int PaymentKiosk_getObjectTypeId(void) {
-    return PAYMENT_KIOSK_OBJECT_TYPE_ID;
+static int paymentkiosk_getObjectTypeId(void) {
+    return 1;
 }
 
-void PaymentKiosk_free(void) {
+static void paymentkiosk_free(void) {
 }
 
-void PaymentKiosk_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+static void paymentkiosk_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                                s8 visible) {
     (void)obj;
     (void)renderArg2;
     (void)renderArg3;
     (void)renderArg4;
     (void)renderArg5;
-
-    if (visible == 0) {
-        return;
-    }
+    (void)visible;
 }
 
-void PaymentKiosk_hitDetect(void) {
+static void paymentkiosk_hitDetect(void) {
 }
 
-void PaymentKiosk_update(GameObject* obj) {
+static void paymentkiosk_update(GameObject* obj) {
     PaymentKioskState* state = obj->extra;
     const PaymentKioskPlacement* placement = (const PaymentKioskPlacement*)obj->anim.placementData;
-    u8 payState = state->payState;
 
-    switch (payState) {
-    case PAYMENT_KIOSK_STATE_RESOLVE:
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit)) != PAYMENT_KIOSK_NO_GAME_BIT && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit))) != 0) {
-            state->payState = PAYMENT_KIOSK_STATE_PAID;
-        } else {
-            state->payState = PAYMENT_KIOSK_STATE_ACTIVE;
-        }
-        break;
-    case PAYMENT_KIOSK_STATE_ACTIVE:
-        if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) {
-            (*gObjectTriggerInterface)->runSequence(0, (void*)obj, -1);
-        }
-        obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags & ~INTERACT_FLAG_DISABLED;
-        break;
-    case PAYMENT_KIOSK_STATE_PAID:
-        obj->anim.resetHitboxFlags = obj->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
+    switch (state->paymentState) {
+    case PAYMENT_KIOSK_PAYMENT_STATE_RESOLVE: {
+        s16 completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit);
+
+        state->paymentState = completionGameBit != -1 && mainGetBit(completionGameBit) != 0
+                                  ? PAYMENT_KIOSK_PAYMENT_STATE_PAID
+                                  : PAYMENT_KIOSK_PAYMENT_STATE_ACTIVE;
         break;
     }
+    case PAYMENT_KIOSK_PAYMENT_STATE_ACTIVE:
+        if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0) {
+            (*gObjectTriggerInterface)->runSequence(0, obj, -1);
+        }
+        obj->anim.resetHitboxFlags &= (u8)~INTERACT_FLAG_DISABLED;
+        break;
+    case PAYMENT_KIOSK_PAYMENT_STATE_PAID:
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+        break;
+    }
+
     state->promptState = PAYMENT_KIOSK_PROMPT_NONE;
     if ((obj->anim.modelInstance->flags & OBJDEF_FLAG_HAS_MODELS) != 0 && obj->anim.hitVolumeTransforms != NULL) {
         objUpdateHitVolumeTransforms(obj);
     }
 }
 
-void PaymentKiosk_init(GameObject* obj, const PaymentKioskPlacement* placement) {
-    GameObject* self = obj;
-    const PaymentKioskPlacement* setup = placement;
-    PaymentKioskState* state = self->extra;
-    u32 textVariant;
+static void paymentkiosk_init(GameObject* obj, const PaymentKioskPlacement* placement) {
+    PaymentKioskState* state = obj->extra;
 
-    self->animEventCallback = PaymentKiosk_SeqFn;
-    self->anim.rotX = (s16)((s32)setup->rotXByte << 8);
-    state->payState = PAYMENT_KIOSK_STATE_RESOLVE;
-    self->objectFlags = (u16)(self->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
-    self->anim.resetHitboxFlags = self->anim.resetHitboxFlags | INTERACT_FLAG_DISABLED;
-    textVariant = (self->anim.romDefNo == PAYMENT_KIOSK_SP_WELL_SEQUENCE_ID) ? PAYMENT_KIOSK_TEXT_VARIANT_SP_WELL
-                                                                          : PAYMENT_KIOSK_TEXT_VARIANT_PAYPOINT;
-    state->textVariant = textVariant;
+    obj->animEventCallback = paymentkiosk_animEventCallback;
+    obj->anim.rotX = (s16)((s32)placement->rotationXByte * 0x100);
+    state->paymentState = PAYMENT_KIOSK_PAYMENT_STATE_RESOLVE;
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+    state->textVariant = obj->anim.romDefNo == PAYMENT_KIOSK_SP_WELL_ROM_DEF_NO ? PAYMENT_KIOSK_TEXT_VARIANT_SP_WELL
+                                                                                : PAYMENT_KIOSK_TEXT_VARIANT_PAYPOINT;
 }
 
-void PaymentKiosk_release(void) {
+static void paymentkiosk_release(void) {
 }
 
-void PaymentKiosk_initialise(void) {
+static void paymentkiosk_initialise(void) {
 }
 
 ObjectDescriptor gPaymentKioskObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)PaymentKiosk_initialise,
-    (ObjectDescriptorCallback)PaymentKiosk_release,
-    0,
-    (ObjectDescriptorCallback)PaymentKiosk_init,
-    (ObjectDescriptorCallback)PaymentKiosk_update,
-    (ObjectDescriptorCallback)PaymentKiosk_hitDetect,
-    (ObjectDescriptorCallback)PaymentKiosk_render,
-    (ObjectDescriptorCallback)PaymentKiosk_free,
-    (ObjectDescriptorCallback)PaymentKiosk_getObjectTypeId,
-    PaymentKiosk_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)paymentkiosk_initialise,
+    .release = (ObjectDescriptorCallback)paymentkiosk_release,
+    .init = (ObjectDescriptorCallback)paymentkiosk_init,
+    .update = (ObjectDescriptorCallback)paymentkiosk_update,
+    .hitDetect = (ObjectDescriptorCallback)paymentkiosk_hitDetect,
+    .render = (ObjectDescriptorCallback)paymentkiosk_render,
+    .free = (ObjectDescriptorCallback)paymentkiosk_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)paymentkiosk_getObjectTypeId,
+    .getExtraSize = paymentkiosk_getExtraSize,
 };

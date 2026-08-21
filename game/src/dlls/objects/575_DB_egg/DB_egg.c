@@ -28,7 +28,6 @@
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "main/vecmath.h"
 #include "main/dll/dll22cstate_struct.h"
-#include "main/dll/dfpobjcreatorstate_struct.h"
 #include "main/dll/dbholecontrol1state_struct.h"
 #include "main/dll/dfptorchstate_struct.h"
 #include "main/dll/dbeggstate_struct.h"
@@ -69,7 +68,6 @@
 int dbegg_probeSurface(GameObject* obj, f32* out, f32 a, f32 b, int p3);
 STATIC_ASSERT(sizeof(DbStealerwormControl) == 0x50);
 STATIC_ASSERT(sizeof(DfpLevelControlState) == 0xC);
-STATIC_ASSERT(sizeof(DfpObjCreatorState) == 0x1C);
 STATIC_ASSERT(sizeof(DfpTorchState) == 0x10);
 STATIC_ASSERT(sizeof(Dll22CState) == 0x10);
 STATIC_ASSERT(offsetof(DbEggState, mode) == 0x118);

@@ -18,6 +18,11 @@ typedef enum MoveLibPhase
     MOVELIB_PHASE_HELD = 8
 } MoveLibPhase;
 
+typedef enum MoveLibModeFlag
+{
+    MOVELIB_HOLD_LOOK_TRACKING = 1 << 0
+} MoveLibModeFlag;
+
 typedef struct MoveLibTarget
 {
     s16 angle;

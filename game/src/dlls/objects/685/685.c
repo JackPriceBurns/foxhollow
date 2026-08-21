@@ -1,36 +1,17 @@
-/*
- * DLL 685 - a decorative wobbling/swaying object whose
- * animation move is driven by a pair of shared, free-running phase
- * accumulators. The first non-disabled instance to update becomes the
- * global phase driver
- * and advances both phases by timeDelta each frame, wrapping each at
- * 1.0f; every softbody then samples one of the two phases to
- * pick its current animation move. Which phase is used depends on the
- * object's romDefNo: moves in [0x6AF,0x6B2) use the first phase, all
- * others use the second.
- *
- * init applies the placement's packed 1/256-turn rotations and optional
- * scale (also scaling the hit sphere); the object has no per-instance
- * extra state (getExtraSize returns 0).
- */
 #include "main/dll/dll_02AD_softbody.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
 
-f32 gSoftBodySlowPhase;
-f32 gSoftBodyFastPhase;
-GameObject* gSoftBodyPhaseDriver;
+typedef enum SoftBodyObjectId {
+    SOFT_BODY_SLOW_PHASE_OBJECT_A = 0x6AF,
+    SOFT_BODY_SLOW_PHASE_OBJECT_B,
+    SOFT_BODY_SLOW_PHASE_OBJECT_C
+} SoftBodyObjectId;
 
-#define SOFTBODY_SLOW_PHASE_RATE   0.001f
-#define SOFTBODY_FAST_PHASE_RATE   0.005f
-#define SOFTBODY_PHASE_WRAP        1.0f
-#define SOFTBODY_ROTATION_SHIFT    8
-#define SOFTBODY_SCALE_DIVISOR     255.0f
-
-/* romDefNo range whose moves are driven by the first shared phase */
-#define SOFTBODY_MOVE_PHASE_A_FIRST 0x6af
-#define SOFTBODY_MOVE_PHASE_A_END   0x6b2
+static f32 gSoftBodySlowPhase;
+static f32 gSoftBodyFastPhase;
+static GameObject* gSoftBodyPhaseDriver;
 
 int SoftBody_getExtraSize(void)
 {
@@ -64,33 +45,32 @@ void SoftBody_hitDetect(void)
 
 void SoftBody_update(GameObject* obj)
 {
-    GameObject* object = obj;
-    SoftBodySetup* setup = (SoftBodySetup*)object->anim.placementData;
+    const SoftBodyPlacement* placement = obj->anim.placementData;
 
-    if (gSoftBodyPhaseDriver == NULL && setup->phaseDriverDisabled == 0)
+    if (gSoftBodyPhaseDriver == NULL && placement->phaseDriverDisabled == 0)
     {
         gSoftBodyPhaseDriver = obj;
     }
 
     if (obj == gSoftBodyPhaseDriver)
     {
-        gSoftBodySlowPhase = SOFTBODY_SLOW_PHASE_RATE * timeDelta + gSoftBodySlowPhase;
-        while (gSoftBodySlowPhase > SOFTBODY_PHASE_WRAP)
+        gSoftBodySlowPhase = 0.001f * timeDelta + gSoftBodySlowPhase;
+        while (gSoftBodySlowPhase > 1.0f)
         {
-            gSoftBodySlowPhase -= SOFTBODY_PHASE_WRAP;
+            gSoftBodySlowPhase -= 1.0f;
         }
-        gSoftBodyFastPhase = SOFTBODY_FAST_PHASE_RATE * timeDelta + gSoftBodyFastPhase;
-        while (gSoftBodyFastPhase > SOFTBODY_PHASE_WRAP)
+        gSoftBodyFastPhase = 0.005f * timeDelta + gSoftBodyFastPhase;
+        while (gSoftBodyFastPhase > 1.0f)
         {
-            gSoftBodyFastPhase -= SOFTBODY_PHASE_WRAP;
+            gSoftBodyFastPhase -= 1.0f;
         }
     }
 
-    switch (object->anim.romDefNo)
+    switch (obj->anim.romDefNo)
     {
-    case SOFTBODY_MOVE_PHASE_A_FIRST:
-    case SOFTBODY_MOVE_PHASE_A_FIRST + 1:
-    case SOFTBODY_MOVE_PHASE_A_FIRST + 2:
+    case SOFT_BODY_SLOW_PHASE_OBJECT_A:
+    case SOFT_BODY_SLOW_PHASE_OBJECT_B:
+    case SOFT_BODY_SLOW_PHASE_OBJECT_C:
         ObjAnim_SetCurrentMove(obj, 0, gSoftBodySlowPhase, 0);
         break;
     default:
@@ -99,30 +79,27 @@ void SoftBody_update(GameObject* obj)
     }
 }
 
-void SoftBody_init(GameObject* obj, SoftBodySetup* setup)
+void SoftBody_init(GameObject* obj, const SoftBodyPlacement* placement)
 {
-    GameObject* object = obj;
-    SoftBodySetup* setupData = setup;
-
-    object->anim.rotZ = (s16)(setupData->rotZ << SOFTBODY_ROTATION_SHIFT);
-    object->anim.rotY = (s16)(setupData->rotY << SOFTBODY_ROTATION_SHIFT);
-    object->anim.rotX = (s16)(setupData->rotX << SOFTBODY_ROTATION_SHIFT);
-    if (setupData->scale != 0)
+    obj->anim.rotZ = (s16)((u32)placement->rotationZByte * 256);
+    obj->anim.rotY = (s16)((u32)placement->rotationYByte * 256);
+    obj->anim.rotX = (s16)((u32)placement->rotationXByte * 256);
+    if (placement->scaleByte != 0)
     {
-        object->anim.rootMotionScale = (f32)(u32)setupData->scale / SOFTBODY_SCALE_DIVISOR;
-        if (!object->anim.rootMotionScale)
+        obj->anim.rootMotionScale = (f32)(u32)placement->scaleByte / 255.0f;
+        if (obj->anim.rootMotionScale == 0.0f)
         {
-            object->anim.rootMotionScale = 1.0f;
+            obj->anim.rootMotionScale = 1.0f;
         }
-        object->anim.rootMotionScale = object->anim.rootMotionScale * object->anim.modelInstance->rootMotionScaleBase;
+        obj->anim.rootMotionScale *= obj->anim.modelInstance->rootMotionScaleBase;
     }
-    object->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     ObjAnim_SetCurrentMove(obj, 0, 0.0f, 0);
-    if (object->anim.hitReactState != NULL)
+    if (obj->anim.hitReactState != NULL)
     {
-        ObjHitbox_SetSphereRadius(&obj->anim,
-                                  (s16)((f32)((ObjHitsPriorityState*)object->anim.hitReactState)->primaryRadius *
-                                        object->anim.rootMotionScale));
+        ObjHitsPriorityState* hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
+
+        ObjHitbox_SetSphereRadius(&obj->anim, (s16)((f32)hitState->primaryRadius * obj->anim.rootMotionScale));
     }
 }
 

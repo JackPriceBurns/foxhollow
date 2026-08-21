@@ -4,7 +4,6 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "main/dll/partfx_interface.h"
 
 typedef struct MMPTrenchFxPlacement {
     ObjPlacement base;
@@ -36,30 +35,6 @@ STATIC_ASSERT(offsetof(MMPTrenchFxPlacement, emitCount) == 0x22);
 STATIC_ASSERT(offsetof(MMPTrenchFxPlacement, enableGameBit) == 0x24);
 STATIC_ASSERT(offsetof(MMPTrenchFxPlacement, stopGameBit) == 0x26);
 
-typedef struct MMPTrenchFxState {
-    s16 enableGameBit;
-    u16 extentX;
-    u16 extentZ;
-    u16 extentY;
-    s16 emitAngles[3];
-    u8 unknown0E[2];
-    PartFxSpawnParams burstSpawnParams;
-    f32 burstCooldown;
-    f32 burstTimer;
-} MMPTrenchFxState;
-
-STATIC_ASSERT(sizeof(MMPTrenchFxState) == 0x30);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, enableGameBit) == 0x00);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, extentX) == 0x02);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, extentZ) == 0x04);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, extentY) == 0x06);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, emitAngles) == 0x08);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, unknown0E) == 0x0E);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, burstSpawnParams) == 0x10);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, burstCooldown) == 0x28);
-STATIC_ASSERT(offsetof(MMPTrenchFxState, burstTimer) == 0x2C);
-
-extern PartFxSpawnParams gMMPTrenchFxAmbientSpawnParams;
 extern ObjectDescriptor gMMPTrenchFxObjDescriptor;
 
 int mmpTrenchFx_getExtraSize(void);

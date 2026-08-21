@@ -26,8 +26,8 @@ void mutatedEbaUpdateWhileFrozen(GameObject* obj, u8* state, GameObject* attacke
                                  int sector);
 void hoodedZyckUpdateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int hit, int p5, int p6, Vec* hitPos,
                                  int sector);
-void battleDroidUpdateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int hit, int p5, int p6, Vec* hitPos,
-                                  int sector);
+void battleDroidUpdateWhileFrozen(GameObject* obj, EnemyState* state, GameObject* attacker, int hit, int p5, int p6,
+                                  Vec* hitPos, int sector);
 void crawler_onHit(GameObject* obj, u8* state, GameObject* attacker, int hit, int p5, int p6, Vec* hitPos, int sector);
 void hagabonMK2_updateWhileFrozen(GameObject* obj, u8* state, GameObject* attacker, int hit, int p5, int p6, Vec* hitPos,
                                   int sector);

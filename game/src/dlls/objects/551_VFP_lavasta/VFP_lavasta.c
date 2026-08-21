@@ -10,11 +10,11 @@
 #include "main/resource.h"
 #include "main/vecmath.h"
 
-#define VFP_LAVASTAR_RESOURCE_ID                 0xa6
-#define VFP_LAVASTAR_PARTFX                     0x3a4
+typedef enum VfpLavaStarParticleId {
+    VFP_LAVA_STAR_PARTICLE_ID = 0x3A4,
+} VfpLavaStarParticleId;
 
-
-DllA6Interface** gVfpLavaPoolEffectResource;
+static DllA6Interface** sVfpLavaPoolEffectResource;
 
 typedef struct VfpLavaStarState
 {
@@ -27,14 +27,14 @@ typedef struct VfpLavaStarState
     u8 pad11[3];
 } VfpLavaStarState;
 
-typedef struct VfpLavaStarMapData
+typedef struct VfpLavaStarPlacement
 {
     ObjPlacement base;
     u8 pad18[2];
     s16 heightOffset;
     u8 pad1C[2];
     s16 gameBit;
-} VfpLavaStarMapData;
+} VfpLavaStarPlacement;
 
 STATIC_ASSERT(sizeof(VfpLavaStarState) == 0x14);
 STATIC_ASSERT(offsetof(VfpLavaStarState, verticalVelocity) == 0x00);
@@ -43,8 +43,8 @@ STATIC_ASSERT(offsetof(VfpLavaStarState, delayRangeMax) == 0x08);
 STATIC_ASSERT(offsetof(VfpLavaStarState, gameBit) == 0x0C);
 STATIC_ASSERT(offsetof(VfpLavaStarState, effectTimer) == 0x0E);
 STATIC_ASSERT(offsetof(VfpLavaStarState, particleToggle) == 0x10);
-STATIC_ASSERT(offsetof(VfpLavaStarMapData, heightOffset) == 0x1A);
-STATIC_ASSERT(offsetof(VfpLavaStarMapData, gameBit) == 0x1E);
+STATIC_ASSERT(offsetof(VfpLavaStarPlacement, heightOffset) == 0x1A);
+STATIC_ASSERT(offsetof(VfpLavaStarPlacement, gameBit) == 0x1E);
 
 int VFP_lavastar_getExtraSize(void)
 {
@@ -53,7 +53,7 @@ int VFP_lavastar_getExtraSize(void)
 
 int VFP_lavastar_getObjectTypeId(void)
 {
-    return 0x0;
+    return 0;
 }
 
 void VFP_lavastar_free(GameObject* obj)
@@ -72,42 +72,37 @@ void VFP_lavastar_hitDetect(void)
 
 void VFP_lavastar_update(GameObject* obj)
 {
-    VfpLavaStarMapData* mapData;
-    VfpLavaStarState* state;
+    const VfpLavaStarPlacement* placement = (const VfpLavaStarPlacement*)obj->anim.placementData;
+    VfpLavaStarState* state = obj->extra;
 
-    mapData = (VfpLavaStarMapData*)obj->anim.placementData;
-    state = obj->extra;
     obj->anim.localPosY += timeDelta * state->verticalVelocity;
-    if (obj->anim.localPosY > 900.0f + mapData->base.posY)
+    if (obj->anim.localPosY > 900.0f + placement->base.posY)
     {
         state->verticalVelocity = 0.1f * (f32)randomGetRange(5, 0x14);
-        obj->anim.localPosY = mapData->base.posY;
+        obj->anim.localPosY = placement->base.posY;
     }
     state->effectTimer += (s16)timeDelta;
-    if (gVfpLavaPoolEffectResource != 0 && state->effectTimer >= 0x28)
+    if (sVfpLavaPoolEffectResource != NULL && state->effectTimer >= 0x28)
     {
-        (*gVfpLavaPoolEffectResource)->spawn(obj, 0, NULL, 4);
+        (*sVfpLavaPoolEffectResource)->spawn(obj, 0, NULL, 4);
         state->effectTimer = 0;
     }
     if (state->particleToggle == 0)
     {
-        (*gPartfxInterface)->spawnObject(
-            (void*)obj, VFP_LAVASTAR_PARTFX, NULL, 2, -1, NULL);
+        (*gPartfxInterface)->spawnObject(obj, VFP_LAVA_STAR_PARTICLE_ID, NULL, 2, -1, NULL);
     }
     state->particleToggle ^= 1;
 }
 
-void VFP_lavastar_init(GameObject* obj, VfpLavaStarMapData* def)
+void VFP_lavastar_init(GameObject* obj, const VfpLavaStarPlacement* placement)
 {
-    VfpLavaStarState* state;
-    VfpLavaStarMapData* mapData;
+    VfpLavaStarState* state = obj->extra;
 
-    mapData = def;
-    state = obj->extra;
-    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->gameBit));
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBit);
     state->verticalVelocity = 0.1f * (f32)randomGetRange(10, 0x19);
     state->effectTimer = 0x14;
-    obj->anim.localPosY = mapData->base.posY + (f32)(int)ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->heightOffset));
+    obj->anim.localPosY =
+        placement->base.posY + (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->heightOffset);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     state->delayRangeMin = (f32)randomGetRange(0x1e, 0x3c);
     state->delayRangeMax = (f32)randomGetRange(100, 200);
@@ -115,14 +110,13 @@ void VFP_lavastar_init(GameObject* obj, VfpLavaStarMapData* def)
 
 void VFP_lavastar_release(void)
 {
-    Resource_Release(gVfpLavaPoolEffectResource);
-    gVfpLavaPoolEffectResource = NULL;
+    Resource_Release(sVfpLavaPoolEffectResource);
+    sVfpLavaPoolEffectResource = NULL;
 }
 
 void VFP_lavastar_initialise(void)
 {
-    gVfpLavaPoolEffectResource = NULL;
-    gVfpLavaPoolEffectResource = Resource_Acquire(VFP_LAVASTAR_RESOURCE_ID, 1);
+    sVfpLavaPoolEffectResource = Resource_Acquire(0xA6, 1);
 }
 
 ObjectDescriptor gVFP_lavastarObjDescriptor = {

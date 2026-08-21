@@ -1,6 +1,3 @@
-/*
- * DLL 138 / 0x8A - a single-command modgfx effect spawner.
- */
 #include "main/dll/dll_008A_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/modgfx_types.h"
@@ -32,12 +29,12 @@ u8 gDll8AEffectResourceData[sizeof(Dll8AEffectResourceView)] = {
 
 void dll_8A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags) {
     ModgfxSpawnPacket packet;
-    u8* resourceData = (u8*)gDll8AEffectResourceData;
+    Dll8AEffectResourceView* resource = (Dll8AEffectResourceView*)gDll8AEffectResourceData;
     GfxCmd* commands = packet.entries;
 
     commands[0].layer = 0;
     commands[0].flags = 8;
-    commands[0].tex = &resourceData[offsetof(Dll8AEffectResourceView, allVertexIndices)];
+    commands[0].tex = resource->allVertexIndices;
     commands[0].mode = 2;
     commands[0].x = 0.5f;
     commands[0].y = 0.5f;
@@ -58,14 +55,10 @@ void dll_8A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     packet.byte5A = 0;
     packet.textureFrameTimer = 0x10;
     packet.flags = 0x2000492;
-    packet.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd)) - commands;
-    packet.sequenceParams[0] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[0])];
-    packet.sequenceParams[1] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[1])];
-    packet.sequenceParams[2] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[2])];
-    packet.sequenceParams[3] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[3])];
-    packet.sequenceParams[4] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[4])];
-    packet.sequenceParams[5] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[5])];
-    packet.sequenceParams[6] = *(s16*)&resourceData[offsetof(Dll8AEffectResourceView, sequenceParams[6])];
+    packet.commandCount = 1;
+    for (s32 paramIndex = 0; paramIndex < ARRAY_COUNT(packet.sequenceParams); paramIndex++) {
+        packet.sequenceParams[paramIndex] = fhReadBES16(&resource->sequenceParams[paramIndex]);
+    }
     packet.commands = commands;
     packet.flags |= spawnFlags;
     if ((packet.flags & 1) != 0) {
@@ -82,8 +75,8 @@ void dll_8A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 8, (u8*)gDll8AEffectResourceData, 0xC,
-                      &resourceData[offsetof(Dll8AEffectResourceView, triangles)], 0x1FD, 0);
+        ->spawnEffect(&packet, 0, ARRAY_COUNT(resource->vertices), resource->vertices,
+                      ARRAY_COUNT(resource->triangles), resource->triangles, 0x1FD, NULL);
 }
 
 void dll_8A_release(void) {

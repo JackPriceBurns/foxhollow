@@ -7,32 +7,6 @@
 #include "game/objects/object_setup.h"
 #include "main/objseq.h"
 
-typedef struct WmNewCrystalState
-{
-    s16 fxState[0x1A];    /* 0x00: primary crystal-orbit effect block */
-    s16 secondaryFxState[0x1A]; /* 0x34: secondary crystal-orbit effect block */
-    u8 greenBurstsActive;       /* 0x68: green crystal still bursting */
-    u8 pad69[3];
-} WmNewCrystalState;
-
-/* layout-compatible with the PartFxSpawnParams head (partfx_interface.h) */
-typedef struct WmNewCrystalParticleParams
-{
-    u8 pad0[6];
-    s16 pathPoint; /* 0x06 */
-    u8 pad8[4];
-    f32 x; /* 0x0C */
-    f32 y; /* 0x10 */
-    f32 z; /* 0x14 */
-} WmNewCrystalParticleParams;
-
-STATIC_ASSERT(offsetof(WmNewCrystalState, secondaryFxState) == 0x34);
-STATIC_ASSERT(offsetof(WmNewCrystalState, greenBurstsActive) == 0x68);
-STATIC_ASSERT(sizeof(WmNewCrystalState) == 0x6C);
-STATIC_ASSERT(offsetof(WmNewCrystalParticleParams, pathPoint) == 0x06);
-STATIC_ASSERT(offsetof(WmNewCrystalParticleParams, x) == 0x0C);
-STATIC_ASSERT(sizeof(WmNewCrystalParticleParams) == 0x18);
-
 int WM_newcrystal_SeqFn(GameObject* obj, int unused, ObjSeqState* actor);
 int WM_newcrystal_getExtraSize(void);
 int WM_newcrystal_getObjectTypeId(void);
@@ -46,4 +20,4 @@ void WM_newcrystal_initialise(void);
 
 extern ObjectDescriptor gWM_newcrystalObjDescriptor;
 
-#endif /* MAIN_DLL_WM_DLL_0215_WMNEWCRYSTAL_H_ */
+#endif

@@ -2,25 +2,11 @@
 #define MAIN_DLL_WC_DLL_0292_WCTREXSTATU_H
 
 #include "global.h"
-#include "game/objects/object.h"
+#include "game/objects/object_fwd.h"
 #include "dlls/object_descriptor.h"
-#include "game/objects/object_setup.h"
 #include "main/objseq.h"
 
-typedef struct WCTrexStatueSetup
-{
-    ObjPlacement base;
-    s8 type;
-    s8 modelIndex;
-    u8 pad1A[0x1E - 0x1A];
-    s16 raisedBit;
-    u8 pad20[0x24 - 0x20];
-} WCTrexStatueSetup;
-
-STATIC_ASSERT(sizeof(WCTrexStatueSetup) == 0x24);
-STATIC_ASSERT(offsetof(WCTrexStatueSetup, type) == 0x18);
-STATIC_ASSERT(offsetof(WCTrexStatueSetup, modelIndex) == 0x19);
-STATIC_ASSERT(offsetof(WCTrexStatueSetup, raisedBit) == 0x1E);
+typedef struct WcTrexStatuePlacement WcTrexStatuePlacement;
 
 extern ObjectDescriptor gWCTrexStatuObjDescriptor;
 
@@ -31,8 +17,8 @@ void wctrexstatu_free(void);
 void wctrexstatu_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void wctrexstatu_hitDetect(GameObject* obj);
 void wctrexstatu_update(void);
-void wctrexstatu_init(GameObject* obj, WCTrexStatueSetup* setup, int fromLoad);
+void wctrexstatu_init(GameObject* obj, const WcTrexStatuePlacement* placement, int fromLoad);
 void wctrexstatu_release(void);
 void wctrexstatu_initialise(void);
 
-#endif /* MAIN_DLL_WC_DLL_0292_WCTREXSTATU_H */
+#endif

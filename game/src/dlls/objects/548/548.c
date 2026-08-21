@@ -1,143 +1,141 @@
-/* DLL 0x0224 */
 #include "dlls/object_descriptor.h"
-#include "main/game_ui_interface.h"
-#include "main/mapEventTypes.h"
-#include "main/vecmath.h"
-#include "sys/objects.h"
+#include "game/objects/object.h"
 #include "game/objects/object_setup.h"
+#include "main/game_ui_interface.h"
 #include "main/gamebits_api.h"
+#include "main/mapEventTypes.h"
 #include "main/objprint_render_api.h"
+#include "main/vecmath_distance_api.h"
+#include "sys/objects.h"
 
+typedef enum SpellStoneUseMode {
+    SPELL_STONE_USE_MODE_A = 1,
+    SPELL_STONE_USE_MODE_B = 2,
+    SPELL_STONE_USE_MODE_C = 3,
+} SpellStoneUseMode;
 
-u32 gSpellStoneEventId;
+typedef enum SpellStoneUseUiEvent {
+    SPELL_STONE_USE_EVENT_A = 0x123,
+    SPELL_STONE_USE_EVENT_B = 0x83B,
+    SPELL_STONE_USE_EVENT_C = 0x83C,
+} SpellStoneUseUiEvent;
+
+typedef struct SpellStoneUsePlacement {
+    ObjPlacement base;
+    s8 rotXByte;
+    u8 pad19[5];
+    s16 completionGameBit;
+    s16 requiredGameBit;
+} SpellStoneUsePlacement;
 
 typedef struct SpellStoneUseState {
-    s16 completeGameBit;
+    s16 completionGameBit;
     s16 requiredGameBit;
     u8 used;
+    u8 pad05;
 } SpellStoneUseState;
 
-typedef struct SpellStonePlacement {
-    ObjPlacement base;
-    s8 rotXByte; /* 0x18 */
-    u8 pad19[5];
-    s16 completeGameBit; /* 0x1e */
-    s16 requiredGameBit; /* 0x20 */
-} SpellStonePlacement;
+STATIC_ASSERT(sizeof(SpellStoneUsePlacement) == 0x24);
+STATIC_ASSERT(offsetof(SpellStoneUsePlacement, rotXByte) == 0x18);
+STATIC_ASSERT(offsetof(SpellStoneUsePlacement, completionGameBit) == 0x1E);
+STATIC_ASSERT(offsetof(SpellStoneUsePlacement, requiredGameBit) == 0x20);
 
-void SpellStoneUse_updateInteraction(GameObject* obj);
-int dll_224_getExtraSize_ret_6(void);
-int dll_224_getObjectTypeId(void);
-void dll_224_free_nop(void);
-void dll_224_render(int p1, int p2, int p3, int p4, int p5, s8 visible);
-void dll_224_hitDetect(GameObject* obj);
-void dll_224_update(GameObject* obj);
-void dll_224_init(GameObject* obj, void* other);
-void dll_224_release_nop(void);
-void dll_224_initialise_nop(void);
+STATIC_ASSERT(sizeof(SpellStoneUseState) == 0x06);
+STATIC_ASSERT(offsetof(SpellStoneUseState, completionGameBit) == 0x00);
+STATIC_ASSERT(offsetof(SpellStoneUseState, requiredGameBit) == 0x02);
+STATIC_ASSERT(offsetof(SpellStoneUseState, used) == 0x04);
 
-void SpellStoneUse_updateInteraction(GameObject* obj) {
+static void spellStoneUse_updateInteraction(GameObject* obj, SpellStoneUseUiEvent event) {
     SpellStoneUseState* state = obj->extra;
-    s16 cond = 1;
     GameObject* player = Obj_GetPlayerObject();
+    s16 requirementMet = 1;
+
     if (player == NULL) {
         return;
     }
     if (state->requiredGameBit != -1) {
-        cond = mainGetBit(state->requiredGameBit);
+        requirementMet = mainGetBit(state->requiredGameBit);
     }
-    if ((s16)mainGetBit(state->completeGameBit) != 0 || state->used != 0) {
+    if ((s16)mainGetBit(state->completionGameBit) != 0 || state->used != 0 || requirementMet == 0) {
         return;
     }
-    if (cond == 0) {
-        return;
-    }
-    obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
-    if ((*gGameUIInterface)->isItemBeingUsed(gSpellStoneEventId) != 0) {
-        if (Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < 100.0f) {
-            mainSetBits(state->completeGameBit, 1);
-            state->used = 1;
-            obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-        }
+
+    obj->anim.resetHitboxFlags &= (u8)~INTERACT_FLAG_DISABLED;
+    if ((*gGameUIInterface)->isItemBeingUsed(event) != 0 &&
+        Vec_distance(&obj->anim.worldPos.x, &player->anim.worldPos.x) < 100.0f) {
+        mainSetBits(state->completionGameBit, 1);
+        state->used = 1;
+        obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     }
 }
 
-int dll_224_getExtraSize_ret_6(void) {
-    return 0x6;
+static int spellStoneUse_getExtraSize(void) {
+    return sizeof(SpellStoneUseState);
 }
 
-int dll_224_getObjectTypeId(void) {
-    return 0x0;
+static int spellStoneUse_getObjectTypeId(void) {
+    return 0;
 }
 
-void dll_224_free_nop(void) {
+static void spellStoneUse_free(void) {
 }
 
-void dll_224_render(int p1, int p2, int p3, int p4, int p5, s8 visible) {
-    if (visible == 0) {
-        return;
-    }
+static void spellStoneUse_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                                 s8 visible) {
+    (void)obj;
+    (void)renderArg2;
+    (void)renderArg3;
+    (void)renderArg4;
+    (void)renderArg5;
+    (void)visible;
 }
 
-void dll_224_hitDetect(GameObject* obj) {
+static void spellStoneUse_hitDetect(GameObject* obj) {
     if (obj->anim.hitVolumeTransforms != NULL) {
         objUpdateHitVolumeTransforms(obj);
     }
 }
 
-void dll_224_update(GameObject* obj) {
-    int mapAct;
+static void spellStoneUse_update(GameObject* obj) {
+    SpellStoneUseUiEvent event = SPELL_STONE_USE_EVENT_A;
 
-    mapAct = (*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot);
-    switch (mapAct) {
-    case 1:
-        gSpellStoneEventId = 0x123;
+    switch ((SpellStoneUseMode)(u8)(*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot)) {
+    case SPELL_STONE_USE_MODE_A:
         break;
-    case 2:
-        gSpellStoneEventId = 0x83b;
+    case SPELL_STONE_USE_MODE_B:
+        event = SPELL_STONE_USE_EVENT_B;
         break;
-    case 3:
-        gSpellStoneEventId = 0x83c;
-        break;
-    default:
-        gSpellStoneEventId = 0x123;
+    case SPELL_STONE_USE_MODE_C:
+        event = SPELL_STONE_USE_EVENT_C;
         break;
     }
-    SpellStoneUse_updateInteraction(obj);
+    spellStoneUse_updateInteraction(obj, event);
 }
 
-void dll_224_init(GameObject* obj, void* other) {
-    SpellStoneUseState* extra = obj->extra;
-    SpellStonePlacement* def = (SpellStonePlacement*)other;
-    s16 rotX = (def->rotXByte << 8);
-    u8 hitboxFlags;
+static void spellStoneUse_init(GameObject* obj, const SpellStoneUsePlacement* placement) {
+    SpellStoneUseState* state = obj->extra;
 
-    obj->anim.rotX = rotX;
-    extra->completeGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(def->completeGameBit));
-    extra->requiredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(def->requiredGameBit));
-    hitboxFlags = (*&obj->anim.resetHitboxMode | INTERACT_FLAG_DISABLED);
-    obj->anim.resetHitboxFlags = hitboxFlags;
+    obj->anim.rotX = (s16)placement->rotXByte * 0x100;
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->completionGameBit);
+    state->requiredGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->requiredGameBit);
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
 }
 
-void dll_224_release_nop(void) {
+static void spellStoneUse_release(void) {
 }
 
-void dll_224_initialise_nop(void) {
+static void spellStoneUse_initialise(void) {
 }
 
-ObjectDescriptor gDll224ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_224_initialise_nop,
-    (ObjectDescriptorCallback)dll_224_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_224_init,
-    (ObjectDescriptorCallback)dll_224_update,
-    (ObjectDescriptorCallback)dll_224_hitDetect,
-    (ObjectDescriptorCallback)dll_224_render,
-    (ObjectDescriptorCallback)dll_224_free_nop,
-    (ObjectDescriptorCallback)dll_224_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)dll_224_getExtraSize_ret_6,
+ObjectDescriptor gSpellStoneUseObjDescriptor = {
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)spellStoneUse_initialise,
+    .release = (ObjectDescriptorCallback)spellStoneUse_release,
+    .init = (ObjectDescriptorCallback)spellStoneUse_init,
+    .update = (ObjectDescriptorCallback)spellStoneUse_update,
+    .hitDetect = (ObjectDescriptorCallback)spellStoneUse_hitDetect,
+    .render = (ObjectDescriptorCallback)spellStoneUse_render,
+    .free = (ObjectDescriptorCallback)spellStoneUse_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)spellStoneUse_getObjectTypeId,
+    .getExtraSize = spellStoneUse_getExtraSize,
 };

@@ -13,37 +13,37 @@
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
-#define FLAMETHROWERSPE_SCALE_DIVISOR 10.0f
+typedef enum FlameThrowerspePhase {
+    FLAMETHROWERSPE_PHASE_LAUNCH = 1,
+    FLAMETHROWERSPE_PHASE_ACTIVE = 2,
+} FlameThrowerspePhase;
 
-#define FLAMETHROWERSPE_PHASE_LAUNCH 1
-#define FLAMETHROWERSPE_PHASE_ACTIVE 2
+typedef struct FlameThrowerspeState {
+    u8 unk0[4];
+    f32 lifeTimer;
+    f32 sizeScale;
+    f32 sphereRadius;
+    FlameThrowerspePhase phase;
+} FlameThrowerspeState;
 
-#define FLAMETHROWERSPE_RANDOM_SPEED_MIN 100
-#define FLAMETHROWERSPE_RANDOM_SPEED_MAX 150
-#define FLAMETHROWERSPE_SPEED_SCALE 0.1f
-#define FLAMETHROWERSPE_RANDOM_SPEED_SCALE 0.12f
+typedef struct FlameThrowerspeHitProfile {
+    u32 unk0;
+    u32 unk4;
+    int hitVolumeSlot;
+} FlameThrowerspeHitProfile;
 
-f32 gFlameThrowerspeScaleMultiplier = 2.0f;
-int gFlameThrowerspeLifetimeFrames = 35;
-f32 gFlameThrowerspeSpeedMultiplier = 1.0f;
-f32 gFlameThrowerspeRadiusMultiplier = 8.0f;
-
-FlameThrowerspeHitProfile gFlameThrowerspeHitProfiles[FLAMETHROWERSPE_HIT_PROFILE_COUNT] = {
+static const FlameThrowerspeHitProfile sFlameThrowerspeHitProfiles[] = {
     {0x4F, 0xFFC40000, 0x1F},
     {0x4F, 0x00C4FF00, 0x5},
     {0x4F, 0x00C4FF00, 0x1E},
 };
 
-
-
 void FlameThrowerspe_modelMtxFn(void) {
 }
 
 void FlameThrowerspe_launch(GameObject* obj) {
-    s32 phase = FLAMETHROWERSPE_PHASE_LAUNCH;
     FlameThrowerspeState* state = obj->extra;
-
-    state->phase = phase;
+    state->phase = FLAMETHROWERSPE_PHASE_LAUNCH;
 }
 
 void FlameThrowerspe_setTransform(GameObject* obj, s16 rotY, s16 rotX, f32 x, f32 y, f32 z) {
@@ -67,11 +67,8 @@ void FlameThrowerspe_free(GameObject* obj) {
 }
 
 void FlameThrowerspe_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int fwdArg5, s8 visible) {
-    f32 scale = 1.0f;
-
     (void)visible;
-
-    objRenderModelAndHitVolumes(obj, fwdArg2, fwdArg3, fwdArg4, fwdArg5, scale);
+    objRenderModelAndHitVolumes(obj, fwdArg2, fwdArg3, fwdArg4, fwdArg5, 1.0f);
 }
 
 void FlameThrowerspe_hitDetect(GameObject* obj) {
@@ -86,14 +83,10 @@ void FlameThrowerspe_update(GameObject* obj) {
     case FLAMETHROWERSPE_PHASE_LAUNCH:
         obj->anim.velocityX = 0.0f;
         obj->anim.velocityZ =
-            gFlameThrowerspeSpeedMultiplier *
-            (FLAMETHROWERSPE_SPEED_SCALE *
-             (state->sizeScale *
-              (FLAMETHROWERSPE_RANDOM_SPEED_SCALE *
-               (f32)randomGetRange(FLAMETHROWERSPE_RANDOM_SPEED_MIN, FLAMETHROWERSPE_RANDOM_SPEED_MAX))));
+            0.1f * (state->sizeScale * (0.12f * (f32)randomGetRange(100, 150)));
         vecRotateZXY(&obj->anim.rotX, &obj->anim.velocityX);
-        state->sphereRadius = gFlameThrowerspeRadiusMultiplier * state->sizeScale;
-        s16toFloat(&state->lifeTimer, (s16)gFlameThrowerspeLifetimeFrames);
+        state->sphereRadius = 8.0f * state->sizeScale;
+        s16toFloat(&state->lifeTimer, 35);
         state->phase = FLAMETHROWERSPE_PHASE_ACTIVE;
         break;
     case FLAMETHROWERSPE_PHASE_ACTIVE:
@@ -103,16 +96,12 @@ void FlameThrowerspe_update(GameObject* obj) {
             return;
         }
         ObjHits_EnableObject(obj);
-        ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj,
-                                 gFlameThrowerspeHitProfiles[placement->hitVolumeProfile].hitVolumeSlot, 1, 0);
-        {
-            f32 dt = (f32)(f64)timeDelta;
-            (void)objMove(obj, obj->anim.velocityX * dt, obj->anim.velocityY * dt, obj->anim.velocityZ * dt);
-        }
-        ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj,
-                                  (int)(state->sphereRadius *
-                                        (((f32)gFlameThrowerspeLifetimeFrames - state->lifeTimer) /
-                                         gFlameThrowerspeLifetimeFrames)));
+        ObjHits_SetHitVolumeSlot(&obj->anim,
+                                 sFlameThrowerspeHitProfiles[placement->hitVolumeProfile].hitVolumeSlot, 1, 0);
+        f32 dt = (f32)(f64)timeDelta;
+        objMove(obj, obj->anim.velocityX * dt, obj->anim.velocityY * dt, obj->anim.velocityZ * dt);
+        ObjHitbox_SetSphereRadius(&obj->anim,
+                                  (int)(state->sphereRadius * ((35.0f - state->lifeTimer) / 35)));
         break;
     }
 }
@@ -121,10 +110,8 @@ void FlameThrowerspe_init(GameObject* obj, FlameThrowerspePlacement* placement) 
     FlameThrowerspeState* state = obj->extra;
 
     storeZeroToFloatParam(&state->lifeTimer);
-    {
-        f32 scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scaleParam)) / FLAMETHROWERSPE_SCALE_DIVISOR;
-        state->sizeScale = scale * gFlameThrowerspeScaleMultiplier;
-    }
+    f32 scale = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->scaleParam) / 10.0f;
+    state->sizeScale = scale * 2.0f;
     obj->anim.velocityY = 0.0f;
     obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
     state->phase = FLAMETHROWERSPE_PHASE_LAUNCH;

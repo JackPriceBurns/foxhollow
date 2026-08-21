@@ -54,7 +54,6 @@ STATIC_ASSERT(offsetof(ECSHShrinePuzzleScratch, nextCupSlotMap) == 0x3C);
 STATIC_ASSERT(sizeof(ECSHShrinePuzzleScratch) == 0x48);
 STATIC_ASSERT(sizeof(ECSHShrineCupPosition) == 0x08);
 
-#define ECSH_SHRINE_OBJ_GROUP 0xB
 
 #define ECSH_SHRINE_CAMERA_MODE_STATIC 0x48
 
@@ -382,7 +381,7 @@ void ecshShrine_free(GameObject* obj) {
         ModelLightStruct_free(state->light);
         state->light = NULL;
     }
-    objFreeObjectType(obj, ECSH_SHRINE_OBJ_GROUP);
+    objFreeObjectType(obj, OBJECT_CLASS_KRAZOA_SHRINE);
     mainSetBits(GAMEBIT_IN_KRAZOA_SHRINE, 0);
     mainSetBits(GAMEBIT_SHRINE_MUSIC_LOCK, 1);
     mainSetBits(GAMEBIT_WMRelated0A7F, 1);
@@ -806,7 +805,7 @@ void ecshShrine_init(GameObject* obj, const s8* placement) {
     byteValue = mainGetBit(GAMEBIT_K1_SHRINE_INTRO_TEXT_TRIGGER);
     state->introTextLatch = byteValue;
     gECSHShrineActiveObject = obj;
-    objAddObjectType(obj, ECSH_SHRINE_OBJ_GROUP);
+    objAddObjectType(obj, OBJECT_CLASS_KRAZOA_SHRINE);
     obj->userData1 = ECSH_SHRINE_LOAD_TIMER_START;
     if (state->light == NULL) {
         state->light = objCreateLight(NULL, 1);

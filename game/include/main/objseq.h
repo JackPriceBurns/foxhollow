@@ -186,6 +186,11 @@ struct ObjSeqState {
     u8 pad137;
 };
 
+enum ObjSeqFlag {
+    OBJSEQ_APPLY_JOINT_ROTATION_TRACKS = 1 << 3,
+    OBJSEQ_APPLY_TEXTURE_SCROLL_TRACK = 1 << 6,
+};
+
 STATIC_ASSERT(sizeof(ObjSeqCommand) == 0x04);
 STATIC_ASSERT(sizeof(ObjSeqState) == 0x138);
 STATIC_ASSERT(offsetof(ObjSeqState, curFrame) == 0x58);

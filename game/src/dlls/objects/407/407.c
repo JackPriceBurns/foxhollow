@@ -1,314 +1,350 @@
-/* DLL 0x197. */
 #include "dlls/objects/407.h"
 
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
+#include "main/audio/sfx_channel_query_api.h"
+#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx_stop_channel_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
+#include "main/dll/dll_0069_modgfx.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
+#include "main/gamebit_ids.h"
 #include "main/gamebits_api.h"
+#include "main/objhits.h"
 #include "main/resource.h"
 #include "main/shader_api.h"
 #include "main/vecmath.h"
 #include "main/voxmaps.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/objhits.h"
 
-#define DLL197_EFFECT_RESOURCE_ID        0x69
-#define DLL197_EFFECT_SPAWN_FLAGS        0x10004
-#define DLL197_PARTFX_SPARK              0x1A3
-#define DLL197_PARTFX_SPARK_COUNT        200
-#define DLL197_PARTFX_SPARKLE            0x1F7
-#define DLL197_PROXIMITY_DISTANCE        90.0f
-#define DLL197_PROXIMITY_SFX_CHANNEL     0x40
-#define DLL197_SHUTDOWN_SFX_CHANNEL      0x7F
-#define DLL197_STAGE_COMPLETE_GAMEBIT    0x472
-#define DLL197_STAGE_EFFECT_PARAM1_BASE  0x19D
-#define DLL197_STAGE_EFFECT_PARAM2_BASE  0x19E
-#define DLL197_STAGE_RESET_GATE_GAMEBIT  0x474
-#define DLL197_VISIBILITY_TRACE_DISTANCE 50.0f
+enum Dll407Mode {
+    DLL407_MODE_PASSIVE_EFFECT,
+    DLL407_MODE_PUZZLE_STAGE,
+};
 
-typedef struct Dll197EffectSpawnParams {
-    u8 unknown00[0x10];
-    f32 scale;
-} Dll197EffectSpawnParams;
+enum Dll407SequenceStage {
+    DLL407_SEQUENCE_STAGE_NONE,
+    DLL407_SEQUENCE_STAGE_FIRST,
+    DLL407_SEQUENCE_STAGE_SECOND,
+    DLL407_SEQUENCE_STAGE_COMPLETE,
+};
 
-STATIC_ASSERT(sizeof(Dll197EffectSpawnParams) == 0x14);
-STATIC_ASSERT(offsetof(Dll197EffectSpawnParams, unknown00) == 0x00);
-STATIC_ASSERT(offsetof(Dll197EffectSpawnParams, scale) == 0x10);
+enum Dll407ParticleId {
+    DLL407_PARTICLE_ACTIVATION = 0x1A3,
+    DLL407_PARTICLE_IDLE = 0x1F7,
+};
 
-const Dll69EffectParams gDll197EffectParamTemplate = {0x3E7, 0x8C, 0x8D, 0x28};
-s8 gDll197PuzzleProgress;
+enum Dll407EffectParamId {
+    DLL407_EFFECT_PARAM_STAGE_0_A = 0x19D,
+    DLL407_EFFECT_PARAM_STAGE_0_B = 0x19E,
+};
 
-int dll407_getExtraSize(void) {
-    return sizeof(Dll197State);
+typedef struct Dll407Placement {
+    ObjPlacement base;
+    s8 rotationIndex;
+    u8 mode;
+    s16 scalePacked;
+    s16 sequenceIndex;
+    s16 gameBitId;
+} Dll407Placement;
+
+typedef struct Dll407State {
+    s32 gameBitId;
+    s16 delayTimer;
+    s16 resetTimer;
+    s16 settleTimer;
+    u8 lineOfSightVisible;
+    u8 mode;
+    u8 active;
+    u8 needsOpenSfx;
+    u8 previousActive;
+    u8 sequenceIndex;
+} Dll407State;
+
+typedef struct Dll407EffectSpawnParams {
+    u8 args[0x10];
+    f32 positionY;
+} Dll407EffectSpawnParams;
+
+STATIC_ASSERT(sizeof(Dll407Placement) == 0x20);
+STATIC_ASSERT(offsetof(Dll407Placement, rotationIndex) == 0x18);
+STATIC_ASSERT(offsetof(Dll407Placement, mode) == 0x19);
+STATIC_ASSERT(offsetof(Dll407Placement, scalePacked) == 0x1A);
+STATIC_ASSERT(offsetof(Dll407Placement, sequenceIndex) == 0x1C);
+STATIC_ASSERT(offsetof(Dll407Placement, gameBitId) == 0x1E);
+
+STATIC_ASSERT(sizeof(Dll407State) == 0x10);
+STATIC_ASSERT(offsetof(Dll407State, gameBitId) == 0x00);
+STATIC_ASSERT(offsetof(Dll407State, delayTimer) == 0x04);
+STATIC_ASSERT(offsetof(Dll407State, resetTimer) == 0x06);
+STATIC_ASSERT(offsetof(Dll407State, settleTimer) == 0x08);
+STATIC_ASSERT(offsetof(Dll407State, lineOfSightVisible) == 0x0A);
+STATIC_ASSERT(offsetof(Dll407State, mode) == 0x0B);
+STATIC_ASSERT(offsetof(Dll407State, active) == 0x0C);
+STATIC_ASSERT(offsetof(Dll407State, needsOpenSfx) == 0x0D);
+STATIC_ASSERT(offsetof(Dll407State, previousActive) == 0x0E);
+STATIC_ASSERT(offsetof(Dll407State, sequenceIndex) == 0x0F);
+
+STATIC_ASSERT(sizeof(Dll407EffectSpawnParams) == 0x14);
+STATIC_ASSERT(offsetof(Dll407EffectSpawnParams, positionY) == 0x10);
+
+static const Dll69EffectParams sDll407EffectParams = {
+    .param0 = 0x3E7,
+    .param1 = 0x8C,
+    .param2 = 0x8D,
+    .param3 = 0x28,
+};
+
+static s8 sDll407SequenceStage;
+
+static int dll407_getExtraSize(void) {
+    return sizeof(Dll407State);
 }
 
-int dll407_getObjectTypeId(void) {
+static int dll407_getObjectTypeId(void) {
     return 1;
 }
 
-void dll407_free(GameObject* obj) {
+static void dll407_free(GameObject* obj) {
     (*gModgfxInterface)->detachSource(obj);
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
-void dll407_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
-    f32 originOffset = 0.0f;
-    PartFxSpawnParams particleParams;
-    f32 dir[3];
-    f32 objTrace[3];
-    f32 cameraTrace[3];
-    s16 startGrid[4];
-    s16 endGrid[4];
-    u8 traceOut[8];
-    Dll197State* state = obj->extra;
-    Camera* camera;
-    f32 dist;
-    f32 scale;
-    void* dirAlias = dir;
+static void dll407_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+    Dll407State* state = obj->extra;
 
-    (void)dirAlias;
     if (visible == 0) {
-        state->sparkTimer = 0;
-        state->visibleToCamera = 0;
+        state->delayTimer = 0;
+        state->lineOfSightVisible = 0;
         return;
     }
-
     if (state->active == 0) {
         return;
     }
 
-    state->visibleToCamera = 1;
-    camera = Camera_GetCurrent();
-    dir[0] = camera->x - obj->anim.localPosX;
-    dir[1] = camera->y - obj->anim.localPosY;
-    dir[2] = camera->z - obj->anim.localPosZ;
+    state->lineOfSightVisible = 1;
+    Camera* camera = Camera_GetCurrent();
+    Vec3f cameraDelta = {
+        .x = camera->position.x - obj->anim.localPos.x,
+        .y = camera->position.y - obj->anim.localPos.y,
+        .z = camera->position.z - obj->anim.localPos.z,
+    };
+    f32 distance =
+        sqrtf(cameraDelta.z * cameraDelta.z + (cameraDelta.x * cameraDelta.x + cameraDelta.y * cameraDelta.y));
 
-    dist = sqrtf(dir[2] * dir[2] + (dir[0] * dir[0] + dir[1] * dir[1]));
-    if (dist > DLL197_VISIBILITY_TRACE_DISTANCE) {
-        scale = 1.0f / dist;
-        dir[0] = dir[0] * scale;
-        dir[1] = dir[1] * scale;
-        dir[2] = dir[2] * scale;
+    if (distance > 50.0f) {
+        f32 inverseDistance = 1.0f / distance;
 
-        objTrace[0] = 32.0f * dir[0];
-        objTrace[1] = 32.0f * dir[1];
-        objTrace[2] = 32.0f * dir[2];
-        objTrace[0] = objTrace[0] + obj->anim.localPosX;
-        objTrace[1] = objTrace[1] + obj->anim.localPosY;
-        objTrace[2] = objTrace[2] + obj->anim.localPosZ;
-        cameraTrace[0] = -20.0f * dir[0];
-        cameraTrace[1] = -20.0f * dir[1];
-        cameraTrace[2] = -20.0f * dir[2];
-        cameraTrace[0] = cameraTrace[0] + camera->x;
-        cameraTrace[1] = cameraTrace[1] + camera->y;
-        cameraTrace[2] = cameraTrace[2] + camera->z;
+        cameraDelta.x *= inverseDistance;
+        cameraDelta.y *= inverseDistance;
+        cameraDelta.z *= inverseDistance;
 
-        voxmaps_worldToGrid(objTrace, startGrid);
-        voxmaps_worldToGrid(cameraTrace, endGrid);
-        if (voxmaps_traceLine((VoxPos*)startGrid, (VoxPos*)endGrid, (VoxPos*)traceOut, NULL, 0) == 0) {
-            state->visibleToCamera = 0;
-            (*gExpgfxInterface)->freeSource((u32)obj);
+        Vec3f objectTraceStart = {
+            .x = 32.0f * cameraDelta.x + obj->anim.localPos.x,
+            .y = 32.0f * cameraDelta.y + obj->anim.localPos.y,
+            .z = 32.0f * cameraDelta.z + obj->anim.localPos.z,
+        };
+        Vec3f cameraTraceEnd = {
+            .x = -20.0f * cameraDelta.x + camera->position.x,
+            .y = -20.0f * cameraDelta.y + camera->position.y,
+            .z = -20.0f * cameraDelta.z + camera->position.z,
+        };
+        VoxPos startGrid;
+        VoxPos endGrid;
+        VoxPos traceOut;
+
+        voxmaps_worldToGrid(&objectTraceStart.x, &startGrid.x);
+        voxmaps_worldToGrid(&cameraTraceEnd.x, &endGrid.x);
+        if (voxmaps_traceLine(&startGrid, &endGrid, &traceOut, NULL, 0) == 0) {
+            state->lineOfSightVisible = 0;
+            (*gExpgfxInterface)->freeSource((uintptr_t)obj);
         }
     }
 
-    if (state->sparkTimer > 0) {
-        state->sparkTimer -= framesThisStep;
+    if (state->delayTimer > 0) {
+        state->delayTimer -= framesThisStep;
         return;
     }
 
-    if (state->visibleToCamera != 0) {
-        particleParams.posX = originOffset;
-        particleParams.posY = 5.0f;
-        particleParams.posZ = originOffset;
-        (*gPartfxInterface)->spawnObject((void*)obj, DLL197_PARTFX_SPARKLE, &particleParams, 0x12, -1, NULL);
+    if (state->lineOfSightVisible != 0) {
+        PartFxSpawnParams particleParams;
+
+        particleParams.pos = (Vec3f){0.0f, 5.0f, 0.0f};
+        (*gPartfxInterface)->spawnObject(obj, DLL407_PARTICLE_IDLE, &particleParams, 0x12, -1, NULL);
     }
-
-    state->sparkTimer = randomGetRange(-10, 10) + 0x3C;
+    state->delayTimer = (s16)(randomGetRange(-10, 10) + 60);
 }
 
-void dll407_hitDetect(void) {
+static void dll407_hitDetect(void) {
 }
 
-void dll407_update(GameObject* objectAddress) {
-    Dll197State* state = objectAddress->extra;
-    Dll69EffectParams resourceParams;
-    Dll197EffectSpawnParams effectSpawnParams;
-    GameObject* player;
-    f32 distance;
-    Dll69Interface** resource;
-    int effect;
-    int stageEffectBase;
+static void dll407_update(GameObject* obj) {
+    Dll407State* state = obj->extra;
+    Dll69EffectParams effectParams = sDll407EffectParams;
+    Dll407EffectSpawnParams effectSpawn;
+    GameObject* player = Obj_GetPlayerObject();
+    f32 distance = Vec_distance(&player->anim.worldPos.x, &obj->anim.worldPos.x);
 
-    resourceParams = gDll197EffectParamTemplate;
-
-    player = Obj_GetPlayerObject();
-    distance = Vec_distance(&player->anim.worldPosX, &objectAddress->anim.worldPosX);
-    if (Sfx_IsPlayingFromObjectChannel(objectAddress, DLL197_PROXIMITY_SFX_CHANNEL) != 0) {
-        if (distance >= DLL197_PROXIMITY_DISTANCE && state->active != 0) {
-            Sfx_StopObjectChannel(objectAddress, DLL197_PROXIMITY_SFX_CHANNEL);
+    if (Sfx_IsPlayingFromObjectChannel(obj, 0x40) != 0) {
+        if (distance >= 90.0f && state->active != 0) {
+            Sfx_StopObjectChannel(obj, 0x40);
         }
-    } else if (distance < DLL197_PROXIMITY_DISTANCE && state->active != 0) {
-        Sfx_PlayFromObject(objectAddress, SFXTRIG_mushdizzylp12);
+    } else if (distance < 90.0f && state->active != 0) {
+        Sfx_PlayFromObject(obj, SFXTRIG_mushdizzylp12);
     }
 
-    objUpdateOpacity(objectAddress);
-
-    if (state->hitCooldown > 0) {
-        state->hitCooldown -= framesThisStep;
+    objUpdateOpacity(obj);
+    if (state->settleTimer > 0) {
+        state->settleTimer -= framesThisStep;
     }
-
-    switch (state->mode) {
-    case 1:
-        break;
-    case 0:
-    default:
+    if (state->mode != DLL407_MODE_PUZZLE_STAGE) {
         return;
     }
 
-    effectSpawnParams.scale = -2.0f;
+    effectSpawn.positionY = -2.0f;
     state->previousActive = state->active;
-    if (ObjHits_GetPriorityHit(objectAddress, 0, 0, 0) != 0 ||
-        (state->hitCooldown != 0 && state->hitCooldown <= 0x14)) {
+    if (ObjHits_GetPriorityHit(obj, 0, 0, 0) != 0 || (state->settleTimer != 0 && state->settleTimer <= 20)) {
         state->active = 1 - state->active;
         if (state->active != 0) {
-            state->activeTimer = 1000;
+            state->resetTimer = 1000;
         }
-        if (state->hitCooldown != 0) {
-            state->hitCooldown = 0;
-            gDll197PuzzleProgress = 3;
-            state->activeTimer = 300;
-            if (state->stage == 2) {
-                mainSetBits(DLL197_STAGE_COMPLETE_GAMEBIT, 1);
+        if (state->settleTimer != 0) {
+            state->settleTimer = 0;
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_COMPLETE;
+            state->resetTimer = 300;
+            if (state->sequenceIndex == 2) {
+                mainSetBits(GAMEBIT_DBSH_ActNo, 1);
             }
         }
     }
 
-    if (state->active != 0 && state->activeTimer != 0) {
-        state->activeTimer -= framesThisStep;
-        if (state->activeTimer <= 0) {
-            state->activeTimer = 0;
+    if (state->active != 0 && state->resetTimer != 0) {
+        state->resetTimer -= framesThisStep;
+        if (state->resetTimer <= 0) {
+            state->resetTimer = 0;
             state->active = 0;
         }
     }
 
-    if (state->active != 0 && state->sparkTimer <= 0 && state->sparkArmed != 0) {
-        state->sparkArmed = 0;
-        Sfx_PlayFromObject(objectAddress, SFXTRIG_cvdrip1c);
+    if (state->active != 0 && state->delayTimer <= 0 && state->needsOpenSfx != 0) {
+        state->needsOpenSfx = 0;
+        Sfx_PlayFromObject(obj, SFXTRIG_cvdrip1c);
     }
-
     if (state->active == state->previousActive) {
         return;
     }
 
     if (state->active != 0) {
-        resource = Resource_Acquire(DLL197_EFFECT_RESOURCE_ID, 1);
-        stageEffectBase = state->stage * 2;
-        resourceParams.param1 = stageEffectBase + DLL197_STAGE_EFFECT_PARAM1_BASE;
-        resourceParams.param2 = stageEffectBase + DLL197_STAGE_EFFECT_PARAM2_BASE;
-        (*resource)->spawn(objectAddress, 1, &effectSpawnParams, DLL197_EFFECT_SPAWN_FLAGS, -1,
-                           &resourceParams);
-        Resource_Release(resource);
+        Dll69Interface** effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+        int effectParamOffset = state->sequenceIndex * 2;
 
-        for (effect = 0; effect < DLL197_PARTFX_SPARK_COUNT; effect++) {
-            (*gPartfxInterface)->spawnObject((void*)objectAddress, DLL197_PARTFX_SPARK, NULL, 0, -1, NULL);
+        effectParams.param1 = effectParamOffset + DLL407_EFFECT_PARAM_STAGE_0_A;
+        effectParams.param2 = effectParamOffset + DLL407_EFFECT_PARAM_STAGE_0_B;
+        (*effectResource)->spawn(obj, 1, &effectSpawn, PARTFXFLAG_10000 | PARTFXFLAG_4, -1, &effectParams);
+        Resource_Release(effectResource);
+
+        for (int particleIndex = 0; particleIndex < 200; particleIndex++) {
+            (*gPartfxInterface)->spawnObject(obj, DLL407_PARTICLE_ACTIVATION, NULL, 0, -1, NULL);
         }
 
-        if (state->gameBit != -1 && mainGetBit(state->gameBit) == 0) {
-            mainSetBits(state->gameBit, 1);
+        if (state->gameBitId != -1 && mainGetBit(state->gameBitId) == 0) {
+            mainSetBits(state->gameBitId, 1);
         }
-        if (gDll197PuzzleProgress == 0 && state->stage == 0 && mainGetBit(state->gameBit) != 0) {
-            gDll197PuzzleProgress = 1;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_NONE && state->sequenceIndex == 0 &&
+            mainGetBit(state->gameBitId) != 0) {
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_FIRST;
         }
-        if (gDll197PuzzleProgress == 1 && state->stage == 1 && mainGetBit(state->gameBit) != 0) {
-            gDll197PuzzleProgress = 2;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_FIRST && state->sequenceIndex == 1 &&
+            mainGetBit(state->gameBitId) != 0) {
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_SECOND;
         }
-        if (gDll197PuzzleProgress == 2 && state->stage == 2 && mainGetBit(state->gameBit) != 0) {
-            mainSetBits(DLL197_STAGE_COMPLETE_GAMEBIT, 1);
-            gDll197PuzzleProgress = 3;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_SECOND && state->sequenceIndex == 2 &&
+            mainGetBit(state->gameBitId) != 0) {
+            mainSetBits(GAMEBIT_DBSH_ActNo, 1);
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_COMPLETE;
         }
-        state->sparkArmed = 1;
-        state->sparkTimer = 1;
+        state->needsOpenSfx = 1;
+        state->delayTimer = 1;
     } else {
-        Sfx_StopObjectChannel(objectAddress, DLL197_SHUTDOWN_SFX_CHANNEL);
-        (*gModgfxInterface)->detachSource((void*)objectAddress);
-        (*gExpgfxInterface)->freeSource((u32)objectAddress);
-        if (state->gameBit != -1 && mainGetBit(state->gameBit) != 0) {
-            mainSetBits(state->gameBit, 0);
+        Sfx_StopObjectChannel(obj, 0x7F);
+        (*gModgfxInterface)->detachSource(obj);
+        (*gExpgfxInterface)->freeSource((uintptr_t)obj);
+        if (state->gameBitId != -1 && mainGetBit(state->gameBitId) != 0) {
+            mainSetBits(state->gameBitId, 0);
         }
-        if (gDll197PuzzleProgress == 1 && state->stage == 0) {
-            gDll197PuzzleProgress = 0;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_FIRST && state->sequenceIndex == 0) {
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_NONE;
         }
-        if (gDll197PuzzleProgress == 2 && state->stage == 1) {
-            gDll197PuzzleProgress = 0;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_SECOND && state->sequenceIndex == 1) {
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_NONE;
         }
-        if (gDll197PuzzleProgress == 3 && state->stage == 2 && mainGetBit(DLL197_STAGE_RESET_GATE_GAMEBIT) == 0) {
-            mainSetBits(DLL197_STAGE_COMPLETE_GAMEBIT, 0);
-            gDll197PuzzleProgress = 0;
+        if (sDll407SequenceStage == DLL407_SEQUENCE_STAGE_COMPLETE && state->sequenceIndex == 2 &&
+            mainGetBit(GAMEBIT_DBSH_Related0474) == 0) {
+            mainSetBits(GAMEBIT_DBSH_ActNo, 0);
+            sDll407SequenceStage = DLL407_SEQUENCE_STAGE_NONE;
         }
     }
 }
 
-void dll407_init(GameObject* obj, const Dll197Placement* placement) {
-    Dll197State* state;
-    Dll69Interface** resource;
-    Dll197EffectSpawnParams effectSpawnParams;
+static void dll407_init(GameObject* obj, const Dll407Placement* placement) {
+    Dll407State* state = obj->extra;
+    Dll407EffectSpawnParams effectSpawn;
+    s16 scalePacked = ObjAnim_ReadPlacementS16(&obj->anim, &placement->scalePacked);
 
-    state = obj->extra;
-    obj->anim.rotX = (s16)((placement->rotationParam & 0x3Fu) << 10);
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scale)) > 0) {
-        obj->anim.rootMotionScale = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->scale)) / 8192.0f;
+    obj->anim.rotX = (s16)((placement->rotationIndex & 0x3F) << 10);
+    if (scalePacked > 0) {
+        obj->anim.rootMotionScale = scalePacked / 8192.0f;
     } else {
         obj->anim.rootMotionScale = 0.1f;
     }
+
     state->mode = placement->mode;
     state->active = 0;
-    state->stage = 0;
-    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->gameBit));
-    effectSpawnParams.scale = -2.0f;
+    state->sequenceIndex = 0;
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gameBitId);
+    effectSpawn.positionY = -2.0f;
+
     switch (state->mode) {
-    case 0:
+    case DLL407_MODE_PASSIVE_EFFECT: {
+        Dll69Interface** effectResource;
+
         state->active = 1;
-        resource = Resource_Acquire(DLL197_EFFECT_RESOURCE_ID, 1);
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stage)) == 0) {
-            (*resource)->spawn(obj, 0, &effectSpawnParams, DLL197_EFFECT_SPAWN_FLAGS, -1, NULL);
+        effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+        if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceIndex) == 0) {
+            (*effectResource)->spawn(obj, 0, &effectSpawn, PARTFXFLAG_10000 | PARTFXFLAG_4, -1, NULL);
         }
         break;
-    case 1:
-        state->stage = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->stage));
-        state->sparkArmed = 0;
-        state->hitCooldown = (s16)(state->stage * 0x28 + 0x398);
+    }
+    case DLL407_MODE_PUZZLE_STAGE:
+        state->sequenceIndex = (u8)ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceIndex);
+        state->needsOpenSfx = 0;
+        state->settleTimer = (s16)(state->sequenceIndex * 0x28 + 0x398);
         state->previousActive = 0;
         break;
     }
-    state->sparkTimer = 0;
+    state->delayTimer = 0;
 }
 
-void dll407_release(void) {
+static void dll407_release(void) {
 }
 
-void dll407_initialise(void) {
+static void dll407_initialise(void) {
 }
 
 ObjectDescriptor gDll197ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll407_initialise,
-    (ObjectDescriptorCallback)dll407_release,
-    0,
-    (ObjectDescriptorCallback)dll407_init,
-    (ObjectDescriptorCallback)dll407_update,
-    (ObjectDescriptorCallback)dll407_hitDetect,
-    (ObjectDescriptorCallback)dll407_render,
-    (ObjectDescriptorCallback)dll407_free,
-    (ObjectDescriptorCallback)dll407_getObjectTypeId,
-    dll407_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)dll407_initialise,
+    .release = (ObjectDescriptorCallback)dll407_release,
+    .init = (ObjectDescriptorCallback)dll407_init,
+    .update = (ObjectDescriptorCallback)dll407_update,
+    .hitDetect = (ObjectDescriptorCallback)dll407_hitDetect,
+    .render = (ObjectDescriptorCallback)dll407_render,
+    .free = (ObjectDescriptorCallback)dll407_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)dll407_getObjectTypeId,
+    .getExtraSize = dll407_getExtraSize,
 };

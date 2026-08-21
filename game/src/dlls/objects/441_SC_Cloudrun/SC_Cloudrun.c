@@ -1,123 +1,123 @@
-/*
- * SC_Cloudrun (DLL 0x01B9) drives SC CloudRunner A sequence events and
- * manages the attached CmbSrc effect source.
- */
-
 #include "dlls/objects/441_SC_Cloudrun.h"
 
+#include "game/objects/object_setup.h"
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/dll/dll_02B1_cmbsrc.h"
+#include "main/frame_timing.h"
 #include "main/obj_link.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
+#include "main/objseq.h"
+#include "main/objtype.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
-#include "main/frame_timing.h"
-#include "main/objseq.h"
-#define SC_CLOUDRUNNER_A_EVENT_CREATE_CHILD      0
-#define SC_CLOUDRUNNER_A_EVENT_DEACTIVATE_CHILD  1
-#define SC_CLOUDRUNNER_A_EVENT_REMOVE_CHILD      2
-#define SC_CLOUDRUNNER_A_CHILD_OBJECT_ID         CMBSRC_SEQ_DEFAULT
-#define SC_CLOUDRUNNER_A_OBJECT_TYPE_ID          0xB
-#define SC_CLOUDRUNNER_A_SEQUENCE_CLASS_ID       0x10
-#define SC_CLOUDRUNNER_A_OBJECT_SLOT             0x64
-#define SC_CLOUDRUNNER_A_CHILD_SETUP_FLAGS       5
-#define SC_CLOUDRUNNER_A_SEQUENCE_PENDING        -2
-#define SC_CLOUDRUNNER_A_SEQUENCE_NONE           -1
-#define SC_CLOUDRUNNER_A_SEQUENCE_FLAGS          -1
-#define SC_CLOUDRUNNER_A_CURVE_NONE              -1
-#define SC_CLOUDRUNNER_A_ANIM_DATA_NONE          -1
-#define SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX 1
-#define SC_CLOUDRUNNER_A_NO_OBJECT_INDEX         -1
-#define SC_CLOUDRUNNER_A_CHILD_YAW_OFFSET        0xE38
-#define SC_CLOUDRUNNER_A_CHILD_PITCH_OFFSET      -0x8000
-#define SC_CLOUDRUNNER_A_SHADOW_TINT_A           0x64
-#define SC_CLOUDRUNNER_A_SHADOW_TINT_B           0x96
+enum ScCloudrunnerAEvent {
+    SC_CLOUDRUNNER_A_EVENT_CREATE_CHILD = 0,
+    SC_CLOUDRUNNER_A_EVENT_DEACTIVATE_CHILD = 1,
+    SC_CLOUDRUNNER_A_EVENT_REMOVE_CHILD = 2,
+};
 
+enum ScCloudrunnerAAnimDataIndex {
+    SC_CLOUDRUNNER_A_ANIM_DATA_NONE = -1,
+    SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX = 1,
+};
 
-int sc_cloudrunnera_getExtraSize(void) {
+typedef struct ScCloudrunnerAPlacement {
+    ObjPlacement base;
+    s16 animDataIndex;
+    s16 sequenceGameBit;
+    u8 unused1C[8];
+    u8 positionDamping;
+} ScCloudrunnerAPlacement;
+
+typedef struct ScCloudrunnerAState {
+    ObjSeqState sequence;
+    u8 trailingState[8];
+} ScCloudrunnerAState;
+
+STATIC_ASSERT(sizeof(ScCloudrunnerAPlacement) == 0x28);
+STATIC_ASSERT(offsetof(ScCloudrunnerAPlacement, base) == 0x00);
+STATIC_ASSERT(offsetof(ScCloudrunnerAPlacement, animDataIndex) == 0x18);
+STATIC_ASSERT(offsetof(ScCloudrunnerAPlacement, sequenceGameBit) == 0x1A);
+STATIC_ASSERT(offsetof(ScCloudrunnerAPlacement, unused1C) == 0x1C);
+STATIC_ASSERT(offsetof(ScCloudrunnerAPlacement, positionDamping) == 0x24);
+
+STATIC_ASSERT(sizeof(ScCloudrunnerAState) == 0x168);
+STATIC_ASSERT(offsetof(ScCloudrunnerAState, sequence) == 0x000);
+STATIC_ASSERT(offsetof(ScCloudrunnerAState, trailingState) == 0x160);
+
+static int sc_cloudrunnera_getExtraSize(void) {
     return sizeof(ScCloudrunnerAState);
 }
 
-int sc_cloudrunnera_getObjectTypeId(void) {
-    return SC_CLOUDRUNNER_A_OBJECT_TYPE_ID;
+static int sc_cloudrunnera_getObjectTypeId(void) {
+    return 0xB;
 }
 
-void sc_cloudrunnera_free(GameObject* obj) {
-    ObjSeqState* sequence = obj->extra;
+static void sc_cloudrunnera_free(GameObject* obj) {
+    ScCloudrunnerAState* state = obj->extra;
 
-    (*gObjectTriggerInterface)->freeState((u8*)sequence);
-    gTitleMenuControlInterfaceCopy->vtable->func05(obj, 0xffff, 0, 0, 0);
+    (*gObjectTriggerInterface)->freeState((u8*)&state->sequence);
+    gTitleMenuControlInterfaceCopy->vtable->func05(obj, 0xFFFF, 0, 0, 0);
 }
 
-void sc_cloudrunnera_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
-                            s8 visible) {
-    s32 visibleValue = visible;
-
-    if (visibleValue != 0) {
+static void sc_cloudrunnera_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                                   s8 visible) {
+    if (visible != 0) {
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
     }
 }
 
-void sc_cloudrunnera_hitDetect(void) {
+static void sc_cloudrunnera_hitDetect(void) {
 }
 
-void sc_cloudrunnera_update(GameObject* obj) {
-    int eventIndex;
-    ObjSeqState* sequence = obj->extra;
-    ScCloudrunnerAPlacement* placement;
-    int objectIndex, objectCount;
+static void sc_cloudrunnera_update(GameObject* obj) {
+    const ScCloudrunnerAPlacement* placement = (const ScCloudrunnerAPlacement*)obj->anim.placementData;
+    ScCloudrunnerAState* state = obj->extra;
+    ObjSeqState* sequence = &state->sequence;
 
-    placement = (ScCloudrunnerAPlacement*)(obj)->anim.placementData;
     if (placement == NULL) {
         return;
     }
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) == SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &placement->animDataIndex) == SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
         return;
     }
-    objectIndex = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStepUnclamped);
-    if (objectIndex != 0 && obj->seqIndex == SC_CLOUDRUNNER_A_SEQUENCE_PENDING) {
-        GameObject* sequenceOwner;
-        register s32 slot = sequence->slot;
-        GameObject** objects;
-        int participantLimit;
-        int sequenceSlotCopy;
-        int participantCount;
+    int sequenceResult = (*gObjectTriggerInterface)->update((u8*)obj, (f32)(u32)framesThisStepUnclamped);
+    if (sequenceResult != 0 && obj->seqIndex == OBJECT_SEQUENCE_INDEX_PENDING) {
+        int firstObjectIndex;
+        int objectCount;
+        GameObject** objects = ObjList_GetObjects(&firstObjectIndex, &objectCount);
+        GameObject* sequenceOwner = NULL;
+        int sequenceSlot = sequence->slot;
+        int participantCount = 0;
 
-        sequenceOwner = 0;
-        objects = ObjList_GetObjects(&objectIndex, &objectCount);
-        participantCount = 0;
-        objectIndex = 0;
-        sequenceSlotCopy = slot;
-        participantLimit = objectCount;
-        for (; objectIndex < participantLimit; objectIndex++) {
-            GameObject* otherObject = (GameObject*)*objects;
+        for (int objectIndex = firstObjectIndex; objectIndex < objectCount; objectIndex++) {
+            GameObject* otherObject = objects[objectIndex];
             s16 sequenceIndex = otherObject->seqIndex;
 
-            if (sequenceIndex == slot) {
+            if (sequenceIndex == sequenceSlot) {
                 sequenceOwner = otherObject;
             }
-            if (sequenceIndex == SC_CLOUDRUNNER_A_SEQUENCE_PENDING &&
-                otherObject->anim.classId == SC_CLOUDRUNNER_A_SEQUENCE_CLASS_ID) {
-                sequence = *(ObjSeqState**)&otherObject->extra;
-                if (sequenceSlotCopy == sequence->slot) {
+            if (sequenceIndex == OBJECT_SEQUENCE_INDEX_PENDING &&
+                otherObject->anim.classId == OBJECT_CLASS_SEQUENCE) {
+                sequence = otherObject->extra;
+                if (sequenceSlot == sequence->slot) {
                     participantCount++;
                 }
             }
-            objects++;
         }
         if (participantCount <= 1 && sequenceOwner != NULL &&
-            sequenceOwner->seqIndex != SC_CLOUDRUNNER_A_SEQUENCE_NONE) {
-            sequenceOwner->seqIndex = SC_CLOUDRUNNER_A_SEQUENCE_NONE;
-            (*gObjectTriggerInterface)->endSequence(sequenceSlotCopy);
+            sequenceOwner->seqIndex != OBJECT_SEQUENCE_INDEX_NONE) {
+            sequenceOwner->seqIndex = OBJECT_SEQUENCE_INDEX_NONE;
+            (*gObjectTriggerInterface)->endSequence(sequenceSlot);
         }
-        obj->seqIndex = SC_CLOUDRUNNER_A_SEQUENCE_NONE;
+        obj->seqIndex = OBJECT_SEQUENCE_INDEX_NONE;
     }
 
-    for (eventIndex = 0; eventIndex < sequence->eventCount; eventIndex++) {
+    for (int eventIndex = 0; eventIndex < sequence->eventCount; eventIndex++) {
         switch (sequence->eventIds[eventIndex]) {
         case SC_CLOUDRUNNER_A_EVENT_CREATE_CHILD: {
             CmbSrcMapData* setup;
@@ -129,7 +129,7 @@ void sc_cloudrunnera_update(GameObject* obj) {
             if (Obj_IsLoadingLocked() == 0) {
                 break;
             }
-            setup = (CmbSrcMapData*)Obj_AllocObjectSetup(CMBSRC_PLACEMENT_BYTES, SC_CLOUDRUNNER_A_CHILD_OBJECT_ID);
+            setup = (CmbSrcMapData*)Obj_AllocObjectSetup(sizeof(*setup), CMBSRC_SEQ_DEFAULT);
             setup->colorIndex = 0x9;
             setup->effectMode = 0;
             setup->pulseSubMode = 0;
@@ -144,17 +144,15 @@ void sc_cloudrunnera_update(GameObject* obj) {
             setup->base.color[3] = 0xff;
             setup->flags = CMBSRC_MAP_START_ACTIVE;
             setup->behaviorFlags = 0;
-            child =
-                objSetupObject(&setup->base, SC_CLOUDRUNNER_A_CHILD_SETUP_FLAGS, obj->anim.mapEventSlot,
-                                SC_CLOUDRUNNER_A_NO_OBJECT_INDEX, obj->anim.parent);
-            child->anim.flags = (s16)(child->anim.flags | OBJANIM_FLAG_HIDDEN);
+            child = objSetupObject(&setup->base, 5, obj->anim.mapEventSlot, -1, obj->anim.parent);
+            child->anim.flags |= OBJANIM_FLAG_HIDDEN;
             ObjLink_AttachChild(obj, child, 0);
             Sfx_PlayFromObject(obj, SFXTRIG_en_cvdrip1c);
             break;
         }
         case SC_CLOUDRUNNER_A_EVENT_DEACTIVATE_CHILD: {
             if (obj->childObjs[0] != NULL) {
-                cmbsrc_setExternalActive((GameObject*)(obj)->childObjs[0], 0);
+                cmbsrc_setExternalActive(obj->childObjs[0], 0);
             }
             break;
         }
@@ -174,64 +172,57 @@ void sc_cloudrunnera_update(GameObject* obj) {
 
         if (child != NULL) {
             child->anim.rotZ = obj->anim.rotZ;
-            ((GameObject*)(obj)->childObjs[0])->anim.rotY =
-                (s16)(obj->anim.rotY + SC_CLOUDRUNNER_A_CHILD_YAW_OFFSET);
-            ((GameObject*)(obj)->childObjs[0])->anim.rotX =
-                (s16)(obj->anim.rotX + SC_CLOUDRUNNER_A_CHILD_PITCH_OFFSET);
+            child->anim.rotY = (s16)(obj->anim.rotY + 0xE38);
+            child->anim.rotX = (s16)(obj->anim.rotX - 0x8000);
         }
     }
 }
 
-void sc_cloudrunnera_init(GameObject* obj, const ScCloudrunnerAPlacement* placement) {
-    ObjSeqState* sequence;
-    f32 one;
-    s32 cachedAnimDataIndexPlusOne;
+static void sc_cloudrunnera_init(GameObject* obj, const ScCloudrunnerAPlacement* placement) {
+    ScCloudrunnerAState* state = obj->extra;
+    ObjSeqState* sequence = &state->sequence;
+    s16 animDataIndex = ObjAnim_ReadPlacementS16(&obj->anim, &placement->animDataIndex);
+    intptr_t cachedAnimDataIndexPlusOne;
 
-    objSetSlot(obj, SC_CLOUDRUNNER_A_OBJECT_SLOT);
-    sequence = obj->extra;
-    sequence->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->sequenceGameBit));
-    sequence->flags = SC_CLOUDRUNNER_A_SEQUENCE_FLAGS;
-    one = 1.0f;
-    sequence->posOffsetDecay = one / (one + (f32)(u32)placement->positionDamping);
-    sequence->curveId = SC_CLOUDRUNNER_A_CURVE_NONE;
+    objSetSlot(obj, 0x64);
+    sequence->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->sequenceGameBit);
+    sequence->flags = -1;
+    sequence->posOffsetDecay = 1.0f / (1.0f + (f32)(u32)placement->positionDamping);
+    sequence->curveId = -1;
     obj->userData2 = 0;
 
     cachedAnimDataIndexPlusOne = obj->userData1;
-    if (cachedAnimDataIndexPlusOne == 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX) {
+    if (cachedAnimDataIndexPlusOne == 0 && animDataIndex != SC_CLOUDRUNNER_A_DEFAULT_ANIM_DATA_INDEX) {
         (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
-        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
-    } else if (cachedAnimDataIndexPlusOne != 0 && ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != cachedAnimDataIndexPlusOne - 1) {
+        obj->userData1 = animDataIndex + 1;
+    } else if (cachedAnimDataIndexPlusOne != 0 && animDataIndex != cachedAnimDataIndexPlusOne - 1) {
         (*gObjectTriggerInterface)->freeState((u8*)sequence);
-        if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) != SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
+        if (animDataIndex != SC_CLOUDRUNNER_A_ANIM_DATA_NONE) {
             (*gObjectTriggerInterface)->loadAnimData((u8*)sequence, (u8*)placement, &obj->anim);
         }
-        obj->userData1 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->animDataIndex)) + 1;
+        obj->userData1 = animDataIndex + 1;
     }
     if (obj->anim.modelState != NULL) {
-        obj->anim.modelState->shadowTintA = SC_CLOUDRUNNER_A_SHADOW_TINT_A;
-        obj->anim.modelState->shadowTintB = SC_CLOUDRUNNER_A_SHADOW_TINT_B;
+        obj->anim.modelState->shadowTintA = 0x64;
+        obj->anim.modelState->shadowTintB = 0x96;
     }
 }
 
-void sc_cloudrunnera_release(void) {
+static void sc_cloudrunnera_release(void) {
 }
 
-void sc_cloudrunnera_initialise(void) {
+static void sc_cloudrunnera_initialise(void) {
 }
 
 ObjectDescriptor gSC_CloudrunnerAObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)sc_cloudrunnera_initialise,
-    (ObjectDescriptorCallback)sc_cloudrunnera_release,
-    0,
-    (ObjectDescriptorCallback)sc_cloudrunnera_init,
-    (ObjectDescriptorCallback)sc_cloudrunnera_update,
-    (ObjectDescriptorCallback)sc_cloudrunnera_hitDetect,
-    (ObjectDescriptorCallback)sc_cloudrunnera_render,
-    (ObjectDescriptorCallback)sc_cloudrunnera_free,
-    (ObjectDescriptorCallback)sc_cloudrunnera_getObjectTypeId,
-    sc_cloudrunnera_getExtraSize,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    .initialise = (ObjectDescriptorCallback)sc_cloudrunnera_initialise,
+    .release = (ObjectDescriptorCallback)sc_cloudrunnera_release,
+    .init = (ObjectDescriptorCallback)sc_cloudrunnera_init,
+    .update = (ObjectDescriptorCallback)sc_cloudrunnera_update,
+    .hitDetect = (ObjectDescriptorCallback)sc_cloudrunnera_hitDetect,
+    .render = (ObjectDescriptorCallback)sc_cloudrunnera_render,
+    .free = (ObjectDescriptorCallback)sc_cloudrunnera_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)sc_cloudrunnera_getObjectTypeId,
+    .getExtraSize = sc_cloudrunnera_getExtraSize,
 };

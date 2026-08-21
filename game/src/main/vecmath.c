@@ -93,20 +93,20 @@ f32 getXZDistanceSquared(f32* a, f32* b) {
     return dx * dx + dz * dz;
 }
 
-f32 Vec_xzDistance(f32* a, f32* b) {
+f32 Vec_xzDistance(const f32* a, const f32* b) {
     f32 dx = a[0] - b[0];
     f32 dz = a[2] - b[2];
     return sqrtf(dx * dx + dz * dz);
 }
 
-f32 vec3f_distanceSquared(f32* a, f32* b) {
+f32 vec3f_distanceSquared(const f32* a, const f32* b) {
     f32 dx = a[0] - b[0];
     f32 dy = a[1] - b[1];
     f32 dz = a[2] - b[2];
     return dx * dx + dy * dy + dz * dz;
 }
 
-f32 Vec_distance(f32* a, f32* b) {
+f32 Vec_distance(const f32* a, const f32* b) {
     f32 dx = a[0] - b[0];
     f32 dy = a[1] - b[1];
     f32 dz = a[2] - b[2];

@@ -1,10 +1,10 @@
 #ifndef H_MAIN_DLL_WISPBADDIE_BADDIE_H
 #define H_MAIN_DLL_WISPBADDIE_BADDIE_H
 
-#include "global.h"
+#include "main/dll/dll_00C9_enemy.h"
 
-void battleDroidUpdate(GameObject* obj, void* state);
-void battleDroidUpdateAttack(GameObject* obj, void* state);
-void battleDroidInit(GameObject* unused, char* p);
+void battleDroidUpdate(GameObject* obj, EnemyState* state);
+void battleDroidUpdateAttack(GameObject* obj, EnemyState* state);
+void battleDroidInit(GameObject* obj, EnemyState* state);
 
 #endif /* H_MAIN_DLL_WISPBADDIE_BADDIE_H */

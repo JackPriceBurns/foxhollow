@@ -5,7 +5,6 @@
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 
-/* All three active-target placements are fixed 9-word (0x24-byte) records. */
 typedef struct DimBarrierPlacement {
     ObjPlacement base;
     s8 rotationXByte;
@@ -14,23 +13,12 @@ typedef struct DimBarrierPlacement {
     u8 unknown20[4];
 } DimBarrierPlacement;
 
-typedef struct DimBarrierState {
-    s16 fadeTimer;
-    u8 phase;
-    s8 triggerCountdown;
-} DimBarrierState;
-
 STATIC_ASSERT(offsetof(DimBarrierPlacement, base) == 0x00);
 STATIC_ASSERT(offsetof(DimBarrierPlacement, rotationXByte) == 0x18);
 STATIC_ASSERT(offsetof(DimBarrierPlacement, unknown19) == 0x19);
 STATIC_ASSERT(offsetof(DimBarrierPlacement, barrierGameBit) == 0x1E);
 STATIC_ASSERT(offsetof(DimBarrierPlacement, unknown20) == 0x20);
 STATIC_ASSERT(sizeof(DimBarrierPlacement) == 0x24);
-
-STATIC_ASSERT(offsetof(DimBarrierState, fadeTimer) == 0x00);
-STATIC_ASSERT(offsetof(DimBarrierState, phase) == 0x02);
-STATIC_ASSERT(offsetof(DimBarrierState, triggerCountdown) == 0x03);
-STATIC_ASSERT(sizeof(DimBarrierState) == 0x04);
 
 int dimbarrier_getExtraSize(void);
 int dimbarrier_getObjectTypeId(void);

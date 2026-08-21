@@ -1,130 +1,131 @@
-/*
- * DR_CloudPer (DLL 640) - a cloud-perimeter trigger plane.
- *
- * init derives a vertical clip plane (normal + distance) from the
- * placement yaw byte and the object's position, joins the trigger and
- * surface object groups, and enables this cloud's map anim event if it
- * is the currently selected active cloud. DR_CloudPer_activate arms the cloud (when
- * its placement game bit is set) by recording it as the active cloud and
- * running the enable sequence; selectActiveCloud switches the active
- * cloud and runs the select sequence.
- */
+#include "main/dll/DR/dll_0280_drcloudper.h"
+
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "game/objects/object.h"
+#include "game/objects/object_setup.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
-#include "dlls/object_descriptor.h"
-
-#include "main/dll/DR/dll_0280_drcloudper.h"
 #include "main/objtype.h"
 
+typedef enum DrCloudPerObjectGroup {
+    DR_CLOUD_PER_OBJECT_GROUP_TRIGGER = 0x13,
+    DR_CLOUD_PER_OBJECT_GROUP_SURFACE = 0x39,
+} DrCloudPerObjectGroup;
 
-#define DRCLOUDPER_GROUP_TRIGGER        0x13
-#define DRCLOUDPER_GROUP_SURFACE        0x39
-#define DRCLOUDPER_ACTIVE_CLOUD_GAMEBIT 0x7a9
-#define DRCLOUDPER_MAP_ANIM_EVENT       0x0c
+typedef enum DrCloudPerMapEvent {
+    DR_CLOUD_PER_MAP_ANIM_EVENT = 0x0C,
+} DrCloudPerMapEvent;
 
-int DR_CloudPer_activate(GameObject* obj)
-{
-    GameObject* cloud = obj;
-    DrCloudPerSetup* setup = (DrCloudPerSetup*)cloud->anim.placementData;
-    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->gameBit))) == 0)
-    {
+typedef enum DrCloudPerSequence {
+    DR_CLOUD_PER_SEQUENCE_SELECT = 1,
+    DR_CLOUD_PER_SEQUENCE_ACTIVATE = 2,
+} DrCloudPerSequence;
+
+typedef struct DrCloudPerPlacement {
+    ObjPlacement base;
+    s8 yawByte;
+    s8 cloudIndex;
+    u8 pad1A[4];
+    s16 activationGameBit;
+} DrCloudPerPlacement;
+
+typedef struct DrCloudPerState {
+    Vec3f normal;
+    f32 planeDistance;
+} DrCloudPerState;
+
+STATIC_ASSERT(sizeof(DrCloudPerPlacement) == 0x20);
+STATIC_ASSERT(offsetof(DrCloudPerPlacement, yawByte) == 0x18);
+STATIC_ASSERT(offsetof(DrCloudPerPlacement, cloudIndex) == 0x19);
+STATIC_ASSERT(offsetof(DrCloudPerPlacement, activationGameBit) == 0x1E);
+
+STATIC_ASSERT(sizeof(DrCloudPerState) == 0x10);
+STATIC_ASSERT(offsetof(DrCloudPerState, normal) == 0x00);
+STATIC_ASSERT(offsetof(DrCloudPerState, planeDistance) == 0x0C);
+
+static void drCloudPer_enableMapAnimation(GameObject* obj) {
+    (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, DR_CLOUD_PER_MAP_ANIM_EVENT, 1);
+}
+
+static int drCloudPer_activate(GameObject* obj) {
+    const DrCloudPerPlacement* placement = (const DrCloudPerPlacement*)obj->anim.placementData;
+
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->activationGameBit)) == 0) {
         return 0;
     }
-    mainSetBits(DRCLOUDPER_ACTIVE_CLOUD_GAMEBIT, setup->cloudIndex);
-    (*gMapEventInterface)->setObjGroupStatus(cloud->anim.mapEventSlot, DRCLOUDPER_MAP_ANIM_EVENT, 1);
-    (*gObjectTriggerInterface)->runSequence(2, obj, -1);
+    mainSetBits(GAMEBIT_DR_ActiveCloud, placement->cloudIndex);
+    drCloudPer_enableMapAnimation(obj);
+    (*gObjectTriggerInterface)->runSequence(DR_CLOUD_PER_SEQUENCE_ACTIVATE, obj, -1);
     return 1;
 }
 
-int DR_CloudPer_selectActiveCloud(GameObject* obj)
-{
-    GameObject* cloud = obj;
-    DrCloudPerSetup* setup = (DrCloudPerSetup*)cloud->anim.placementData;
+static int drCloudPer_selectActiveCloud(GameObject* obj) {
+    const DrCloudPerPlacement* placement = (const DrCloudPerPlacement*)obj->anim.placementData;
 
-    mainSetBits(DRCLOUDPER_ACTIVE_CLOUD_GAMEBIT, setup->cloudIndex);
-    (*gObjectTriggerInterface)->runSequence(1, obj, -1);
+    mainSetBits(GAMEBIT_DR_ActiveCloud, placement->cloudIndex);
+    (*gObjectTriggerInterface)->runSequence(DR_CLOUD_PER_SEQUENCE_SELECT, obj, -1);
     return 0;
 }
 
-int DR_CloudPer_getExtraSize(void)
-{
-    return 0x10;
+static int drCloudPer_getExtraSize(void) {
+    return sizeof(DrCloudPerState);
 }
 
-int DR_CloudPer_getObjectTypeId(void)
-{
+static int drCloudPer_getObjectTypeId(void) {
     return 0;
 }
 
-void DR_CloudPer_free(GameObject* obj)
-{
-    objFreeObjectType(obj, DRCLOUDPER_GROUP_TRIGGER);
-    objFreeObjectType(obj, DRCLOUDPER_GROUP_SURFACE);
+static void drCloudPer_free(GameObject* obj) {
+    objFreeObjectType(obj, DR_CLOUD_PER_OBJECT_GROUP_TRIGGER);
+    objFreeObjectType(obj, DR_CLOUD_PER_OBJECT_GROUP_SURFACE);
 }
 
-void DR_CloudPer_render(void)
-{
+static void drCloudPer_render(void) {
 }
 
-void DR_CloudPer_hitDetect(void)
-{
+static void drCloudPer_hitDetect(void) {
 }
 
-void DR_CloudPer_update(void)
-{
+static void drCloudPer_update(void) {
 }
 
-void DR_CloudPer_init(GameObject* cloud, DrCloudPerSetup* setup)
-{
-    DrCloudPerSetup* setupData;
-    DrCloudPerState* state;
+static void drCloudPer_init(GameObject* obj, const DrCloudPerPlacement* placement) {
+    DrCloudPerState* state = obj->extra;
 
-    objAddObjectType(cloud, DRCLOUDPER_GROUP_TRIGGER);
-    objAddObjectType(cloud, DRCLOUDPER_GROUP_SURFACE);
-    setupData = setup;
-    {
-        int yawTmp = setupData->yawByte << 8;
-        cloud->anim.rotX = yawTmp;
-    }
-    state = cloud->extra;
-    state->normalX = mathSinf(3.1415927f * cloud->anim.rotX / 32768.0f);
-    state->normalY = 0.0f;
-    state->normalZ = mathCosf(3.1415927f * cloud->anim.rotX / 32768.0f);
+    objAddObjectType(obj, DR_CLOUD_PER_OBJECT_GROUP_TRIGGER);
+    objAddObjectType(obj, DR_CLOUD_PER_OBJECT_GROUP_SURFACE);
+    obj->anim.rotX = (s16)placement->yawByte * 0x100;
+
+    state->normal.x = mathSinf(3.1415927f * obj->anim.rotX / 32768.0f);
+    state->normal.y = 0.0f;
+    state->normal.z = mathCosf(3.1415927f * obj->anim.rotX / 32768.0f);
     state->planeDistance =
-        -(state->normalZ * cloud->anim.localPosZ +
-          (state->normalX * cloud->anim.localPosX + state->normalY * cloud->anim.localPosY));
-    cloud->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_UPDATE_DISABLED;
-    if (setupData->cloudIndex == mainGetBit(DRCLOUDPER_ACTIVE_CLOUD_GAMEBIT))
-    {
-        (*gMapEventInterface)->setObjGroupStatus(cloud->anim.mapEventSlot, DRCLOUDPER_MAP_ANIM_EVENT, 1);
+        -(state->normal.z * obj->anim.localPos.z +
+          (state->normal.x * obj->anim.localPos.x + state->normal.y * obj->anim.localPos.y));
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_UPDATE_DISABLED;
+    if (placement->cloudIndex == mainGetBit(GAMEBIT_DR_ActiveCloud)) {
+        drCloudPer_enableMapAnimation(obj);
     }
 }
 
-void DR_CloudPer_release(void)
-{
+static void drCloudPer_release(void) {
 }
 
-void DR_CloudPer_initialise(void)
-{
+static void drCloudPer_initialise(void) {
 }
 
 ObjectDescriptor12 gDrCloudPerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)DR_CloudPer_initialise,
-    (ObjectDescriptorCallback)DR_CloudPer_release,
-    0,
-    (ObjectDescriptorCallback)DR_CloudPer_init,
-    (ObjectDescriptorCallback)DR_CloudPer_update,
-    (ObjectDescriptorCallback)DR_CloudPer_hitDetect,
-    (ObjectDescriptorCallback)DR_CloudPer_render,
-    (ObjectDescriptorCallback)DR_CloudPer_free,
-    (ObjectDescriptorCallback)DR_CloudPer_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DR_CloudPer_getExtraSize,
-    (ObjectDescriptorCallback)DR_CloudPer_activate,
-    (ObjectDescriptorCallback)DR_CloudPer_selectActiveCloud,
+    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+    .initialise = (ObjectDescriptorCallback)drCloudPer_initialise,
+    .release = (ObjectDescriptorCallback)drCloudPer_release,
+    .init = (ObjectDescriptorCallback)drCloudPer_init,
+    .update = (ObjectDescriptorCallback)drCloudPer_update,
+    .hitDetect = (ObjectDescriptorCallback)drCloudPer_hitDetect,
+    .render = (ObjectDescriptorCallback)drCloudPer_render,
+    .free = (ObjectDescriptorCallback)drCloudPer_free,
+    .getObjectTypeId = (ObjectDescriptorCallback)drCloudPer_getObjectTypeId,
+    .getExtraSize = drCloudPer_getExtraSize,
+    .slot0A = (ObjectDescriptorCallback)drCloudPer_activate,
+    .slot0B = (ObjectDescriptorCallback)drCloudPer_selectActiveCloud,
 };

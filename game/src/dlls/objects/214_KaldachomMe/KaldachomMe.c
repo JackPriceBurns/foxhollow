@@ -9,75 +9,72 @@
 #include "main/object_render.h"
 #include "sys/objects.h"
 
+typedef struct KaldachomMeState {
+    f32 progress;
+    f32 step;
+    f32 targetProgress;
+    u8 moveId;
+} KaldachomMeState;
 
+static s32 kaldachomme_getLinkedMouthId(s32 ident) {
+    switch (ident) {
+    case 0x43d14:
+        return 0x4b3b5;
+    case 0x41be9:
+        return 0x4b3f9;
+    case 0x41cc4:
+        return 0x4b402;
+    case 0x41cc5:
+        return 0x4b403;
+    case 0x41cc6:
+        return 0x4b404;
+    case 0x41cc7:
+        return 0x4b40b;
+    case 0x41cc8:
+        return 0x4b40c;
+    case 0x41cc9:
+        return 0x4b40f;
+    case 0x41cd2:
+        return 0x4b410;
+    case 0x41ccc:
+        return 0x4b411;
+    case 0x41cd5:
+        return 0x4b414;
+    case 0x41cd6:
+        return 0x4b415;
+    case 0x41cd9:
+        return 0x4b453;
+    default:
+        return -1;
+    }
+}
 
 void kaldachomme_setLinkedMouthMode(GameObject* obj, KaldachomMeLinkedMode mode) {
-    KaldachomMeState* state;
-    GameObject* linkedObj;
-
     if (obj == NULL) {
         return;
     }
-    switch (obj->anim.placement->ident) {
-    case 0x43d14:
-        linkedObj = ObjList_FindObjectById(0x4b3b5);
+    s32 linkedMouthId = kaldachomme_getLinkedMouthId(obj->anim.placement->ident);
+    if (linkedMouthId == -1) {
+        return;
+    }
+    GameObject* linkedObj = ObjList_FindObjectById(linkedMouthId);
+    KaldachomMeState* state = linkedObj->extra;
+    if (state == NULL) {
+        return;
+    }
+    switch (mode) {
+    case KALDACHOMME_LINKED_MODE_MOVE_0:
+        state->moveId = 0;
         break;
-    case 0x41be9:
-        linkedObj = ObjList_FindObjectById(0x4b3f9);
-        break;
-    case 0x41cc4:
-        linkedObj = ObjList_FindObjectById(0x4b402);
-        break;
-    case 0x41cc5:
-        linkedObj = ObjList_FindObjectById(0x4b403);
-        break;
-    case 0x41cc6:
-        linkedObj = ObjList_FindObjectById(0x4b404);
-        break;
-    case 0x41cc7:
-        linkedObj = ObjList_FindObjectById(0x4b40b);
-        break;
-    case 0x41cc8:
-        linkedObj = ObjList_FindObjectById(0x4b40c);
-        break;
-    case 0x41cc9:
-        linkedObj = ObjList_FindObjectById(0x4b40f);
-        break;
-    case 0x41cd2:
-        linkedObj = ObjList_FindObjectById(0x4b410);
-        break;
-    case 0x41ccc:
-        linkedObj = ObjList_FindObjectById(0x4b411);
-        break;
-    case 0x41cd5:
-        linkedObj = ObjList_FindObjectById(0x4b414);
-        break;
-    case 0x41cd6:
-        linkedObj = ObjList_FindObjectById(0x4b415);
-        break;
-    case 0x41cd9:
-        linkedObj = ObjList_FindObjectById(0x4b453);
+    case KALDACHOMME_LINKED_MODE_MOVE_1:
+        state->moveId = 1;
         break;
     default:
         return;
     }
-    state = linkedObj->extra;
-    if (state != NULL) {
-        switch (mode) {
-        case KALDACHOMME_LINKED_MODE_MOVE_0:
-            state->targetProgress = 1.0f;
-            state->progress = 0.0f;
-            state->step = 0.025f;
-            state->moveId = 0;
-            break;
-        case KALDACHOMME_LINKED_MODE_MOVE_1:
-            state->targetProgress = 1.0f;
-            state->progress = 0.0f;
-            state->step = 0.025f;
-            state->moveId = 1;
-            break;
-        }
-    }
+    state->targetProgress = 1.0f;
+    state->progress = 0.0f;
+    state->step = 0.025f;
 }
 
 int KaldachomMe_getExtraSize(void) {
@@ -103,16 +100,11 @@ void KaldachomMe_hitDetect(GameObject* obj) {
 }
 
 void KaldachomMe_update(GameObject* obj) {
-    f32 target;
-    f32 current;
-    f32 step;
-    KaldachomMeState* state;
-
-    state = obj->extra;
-    current = state->progress;
-    target = state->targetProgress;
+    KaldachomMeState* state = obj->extra;
+    f32 current = state->progress;
+    f32 target = state->targetProgress;
     if (current != target) {
-        step = state->step;
+        f32 step = state->step;
         if (step > 0.0f) {
             if (current < target) {
                 state->progress = current + step * timeDelta;

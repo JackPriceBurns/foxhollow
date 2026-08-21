@@ -1,11 +1,3 @@
-/*
- * WM_Torch (DLL 0x0204) - the lightable torch at Krazoa Palace.
- *
- * Initialization attaches the flame effect for the placement's torch type
- * (two variants from resource 0x69, the third from 0x63) and scales the
- * model. The update spins type-2 torches and runs a proximity sound loop
- * around the player; cleanup releases the flame and optional linked object.
- */
 #include "dlls/objects/516_WM_Torch.h"
 
 #include "game/objects/object.h"
@@ -21,21 +13,27 @@
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
-#define WM_TORCH_OBJECT_TYPE_ID       1
-#define WM_TORCH_SPINNING_TYPE        2
-#define WM_TORCH_ROTATION_STEP        0x32
-#define WM_TORCH_SOUND_RADIUS         90.0f
-#define WM_TORCH_SOUND_CHANNEL        0x40
-#define WM_TORCH_DEFAULT_MOTION_RATE  75.0f
-#define WM_TORCH_DEFAULT_COLOR_INDEX  0x8C
-#define WM_TORCH_ALTERNATE_FLAME_TYPE 0x7F
+typedef enum WMTorchType {
+    WM_TORCH_TYPE_DEFAULT = 0,
+    WM_TORCH_TYPE_SPINNING = 2,
+    WM_TORCH_TYPE_ALTERNATE_FLAME = 0x7F
+} WMTorchType;
+
+typedef struct WMTorchState {
+    GameObject* linkedObject;
+    f32 motionRate;
+    u8 unknown0C[2];
+    s16 colorIndex;
+    u8 torchType;
+    u8 unknown11[3];
+} WMTorchState;
 
 int wmtorch_getExtraSize(void) {
     return sizeof(WMTorchState);
 }
 
 int wmtorch_getObjectTypeId(void) {
-    return WM_TORCH_OBJECT_TYPE_ID;
+    return 1;
 }
 
 void wmtorch_free(GameObject* obj, int mode) {
@@ -60,50 +58,49 @@ void wmtorch_hitDetect(void) {
 void wmtorch_update(GameObject* obj) {
     WMTorchState* state = obj->extra;
 
-    if (state->torchType == WM_TORCH_SPINNING_TYPE) {
-        obj->anim.rotX += WM_TORCH_ROTATION_STEP;
+    if (state->torchType == WM_TORCH_TYPE_SPINNING) {
+        obj->anim.rotX += 0x32;
     }
-    if (Vec_distance(&Obj_GetPlayerObject()->anim.worldPosX, &obj->anim.worldPosX) < WM_TORCH_SOUND_RADIUS) {
+    if (Vec_distance(&Obj_GetPlayerObject()->anim.worldPosX, &obj->anim.worldPosX) < 90.0f) {
         Sfx_PlayFromObject(obj, SFXTRIG_mushdizzylp12);
     } else {
-        Sfx_StopObjectChannel(obj, WM_TORCH_SOUND_CHANNEL);
+        Sfx_StopObjectChannel(obj, 0x40);
     }
 }
 
-void wmtorch_init(GameObject* obj, const WMTorchPlacementView* placement) {
-    WMTorchState* state;
-    void* effectResource;
-    f32 flameParams[5]; /* flame params; only [4] is set, the rest raw on purpose */
+void wmtorch_init(GameObject* obj, const WMTorchPlacement* placement) {
+    WMTorchState* state = obj->extra;
+    s16 motionRate = ObjAnim_ReadPlacementS16(&obj->anim, &placement->motionRate);
+    s16 colorIndex = ObjAnim_ReadPlacementS16(&obj->anim, &placement->colorIndex);
+    f32 flameParams[5];
 
-    state = obj->extra;
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->motionRate)) != 0) {
-        state->motionRate = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(placement->motionRate));
-    } else {
-        state->motionRate = WM_TORCH_DEFAULT_MOTION_RATE;
-    }
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->colorIndex)) != 0) {
-        state->colorIndex = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->colorIndex));
-    } else {
-        state->colorIndex = WM_TORCH_DEFAULT_COLOR_INDEX;
-    }
+    state->motionRate = motionRate != 0 ? motionRate : 75.0f;
+    state->colorIndex = colorIndex != 0 ? colorIndex : 0x8C;
     state->torchType = placement->torchType;
     flameParams[4] = -2.0f;
-    if (state->torchType == 0) {
-        effectResource = Resource_Acquire(0x69, 1);
+    if (state->torchType == WM_TORCH_TYPE_DEFAULT) {
+        Dll69Interface** effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+
         obj->anim.rootMotionScale *= 0.5f;
-        (*(Dll69Interface**)effectResource)->spawn(obj, 1, flameParams, 0x10004, -1, NULL);
-    } else if (state->torchType == WM_TORCH_ALTERNATE_FLAME_TYPE) {
-        effectResource = Resource_Acquire(0x69, 1);
+        (*effectResource)->spawn(obj, 1, flameParams, 0x10004, -1, NULL);
+        obj->anim.rootMotionScale *= 2.0f;
+        Resource_Release(effectResource);
+    } else if (state->torchType == WM_TORCH_TYPE_ALTERNATE_FLAME) {
+        Dll69Interface** effectResource = Resource_Acquire(DLL_69_RESOURCE_ID, 1);
+
         obj->anim.rootMotionScale *= 0.5f;
-        (*(Dll69Interface**)effectResource)->spawn(obj, 2, flameParams, 0x10004, -1, NULL);
+        (*effectResource)->spawn(obj, 2, flameParams, 0x10004, -1, NULL);
+        obj->anim.rootMotionScale *= 2.0f;
+        Resource_Release(effectResource);
     } else {
-        effectResource = Resource_Acquire(0x63, 1);
+        Dll63Interface** effectResource = Resource_Acquire(0x63, 1);
+
         obj->anim.rootMotionScale *= 0.5f;
-        (*(Dll63Interface**)effectResource)->spawn(obj, 2, flameParams, 0x10004, -1, NULL);
+        (*effectResource)->spawn(obj, 2, flameParams, 0x10004, -1, NULL);
+        obj->anim.rootMotionScale *= 2.0f;
+        Resource_Release(effectResource);
     }
-    obj->anim.rootMotionScale *= 2.0f;
-    Resource_Release(effectResource);
-    obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
 void wmtorch_release(void) {

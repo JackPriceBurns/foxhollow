@@ -3,9 +3,19 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
+#include "game/objects/object_interface.h"
 #include "dlls/objects/430_SH_LevelCon.h"
 #include "main/model_light.h"
 #include "main/objseq.h"
+
+typedef struct ECSHShrineInterface {
+    ObjectInterface base;
+    void (*getStateValue)(s16* out);
+    void (*getCupPosition)(u8 cupIndex, f32* outX, f32* outZ);
+    void (*getPhaseAndSpiritCup)(int* outAnimState, u8* outSpiritCup);
+    void (*setCupPosition)(u8 cupIndex, f32 x, f32 z);
+    void (*checkCupPick)(u8 cupIndex);
+} ECSHShrineInterface;
 
 typedef struct ECSHShrineState {
     ModelLightStruct* light;
