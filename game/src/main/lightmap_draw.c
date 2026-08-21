@@ -41,6 +41,7 @@
 #include "main/dll/player_api.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/lightmap.h"
+#include "foxhollow_config.h"
 
 extern f32 widescreenAspect;
 
@@ -110,6 +111,11 @@ int isDrawDistanceEnabled(void) { return renderFlags & RENDERFLAG_DRAW_DISTANCE;
 
 int setWidescreen(u8 v)
 {
+    if (fhConfigScreenStyleIsForced())
+    {
+        v = (u8)fhConfigScreenStyleIsWide();
+    }
+
     if (v != 0)
     {
         renderFlags |= RENDERFLAG_WIDESCREEN;

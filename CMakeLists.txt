@@ -40,6 +40,7 @@ if (FOXHOLLOW_GAME_SOURCES)
 endif ()
 
 add_executable(foxhollow src/main.c)
+target_include_directories(foxhollow PRIVATE port/include)
 find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
 target_link_libraries(foxhollow PRIVATE

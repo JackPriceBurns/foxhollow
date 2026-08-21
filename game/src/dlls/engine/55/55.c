@@ -29,6 +29,7 @@
 #include "main/lightmap_api.h"
 #include "main/rcp_dolphin_render_api.h"
 #include "main/dll/dll_4E.h"
+#include "foxhollow_config.h"
 
 typedef struct OptionsScreenPanelConfig {
     u16* items;
@@ -395,6 +396,9 @@ void optionsMenu_openGeneralPanel(void)
     int cheatId2;
     int entryIndex2;
     int lastUnlocked2;
+    int firstSelectable;
+    int linkIndex;
+    s8 aboveWidescreen;
 
     if (gOptionsActivePanel != -1)
     {
@@ -440,7 +444,27 @@ void optionsMenu_openGeneralPanel(void)
         cheatId2++;
     } while (cheatId2 < 4);
 
-    gTitleMenuLinkInterface->vtable->setup(entries, count, 0, NULL, 0, 0, 0x14, 0xc8, 0xff,
+    firstSelectable = 0;
+    if (fhConfigScreenStyleIsForced())
+    {
+        aboveWidescreen = entries[GAMEPLAY_OPTION_WIDESCREEN].upLink;
+        entries[GAMEPLAY_OPTION_WIDESCREEN].flags |= TITLE_MENU_TEXT_ENTRY_HIDDEN;
+        for (linkIndex = 0; linkIndex < count; linkIndex++)
+        {
+            if (entries[linkIndex].upLink == GAMEPLAY_OPTION_WIDESCREEN)
+            {
+                entries[linkIndex].upLink = GAMEPLAY_OPTION_RUMBLE;
+            }
+            if (entries[linkIndex].downLink == GAMEPLAY_OPTION_WIDESCREEN)
+            {
+                entries[linkIndex].downLink = GAMEPLAY_OPTION_RUMBLE;
+            }
+        }
+        entries[GAMEPLAY_OPTION_RUMBLE].upLink = aboveWidescreen;
+        firstSelectable = GAMEPLAY_OPTION_RUMBLE;
+    }
+
+    gTitleMenuLinkInterface->vtable->setup(entries, count, firstSelectable, NULL, 0, 0, 0x14, 0xc8, 0xff,
                                            0xff, 0xff, 0xff);
 
     gOptionsMenuItems[0] =
@@ -470,7 +494,7 @@ void optionsMenu_openGeneralPanel(void)
         cheatId++;
     } while (cheatId <= 1);
 
-    gTitleMenuItemInterface->vtable->setEnabled(gOptionsMenuItems[0], 1);
+    gTitleMenuItemInterface->vtable->setEnabled(gOptionsMenuItems[firstSelectable], 1);
     gOptionsLayoutRefreshFrames = 2;
 }
 

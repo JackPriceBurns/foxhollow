@@ -2,6 +2,9 @@
 #include <aurora/dvd.h>
 #include <aurora/event.h>
 #include <aurora/main.h>
+#include <dolphin/gx/GXAurora.h>
+
+#include "foxhollow_config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,10 +58,15 @@ int main(int argc, char* argv[]) {
   const AuroraConfig config = {
       .appName = "Foxhollow",
       .logCallback = &log_callback,
+      .vsync = fhConfigVsync() != 0,
+      .startFullscreen = fhConfigFullscreen() != 0,
       .mem1Size = 128 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
   aurora_initialize(argc, argv, &config);
+
+  AuroraSetViewportPolicy(AURORA_VIEWPORT_FIT);
+  AuroraSetDisplayAspect(fhConfigDisplayAspect());
 
   if (!aurora_dvd_open(disc)) {
     fprintf(stderr, "foxhollow: failed to open disc image: %s\n", disc);

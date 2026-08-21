@@ -67,6 +67,8 @@
 #include "dolphin/gx/GXFifo.h"
 #include "dolphin/os/OSThread.h"
 #include "dolphin/vi/vifuncs.h"
+#include "foxhollow_config.h"
+#include "main/lightmap_api.h"
 
 
 void videoSwapFrameBuffers(u32 retraceCount);
@@ -212,6 +214,11 @@ void videoInit(void* unusedRenderMode, int unusedArg)
     /* Mark performance-monitor events and disable speculative cache access. */
     PPCMtmsr(PPCMfmsr() | MSR_PM);
     PPCMthid0(PPCMfhid0() | HID0_SPD);
+
+    if (fhConfigScreenStyleIsForced())
+    {
+        setWidescreen((u8)fhConfigScreenStyleIsWide());
+    }
 }
 
 void videoSetEfbCopyClearColor(u8 r, u8 g, u8 b)

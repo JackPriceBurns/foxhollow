@@ -5,6 +5,7 @@
 #include <SDL3/SDL_timer.h>
 #include <stdlib.h>
 #include "foxhollow_compat.h"
+#include "foxhollow_config.h"
 #include "shim_log.h"
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
@@ -22,11 +23,20 @@ static Uint64 sNextRetraceNs;
 
 void fhGXCompleteFrame(void);
 
-enum { VI_RETRACE_HZ = 60 };
+enum { VI_RETRACE_DEFAULT_HZ = 60 };
 
 static void wait_for_retrace_deadline(void) {
-  const Uint64 periodNs = SDL_NS_PER_SECOND / VI_RETRACE_HZ;
-  const Uint64 now = SDL_GetTicksNS();
+  const int limit = fhConfigFrameLimit();
+  Uint64 periodNs;
+  Uint64 now;
+
+  if (limit == 0) {
+    sNextRetraceNs = 0;
+    return;
+  }
+
+  periodNs = SDL_NS_PER_SECOND / (Uint64)(limit > 0 ? limit : VI_RETRACE_DEFAULT_HZ);
+  now = SDL_GetTicksNS();
 
   if (sNextRetraceNs == 0) {
     sNextRetraceNs = now + periodNs;
