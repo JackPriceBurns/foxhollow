@@ -48,8 +48,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build zlib1g-dev libjpeg-dev \
-            libx11-dev libxext-dev libwayland-dev libxkbcommon-dev \
-            libasound2-dev libpulse-dev libudev-dev libdrm-dev libgbm-dev
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
+            libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libwayland-dev wayland-protocols libdecor-0-dev \
+            libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libegl1-mesa-dev
 
       - name: Install Windows dependencies
         if: matrix.platform == 'windows'
