@@ -48,11 +48,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build zlib1g-dev libjpeg-dev \
-            libx11-dev libxext-dev libwayland-dev libxkbcommon-dev
+            libx11-dev libxext-dev libwayland-dev libxkbcommon-dev \
+            libasound2-dev libpulse-dev libudev-dev libdrm-dev libgbm-dev
 
       - name: Install Windows dependencies
         if: matrix.platform == 'windows'
-        run: choco install ninja --no-progress
+        shell: bash
+        run: |
+          choco install ninja --no-progress
+          "$VCPKG_INSTALLATION_ROOT/vcpkg" install libjpeg-turbo:x64-windows zlib:x64-windows
+          echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV" 
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.platform == 'windows'
@@ -64,7 +69,13 @@ jobs:
           key: deps-${{ matrix.platform }}-${{ hashFiles('CMakeLists.txt', 'extern/aurora/CMakeLists.txt') }}
 
       - name: Configure
-        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF
+        shell: bash
+        run: |
+          args=(-B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF)
+          if [ -n "${CMAKE_TOOLCHAIN_FILE:-}" ]; then
+            args+=(-DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}")
+          fi
+          cmake "${args[@]}"
 
       - name: Build
         run: cmake --build build --target foxhollow

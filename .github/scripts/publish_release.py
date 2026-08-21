@@ -49,13 +49,24 @@ def signed_post(url, payload):
     return response.json()
 
 
+def built_artifacts(tag):
+    found = {}
+    for platform, extension in EXTENSIONS.items():
+        local = DIST / f"foxhollow-{tag}-{platform}.{extension}"
+        if local.exists():
+            found[platform] = local
+    return found
+
+
 def main():
     tag = os.environ["TAG"]
+    artifacts = built_artifacts(tag)
     payload = {
         "version": tag,
         "channel": CHANNEL,
         "commit": os.environ.get("COMMIT", "")[:12],
         "notes": notes_for(tag),
+        "sizeBytes": max((path.stat().st_size for path in artifacts.values()), default=0),
     }
     release_url = os.environ.get("RELEASE_URL")
     if release_url:
@@ -67,8 +78,8 @@ def main():
     uploaded = 0
     for upload in release["uploads"]:
         platform = upload["platform"]
-        local = DIST / f"foxhollow-{tag}-{platform}.{EXTENSIONS[platform]}"
-        if not local.exists():
+        local = artifacts.get(platform)
+        if local is None:
             print(f"  {platform}: not built, skipping")
             continue
         with local.open("rb") as handle:
