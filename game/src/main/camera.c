@@ -33,6 +33,8 @@ u16 gCameraPerspectiveNorm;
 s8 gObjTransformMatrixSlot;
 s16 cameraViewportYOffset;
 s16 gCameraViewportYOffset;
+
+#define FH_CAMERA_SAFE_AREA_MARGIN 0
 s16 gCameraFarPlaneTransitionFrames;
 s16 gCameraFarPlaneTransitionFramesLeft;
 
@@ -599,7 +601,7 @@ void Camera_ApplyCurrentViewport(void* viewportArg) {
     viewportY = screenSize >> 16;
     width = screenSize;
     screenSize = viewportY;
-    viewportY = gCameraViewportYOffset + 6;
+    viewportY = gCameraViewportYOffset + FH_CAMERA_SAFE_AREA_MARGIN;
     screenSize -= viewportY;
     gxSetScissorRect(0, 0, 0, viewportY, width, screenSize);
 }
@@ -688,8 +690,8 @@ void Camera_GetFullViewportRect(s32* outLeft, s32* outTop, u32* outRight, s32* o
 
     *outLeft = 0;
     *outRight = resolution & 0xFFFF;
-    *outTop = gCameraViewportYOffset + 6;
-    *outBottom = (resolution >> 16) - (gCameraViewportYOffset + 6);
+    *outTop = gCameraViewportYOffset + FH_CAMERA_SAFE_AREA_MARGIN;
+    *outBottom = (resolution >> 16) - (gCameraViewportYOffset + FH_CAMERA_SAFE_AREA_MARGIN);
 }
 
 void Camera_SetCurrentViewIndex(int index) {
