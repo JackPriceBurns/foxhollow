@@ -467,8 +467,15 @@ void optionsMenu_openGeneralPanel(void)
     gTitleMenuLinkInterface->vtable->setup(entries, count, firstSelectable, NULL, 0, 0, 0x14, 0xc8, 0xff,
                                            0xff, 0xff, 0xff);
 
-    gOptionsMenuItems[0] =
-        gTitleMenuItemInterface->vtable->createWithWindow(0x366, 0x22, 0, 1, gOptionsSaveData->widescreenEnabled);
+    if (fhConfigScreenStyleIsForced())
+    {
+        gOptionsMenuItems[0] = NULL;
+    }
+    else
+    {
+        gOptionsMenuItems[0] = gTitleMenuItemInterface->vtable->createWithWindow(
+            0x366, 0x22, 0, 1, gOptionsSaveData->widescreenEnabled);
+    }
     gOptionsMenuItems[1] =
         gTitleMenuItemInterface->vtable->createWithWindow(0x36b, 0x23, 0, 1,
                                                          (s16)(gOptionsSaveData->rumbleEnabled == 0));
@@ -755,7 +762,11 @@ int OptionsScreen_frameStart(void)
         optionsMenu_applyGameplaySetting(selection, item);
         if (selection == 0)
         {
-            gOptionsSaveData->widescreenEnabled = gTitleMenuItemInterface->vtable->getValue(gOptionsMenuItems[0]);
+            if (!fhConfigScreenStyleIsForced())
+            {
+                gOptionsSaveData->widescreenEnabled =
+                    gTitleMenuItemInterface->vtable->getValue(gOptionsMenuItems[0]);
+            }
             gOptionsSaveData->rumbleEnabled = !gTitleMenuItemInterface->vtable->getValue(gOptionsMenuItems[1]);
             setWidescreen(gOptionsSaveData->widescreenEnabled);
             setRumbleEnabled(gOptionsSaveData->rumbleEnabled);
