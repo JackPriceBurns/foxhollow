@@ -107,8 +107,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.event.release.tag_name }}
 
       - uses: actions/download-artifact@v4
         with:
