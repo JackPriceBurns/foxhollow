@@ -7,8 +7,10 @@
 
 static inline double __frsqrte(double x) { return 1.0 / sqrt(x); }
 static inline float __fres(float x) { return 1.0f / x; }
+#if !defined(__GNUC__) || defined(__clang__)
 static inline float __fabsf(float x) { return fabsf(x); }
 static inline double __fabs(double x) { return fabs(x); }
+#endif
 static inline int __cntlzw(unsigned int x) { return x ? __builtin_clz(x) : 32; }
 static inline unsigned int __cvt_fp2unsigned(double x) {
   if (x <= 0.0) return 0;
