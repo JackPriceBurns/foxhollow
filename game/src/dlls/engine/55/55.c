@@ -398,6 +398,9 @@ void optionsMenu_openGeneralPanel(void)
     int lastUnlocked2;
     int firstSelectable;
     int linkIndex;
+    int windowShift;
+    u16 carriedBoxId;
+    u16 nextBoxId;
     s8 aboveWidescreen;
 
     if (gOptionsActivePanel != -1)
@@ -445,6 +448,7 @@ void optionsMenu_openGeneralPanel(void)
     } while (cheatId2 < 4);
 
     firstSelectable = 0;
+    windowShift = 0;
     if (fhConfigScreenStyleIsForced())
     {
         aboveWidescreen = entries[GAMEPLAY_OPTION_WIDESCREEN].upLink;
@@ -462,6 +466,18 @@ void optionsMenu_openGeneralPanel(void)
         }
         entries[GAMEPLAY_OPTION_RUMBLE].upLink = aboveWidescreen;
         firstSelectable = GAMEPLAY_OPTION_RUMBLE;
+        windowShift = 1;
+
+        if (entries[GAMEPLAY_OPTION_RUMBLE].boxId != entries[GAMEPLAY_OPTION_WIDESCREEN].boxId)
+        {
+            carriedBoxId = entries[GAMEPLAY_OPTION_WIDESCREEN].boxId;
+            for (linkIndex = GAMEPLAY_OPTION_RUMBLE; linkIndex < count; linkIndex++)
+            {
+                nextBoxId = entries[linkIndex].boxId;
+                entries[linkIndex].boxId = carriedBoxId;
+                carriedBoxId = nextBoxId;
+            }
+        }
     }
 
     gTitleMenuLinkInterface->vtable->setup(entries, count, firstSelectable, NULL, 0, 0, 0x14, 0xc8, 0xff,
@@ -477,7 +493,7 @@ void optionsMenu_openGeneralPanel(void)
             0x366, 0x22, 0, 1, gOptionsSaveData->widescreenEnabled);
     }
     gOptionsMenuItems[1] =
-        gTitleMenuItemInterface->vtable->createWithWindow(0x36b, 0x23, 0, 1,
+        gTitleMenuItemInterface->vtable->createWithWindow(0x36b, 0x23 - windowShift, 0, 1,
                                                          (s16)(gOptionsSaveData->rumbleEnabled == 0));
     slot[0] = gOptionsMenuItems;
 
@@ -489,12 +505,13 @@ void optionsMenu_openGeneralPanel(void)
             if (cheatId == CHEAT_SEPIA_MODE)
             {
                 slot[0][2] = gTitleMenuItemInterface->vtable->createWithWindow(
-                    0x507, cheatId + 0x24, 0, 1, Rcp_GetColorFilterEnabled());
+                    0x507, cheatId + 0x24 - windowShift, 0, 1, Rcp_GetColorFilterEnabled());
             }
             else
             {
                 slot[0][2] = gTitleMenuItemInterface->vtable->createWithWindow(
-                    0x36b, cheatId + 0x24, 0, 1, (s16)(saveFileStruct_isCheatActive((u8)cheatId) == 0));
+                    0x36b, cheatId + 0x24 - windowShift, 0, 1,
+                    (s16)(saveFileStruct_isCheatActive((u8)cheatId) == 0));
             }
         }
         slot[0]++;
