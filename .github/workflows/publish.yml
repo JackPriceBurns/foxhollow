@@ -1,0 +1,120 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build and publish
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  API_HOST: api.foxhollow.dev
+  RELEASE_CHANNEL: stable
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            os: macos-latest
+          - platform: linux
+            os: ubuntu-latest
+          - platform: windows
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
+          submodules: recursive
+
+      - name: Install macOS dependencies
+        if: matrix.platform == 'macos'
+        run: brew install ninja jpeg-turbo
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build zlib1g-dev libjpeg-dev \
+            libx11-dev libxext-dev libwayland-dev libxkbcommon-dev
+
+      - name: Install Windows dependencies
+        if: matrix.platform == 'windows'
+        run: choco install ninja --no-progress
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.platform == 'windows'
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ matrix.platform }}-${{ hashFiles('CMakeLists.txt', 'extern/aurora/CMakeLists.txt') }}
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF
+
+      - name: Build
+        run: cmake --build build --target foxhollow
+
+      - name: Package
+        shell: bash
+        run: |
+          version="${{ inputs.tag || github.event.release.tag_name }}"
+          mkdir -p dist
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            7z a "dist/foxhollow-${version}-${{ matrix.platform }}.zip" ./build/foxhollow.exe
+          else
+            tar -czf "dist/foxhollow-${version}-${{ matrix.platform }}.tar.gz" -C build foxhollow
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foxhollow-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish to the CDN
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List what was built
+        run: ls -la dist || echo "No binaries were produced."
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install signing helper
+        run: pip install --quiet botocore requests
+
+      - name: Create the release and upload the binaries
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          COMMIT: ${{ github.sha }}
+        run: python3 .github/scripts/publish_release.py

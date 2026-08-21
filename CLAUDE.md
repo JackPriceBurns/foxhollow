@@ -382,6 +382,13 @@ frame can plausibly produce before theorising about it.
 
 - `OSReport` is a **weak no-op** in this build; Aurora's is `#if 0`'d. Use `fprintf(stderr, …)`
   for debug output or you will get silence and misread it as "code never ran".
+- **Exiting without `aurora_shutdown()` aborts the process.** Aurora owns joinable `std::thread`
+  globals (the render worker, both pipeline-cache threads, the texture worker pool, and the DVD
+  worker). `exit()` runs their static destructors, and `std::thread::~thread()` calls
+  `std::terminate()` on a still-joinable thread — SIGABRT and a macOS crash report on every quit,
+  with no exception involved. `pump_events` must call `aurora_dvd_close()` and `aurora_shutdown()`
+  first. SDL turns SIGTERM into `SDL_EVENT_QUIT`, so a launcher-issued kill lands on the same path
+  as the window close; all quit routes share this one fix.
 - **Dev shortcuts manufacture phantom bugs.** The prologue quick-load in `gameloop_main.c`
   bypasses the title screen, so the level texture bank never merges and ids fall back to
   offset-0 garbage. Before deep-diving a rendering oddity, reproduce it on a normal boot.
@@ -400,6 +407,22 @@ frame can plausibly produce before theorising about it.
   **676** int→pointer. Most are benign (ids, indices, values that were never pointers); the fatal
   ones are round trips through 32-bit storage. There are **zero** implicit int/pointer conversions —
   the decomp always casts explicitly — so the compiler sees every one of them.
+
+## Releases
+
+Tagging a commit `v*` runs `.github/workflows/release.yml`, which pulls the matching section out
+of `CHANGELOG.md` and creates a GitHub release from it. The heading must match the tag exactly —
+`## v0.1.0` or `## v0.1.0 - 2026-08-21` - and the workflow fails rather than publishing an empty
+release if it finds nothing.
+
+Publishing that release then runs `.github/workflows/publish.yml`, which builds macOS, Linux and
+Windows with `continue-on-error` (only macOS is known to build today), calls `POST /releases` on
+the API signed with SigV4 through the GitHub OIDC role, and uploads each binary it managed to
+build to the presigned URL it gets back. Platforms that failed to build are skipped, not faked.
+
+`.github/scripts/changelog.py` is shared by both: `--format markdown` produces the GitHub release
+body, `--format json` produces the bullet array the API stores as release notes and the launcher
+renders.
 
 ## References
 - `extern/aurora` — the compatibility layer (see docs/ and examples/simple.c)
