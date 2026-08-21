@@ -67,6 +67,7 @@ def main():
         "commit": os.environ.get("COMMIT", "")[:12],
         "notes": notes_for(tag),
         "sizeBytes": max((path.stat().st_size for path in artifacts.values()), default=0),
+        "platforms": sorted(artifacts),
     }
     release_url = os.environ.get("RELEASE_URL")
     if release_url:
