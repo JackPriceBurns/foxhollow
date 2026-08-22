@@ -4,6 +4,11 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.2.0 — 2026-08-23
+
+### Added
+- Windows fully playable end-to-end!
+
 ## v0.1.1 — 2026-08-22
 
 ### Added
