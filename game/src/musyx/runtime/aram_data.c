@@ -66,20 +66,17 @@ void aramRemoveData(void* unused, u32 size) {
  * pointer, and the setup loop links eight entries per iteration.
  */
 void aramInitStreamBuffers(void) {
-    u8* base = (u8*)&aramNormalPriorityQueue;
     u32 i;
 
     aramQueueWrite = 0;
     aramQueueValid = 0;
-    AramStreamBufferEntry* buffers = (AramStreamBufferEntry*)(base + sizeof(AramTransferQueues));
-    aramStreamFreeList = buffers;
+    aramStreamFreeList = aramStreamBuffers;
 
     for (i = 1; i < ARAM_STREAM_BUFFER_COUNT; i++) {
-        ((AramStreamBufferEntry*)(base + sizeof(AramTransferQueues)))[i - 1].next =
-            &((AramStreamBufferEntry*)(base + sizeof(AramTransferQueues)))[i];
+        aramStreamBuffers[i - 1].next = &aramStreamBuffers[i];
     }
 
-    ((AramStreamBufferEntry*)(base + sizeof(AramTransferQueues)))[i - 1].next = NULL;
+    aramStreamBuffers[i - 1].next = NULL;
     aramStream = aramTop;
 }
 

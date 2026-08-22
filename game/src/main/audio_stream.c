@@ -299,7 +299,8 @@ int AudioStream_Play(int id, void (*preparedCallback)(void))
     }
     gAudioStreamDvdState = 0;
 
-    if (concatThreeStrings(path, (void*)0x40, (char*)fadeTbl + 0x3C, s->name, sAdpExtension) != 0)
+    if (concatThreeStrings(path, (void*)0x40, sDvdCancelStreamWarning + 0x30, s->name,
+                           sAdpExtension) != 0)
     {
         if (DVDOpen(path, &gAudioStreamDvdBlockPrepared.fileInfo) == 0)
         {
@@ -316,7 +317,7 @@ int AudioStream_Play(int id, void (*preparedCallback)(void))
             AISetStreamVolRight(0);
             if (DVDCancelStreamAsync(&gAudioStreamDvdBlockCurrent, AudioStream_CancelCallback) == 0)
             {
-                OSReport((char*)fadeTbl + 0xC);
+                OSReport(sDvdCancelStreamWarning);
                 gAudioStreamPlaying = 0;
             }
             gAudioStreamPreparedId = 0;
