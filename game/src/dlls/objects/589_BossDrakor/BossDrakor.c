@@ -411,7 +411,6 @@ BossDrakorTuning gBossDrakorTurnMoveStates = {
 
 void bossdrakor_handleActionEvent(GameObject* obj, BossDrakorState* state, int action)
 {
-    int* tbl = gBossDrakorMoveStateTable;
     BossDrakorState* s = state;
     f32 t;
     GameObject* found;
@@ -450,24 +449,24 @@ void bossdrakor_handleActionEvent(GameObject* obj, BossDrakorState* state, int a
         s16toFloat(&s->attackTimer, 0x5a);
         s->attackTimerDuration = 90.0f;
         s->attackType = 1;
-        s->missileBaseSpeed = *(f32*)((char*)tbl + 0x84);
-        s->missileLeadFactor = *(f32*)((char*)tbl + 0x90);
+        s->missileBaseSpeed = gBossDrakorTurnMoveStates.missileBaseSpeeds[0];
+        s->missileLeadFactor = gBossDrakorTurnMoveStates.missileLeadFactors[0];
         break;
     case 4:
         storeZeroToFloatParam(&s->attackTimer);
         s16toFloat(&s->attackTimer, 0x3c);
         s->attackTimerDuration = 60.0f;
         s->attackType = 1;
-        s->missileBaseSpeed = *(f32*)((char*)tbl + 0x88);
-        s->missileLeadFactor = *(f32*)((char*)tbl + 0x94);
+        s->missileBaseSpeed = gBossDrakorTurnMoveStates.missileBaseSpeeds[1];
+        s->missileLeadFactor = gBossDrakorTurnMoveStates.missileLeadFactors[1];
         break;
     case 5:
         storeZeroToFloatParam(&s->attackTimer);
         s16toFloat(&s->attackTimer, 0x1e);
         s->attackTimerDuration = 30.0f;
         s->attackType = 1;
-        s->missileBaseSpeed = *(f32*)((char*)tbl + 0x8c);
-        s->missileLeadFactor = *(f32*)((char*)tbl + 0x98);
+        s->missileBaseSpeed = gBossDrakorTurnMoveStates.missileBaseSpeeds[2];
+        s->missileLeadFactor = gBossDrakorTurnMoveStates.missileLeadFactors[2];
         break;
     case 6:
         t = 0.0f;
@@ -493,7 +492,7 @@ void bossdrakor_handleActionEvent(GameObject* obj, BossDrakorState* state, int a
     case 10:
     case 11:
     case 12:
-        if (s->airMeterHandle < (tbl + action)[0x1d])
+        if (s->airMeterHandle < gBossDrakorTurnMoveStates.unk74[action - 10])
         {
             s->curveFollowState = 1;
         }

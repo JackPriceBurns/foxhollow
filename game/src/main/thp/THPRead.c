@@ -20,6 +20,9 @@ OSThread gPicMenuReadThread;
 extern OSMessageQueue gPicMenuReadedBuffer2Queue;
 extern OSMessageQueue gPicMenuReadedBufferQueue;
 extern OSMessageQueue gPicMenuFreeReadBufferQueue;
+extern OSMessage gPicMenuFreeReadBufferMessages[10];
+extern OSMessage gPicMenuReadedBufferMessages[10];
+extern OSMessage gPicMenuReadedBuffer2Messages[10];
 
 s32 gPicMenuReadThreadCreated;
 
@@ -51,10 +54,8 @@ static void* THPRead_Reader(void* unused) {
     AttractMovieReadBuffer* req;
     u32 readOff;
     u32 readSize;
-    char* base;
     int i;
 
-    base = gPicMenuReadThreadArea;
     i = 0;
     readOff = gAttractMoviePlayer.initOffset;
     readSize = gAttractMoviePlayer.initReadSize;
@@ -63,7 +64,7 @@ static void* THPRead_Reader(void* unused) {
         OSMessage msgVal;
         s32 res;
 
-        OSReceiveMessage((OSMessageQueue*)(base + 0x13C8), &msgVal, OS_MESSAGE_BLOCK);
+        OSReceiveMessage(&gPicMenuFreeReadBufferQueue, &msgVal, OS_MESSAGE_BLOCK);
         req = (AttractMovieReadBuffer*)msgVal;
 
         res = DVDReadPrio(&gAttractMoviePlayer.fileInfo, req->ptr, readSize, readOff, 2);
@@ -74,11 +75,11 @@ static void* THPRead_Reader(void* unused) {
             if (i == 0) {
                 PrepareReady(0);
             }
-            OSSuspendThread((OSThread*)(base + 0x1000));
+            OSSuspendThread(&gPicMenuReadThread);
         }
 
         req->frameNumber = i;
-        OSSendMessage((OSMessageQueue*)(base + 0x13A8), (OSMessage)req, OS_MESSAGE_BLOCK);
+        OSSendMessage(&gPicMenuReadedBufferQueue, (OSMessage)req, OS_MESSAGE_BLOCK);
 
         readOff += readSize;
         readSize = fhSwap32(*(u32*)req->ptr);
@@ -91,7 +92,7 @@ static void* THPRead_Reader(void* unused) {
                 if (gAttractMoviePlayer.playFlags & 1) {
                     readOff = gAttractMoviePlayer.header.mMovieDataOffsets;
                 } else {
-                    OSSuspendThread((OSThread*)(base + 0x1000));
+                    OSSuspendThread(&gPicMenuReadThread);
                 }
             }
         }
@@ -118,17 +119,16 @@ void ReadThreadStart(void)
 
 BOOL CreateReadThread(OSPriority priority)
 {
-    char* base = gPicMenuReadThreadArea;
-    char* stack = base + 0x1000;
+    char* stack = gPicMenuReadThreadArea + sizeof(gPicMenuReadThreadArea);
 
-    if (!OSCreateThread((OSThread*)stack, THPRead_Reader, NULL, stack, 0x1000, priority, 1))
+    if (!OSCreateThread(&gPicMenuReadThread, THPRead_Reader, NULL, stack, 0x1000, priority, 1))
     {
         return 0;
     }
 
-    OSInitMessageQueue((OSMessageQueue*)(base + 0x13C8), (void*)(base + 0x1360), 10);
-    OSInitMessageQueue((OSMessageQueue*)(base + 0x13A8), (void*)(base + 0x1338), 10);
-    OSInitMessageQueue((OSMessageQueue*)(base + 0x1388), (void*)(base + 0x1310), 10);
+    OSInitMessageQueue(&gPicMenuFreeReadBufferQueue, gPicMenuFreeReadBufferMessages, 10);
+    OSInitMessageQueue(&gPicMenuReadedBufferQueue, gPicMenuReadedBufferMessages, 10);
+    OSInitMessageQueue(&gPicMenuReadedBuffer2Queue, gPicMenuReadedBuffer2Messages, 10);
     gPicMenuReadThreadCreated = 1;
     return 1;
 }

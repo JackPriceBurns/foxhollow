@@ -136,12 +136,12 @@ int wcblock_isPlayerAwayFromStoredCell(GameObject* obj, WCBlockState* state, Gam
     if (objAnim->bankIndex == WCBLOCK_VARIANT_A)
     {
         iface->getCellXYA(state->tileIndex, &state->cellX, &state->cellZ, iface);
-        iface->getCellWorldA((int)obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
+        iface->getCellWorldA(obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
     }
     else
     {
         iface->getCellXYB(state->tileIndex, &state->cellX, &state->cellZ, iface);
-        iface->getCellWorldB((int)obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
+        iface->getCellWorldB(obj, state->cellX, state->cellZ, &cellX, &cellZ, iface);
     }
 
     min = cellX - WCBLOCK_PLAYER_CELL_MARGIN;

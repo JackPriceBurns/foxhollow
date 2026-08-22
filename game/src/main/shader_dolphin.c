@@ -1008,11 +1008,11 @@ void addWarpedRingTevStages(void)
     f32 rx;
     f32 ry;
     void* invView;
-    va = ((Vec*)&sEnvMapBumpIndMtx)[4];
-    vb = ((Vec*)&sEnvMapBumpIndMtx)[5];
-    vc = ((Vec*)&sEnvMapBumpIndMtx)[6];
-    vd = ((Vec*)&sEnvMapBumpIndMtx)[7];
-    im = *(IndTexMtx23*)((Vec*)&sEnvMapBumpIndMtx + 8);
+    va = sWarpedRingRotAxes[0];
+    vb = sWarpedRingRotAxes[1];
+    vc = sWarpedRingRotAxes[2];
+    vd = sWarpedRingRotAxes[3];
+    im = sWarpedRingIndMtx;
     invView = Camera_GetInverseViewMatrix();
     PSMTXRotAxisRad(mf8, &va, 1.0f);
     PSMTXRotAxisRad(mc8, &vb, 1.0f);

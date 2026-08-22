@@ -647,10 +647,10 @@ void wispBaddiePlayMoveEventSfx(GameObject* obj, void* animState)
 
 void wispBaddieQueueNextEvent(GameObject* obj, int delta)
 {
-    u8* inner = ((GameObject*)obj)->extra;
-    u8* ptr = gBaddieFamilyTables[inner[0x33b]].tbl4;
-    inner[0x33d] = (u8)(delta + (u32)ptr[8] + 1);
-    inner[0x33e] = 1;
+    EnemyState* inner = (EnemyState*)((GameObject*)obj)->extra;
+    u8* ptr = gBaddieFamilyTables[inner->userData2].tbl4;
+    inner->familyData.unk33C[1] = (u8)(delta + (u32)ptr[8] + 1);
+    inner->familyData.unk33C[2] = 1;
 }
 
 u8 sharpClawHandleHitMessage(GameObject* obj, u8* state, GameObject* attacker, int msgId, int arrIdx, int damage,
@@ -1127,7 +1127,7 @@ void sharpClawUpdateApproach(GameObject* obj, void* state)
         ((EnemyState*)state)->animPlaySpeed =
             ((EnemyState*)state)->pathStep *
             (((f32)(u32)((EnemyState*)state)->targetDist / ((EnemyState*)state)->aggroRange / 60.0f) *
-             ((f32*)(table + 0x1538))[((EnemyState*)state)->userData2]);
+             gBaddieFamilySpeedScales[((EnemyState*)state)->userData2]);
         if (((EnemyState*)state)->animPlaySpeed < 0.03f)
         {
             ((EnemyState*)state)->animPlaySpeed = 0.03f;

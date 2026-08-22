@@ -257,25 +257,28 @@ void player_updateParticles(GameObject* obj, int unused, int effectId, int count
     }
 }
 
+typedef void (*ProjGfxSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags, int modelId,
+                               void* unused3);
+
 void player_doProjGfx(GameObject* obj, int unusedA, int resIdBase, int count, int unusedB, int mode)
 {
-    /* res: acquired projectile-gfx resource; its vtable slot [+4] is the
-     * per-instance spawn entry, dispatched `count` times with a mode-selected
-     * flag (1/2/4). */
-    void* res = Resource_Acquire((u16)(resIdBase + 0x58), 1);
+    /* res: acquired projectile-gfx resource; its vtable slot 1 (retail +4) is
+     * the per-instance spawn entry, dispatched `count` times with a
+     * mode-selected flag (1/2/4). */
+    ObjectInterfaceHandle res = Resource_Acquire((u16)(resIdBase + 0x58), 1);
     while (count != 0)
     {
         if (mode == 0)
         {
-            (*(void (*)(GameObject*, int, int, int, int, int))(*(int*)(*(int*)res + 4)))(obj, 0, 0, 1, -1, 0);
+            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 1, -1, NULL);
         }
         else if (mode == 1)
         {
-            (*(void (*)(GameObject*, int, int, int, int, int))(*(int*)(*(int*)res + 4)))(obj, 0, 0, 2, -1, 0);
+            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 2, -1, NULL);
         }
         else if (mode == 2)
         {
-            (*(void (*)(GameObject*, int, int, int, int, int))(*(int*)(*(int*)res + 4)))(obj, 0, 0, 4, -1, 0);
+            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 4, -1, NULL);
         }
         count--;
     }

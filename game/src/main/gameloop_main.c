@@ -329,12 +329,10 @@ char sGameBitSetDuringSaveLoadWarning[204] =
 
 void checkReset(void)
 {
-    char* msg;
     u8 pressed;
     f32 t;
     int status;
 
-    msg = sGameLoopResetMessages;
     if (gVideoRetracePending == 0 || gDvdCoverOpenErrorActive != 0)
     {
         return;
@@ -376,7 +374,7 @@ void checkReset(void)
         break;
     case GAME_STATE_RESETPRESSED:
     case GAME_STATE_HARDRESETPRESSED:
-        OSReport(msg + 0xd0);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0x50);
         if (gGameLoopInitComplete != 0)
         {
             (*gScreenTransitionInterface)->start(0x1e, SCREEN_TRANSITION_BLACK);
@@ -405,7 +403,7 @@ void checkReset(void)
         }
         break;
     case GAME_STATE_RESETNOW:
-        OSReport(msg + 0xec);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0x6c);
         while (gDvdErrorPauseActive == 0 && (gAudioStreamPlaying != 0 || gAudioStreamDvdState != 0))
         {
             status = DVDGetDriveStatus();
@@ -431,19 +429,19 @@ void checkReset(void)
         }
         AISetStreamPlayState(AI_STREAM_STOP);
         audioReset();
-        OSReport(msg + 0x104);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0x84);
         stopRumble2();
         waitNextFrame();
         GXFlush_(1, 0);
         waitNextFrame();
         GXFlush_(1, 0);
-        OSReport(msg + 0x118);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0x98);
         LCDisable();
         DVDSetAutoInvalidation(1);
         VISetBlack(1);
         VIFlush();
         VIWaitForRetrace();
-        OSReport(msg + 0x12c);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0xac);
         gameState = GAME_STATE_RESETDONE;
         if (gGameLoopHardReset != 0)
         {
@@ -455,7 +453,7 @@ void checkReset(void)
         }
         break;
     default:
-        OSReport(msg + 0x13c);
+        OSReport(sGameBitSetDuringSaveLoadWarning + 0xbc);
         break;
     }
 }

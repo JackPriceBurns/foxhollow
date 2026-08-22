@@ -12,6 +12,7 @@
 #include "main/audio/sfx_object_query_api.h"
 #include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
+#include "main/dll/dll_005B_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/player_api.h"
@@ -72,8 +73,6 @@
 #define SMALLBASKET_CHILD_OBJECT_ENERGY_EGG COLLECTIBLE_ITEM_ENERGY_EGG
 #define SMALLBASKET_CHILD_OBJECT_APPLE      COLLECTIBLE_ITEM_APPLE
 
-typedef void (*SmallBasketBreakEffectFn)(GameObject* obj, int arg1, int arg2, int arg3, int arg4, int arg5);
-
 /* Known fields shared by the 0x24- and 0x30-byte child placement records. */
 typedef union SmallBasketCollisionResults {
     TrackHitResults record;
@@ -84,26 +83,16 @@ typedef union SmallBasketCollisionResults {
     };
 } SmallBasketCollisionResults;
 
-typedef struct SmallBasketResource {
-    void* pad00;
-    SmallBasketBreakEffectFn spawnBreakEffect; /* 0x04 */
-} SmallBasketResource;
-
-
 STATIC_ASSERT(offsetof(SmallBasketCollisionResults, hitInfo) == 0x0);
 STATIC_ASSERT(offsetof(SmallBasketCollisionResults, radii) == 0x40);
 STATIC_ASSERT(offsetof(SmallBasketCollisionResults, hitAxes) == 0x50);
 STATIC_ASSERT(sizeof(SmallBasketCollisionResults) == sizeof(TrackHitResults));
 
-STATIC_ASSERT(offsetof(SmallBasketResource, pad00) == 0x0);
-STATIC_ASSERT(offsetof(SmallBasketResource, spawnBreakEffect) == 0x4);
-STATIC_ASSERT(sizeof(SmallBasketResource) == 0x8);
-
 int gSmallBasketDisableOnHit = 1;
 f32 gSmallBasketChainHitRadius = 15.0f;
 f32 gSmallBasketChainHitHeight = 30.0f;
 f32 gSmallBasketHitVelocity[4];
-SmallBasketResource** gSmallBasketResource;
+Dll5BInterface** gSmallBasketResource;
 
 static int SmallBasket_isPlayerClear(GameObject* obj) {
     return Vec_distance(&obj->anim.worldPosX, &((GameObject*)Obj_GetPlayerObject())->anim.worldPosX) >
@@ -807,7 +796,7 @@ void SmallBasket_update(GameObject* obj) {
                 effectParams.posY = obj->anim.localPosY;
                 effectParams.posZ = obj->anim.localPosZ;
                 objDoHitParticleFx((void*)obj, 0.014f, &effectParams, 1, 0);
-                (*gSmallBasketResource)->spawnBreakEffect(obj, 1, 0, 2, -1, 0);
+                (*gSmallBasketResource)->spawn(obj, 1, NULL, 2, -1, NULL);
                 Sfx_PlayFromObject(obj, (u16)state->hitSfxId);
                 state->disableTimer = SMALLBASKET_HIT_DISABLE_FRAMES;
                 state->throwState = SMALLBASKET_THROW_NONE;

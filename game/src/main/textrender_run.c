@@ -856,14 +856,14 @@ void gameTextBuildSystemFontAtlas(void)
         {
             charset->glyphs = (TextGlyph*)fontData;
             charset->glyphCount = 0x55;
-            charset->entries = (GameTextDef*)(fontData + 0x8ec);
+            charset->entries = sJpDiscStatusMessageTable.messages;
             charset->entryCount = 7;
         }
         else
         {
-            charset->glyphs = (TextGlyph*)(fontData + 0x940);
+            charset->glyphs = sJpDiscStatusMessageTable.glyphs;
             charset->glyphCount = 0x2b;
-            charset->entries = (GameTextDef*)(fontData + 0xe24);
+            charset->entries = sDiscStatusMessageTable.messages;
             charset->entryCount = 7;
         }
     }

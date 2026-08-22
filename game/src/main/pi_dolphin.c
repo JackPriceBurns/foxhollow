@@ -4136,7 +4136,6 @@ void videoSwapFrameBuffers(u32 retraceCount);
 void videoBreakPointCallback(void);
 
 void gpuErrorHandler(u32 retraceCount) {
-    char* strs = (char*)gLoadingScreenTextures;
     void* tok[3];
     u32 botClks;
     u32 botPerf0;
@@ -4185,7 +4184,7 @@ void gpuErrorHandler(u32 retraceCount) {
         break;
     }
     if (enableDebugText != 0 && gVideoWaitThread != NULL && (u32)gGpuStallRetraceCount > 600) {
-        debugPrintfxy(0x32, 100, strs + 0x40000);
+        debugPrintfxy(0x32, 100, lbl_8030C6A0);
         GXReadXfRasMetric(&botPerf0, &botClks, &botPerf1, &botClks2);
         GXReadXfRasMetric(&topPerf0, &topClks, &topPerf1, &topClks2);
         xfStuck = (topClks - botClks) == 0;
@@ -4193,17 +4192,17 @@ void gpuErrorHandler(u32 retraceCount) {
         rdIdle = (topClks2 - botClks2) != 0;
         cmdIdle = (topPerf1 - botPerf1) != 0;
         GXGetGPStatus(&fifoErr, &fifoErr, &cmdRdy, &readIdle, &fifoErr);
-        debugPrintfxy(0x32, 0x78, strs + 0x4002c, cmdRdy, readIdle, xfStuck, cmdStuck, rdIdle, cmdIdle);
+        debugPrintfxy(0x32, 0x78, lbl_8030C6A0 + 0x2c, cmdRdy, readIdle, xfStuck, cmdStuck, rdIdle, cmdIdle);
         if (cmdStuck == 0 && rdIdle != 0) {
-            debugPrintfxy(0x32, 0x8c, strs + 0x40048);
+            debugPrintfxy(0x32, 0x8c, lbl_8030C6A0 + 0x48);
         } else if (xfStuck == 0 && cmdStuck != 0 && rdIdle != 0) {
-            debugPrintfxy(0x32, 0x8c, strs + 0x40068);
+            debugPrintfxy(0x32, 0x8c, lbl_8030C6A0 + 0x68);
         } else if (readIdle == 0 && xfStuck != 0 && cmdStuck != 0 && rdIdle != 0) {
-            debugPrintfxy(0x32, 0x8c, strs + 0x40090);
+            debugPrintfxy(0x32, 0x8c, lbl_8030C6A0 + 0x90);
         } else if (cmdRdy != 0 && readIdle != 0 && xfStuck != 0 && cmdStuck != 0 && rdIdle != 0 && cmdIdle != 0) {
-            debugPrintfxy(0x32, 0x8c, strs + 0x400b4);
+            debugPrintfxy(0x32, 0x8c, lbl_8030C6A0 + 0xb4);
         } else {
-            debugPrintfxy(0x32, 0x8c, strs + 0x400e4);
+            debugPrintfxy(0x32, 0x8c, lbl_8030C6A0 + 0xe4);
         }
         debugPrintfxy(0x32, 0xa0, sProgramCounterFormat, 0);
     }

@@ -55,6 +55,18 @@
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "main/dll/baddie_control_interface.h"
 
+typedef struct DbStealerwormObjDescriptorLayout
+{
+    u32 reserved0;
+    u32 reserved1;
+    u32 reserved2;
+    u32 slotCountAndFlags;
+    void (*callbacks[12])(void);
+    char debugStrings[0x5C];
+} DbStealerwormObjDescriptorLayout;
+
+extern DbStealerwormObjDescriptorLayout gDBstealerwormObjDescriptor;
+
 extern int gDbStealerwormRunToAvoidGroups[];
 extern f32 gDbStealerwormRunToAvoidWeights[];
 extern int gDbStealerwormWaitAvoidGroups[];
@@ -319,6 +331,10 @@ void* gDBStealerWormStateHandlersB[7];
 extern int gDbStealerwormDeathFootstepSfx[];
 extern int gDbStealerwormBurrowFootstepSfx[];
 extern int gDbStealerwormSfxIds[];
+extern int gDbStealerwormHitReactionMoves[];
+extern s8 gDbStealerwormHitReactionDamage[];
+extern int gDbStealerwormRunToAvoidGroups[];
+extern f32 gDbStealerwormRunToAvoidWeights[];
 extern DbStealerwormScriptStep gDbStealerwormScriptStealEggThrowToWorm[];
 
 int dbstealerworm_stateHandlerB04(GameObject* obj, BaddieState* baddie)
@@ -600,7 +616,6 @@ int dbstealerworm_stateHandlerA0D(GameObject* obj, BaddieState* baddie)
 }
 int dbstealerworm_stateHandlerA0C(GameObject* obj, BaddieState* baddie, f32 t)
 {
-    char* tbl = (char*)gDbStealerwormScriptStealEggThrowToWorm;
     GroundBaddieState* blob = obj->extra;
     DbStealerwormControl* sub = (DbStealerwormControl*)blob->control;
     int c30 = sub->objGroup;
@@ -627,7 +642,7 @@ int dbstealerworm_stateHandlerA0C(GameObject* obj, BaddieState* baddie, f32 t)
 
     sub->flags15 &= ~4;
     sub->flags14 |= DBWORM_FLAG14_FX_DUST;
-    logPrintf(tbl + 0x430, sub->savedTargetObj, sub->linkedObj);
+    logPrintf(gDBstealerwormObjDescriptor.debugStrings + 0x34, sub->savedTargetObj, sub->linkedObj);
     if (sub->savedTargetObject == NULL)
     {
         player = Obj_GetPlayerObject();
@@ -674,13 +689,13 @@ int dbstealerworm_stateHandlerA0C(GameObject* obj, BaddieState* baddie, f32 t)
     }
     if (sub->flags44.flag20 != 0)
     {
-        dbstealerworm_avoidObjects(obj, (int*)(tbl + 0x344), (f32*)(tbl + 0x354), 4, frac);
+        dbstealerworm_avoidObjects(obj, gDbStealerwormRunToAvoidGroups, gDbStealerwormRunToAvoidWeights, 4, frac);
     }
     player = Obj_GetPlayerObject();
     ratio = (Vec_xzDistance(&obj->anim.worldPosX, &player->anim.worldPosX) - 60.0f) /
             (0.05f * blob->aggression);
     n = (int)(ratio < 0.0f ? 0.0f : (ratio > 100.0f ? 100.0f : ratio));
-    logPrintf(tbl + 0x444, n);
+    logPrintf(gDBstealerwormObjDescriptor.debugStrings + 0x48, n);
     player = Obj_GetPlayerObject();
     best = NULL;
     bestD = 0.0f;
@@ -2331,8 +2346,8 @@ void dbstealerworm_update(GameObject* obj)
                 }
                 if ((*gBaddieControlInterface)
                         ->updateHitReaction(obj, (void*)blob, &blob->routeNav,
-                                            blob->gameBitB, (int*)(tbl + 0x2ac),
-                                            (u8*)(tbl + 0x324), 1, st[0]) != 0)
+                                            blob->gameBitB, gDbStealerwormHitReactionMoves,
+                                            (u8*)gDbStealerwormHitReactionDamage, 1, st[0]) != 0)
                 {
                     st[0]->posX = obj->anim.localPosX;
                     st[0]->posY = obj->anim.localPosY;
@@ -2524,9 +2539,16 @@ char gDbStealerwormCommandNames[DBSTEALERWORM_CMD_COUNT][15] = {
 int gDbStealerwormDeathFootstepSfx[3] = {0x000001ed, 0x000001ed, 0x000001ec};
 int gDbStealerwormBurrowFootstepSfx[4] = {0x00000000, 0x000001f0, 0x000001f1, 0x000001f1};
 
-int gDbStealerwormSfxIds[] = {
-    498, 498, 498, 149, 149, 5, 5, 5, 5, 5, 5, 5, 5, 5,  5,  5,  5,  5,  5,  2,  5,      5,
-    5,   5,   5,   5,   5,   5, 5, 5, 5, 5, 5, 5, 5, -1, -1, -1, -1, -1, -1, -1, -65536,
+int gDbStealerwormSfxIds[5] = {498, 498, 498, 149, 149};
+
+int gDbStealerwormHitReactionMoves[30] = {
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+};
+
+s8 gDbStealerwormHitReactionDamage[32] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    0,  0,
 };
 
 int gDbStealerwormRunToAvoidGroups[4] = {0, 1, 3, 10};
@@ -2535,18 +2557,6 @@ int gDbStealerwormWaitAvoidGroups[4] = {3, 0, 1, 10};
 f32 gDbStealerwormWaitAvoidWeights[4] = {8.0f, 3.0f, 2.0f, 4.0f};
 int gDbStealerwormKillAvoidGroups[4] = {3, 1, 0, 10};
 f32 gDbStealerwormKillAvoidWeights[10] = {2.0f, 0.8f, 0.4f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-typedef struct DbStealerwormObjDescriptorLayout
-{
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    void (*callbacks[12])(void);
-    char debugStrings[0x5C];
-} DbStealerwormObjDescriptorLayout;
-
-
-
 void* gDBStealerWormStateHandlersA[17];
 
 DbStealerwormObjDescriptorLayout gDBstealerwormObjDescriptor = {

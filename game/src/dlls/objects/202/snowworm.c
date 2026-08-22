@@ -371,7 +371,7 @@ void snowworm_update(GameObject* obj, u8* state)
 void snowworm_applyReactionState(GameObject* obj, int* st)
 {
     u8* t1 = gCrawlerReactionTables[((EnemyState*)st)->phaseAngle].moveSequence;
-    *((u8*)obj + 0xaf) = (u8)(*((u8*)obj + 0xaf) | 0x8);
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     if ((((EnemyState*)st)->controlFlags & BADDIE_CONTROL_SEQUENCE_DRIVEN) != 0)
     {
         s16 a = obj->anim.currentMove;

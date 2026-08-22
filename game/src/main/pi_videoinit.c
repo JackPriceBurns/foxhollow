@@ -295,12 +295,25 @@ void videoBlackScreenForFrames(int frameCount)
     VIFlush();
     gVideoBlackScreenFrameCount = frames;
 }
+char lbl_8030C6A0[0x1B8] =
+    "Suspected graphics hang or infinite loop\0\0\0\0"
+    "GP status %d%d%d%d%d%d --> \0"
+    "GP hang due to XF stall bug.\0\0\0\0"
+    "GP hang due to unterminated primitive\0\0\0"
+    "GP hang due to illegal instruction.\0"
+    "GP appears to be not hung (waiting for input).\0\0"
+    "GP is in unknown state.\0"
+    "GP hang due to XF stall bug.\n\0\0\0"
+    "GP hang due to unterminated primitive.\n\0"
+    "GP hang due to illegal instruction.\n\0\0\0\0"
+    "GP appears to be not hung (waiting for input).\n\0"
+    "GP is in unknown state.\n\0\0\0";
+
 void logGpuHang(void);
 void gxSetGPMetricsEnabled(int enabled);
 
 void logGpuHang(void)
 {
-    char* strs = (char*)gLoadingScreenTextures;
     u32 topClks, topPerf0, topClks2, topPerf1;
     u32 botClks, botPerf0, botClks2, botPerf1;
     u32 xfStuck;
@@ -319,26 +332,26 @@ void logGpuHang(void)
     rdIdle = (botClks2 - topClks2) != 0;
     cmdIdle = (botPerf1 - topPerf1) != 0;
     GXGetGPStatus(&fifoErr, &fifoErr, &cmdRdy, &readIdle, &fifoErr);
-    OSReport(strs + 0x4002c, cmdRdy, readIdle, xfStuck, cmdStuck, rdIdle, cmdIdle);
+    OSReport(lbl_8030C6A0 + 0x2c, cmdRdy, readIdle, xfStuck, cmdStuck, rdIdle, cmdIdle);
     if (cmdStuck == 0 && rdIdle != 0)
     {
-        OSReport(strs + 0x400fc);
+        OSReport(lbl_8030C6A0 + 0xfc);
     }
     else if (xfStuck == 0 && cmdStuck != 0 && rdIdle != 0)
     {
-        OSReport(strs + 0x4011c);
+        OSReport(lbl_8030C6A0 + 0x11c);
     }
     else if ((readIdleVal = readIdle) == 0 && xfStuck != 0 && cmdStuck != 0 && rdIdle != 0)
     {
-        OSReport(strs + 0x40144);
+        OSReport(lbl_8030C6A0 + 0x144);
     }
     else if (cmdRdy != 0 && readIdleVal != 0 && xfStuck != 0 && cmdStuck != 0 && rdIdle != 0 && cmdIdle != 0)
     {
-        OSReport(strs + 0x4016c);
+        OSReport(lbl_8030C6A0 + 0x16c);
     }
     else
     {
-        OSReport(strs + 0x4019c);
+        OSReport(lbl_8030C6A0 + 0x19c);
     }
 }
 

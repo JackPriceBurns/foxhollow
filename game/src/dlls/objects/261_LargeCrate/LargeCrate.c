@@ -10,6 +10,7 @@
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
+#include "main/dll/dll_005B_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -75,16 +76,9 @@
 #define LARGECRATE_SPIN_SPEED_MIN            600
 #define LARGECRATE_SPIN_SPEED_MAX            800
 
-typedef void (*LargeCrateBreakEffectFn)(GameObject* obj, int arg1, int arg2, int arg3, int arg4, int arg5);
-
 typedef struct LargeCrateVariantRemap {
     s16 entries[6];
 } LargeCrateVariantRemap;
-
-typedef struct LargeCrateResource {
-    void* pad00;
-    LargeCrateBreakEffectFn spawnBreakEffect; /* 0x04 */
-} LargeCrateResource;
 
 const LargeCrateVariantRemap gLargeCrateVariantARemap = {
     {0, 1, 2, 3, 4, 8},
@@ -94,11 +88,8 @@ const LargeCrateVariantRemap gLargeCrateVariantBRemap = {
 };
 
 STATIC_ASSERT(sizeof(LargeCrateVariantRemap) == 0xC);
-STATIC_ASSERT(offsetof(LargeCrateResource, pad00) == 0x0);
-STATIC_ASSERT(offsetof(LargeCrateResource, spawnBreakEffect) == 0x4);
-STATIC_ASSERT(sizeof(LargeCrateResource) == 0x8);
 
-LargeCrateResource** gLargeCrateResource;
+Dll5BInterface** gLargeCrateResource;
 
 
 
@@ -511,7 +502,7 @@ void LargeCrate_update(GameObject* obj) {
                 }
             } else {
                 Sfx_StopObjectChannel(obj, 0x7F);
-                (*gLargeCrateResource)->spawnBreakEffect(obj, 1, 0, 2, -1, 0);
+                (*gLargeCrateResource)->spawn(obj, 1, NULL, 2, -1, NULL);
                 if (Sfx_IsPlayingFromObject(0, (u16)state->breakSfxId) == 0) {
                     Sfx_PlayFromObject(obj, (u16)state->breakSfxId);
                 }

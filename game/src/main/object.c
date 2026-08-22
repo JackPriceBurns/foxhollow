@@ -683,7 +683,7 @@ void mapSetupPlayer(void) {
     base = (u8*)&gObjCameraSetupBlock;
     mapType = getCurMapType();
     if (mapType == MAPTYPE_UNLOAD_UNUSED || mapType == MAPTYPE_SUBMAP_UNUSED) {
-        OSReport((char*)(base + 0x70));
+        OSReport(sObjDebugStrings + 0x14);
         Obj_ResetObjectSystem();
     } else {
         playerNo = (*gMapEventInterface)->getCurChar();
@@ -693,7 +693,7 @@ void mapSetupPlayer(void) {
         z = pos->z;
         obj = 0;
         if (playerNo > -1 && mapType != MAPTYPE_NO_HUD) {
-            OSReport((char*)(base + 0x88), mapType, playerNo);
+            OSReport(sObjDebugStrings + 0x2c, mapType, playerNo);
             memset(&spawn, 0, 0x18);
             spawn.mapId = -1;
             spawn.unk3 = 0;
@@ -707,13 +707,13 @@ void mapSetupPlayer(void) {
             spawn.y = y;
             spawn.z = z;
             if (getLoadedFileFlags(0) & 0x100000) {
-                OSReport((char*)(base + 0x20), -1);
+                OSReport(sObjSetupObjectLoadingLockedWarning, -1);
                 obj = 0;
             } else {
                 obj = loadCharacter((s16*)&spawn, 1, -1, -1, 0, 0);
                 if (obj != 0) {
                     Obj_RegisterObject((GameObject*)obj, 1);
-                    OSReport((char*)(base + 0x5c), obj->anim.modelInstance->name);
+                    OSReport(sObjDebugStrings, obj->anim.modelInstance->name);
                 }
             }
         }
@@ -884,6 +884,7 @@ static void objFreeObjdef(u8* obj, int flag) {
     {
         s16 type;
         u8* refCounts;
+        ObjDef* def;
 
         type = ((GameObject*)obj)->anim.defId;
         refCounts = gObjFileRefCount;
@@ -892,14 +893,14 @@ static void objFreeObjdef(u8* obj, int flag) {
         } else {
             refCounts[type]--;
             if (gObjFileRefCount[type] == 0) {
-                otherObj = (GameObject*)gObjFileBufferTable[type];
-                if (*(void**)&otherObj->anim.parent != NULL) {
-                    mm_free(otherObj->anim.parent);
+                def = (ObjDef*)gObjFileBufferTable[type];
+                if (def->modLines != NULL) {
+                    mm_free(def->modLines);
                 }
-                if (*(void**)((u8*)otherObj + 0x34) != NULL) {
-                    mm_free(*(void**)((u8*)otherObj + 0x34));
+                if (def->intersectionLines != NULL) {
+                    mm_free(def->intersectionLines);
                 }
-                mm_free(otherObj);
+                mm_free(def);
             }
         }
     }

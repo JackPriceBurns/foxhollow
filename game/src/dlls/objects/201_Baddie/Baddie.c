@@ -1857,8 +1857,8 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
     if (node->userData1 != 0)
         return 0;
     ((EnemyState*)sub)->controlFlags |= 0x8000LL;
-    memcpy(sub + 0x2c4, sub + 0x2b8, 0xc);
-    memcpy(sub + 0x2b8, (char*)node + 0x24, 0xc);
+    memcpy(&((EnemyState*)sub)->prevLookDirX, &((EnemyState*)sub)->lookDirX, 0xc);
+    memcpy(&((EnemyState*)sub)->lookDirX, &node->anim.velocityX, 0xc);
     for (i = 0; i < animUpdate->eventCount; i++)
     {
         switch (animUpdate->eventIds[i])

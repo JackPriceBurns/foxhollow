@@ -74,6 +74,18 @@
 #include "main/lightmap_internal.h"
 
 extern char sTrackLoadBlockOverrunError[];
+struct ShaderObjLoadMessages
+{
+    char passLevelObject[28];
+    char failManualLoad[24];
+    char failOutsideMap[40];
+    char failNoBlock[24];
+    char passBlockObject[28];
+    char passInRange[24];
+    char failOutOfRange[28];
+};
+extern struct ShaderObjLoadMessages sShaderObjLoadMessages;
+
 extern char sShaderUnusedWordTable[];
 #define MAP_BLOCK_LAYER_COUNT 5
 #define FRUSTUM_PLANE_COUNT   5
@@ -672,7 +684,6 @@ static inline int objVisibleForAct(ObjPlacement* placement, int t)
 
 static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup)
 {
-    char* strs;
     int verbose;
     int useObj;
     f32 y;
@@ -691,7 +702,6 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
     f32 dy;
     f32 range;
 
-    strs = sShaderUnusedWordTable;
     if (placement->ident == 0x49054)
     {
         verbose = 1;
@@ -709,7 +719,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
     {
         if (verbose)
         {
-            OSReport(strs + 0x1cc);
+            OSReport(sShaderObjLoadMessages.passLevelObject);
         }
         return 1;
     }
@@ -717,7 +727,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
     {
         if (verbose)
         {
-            OSReport(strs + 0x1e8);
+            OSReport(sShaderObjLoadMessages.failManualLoad);
         }
         return 0;
     }
@@ -729,7 +739,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
         {
             if (verbose)
             {
-                OSReport(strs + 0x200, &placement->posX, &placement->posY, &placement->posZ);
+                OSReport(sShaderObjLoadMessages.failOutsideMap, &placement->posX, &placement->posY, &placement->posZ);
             }
             return 0;
         }
@@ -746,7 +756,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
         {
             if (verbose)
             {
-                OSReport(strs + 0x228);
+                OSReport(sShaderObjLoadMessages.failNoBlock);
             }
             return 0;
         }
@@ -755,7 +765,7 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
     {
         if (verbose)
         {
-            OSReport(strs + 0x240);
+            OSReport(sShaderObjLoadMessages.passBlockObject);
         }
         return 1;
     }
@@ -795,13 +805,13 @@ static int objShouldLoad(ObjPlacement* placement, s8 viewSlot, int mapEventGroup
     {
         if (verbose)
         {
-            OSReport(strs + 0x25c, &d);
+            OSReport(sShaderObjLoadMessages.passInRange, &d);
         }
         return 1;
     }
     if (verbose)
     {
-        OSReport(strs + 0x274);
+        OSReport(sShaderObjLoadMessages.failOutOfRange);
     }
     return 0;
 }
@@ -2942,16 +2952,7 @@ s8 gMapBlockDrawOrderFrontToBack[16] = {7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12
    edges, i.e. back to front. */
 s8 gMapBlockDrawOrderBackToFront[16] = {0, 15, 1, 14, 2, 13, 3, 12, 4, 11, 5, 10, 6, 9, 8, 7};
 
-struct
-{
-    char passLevelObject[28];
-    char failManualLoad[24];
-    char failOutsideMap[40];
-    char failNoBlock[24];
-    char passBlockObject[28];
-    char passInRange[24];
-    char failOutOfRange[28];
-} sShaderObjLoadMessages = {
+struct ShaderObjLoadMessages sShaderObjLoadMessages = {
     "LOAD PASS: Level object\n",
     "LOAD FAIL: Manual load\n",
     "LOAD FAIL: Outside map x=%f y=%f z=%f\n",

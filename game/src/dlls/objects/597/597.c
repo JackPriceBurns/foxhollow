@@ -90,7 +90,10 @@ int gDrHighTopHitObjectKinds[] = {
     0x72, 0x16D, 0x170, 0x16C, 0x16F, 0x38C, 0x389, 0x38A, 0x4D3, 0x38D, 0x38E, 0x4D4,
 };
 
-/* Hittable rider, bike, and scenery object IDs. */
+/* Hittable rider, bike, and scenery object IDs, followed by the per-bikeType
+   route gamebit triples (enable, disable, unused) from index 20 on. */
+#define SNOWBIKE_ROUTE_GAMEBIT_FIRST 20
+
 s16 gSnowBikeHitObjectIdTable[26] = {
     0, 365, 0, 368, 0, 364, 0, 367, 0, 905, 0, 906, 0, 1235, 0, 909, 0, 910, 0, 1236, 1175, 1176, 1180, 930, 931, 1180,
 };
@@ -2535,7 +2538,7 @@ void SnowBike_init(GameObject* obj, SnowBikePlacement* params, int flag)
     fv = s->velLimitZ;
     s->localVelZLimit = fv;
     s->baseVelLimitZ = fv;
-    s->gameBitPtr = (s16*)(base[0] + 0xa4 + s->bikeType * 6);
+    s->gameBitPtr = &gSnowBikeHitObjectIdTable[SNOWBIKE_ROUTE_GAMEBIT_FIRST + s->bikeType * 3];
     if (s->bikeType == 0)
     {
         if (!s->routeFlags.b02)

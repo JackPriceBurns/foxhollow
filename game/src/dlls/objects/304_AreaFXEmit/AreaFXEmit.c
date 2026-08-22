@@ -44,6 +44,11 @@ typedef enum AreaFXEmitSequenceEvent {
     AREAFXEMIT_SEQUENCE_EVENT_EMIT = 1,
 } AreaFXEmitSequenceEvent;
 
+typedef void (*AreaFXEmitModelSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags,
+                                       int modelId, void* unused3);
+typedef void (*AreaFXEmitProjectileSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags,
+                                            int modelId, int effectId, void* unused3);
+
 #define AREAFXEMIT_RANDOMIZE_OFFSET(state, position)                                                                   \
     do {                                                                                                               \
         u16 range;                                                                                                     \
@@ -146,22 +151,20 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
         resource = Resource_Acquire((state->effectId + AREAFXEMIT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                ((PartFxSpawnCallback)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
+                ((AreaFXEmitModelSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
             }
         } else {
-            ((PartFxSpawnCallback)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
+            ((AreaFXEmitModelSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_OBJECT_RESOURCE_ALT) {
         resource = Resource_Acquire((state->effectId + AREAFXEMIT_ALT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                ((void (*)(GameObject*, int, int, int, int, int, int))resource[0][1])(
-                    obj, 0, 0, 1, -1, state->effectId & 0xFF, 0);
+                ((AreaFXEmitProjectileSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
             }
         } else {
-            ((void (*)(GameObject*, int, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1,
-                                                                                  state->effectId & 0xFF, 0);
+            ((AreaFXEmitProjectileSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_LOCAL_OBJECT) {

@@ -9,7 +9,7 @@
 #include "main/objseq.h"
 #include "main/objprint_sound_api.h"
 
-typedef int (*KytesMumUpdateCallback)(int obj);
+typedef int (*KytesMumUpdateCallback)(GameObject* obj);
 
 typedef struct KytesMumQuestTriple
 {

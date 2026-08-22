@@ -309,7 +309,7 @@ void kytesmum_update(GameObject* obj)
     nearDist = 200.0f;
     if (runtime->questComplete == 0)
     {
-        if (runtime->updateCallback((int)obj) != 0)
+        if (runtime->updateCallback(obj) != 0)
         {
             mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->completionGameBit)), 1);
             runtime->questComplete = 1;

@@ -764,22 +764,22 @@ void Link_setup(TitleMenuTextEntry* items, int count, int selected, const char* 
             item->timer = items[i].timer;
             if ((item->upLink < -1) || (item->upLink >= count))
             {
-                OSReport(errBase + 0xa4, item->upLink);
+                OSReport(sLinkSlotOverflowErr + 0x18, item->upLink);
             }
 
             if ((item->downLink < -1) || (item->downLink >= count))
             {
-                OSReport(errBase + 0xb8, item->downLink);
+                OSReport(sLinkSlotOverflowErr + 0x2c, item->downLink);
             }
 
             if ((item->leftLink < -1) || (item->leftLink >= count))
             {
-                OSReport(errBase + 0xd0, item->leftLink);
+                OSReport(sLinkSlotOverflowErr + 0x44, item->leftLink);
             }
 
             if ((item->rightLink < -1) || (item->rightLink >= count))
             {
-                OSReport(errBase + 0xe8, item->rightLink);
+                OSReport(sLinkSlotOverflowErr + 0x5c, item->rightLink);
             }
 
             if (items[i].textureAssetId != -1)

@@ -18,10 +18,6 @@
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/gx/GXGet.h"
 
-struct JapaneseDiscStatusResource;
-struct EnglishDiscStatusResource;
-extern struct JapaneseDiscStatusResource sJpDiscStatusMessageTable;
-extern struct EnglishDiscStatusResource sDiscStatusMessageTable;
 extern char sDiscReadingMessage[];
 extern char sDiscInsertPromptLine[];
 extern char sDiscInsertGameDiscLine[];
@@ -285,12 +281,7 @@ char* sJpWrongDiscMessageLines[] = {
  * status messages, and the latin glyphs (lang 4) the messages still need
  * ("OFF", "NINTENDO GAMECUBE", ...).
  */
-struct JapaneseDiscStatusResource
-{
-    char loadingMessage[16]; /* "Now loading..." */
-    GameTextDef messages[7];
-    TextGlyph glyphs[43];
-} sJpDiscStatusMessageTable = {
+struct JapaneseDiscStatusResource sJpDiscStatusMessageTable = {
     "\xe3\x83\xad\xe3\x83\xbc\xe3\x83\x89\xe4\xb8\xad\xe2\x80\xa6",
     {
         {0x339, 7, 0x81, 0, 0, 4, sJpDiscErrorOccurredMessageLines},
@@ -376,11 +367,7 @@ char* sWrongDiscMessageLines[] = {
 };
 
 /* The English disc-status resource ("Loading..." plus the seven messages). */
-struct EnglishDiscStatusResource
-{
-    char loadingMessage[12];
-    GameTextDef messages[7];
-} sDiscStatusMessageTable = {
+struct EnglishDiscStatusResource sDiscStatusMessageTable = {
     "Loading...",
     {
         {0x339, 3, 0x81, 0, 0, 0, sDiscErrorOccurredMessageLines},

@@ -75,5 +75,6 @@ extern OSThread* gVideoWaitThread;
 extern OSStopwatch gFrameStopwatch;
 extern RingBufferQueue gVideoFlipQueue;
 extern u8 gLoadingScreenTextures[];
+extern char lbl_8030C6A0[0x1B8];
 
 #endif /* MAIN_PI_DOLPHIN_H_ */

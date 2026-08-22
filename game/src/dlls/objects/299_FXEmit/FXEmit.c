@@ -36,18 +36,18 @@
 #define FXEMIT_INITIAL_SCALE                0.1f
 #define FXEMIT_RANDOM_DELAY_MAX             10
 
-typedef void (*FXEmitModelResourceSpawnFn)(GameObject* obj, int unused1, int unused2, int spawnFlags, int modelId,
-                                           int unused3);
-typedef void (*FXEmitProjectileResourceSpawnFn)(GameObject* obj, int unused1, int unused2, int spawnFlags, int modelId,
-                                                int effectId, int unused3);
+typedef void (*FXEmitModelResourceSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags,
+                                           int modelId, void* unused3);
+typedef void (*FXEmitProjectileResourceSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2,
+                                                u32 spawnFlags, int modelId, int effectId, void* unused3);
 
 typedef struct FXEmitModelResourceVTable {
-    u8 pad00[4];
+    void* pad00;
     FXEmitModelResourceSpawnFn spawnEffect;
 } FXEmitModelResourceVTable;
 
 typedef struct FXEmitProjectileResourceVTable {
-    u8 pad00[4];
+    void* pad00;
     FXEmitProjectileResourceSpawnFn spawnEffect;
 } FXEmitProjectileResourceVTable;
 
@@ -158,10 +158,10 @@ void FXEmit_emitEffect(GameObject* obj) {
             resource = Resource_Acquire((state->effectId + FXEMIT_MODEL_RESOURCE_ID_BASE), 1);
             if (state->emitRate > 0) {
                 for (i = 0; i < state->emitRate; i++) {
-                    resource->vtable->spawnEffect(obj, 0, 0, spawnFlags, -1, 0);
+                    resource->vtable->spawnEffect(obj, 0, NULL, spawnFlags, -1, NULL);
                 }
             } else {
-                resource->vtable->spawnEffect(obj, 0, 0, spawnFlags, -1, 0);
+                resource->vtable->spawnEffect(obj, 0, NULL, spawnFlags, -1, NULL);
             }
             Resource_Release(resource);
         } else if (effectBank == FXEMIT_EFFECT_BANK_PROJECTILE) {
@@ -169,13 +169,13 @@ void FXEmit_emitEffect(GameObject* obj) {
             if (state->emitRate > 0) {
                 for (i = 0; i < state->emitRate; i++) {
                     ((FXEmitProjectileResource*)resource)
-                        ->vtable->spawnEffect(obj, 0, 0, spawnFlags, -1,
-                                              state->effectId & FXEMIT_PROJECTILE_EFFECT_ID_MASK, 0);
+                        ->vtable->spawnEffect(obj, 0, NULL, spawnFlags, -1,
+                                              state->effectId & FXEMIT_PROJECTILE_EFFECT_ID_MASK, NULL);
                 }
             } else {
                 ((FXEmitProjectileResource*)resource)
-                    ->vtable->spawnEffect(obj, 0, 0, spawnFlags, -1, state->effectId & FXEMIT_PROJECTILE_EFFECT_ID_MASK,
-                                          0);
+                    ->vtable->spawnEffect(obj, 0, NULL, spawnFlags, -1,
+                                          state->effectId & FXEMIT_PROJECTILE_EFFECT_ID_MASK, NULL);
             }
             Resource_Release(resource);
         }

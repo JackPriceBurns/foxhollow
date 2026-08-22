@@ -1262,13 +1262,11 @@ static const int sSnowSizeRanges[][2] = {
 #define NC_CLOUD ((u8 *)gNewClouds[id])
 void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
 {
-    char* strs;
     int id;
     int ok;
     int i;
     u8 fl;
 
-    strs = (char*)lbl_8030F500;
     ok = 1;
     id = params->cloudIndex;
     if (gNewClouds[id] != NULL)
@@ -1278,7 +1276,7 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
     gNewClouds[id] = mmAlloc(sizeof(NewCloud), 0x17, 0);
     if (gNewClouds[id] == NULL)
     {
-        debugPrintf(strs + 0x1b0);
+        debugPrintf(sSnowCloudErrorMessageBlock + 0x40);
         return;
     }
     memset(gNewClouds[id], 0, sizeof(NewCloud));
@@ -1375,7 +1373,7 @@ void newClouds(CloudSpawnParams* params, void* owner, f32 x, f32 y, f32 z)
     }
     if (ok == 0)
     {
-        debugPrintf(strs + 0x1f0);
+        debugPrintf(sSnowCloudErrorMessageBlock + 0x80);
         mm_free(gNewClouds[id]);
         gNewClouds[id] = NULL;
         return;

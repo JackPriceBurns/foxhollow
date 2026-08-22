@@ -1315,7 +1315,6 @@ int* voxmaps_updateActiveMap(VoxPos* obj)
 
 VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8)
 {
-    char* msg = sVoxmapsRouteNodesListOverflow;
     int count;
     int size;
     int entry;
@@ -1323,7 +1322,7 @@ VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8)
 
     if (getTableFileEntry(MLDF_FILEID_VOXMAP_TAB_A, mapArg, &entry) == 0)
     {
-        OSReport(msg + 0xd0);
+        OSReport(sVoxMapsDebugStrings + 0xac);
         return NULL;
     }
     loadVoxMaps(entry, &count, &size);
@@ -1333,24 +1332,24 @@ VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8)
     }
     if (size > 30720)
     {
-        debugPrintf(msg + 0x104);
+        debugPrintf(sVoxMapsDebugStrings + 0xe0);
         return NULL;
     }
     if (size <= 0)
     {
-        OSReport(msg + 0x13c);
+        OSReport(sVoxMapsDebugStrings + 0x118);
         return NULL;
     }
     hdr = mmAlloc(size, 16, 0);
     if (hdr == NULL)
     {
-        OSReport(msg + 0x174);
+        OSReport(sVoxMapsDebugStrings + 0x150);
         return NULL;
     }
     loadAndDecompressDataFile(MLDF_FILEID_VOXMAP_BIN_A, hdr, entry, count, 0, 0, 0);
     if (hdr == NULL)
     {
-        OSReport(msg + 0x174);
+        OSReport(sVoxMapsDebugStrings + 0x150);
         return NULL;
     }
     hdr->minY = (int)fhSwap32((u32)hdr->minY);

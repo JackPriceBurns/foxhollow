@@ -127,25 +127,35 @@ void* textureIdxToPtr(uintptr_t idx)
 
 
 extern char sRcpTexRestructStrings[];
+extern char sTexRestructRunningBanner[];
+extern char sTexRestructReRegionBanner[];
+extern char sTexRestructReRegionNoSpaceFormat[];
+extern char sTexRestructReRegionOptimalFormat[];
+extern char sTexRestructAfterReRegionBanner[];
+extern char sTexRestructNoSpaceFormat[];
+extern char sTexRestructWrongRegionFormat[];
+extern char sTexRestructSubOptimalFormat[];
+extern char sTexRestructOptimalFormat[];
+extern char sTexRestructReRegionedStuckFormat[];
+extern char sTexRestructReRegionedOptimalFormat[];
+extern char sTexRestructFinishedFormat[];
 
 void texRestructRefs(int mode)
 {
     u8* na;
     int i;
-    char* strs;
     int done;
     int pass;
     u8* tex;
     u32 size;
     int d;
 
-    strs = sRcpTexRestructStrings;
     done = 0;
     pass = 0;
     mmSetTextureAllocationState(2);
-    OSReport(strs + 0x1164);
+    OSReport(sTexRestructRunningBanner);
     printHeapStats(1);
-    OSReport(strs + 0x1194);
+    OSReport(sTexRestructReRegionBanner);
     testAndSet_onlyUseHeaps1and2(1);
     for (i = 0; i < gLoadedTextureCount; i++)
     {
@@ -158,11 +168,11 @@ void texRestructRefs(int mode)
             na = (u8*)mmAlloc(size, 0xa0a0a0a0, 0);
             if (na == NULL)
             {
-                OSReport(strs + 0x11b4, tex, getHeapItemSize(tex));
+                OSReport(sTexRestructReRegionNoSpaceFormat, tex, getHeapItemSize(tex));
             }
             else if (na != NULL)
             {
-                OSReport(strs + 0x11f4, tex, na, getHeapItemSize(tex));
+                OSReport(sTexRestructReRegionOptimalFormat, tex, na, getHeapItemSize(tex));
                 done = 0;
                 memcpy(na, tex, size);
                 DCStoreRange(na, size);
@@ -175,7 +185,7 @@ void texRestructRefs(int mode)
         }
     }
     testAndSet_onlyUseHeaps1and2(-1);
-    OSReport(strs + 0x1238);
+    OSReport(sTexRestructAfterReRegionBanner);
     printHeapStats(1);
     defragMemory(2);
     while (done == 0 && pass < 4)
@@ -193,25 +203,25 @@ void texRestructRefs(int mode)
                     na = (u8*)mmAlloc(size, 0xa0a0a0a0, 0);
                     if (na == NULL)
                     {
-                        OSReport(strs + 0x125c, tex, getHeapItemSize(tex));
+                        OSReport(sTexRestructNoSpaceFormat, tex, getHeapItemSize(tex));
                     }
                     else if (mmGetRegionForPtr(na) != 0)
                     {
-                        OSReport(strs + 0x129c, tex, na, getHeapItemSize(tex));
+                        OSReport(sTexRestructWrongRegionFormat, tex, na, getHeapItemSize(tex));
                         d = mmSetFreeDelay(0);
                         mm_free(na);
                         mmSetFreeDelay(d);
                     }
                     else if (na < tex)
                     {
-                        OSReport(strs + 0x12d8, tex, na, getHeapItemSize(tex));
+                        OSReport(sTexRestructSubOptimalFormat, tex, na, getHeapItemSize(tex));
                         d = mmSetFreeDelay(0);
                         mm_free(na);
                         mmSetFreeDelay(d);
                     }
                     else if (na != NULL)
                     {
-                        OSReport(strs + 0x1320, tex, na, getHeapItemSize(tex));
+                        OSReport(sTexRestructOptimalFormat, tex, na, getHeapItemSize(tex));
                         done = 0;
                         memcpy(na, tex, size);
                         DCStoreRange(na, size);
@@ -232,18 +242,18 @@ void texRestructRefs(int mode)
                             na = (u8*)mmAlloc(size, 0xa0a0a0a0, 0);
                             if (na == NULL)
                             {
-                                OSReport(strs + 0x125c, tex, getHeapItemSize(tex));
+                                OSReport(sTexRestructNoSpaceFormat, tex, getHeapItemSize(tex));
                             }
                             else if (mmGetRegionForPtr(na) != 0)
                             {
-                                OSReport(strs + 0x1368, tex, na, getHeapItemSize(tex));
+                                OSReport(sTexRestructReRegionedStuckFormat, tex, na, getHeapItemSize(tex));
                                 d = mmSetFreeDelay(0);
                                 mm_free(na);
                                 mmSetFreeDelay(d);
                             }
                             else if (na != NULL)
                             {
-                                OSReport(strs + 0x13c8, tex, na, getHeapItemSize(tex));
+                                OSReport(sTexRestructReRegionedOptimalFormat, tex, na, getHeapItemSize(tex));
                                 done = 0;
                                 memcpy(na, tex, size);
                                 DCStoreRange(na, size);
@@ -261,7 +271,7 @@ void texRestructRefs(int mode)
         printHeapStats(1);
         pass++;
     }
-    OSReport(strs + 0x1420, pass);
+    OSReport(sTexRestructFinishedFormat, pass);
     mmSetTextureAllocationState(0);
 }
 

@@ -175,6 +175,23 @@ extern char* gCurTextBuffer;
 extern int gGameTextBufferIndex;
 extern const f32 gGameTextFadeLimit;
 extern char gGameTextFontData[];
+
+struct JapaneseDiscStatusResource
+{
+    char loadingMessage[16];
+    GameTextDef messages[7];
+    TextGlyph glyphs[43];
+};
+
+struct EnglishDiscStatusResource
+{
+    char loadingMessage[12];
+    GameTextDef messages[7];
+};
+
+extern struct JapaneseDiscStatusResource sJpDiscStatusMessageTable;
+extern struct EnglishDiscStatusResource sDiscStatusMessageTable;
+
 extern char sGameTextBlankFormat[5];
 extern char sGameTextSequencePathFormat[];
 

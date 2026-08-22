@@ -116,6 +116,13 @@ STATIC_ASSERT(offsetof(MmGlobalLayout, regions) == 0x3F00);
 STATIC_ASSERT(sizeof(MmGlobalLayout) == 0x3FA0);
 
 extern char sMmShowInfoFBMemoryStoreMessageBlock[];
+extern char sMmCreateMemoryStoreZeroSizeError[];
+extern char sMmCreateMemoryStoreSizeTooLargeError[];
+extern char sMmCreateMemoryStoreObjectAllocError[];
+extern char sMmStorePtrStoreAllocationTag[];
+extern char sMmCreateMemoryStorePtrStoreAllocError[];
+extern char sMmCreateMemoryStoreNoFreeSlotError[];
+extern char sMmAllocFreeMessageBlock[];
 extern char sMemStatsFormat[];
 extern char sMmAllocateFromFBMemoryStoreMissingHandleError[];
 extern char sMmAllocateFromFBMemoryStoreSpaceError[];
@@ -224,33 +231,32 @@ void* mmAllocateFromFBMemoryStore(int handle, int size)
 
 int mmCreateMemoryStore(int size)
 {
-    char* msg = sMmShowInfoFBMemoryStoreMessageBlock;
     MmStore* store;
     int i = 0;
     if (size <= 0)
     {
-        OSReport(msg + 0x1e8, size);
+        OSReport(sMmCreateMemoryStoreZeroSizeError, size);
         return 0;
     }
     if (size > 0x4000)
     {
-        OSReport(msg + 0x218, size, 0x4000);
+        OSReport(sMmCreateMemoryStoreSizeTooLargeError, size, 0x4000);
         return 0;
     }
     store = (MmStore*)mmAlloc(sizeof(MmStore), 0, (uintptr_t)sMmStoreAllocationTag);
     if (store == NULL)
     {
-        OSReport(msg + 0x26c);
+        OSReport(sMmCreateMemoryStoreObjectAllocError);
         return 0;
     }
     store->size = size;
     store->handle = gMmNextStoreHandle++;
     store->ptrStore = NULL;
     store->ptrCurrent = NULL;
-    store->ptrStore = mmAlloc(store->size, 0, (uintptr_t)(msg + 0x2a8));
+    store->ptrStore = mmAlloc(store->size, 0, (uintptr_t)(sMmStorePtrStoreAllocationTag));
     if (store->ptrStore == NULL)
     {
-        OSReport(msg + 0x2bc);
+        OSReport(sMmCreateMemoryStorePtrStoreAllocError);
         if (gMmFreeDelay == 0)
         {
             mmFree(store);
@@ -272,7 +278,7 @@ int mmCreateMemoryStore(int size)
         if (++i == 0x20)
         {
             void* buf;
-            OSReport(msg + 0x2f8);
+            OSReport(sMmCreateMemoryStoreNoFreeSlotError);
             buf = store->ptrStore;
             if (gMmFreeDelay == 0)
             {
@@ -699,7 +705,6 @@ int mmSetFreeDelay(int v)
 
 static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag)
 {
-    char* msg = sMmShowInfoFBMemoryStoreMessageBlock;
     int bestIdx;
     int bestSize;
     int idx;
@@ -716,7 +721,7 @@ static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag
 
     if (gMmRegionTable[region].slotsUsed + 1 == gMmRegionTable[region].numSlots)
     {
-        OSReport(msg + 0x4b8, tag, region, gMmRegionTable[region].slotsUsed, gMmRegionTable[region].numSlots);
+        OSReport(sMmAllocFreeMessageBlock + 0x3c, tag, region, gMmRegionTable[region].slotsUsed, gMmRegionTable[region].numSlots);
         return 0;
     }
 
@@ -792,7 +797,7 @@ static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag
         gMmRegionTable[region].usedBytes += size;
         if (gMmRegionTable[region].usedBytes < 0 || gMmRegionTable[region].usedBytes > gMmRegionTable[region].size)
         {
-            OSReport(msg + 0x50c);
+            OSReport(sMmAllocFreeMessageBlock + 0x90);
         }
         if (gMmRegion0SpawnEnabled != 0 && region == 0 && size < 0x33450)
         {
@@ -805,7 +810,7 @@ static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag
         res = &base[bestIdx];
         if (gMmNextAllocId == 0x3ef)
         {
-            OSReport(msg + 0x53c);
+            OSReport(sMmAllocFreeMessageBlock + 0xc0);
         }
         res->allocId = gMmNextAllocId++;
         gMmOpCount++;
@@ -816,7 +821,7 @@ static uintptr_t mmAllocFromRegion(int region, int size, int type, uintptr_t tag
     {
         HeapItem* b;
         HeapItem* w;
-        OSReport(msg + 0x54c, tag, region, type, size, largest);
+        OSReport(sMmAllocFreeMessageBlock + 0xd0, tag, region, type, size, largest);
         b = (HeapItem*)gMmRegionTable[0].start;
         w = b;
         while (w->next != -1)
