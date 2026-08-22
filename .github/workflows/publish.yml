@@ -59,8 +59,12 @@ jobs:
         shell: bash
         run: |
           choco install ninja --no-progress
+          if [ ! -x "/c/Program Files/LLVM/bin/clang-cl.exe" ]; then
+            choco install llvm --no-progress
+          fi
+          echo "C:\\Program Files\\LLVM\\bin" >> "$GITHUB_PATH"
           "$VCPKG_INSTALLATION_ROOT/vcpkg" install libjpeg-turbo:x64-windows zlib:x64-windows
-          echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV" 
+          echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.platform == 'windows'
@@ -78,6 +82,9 @@ jobs:
           if [ -n "${CMAKE_TOOLCHAIN_FILE:-}" ]; then
             args+=(-DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}")
           fi
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            args+=(-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl)
+          fi
           cmake "${args[@]}"
 
       - name: Build
@@ -89,7 +96,13 @@ jobs:
           version="${{ inputs.tag || github.event.release.tag_name }}"
           mkdir -p dist
           if [ "${{ matrix.platform }}" = "windows" ]; then
-            7z a "dist/foxhollow-${version}-${{ matrix.platform }}.zip" ./build/foxhollow.exe
+            archive="$(pwd)/dist/foxhollow-${version}-windows.zip"
+            (cd build && 7z a "$archive" foxhollow.exe *.dll)
+            if ! 7z l -slt "$archive" | grep -qx "Path = foxhollow.exe"; then
+              echo "foxhollow.exe is not at the root of the archive; the launcher will not find it."
+              7z l "$archive"
+              exit 1
+            fi
           else
             tar -czf "dist/foxhollow-${version}-${{ matrix.platform }}.tar.gz" -C build foxhollow
           fi

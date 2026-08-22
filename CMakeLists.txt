@@ -23,9 +23,35 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if (MSVC)
+    set(FOXHOLLOW_C_DIALECT_FLAGS /clang:-std=gnu11 /clang:-fsigned-char /clang:-fcommon)
+    set(FOXHOLLOW_CXX_DIALECT_FLAGS /clang:-fsigned-char)
+    set(FOXHOLLOW_NO_WARN_FLAGS /w -Wno-error=incompatible-pointer-types)
+    set(FOXHOLLOW_FORCE_INCLUDE_FLAGS /FI${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
+else ()
+    set(FOXHOLLOW_C_DIALECT_FLAGS -std=gnu11 -fsigned-char -fcommon)
+    set(FOXHOLLOW_CXX_DIALECT_FLAGS -fsigned-char)
+    set(FOXHOLLOW_NO_WARN_FLAGS -w)
+    set(FOXHOLLOW_FORCE_INCLUDE_FLAGS -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
+endif ()
+
+function(foxhollow_link_whole_archive target archive)
+    if (APPLE)
+        target_link_options(${target} PRIVATE -Wl,-force_load,$<TARGET_FILE:${archive}>)
+    elseif (MSVC)
+        target_link_options(${target} PRIVATE /WHOLEARCHIVE:$<TARGET_FILE:${archive}> /FORCE:MULTIPLE)
+    else ()
+        target_link_options(${target} PRIVATE
+                -Wl,--whole-archive $<TARGET_FILE:${archive}> -Wl,--no-whole-archive)
+    endif ()
+endfunction()
+
 set(AURORA_ENABLE_DVD ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
+
+find_package(ZLIB REQUIRED)
+find_package(JPEG REQUIRED)
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS port/compiling.txt)
 file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/port/compiling.txt FOXHOLLOW_GAME_SOURCES)
@@ -34,15 +60,14 @@ if (FOXHOLLOW_GAME_SOURCES)
     list(TRANSFORM FOXHOLLOW_GAME_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/game/src/)
     add_library(game STATIC ${FOXHOLLOW_GAME_SOURCES})
     target_include_directories(game PRIVATE port/include extern/aurora/include game/include game)
+    target_link_libraries(game PRIVATE ZLIB::ZLIB)
     target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1 TARGET_PC=1)
-    target_compile_options(game PRIVATE -std=gnu11 -fsigned-char -fcommon -w
-            -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
+    target_compile_options(game PRIVATE
+            ${FOXHOLLOW_C_DIALECT_FLAGS} ${FOXHOLLOW_NO_WARN_FLAGS} ${FOXHOLLOW_FORCE_INCLUDE_FLAGS})
 endif ()
 
 add_executable(foxhollow src/main.c)
 target_include_directories(foxhollow PRIVATE port/include)
-find_package(ZLIB REQUIRED)
-find_package(JPEG REQUIRED)
 target_link_libraries(foxhollow PRIVATE
         ZLIB::ZLIB
         port_shims
@@ -50,12 +75,7 @@ target_link_libraries(foxhollow PRIVATE
         aurora::os aurora::pad aurora::dvd aurora::card
         aurora::mtx aurora::si aurora::gd aurora::ms)
 if (TARGET game)
-    if (APPLE)
-        target_link_options(foxhollow PRIVATE -Wl,-force_load,$<TARGET_FILE:game>)
-    else ()
-        target_link_options(foxhollow PRIVATE
-                -Wl,--whole-archive $<TARGET_FILE:game> -Wl,--no-whole-archive)
-    endif ()
+    foxhollow_link_whole_archive(foxhollow game)
     add_dependencies(foxhollow game)
     set_target_properties(foxhollow PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
 endif ()
@@ -66,6 +86,9 @@ if (APPLE)
             ${CMAKE_CURRENT_SOURCE_DIR}/debug.entitlements -f $<TARGET_FILE:foxhollow>
             COMMENT "Re-signing with get-task-allow so lldb can attach")
 endif ()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora/cmake/AuroraCopyRuntimeDLLs.cmake)
+aurora_copy_runtime_dlls(foxhollow)
 
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
@@ -78,8 +101,8 @@ if (FOXHOLLOW_DEBUG_SHORTCUTS)
     target_compile_definitions(port_shims PRIVATE FOXHOLLOW_DEBUG_SHORTCUTS=1)
 endif ()
 target_compile_options(port_shims PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:-std=gnu11;-fsigned-char;-fcommon>
-        $<$<COMPILE_LANGUAGE:CXX>:-fsigned-char>)
+        $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
 target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG)
 
 
@@ -91,12 +114,7 @@ if (TARGET game)
             aurora::core aurora::gx aurora::main aurora::vi
             aurora::os aurora::pad aurora::dvd aurora::card
             aurora::mtx aurora::si aurora::gd aurora::ms)
-    if (APPLE)
-        target_link_options(linkcheck PRIVATE -Wl,-force_load,$<TARGET_FILE:game>)
-    else ()
-        target_link_options(linkcheck PRIVATE
-                -Wl,--whole-archive $<TARGET_FILE:game> -Wl,--no-whole-archive)
-    endif ()
+    foxhollow_link_whole_archive(linkcheck game)
     add_dependencies(linkcheck game)
     set_target_properties(linkcheck PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
 endif ()

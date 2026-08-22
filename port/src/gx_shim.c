@@ -59,7 +59,7 @@ void GXPreLoadEntireTexture(const GXTexObj* obj, const GXTexRegion* region) {
 void GXInitFifoLimits(GXFifoObj* fifo, u32 hiWatermark, u32 loWatermark) {
   (void)fifo; (void)hiWatermark; (void)loWatermark;
 }
-void GXSetMisc(u32 token, u32 value) { (void)token; (void)value; }
+void GXSetMisc(GXMiscToken token, u32 value) { (void)token; (void)value; }
 void GXSetGPMetric(GXPerf0 perf0, GXPerf1 perf1) { (void)perf0; (void)perf1; }
 void GXReadXfRasMetric(u32* xf_wait_in, u32* xf_wait_out, u32* ras_busy, u32* clocks) {
   if (xf_wait_in) { *xf_wait_in = 0; }
