@@ -166,7 +166,7 @@ void DR_BarrelGr_update(GameObject* obj)
         return;
     }
     flags->bit40 = 1;
-    ((void (*)(void*, u16))Sfx_KeepAliveLoopedObjectSound)(obj, SFXTRIG_bcrek1_c);
+    Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_bcrek1_c);
 
     switch (state->mode)
     {

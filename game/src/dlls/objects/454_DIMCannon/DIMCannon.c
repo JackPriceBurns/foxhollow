@@ -427,7 +427,7 @@ int DIMCannon_getObjectTypeId(GameObject* obj) {
 
 void DIMCannon_free(GameObject* obj) {
     if (obj->anim.romDefNo != DIM_CANNON_BALL_SEQUENCE_ID) {
-        ((void (*)(void))((int**)*gGameUIInterface)[0x18])();
+        (*gGameUIInterface)->airMeterShutdown();
         Resource_Release(gDimCannonResource);
         gDimCannonResource = NULL;
     }

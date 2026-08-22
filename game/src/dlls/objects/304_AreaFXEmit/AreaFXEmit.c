@@ -5,6 +5,7 @@
 #include "dlls/objects/304_AreaFXEmit.h"
 
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/dll/dll_000E_partfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
@@ -145,10 +146,10 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
         resource = Resource_Acquire((state->effectId + AREAFXEMIT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                ((void (*)(GameObject*, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1, 0);
+                ((PartFxSpawnCallback)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
             }
         } else {
-            ((void (*)(GameObject*, int, int, int, int, int))resource[0][1])(obj, 0, 0, 1, -1, 0);
+            ((PartFxSpawnCallback)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_OBJECT_RESOURCE_ALT) {

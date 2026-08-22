@@ -1340,13 +1340,13 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     state->savePosEnabled = 1;
     switch (obj->anim.romDefNo) {
     case PUSHABLE_SEQ_ID_MAGIC_GEM_21E:
-        ((void (*)(GameObject*, PushableState*))pushable_initMagicGem)(obj, state);
+        pushable_initMagicGem(obj, state);
         break;
     case PUSHABLE_SEQ_ID_MAGIC_GEM_411:
-        ((void (*)(GameObject*, PushableState*))pushable_initMagicGem)(obj, state);
+        pushable_initMagicGem(obj, state);
         break;
     case PUSHABLE_SEQ_ID_WC_PUSH_BLOCK:
-        ((void (*)(GameObject*, PushableState*))pushable_initWcPushBlock)(obj, state);
+        pushable_initWcPushBlock(obj, state);
         break;
     case PUSHABLE_SEQ_ID_DIM_PUSH_BLOCK:
         if (gameBit > PUSHABLE_NO_GAME_BIT && mainGetBit(gameBit) != 0) {

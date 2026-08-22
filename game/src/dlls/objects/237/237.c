@@ -573,7 +573,7 @@ void collectible_update(GameObject* obj) {
         }
     } else {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
-        ((void (*)(GameObject*))collectible_updateIdleMotion)(obj);
+        collectible_updateIdleMotion(obj);
         if (state->bounceTimer != 0) {
             collectible_updateLooseMotion(obj);
         }

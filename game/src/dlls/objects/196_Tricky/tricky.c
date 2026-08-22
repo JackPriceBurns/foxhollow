@@ -5484,7 +5484,7 @@ u32 tricky_substateWaitMoveEnd(GameObject* obj, TrickyState* trickyState) {
             continue;
         }
         if ((int)(obj)->anim.currentMove >= 0x30 || (int)(obj)->anim.currentMove < 0x29) {
-            if (((int (*)(GameObject*, int))Sfx_IsPlayingFromObjectChannel)(obj, 0x10) == 0) {
+            if (Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
                 objSoundStartTimed(obj, &ref->soundState, 0x357, 0, 0xffffffff, 0);
             }
         }

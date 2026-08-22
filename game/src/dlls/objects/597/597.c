@@ -585,7 +585,7 @@ void SnowBike_UpdateEngineFx(GameObject* obj, void* state, f32 localVelZ, int in
             bikeState->unk3F8 = 45.0f;
         }
         channelVol = bikeState->unk3F8;
-        ((void (*)(GameObject*, u32, u8, f32))Sfx_SetObjectChannelVolume)(obj, 2, channelVol, channelVol / 256.0f + 0.3f);
+        Sfx_SetObjectChannelVolume(obj, 2, channelVol, channelVol / 256.0f + 0.3f);
         if (intensity > 5)
         {
             bikeState->unk3F4 = 60.0f + intensity;
@@ -606,7 +606,7 @@ void SnowBike_UpdateEngineFx(GameObject* obj, void* state, f32 localVelZ, int in
             bikeState->unk3F4 = 65.0f;
         }
         channelVol4 = bikeState->unk3F4;
-        ((void (*)(GameObject*, u32, u8, f32))Sfx_SetObjectChannelVolume)(obj, 4, channelVol4, channelVol4 / 100.0f);
+        Sfx_SetObjectChannelVolume(obj, 4, channelVol4, channelVol4 / 100.0f);
         pulse.unkC = -5.3f;
         pulse.unk10 = 4.4f;
         pulse.unk14 = 24.0f;

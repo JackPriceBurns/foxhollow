@@ -1026,12 +1026,12 @@ void Trigger_hitDetect(GameObject* obj) {
                 switch (((TriggerPlacement*)def)->typeId) {
                 case 0x4b:
                     if (ok) {
-                        ((void (*)(GameObject*, GameObject*))triggerEvalEndpointSpheres)(obj, target);
+                        triggerEvalEndpointSpheres(obj, target);
                     }
                     break;
                 case 0x230:
                     if (ok) {
-                        ((void (*)(GameObject*, GameObject*))triggerEvalEndpointCylinders)(obj, target);
+                        triggerEvalEndpointCylinders(obj, target);
                     }
                     break;
                 case 0x4c:
@@ -1056,8 +1056,8 @@ void Trigger_hitDetect(GameObject* obj) {
                 case 0x4d:
                     if (ok) {
                         TriggerState* st = (TriggerState*)(obj)->extra;
-                        inside = ((int (*)(GameObject*, f32*))triggerPointInBox)(obj, &st->prevTargetPosX);
-                        wasInside = ((int (*)(GameObject*, f32*))triggerPointInBox)(obj, &st->targetPosX);
+                        inside = triggerPointInBox(obj, &st->prevTargetPosX);
+                        wasInside = triggerPointInBox(obj, &st->targetPosX);
                         if (inside != 0) {
                             if (wasInside == 0) {
                                 objInterpretSeq(obj, target, 1, 0);
@@ -1097,7 +1097,7 @@ void Trigger_hitDetect(GameObject* obj) {
                     break;
                 case 0xf4:
                     if (ok) {
-                        ((void (*)(GameObject*, GameObject*))triggerEvalCurveLoop)(obj, target);
+                        triggerEvalCurveLoop(obj, target);
                     }
                     break;
                 }

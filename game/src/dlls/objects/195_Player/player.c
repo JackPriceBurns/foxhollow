@@ -5696,7 +5696,7 @@ int playerState1D(GameObject* obj, PlayerState* state, f32 fv) {
                 a = inner->stickTargetX;
                 b = inner->stickTargetY;
             }
-            res = ((u8 (*)(void*, void*, int, f32, f32))sub->anim.dll[0][8])(sub, obj, direction, a, b);
+            res = ((int (*)(GameObject*, GameObject*, int, f32, f32))sub->anim.dll[0][8])(sub, obj, direction, a, b);
             if (res == 1) {
                 inner->latchedStickDir = 1;
             } else if (res == 2) {
@@ -15749,7 +15749,7 @@ void objLoadPlayerFromSave(GameObject* obj) {
     if (obj->anim.modelState != NULL) {
         obj->anim.modelState->flags |= (OBJ_MODEL_STATE_UNREAD_4000 | OBJ_MODEL_STATE_SHADOW_INIT_CALLBACK_RAN);
     }
-    ((void (*)(GameUIInterface*))(*gGameUIInterface)->pad10_slots[1])(*gGameUIInterface);
+    (*gGameUIInterface)->pad10_slots[1]();
     gPlayerChildObject = NULL;
     inner->flags3F4.b40 = 1;
     inner->moveAnimIds = gPlayerMoveTableA;

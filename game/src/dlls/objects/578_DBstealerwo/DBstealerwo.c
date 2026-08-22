@@ -1051,7 +1051,7 @@ int dbstealerworm_stateHandlerA0A(GameObject* obj, BaddieState* state)
             launchVelocity[0] = 0.0f;
             launchVelocity[2] = 2.3333333f;
             ObjMsg_SendToObject(control->linkedObject, 0x11, obj, 0x11);
-            ((void (*)(GameObject*, f32*))control->linkedObject->anim.dll[0][9])(control->linkedObject, launchVelocity);
+            ((int (*)(GameObject*, f32*))control->linkedObject->anim.dll[0][9])(control->linkedObject, launchVelocity);
             control->linkedObject = NULL;
             control->msgSlotIndex = -1;
         }
@@ -1355,7 +1355,7 @@ int dbstealerworm_stateHandlerA07(GameObject* obj, BaddieState* baddie, f32 t)
 
     sub->flags14 |= DBWORM_FLAG14_FX_DUST;
     sub->flags15 &= ~4;
-    ((void (*)(GameObject*, int))Sfx_KeepAliveLoopedObjectSound)(obj, SFXTRIG_baddie_vambat_death);
+    Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_baddie_vambat_death);
     if (baddie->moveJustStartedA != 0)
     {
         ObjHits_EnableObject(obj);

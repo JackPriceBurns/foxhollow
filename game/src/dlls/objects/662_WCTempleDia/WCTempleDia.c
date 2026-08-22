@@ -124,9 +124,8 @@ void wctempledia_update(GameObject* obj)
     Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_en_treedrum16);
     {
         f32 ratio = state->currentSpeed / state->targetTable[2];
-        ((void (*)(int, int, int, f32))Sfx_SetObjectSfxVolume)(
-            (u32)go, SFXTRIG_en_treedrum16, (u8)(18.0f * ratio + 109.0f),
-            0.75f * ratio + 0.25f);
+        Sfx_SetObjectSfxVolume(go, SFXTRIG_en_treedrum16, (u8)(18.0f * ratio + 109.0f),
+                               0.75f * ratio + 0.25f);
     }
     for (i = 0; i < WCTEMPLE_DIA_STAGE_COUNT; i++)
     {

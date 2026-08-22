@@ -102,7 +102,7 @@ int wctemplebri_SeqFn(GameObject* obj, int p2, ObjSeqState* animUpdate)
     animUpdate->movementState = 0;
     animUpdate->savedFlags &= ~WCTEMPLEBRI_PAYLOAD_BLOCK_FLAG;
     animUpdate->flags &= ~WCTEMPLEBRI_PAYLOAD_BLOCK_FLAG;
-    ((void (*)(GameObject*, WCTempleBriState*))wctemplebri_updateModelWarp)(obj, state);
+    wctemplebri_updateModelWarp(obj, state);
     if (animUpdate->curEventId == WCTEMPLEBRI_PAYLOAD_TRIGGER)
     {
         state->active = 1;
@@ -179,7 +179,7 @@ void wctemplebri_update(GameObject* obj)
 
     Obj_GetPlayerObject();
     state = obj->extra;
-    ((void (*)(GameObject*, WCTempleBriState*))wctemplebri_updateModelWarp)(obj, state);
+    wctemplebri_updateModelWarp(obj, state);
     model = Obj_GetActiveModel(obj);
     modelBase = model->file;
     for (i = 0; i < modelBase->vertexCount; i++)

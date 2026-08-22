@@ -96,7 +96,7 @@ void duster_update(GameObject* obj) {
     while (ObjMsg_Pop(obj, (u32*)&message, 0, 0) != 0) {
         switch (message) {
         case DUSTER_MESSAGE_DEPOSIT:
-            ((void (*)(void*, u16))Sfx_PlayFromObject)(obj, SFXTRIG_sc_cam90_c);
+            Sfx_PlayFromObject(obj, SFXTRIG_sc_cam90_c);
             (*gPartfxInterface)->spawnObject((void*)obj, DUSTER_PARTICLE_DEPOSIT, NULL, 1, -1, NULL);
             (*gPartfxInterface)->spawnObject((void*)obj, DUSTER_PARTICLE_DEPOSIT, NULL, 1, -1, NULL);
             (*gPartfxInterface)->spawnObject((void*)obj, DUSTER_PARTICLE_DEPOSIT, NULL, 1, -1, NULL);
@@ -158,7 +158,7 @@ void duster_update(GameObject* obj) {
     if (state->settleTimer == 0 && state->hitReactTimer == 0) {
         if (ObjAnim_AdvanceCurrentMove(obj, state->moveStepScale, timeDelta, NULL) != 0 ||
             state->priorityHit != 0) {
-            ((void (*)(void*, u16))Sfx_PlayFromObject)(obj, SFXTRIG_en_lflsh3_c);
+            Sfx_PlayFromObject(obj, SFXTRIG_en_lflsh3_c);
             (*gPartfxInterface)->spawnObject((void*)obj, DUSTER_PARTICLE_BOUNCE, NULL, 2, -1, NULL);
             (*gPartfxInterface)->spawnObject((void*)obj, DUSTER_PARTICLE_BOUNCE, NULL, 2, -1, NULL);
             state->driftDirection = randomGetRange(0, DUSTER_DRIFT_DIRECTION_MAX);
@@ -183,7 +183,7 @@ void duster_update(GameObject* obj) {
 
         if (ObjHits_GetPriorityHit(obj, 0, 0, 0) == DUSTER_HIT_REACTION_PRIORITY) {
             state->hitReactionActive = 1;
-            ((void (*)(void*, u16))Sfx_PlayFromObject)(obj, SFXTRIG_dn_boar1_c_4d);
+            Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_4d);
         }
     } else {
         if (state->settleTimer != 0) {

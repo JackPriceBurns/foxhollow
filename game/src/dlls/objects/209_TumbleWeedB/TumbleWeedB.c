@@ -707,7 +707,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
             while (ObjMsg_Pop(obj, &messageId, 0, 0) != 0) {
                 if (messageId == TUMBLEWEED_MESSAGE_PICKUP) {
                     gameBitIncrement(GAMEBIT_ITEM_FireWeed_Count);
-                    ((void (*)(void*, u16))Sfx_PlayFromObject)(obj, SFXTRIG_lockoff22);
+                    Sfx_PlayFromObject(obj, SFXTRIG_lockoff22);
                     state->flags |= TUMBLEWEED_EFFECT_FLAGS_ALL;
                 }
             }

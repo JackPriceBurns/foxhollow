@@ -1163,7 +1163,7 @@ void ktrex_updateAttackEffects(GameObject* obj)
         {
             if (randomGetRange(0, 5) == 0 && gKTRexState->lightning[i] == NULL)
             {
-                ((void (*)(GameObject*, int, f32, int))ktrex_spawnRandomEnergyArc)(obj, randomGetRange(8, 0xc), 100.0f, i);
+                ktrex_spawnRandomEnergyArc(obj, randomGetRange(8, 0xc), 100.0f, i);
             }
         }
     }

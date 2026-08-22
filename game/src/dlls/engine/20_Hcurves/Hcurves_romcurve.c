@@ -26,7 +26,7 @@ int RomCurve_initFromCurveId(RomCurveWalker* state, GameObject* unusedObj, int s
                     RomCurveInterface* unusedInterface);
 int RomCurve_goNextPointIndexed(RomCurveWalker* state, int pickIdx);
 void RomCurve_setNextNode(void* walker, void* curve);
-int RomCurve_initCurve(RomCurveWalker* state, GameObject* obj, int* curveTypes, int curveType, f32 maxDistance);
+int RomCurve_initCurve(RomCurveWalker* state, GameObject* obj, f32 maxDistance, int* curveTypes, int curveType);
 int RomCurve_findShortestPathLink(RomCurveDef* startCurve, int unused1, int unused2, int* previousCurveId);
 int Objfsa_GetNearestAdjacentLink(RomCurveDef* curve, int preferredNeighborId, f32 x, f32 y, f32 z);
 int curves_findEnclosingLoopOfType17(f32 x, f32 y, f32 z);
@@ -806,7 +806,7 @@ u8 RomCurve_goNextPoint(RomCurveWalker* state)
     return 1;
 }
 
-int RomCurve_initCurve(RomCurveWalker* state, GameObject* obj, int* curveTypes, int curveType, f32 maxDistance)
+int RomCurve_initCurve(RomCurveWalker* state, GameObject* obj, f32 maxDistance, int* curveTypes, int curveType)
 {
     char* stateBytes;
     int curveId;
@@ -959,9 +959,8 @@ int curves_findNearObj(GameObject* obj, int* curveTypes, int typeCount, int acti
                     voxmaps_worldToGrid(curvePos, curveGrid);
                     traceResult = voxmaps_traceLine((VoxPos*)curveGrid, (VoxPos*)objGrid, NULL, &traceHit, 0);
                     {
-                        int lix = ((int (*)(f32*, f32*, f32, int, TrackBBoxHit*, GameObject*, s8, int, int, int))trackGetLineIntersect)(
-                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit, obj,
-                             bboxMode, -1, 0, 0);
+                        int lix = trackGetLineIntersect(&(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit,
+                                                        obj, bboxMode, -1, 0, 0);
                         if (((traceHit == 1) || (traceResult != 0)) && lix == 0)
                         {
                             bestDistance = distance;
@@ -977,9 +976,8 @@ int curves_findNearObj(GameObject* obj, int* curveTypes, int typeCount, int acti
                     voxmaps_worldToGrid(curvePos, curveGrid);
                     traceResult = voxmaps_traceLine((VoxPos*)curveGrid, (VoxPos*)objGrid, NULL, &traceHit, 0);
                     if (((traceHit == 1) || (traceResult != 0)) &&
-                        (((int (*)(f32*, f32*, f32, int, TrackBBoxHit*, GameObject*, s8, int, int, int))trackGetLineIntersect)(
-                             &(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit, obj,
-                             bboxMode, -1, 0, 0) == 0))
+                        (trackGetLineIntersect(&(obj)->anim.localPosX, curvePos, ROMCURVE_ONE, 0, &bboxHit, obj,
+                                               bboxMode, -1, 0, 0) == 0))
                     {
                         bestActionDistance = distance;
                         bestActionCurve = curve;

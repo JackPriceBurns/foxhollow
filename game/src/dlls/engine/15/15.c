@@ -450,7 +450,7 @@ void player_playSoundFn0F(GameObject* obj, int* state, int bit, int idx, int* sf
     }
 }
 
-void player_rotateTowardEnemy(GameObject* obj, int* ctx, int spd)
+void player_rotateTowardEnemy(GameObject* obj, int* ctx, f32 unusedTimeDelta, int spd)
 {
     GameObject* enemy;
     f32 dx;

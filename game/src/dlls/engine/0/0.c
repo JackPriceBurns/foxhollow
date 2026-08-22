@@ -2334,7 +2334,7 @@ void hudDrawCounter(int idx, s16 value, s16 target, int alpha, int timer, int* y
         if (((f32)timer < 30.0f) || ((f32)timer > 150.0f) || ((timer & 8) != 0) || (idx == 30))
         {
             tex = hudTextures[idx];
-            ((void (*)(void*, f32, f32, int, int))drawTexture)(tex, (f32)(575 - *yPos), 390.0f, alpha, 256);
+            drawTexture(tex, (f32)(575 - *yPos), 390.0f, alpha, 256);
             if (idx == 30)
             {
                 if (showTarget != 0)

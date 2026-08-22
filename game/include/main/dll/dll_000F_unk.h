@@ -37,7 +37,7 @@ void player_updateCurve(GameObject* obj, int* state, f32 t);
 void player_findCurve(GameObject* obj, int* state, int curveId);
 void player_playSoundFn10(GameObject* obj, int* state, int bit, int idx, int* sfxTable);
 void player_playSoundFn0F(GameObject* obj, int* state, int bit, int idx, int* sfxTable);
-void player_rotateTowardEnemy(GameObject* obj, int* ctx, int spd);
+void player_rotateTowardEnemy(GameObject* obj, int* ctx, f32 unusedTimeDelta, int spd);
 void player_render2(GameObject* obj, int* state, f32 f1, f32 f2);
 void player_modelMtxFn(f32* mtx, int* state, f32 f1, f32 f2);
 void dll_0F_func0B(GameObject* obj, int* state, f32 f1, f32 f2, f32 f3);

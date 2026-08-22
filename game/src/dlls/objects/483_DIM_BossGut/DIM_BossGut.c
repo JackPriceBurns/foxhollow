@@ -232,7 +232,7 @@ void DIM_BossGut2_update(GameObject* obj) {
         control = state->groundBaddie.control;
         dimbossgut2_spawnBreathSplash(obj, control, &effectParams);
         control->breathFxTimer += framesThisStep;
-        ((void (*)(GameObject*, DimBossGut2State*))dimbossgut2_updateBobAndSway)(obj, state);
+        dimbossgut2_updateBobAndSway(obj, state);
         dimbossgut2_updateTracking(obj, state);
         ObjAnim_AdvanceCurrentMove(obj, 0.015f, timeDelta, NULL);
         ((ObjHitsPriorityState*)obj->anim.hitReactState)->hitVolumePriority = DIMBOSSGUT2_HIT_VOLUME_PRIORITY;
