@@ -47,7 +47,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build zlib1g-dev libjpeg-dev \
+          sudo apt-get install -y clang ninja-build zlib1g-dev libjpeg-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
             libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
             libwayland-dev wayland-protocols libdecor-0-dev \
@@ -84,6 +84,9 @@ jobs:
           fi
           if [ "${{ matrix.platform }}" = "windows" ]; then
             args+=(-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl)
+          fi
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            args+=(-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++)
           fi
           cmake "${args[@]}"
 
