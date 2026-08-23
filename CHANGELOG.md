@@ -4,6 +4,13 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.3.1 — 2026-08-23
+
+### Fixed
+- The Linux build no longer refuses to start with `libjpeg.so.8: cannot open shared object file`.
+  It was linked against the JPEG library under the name Debian and Ubuntu give it, which no other
+  distribution ships, so it only ran on the one it was built on. It is now built into the binary.
+
 ## v0.3.0 — 2026-08-23
 
 ### Added
