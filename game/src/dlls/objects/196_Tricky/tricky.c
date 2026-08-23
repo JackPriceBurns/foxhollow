@@ -312,16 +312,19 @@ void trickyUpdateColorVariant(GameObject* obj, TrickyState* state) {
     }
 }
 
-static inline int skeetla_isInWater(TrickyState* state) {
-    if (0.0f == state->waterLevel) {
+static inline int tricky_isInWater(TrickyState* state) {
+    if (state->waterLevel == 0.0f) {
         return 0;
     }
-    if (-100000.0f == state->eventTime) {
+
+    if (state->eventTime == -100000.0f) {
         return 1;
     }
+
     if (state->currentTime - state->eventTime > 8.0f) {
         return 1;
     }
+
     return 0;
 }
 
@@ -407,8 +410,8 @@ GameObject* trickyFindNearestUsableBaddie(GameObject* origin, f32 maxRadius, int
                 if ((*gMapEventInterface)->shouldNotSaveTime(((ObjPlacement*)data)->ident) != 0) {
                     if (allowSpecialTypes == 0) {
                         s16 m = (*objs)->anim.romDefNo;
-                        if (m == TRICKY_SEQID_VAMBAT || m == TRICKY_SEQID_WB ||
-                            m == LIGHTFOOT_OBJECT_BABY || m == TRICKY_SEQID_PINPON) {
+                        if (m == TRICKY_SEQID_VAMBAT || m == TRICKY_SEQID_WB || m == LIGHTFOOT_OBJECT_BABY ||
+                            m == TRICKY_SEQID_PINPON) {
                             continue;
                         }
                     }
@@ -943,7 +946,7 @@ int moveTricky(GameObject* obj, f32* targetPos) {
 
     if (moveSpeed >= 0.05f) {
         skeetla_faceMoveVector(obj);
-        if (skeetla_isInWater(state) != 0) {
+        if (tricky_isInWater(state) != 0) {
             trickyRequestMove(obj, 7, 0.0001f, 0x2000000);
             state->cooldownC = 600.0f;
             state->particleTimer = 0.0f;
@@ -1000,7 +1003,7 @@ int moveTricky(GameObject* obj, f32* targetPos) {
         td = turnDelta;
 
         if ((state->stateFlags & 0x100000) != 0) {
-            if (skeetla_isInWater(state) != 0) {
+            if (tricky_isInWater(state) != 0) {
                 trickyDebugPrint(lbl_8031D478 + 0x2c);
                 trickyRequestMove(obj, 8, 0.02f, 0);
                 state->cooldownC = 600.0f;
@@ -1041,9 +1044,10 @@ int moveTricky(GameObject* obj, f32* targetPos) {
 
         state->speed = 0.05f;
         stateFlags = state->stateFlags;
-        if (((stateFlags & 0x100000) == 0) && ((stateFlags & 0x200000) == 0)) {
+        if ((stateFlags & 0x100000) == 0 && (stateFlags & 0x200000) == 0) {
             return 0;
         }
+
     }
     return 1;
 }
@@ -3099,7 +3103,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
                 state->substate = ANIMOBJD2_SUBSTATE_APPROACH;
                 z = 0.0f;
                 state->cooldownA = z;
-                b = skeetla_isInWater(state);
+                b = tricky_isInWater(state);
                 if (b != 0) {
                     trickyRequestMove(obj, 8, 0.02f, 0);
                     state->cooldownC = 600.0f;
@@ -4044,7 +4048,7 @@ void trickyGuard(GameObject* obj, TrickyState* trickyState) {
     case TRICKY_GUARD_TO_FRONT:
         trickyDebugPrint(sTrickyGuardDebugTextBlock + 0x2c);
         if (trickyUpdateMovementState(obj, 5.0f, trickyState) == 0) {
-            if (skeetla_isInWater(trickyState) != 0) {
+            if (tricky_isInWater(trickyState) != 0) {
                 trickyRequestMove(obj, 0x8, 0.02f, 0);
                 (trickyState)->cooldownC = 600.0f;
                 (trickyState)->particleTimer = 0.0f;
@@ -4850,8 +4854,9 @@ void trickyDigTunnel(u8* obj, TrickyState* state) {
         }
         break;
     case 5:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock + 0x40), Vec_xzDistance(&((GameObject*)obj)->anim.worldPosX,
-                                                               &((RomCurveDef*)state->scratch704.ptr)->x));
+        trickyDebugPrint(
+            (char*)(sTrickyDigTunnelDebugTextBlock + 0x40),
+            Vec_xzDistance(&((GameObject*)obj)->anim.worldPosX, &((RomCurveDef*)state->scratch704.ptr)->x));
         pos = (u8*)&((RomCurveDef*)state->scratch704.ptr)->x;
         trickyUpdateApproachSpeed((GameObject*)obj, 5.0f, state, (f32*)pos, 1);
         if (moveTricky((GameObject*)obj, (f32*)pos) == 0) {
@@ -7072,8 +7077,8 @@ void Tricky_update(GameObject* obj) {
     }
     {
         int flagsByte = trickyState->flags358;
-        trickyDebugPrint(sSidekickCommandDebugTextBlock + 0x40, flagsByte & 1, flagsByte & 2, flagsByte & 4, flagsByte & 8, flagsByte & 0x10,
-                         flagsByte & 0x20, flagsByte & 0x40, flagsByte & 0x80);
+        trickyDebugPrint(sSidekickCommandDebugTextBlock + 0x40, flagsByte & 1, flagsByte & 2, flagsByte & 4,
+                         flagsByte & 8, flagsByte & 0x10, flagsByte & 0x20, flagsByte & 0x40, flagsByte & 0x80);
     }
     {
         u8* debugCursor = *(u8**)state;

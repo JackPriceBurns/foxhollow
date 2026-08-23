@@ -80,6 +80,14 @@ static const char* disc_path(int argc, char* argv[]) {
   return getenv("FOXHOLLOW_DISC");
 }
 
+static const char* shader_cache_path(void) {
+  const char* path = getenv("FOXHOLLOW_SHADER_CACHE");
+  if (path == NULL || path[0] == '\0') {
+    return NULL;
+  }
+  return path;
+}
+
 int main(int argc, char* argv[]) {
   const char* disc;
   fhInstallCrashHandler();
@@ -97,6 +105,7 @@ int main(int argc, char* argv[]) {
 
   const AuroraConfig config = {
       .appName = "Foxhollow",
+      .resourcesPath = shader_cache_path(),
       .logCallback = &log_callback,
       .vsync = fhConfigVsync() != 0,
       .startFullscreen = fhConfigFullscreen() != 0,
