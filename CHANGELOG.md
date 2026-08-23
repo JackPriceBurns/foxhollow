@@ -4,6 +4,13 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.3.2 — 2026-08-23
+
+### Added
+- The shader cache directory is taken from `FOXHOLLOW_SHADER_CACHE`, so the launcher can hand over
+  a shared pipeline cache to start from. Areas other players have already been through compile far
+  fewer shaders on the first run.
+
 ## v0.3.1 — 2026-08-23
 
 ### Fixed
