@@ -134,9 +134,6 @@ extern char lbl_8031D478[];
 extern char sTrickyGrowlAtDebugTextBlock[];
 extern char sTrickyGuardDebugTextBlock[];
 extern char sTrickyFlameDebugTextBlock[];
-extern char sTrickyDigTunnelDebugTextBlock[];
-extern char sSidekickCommandDebugTextBlock[];
-
 /* The one partfx effect emitted along Tricky's queued impress path. */
 #define TRICKY_PATH_PARTFX 0x533
 
@@ -4721,17 +4718,7 @@ static inline void trickyAdvanceNode(TrickyState* state) {
     }
 }
 
-char sTrickyDigTunnelDebugTextBlock[] = {
-    0x44, 0x49, 0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45, 0x4C, 0x5F, 0x46, 0x49, 0x4E, 0x44, 0x49, 0x4E, 0x47, 0x0A,
-    0x00, 0x00, 0x44, 0x49, 0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45, 0x4C, 0x5F, 0x47, 0x4F, 0x49, 0x4E, 0x47, 0x54,
-    0x4F, 0x53, 0x54, 0x41, 0x52, 0x54, 0x0A, 0x00, 0x44, 0x49, 0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45, 0x4C, 0x5F,
-    0x44, 0x49, 0x47, 0x47, 0x49, 0x4E, 0x47, 0x0A, 0x00, 0x00, 0x44, 0x49, 0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45,
-    0x4C, 0x5F, 0x54, 0x4F, 0x45, 0x4E, 0x44, 0x31, 0x20, 0x25, 0x66, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x44, 0x49,
-    0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45, 0x4C, 0x5F, 0x54, 0x4F, 0x45, 0x4E, 0x44, 0x32, 0x0A, 0x00, 0x00, 0x00,
-    0x44, 0x49, 0x47, 0x54, 0x55, 0x4E, 0x4E, 0x45, 0x4C, 0x5F, 0x57, 0x41, 0x49, 0x54, 0x0A, 0x00,
-};
-
-void trickyDigTunnel(u8* obj, TrickyState* state) {
+void trickyDigTunnel(GameObject* obj, TrickyState* state) {
     u32 sfxTable;
     RomCurveDef* pc;
     u8* pos;
@@ -4767,56 +4754,56 @@ void trickyDigTunnel(u8* obj, TrickyState* state) {
         }
         state->substate = 1;
     case 1:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock));
-        trickyUpdateMovementState((GameObject*)obj, 5.0f, state);
-        gidx = Objfsa_GetWalkGroupIndexAtPoint(&((GameObject*)obj)->anim.worldPosX, NULL);
+        trickyDebugPrint("DIGTUNNEL_FINDING\n");
+        trickyUpdateMovementState(obj, 5.0f, state);
+        gidx = Objfsa_GetWalkGroupIndexAtPoint(&obj->anim.worldPosX, NULL);
         if (((RomCurveDef*)state->scratch708.ptr)->walkGroup == gidx) {
             state->movementState = TRICKY_MOVE_WALK_FREE;
             state->substate = 2;
         }
         break;
     case 2:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock + 0x14));
+        trickyDebugPrint("DIGTUNNEL_GOINGTOSTART\n");
         pos = (u8*)&((RomCurveDef*)state->scratch700.ptr)->x;
-        trickyUpdateApproachSpeed((GameObject*)obj, 5.0f, state, (f32*)pos, 1);
-        if (moveTricky((GameObject*)obj, (f32*)pos) == 0) {
+        trickyUpdateApproachSpeed(obj, 5.0f, state, (f32*)pos, 1);
+        if (moveTricky(obj, (f32*)pos) == 0) {
             state->stateFlags |= 0x2010;
             state->substate = 3;
         } else {
-            if (Objfsa_GetWalkGroupIndexAtPoint(&((GameObject*)obj)->anim.worldPosX, NULL) == 0) {
+            if (Objfsa_GetWalkGroupIndexAtPoint(&obj->anim.worldPosX, NULL) == 0) {
                 state->stateFlags |= 0x2010;
             }
         }
         break;
     case 3:
-        trickyRequestMove((GameObject*)obj, 0xe, 0.033f, 0x4000000);
+        trickyRequestMove(obj, 0xe, 0.033f, 0x4000000);
         state->dirX = ((RomCurveDef*)state->scratch704.ptr)->x - ((RomCurveDef*)state->scratch700.ptr)->x;
         state->dirZ = ((RomCurveDef*)state->scratch704.ptr)->z - ((RomCurveDef*)state->scratch700.ptr)->z;
         Sfx_AddLoopedObjectSound(obj, SFXTRIG_trwhin1);
         state->scratch70C.f = (f32)(int)randomGetRange(0x14, 0xb4);
         state->substate = 4;
     case 4:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock + 0x2c));
+        trickyDebugPrint("DIGTUNNEL_DIGGING\n");
         state->scratch70C.f -= timeDelta;
         if (state->scratch70C.f <= 0.0f) {
             state->scratch70C.f = (f32)(int)randomGetRange(0x14, 0xb4);
             state->scratch70C.f *= 100.0f;
-            ptr = ((GameObject*)obj)->extra;
+            ptr = obj->extra;
             if (((TrickyState*)ptr)->soundSuppressed == 0 &&
-                (((GameObject*)obj)->anim.currentMove >= 0x30 || ((GameObject*)obj)->anim.currentMove < 0x29) &&
-                Sfx_IsPlayingFromObjectChannel((GameObject*)obj, 0x10) == 0) {
-                objSoundStartTimed((GameObject*)obj, &((TrickyState*)ptr)->soundState, 0x360, 0x500, -1, 0);
+                (obj->anim.currentMove >= 0x30 || obj->anim.currentMove < 0x29) &&
+                Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
+                objSoundStartTimed(obj, &((TrickyState*)ptr)->soundState, 0x360, 0x500, -1, 0);
             }
         }
-        spd = GROUND_ANIMATOR_INTERFACE(state->followObj)->applyPress(state->followObj, (GameObject*)obj);
-        ((GameObject*)obj)->anim.localPosX = state->dirX * spd + ((RomCurveDef*)state->scratch700.ptr)->x;
-        ((GameObject*)obj)->anim.localPosZ = state->dirZ * spd + ((RomCurveDef*)state->scratch700.ptr)->z;
-        vx = ((TrickyState*)((GameObject*)obj)->extra)->dirX;
+        spd = GROUND_ANIMATOR_INTERFACE(state->followObj)->applyPress(state->followObj, obj);
+        obj->anim.localPosX = state->dirX * spd + ((RomCurveDef*)state->scratch700.ptr)->x;
+        obj->anim.localPosZ = state->dirZ * spd + ((RomCurveDef*)state->scratch700.ptr)->z;
+        vx = ((TrickyState*)obj->extra)->dirX;
         vxx = vx * vx;
-        vz = ((TrickyState*)((GameObject*)obj)->extra)->dirZ;
+        vz = ((TrickyState*)obj->extra)->dirZ;
         spd = vz * vz;
         if (vxx + spd > 0.01f) {
-            trickyTurnTowardYaw((GameObject*)obj, getAngle(-vx, -vz));
+            trickyTurnTowardYaw(obj, getAngle(-vx, -vz));
         }
         if (GROUND_ANIMATOR_INTERFACE(state->followObj)->isFullySunk(state->followObj) != 0) {
             {
@@ -4845,30 +4832,29 @@ void trickyDigTunnel(u8* obj, TrickyState* state) {
             Sfx_RemoveLoopedObjectSound(obj, SFXTRIG_trwhin1);
             state->substate = 5;
             id = *(u16*)((char*)&sfxTable + randomGetRange(0, 1) * 2);
-            ptr = ((GameObject*)obj)->extra;
+            ptr = obj->extra;
             if (((TrickyState*)ptr)->soundSuppressed == 0 &&
-                (((GameObject*)obj)->anim.currentMove >= 0x30 || ((GameObject*)obj)->anim.currentMove < 0x29) &&
-                Sfx_IsPlayingFromObjectChannel((GameObject*)obj, 0x10) == 0) {
-                objSoundStartTimed((GameObject*)obj, &((TrickyState*)ptr)->soundState, id, 0x500, -1, 0);
+                (obj->anim.currentMove >= 0x30 || obj->anim.currentMove < 0x29) &&
+                Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
+                objSoundStartTimed(obj, &((TrickyState*)ptr)->soundState, id, 0x500, -1, 0);
             }
         }
         break;
     case 5:
-        trickyDebugPrint(
-            (char*)(sTrickyDigTunnelDebugTextBlock + 0x40),
-            Vec_xzDistance(&((GameObject*)obj)->anim.worldPosX, &((RomCurveDef*)state->scratch704.ptr)->x));
+        trickyDebugPrint("DIGTUNNEL_TOEND1 %f\n",
+                         Vec_xzDistance(&obj->anim.worldPosX, &((RomCurveDef*)state->scratch704.ptr)->x));
         pos = (u8*)&((RomCurveDef*)state->scratch704.ptr)->x;
-        trickyUpdateApproachSpeed((GameObject*)obj, 5.0f, state, (f32*)pos, 1);
-        if (moveTricky((GameObject*)obj, (f32*)pos) == 0) {
+        trickyUpdateApproachSpeed(obj, 5.0f, state, (f32*)pos, 1);
+        if (moveTricky(obj, (f32*)pos) == 0) {
             trickyAdvanceNode(state);
             state->substate = 6;
         }
         break;
     case 6:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock + 0x58));
+        trickyDebugPrint("DIGTUNNEL_TOEND2\n");
         pos = (u8*)&((RomCurveDef*)state->scratch704.ptr)->x;
-        trickyUpdateApproachSpeed((GameObject*)obj, 5.0f, state, (f32*)pos, 1);
-        if (moveTricky((GameObject*)obj, (f32*)pos) == 0) {
+        trickyUpdateApproachSpeed(obj, 5.0f, state, (f32*)pos, 1);
+        if (moveTricky(obj, (f32*)pos) == 0) {
             if (0.0f == state->waterLevel) {
                 inWater = 0;
             } else if (-100000.0f == state->eventTime) {
@@ -4879,12 +4865,12 @@ void trickyDigTunnel(u8* obj, TrickyState* state) {
                 inWater = 0;
             }
             if (inWater != 0) {
-                trickyRequestMove((GameObject*)obj, 8, 0.02f, 0);
+                trickyRequestMove(obj, 8, 0.02f, 0);
                 state->cooldownC = 600.0f;
                 state->particleTimer = 0.0f;
                 trickyDebugPrint((char*)(sInWaterMessage));
             } else {
-                trickyRequestMove((GameObject*)obj, 0, 0.005f, 0);
+                trickyRequestMove(obj, 0, 0.005f, 0);
                 trickyDebugPrint((char*)(lbl_8031D478));
             }
             state->stateFlags &= ~0x2010;
@@ -4892,12 +4878,12 @@ void trickyDigTunnel(u8* obj, TrickyState* state) {
         }
         break;
     case 7:
-        trickyDebugPrint((char*)(sTrickyDigTunnelDebugTextBlock + 0x6c));
+        trickyDebugPrint("DIGTUNNEL_WAIT\n");
         gidx = Objfsa_GetWalkGroupIndexAtPoint(&state->playerObj->anim.worldPosX, NULL);
         {
             int currentGroup;
 
-            currentGroup = Objfsa_GetWalkGroupIndexAtPoint(&((GameObject*)obj)->anim.worldPosX, NULL);
+            currentGroup = Objfsa_GetWalkGroupIndexAtPoint(&obj->anim.worldPosX, NULL);
             if (currentGroup == gidx) {
                 state->stateIndex = 1;
                 state->substate = 0;
@@ -6577,7 +6563,7 @@ void sideCommandEnable(GameObject* obj, GameObject* targetObj, int commandKind, 
 
     state = obj->extra;
     if (state->commandCount == ARRAY_COUNT(state->commands)) {
-        trickyReportError(sSidekickCommandDebugTextBlock);
+        trickyReportError("sideCommandEnable warning: need to increase MAX_COMM_PRESENT\n");
         return;
     }
     state->commandRequestBits = (u8)(state->commandRequestBits | (1 << commandType));
@@ -7077,13 +7063,13 @@ void Tricky_update(GameObject* obj) {
     }
     {
         int flagsByte = trickyState->flags358;
-        trickyDebugPrint(sSidekickCommandDebugTextBlock + 0x40, flagsByte & 1, flagsByte & 2, flagsByte & 4,
+        trickyDebugPrint("hits: %d %d %d %d %d %d %d %d", flagsByte & 1, flagsByte & 2, flagsByte & 4,
                          flagsByte & 8, flagsByte & 0x10, flagsByte & 0x20, flagsByte & 0x40, flagsByte & 0x80);
     }
     {
         u8* debugCursor = *(u8**)state;
 
-        trickyDebugPrint(sSidekickCommandDebugTextBlock + 0x60, *debugCursor, *(debugCursor + 1));
+        trickyDebugPrint("\nEnergy: %d/%d\n", *debugCursor, *(debugCursor + 1));
     }
     if ((trickyState->stateFlags & 0x200) != 0) {
         ObjHits_EnableObject((GameObject*)obj);
@@ -7233,7 +7219,7 @@ void Tricky_update(GameObject* obj) {
                         break;
                     default:
                         TRICKY_RESET_COMMAND(state);
-                        trickyReportError(sSidekickCommandDebugTextBlock + 0x70);
+                        trickyReportError("find command used on the wrong object\n");
                         break;
                     }
                     break;
@@ -7318,7 +7304,7 @@ void Tricky_update(GameObject* obj) {
                             break;
                         default:
                             TRICKY_RESET_COMMAND(state);
-                            trickyReportError(sSidekickCommandDebugTextBlock + 0x70);
+                            trickyReportError("find command used on the wrong object\n");
                             break;
                         }
                     }
@@ -7704,19 +7690,6 @@ void trickyReportError(const char* fmt, ...) {
 
 void trickyDebugPrint(const char* fmt, ...) {
 }
-
-/* pooled sidekick-command debug format strings (embedded NULs), raw bytes. */
-char sSidekickCommandDebugTextBlock[] = {
-    0x73, 0x69, 0x64, 0x65, 0x43, 0x6F, 0x6D, 0x6D, 0x61, 0x6E, 0x64, 0x45, 0x6E, 0x61, 0x62, 0x6C, 0x65, 0x20,
-    0x77, 0x61, 0x72, 0x6E, 0x69, 0x6E, 0x67, 0x3A, 0x20, 0x6E, 0x65, 0x65, 0x64, 0x20, 0x74, 0x6F, 0x20, 0x69,
-    0x6E, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x20, 0x4D, 0x41, 0x58, 0x5F, 0x43, 0x4F, 0x4D, 0x4D, 0x5F, 0x50,
-    0x52, 0x45, 0x53, 0x45, 0x4E, 0x54, 0x0A, 0x00, 0x00, 0x00, 0x68, 0x69, 0x74, 0x73, 0x3A, 0x20, 0x25, 0x64,
-    0x20, 0x25, 0x64, 0x20, 0x25, 0x64, 0x20, 0x25, 0x64, 0x20, 0x25, 0x64, 0x20, 0x25, 0x64, 0x20, 0x25, 0x64,
-    0x20, 0x25, 0x64, 0x00, 0x00, 0x00, 0x0A, 0x45, 0x6E, 0x65, 0x72, 0x67, 0x79, 0x3A, 0x20, 0x25, 0x64, 0x2F,
-    0x25, 0x64, 0x0A, 0x00, 0x66, 0x69, 0x6E, 0x64, 0x20, 0x63, 0x6F, 0x6D, 0x6D, 0x61, 0x6E, 0x64, 0x20, 0x75,
-    0x73, 0x65, 0x64, 0x20, 0x6F, 0x6E, 0x20, 0x74, 0x68, 0x65, 0x20, 0x77, 0x72, 0x6F, 0x6E, 0x67, 0x20, 0x6F,
-    0x62, 0x6A, 0x65, 0x63, 0x74, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
 
 const u32 gTrickyLiteralPoolPadding = 0;
 
