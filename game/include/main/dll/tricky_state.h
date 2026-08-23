@@ -9,6 +9,7 @@
 #include "game/objects/object.h"
 #include "main/objprint_sound_api.h"
 #include "main/pi_dolphin_path_api.h"
+#include "main/mapEventTypes.h"
 
 /* Shared TrickyState.stateFlags bits used across the Tricky sidekick / spawned
  * sibling handlers (tricky, tricky_substates, trickyfollow, tumbleweedbush,
@@ -94,7 +95,7 @@ struct RomCurveDef;
  * Tricky_getExtraSize returns 0x83C; sizeof kept at the 0x840 alloc rounding.
  */
 typedef struct TrickyState {
-    u8* progressPtr;       /* MapEventInterface getTrickyEnergy() result */
+    TrickyStats* stats;
     GameObject* playerObj; /* owning player/sidekick object */
     u8 stateIndex; /* primary Tricky state selector (0..0x11); indexes the handlerBase[] per-state handler dispatch table and gates the state machine */
     u8 movementState;      /* follow-handler phase selector (discrete 0..5; gates the pathing/seed branches) */
@@ -339,9 +340,9 @@ typedef struct TrickyState {
     f32 footPoints[4][3];
     f32 impressTimer; /* impress-move countdown: primed to lbl_803E2408 by trickyImpress (which sets stateFlags 0x80000000); while that flag is set, -= timeDelta each cycle, and on reaching floor lbl_803E23DC the flag is cleared and a TRICKY_VOICE line fires (tricky) */
     ObjAnimEventList animEvents; /* 0x808+4: root-motion deltas and triggered anim-event ids filled by ObjAnim_AdvanceCurrentMove; rootDelta* scale the sidestep/vertical/backstep moves, rootPitch drives the facing step, triggeredIds[] pick the bark sfx */
-    f32 variantFadeTimer; /* model-variant crossfade countdown: primed to 20.0f, -= timeDelta; > 10 fades out, <= 10 swaps the texture selector and fades back in via timer/10 (tricky) */
-    u8 modelVariant; /* progress/10; indexes model bank color */
-    u8 progressValue; /* map-event progress byte written out via **progressPtr; computed as base+(count<<2), clamped to a max byte (tricky writes to progressPtr, substates computes/clamps) */
+    f32 colorFadeTimer;
+    u8 colorVariant;
+    u8 pendingEnergy;
     union {
         u8 flags82E; /* bit flags 5/6/7 (tricky/tricky_substates) */
         struct {
@@ -353,7 +354,7 @@ typedef struct TrickyState {
         };
     };
     u8 pad82F[0x830 - 0x82F];
-    f32 blendWeight; /* model blend-channel 1 weight, ramped toward progressPtr[0]/progressPtr[1] and clamped to [0,1]; pushed to the channel as 2*weight-1 (tricky) */
+    f32 blendWeight;
     f32 blendVelocity; /* blendWeight ramp rate: += 0.004f*timeDelta toward the target, damped by 0.7f near it, zeroed at the clamp (tricky) */
     f32 particleTimer; /* f32 countdown decremented by timeDelta; while > threshold the queued particle effect keeps emitting; reset to a float sentinel on state entry (tricky/skeetla/weapone6/tricky_substates/mmp_cratercritter/animobjd2) */
     u8 pad83C[0x840 - 0x83C];
@@ -404,7 +405,7 @@ STATIC_ASSERT(offsetof(TrickyState, packedSlots) == 0x7BC);
 STATIC_ASSERT(offsetof(TrickyState, footPoints) == 0x7D8);
 STATIC_ASSERT(offsetof(TrickyState, impressTimer) == 0x808);
 STATIC_ASSERT(offsetof(TrickyState, animEvents) == 0x80C);
-STATIC_ASSERT(offsetof(TrickyState, variantFadeTimer) == 0x828);
+STATIC_ASSERT(offsetof(TrickyState, colorFadeTimer) == 0x828);
 STATIC_ASSERT(offsetof(TrickyState, flags82E) == 0x82E);
 STATIC_ASSERT(offsetof(TrickyState, blendWeight) == 0x830);
 STATIC_ASSERT(offsetof(TrickyState, blendVelocity) == 0x834);

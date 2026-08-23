@@ -2692,7 +2692,7 @@ char sTemplateProgressCounterFormat[] = "%02d/%02d";
 void pauseMenuDrawStatus(void)
 {
     int statusOffset;
-    u8* trickyEnergy;
+    TrickyStats* trickyStats;
     f32* opacity;
     TrickyHud* hud;
     int magicDelta;
@@ -2713,7 +2713,7 @@ void pauseMenuDrawStatus(void)
     hud = (TrickyHud*)lbl_803A87F0;
     player = Obj_GetPlayerObject();
     getTrickyObject();
-    trickyEnergy = (*gMapEventInterface)->getTrickyEnergy();
+    trickyStats = (*gMapEventInterface)->getTrickyStats();
     statuses[HUD_STATUS_HEALTH] = playerGetCurHealth(player);
     statuses[HUD_STATUS_MAX_HEALTH] = playerGetMaxHealth(player);
     statuses[HUD_STATUS_TRICKY_FOOD] = mainGetBit(GAMEBIT_ITEM_TrickyFood_Count);
@@ -2765,7 +2765,7 @@ void pauseMenuDrawStatus(void)
     statuses[HUD_STATUS_MOON_SEEDS] = mainGetBit(GAMEBIT_ITEM_MoonSeed_Count);
     statuses[HUD_STATUS_FUEL_CELLS] = mainGetBit(GAMEBIT_ITEM_FuelCell_Count);
     statuses[HUD_STATUS_SCARABS] = playerGetMoney(player);
-    statuses[HUD_STATUS_TRICKY_ENERGY] = *trickyEnergy;
+    statuses[HUD_STATUS_TRICKY_ENERGY] = trickyStats->energy;
     if ((((gHudForceShowMask & 1) != 0) ||
          ((0.0f == (*gScreenTransitionInterface)->getProgress()) &&
           ((*gCameraInterface)->getMode() != CAMERA_MODE_VIEWFINDER_RESOURCE_ID) &&

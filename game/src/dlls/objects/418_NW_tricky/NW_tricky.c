@@ -141,13 +141,13 @@ static void nwTricky_updateEnergy(NwTrickyState* state, GameObject* tricky) {
     }
 
     if (mainGetBit(GAMEBIT_TrickyTalk) == NW_TRICKY_TALK_LOW_ENERGY &&
-        (*gMapEventInterface)->getTrickyEnergy()[0] >= 4) {
+        (*gMapEventInterface)->getTrickyStats()->energy >= 4) {
         mainSetBits(GAMEBIT_TrickyTalk, NW_TRICKY_TALK_READY);
     }
 
     if (state->phaseTimer >= 2000.0f) {
         state->phaseTimer -= 2000.0f;
-        if (mainGetBit(GAMEBIT_TrickyTalk) == NW_TRICKY_TALK_READY && (*gMapEventInterface)->getTrickyEnergy()[0] < 4) {
+        if (mainGetBit(GAMEBIT_TrickyTalk) == NW_TRICKY_TALK_READY && (*gMapEventInterface)->getTrickyStats()->energy < 4) {
             mainSetBits(GAMEBIT_TrickyTalk, NW_TRICKY_TALK_LOW_ENERGY);
         }
     }

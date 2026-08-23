@@ -2,7 +2,7 @@
  * Tricky companion DLL.
  *
  * Blend-channel weight animation (Tricky_updateBlendChannelWeight), the
- * impress fade (tricky_updateModelVariantFade / trickyImpress), queued-path particle emission
+ * color-variant fade (trickyUpdateColorVariant), impress reaction (trickyImpress), queued-path particle emission
  * (Tricky_emitQueuedPathParticles), baddie target search
  * (trickyFindNearestUsableBaddie) and queued-command target selection
  * (trickySelectQueuedCommandTarget), plus small state accessors.
@@ -147,6 +147,9 @@ extern char sSidekickCommandDebugTextBlock[];
 #define TRICKY_SEQID_WB        1239 /* "WB" (DLL 0xC9) */
 #define TRICKY_SEQID_PINPON    593  /* "PinPon" (DLL 0xC9) */
 
+#define TRICKY_COLOR_CHANGE_SEEN_GAMEBIT 1005
+#define TRICKY_COLOR_CHANGE_SEQUENCE_ID  5
+
 /* Bit setter at bit 6 (0x40) of obj->_b8->_58. */
 void trickySetSoundSuppressed(GameObject* obj, int value) {
     ((TrickyState*)obj->extra)->soundSuppressed = value;
@@ -240,8 +243,8 @@ void Tricky_updateBlendChannelWeight(GameObject* obj, TrickyState* state) {
         state->blendActive = 1;
     }
     if (state->blendActive) {
-        u8* data = state->progressPtr;
-        target = (f32)(u32)data[0] / (f32)(u32)data[1];
+        TrickyStats* stats = state->stats;
+        target = (f32)(u32)stats->energy / (f32)(u32)stats->maxEnergy;
         if (target > state->blendWeight) {
             state->blendVelocity = 0.004f * timeDelta + state->blendVelocity;
             state->blendWeight = state->blendVelocity * timeDelta + state->blendWeight;
@@ -275,36 +278,36 @@ void Tricky_updateBlendChannelWeight(GameObject* obj, TrickyState* state) {
     }
 }
 
-void tricky_updateModelVariantFade(GameObject* obj, TrickyState* state) {
-    u8 ratio = state->progressPtr[2] / 10;
+void trickyUpdateColorVariant(GameObject* obj, TrickyState* state) {
+    u8 colorVariant = state->stats->ballReturnCount / 10;
 
-    if (state->modelVariant == ratio) {
+    if (state->colorVariant == colorVariant) {
         return;
     }
 
-    if (mainGetBit(1005) == 0) {
-        mainSetBits(1005, 1);
-        (*gObjectTriggerInterface)->runSequence(5, obj, -1);
+    if (mainGetBit(TRICKY_COLOR_CHANGE_SEEN_GAMEBIT) == 0) {
+        mainSetBits(TRICKY_COLOR_CHANGE_SEEN_GAMEBIT, 1);
+        (*gObjectTriggerInterface)->runSequence(TRICKY_COLOR_CHANGE_SEQUENCE_ID, obj, -1);
         state->stateFlags |= 0x4000;
-        state->variantFadeTimer += 20.0f;
+        state->colorFadeTimer += 20.0f;
     }
 
-    state->variantFadeTimer -= timeDelta;
-    if (state->variantFadeTimer > 20.0f) {
+    state->colorFadeTimer -= timeDelta;
+    if (state->colorFadeTimer > 20.0f) {
         return;
     }
 
-    if (state->variantFadeTimer > 0.0f) {
+    if (state->colorFadeTimer > 0.0f) {
         f32 alpha;
-        if (state->variantFadeTimer > 10.0f) {
-            alpha = 1.0f - (state->variantFadeTimer - 10.0f) / 10.0f;
+        if (state->colorFadeTimer > 10.0f) {
+            alpha = 1.0f - (state->colorFadeTimer - 10.0f) / 10.0f;
         } else {
-            Obj_GetActiveModel(obj)->textureRefs->swapSelector = ratio;
-            alpha = state->variantFadeTimer / 10.0f;
+            Obj_GetActiveModel(obj)->textureRefs->swapSelector = colorVariant;
+            alpha = state->colorFadeTimer / 10.0f;
         }
         Obj_SetModelColorOverrideRecursive(obj, 255, 255, 255, 196.0f * alpha, 1);
     } else {
-        state->modelVariant = ratio;
+        state->colorVariant = colorVariant;
         Obj_SetModelColorOverrideRecursive(obj, 0, 0, 0, 0, 0);
     }
 }
@@ -2836,7 +2839,7 @@ void trickyGrowl(GameObject* obj, TrickyState* trickyState) {
         break;
     case TRICKYGROWL_FACE_TARGET:
         trickyDebugPrint(sTrickyGrowlAtDebugTextBlock + 0x10);
-        if (*trickyState->progressPtr != 0 && trickyState->stateWord728 != 0) {
+        if (trickyState->stats->energy != 0 && trickyState->stateWord728 != 0) {
             trickyState->substate = TRICKYGROWL_DIG_START;
         } else {
             f32* target = ((TrickyState*)obj->extra)->targetPosPtr;
@@ -2870,7 +2873,7 @@ void trickyGrowl(GameObject* obj, TrickyState* trickyState) {
                 Sfx_PlayFromObject(obj, SFXTRIG_en_cvdrip1c_3db);
                 Sfx_AddLoopedObjectSound(obj, SFXTRIG_trpopn_c);
             }
-            (*trickyState->progressPtr)--;
+            trickyState->stats->energy--;
             trickyRequestMove(obj, 0x34, 0.005f, 0x4000000);
             trickyState->stateFlags |= 0x10;
             trickyState->substate = TRICKYGROWL_DIG_END;
@@ -3111,7 +3114,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
         break;
     }
     case ANIMOBJD2_SUBSTATE_APPROACH: {
-        trickyDebugPrint(sTrickyGrowlAtDebugTextBlock + 0x5c, *state->progressPtr, state->stateWord728);
+        trickyDebugPrint(sTrickyGrowlAtDebugTextBlock + 0x5c, state->stats->energy, state->stateWord728);
         ok = trickyUpdateMovementState(obj, 50.0f, state);
         hasTarget = trickyAcquireCirclingTarget(state);
         if (hasTarget != 0) {
@@ -3135,7 +3138,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
                 trickyRequestMove(obj, 0x33, 0.02f, 0);
             }
             if (state->stateWord728 != 0) {
-                if (*state->progressPtr < 2) {
+                if (state->stats->energy < 2) {
                     state->stateWord728 = 0;
                     if (Obj_IsLoadingLocked() != 0) {
                         state->stateFlags |= TRICKY_STATE_FLAG_4;
@@ -3232,7 +3235,7 @@ void trickyUpdateCircling(GameObject* obj, TrickyState* state) {
                 Sfx_PlayFromObject(obj, SFXTRIG_en_cvdrip1c_3db);
                 Sfx_AddLoopedObjectSound(obj, SFXTRIG_trpopn_c);
             }
-            *state->progressPtr -= 2;
+            state->stats->energy -= 2;
             state->substate = ANIMOBJD2_SUBSTATE_FINISH;
         }
         break;
@@ -3611,11 +3614,11 @@ void tricky_fetchBall(GameObject* obj, TrickyState* state) {
         break;
     case 2:
         if ((state->stateFlags & TRICKY_STATE_FLAG_MOVE_ADVANCING) != 0) {
-            state->variantFadeTimer = 20.0f;
-            if (state->progressPtr[2] >= 0xef) {
-                state->progressPtr[2] = 0;
+            state->colorFadeTimer = 20.0f;
+            if (state->stats->ballReturnCount >= 239) {
+                state->stats->ballReturnCount = 0;
             } else {
-                state->progressPtr[2]++;
+                state->stats->ballReturnCount++;
             }
             {
                 u32 mask;
@@ -4057,7 +4060,7 @@ void trickyGuard(GameObject* obj, TrickyState* trickyState) {
         trickyDebugPrint(sTrickyGuardDebugTextBlock + 0x3c);
         if (trickyUpdateMovementState(obj, 15.0f, trickyState) == 0) {
             trickyState->stateFlags = trickyState->stateFlags | TRICKY_STATE_RESET_FLAG_10;
-            if (*trickyState->progressPtr != 0 && trickyState->guardCanSpawnHelpers != 0) {
+            if (trickyState->stats->energy != 0 && trickyState->guardCanSpawnHelpers != 0) {
                 if ((u8)Obj_IsLoadingLocked() != 0) {
                     trickyState->stateFlags = trickyState->stateFlags | TRICKY_STATE_HELPERS_ACTIVE_FLAG;
                     for (i = 0; i < TRICKY_GUARD_HELPER_COUNT; i++) {
@@ -4071,7 +4074,7 @@ void trickyGuard(GameObject* obj, TrickyState* trickyState) {
                     Sfx_PlayFromObject(obj, SFXTRIG_en_cvdrip1c_3db);
                     Sfx_AddLoopedObjectSound(obj, SFXTRIG_trpopn_c);
                 }
-                (*trickyState->progressPtr)--;
+                trickyState->stats->energy--;
                 trickyRequestMove(obj, 0x34, 0.005f, 0x4000000);
                 trickyState->substate = TRICKY_GUARD_FLAME;
             } else {
@@ -4316,7 +4319,7 @@ void trickyFlame(GameObject* obj, TrickyState* trickyState) {
         }
         trickyRequestMove(obj, 0x1a, 0.004f, 0x4000000);
         trickyState->substate = TRICKY_FLAME_OUT;
-        *trickyState->progressPtr -= 4;
+        trickyState->stats->energy -= 4;
         /* fall through */
     case TRICKY_FLAME_OUT:
         trickyDebugPrint(sTrickyFlameDebugTextBlock + 0x44);
@@ -4408,7 +4411,7 @@ void trickyFlame(GameObject* obj, TrickyState* trickyState) {
         if (moveTricky(obj, target) == 0) {
             trickyRequestMove(obj, 0x1a, 0.004f, 0x4000000);
             trickyState->substate = TRICKY_FLAME_IN;
-            *trickyState->progressPtr -= 4;
+            trickyState->stats->energy -= 4;
         }
         break;
     case TRICKY_FLAME_IN:
@@ -5801,7 +5804,7 @@ u32 tricky_updateIdleBehavior(GameObject* obj, TrickyState* trickyState) {
         }
         return 0;
     }
-    if (*trickyState->progressPtr <= 3) {
+    if (trickyState->stats->energy <= 3) {
         trickyRequestMove(obj, 0x14, 0.005f, 0);
         trickyState->substate = 3;
         trickyState->sfxRepeatTimer = 600.0f;
@@ -5811,7 +5814,7 @@ u32 tricky_updateIdleBehavior(GameObject* obj, TrickyState* trickyState) {
     if (trickyState->idleTimer <= 0.0f) {
         bitVal = randomGetRange(200, 500);
         trickyState->idleTimer = (f32)(s32)bitVal;
-        if (*trickyState->progressPtr <= 7) {
+        if (trickyState->stats->energy <= 7) {
             trickyRequestMove(obj, 0x14, 0.005f, 0);
             trickyState->substate = 3;
             trickyState->sfxRepeatTimer = 600.0f;
@@ -5989,8 +5992,8 @@ int tricky_handleFeedOrTalk(GameObject* obj, TrickyState* state) {
     if (flag != 0) {
         if (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) {
             if ((*gGameUIInterface)->isItemBeingUsed(0xc1) != 0) {
-                a = *state->progressPtr;
-                c = state->progressPtr[1];
+                a = state->stats->energy;
+                c = state->stats->maxEnergy;
                 if (a == c) {
                     b = obj->extra;
                     b->stateFlags |= 0x4000;
@@ -6022,14 +6025,14 @@ int tricky_handleFeedOrTalk(GameObject* obj, TrickyState* state) {
                         cnt += 1;
                     }
                     if (cnt > n) {
-                        state->progressValue = a + (n << 2);
+                        state->pendingEnergy = a + (n << 2);
                         mainSetBits(GAMEBIT_ITEM_TrickyFood_Count, 0);
                     } else {
-                        state->progressValue = a + (cnt << 2);
+                        state->pendingEnergy = a + (cnt << 2);
                         mainSetBits(GAMEBIT_ITEM_TrickyFood_Count, n - cnt);
                     }
-                    if (state->progressValue > state->progressPtr[1]) {
-                        state->progressValue = state->progressPtr[1];
+                    if (state->pendingEnergy > state->stats->maxEnergy) {
+                        state->pendingEnergy = state->stats->maxEnergy;
                     }
                     b = obj->extra;
                     b->stateFlags |= 0x4000;
@@ -6201,7 +6204,7 @@ typedef void (*TrickyHandlerFn)(void* obj, void* state);
 typedef enum TrickySequenceEvent {
     TRICKY_SEQUENCE_EVENT_TOGGLE_FLAME_CHILDREN = 1,
     TRICKY_SEQUENCE_EVENT_SPAWN_BADGE = 2,
-    TRICKY_SEQUENCE_EVENT_STORE_PROGRESS = 3,
+    TRICKY_SEQUENCE_EVENT_STORE_ENERGY = 3,
     TRICKY_SEQUENCE_EVENT_HIDE_SHADOW = 0x2B,
     TRICKY_SEQUENCE_EVENT_SHOW_SHADOW = 0x2C,
 } TrickySequenceEvent;
@@ -6430,8 +6433,8 @@ int tricky_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
                 ObjLink_AttachChild(obj, ((TrickyState*)state)->spawnedChild, 3);
             }
             break;
-        case TRICKY_SEQUENCE_EVENT_STORE_PROGRESS:
-            *((TrickyState*)state)->progressPtr = ((TrickyState*)state)->progressValue;
+        case TRICKY_SEQUENCE_EVENT_STORE_ENERGY:
+            ((TrickyState*)state)->stats->energy = ((TrickyState*)state)->pendingEnergy;
             break;
         case TRICKY_SEQUENCE_EVENT_HIDE_SHADOW:
             obj->anim.modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
@@ -6445,7 +6448,7 @@ int tricky_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     objAnimFreeChildren(obj, (TrickyState*)state, &((TrickyState*)state)->childA);
     objAnimFreeChildren(obj, (TrickyState*)state, &((TrickyState*)state)->childB);
     objAnimFreeChildren(obj, (TrickyState*)state, &((TrickyState*)state)->child);
-    tricky_updateModelVariantFade(obj, (TrickyState*)state);
+    trickyUpdateColorVariant(obj, (TrickyState*)state);
     Tricky_updateBlendChannelWeight(obj, (TrickyState*)state);
     objAudioDispatchAnimEvents(obj, &sequence->animEvents, 1, ((TrickyState*)state)->footPoints,
                                &((TrickyState*)state)->pathControlState, 1.0f, 1.0f);
@@ -6554,10 +6557,10 @@ void Tricky_commandPlayBall(int* obj, int commandEnabled, GameObject* targetObj)
 }
 
 u8 Tricky_getEnergyMax(int* obj) {
-    return ((TrickyState*)((GameObject*)obj)->extra)->progressPtr[1];
+    return ((TrickyState*)((GameObject*)obj)->extra)->stats->maxEnergy;
 }
 u8 Tricky_getEnergy(int* obj) {
-    return ((TrickyState*)((GameObject*)obj)->extra)->progressPtr[0];
+    return ((TrickyState*)((GameObject*)obj)->extra)->stats->energy;
 }
 
 void sideCommandEnable(GameObject* obj, GameObject* targetObj, int commandKind, int commandType) {
@@ -7569,7 +7572,7 @@ void Tricky_update(GameObject* obj) {
             TRICKY_VOICE(obj, sfxId, 0x500);
         }
     }
-    tricky_updateModelVariantFade((GameObject*)obj, (TrickyState*)state);
+    trickyUpdateColorVariant((GameObject*)obj, (TrickyState*)state);
     Tricky_updateBlendChannelWeight((GameObject*)obj, (TrickyState*)state);
     if (trickyState->speed > 0.2f) {
         objAudioDispatchAnimEvents((GameObject*)obj, &trickyState->animEvents, 1, trickyState->footPoints,
@@ -7646,7 +7649,7 @@ void Tricky_init(GameObject* obj) {
     TrickyState* state;
     ObjModel* model;
     void* pathState;
-    u32 modelVariant;
+    u32 colorVariant;
     u16 startPath[4];
 
     state = obj->extra;
@@ -7666,7 +7669,7 @@ void Tricky_init(GameObject* obj) {
     pathSearchInit(&state->pathSearches[6]);
     pathSearchInit(&state->pathSearches[7]);
     pathSearchInit(&state->pathSearches[8]);
-    state->progressPtr = (*gMapEventInterface)->getTrickyEnergy();
+    state->stats = (*gMapEventInterface)->getTrickyStats();
     state->playerObj = Obj_GetPlayerObject();
     state->stateIndex = 0;
     state->commandRequestBits = 0;
@@ -7675,10 +7678,10 @@ void Tricky_init(GameObject* obj) {
     state->homePosX = (obj)->anim.worldPosX;
     state->homePosY = (obj)->anim.worldPosY;
     state->homePosZ = (obj)->anim.worldPosZ;
-    modelVariant = state->progressPtr[2] / 10;
-    state->modelVariant = modelVariant;
+    colorVariant = state->stats->ballReturnCount / 10;
+    state->colorVariant = colorVariant;
     model = Obj_GetActiveModel(obj);
-    model->textureRefs->swapSelector = state->modelVariant;
+    model->textureRefs->swapSelector = state->colorVariant;
     pathState = &state->pathControlState;
     (*gPathControlInterface)->init(pathState, 1, 0xa7, 1);
     (*gPathControlInterface)->setLocalPointCollision(pathState, 1, gTrickyPathPointCollision, &lbl_803DBC48, 2);
