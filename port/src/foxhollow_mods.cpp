@@ -1,6 +1,7 @@
 #include "foxhollow_mods.h"
 
 #include "foxhollow_mod_api.h"
+#include "foxhollow_hook.h"
 
 #include <dolphin/gx/GXStruct.h>
 
@@ -11,18 +12,8 @@
 
 #if !defined(_WIN32)
 #include <dlfcn.h>
-#include <sys/mman.h>
-#include <unistd.h>
 #else
 #include <windows.h>
-#endif
-
-#if defined(__APPLE__)
-#include <libkern/OSCacheControl.h>
-#include <mach-o/dyld.h>
-#include <mach-o/loader.h>
-#include <mach-o/nlist.h>
-#include <mach/mach.h>
 #endif
 
 #include <algorithm>
@@ -189,139 +180,10 @@ int host_class_replace_callback(FhMod* mod, uint32_t classId, FhClassSlot slot, 
   return FH_MOD_OK;
 }
 
-constexpr uint32_t kArm64Nop = 0xd503201fu;
-constexpr size_t kPatchBytes = 16;
-
-#if defined(__APPLE__) && defined(__aarch64__)
-
-void* resolve_symbol(const char* name) {
-  if (name == nullptr || name[0] == '\0') {
-    return nullptr;
-  }
-  const std::string decorated = std::string("_") + name;
-
-  const struct mach_header_64* header = reinterpret_cast<const struct mach_header_64*>(_dyld_get_image_header(0));
-  if (header == nullptr) {
-    return nullptr;
-  }
-  const intptr_t slide = _dyld_get_image_vmaddr_slide(0);
-
-  const symtab_command* symtab = nullptr;
-  const segment_command_64* linkedit = nullptr;
-  const uint8_t* cursor = reinterpret_cast<const uint8_t*>(header) + sizeof(struct mach_header_64);
-  for (uint32_t i = 0; i < header->ncmds; ++i) {
-    const load_command* command = reinterpret_cast<const load_command*>(cursor);
-    if (command->cmd == LC_SYMTAB) {
-      symtab = reinterpret_cast<const symtab_command*>(command);
-    } else if (command->cmd == LC_SEGMENT_64) {
-      const auto* segment = reinterpret_cast<const segment_command_64*>(command);
-      if (std::strcmp(segment->segname, SEG_LINKEDIT) == 0) {
-        linkedit = segment;
-      }
-    }
-    cursor += command->cmdsize;
-  }
-  if (symtab == nullptr || linkedit == nullptr) {
-    return nullptr;
-  }
-
-  const uintptr_t base = static_cast<uintptr_t>(slide) + linkedit->vmaddr - linkedit->fileoff;
-  const auto* symbols = reinterpret_cast<const struct nlist_64*>(base + symtab->symoff);
-  const char* strings = reinterpret_cast<const char*>(base + symtab->stroff);
-
-  for (uint32_t i = 0; i < symtab->nsyms; ++i) {
-    const struct nlist_64& symbol = symbols[i];
-    if ((symbol.n_type & N_STAB) != 0 || (symbol.n_type & N_TYPE) != N_SECT || symbol.n_value == 0) {
-      continue;
-    }
-    if (decorated == (strings + symbol.n_un.n_strx)) {
-      return reinterpret_cast<void*>(static_cast<uintptr_t>(symbol.n_value) + static_cast<uintptr_t>(slide));
-    }
-  }
-  return nullptr;
-}
-
-bool unprotect_range(void* address, size_t size) {
-  const size_t pageSize = static_cast<size_t>(getpagesize());
-  const uintptr_t start = reinterpret_cast<uintptr_t>(address) & ~static_cast<uintptr_t>(pageSize - 1);
-  const uintptr_t end = (reinterpret_cast<uintptr_t>(address) + size + pageSize - 1) & ~static_cast<uintptr_t>(pageSize - 1);
-  const kern_return_t result = vm_protect(mach_task_self(), static_cast<vm_address_t>(start),
-                                          static_cast<vm_size_t>(end - start), FALSE,
-                                          VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
-  if (result == KERN_SUCCESS) {
-    return true;
-  }
-  return mprotect(reinterpret_cast<void*>(start), end - start, PROT_READ | PROT_WRITE) == 0;
-}
-
-void reprotect_range(void* address, size_t size) {
-  const size_t pageSize = static_cast<size_t>(getpagesize());
-  const uintptr_t start = reinterpret_cast<uintptr_t>(address) & ~static_cast<uintptr_t>(pageSize - 1);
-  const uintptr_t end = (reinterpret_cast<uintptr_t>(address) + size + pageSize - 1) & ~static_cast<uintptr_t>(pageSize - 1);
-  mprotect(reinterpret_cast<void*>(start), end - start, PROT_READ | PROT_EXEC);
-  sys_icache_invalidate(address, size);
-}
-
-bool has_patch_pad(const void* target) {
-  uint32_t words[4];
-  std::memcpy(words, target, sizeof(words));
-  for (uint32_t word : words) {
-    if (word != kArm64Nop) {
-      return false;
-    }
-  }
-  return true;
-}
-
-int install_hook(void* target, void* replacement, void** outOriginal) {
-  if (target == nullptr || replacement == nullptr) {
-    return FH_MOD_ERROR;
-  }
-  if (!has_patch_pad(target)) {
-    return FH_MOD_ERROR;
-  }
-  if (!unprotect_range(target, kPatchBytes)) {
-    return FH_MOD_ERROR;
-  }
-
-  uint8_t patch[kPatchBytes];
-  const uint32_t ldr = 0x58000050u;
-  const uint32_t br = 0xd61f0200u;
-  const uint64_t destination = reinterpret_cast<uint64_t>(replacement);
-  std::memcpy(patch + 0, &ldr, 4);
-  std::memcpy(patch + 4, &br, 4);
-  std::memcpy(patch + 8, &destination, 8);
-  std::memcpy(target, patch, kPatchBytes);
-
-  reprotect_range(target, kPatchBytes);
-  if (outOriginal != nullptr) {
-    *outOriginal = static_cast<uint8_t*>(target) + kPatchBytes;
-  }
-  return FH_MOD_OK;
-}
-
-int remove_hook(void* target) {
-  if (target == nullptr || !unprotect_range(target, kPatchBytes)) {
-    return FH_MOD_ERROR;
-  }
-  uint32_t nops[4] = {kArm64Nop, kArm64Nop, kArm64Nop, kArm64Nop};
-  std::memcpy(target, nops, sizeof(nops));
-  reprotect_range(target, kPatchBytes);
-  return FH_MOD_OK;
-}
-
-#else
-
-void* resolve_symbol(const char*) { return nullptr; }
-int install_hook(void*, void*, void**) { return FH_MOD_ERROR; }
-int remove_hook(void*) { return FH_MOD_ERROR; }
-
-#endif
-
-void* host_symbol_address(FhMod*, const char* name) { return resolve_symbol(name); }
+void* host_symbol_address(FhMod*, const char* name) { return fhHookResolveSymbol(name); }
 
 int host_hook_install(FhMod* mod, void* target, void* replacement, void** outOriginal) {
-  const int result = install_hook(target, replacement, outOriginal);
+  const int result = fhHookInstall(target, replacement, outOriginal) == 0 ? FH_MOD_OK : FH_MOD_ERROR;
   if (result == FH_MOD_OK) {
     reinterpret_cast<NativeMod*>(mod)->hooks.push_back(target);
   }
@@ -329,7 +191,7 @@ int host_hook_install(FhMod* mod, void* target, void* replacement, void** outOri
 }
 
 int host_hook_remove(FhMod* mod, void* target) {
-  const int result = remove_hook(target);
+  const int result = fhHookRemove(target) == 0 ? FH_MOD_OK : FH_MOD_ERROR;
   if (result == FH_MOD_OK) {
     auto& hooks = reinterpret_cast<NativeMod*>(mod)->hooks;
     hooks.erase(std::remove(hooks.begin(), hooks.end(), target), hooks.end());
@@ -704,7 +566,7 @@ extern "C" void fhModsShutdown(void) {
       native->shutdown(reinterpret_cast<FhMod*>(native));
     }
     for (void* target : native->hooks) {
-      remove_hook(target);
+      fhHookRemove(target);
     }
     native->hooks.clear();
     for (auto patch = native->patches.rbegin(); patch != native->patches.rend(); ++patch) {

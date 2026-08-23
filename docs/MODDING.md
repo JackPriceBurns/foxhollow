@@ -219,12 +219,46 @@ intercepted; game code is built at `-O2` with no LTO, so cross-translation-unit 
 and hookable, while intra-unit calls may not be. And hooks are installed on the game thread at load
 time, with no synchronisation against other threads executing the same function.
 
-macOS/arm64 only so far. Making a code page writable uses `vm_protect` with `VM_PROT_COPY`, falling
-back to `mprotect`; the same approach works on Linux, and Windows needs `VirtualProtect`.
+### Platform support
+
+| | macOS | Linux | Windows |
+| --- | --- | --- | --- |
+| Asset mods | yes | yes | yes |
+| Load a mod library | yes | yes | yes |
+| Call game functions | yes | yes | yes |
+| Class interposition | yes | yes | yes |
+| Hook exported functions | yes | yes | yes |
+| Hook `static` functions | yes | yes | **no** |
+
+Verified on macOS/arm64, on Linux for both arm64 and x86-64, and on Windows x86-64 under Wine. macOS
+x86-64 is untested; the release build is arm64 only.
+
+The pad is 16 bytes everywhere, so `original = target + 16` is uniform, but the flag that produces it is
+not: `-fpatchable-function-entry` counts **instructions** on arm64 and **bytes** on x86-64, so the build
+passes `=4` on arm64 and `=16` on x86-64. On x86-64 the branch is `ff 25` (`jmp *(%rip)`) plus an
+eight-byte address, and validating the pad means decoding the multi-byte `nop` forms clang emits rather
+than comparing against one constant.
+
+Making a code page writable differs by platform. macOS uses `vm_protect` with `VM_PROT_COPY`. Linux uses
+`mprotect`, and it must request `PROT_EXEC` alongside `PROT_WRITE`: the hooking code lives in the same
+image as the code it patches, so dropping execute permission on that page faults on the very next
+instruction. Windows uses `VirtualProtect` with `PAGE_EXECUTE_READWRITE`.
+
+**Statics do not resolve on Windows.** macOS reads `LC_SYMTAB` out of the loaded image and Linux maps
+`/proc/self/exe` and reads `.symtab`, so both reach file-local functions. PE keeps no equivalent table in
+the executable — `GetProcAddress` sees only the export table, and static functions live in the PDB.
+Closing that gap needs a symbol manifest generated at build time, which is what Dusklight's `symgen
+manifest` produces.
+
+**Windows also needs a curated export list**, which is not written yet. A mod cannot bind to an
+executable without an import library, and exporting everything is not a workaround: a blanket export
+collides with the CRT at link time (`_Unwind_Resume` was the first casualty in testing). The export set
+has to be filtered down to game symbols, which is what `symgen def` does. `WINDOWS_EXPORT_ALL_SYMBOLS` is
+set as a starting point and has not been validated on a real Windows build.
 
 ### Not implemented
 
-- Windows (`symgen def` → `/DEF:` → import library), and symbol hooking on any platform but macOS/arm64
+- A curated Windows export list, and a build-time symbol manifest so statics resolve there
 - Link stubs, so mods can build without a copy of the game binary
 - Services beyond the nine host functions above — no config, no save, no runtime overlay or texture registration
 - ABI version gating in `mod.json`, and any launcher-side compatibility check
