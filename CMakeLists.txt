@@ -8,6 +8,7 @@ endif ()
 project(foxhollow LANGUAGES C CXX VERSION 0.0.1)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
+option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
 
 if (APPLE)
     enable_language(OBJC OBJCXX)
@@ -51,7 +52,15 @@ add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
 
 find_package(ZLIB REQUIRED)
-find_package(JPEG REQUIRED)
+
+if (FOXHOLLOW_STATIC_JPEG)
+    set(FOXHOLLOW_SAVED_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    find_package(JPEG REQUIRED)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${FOXHOLLOW_SAVED_LIBRARY_SUFFIXES})
+else ()
+    find_package(JPEG REQUIRED)
+endif ()
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS port/compiling.txt)
 file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/port/compiling.txt FOXHOLLOW_GAME_SOURCES)

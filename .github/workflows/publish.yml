@@ -86,7 +86,7 @@ jobs:
             args+=(-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl)
           fi
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            args+=(-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++)
+            args+=(-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFOXHOLLOW_STATIC_JPEG=ON)
           fi
           cmake "${args[@]}"
 
