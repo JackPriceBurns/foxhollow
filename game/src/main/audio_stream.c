@@ -719,4 +719,4 @@ char sDvdCancelStreamWarning[0x3C] = "WARNING:DVDCancelStreamAsync returned FALS
 
 GameObject* gSfxLoopedObjectSoundObjects[0x80];
 u16 gSfxLoopedObjectSoundIds[0x80];
-u8 gSfxLoopedObjectSoundFlags[0x80];
+u8 gSfxLoopedObjectSoundFlags[sizeof(SfxLoopedObjectSoundTable)] __attribute__((aligned(8)));
