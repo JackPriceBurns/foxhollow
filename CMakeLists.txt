@@ -72,7 +72,8 @@ if (FOXHOLLOW_GAME_SOURCES)
     target_link_libraries(game PRIVATE ZLIB::ZLIB aurora::core)
     target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1)
     target_compile_options(game PRIVATE
-            ${FOXHOLLOW_C_DIALECT_FLAGS} ${FOXHOLLOW_NO_WARN_FLAGS} ${FOXHOLLOW_FORCE_INCLUDE_FLAGS})
+            ${FOXHOLLOW_C_DIALECT_FLAGS} ${FOXHOLLOW_NO_WARN_FLAGS} ${FOXHOLLOW_FORCE_INCLUDE_FLAGS}
+            -fpatchable-function-entry=4)
 endif ()
 
 add_executable(foxhollow src/main.c)
@@ -89,6 +90,8 @@ if (TARGET game)
     set_target_properties(foxhollow PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)
 endif ()
 
+set_target_properties(foxhollow PROPERTIES ENABLE_EXPORTS ON)
+
 if (APPLE)
     add_custom_command(TARGET foxhollow POST_BUILD
             COMMAND codesign -s - --entitlements
@@ -101,6 +104,7 @@ aurora_copy_runtime_dlls(foxhollow)
 
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/crash_handler.cpp)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_mods.cpp)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/debug_overlay.cpp)
 endif ()
@@ -112,7 +116,7 @@ endif ()
 target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
-target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash)
+target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash nlohmann_json::nlohmann_json)
 
 
 if (TARGET game)

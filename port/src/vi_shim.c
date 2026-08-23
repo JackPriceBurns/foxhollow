@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "foxhollow_compat.h"
 #include "foxhollow_config.h"
+#include "foxhollow_mods.h"
 #include "foxhollow_quit.h"
 #include "shim_log.h"
 
@@ -55,6 +56,7 @@ static void wait_for_retrace_deadline(void) {
 }
 
 static void shutdown_and_exit(void) {
+  fhModsShutdown();
   aurora_dvd_close();
   aurora_shutdown();
   exit(0);
@@ -89,6 +91,7 @@ void VIWaitForRetrace(void) {
     aurora_end_frame();
     sFrameOpen = 0;
   }
+  fhModsUpdate();
   pump_events();
   wait_for_retrace_deadline();
   while (!aurora_begin_frame()) {

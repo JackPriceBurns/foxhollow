@@ -1,0 +1,7 @@
+{
+  "id": "dev.foxhollow.example-code-mod",
+  "name": "Example Code Mod",
+  "version": "1.0.0",
+  "author": "Foxhollow",
+  "description": "Calls into game code and interposes the camera's update slot to widen the FOV."
+}

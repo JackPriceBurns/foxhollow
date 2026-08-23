@@ -8,3 +8,4 @@ cmake-build-*/
 compile_commands.json
 CMakeUserPresets.json
 *.log
+mods/*/lib/

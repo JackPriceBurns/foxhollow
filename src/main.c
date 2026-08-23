@@ -7,6 +7,7 @@
 
 #include "foxhollow_config.h"
 #include "foxhollow_crash.h"
+#include "foxhollow_mods.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +81,14 @@ static const char* disc_path(int argc, char* argv[]) {
   return getenv("FOXHOLLOW_DISC");
 }
 
+static int texture_dumps_enabled(void) {
+  const char* value = getenv("FOXHOLLOW_TEXTURE_DUMPS");
+  if (value == NULL || value[0] == '\0') {
+    return 0;
+  }
+  return strcmp(value, "0") != 0 && strcmp(value, "false") != 0 && strcmp(value, "off") != 0;
+}
+
 static const char* shader_cache_path(void) {
   const char* path = getenv("FOXHOLLOW_SHADER_CACHE");
   if (path == NULL || path[0] == '\0') {
@@ -109,10 +118,11 @@ int main(int argc, char* argv[]) {
       .logCallback = &log_callback,
       .vsync = fhConfigVsync() != 0,
       .startFullscreen = fhConfigFullscreen() != 0,
+      .allowTextureDumps = texture_dumps_enabled() != 0,
       .mem1Size = 128 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
-  aurora_initialize(argc, argv, &config);
+  const AuroraInfo info = aurora_initialize(argc, argv, &config);
 
   AuroraSetViewportPolicy(AURORA_VIEWPORT_FIT);
   AuroraSetDisplayAspect(fhConfigDisplayAspect());
@@ -134,6 +144,8 @@ int main(int argc, char* argv[]) {
   }
   fprintf(stdout, "foxhollow: using %s disc with the GSAE01 asset mapping and USA 1.%d code\n", mapping->label,
           revision);
+
+  fhModsInit(argc, argv, info.userPath);
 
   foxhollowFramePumpInit();
   return gameMain(argc, argv);

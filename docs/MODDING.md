@@ -1,7 +1,8 @@
-# Mod support — design notes
+# Mod support
 
-No mod layer exists yet. This document records what one has to hook, and assesses a backlog of
-proposed mods against what the engine actually does. Findings are traced to source rather than
+Asset mods work today — see [Asset mods](#asset-mods-shipped) for the shipped format. Native code mods
+work as a [proof of concept](#code-mods-proof-of-concept). The rest of this document records what one
+has to hook, and assesses a backlog of proposed mods against what the engine actually does. Findings are traced to source rather than
 assumed; where something is a hypothesis it says so and gives the experiment. One backlog item —
 frame pacing — turned out to be a port bug rather than a mod and has been fixed; it is kept below
 because the other items depend on it.
@@ -14,6 +15,220 @@ Two conclusions up front:
 - **The engine is already a plugin system.** SFA shipped its object classes as relocatable DLLs
   behind a vtable, and Phase 4 turned that into a static table rather than removing it. Exposing
   that table is the highest-leverage single thing the mod layer can do.
+
+## Asset mods (shipped)
+
+A mod is a directory with a `mod.json`. No code, no build step, no compiler.
+
+```
+mods/
+  my-mod/
+    mod.json
+    textures/     replacement textures, matched by hash
+    overlay/      files that replace or add to the disc, by path
+```
+
+`mods/example-texture-pack` is a working one: it repaints Fox's character atlas, which is visible
+on the title screen the moment the game starts.
+
+### Where the mods directory lives
+
+`--mods <dir>`, then `FOXHOLLOW_MODS`, then `<Aurora user path>/mods`. The first two are explicit,
+so a path that is not a directory is reported rather than ignored.
+
+### mod.json
+
+```json
+{
+  "id": "dev.example.my-mod",
+  "name": "My Mod",
+  "version": "1.0.0",
+  "author": "You",
+  "description": "Shown by the launcher.",
+  "enabled": true
+}
+```
+
+`id` is the only required field. `enabled: false` keeps a mod installed but inert.
+
+### Load order
+
+Mods load in case-insensitive directory-name order. When two mods overlay the same disc path the
+later one wins and the loader logs which mod overrode which. Texture replacements take the same
+order as ascending Aurora replacement priority, so later mods win there too.
+
+### textures/
+
+Scanned recursively. Filenames follow Dolphin's convention,
+`tex1_{width}x{height}_{texhash}[_{tluthash}]_{format}.png|.dds`, where the dimensions and hashes
+describe the *original* texture, not the replacement, and `$` is a hash wildcard. `_mipN` sidecars
+next to a file are picked up automatically.
+
+Matching happens on the hash of the decoded GX texture, so replacing a texture never requires
+unpacking `TEX0.tab` or any other archive.
+
+To find the filename for a texture, boot with `FOXHOLLOW_TEXTURE_DUMPS=1`. Every texture the game
+binds is written to `<Aurora cache path>/texture_dumps` as an editable 32-bit RGBA `.dds`, already
+named the way a replacement has to be named. `tools/make_example_texture.py` generates the example
+pack's image if you want a starting point that is not derived from the disc.
+
+### overlay/
+
+Every file under `overlay/` replaces the disc file at the matching path: `overlay/audio/data/Music.bin`
+serves `/audio/data/Music.bin`. Paths that do not exist on the disc are added as new files. Matching
+is case-insensitive, and dotfiles and dot-directories are not packaged.
+
+This covers every asset the game loads, because every read bottoms out in `DVDOpen` — `loadFileByPath`
+(`game/src/main/fileio.c`), the `sResourceFileNameTable` archive opens (`game/src/main/pi_dolphin.c`),
+audio, text and THP movies all go through it.
+
+### Implementation
+
+`port/src/foxhollow_mods.cpp`, called from `src/main.c` once the disc has been opened and validated,
+and torn down on the quit path in `port/src/vi_shim.c`. It is a thin layer over two Aurora
+subsystems that already existed and were previously unused by Foxhollow:
+
+- `aurora_dvd_overlay_callbacks` / `aurora_dvd_overlay_files` (`extern/aurora/lib/dolphin/dvd/fst.cpp`)
+  rebuild the disc FST with the overlay set. The whole set is registered in one call, so the loader
+  merges every mod's files and resolves conflicts before registering.
+- `aurora::texture::load_replacement_directory` (`extern/aurora/include/aurora/texture.hpp`) owns
+  texture matching, decoding and priority.
+
+Overlay reads are served by `fopen`/`fread` on a per-handle `FILE*`, because Aurora may call the
+overlay callbacks from any thread.
+
+Loader output goes to stderr. `stdout` is block-buffered when redirected, so a `stdout` message
+appears out of order or not at all in a captured log — the same trap `OSReport` sets elsewhere.
+
+## Code mods (proof of concept)
+
+Working, and deliberately incomplete. `mods/example-code-mod` loads a native library, calls game
+functions and interposes an object class callback to force the camera FOV to 90°. Treat the ABI as
+unstable.
+
+A mod with code adds one directory to the asset layout:
+
+```
+my-mod/
+  mod.json
+  lib/
+    macos-arm64/mod.so
+    linux-amd64/mod.so
+    windows-amd64/mod.dll
+```
+
+The loader picks the directory matching the host and ignores the rest, so a mod that only ships one
+platform loads on that platform and is skipped elsewhere. `.so` is used on macOS as well as Linux,
+matching what CMake produces for a `MODULE` library.
+
+### Lifecycle
+
+`port/include/foxhollow_mod_api.h` is the whole ABI. A mod exports three functions:
+
+```c
+FH_MOD_EXPORT int  fh_mod_initialize(FhMod* mod, const FhModHost* host);
+FH_MOD_EXPORT void fh_mod_update(FhMod* mod);
+FH_MOD_EXPORT void fh_mod_shutdown(FhMod* mod);
+```
+
+Only `fh_mod_initialize` is required. It receives an `FhModHost` table carrying `modId`, `modDir`,
+`log`, `frameCount`, `classCount` and `classReplaceCallback`, plus `structSize` and `abiVersion` so a
+mod can refuse a host it was not built against. Returning anything but `FH_MOD_OK` disables the mod
+without stopping the game. `fh_mod_update` runs once per presented frame from `VIWaitForRetrace`.
+
+### Calling game code
+
+Nothing special is needed on macOS: the game binary already exports 27,641 symbols in its Mach-O
+export trie, so a mod links against it with `-bundle_loader` and declares what it wants.
+
+```c
+extern float Camera_GetFovY(void);
+extern void Camera_SetFovY(float fovY);
+```
+
+Linux resolves the same way at `dlopen` time; `ENABLE_EXPORTS` on the `foxhollow` target supplies the
+`-rdynamic` that needs. Windows cannot do this — a DLL needs an import library, which means generating
+a `.def` for the executable link. That is not done yet, so Windows code mods do not work.
+
+**A mod that includes game headers must be built with the same toolchain flags as the game**:
+`-DTARGET_PC=1 -DVERSION_GSAE01`, `-fsigned-char`, `-fcommon`, and `-include port/include/foxhollow_compat.h`.
+`TARGET_PC` is Aurora's, not Foxhollow's — the game inherits it from `aurora::core` — and without it
+Aurora's `dolphin/types.h` defines `u32` as `unsigned long`, 8 bytes on LP64, so every struct offset the
+mod computes silently disagrees with the host. The example mod sidesteps this by declaring the handful
+of scalar functions it calls, which is the safe pattern until the SDK sets those flags for the author.
+
+### Interposing an object class
+
+`gResourceDescriptors[]` holds 705 `ResourceDescriptor*`, and a descriptor's callback array *is* the
+object vtable. `ResourceDescriptor` is four `u32` of metadata followed by `acquire` and `release`, so
+the interface sits 32 bytes in natively and `ObjectInterface`'s eight slots follow from there:
+`slot02`, `init`, `update`, `hitDetect`, `render`, `free`, `getObjectTypeId`, `getExtraSize`.
+
+`classReplaceCallback` patches one slot in place and hands back the original to chain to:
+
+```c
+FhClassCallback original = 0;
+host->classReplaceCallback(mod, 1 /* camcontrol */, FH_SLOT_UPDATE, my_hook, &original);
+```
+
+Every patch is recorded per mod and restored before the library is unloaded, because a slot still
+pointing into an unloaded image is a crash on the next dispatch.
+
+This is portable and needs no binary patching, and inlining cannot defeat it because the dispatch is
+already indirect. For anything that is not a class method, use symbol hooking.
+
+### Symbol hooking
+
+Any game function can be hooked by name, `static` ones included:
+
+```c
+void* target = host->symbolAddress(mod, "mainGetBit");
+void* original = NULL;
+host->hookInstall(mod, target, my_hook, &original);
+```
+
+`original` is a normal function pointer; call it to chain. `hookRemove` restores the function, and
+every hook a mod installs is removed automatically before its library is unloaded.
+
+**Game code is compiled with `-fpatchable-function-entry=4`**, so every game function begins with four
+`nop` instructions — 16 bytes of scratch. Installing a hook overwrites that pad with an absolute
+branch:
+
+```
+ldr x16, #8      ; 0x58000050
+br  x16          ; 0xd61f0200
+.quad replacement
+```
+
+The original entry point is then simply `target + 16`, because nothing but padding was overwritten.
+
+That one build flag removes the entire hard part. Instruction relocation is what makes binary hooking
+risky and what pulls in a disassembler — Dusklight vendors funchook plus capstone and patches both to
+work on Apple arm64. Here there is nothing to relocate, so there is no disassembler, no trampoline
+allocator, and no third-party dependency. It costs 16 bytes per function: 132 KB on the binary, 0.67%.
+
+`install_hook` refuses any target whose first four words are not `nop`, so hooking a function that was
+not compiled with the pad — anything in Aurora, or libc — fails cleanly instead of corrupting it.
+
+Symbols resolve by walking the executable's own `LC_SYMTAB` at runtime. The binary is not stripped and
+carries 21,114 local symbols, so file-local `static` functions resolve by name with no separate symbol
+manifest. `dlsym` would only see the 27,641 exported ones.
+
+Two limits are inherent. A call the compiler **inlined** does not go through the symbol and cannot be
+intercepted; game code is built at `-O2` with no LTO, so cross-translation-unit calls are real calls
+and hookable, while intra-unit calls may not be. And hooks are installed on the game thread at load
+time, with no synchronisation against other threads executing the same function.
+
+macOS/arm64 only so far. Making a code page writable uses `vm_protect` with `VM_PROT_COPY`, falling
+back to `mprotect`; the same approach works on Linux, and Windows needs `VirtualProtect`.
+
+### Not implemented
+
+- Windows (`symgen def` → `/DEF:` → import library), and symbol hooking on any platform but macOS/arm64
+- Link stubs, so mods can build without a copy of the game binary
+- Services beyond the nine host functions above — no config, no save, no runtime overlay or texture registration
+- ABI version gating in `mod.json`, and any launcher-side compatibility check
+- Runtime enable/disable/reload; mods load once at startup
 
 ## What the engine already provides
 
