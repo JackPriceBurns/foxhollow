@@ -4,6 +4,22 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.3.0 — 2026-08-23
+
+### Added
+- Linux builds, published from CI alongside macOS and Windows.
+
+### Fixed
+- The frame rate no longer halves on 60Hz displays. Presentation waited for the display to finish
+  scanning out, which stopped the renderer recycling its frame buffers, so each frame cost two
+  refreshes instead of one. Also affects Windows.
+- Two globals were sized for the retail data layout rather than the native one and wrote past their
+  own storage into whatever the linker placed next. The voxel map manager corrupted the object type
+  list, crashing on load, and the looped sound table overwrote the streamed audio table, silencing
+  all music. Both had been latent on every platform.
+- Cloudrunner path values in Dragon Rock are read at their full width again, rather than losing a
+  byte to the value stored after them.
+
 ## v0.2.0 — 2026-08-23
 
 ### Added
