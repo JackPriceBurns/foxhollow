@@ -31,7 +31,7 @@ if (MSVC)
 else ()
     set(FOXHOLLOW_C_DIALECT_FLAGS -std=gnu11 -fsigned-char -fcommon)
     set(FOXHOLLOW_CXX_DIALECT_FLAGS -fsigned-char)
-    set(FOXHOLLOW_NO_WARN_FLAGS -w)
+    set(FOXHOLLOW_NO_WARN_FLAGS -w -Wno-error=incompatible-pointer-types)
     set(FOXHOLLOW_FORCE_INCLUDE_FLAGS -include ${CMAKE_CURRENT_SOURCE_DIR}/port/include/foxhollow_compat.h)
 endif ()
 
