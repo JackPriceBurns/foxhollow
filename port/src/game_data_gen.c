@@ -81,7 +81,6 @@ u8 gTexShaderFogColor[0x10] __attribute__((aligned(8)));
 u32 gTitleScreenInitAlphaMax = 0x437f0000;
 u32 gTitleScreenInitFadeFrames = 0x41f00000;
 u32 gTrackPackedCoordScale = 0x3e000000;
-u8 gVoxMaps[0x30] __attribute__((aligned(8)));
 u8 gVoxMapsRouteState[0x60] __attribute__((aligned(8)));
 u8 gVoxMapsSlotTimers[0x60] __attribute__((aligned(8)));
 u32 gWcEarthWalkerFarPlayerDistance = 0x435c0000;

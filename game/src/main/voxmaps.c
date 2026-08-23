@@ -35,6 +35,7 @@ STATIC_ASSERT(offsetof(VoxRouteWork, pathPoints) == 0xe10);
 STATIC_ASSERT(sizeof(VoxRouteWork) == 0xe88);
 
 int lbl_803DC8E4;
+VoxMaps gVoxMaps;
 int* gVoxMapsMapList;
 u8* gVoxMapsScratchBuffer;
 u8* gVoxMapsScratchBufferPtr;
