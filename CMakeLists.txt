@@ -91,6 +91,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora/cmake/AuroraCopyRuntimeDLLs.cm
 aurora_copy_runtime_dlls(foxhollow)
 
 file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/crash_handler.cpp)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/debug_overlay.cpp)
 endif ()
@@ -103,7 +104,7 @@ endif ()
 target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
-target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG)
+target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash)
 
 
 if (TARGET game)

@@ -6,6 +6,7 @@
 #include <dolphin/gx/GXAurora.h>
 
 #include "foxhollow_config.h"
+#include "foxhollow_crash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,7 +81,9 @@ static const char* disc_path(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-  const char* disc = disc_path(argc, argv);
+  const char* disc;
+  fhInstallCrashHandler();
+  disc = disc_path(argc, argv);
   const FoxhollowDiscMapping* mapping;
   const int revision = fhConfigRevision();
   if (revision < 0) {

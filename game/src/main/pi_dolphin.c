@@ -1,3 +1,4 @@
+#include "foxhollow_crash.h"
 #include "dolphin/PPCArch.h"
 #include "dolphin/gx/GXStruct.h"
 #include "main/dll/dll_80136a40.h"
@@ -1063,6 +1064,7 @@ void mapLoadDataFiles(int mapIdx) {
 }
 
 int loadMapAndParent(int mapId) {
+    fhNoteMapLoaded(mapId);
     int idx;
     int parent;
     if (mapId >= 0x4b) {
