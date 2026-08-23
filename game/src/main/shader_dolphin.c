@@ -404,7 +404,6 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
 }
 void addYUVVideoTevStages(void* tex0, void* tex1, void* tex2, s16 w, s16 h)
 {
-#ifdef TARGET_PC
     GXTexObj rgbTexObj;
     void* rgbTexture;
     extern void* fhTHPVideoGetRGB(const void* yTexture);
@@ -435,86 +434,6 @@ void addYUVVideoTevStages(void* tex0, void* tex1, void* tex2, s16 w, s16 h)
     gRcpNumTevStages++;
     gRcpNumTexGens++;
     return;
-#else
-    GXTexObj buf5c;
-    GXTexObj buf3c;
-    GXTexObj buf1c;
-    GXColorS10 cs10;
-    int h2;
-    int w2;
-    if (gRcpNumTevStages > 0xb || gRcpNumTexGens > 6 || gRcpNextTexMap > 5 || gRcpNextKColor > 1)
-    {
-        return;
-    }
-    {
-        GXSetTexCoordGen2(gRcpNextTexCoord, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
-        GXSetTexCoordGen2(gRcpNextTexCoord + 1, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
-        GXSetTevOrder(gRcpNextTevStage, gRcpNextTexCoord + 1, gRcpNextTexMap + 1, GX_COLOR_NULL);
-        GXSetTevDirect(gRcpNextTevStage);
-        GXSetTevColorIn(gRcpNextTevStage, GX_CC_ZERO, GX_CC_TEXC, GX_CC_KONST, GX_CC_C0);
-        GXSetTevColorOp(gRcpNextTevStage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVREG1);
-        GXSetTevAlphaIn(gRcpNextTevStage, GX_CA_ZERO, GX_CA_TEXA, GX_CA_KONST, GX_CA_A0);
-        GXSetTevAlphaOp(gRcpNextTevStage, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVREG1);
-        GXSetTevKColorSel(gRcpNextTevStage, gRcpNextKColorSel);
-        GXSetTevKAlphaSel(gRcpNextTevStage, gRcpNextKAlphaSel);
-        GXSetTevSwapMode(gRcpNextTevStage, GX_TEV_SWAP0, GX_TEV_SWAP0);
-        GXSetTevOrder(gRcpNextTevStage + 1, gRcpNextTexCoord + 1, gRcpNextTexMap + 2, GX_COLOR_NULL);
-        GXSetTevDirect(gRcpNextTevStage + 1);
-        GXSetTevColorIn(gRcpNextTevStage + 1, GX_CC_ZERO, GX_CC_TEXC, GX_CC_KONST, GX_CC_C1);
-        GXSetTevColorOp(gRcpNextTevStage + 1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_2, GX_FALSE, GX_TEVREG1);
-        GXSetTevAlphaIn(gRcpNextTevStage + 1, GX_CA_ZERO, GX_CA_TEXA, GX_CA_KONST, GX_CA_A1);
-        GXSetTevAlphaOp(gRcpNextTevStage + 1, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVREG1);
-        GXSetTevKColorSel(gRcpNextTevStage + 1, gRcpNextKColorSel + 1);
-        GXSetTevKAlphaSel(gRcpNextTevStage + 1, gRcpNextKAlphaSel + 1);
-        GXSetTevSwapMode(gRcpNextTevStage + 1, GX_TEV_SWAP0, GX_TEV_SWAP0);
-        GXSetTevOrder(gRcpNextTevStage + 2, gRcpNextTexCoord, gRcpNextTexMap, GX_COLOR_NULL);
-        GXSetTevDirect(gRcpNextTevStage + 2);
-        GXSetTevColorIn(gRcpNextTevStage + 2, GX_CC_ZERO, GX_CC_TEXC, GX_CC_ONE, GX_CC_C1);
-        GXSetTevColorOp(gRcpNextTevStage + 2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
-        GXSetTevAlphaIn(gRcpNextTevStage + 2, GX_CA_TEXA, GX_CA_ZERO, GX_CA_ZERO, GX_CA_A1);
-        GXSetTevAlphaOp(gRcpNextTevStage + 2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
-        GXSetTevSwapMode(gRcpNextTevStage + 2, GX_TEV_SWAP0, GX_TEV_SWAP0);
-        GXSetTevOrder(gRcpNextTevStage + 3, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
-        GXSetTevDirect(gRcpNextTevStage + 3);
-        GXSetTevColorIn(gRcpNextTevStage + 3, GX_CC_A1, GX_CC_C1, GX_CC_KONST, GX_CC_ZERO);
-        GXSetTevColorOp(gRcpNextTevStage + 3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
-        GXSetTevAlphaIn(gRcpNextTevStage + 3, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
-        GXSetTevAlphaOp(gRcpNextTevStage + 3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
-        GXSetTevSwapMode(gRcpNextTevStage + 3, GX_TEV_SWAP0, GX_TEV_SWAP0);
-        GXSetTevKColorSel(gRcpNextTevStage + 3, gRcpNextKColorSel + 2);
-        GXSetTevOrder(gRcpNextTevStage + 4, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
-        GXSetTevDirect(gRcpNextTevStage + 4);
-        GXSetTevColorIn(gRcpNextTevStage + 4, GX_CC_CPREV, GX_CC_C1, GX_CC_KONST, GX_CC_ZERO);
-        GXSetTevColorOp(gRcpNextTevStage + 4, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-        GXSetTevAlphaIn(gRcpNextTevStage + 4, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
-        GXSetTevAlphaOp(gRcpNextTevStage + 4, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-        GXSetTevSwapMode(gRcpNextTevStage + 4, GX_TEV_SWAP0, GX_TEV_SWAP0);
-        GXSetTevKColorSel(gRcpNextTevStage + 4, GX_TEV_KCSEL_1_4);
-        gRcpTevPrevColorValid = 1;
-        cs10 = kYuvTevColor0;
-        GXSetTevColorS10(GX_TEVREG0, cs10);
-        GXSetTevKColor(gRcpNextKColor, kYuvKColor0);
-        GXSetTevKColor(gRcpNextKColor + 1, kYuvKColor1);
-        GXSetTevKColor(gRcpNextKColor + 2, kYuvKColor2);
-        GXInitTexObj(&buf5c, tex0, w, h, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD(&buf5c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj(&buf5c, gRcpNextTexMap);
-        GXInitTexObj(&buf3c, tex1, w2 = w >> 1, h2 = h >> 1, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD(&buf3c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj(&buf3c, gRcpNextTexMap + 1);
-        GXInitTexObj(&buf1c, tex2, w2, h2, GX_TF_I8, GX_CLAMP, GX_CLAMP, 0);
-        GXInitTexObjLOD(&buf1c, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, 0, 0, GX_ANISO_1);
-        GXLoadTexObj(&buf1c, gRcpNextTexMap + 2);
-        gRcpNextTevStage = gRcpNextTevStage + 5;
-        gRcpNextTexCoord = gRcpNextTexCoord + 2;
-        gRcpNextTexMap = gRcpNextTexMap + 3;
-        gRcpNextKColor = gRcpNextKColor + 3;
-        gRcpNextKColorSel = gRcpNextKColorSel + 3;
-        gRcpNextKAlphaSel = gRcpNextKAlphaSel + 3;
-        gRcpNumTevStages += 5;
-        gRcpNumTexGens += 2;
-    }
-#endif
 }
 void setupCausticBaseTevStages(void* viewMtx)
 {

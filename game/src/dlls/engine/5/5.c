@@ -79,12 +79,8 @@ u8* gSkyState;
 u16 gSkyMoonAlpha;
 u16 gSkySunAlpha;
 
-#ifdef TARGET_PC
 static Texture* gSkyTextureSlots[5];
 #define SKY_TEXTURE_SLOT(index) gSkyTextureSlots[index]
-#else
-#define SKY_TEXTURE_SLOT(index) ((Texture**)gSkyState)[index]
-#endif
 
 
 /* gSkyEnvFxFlags: per-group env-FX trigger enables + update state */
@@ -2030,9 +2026,7 @@ void skyResetState(void)
             mm_free(gSkyState);
         }
         gSkyState = NULL;
-#ifdef TARGET_PC
         memset(gSkyTextureSlots, 0, sizeof(gSkyTextureSlots));
-#endif
     }
     gSkyState = mmAlloc(sizeof(SkyState), 0x17, 0);
     memset(gSkyState, 0, sizeof(SkyState));

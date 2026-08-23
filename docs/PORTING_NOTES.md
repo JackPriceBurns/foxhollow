@@ -14,8 +14,13 @@ skips, see [Runtime porting and debugging](DEBUGGING.md).
 - **`u32` et al. come from Aurora's `dolphin/types.h`** (stdint-based). The game's own
   `include/dolphin` was deleted at vendor time; Aurora's dolphin headers are canonical, with
   `port/include` shims filling gaps (see `port/include/dolphin/`).
-- `TARGET_PC=1` must be defined globally — Aurora's `types.h` gates `BOOL`/`TRUE`/`FALSE` and
-  `<stdbool.h>` behind it.
+- `TARGET_PC` must be defined on every game and port translation unit — Aurora's `types.h` gates the
+  fixed-width `u8`/`u16`/`u32` typedefs, `BOOL`/`TRUE`/`FALSE` and `<stdbool.h>` behind it. Without it
+  `u32` becomes `unsigned long`, 8 bytes on LP64, and every struct offset silently moves. It is not a
+  Foxhollow switch and is not defined by this repository: `aurora_core.cmake` declares it `PUBLIC`, so
+  the `game` and `port_shims` targets inherit it by linking `aurora::core`. Foxhollow's own code
+  contains no `TARGET_PC` conditionals; a hand-built compile line over game sources still has to pass
+  `-DTARGET_PC=1`, which is why `tools/compile_progress.py` does.
 
 ## Math and intrinsics (`port/include/foxhollow_compat.h`, force-included everywhere)
 

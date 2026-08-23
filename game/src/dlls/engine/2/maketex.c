@@ -16,11 +16,7 @@
 
 volatile s32 gSaveCardState = 0xD;
 char* sMemoryCardFileName = sMemoryCardFileNameString;
-#ifdef TARGET_PC
 int gSaveCardBackdropColor = 0xFF404040;
-#else
-int gSaveCardBackdropColor = 0x404040FF;
-#endif
 int lbl_803DB70C[1] = {0};
 
 typedef struct

@@ -588,7 +588,6 @@ OptionsScreenPanelConfig gOptionsPanelTable[4] = {
     {gOptionsMiscPanelEntries, 0, 0x0203, 0x035b, 0x0368, 0},
 };
 
-#ifdef TARGET_PC
 static u8 gOptionsPanelEntriesNormalized;
 
 static void optionsScreenNormalizePanelEntries(void)
@@ -621,7 +620,6 @@ static void optionsScreenNormalizePanelEntries(void)
     }
     gOptionsPanelEntriesNormalized = 1;
 }
-#endif
 
 ObjectDescriptor6 OptionsScreen_funcs = {
     0,
@@ -851,9 +849,7 @@ void OptionsScreen_release(void)
 
 void OptionsScreen_initialise(void)
 {
-#ifdef TARGET_PC
     optionsScreenNormalizePanelEntries();
-#endif
     (*gScreenTransitionInterface)->step(20, SCREEN_TRANSITION_HUD);
     gameTextLoadDir(21);
     lbl_803DD70C = 0;

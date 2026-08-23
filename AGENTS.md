@@ -7,7 +7,9 @@ job handles syncing them back to the decomp. Port-layer code belongs here.
 
 ## Rules
 - NEVER write code comments unless explicitly asked.
-- Do not add `TARGET_PC` conditionals for native-port behavior; write the native implementation directly.
+- Never write `TARGET_PC` conditionals; the port is the only target, so write the native implementation
+  directly. Game and port code contain none. Aurora still defines `TARGET_PC` for its own headers and
+  supplies it through `aurora::core`, so any hand-built compile line over game sources needs `-DTARGET_PC=1`.
 - NEVER commit game assets, disc images, or anything derived from the retail binary.
 - NEVER add co-authored-by lines to commits.
 - The repo is private until release; do not make it public or publish artifacts from it.
@@ -320,7 +322,9 @@ has — which is how you catch a table indexed past its end at the wrong stride.
 
 **Compare native vs retail offsets** with a throwaway program that prints `offsetof`, built with
 the real flags (`-DTARGET_PC=1 -DVERSION_GSAE01` and `-include port/include/foxhollow_compat.h`).
-Omitting `TARGET_PC` silently changes `u32` to 8 bytes and invalidates every number.
+`TARGET_PC` comes from Aurora's `aurora::core` target in a normal build, so a standalone compile line
+has to pass it by hand. Omitting it makes Aurora's `types.h` define `u32` as `unsigned long` — 8 bytes
+on LP64 — and `BOOL` not at all, silently invalidating every number.
 
 **Resolve what a map actually loads before auditing it.** Guessing from directory names is
 unreliable — many `WM_*` DLLs are cut content that never instantiates. Decode the romlist:

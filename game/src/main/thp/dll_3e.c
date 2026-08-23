@@ -49,7 +49,6 @@ s32 gAttractMovieAudioMode;
 AIDCallback gAttractMovieAudioPrevDmaCallback;
 static VIRetraceCallback OldVIPostCallback;
 
-#ifdef TARGET_PC
 extern void fhTHPVideoSetCompressedSize(u32 size);
 
 static u32 sPcMovieReadOffset;
@@ -120,7 +119,6 @@ static BOOL DecodeNextMovieFramePC(void)
     }
     return TRUE;
 }
-#endif
 
 static void PlayControl(u32 retraceCount) {
     AttractMovieTextureSet* decodedTexture;
@@ -145,7 +143,6 @@ static void PlayControl(u32 retraceCount) {
         return;
     }
 
-#ifdef TARGET_PC
     OSTime now;
 
     gAttractMovieIdleFrameCount = 0;
@@ -166,7 +163,6 @@ static void PlayControl(u32 retraceCount) {
         }
     }
     return;
-#endif
 
     if ((gAttractMoviePlayer.retraceCount == 0) &&
         ((gAttractMoviePlayer.internalState == 0) || (gAttractMoviePlayer.internalState == 4))) {
@@ -345,7 +341,6 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         player->playFlags = playFlags;
         player->videoDecodeCount = 0;
 
-#ifdef TARGET_PC
         sPcMovieReadOffset = player->initOffset;
         sPcMovieReadSize = player->initReadSize;
         sPcMovieFrame = player->initReadFrame;
@@ -368,7 +363,6 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         player->internalState = 0;
         OldVIPostCallback = VISetPostRetraceCallback(PlayControl);
         return TRUE;
-#endif
 
         if (player->isOnMemory != 0) {
             if (DVDRead(&player->fileInfo, player->loopFrame, player->header.mMovieDataSize,

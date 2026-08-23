@@ -629,7 +629,6 @@ void setRumbleEnabled(u8 enabled)
     rumbleEnabled = enabled;
 }
 
-#ifdef TARGET_PC
 enum
 {
     HOST_KEY_A = 4,
@@ -691,7 +690,6 @@ static void initKeyboardControls(void)
         PADSetKeyboardActive(PAD_CHAN0, TRUE);
     }
 }
-#endif
 
 int initControllers(void)
 {
@@ -715,9 +713,7 @@ int initControllers(void)
 
     gPadResetMask = 0xF0000000;
     PADInit();
-#ifdef TARGET_PC
     initKeyboardControls();
-#endif
     PADRecalibrate(gPadResetMask);
     if (PADReset(gPadResetMask) != 0)
     {
