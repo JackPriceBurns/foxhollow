@@ -420,9 +420,16 @@ of `CHANGELOG.md` and creates a GitHub release from it. The heading must match t
 release if it finds nothing.
 
 Publishing that release then runs `.github/workflows/publish.yml`, which builds macOS, Linux and
-Windows with `continue-on-error` (only macOS is known to build today), calls `POST /releases` on
-the API signed with SigV4 through the GitHub OIDC role, and uploads each binary it managed to
-build to the presigned URL it gets back. Platforms that failed to build are skipped, not faked.
+Windows, calls `POST /releases` on the API signed with SigV4 through the GitHub OIDC role, and
+uploads each binary to the presigned URL it gets back. All three platforms build.
+
+A release is all-or-nothing: the CDN step refuses to run unless every platform produced its
+archive, so a broken platform fails the release instead of quietly shipping a partial one. The
+matrix is still `fail-fast: false`, so one run tells you whether it is one platform or all three.
+
+The same job attaches every archive to the GitHub release, and the Windows build also publishes
+`foxhollow-<tag>-windows.lib` — the import library code mods link against, kept out of the
+launcher's zip so that download stays just the game.
 
 `.github/scripts/changelog.py` is shared by both: `--format markdown` produces the GitHub release
 body, `--format json` produces the bullet array the API stores as release notes and the launcher

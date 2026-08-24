@@ -22,8 +22,9 @@ jobs:
   build:
     name: Build ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
+      # Not fail-fast: one platform breaking should still report the others, so a
+      # single run tells you whether it is one platform or all three.
       fail-fast: false
       matrix:
         include:
@@ -106,6 +107,9 @@ jobs:
               7z l "$archive"
               exit 1
             fi
+            # Kept out of the archive above so the launcher download stays just the game.
+            # Code mods link against this; PE has no way to bind to an executable without it.
+            cp build/foxhollow.lib "dist/foxhollow-${version}-windows.lib"
           else
             tar -czf "dist/foxhollow-${version}-${{ matrix.platform }}.tar.gz" -C build foxhollow
           fi
@@ -119,18 +123,52 @@ jobs:
   publish:
     name: Publish to the CDN
     needs: build
+    # Runs even when a build failed, so the guard below reports which platform
+    # went missing rather than the job silently being skipped.
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Require every platform to have built
+        if: needs.build.result != 'success'
+        run: |
+          echo "The build job reported '${{ needs.build.result }}'."
+          echo "Refusing to publish a partial release to the CDN."
+          exit 1
 
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
-      - name: List what was built
-        run: ls -la dist || echo "No binaries were produced."
+      - name: Check every platform archive is present
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          ls -la dist || true
+          missing=0
+          for archive in "foxhollow-${TAG}-macos.tar.gz" \
+                         "foxhollow-${TAG}-linux.tar.gz" \
+                         "foxhollow-${TAG}-windows.zip"; do
+            if [ ! -f "dist/${archive}" ]; then
+              echo "missing: ${archive}"
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            echo "Refusing to publish a partial release to the CDN."
+            exit 1
+          fi
+
+      - name: Attach the binaries to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: gh release upload "${TAG}" dist/* --clobber
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
