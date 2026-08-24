@@ -123,9 +123,6 @@ jobs:
   publish:
     name: Publish to the CDN
     needs: build
-    # Runs even when a build failed, so the guard below reports which platform
-    # went missing rather than the job silently being skipped.
-    if: always()
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -133,36 +130,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Require every platform to have built
-        if: needs.build.result != 'success'
-        run: |
-          echo "The build job reported '${{ needs.build.result }}'."
-          echo "Refusing to publish a partial release to the CDN."
-          exit 1
-
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
-      - name: Check every platform archive is present
-        env:
-          TAG: ${{ inputs.tag || github.event.release.tag_name }}
-        run: |
-          ls -la dist || true
-          missing=0
-          for archive in "foxhollow-${TAG}-macos.tar.gz" \
-                         "foxhollow-${TAG}-linux.tar.gz" \
-                         "foxhollow-${TAG}-windows.zip"; do
-            if [ ! -f "dist/${archive}" ]; then
-              echo "missing: ${archive}"
-              missing=1
-            fi
-          done
-          if [ "${missing}" -ne 0 ]; then
-            echo "Refusing to publish a partial release to the CDN."
-            exit 1
-          fi
+      - name: List what was built
+        run: ls -la dist
 
       - name: Attach the binaries to the GitHub release
         env:

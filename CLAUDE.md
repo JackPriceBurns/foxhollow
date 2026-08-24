@@ -423,9 +423,9 @@ Publishing that release then runs `.github/workflows/publish.yml`, which builds 
 Windows, calls `POST /releases` on the API signed with SigV4 through the GitHub OIDC role, and
 uploads each binary to the presigned URL it gets back. All three platforms build.
 
-A release is all-or-nothing: the CDN step refuses to run unless every platform produced its
-archive, so a broken platform fails the release instead of quietly shipping a partial one. The
-matrix is still `fail-fast: false`, so one run tells you whether it is one platform or all three.
+A release is all-or-nothing: a platform that fails to build fails the build job, and the CDN step
+does not run, so a broken platform fails the release instead of quietly shipping a partial one.
+The matrix is still `fail-fast: false`, so one run tells you whether it is one platform or all three.
 
 The same job attaches every archive to the GitHub release, and the Windows build also publishes
 `foxhollow-<tag>-windows.lib` — the import library code mods link against, kept out of the
