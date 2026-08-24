@@ -6,6 +6,7 @@ extern float gCameraLightPerspectiveMatrix[3][4];
 extern float gCameraLightPerspectiveFlipYMatrix[3][4];
 extern float gCameraLightPerspectiveScaledMatrix[3][4];
 extern unsigned int gCameraProjectionMode;
+#define CAMERA_PROJECTION_ORTHO 1u
 extern void GXSetProjection(float (*matrix)[4], unsigned int mode);
 extern void fhGXSetCullSwap(int enabled);
 extern float gPauseMenuOpenAmount;
@@ -21,16 +22,25 @@ static signed char (*sOrigStickX)(int);
 
 static void say(const char* m) { sHost->log(sMod, FH_LOG_INFO, m); }
 
+static void mirror_light_matrix(float m[3][4]) {
+  for (int i = 0; i < 4; i++) {
+    m[0][i] = m[2][i] - m[0][i];
+  }
+}
+
 static void negate_row0(void) {
   if (sSuppressMirror) {
     return;
   }
+  if (gCameraProjectionMode == CAMERA_PROJECTION_ORTHO) {
+    return;
+  }
   for (int i = 0; i < 4; i++) {
     gCameraProjectionMatrix[0][i] = -gCameraProjectionMatrix[0][i];
-    gCameraLightPerspectiveMatrix[0][i] = -gCameraLightPerspectiveMatrix[0][i];
-    gCameraLightPerspectiveFlipYMatrix[0][i] = -gCameraLightPerspectiveFlipYMatrix[0][i];
-    gCameraLightPerspectiveScaledMatrix[0][i] = -gCameraLightPerspectiveScaledMatrix[0][i];
   }
+  mirror_light_matrix(gCameraLightPerspectiveMatrix);
+  mirror_light_matrix(gCameraLightPerspectiveFlipYMatrix);
+  mirror_light_matrix(gCameraLightPerspectiveScaledMatrix);
   GXSetProjection(gCameraProjectionMatrix, gCameraProjectionMode);
 }
 
