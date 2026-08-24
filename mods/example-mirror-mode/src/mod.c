@@ -1,15 +1,15 @@
 #include "foxhollow_mod_api.h"
 #include <stdio.h>
 
-extern float gCameraProjectionMatrix[4][4];
-extern float gCameraLightPerspectiveMatrix[3][4];
-extern float gCameraLightPerspectiveFlipYMatrix[3][4];
-extern float gCameraLightPerspectiveScaledMatrix[3][4];
-extern unsigned int gCameraProjectionMode;
+FH_MOD_IMPORT extern float gCameraProjectionMatrix[4][4];
+FH_MOD_IMPORT extern float gCameraLightPerspectiveMatrix[3][4];
+FH_MOD_IMPORT extern float gCameraLightPerspectiveFlipYMatrix[3][4];
+FH_MOD_IMPORT extern float gCameraLightPerspectiveScaledMatrix[3][4];
+FH_MOD_IMPORT extern unsigned int gCameraProjectionMode;
 #define CAMERA_PROJECTION_ORTHO 1u
-extern void GXSetProjection(float (*matrix)[4], unsigned int mode);
-extern void fhGXSetCullSwap(int enabled);
-extern float gPauseMenuOpenAmount;
+FH_MOD_IMPORT extern void GXSetProjection(float (*matrix)[4], unsigned int mode);
+FH_MOD_IMPORT extern void fhGXSetCullSwap(int enabled);
+FH_MOD_IMPORT extern float gPauseMenuOpenAmount;
 
 static FhMod* sMod;
 static const FhModHost* sHost;

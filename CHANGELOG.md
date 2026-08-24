@@ -4,6 +4,28 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.4.1
+
+### Fixed
+- Native mods work on Windows. The export list the mod import library is generated from was missing
+  most of what a mod needs: it matched only `T`, `D` and `B` symbols, so the `-fcommon` common symbols
+  that most game globals are — `gCameraProjectionMatrix` among them — and the read-only tables were
+  dropped, 9,343 of game.lib's 12,853. It also covered the game library alone, so a mod could call
+  game code but not Aurora's GX API or the port's own shims. It is now generated from the game, the
+  port shims and the Dolphin-SDK libraries, across all five symbol kinds, which is the surface macOS
+  already had through `-bundle_loader`.
+- Mirror Mode runs on Windows. Its host declarations now use `FH_MOD_IMPORT`, which is
+  `__declspec(dllimport)` on Windows and nothing elsewhere; without it, imported data does not resolve
+  at link time.
+
+### Changed
+- The example mods default to a `Release` build and pin the release CRT. Built with no build type they
+  linked the debug CRT and depended on `ucrtbased.dll` and `VCRUNTIME140D.dll`, which ship only with
+  Visual Studio, so the mod loaded on the machine that built it and nowhere else.
+
+### Removed
+- The example texture pack and `tools/make_example_texture.py`.
+
 ## v0.4.0 — 2026-08-24
 
 ### Added

@@ -103,17 +103,6 @@ endif ()
 
 set_target_properties(foxhollow PROPERTIES ENABLE_EXPORTS ON)
 
-if (WIN32 AND TARGET game)
-    find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
-    set(FOXHOLLOW_EXPORTS_DEF ${CMAKE_BINARY_DIR}/foxhollow_exports.def)
-    add_custom_command(TARGET foxhollow PRE_LINK
-            COMMAND ${CMAKE_COMMAND} -DNM=${FOXHOLLOW_LLVM_NM} -DLIB=$<TARGET_FILE:game>
-                    -DOUT=${FOXHOLLOW_EXPORTS_DEF}
-                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateWindowsExports.cmake
-            COMMENT "Generating the game export list for mods")
-    target_link_options(foxhollow PRIVATE /DEF:${FOXHOLLOW_EXPORTS_DEF})
-endif ()
-
 if (APPLE)
     add_custom_command(TARGET foxhollow POST_BUILD
             COMMAND codesign -s - --entitlements
@@ -145,6 +134,27 @@ target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
 target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash nlohmann_json::nlohmann_json)
 
+if (WIN32 AND TARGET game)
+    find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
+    set(FOXHOLLOW_EXPORTS_DEF ${CMAKE_BINARY_DIR}/foxhollow_exports.def)
+    set(FOXHOLLOW_EXPORT_TARGETS game port_shims
+            aurora::gx aurora::os aurora::pad aurora::mtx aurora::vi
+            aurora::si aurora::dvd aurora::card aurora::gd aurora::ms)
+    set(FOXHOLLOW_EXPORT_LIB_FILES "")
+    foreach (FOXHOLLOW_EXPORT_TARGET IN LISTS FOXHOLLOW_EXPORT_TARGETS)
+        if (TARGET ${FOXHOLLOW_EXPORT_TARGET})
+            list(APPEND FOXHOLLOW_EXPORT_LIB_FILES $<TARGET_FILE:${FOXHOLLOW_EXPORT_TARGET}>)
+        endif ()
+    endforeach ()
+    list(JOIN FOXHOLLOW_EXPORT_LIB_FILES "," FOXHOLLOW_EXPORT_LIBS)
+    add_custom_command(TARGET foxhollow PRE_LINK
+            COMMAND ${CMAKE_COMMAND} -DNM=${FOXHOLLOW_LLVM_NM} "-DLIBS=${FOXHOLLOW_EXPORT_LIBS}"
+                    -DOUT=${FOXHOLLOW_EXPORTS_DEF}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateWindowsExports.cmake
+            COMMENT "Generating the game export list for mods"
+            VERBATIM)
+    target_link_options(foxhollow PRIVATE /DEF:${FOXHOLLOW_EXPORTS_DEF})
+endif ()
 
 if (TARGET game)
     add_executable(linkcheck EXCLUDE_FROM_ALL src/main.c)

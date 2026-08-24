@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+            "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
+endif ()
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+
 project(foxhollow_example_mirror_mode C)
 
 set(CMAKE_C_STANDARD 11)
