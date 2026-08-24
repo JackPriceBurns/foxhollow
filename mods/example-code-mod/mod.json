@@ -3,5 +3,12 @@
   "name": "Example Code Mod",
   "version": "1.0.0",
   "author": "Foxhollow",
-  "description": "Calls into game code and interposes the camera's update slot to widen the FOV."
+  "description": "Calls into game code and interposes the camera's update slot to widen the FOV.",
+  "compatibility": {
+    "abi": 2,
+    "port": {
+      "min": "0.4.0",
+      "max": "0.4.99"
+    }
+  }
 }

@@ -51,6 +51,36 @@ so a path that is not a directory is reported rather than ignored.
 
 `id` is the only required field. `enabled: false` keeps a mod installed but inert.
 
+### Compatibility
+
+Asset mods are effectively version-proof: a texture hash and a disc path do not move between builds.
+Code mods are not — they bind to symbol addresses and struct layouts, and the port is still being
+cleaned up, so a mod built today can stop working on the next release. Mods declare what they support:
+
+```json
+"compatibility": {
+  "abi": 2,
+  "port": { "min": "0.4.0", "max": "0.4.99" }
+}
+```
+
+`abi` is the `FH_MOD_ABI_VERSION` the mod was built against. It is a mechanical check on the shape of
+`FhModHost` and is **required for any mod shipping a `lib/` directory** — a code mod without it is
+refused, because loading a library built against an unknown host table is how you get a crash with no
+useful diagnosis. Asset-only mods may omit the whole block.
+
+`port.min` and `port.max` are the port versions the mod is known to work against, and both are
+optional. They exist because ABI cannot see the failures that matter most here: a renamed function, a
+struct field that moved, a global that changed type. Nothing detects those, so the honest mechanism is
+a range the author sets and narrows deliberately. Keep it tight for a code mod.
+
+The loader enforces all three and refuses with a reason on stderr naming the mod, what it wanted and
+what this build is. The launcher checks the same fields before it will install or enable a mod, so an
+incompatible mod is visible before launch rather than as a silent no-show.
+
+The port's own version comes from `FOXHOLLOW_VERSION`, which CMake sets from the project version and
+CI overrides from the release tag.
+
 ### Load order
 
 Mods load in case-insensitive directory-name order. When two mods overlay the same disc path the

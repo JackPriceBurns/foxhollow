@@ -3,5 +3,12 @@
   "name": "Mirror Mode",
   "version": "1.0.0",
   "author": "Foxhollow",
-  "description": "Mirrors the world along X without touching game data, so saves stay compatible."
+  "description": "Mirrors the world along X without touching game data, so saves stay compatible.",
+  "compatibility": {
+    "abi": 2,
+    "port": {
+      "min": "0.4.0",
+      "max": "0.4.99"
+    }
+  }
 }

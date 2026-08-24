@@ -48,6 +48,10 @@ struct ModEntry {
   fs::path root;
 };
 
+#if !defined(FOXHOLLOW_VERSION)
+#define FOXHOLLOW_VERSION "0.0.0"
+#endif
+
 struct ClassPatch {
   uint32_t classId;
   uint32_t slot;
@@ -344,6 +348,70 @@ fs::path resolve_mods_root(int argc, char** argv, const char* userPath, bool& ou
   return {};
 }
 
+int compare_versions(const std::string& left, const std::string& right) {
+  size_t leftPos = 0;
+  size_t rightPos = 0;
+  for (int part = 0; part < 3; ++part) {
+    long leftValue = 0;
+    long rightValue = 0;
+    if (leftPos < left.size()) {
+      leftValue = std::strtol(left.c_str() + leftPos, nullptr, 10);
+      const size_t dot = left.find('.', leftPos);
+      leftPos = dot == std::string::npos ? left.size() : dot + 1;
+    }
+    if (rightPos < right.size()) {
+      rightValue = std::strtol(right.c_str() + rightPos, nullptr, 10);
+      const size_t dot = right.find('.', rightPos);
+      rightPos = dot == std::string::npos ? right.size() : dot + 1;
+    }
+    if (leftValue != rightValue) {
+      return leftValue < rightValue ? -1 : 1;
+    }
+  }
+  return 0;
+}
+
+bool check_compatibility(const nlohmann::json& manifest, const std::string& id, bool hasNativeLibrary) {
+  const char* portVersion = FOXHOLLOW_VERSION;
+  const bool hasBlock = manifest.contains("compatibility") && manifest["compatibility"].is_object();
+  const nlohmann::json empty = nlohmann::json::object();
+  const nlohmann::json& compatibility = hasBlock ? manifest["compatibility"] : empty;
+
+  if (hasNativeLibrary) {
+    if (!compatibility.contains("abi") || !compatibility["abi"].is_number_integer()) {
+      std::fprintf(stderr, "foxhollow: mods: %s ships code but declares no compatibility.abi; refusing\n", id.c_str());
+      return false;
+    }
+    const int abi = compatibility["abi"].get<int>();
+    if (abi != static_cast<int>(FH_MOD_ABI_VERSION)) {
+      std::fprintf(stderr, "foxhollow: mods: %s needs mod ABI %d, this build provides %u; refusing\n", id.c_str(), abi,
+                   FH_MOD_ABI_VERSION);
+      return false;
+    }
+  }
+
+  if (compatibility.contains("port") && compatibility["port"].is_object()) {
+    const nlohmann::json& port = compatibility["port"];
+    if (port.contains("min") && port["min"].is_string()) {
+      const std::string minimum = port["min"].get<std::string>();
+      if (compare_versions(portVersion, minimum) < 0) {
+        std::fprintf(stderr, "foxhollow: mods: %s needs Foxhollow >= %s, this is %s; refusing\n", id.c_str(),
+                     minimum.c_str(), portVersion);
+        return false;
+      }
+    }
+    if (port.contains("max") && port["max"].is_string()) {
+      const std::string maximum = port["max"].get<std::string>();
+      if (compare_versions(portVersion, maximum) > 0) {
+        std::fprintf(stderr, "foxhollow: mods: %s supports Foxhollow <= %s, this is %s; refusing\n", id.c_str(),
+                     maximum.c_str(), portVersion);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool read_manifest(const fs::path& manifestPath, ModEntry& outMod) {
   std::FILE* file = std::fopen(path_to_utf8(manifestPath).c_str(), "rb");
   if (file == nullptr) {
@@ -374,6 +442,11 @@ bool read_manifest(const fs::path& manifestPath, ModEntry& outMod) {
   }
 
   outMod.id = manifest["id"].get<std::string>();
+  const fs::path libraryPath = manifestPath.parent_path() / "lib" / platform_directory() / library_name();
+  std::error_code libraryError;
+  if (!check_compatibility(manifest, outMod.id, fs::is_regular_file(libraryPath, libraryError))) {
+    return false;
+  }
   outMod.name = manifest.value("name", outMod.id);
   outMod.version = manifest.value("version", std::string{});
   outMod.author = manifest.value("author", std::string{});

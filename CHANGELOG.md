@@ -4,6 +4,24 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.4.0 — 2026-08-24
+
+### Added
+- Mod support. A mod is a directory with a `mod.json` under the folder named by `--mods` or
+  `FOXHOLLOW_MODS`, or `mods` beside the save data. Textures and whole disc files can be replaced
+  with no code at all, and native mods can call into game code, replace an object class's callbacks,
+  or hook game functions by name.
+- Three example mods: a texture pack, a mod that interposes the camera, and Mirror Mode, which
+  mirrors the world without transforming any game data, so saves stay compatible in both directions.
+- Mods declare the mod ABI and the range of Foxhollow versions they support, and the loader refuses
+  anything that does not match rather than failing later in a way that is hard to diagnose.
+- `FOXHOLLOW_TEXTURE_DUMPS` writes every texture the game binds to the cache directory, named the way
+  a replacement has to be named, which is how texture packs are authored.
+
+### Changed
+- `TARGET_PC` conditionals are gone from game code. The port is the only target, so the dead
+  GameCube branches have been removed.
+
 ## v0.3.2 — 2026-08-23
 
 ### Added
