@@ -4,7 +4,7 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
-## v0.4.1
+## v0.4.1 — 2026-08-24
 
 ### Fixed
 - Native mods work on Windows. The export list the mod import library is generated from was missing
