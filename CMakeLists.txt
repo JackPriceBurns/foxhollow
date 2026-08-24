@@ -102,8 +102,16 @@ if (TARGET game)
 endif ()
 
 set_target_properties(foxhollow PROPERTIES ENABLE_EXPORTS ON)
-if (WIN32)
-    set_target_properties(foxhollow PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+if (WIN32 AND TARGET game)
+    find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
+    set(FOXHOLLOW_EXPORTS_DEF ${CMAKE_BINARY_DIR}/foxhollow_exports.def)
+    add_custom_command(TARGET foxhollow PRE_LINK
+            COMMAND ${CMAKE_COMMAND} -DNM=${FOXHOLLOW_LLVM_NM} -DLIB=$<TARGET_FILE:game>
+                    -DOUT=${FOXHOLLOW_EXPORTS_DEF}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateWindowsExports.cmake
+            COMMENT "Generating the game export list for mods")
+    target_link_options(foxhollow PRIVATE /DEF:${FOXHOLLOW_EXPORTS_DEF})
 endif ()
 
 if (APPLE)

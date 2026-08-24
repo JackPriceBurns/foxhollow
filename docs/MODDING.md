@@ -230,8 +230,10 @@ time, with no synchronisation against other threads executing the same function.
 | Hook exported functions | yes | yes | yes |
 | Hook `static` functions | yes | yes | **no** |
 
-Verified on macOS/arm64, on Linux for both arm64 and x86-64, and on Windows x86-64 under Wine. macOS
-x86-64 is untested; the release build is arm64 only.
+Verified on macOS/arm64, on Linux for both arm64 and x86-64, and on Windows x86-64 with clang-cl and the
+MSVC toolchain on EC2. macOS x86-64 is untested; the release build is arm64 only. The full Windows game
+build has not been run with these changes — the mechanism was validated on a project mirroring it, so CI
+is still the thing that confirms the real build.
 
 The pad is 16 bytes everywhere, so `original = target + 16` is uniform, but the flag that produces it is
 not: `-fpatchable-function-entry` counts **instructions** on arm64 and **bytes** on x86-64, so the build
@@ -250,15 +252,24 @@ the executable — `GetProcAddress` sees only the export table, and static funct
 Closing that gap needs a symbol manifest generated at build time, which is what Dusklight's `symgen
 manifest` produces.
 
-**Windows also needs a curated export list**, which is not written yet. A mod cannot bind to an
-executable without an import library, and exporting everything is not a workaround: a blanket export
-collides with the CRT at link time (`_Unwind_Resume` was the first casualty in testing). The export set
-has to be filtered down to game symbols, which is what `symgen def` does. `WINDOWS_EXPORT_ALL_SYMBOLS` is
-set as a starting point and has not been validated on a real Windows build.
+**Windows exports are generated from the game library.** A mod cannot bind to an executable without an
+import library, so `cmake/GenerateWindowsExports.cmake` runs `llvm-nm` over `game.lib` before the link
+and writes a `.def` — functions plain, data tagged `DATA`, compiler and CRT symbols filtered out. The
+executable links with `/DEF:`, which produces `foxhollow.lib` for mods to link against.
+
+`WINDOWS_EXPORT_ALL_SYMBOLS` does **not** work here and was tried first. It collects symbols from the
+target's own object files, and the game is a static library force-loaded in with `/WHOLEARCHIVE`, so it
+exported none of the game: 74 exports, not one of them a game symbol. The mod then failed to resolve
+anything. Exporting everything is not the answer either — with mingw a blanket export collided with the
+CRT at link time on `_Unwind_Resume`.
+
+Scale is not a concern. A 13,200-symbol `.def` generates in 0.85 s, links in 0.5 s, and all 13,200
+entries land in the PE export table with a usable import library beside it. The real game is around
+10,800 symbols, against a PE limit of 65,535.
 
 ### Not implemented
 
-- A curated Windows export list, and a build-time symbol manifest so statics resolve there
+- A build-time symbol manifest so `static` functions resolve on Windows
 - Link stubs, so mods can build without a copy of the game binary
 - Services beyond the nine host functions above — no config, no save, no runtime overlay or texture registration
 - ABI version gating in `mod.json`, and any launcher-side compatibility check
