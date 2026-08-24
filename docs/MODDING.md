@@ -28,9 +28,6 @@ mods/
     overlay/      files that replace or add to the disc, by path
 ```
 
-`mods/example-texture-pack` is a working one: it repaints Fox's character atlas, which is visible
-on the title screen the moment the game starts.
-
 ### Where the mods directory lives
 
 `--mods <dir>`, then `FOXHOLLOW_MODS`, then `<Aurora user path>/mods`. The first two are explicit,
@@ -99,8 +96,7 @@ unpacking `TEX0.tab` or any other archive.
 
 To find the filename for a texture, boot with `FOXHOLLOW_TEXTURE_DUMPS=1`. Every texture the game
 binds is written to `<Aurora cache path>/texture_dumps` as an editable 32-bit RGBA `.dds`, already
-named the way a replacement has to be named. `tools/make_example_texture.py` generates the example
-pack's image if you want a starting point that is not derived from the disc.
+named the way a replacement has to be named.
 
 ### overlay/
 
@@ -177,8 +173,17 @@ extern void Camera_SetFovY(float fovY);
 ```
 
 Linux resolves the same way at `dlopen` time; `ENABLE_EXPORTS` on the `foxhollow` target supplies the
-`-rdynamic` that needs. Windows cannot do this — a DLL needs an import library, which means generating
-a `.def` for the executable link. That is not done yet, so Windows code mods do not work.
+`-rdynamic` that needs. Windows needs an import library, which the build generates from an export
+list — see *Windows exports* below.
+
+On Windows a declaration of **data** in the host has to say it is imported, because PE reaches
+exported data only through an `__imp_` thunk; a plain `extern` on an exported variable is an
+unresolved symbol at link time. `FH_MOD_IMPORT` in `foxhollow_mod_api.h` expands to
+`__declspec(dllimport)` there and to nothing elsewhere, so one declaration works on all three:
+
+```c
+FH_MOD_IMPORT extern float gCameraProjectionMatrix[4][4];
+```
 
 **A mod that includes game headers must be built with the same toolchain flags as the game**:
 `-DTARGET_PC=1 -DVERSION_GSAE01`, `-fsigned-char`, `-fcommon`, and `-include port/include/foxhollow_compat.h`.
@@ -261,9 +266,18 @@ time, with no synchronisation against other threads executing the same function.
 | Hook `static` functions | yes | yes | **no** |
 
 Verified on macOS/arm64, on Linux for both arm64 and x86-64, and on Windows x86-64 with clang-cl and the
-MSVC toolchain on EC2. macOS x86-64 is untested; the release build is arm64 only. The full Windows game
-build has not been run with these changes — the mechanism was validated on a project mirroring it, so CI
-is still the thing that confirms the real build.
+MSVC toolchain. macOS x86-64 is untested; the release build is arm64 only.
+
+The Windows path is confirmed against the real game build, not a stand-in: `foxhollow.exe` exports
+13,927 symbols, Mirror Mode links against the generated `foxhollow.lib`, and all four of its hooks
+install and run — the 3D scene mirrors while the ortho HUD is left alone.
+
+**A mod must link the same CRT as the host.** The port builds `RelWithDebInfo`, so it takes the release
+CRT (`VCRUNTIME140.dll`). A mod configured with no `CMAKE_BUILD_TYPE` takes the *debug* CRT, which pulls
+in `ucrtbased.dll` and `VCRUNTIME140D.dll` — DLLs that ship only with Visual Studio, so the mod loads on
+the machine that built it and fails with "LoadLibrary failed" everywhere else. The example mods default
+`CMAKE_BUILD_TYPE` to `Release` and pin `CMAKE_MSVC_RUNTIME_LIBRARY` to `MultiThreadedDLL` for this
+reason.
 
 The pad is 16 bytes everywhere, so `original = target + 16` is uniform, but the flag that produces it is
 not: `-fpatchable-function-entry` counts **instructions** on arm64 and **bytes** on x86-64, so the build
@@ -282,10 +296,23 @@ the executable — `GetProcAddress` sees only the export table, and static funct
 Closing that gap needs a symbol manifest generated at build time, which is what Dusklight's `symgen
 manifest` produces.
 
-**Windows exports are generated from the game library.** A mod cannot bind to an executable without an
-import library, so `cmake/GenerateWindowsExports.cmake` runs `llvm-nm` over `game.lib` before the link
-and writes a `.def` — functions plain, data tagged `DATA`, compiler and CRT symbols filtered out. The
-executable links with `/DEF:`, which produces `foxhollow.lib` for mods to link against.
+**Windows exports are generated from the linked static libraries.** A mod cannot bind to an executable
+without an import library, so `cmake/GenerateWindowsExports.cmake` runs `llvm-nm` before the link and
+writes a `.def` — functions plain, data tagged `DATA`, compiler and CRT symbols filtered out, names
+deduplicated across libraries. The executable links with `/DEF:`, which produces `foxhollow.lib` for
+mods to link against.
+
+The input is `game.lib`, `port_shims.lib` and the `aurora::*` Dolphin-SDK libraries, not `game.lib`
+alone. macOS gets this for free: `-bundle_loader` resolves against the whole executable, so a mod can
+call anything linked into it. Restricting the `.def` to the game would make Windows the only platform
+where a mod can call `Camera_UpdateProjection` but not `GXSetProjection` or the port's own
+`fhGXSetCullSwap` — which is exactly what Mirror Mode needs.
+
+All five symbol kinds `llvm-nm` reports are exported: `T`, `D`, `B`, **`R`** and **`C`**. The last two
+matter more than they look. The game builds with `-fcommon`, so every tentative definition — which is
+most game globals — is a **common** symbol (`C`), and read-only tables land in `R`. Matching only
+`[TDB]` silently dropped 9,343 of game.lib's 12,853 symbols, including `gCameraProjectionMatrix` and
+every other global a code mod is likely to want.
 
 `WINDOWS_EXPORT_ALL_SYMBOLS` does **not** work here and was tried first. It collects symbols from the
 target's own object files, and the game is a static library force-loaded in with `/WHOLEARCHIVE`, so it
