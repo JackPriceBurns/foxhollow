@@ -427,9 +427,10 @@ A release is all-or-nothing: a platform that fails to build fails the build job,
 does not run, so a broken platform fails the release instead of quietly shipping a partial one.
 The matrix is still `fail-fast: false`, so one run tells you whether it is one platform or all three.
 
-The same job attaches every archive to the GitHub release, and the Windows build also publishes
-`foxhollow-<tag>-windows.lib` — the import library code mods link against, kept out of the
-launcher's zip so that download stays just the game.
+Binaries are distributed through the CDN, not GitHub — releases carry no assets. `GET
+https://api.foxhollow.dev/releases?channel=stable` is public and unauthenticated, and returns each
+version with a `downloads` map of `macos`/`linux`/`windows` to `cdn.foxhollow.dev` URLs. That is
+what the launcher reads, and what anything else building against a release should read too.
 
 `.github/scripts/changelog.py` is shared by both: `--format markdown` produces the GitHub release
 body, `--format json` produces the bullet array the API stores as release notes and the launcher

@@ -107,9 +107,6 @@ jobs:
               7z l "$archive"
               exit 1
             fi
-            # Kept out of the archive above so the launcher download stays just the game.
-            # Code mods link against this; PE has no way to bind to an executable without it.
-            cp build/foxhollow.lib "dist/foxhollow-${version}-windows.lib"
           else
             tar -czf "dist/foxhollow-${version}-${{ matrix.platform }}.tar.gz" -C build foxhollow
           fi
@@ -124,9 +121,6 @@ jobs:
     name: Publish to the CDN
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -137,12 +131,6 @@ jobs:
 
       - name: List what was built
         run: ls -la dist
-
-      - name: Attach the binaries to the GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.event.release.tag_name }}
-        run: gh release upload "${TAG}" dist/* --clobber
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
