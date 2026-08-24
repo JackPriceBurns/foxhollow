@@ -1,0 +1,7 @@
+{
+  "id": "dev.foxhollow.example-mirror-mode",
+  "name": "Mirror Mode",
+  "version": "1.0.0",
+  "author": "Foxhollow",
+  "description": "Mirrors the world along X without touching game data, so saves stay compatible."
+}

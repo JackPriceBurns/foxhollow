@@ -76,6 +76,23 @@ void fhLoadIdentityPosMtx(void) {
   GXLoadPosMtxImm(identity, GX_PNMTX9);
 }
 
+static int sCullSwapEnabled;
+
+void fhGXSetCullSwap(int enabled) { sCullSwapEnabled = enabled != 0; }
+
+int fhGXGetCullSwap(void) { return sCullSwapEnabled; }
+
+void fhGXSetCullMode(GXCullMode mode) {
+    if (sCullSwapEnabled) {
+        if (mode == GX_CULL_FRONT) {
+            mode = GX_CULL_BACK;
+        } else if (mode == GX_CULL_BACK) {
+            mode = GX_CULL_FRONT;
+        }
+    }
+    GXSetCullMode(mode);
+}
+
 void GXResetWriteGatherPipe(void) {}
 void __GXAbortWaitPECopyDone(void) {}
 

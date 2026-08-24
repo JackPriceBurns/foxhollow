@@ -577,6 +577,14 @@ by "mirror". The Y flip is a separate and much worse problem; see below.
 
 ### A. Projection mirror
 
+**Implemented as `mods/example-mirror-mode`.** Four hooks plus the port's cull swap. The one thing this
+section did not anticipate: the game calls `GXSetProjection` in the same function immediately after
+building the matrix, so a post-hook is too late to negate it — the mod re-pushes the mirrored matrix
+itself. The pause menu also needed handling, because `pauseMenuDraw` builds its own perspective view and
+inherited the mirror; the mod suppresses both the mirror and the cull swap for that call, and
+un-inverts the stick alongside it.
+
+
 `gCameraProjectionMatrix` is the single 4×4 used both by `GXSetProjection` **and** by every
 CPU-side world→screen helper — `Camera_ProjectWorldPoint`, `Camera_ProjectWorldSphere` and
 `Camera_ProjectWorldPointWithOffset` in `game/src/main/camera.c` each multiply through it by
@@ -595,7 +603,12 @@ Two subsystems need no attention at all:
 What remains:
 
 1. **Swap `GXSetCullMode` FRONT↔BACK.** A negative determinant flips winding. There are 76 call
-   sites, so this belongs in the GX shim, not in 76 edits.
+   sites, so this belongs in the GX shim, not in 76 edits. **Done:** `foxhollow_compat.h` is
+   force-included into game code only, so `#define GXSetCullMode fhGXSetCullMode` reroutes every call
+   site at build time to a wrapper in `port/src/gx_shim.c`. `fhGXSetCullSwap(1)` turns the swap on;
+   it is off by default and the wrapper simply forwards, so a build with no mod behaves identically.
+   Hooking Aurora's `GXSetCullMode` instead does not work — patching its page kills Aurora's worker
+   threads, see [Symbol hooking](#symbol-hooking).
 2. **Negate row 0 of the three `C_MTXLightPerspective` matrices** —
    `gCameraLightPerspective{,Scaled,FlipY}Matrix`, same four sites in `camera.c`. They are texgen
    matrices that sample buffers rendered *with* the mirrored projection, so they have to agree

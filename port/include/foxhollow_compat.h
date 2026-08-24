@@ -87,6 +87,8 @@ unsigned int sfaRand(void);
 void sfaSrand(unsigned int seed);
 
 #define GX_PNMTX_IDENTITY 27
+
+#define GXSetCullMode fhGXSetCullMode
 void fhLoadIdentityPosMtx(void);
 void fhAIPump(void);
 uintptr_t fhAIGetDMAStartAddr(void);
