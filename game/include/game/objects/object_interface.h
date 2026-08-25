@@ -3,26 +3,32 @@
 
 #include "global.h"
 
-typedef void (*ObjectInterfaceCallback)(void);
-typedef int (*ObjectInterfaceExtraSizeCallback)(void);
+typedef struct GameObject GameObject;
 
-/*
- * Common prefix of every object DLL's runtime interface. Resource_Acquire
- * returns a handle to this table, starting at an ObjectDescriptor's slot02.
- * Object-specific callbacks extend this prefix.
- */
+typedef void (*ObjectInterfaceCallback)(void);
+typedef void (*ObjectInitCallback)(GameObject* obj, void* placement, int flags);
+typedef void (*ObjectUpdateCallback)(GameObject* obj);
+typedef void (*ObjectHitDetectCallback)(GameObject* obj);
+typedef void (*ObjectRenderCallback)(GameObject* obj, int arg2, int arg3, int arg4, int arg5, s8 visible);
+typedef void (*ObjectFreeCallback)(GameObject* obj, int flags);
+typedef int (*ObjectGetObjectTypeIdCallback)(GameObject* obj);
+typedef int (*ObjectGetExtraSizeCallback)(GameObject* obj);
+
+#define OBJECT_INTERFACE_FIELDS                    \
+    ObjectInterfaceCallback slot02;                \
+    ObjectInitCallback init;                       \
+    ObjectUpdateCallback update;                   \
+    ObjectHitDetectCallback hitDetect;             \
+    ObjectRenderCallback render;                   \
+    ObjectFreeCallback free;                       \
+    ObjectGetObjectTypeIdCallback getObjectTypeId; \
+    ObjectGetExtraSizeCallback getExtraSize
+
 typedef struct ObjectInterface {
-    ObjectInterfaceCallback slot02;
-    ObjectInterfaceCallback init;
-    ObjectInterfaceCallback update;
-    ObjectInterfaceCallback hitDetect;
-    ObjectInterfaceCallback render;
-    ObjectInterfaceCallback free;
-    ObjectInterfaceCallback getObjectTypeId;
-    ObjectInterfaceExtraSizeCallback getExtraSize;
+    OBJECT_INTERFACE_FIELDS;
 } ObjectInterface;
 
-typedef ObjectInterfaceCallback** ObjectInterfaceHandle;
+typedef ObjectInterface** ObjectInterfaceHandle;
 
 STATIC_ASSERT(offsetof(ObjectInterface, slot02) == 0x00);
 STATIC_ASSERT(offsetof(ObjectInterface, init) == 0x04);

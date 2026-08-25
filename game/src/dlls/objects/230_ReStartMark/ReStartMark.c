@@ -12,19 +12,25 @@ void ReStartMark_init(GameObject* obj, ReStartMarkPlacement* placement) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gReStartMarkObjDescriptorInitAdapter, ReStartMark_init, obj, placement)
+
 ObjectDescriptor gReStartMarkObjDescriptor = {
-    0,                                          /* reserved0 */
-    0,                                          /* reserved1 */
-    0,                                          /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,           /* slotCountAndFlags */
-    0,                                          /* initialise */
-    0,                                          /* release */
-    0,                                          /* slot02 */
-    (ObjectDescriptorCallback)ReStartMark_init, /* init */
-    0,                                          /* update */
-    0,                                          /* hitDetect */
-    0,                                          /* render */
-    0,                                          /* free */
-    0,                                          /* getObjectTypeId */
-    0,                                          /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gReStartMarkObjDescriptorInitAdapter,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 };

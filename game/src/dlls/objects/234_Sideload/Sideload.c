@@ -6,7 +6,7 @@
  * spawned Tricky inherits the spawner's position and placement rotation.
  */
 #include "dlls/objects/234_Sideload.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -32,18 +32,22 @@ void sideload_update(GameObject* obj) {
 }
 
 ObjectDescriptor gSideloadObjDescriptor = {
-    0,                                         /* reserved0 */
-    0,                                         /* reserved1 */
-    0,                                         /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,          /* slotCountAndFlags */
-    0,                                         /* initialise */
-    0,                                         /* release */
-    0,                                         /* slot02 */
-    0,                                         /* init */
-    (ObjectDescriptorCallback)sideload_update, /* update */
-    0,                                         /* hitDetect */
-    0,                                         /* render */
-    0,                                         /* free */
-    0,                                         /* getObjectTypeId */
-    0,                                         /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    0,
+    sideload_update,
+    0,
+    0,
+    0,
+    0,
+    0,
 };

@@ -44,19 +44,32 @@ void dll_144_release(void) {
 void dll_144_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll144ObjDescriptorInitAdapter, dll_144_init, obj)
+OBJECT_UPDATE_ADAPTER(gDll144ObjDescriptorUpdateAdapter, dll_144_update)
+OBJECT_HIT_DETECT_ADAPTER(gDll144ObjDescriptorHitDetectAdapter, dll_144_hitDetect)
+OBJECT_FREE_ADAPTER(gDll144ObjDescriptorFreeAdapter, dll_144_free)
+OBJECT_TYPE_ID_ADAPTER(gDll144ObjDescriptorTypeIdAdapter, dll_144_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll144ObjDescriptorExtraSizeAdapter, dll_144_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll144ObjDescriptorAcquire, dll_144_initialise)
+
 ObjectDescriptor gDll144ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll144ObjDescriptorAcquire,
+        dll_144_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_144_initialise,
-    (ObjectDescriptorCallback)dll_144_release,
-    0,
-    (ObjectDescriptorCallback)dll_144_init,
-    (ObjectDescriptorCallback)dll_144_update,
-    (ObjectDescriptorCallback)dll_144_hitDetect,
-    (ObjectDescriptorCallback)dll_144_render,
-    (ObjectDescriptorCallback)dll_144_free,
-    (ObjectDescriptorCallback)dll_144_getObjectTypeId,
-    dll_144_getExtraSize,
+    gDll144ObjDescriptorInitAdapter,
+    gDll144ObjDescriptorUpdateAdapter,
+    gDll144ObjDescriptorHitDetectAdapter,
+    dll_144_render,
+    gDll144ObjDescriptorFreeAdapter,
+    gDll144ObjDescriptorTypeIdAdapter,
+    gDll144ObjDescriptorExtraSizeAdapter,
 };

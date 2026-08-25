@@ -73,6 +73,7 @@ void ChukChuk_release(void);
 void ChukChuk_initialise(void);
 
 extern u8 gChukChukGlowTextureRamp[16];
-extern ObjectDescriptor11WithPadding gChukChukObjDescriptor;
+struct ChukChukObjDescriptorType;
+extern struct ChukChukObjDescriptorType gChukChukObjDescriptor;
 
 #endif /* DLLS_OBJECTS_204_CHUKCHUK_H_ */

@@ -15,20 +15,18 @@ STATIC_ASSERT(offsetof(CameraMode4FState, blendProgress) == 0x04);
 STATIC_ASSERT(sizeof(CameraMode4FState) == 0x08);
 
 typedef struct CameraMode4FDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(void);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraMode4FDescriptor;
 
-STATIC_ASSERT(offsetof(CameraMode4FDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraMode4FDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraMode4FDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraMode4FDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraMode4FDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraMode4FDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraMode4FDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraMode4FDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraMode4FDescriptor, update) == 0x20);

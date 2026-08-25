@@ -4,15 +4,20 @@
 #include "dolphin/gx.h"
 #include "dolphin/mtx.h"
 #include "game/objects/object.h"
-#include "track/intersect_depth_read_api.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_hud_api.h"
-#include "track/intersect_geom_api.h"
-#include "track/intersect_screen_api.h"
-#include "track/intersect_whirlpool_api.h"
+#include "track/intersect_depth_read.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_hud.h"
+#include "track/intersect_geom.h"
+#include "track/intersect_render_setup.h"
+#include "track/intersect_screen.h"
+#include "track/intersect_whirlpool.h"
 #include "main/projected_shadow.h"
 #include "types.h"
 
+typedef struct ObjDef ObjDef;
+
+void intersectModLineBuild(ObjDef* obj);
+void gxSetOpaqueZWriteMode(void);
 void* surfaceSfxGetRecord(u32 i);
 void waterFxUpdate(f32 step);
 void waterFxDraw(void);

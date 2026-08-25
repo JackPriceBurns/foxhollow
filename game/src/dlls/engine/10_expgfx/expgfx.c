@@ -2,48 +2,46 @@
 #include "main/dll/partfx_interface.h"
 #include "dolphin/mtx.h"
 #include "string.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_fog_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "track/intersect_geom_api.h"
-#include "main/hud_visibility_api.h"
-#include "main/shader_api.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_fog.h"
+#include "track/intersect_render_setup.h"
+#include "track/intersect_geom.h"
+#include "main/hud_visibility.h"
+#include "main/shader.h"
 #include "main/debug.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "sys/objects/lifecycle.h"
 #include "main/camera.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/expgfx_internal.h"
 #include "game/objects/object.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "sys/objects.h"
 #include "main/objfx.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_render_queue_api.h"
+#include "main/lightmap.h"
+#include "main/lightmap_render_queue.h"
 #include "main/mm.h"
 #include "main/sky.h"
 #include "main/tex_dolphin.h"
 #include "main/texture.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "dolphin/os/OSFastCast.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/render_mode_api.h"
-#include "main/dll/objfx.h"
+#include "main/render_mode.h"
 #include "main/trig_float_helpers.h"
 #include "main/dll/viewfinder.h"
-#include "track/intersect_api.h"
-#include "main/lightmap.h"
+#include "track/intersect.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/dll/dll_005A_staffcollision.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/boneparticleeffect_interface.h"
-#include "main/dll/expgfx_resource_api.h"
+#include "main/dll/expgfx_resource.h"
 #include "main/trig.h"
 #include "main/model_light.h"
 #include "game/objects/object_setup.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/resource.h"
 #include "main/vecmath.h"
 #include "dolphin/gx/GXCull.h"
@@ -53,7 +51,7 @@
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/mtx/vec.h"
 #include "dolphin/os/OSCache.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "dolphin/gx/GXGeometry.h"
 
 typedef union ExpgfxWGPipe
@@ -236,25 +234,28 @@ ObjFxLightColor gObjFxLightColorTbl[12] = {
     {0xFF, 0xFF, 0x40}, {0x00, 0x7F, 0xFF}, {0x00, 0x00, 0x00}, {0x00, 0x00, 0x00},
 };
 
+RESOURCE_ACQUIRE_ADAPTER(gExpgfxResourceAcquire, expgfx_initialise)
+
 ExpgfxDllInterface expgfx_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
-    (ObjectDescriptorCallback)expgfx_initialise,
-    (ObjectDescriptorCallback)expgfx_release,
-    0,
-    (ObjectDescriptorCallback)expgfx_onMapSetup,
-    (ObjectDescriptorCallback)expgfx_addremove,
-    (ObjectDescriptorCallback)expgfx_updateFrameState,
-    (ObjectDescriptorCallback)expgfx_resetAllPools,
-    (ObjectDescriptorCallback)expgfx_free,
-    (ObjectDescriptorCallback)expgfx_free2,
-    (ObjectDescriptorCallback)expgfx_func09,
-    (ObjectDescriptorCallback)expgfx_func0A_nop,
-    (ObjectDescriptorCallback)expgfx_func0B_nop,
-    (ObjectDescriptorCallback)expgfx_ownerFree3,
-    (ObjectDescriptorCallback)expgfx_updateSourceFrameFlags,
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_14_SLOTS},
+        gExpgfxResourceAcquire,
+        expgfx_release,
+    },
+    {
+        {0},
+        expgfx_onMapSetup,
+        expgfx_addremove,
+        expgfx_updateFrameState,
+        expgfx_resetAllPools,
+        expgfx_free,
+        expgfx_free2,
+        expgfx_func09,
+        expgfx_func0A_nop,
+        expgfx_func0B_nop,
+        expgfx_ownerFree3,
+        expgfx_updateSourceFrameFlags,
+    },
 };
 
 s16 gObjFxCrystalSpinSpeed[4] = {-1024, -512, 512, 1024};
@@ -333,7 +334,7 @@ void objfx_spawnCrystalOrbitEffects(GameObject* obj, ObjFxCrystalOrbitState* sta
     }
 }
 
-void objfx_spawnRandomBurst(void* obj, u8 type, u8 count, void* origin, f32 mult, u8 flagByte)
+void objfx_spawnRandomBurst(GameObject* obj, u8 type, u8 count, void* origin, f32 mult, u8 flagByte)
 {
     ObjFxParticleParams params;
     ObjFxRandomBurstTable burstTbl = gObjFxRandomBurstTbl;
@@ -408,7 +409,7 @@ void objfx_spawnHitEmitterAtPos(f32* pos, u8 a, u8 b, u8 c, u8 d)
     (*partfxIface)->spawn(NULL, 1, (PartFxSpawnParams*)&emitter, 0x401, -1, &emitterArgs);
 }
 
-void objfx_spawnHitEffectBurst(void* obj, f32 scale, u8 idSel, u8 paramSel, u8 count, GameObject* origin)
+void objfx_spawnHitEffectBurst(GameObject* obj, f32 scale, u8 idSel, u8 paramSel, u8 count, GameObject* origin)
 {
     ObjFxParticleParams params;
     ObjFxU16Table11 table = gObjFxHitEffectParamTbl2;
@@ -438,7 +439,7 @@ void objfx_spawnHitEffectBurst(void* obj, f32 scale, u8 idSel, u8 paramSel, u8 c
     }
 }
 
-void objfx_spawnMaskedHitEffect(void* obj, f32 scale, u8 type, u8 mode, u8 mask, void* origin)
+void objfx_spawnMaskedHitEffect(GameObject* obj, f32 scale, u8 type, u8 mode, u8 mask, void* origin)
 {
     ObjFxParticleParams params;
     ObjFxU16Table11 effectParamTbl = gObjFxHitEffectParamTbl;
@@ -468,7 +469,8 @@ void objfx_spawnMaskedHitEffect(void* obj, f32 scale, u8 type, u8 mode, u8 mask,
     (*gPartfxInterface)->spawnObject(obj, spawnIdTbl.values[type], &params, 2, -1, NULL);
 }
 
-void objfx_spawnDirectionalBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chance, f32 mult, void* origin,
+void objfx_spawnDirectionalBurst(GameObject* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chance, f32 mult,
+                                 void* origin,
                                  int flags)
 {
     ObjFxParticleParams params;
@@ -552,7 +554,8 @@ void objfx_spawnDirectionalBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode,
 
 #define OBJ_FX_PI 3.1415927f
 
-void objfx_spawnArcedBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, int chance, f32 angBase, f32 lo, f32 hi,
+void objfx_spawnArcedBurst(GameObject* obj, u8 idx, f32 scale, u8 kind, u8 mode, int chance, f32 angBase, f32 lo,
+                           f32 hi,
                            void* origin, int flags) {
     ObjFxParticleParams params;
     ObjFxU16Table9 effectParams = *(ObjFxU16Table9*)&gObjFxHitPulseTbl.records[1][0];
@@ -630,7 +633,8 @@ void objfx_spawnArcedBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, int c
     }
 }
 
-void objfx_spawnBoxBurst(void* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chance, f32 mulX, f32 mulY, f32 mulZ,
+void objfx_spawnBoxBurst(GameObject* obj, u8 idx, f32 scale, u8 kind, u8 mode, u8 chance, f32 mulX, f32 mulY,
+                         f32 mulZ,
                          void* origin, int flags)
 {
     ObjFxParticleParams params;
@@ -1037,7 +1041,7 @@ void objfx_spawnFlaggedTrailBurst(void* obj, f32 fval, u8 mode, int f6val, int f
     }
 }
 
-void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, const Vec* offset)
+void objfx_spawnPulseBurst(GameObject* obj, f32 scale, int type, int count, int mode, const Vec* offset)
 {
     ObjFxParticleParams params;
     int j;
@@ -1306,7 +1310,7 @@ void objfx_spawnPulseBurst(void* obj, f32 scale, int type, int count, int mode, 
         }
     }
 }
-void projectileDoParticleFx(void* obj, f32 scaleArg, int mode)
+void projectileDoParticleFx(GameObject* obj, f32 scaleArg, int mode)
 {
     ObjFxParticleParams params;
     f32 tailScale;
@@ -1399,7 +1403,7 @@ void projectileDoParticleFx(void* obj, f32 scaleArg, int mode)
     (*gPartfxInterface)->spawnObject(obj, 0x79f, NULL, 1, -1, &tailScale);
 }
 
-void itemPickupDoParticleFx(void* obj, f32 scale, int mode, u8 count)
+void itemPickupDoParticleFx(GameObject* obj, f32 scale, int mode, u8 count)
 {
     ObjFxParticleParams params;
     int i;
@@ -1569,7 +1573,7 @@ void objDoParticleFx(GameObject* obj, f32 scale, int type, f32 extraScale, Model
     }
 }
 
-void objDoHitParticleFx(void* obj, f32 scale, void* origin, u8 type, void* light)
+void objDoHitParticleFx(GameObject* obj, f32 scale, void* origin, u8 type, void* light)
 {
     u8 spawnArgs[16];
     u8 remaining;

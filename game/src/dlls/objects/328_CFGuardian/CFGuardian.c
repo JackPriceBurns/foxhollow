@@ -1,38 +1,38 @@
 #include "dlls/objects/328_CFGuardian.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera_interface.h"
 #include "main/curve.h"
 #include "main/dll/dll_0015_curves.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_status.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/game_ui_interface.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_sequence_api.h"
+#include "main/maketex_random.h"
+#include "main/maketex_sequence.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
 #include "main/objseq.h"
-#include "main/pad_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/pad.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "main/dll/dll_002E_moveLib.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/dll/savegame_object.h"
 
 #define CFGUARDIAN_AIRBORNE_OBJECT_GROUP      0x16
 #define CFGUARDIAN_TARGET_OBJECT_GROUP        3
@@ -278,12 +278,12 @@ int cfguardian_flyAlongPath(GameObject* obj, RomCurveWalker* walker, f32 speed, 
         }
     } else {
         pathComplete = 0;
-        if (Curve_AdvanceAlongPath(&walker->curve, speed) != 0 || walker->atSegmentEnd != 0) {
+        if (Curve_AdvanceAlongPath(&walker->curve, speed) != 0 || walker->curve.idx != 0) {
             pathComplete = (*gRomCurveInterface)->goNextPoint(walker);
         }
-        obj->anim.localPosX = walker->posX;
-        obj->anim.localPosY = walker->posY;
-        obj->anim.localPosZ = walker->posZ;
+        obj->anim.localPosX = walker->curve.sample[0];
+        obj->anim.localPosY = walker->curve.sample[1];
+        obj->anim.localPosZ = walker->curve.sample[2];
         if (pathComplete != 0) {
             obj->userData1 = -1;
         }
@@ -858,7 +858,7 @@ void cfguardian_init(GameObject* obj, CfGuardianPlacement* placement) {
     state->moveSpeed = 0.0f;
     state->unknownA90 = 6;
     state->stateFlags = 0;
-    state->flags611 = state->flags611 | 0x28;
+    state->moveLib.modeBits = state->moveLib.modeBits | 0x28;
     state->chatterState = CFGUARDIAN_CHATTER_READY;
     state->chatterAlt = 0;
     state->chatterPick = 0;
@@ -876,7 +876,7 @@ void cfguardian_init(GameObject* obj, CfGuardianPlacement* placement) {
     dll_2E_initState(obj, &state->moveLib, -0x2000, 0x2800, 4);
     dll_2E_setReattackDelay(&state->moveLib, 0x12c, 0x64);
     dll_2E_setMoveTables(&state->moveLib, &hitboxTemplateB, &hitboxTemplateA, 4);
-    state->flags611 = state->flags611 | 0x2;
+    state->moveLib.modeBits = state->moveLib.modeBits | 0x2;
 }
 
 void cfguardian_release(void) {
@@ -885,20 +885,42 @@ void cfguardian_release(void) {
 void cfguardian_initialise(void) {
 }
 
-ObjectDescriptor11ExtraSize gCFGuardianObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    (ObjectDescriptorCallback)cfguardian_initialise,
-    (ObjectDescriptorCallback)cfguardian_release,
-    0,
-    (ObjectDescriptorCallback)cfguardian_init,
-    (ObjectDescriptorCallback)cfguardian_update,
-    (ObjectDescriptorCallback)cfguardian_hitDetect,
-    (ObjectDescriptorCallback)cfguardian_render,
-    (ObjectDescriptorCallback)cfguardian_free,
-    (ObjectDescriptorCallback)cfguardian_getObjectTypeId,
-    cfguardian_getExtraSize,
-    (ObjectDescriptorCallback)cfguardian_isNotPathFlying,
+OBJECT_INIT_ADAPTER(gCFGuardianObjDescriptorInitAdapter, cfguardian_init, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gCFGuardianObjDescriptorTypeIdAdapter, cfguardian_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFGuardianObjDescriptorExtraSizeAdapter, cfguardian_getExtraSize)
+
+typedef struct CFGuardianObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(cfguardian_isNotPathFlying)* cfguardian_isNotPathFlying;
+} CFGuardianObjDescriptorTypeInterface;
+
+struct CFGuardianObjDescriptorType {
+    ObjectDescriptorHeader header;
+    CFGuardianObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gCFGuardianObjDescriptorAcquire, cfguardian_initialise)
+
+struct CFGuardianObjDescriptorType gCFGuardianObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        },
+        gCFGuardianObjDescriptorAcquire,
+        cfguardian_release,
+    },
+    {
+        0,
+        gCFGuardianObjDescriptorInitAdapter,
+        cfguardian_update,
+        cfguardian_hitDetect,
+        cfguardian_render,
+        cfguardian_free,
+        gCFGuardianObjDescriptorTypeIdAdapter,
+        gCFGuardianObjDescriptorExtraSizeAdapter,
+        cfguardian_isNotPathFlying,
+    },
 };

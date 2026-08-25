@@ -4,48 +4,35 @@
 #include "global.h"
 #include "types.h"
 
-typedef struct ResourceDescriptor {
-    u8 pad00[0x10];
-    void (*acquire)(struct ResourceDescriptor* descriptor);
-    void (*release)(void);
+typedef struct ResourceDescriptor ResourceDescriptor;
+
+typedef void (*ResourceAcquireCallback)(ResourceDescriptor* descriptor);
+typedef void (*ResourceReleaseCallback)(void);
+
+typedef struct ResourceDescriptorHeader {
+    u32 metadata[4];
+    ResourceAcquireCallback acquire;
+    ResourceReleaseCallback release;
+} ResourceDescriptorHeader;
+
+struct ResourceDescriptor {
+    u32 metadata[4];
+    ResourceAcquireCallback acquire;
+    ResourceReleaseCallback release;
     u8 data[0];
-} ResourceDescriptor;
+};
+
+#define RESOURCE_ACQUIRE_ADAPTER(adapter, callback, ...) \
+    static void adapter(ResourceDescriptor* descriptor) { callback(__VA_ARGS__); }
+
+#define RESOURCE_DESCRIPTOR_TYPE(name, interfaceType) \
+    typedef struct name {                              \
+        ResourceDescriptorHeader header;               \
+        interfaceType interface;                       \
+    } name
 
 #define RESOURCE_DESCRIPTOR_REF(descriptor) \
     _Generic(&(descriptor), ResourceDescriptor*: &(descriptor), default: (void*)&(descriptor))
-
-typedef void (*ResourceDescriptorCallback)(void);
-
-typedef struct ResourceDescriptorCallbacks7 {
-    u32 metadata[4];
-    ResourceDescriptorCallback callbacks[7];
-} ResourceDescriptorCallbacks7;
-
-typedef struct ResourceDescriptorCallbacks8 {
-    u32 metadata[4];
-    ResourceDescriptorCallback callbacks[8];
-} ResourceDescriptorCallbacks8;
-
-typedef struct ResourceDescriptorCallbacks12 {
-    u32 metadata[4];
-    ResourceDescriptorCallback callbacks[12];
-} ResourceDescriptorCallbacks12;
-
-typedef struct ResourceDescriptorCallbacks11 {
-    u32 metadata[4];
-    ResourceDescriptorCallback callbacks[11];
-} ResourceDescriptorCallbacks11;
-
-typedef struct ResourceDescriptorCallbacks14 {
-    u32 metadata[4];
-    ResourceDescriptorCallback callbacks[14];
-} ResourceDescriptorCallbacks14;
-
-STATIC_ASSERT(sizeof(ResourceDescriptorCallbacks7) == 0x2C);
-STATIC_ASSERT(sizeof(ResourceDescriptorCallbacks8) == 0x30);
-STATIC_ASSERT(sizeof(ResourceDescriptorCallbacks11) == 0x3C);
-STATIC_ASSERT(sizeof(ResourceDescriptorCallbacks12) == 0x40);
-STATIC_ASSERT(sizeof(ResourceDescriptorCallbacks14) == 0x48);
 
 extern ResourceDescriptor* gResourceDescriptors[];
 extern void* gResourceLoadedHandles[];

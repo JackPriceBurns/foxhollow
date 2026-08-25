@@ -1,15 +1,15 @@
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -17,7 +17,7 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
@@ -27,27 +27,24 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/wispbaddie_baddie.h"
-#include "main/audio/sfx_position_api.h"
 #include "main/audio/sfx_ids.h"
 #include "main/dll/baddie_setmove.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/dll/seqobj11d_ext.h"
 #include "main/dll/wispbaddieseq_ext.h"
-#include "main/gameloop_api.h"
-#include "main/audio/sfx.h"
+#include "main/gameloop.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/gamebits.h"
 #include "main/dll/objfsa.h"
 #include "main/gamebit_ids.h"
 #include "main/dll/newseqobj_baddie.h"
 #include "main/dll/baddie_frozen.h"
 #include "main/game_ui_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/model.h"
 #include "main/object_transform.h"
 #include "main/dll/player_target.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dlls/objects/225_WispBaddie.h"
 #include "main/trig_float_helpers.h"
 #include "main/obj_link.h"
@@ -66,10 +63,9 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/fall_ladders.h"
 #include "main/dll/fireflyLantern.h"
-#include "main/dll/duster_api.h"
-#include "main/track_bbox_api.h"
-#include "main/sky_interface.h"
 #include "main/dll/duster.h"
+#include "main/track_bbox.h"
+#include "main/sky_interface.h"
 #include "dlls/objects/216_PinPonSpike.h"
 #include "main/dll/duster_wb.h"
 #include "main/obj_query.h"
@@ -907,8 +903,8 @@ void sharpClawUpdateIdle(GameObject* obj, u8* state)
         f32 delta;
 
         {
-            f32 dx = path->posX - (obj)->anim.localPosX;
-            f32 dz = path->posZ - (obj)->anim.localPosZ;
+            f32 dx = path->curve.sample[0] - (obj)->anim.localPosX;
+            f32 dz = path->curve.sample[2] - (obj)->anim.localPosZ;
             dist = sqrtf(dx * dx + dz * dz);
         }
         if (dist > 64.0f)
@@ -924,14 +920,14 @@ void sharpClawUpdateIdle(GameObject* obj, u8* state)
         {
             ((EnemyState*)state)->pathSpeed = 0.25f;
         }
-        if (Curve_AdvanceAlongPath(&path->curve, ((EnemyState*)state)->pathSpeed) != 0 || path->atSegmentEnd != 0)
+        if (Curve_AdvanceAlongPath(&path->curve, ((EnemyState*)state)->pathSpeed) != 0 || path->curve.idx != 0)
         {
             if ((*gRomCurveInterface)->goNextPoint(path) != 0)
             {
                 sidekickToy_updateCurveTargetLatch(obj);
             }
         }
-        delta = (f32)(int)((u16)getAngle(path->tangentX, path->tangentZ) + 0x8000 - (u16)(obj)->anim.rotX);
+        delta = (f32)(int)((u16)getAngle(path->curve.tangent[0], path->curve.tangent[2]) + 0x8000 - (u16)(obj)->anim.rotX);
         if (delta > 32768.0f)
         {
             delta = -65535.0f + delta;
@@ -989,7 +985,7 @@ void sharpClawUpdateIdle(GameObject* obj, u8* state)
                 ((EnemyState*)state)->pathSpeed = 0.0f;
             }
         }
-        baddieTurnTowardPoint(obj, state, path->posX, path->posZ, 0xf, 0);
+        baddieTurnTowardPoint(obj, state, path->curve.sample[0], path->curve.sample[2], 0xf, 0);
     }
     else
     {

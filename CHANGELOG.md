@@ -4,6 +4,37 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.0 — 2026-08-25
+
+### Added
+- A development object gallery can survey the object definitions available in each map, spawn them
+  in pages around the player, freeze their logic, inspect their runtime identity and recover from
+  definitions that fault while loading.
+
+### Changed
+- Shared runtime structures are now used directly instead of maintaining parallel padded views of
+  the same memory. Ground baddies and enemies use `CurvesCollisionState`, the vehicle families use
+  one common interface, and Tricky's packed flags and scratch values have explicit representations.
+- All 510 object descriptors and the resource, effect, projectile, camera, curve and UI export
+  tables now expose their real callback signatures. Deliberate signature differences are handled by
+  small adapters at the provider boundary instead of casts at every consumer.
+- The fragmented `*_api.h` declaration headers have been folded into their canonical subsystem
+  headers. Every caller now sees the same declaration for audio, rendering, object, game-text,
+  camera, save-game, math and related APIs.
+- Game-bit latch helpers now operate on the mask they actually mutate instead of wrapping that one
+  field in a nominal structure. Byte-sized users have explicit byte adapters.
+- Model, object, collision, animation and controller fields recovered during the layout audit now
+  carry their shared names rather than per-DLL aliases and offset padding.
+
+### Fixed
+- Removed latent native ABI hazards that the erased callback types concealed, including modgfx
+  sequence counts transported through pointer parameters, stale extra arguments, integer object
+  handles and extension-table calls with guessed signatures.
+- Object and resource acquisition now preserves the loader's descriptor argument while adapting
+  original no-argument initialisers explicitly.
+- The complete game source passes an exhaustive incompatible-function-pointer audit across all 848
+  translation units.
+
 ## v0.4.1 — 2026-08-24
 
 ### Fixed

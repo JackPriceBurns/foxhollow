@@ -10,9 +10,9 @@
 #include "main/gamebits.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/dll_0014_api.h"
+#include "main/dll/dll_0014.h"
 #include "main/dll/rom_curve_def.h"
-#include "main/dll/objfsa_query_api.h"
+#include "main/dll/objfsa_query.h"
 #include "main/objtype.h"
 
 #define TRICKYWARP_OBJ_GROUP          0x4B
@@ -139,19 +139,27 @@ void TrickyWarp_init(GameObject* obj, TrickyWarpPlacement* placement) {
     obj->anim.rotX = (s16)((u32)placement->rotXByte << 8);
 }
 
+OBJECT_INIT_ADAPTER(gTrickyWarpObjDescriptorInitAdapter, TrickyWarp_init, obj, placement)
+OBJECT_FREE_ADAPTER(gTrickyWarpObjDescriptorFreeAdapter, TrickyWarp_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gTrickyWarpObjDescriptorExtraSizeAdapter, TrickyWarp_getExtraSize)
+
 ObjectDescriptor gTrickyWarpObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gTrickyWarpObjDescriptorInitAdapter,
+    TrickyWarp_update,
     0,
     0,
+    gTrickyWarpObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)TrickyWarp_init,
-    (ObjectDescriptorCallback)TrickyWarp_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)TrickyWarp_free,
-    0,
-    TrickyWarp_getExtraSize,
+    gTrickyWarpObjDescriptorExtraSizeAdapter,
 };

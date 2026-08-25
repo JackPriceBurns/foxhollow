@@ -2,14 +2,14 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_placement.h"
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/resource.h"
 #include "sys/objects.h"
@@ -141,15 +141,25 @@ static void dll410_release(void) {
 static void dll410_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll19AObjDescriptorInitAdapter, dll410_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll19AObjDescriptorHitDetectAdapter, dll410_hitDetect)
+OBJECT_FREE_ADAPTER(gDll19AObjDescriptorFreeAdapter, dll410_free)
+OBJECT_TYPE_ID_ADAPTER(gDll19AObjDescriptorTypeIdAdapter, dll410_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll19AObjDescriptorExtraSizeAdapter, dll410_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll19AObjDescriptorAcquire, dll410_initialise)
+
 ObjectDescriptor gDll19AObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dll410_initialise,
-    .release = (ObjectDescriptorCallback)dll410_release,
-    .init = (ObjectDescriptorCallback)dll410_init,
-    .update = (ObjectDescriptorCallback)dll410_update,
-    .hitDetect = (ObjectDescriptorCallback)dll410_hitDetect,
-    .render = (ObjectDescriptorCallback)dll410_render,
-    .free = (ObjectDescriptorCallback)dll410_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dll410_getObjectTypeId,
-    .getExtraSize = dll410_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDll19AObjDescriptorAcquire,
+        .release = dll410_release,
+    },
+    .init = gDll19AObjDescriptorInitAdapter,
+    .update = dll410_update,
+    .hitDetect = gDll19AObjDescriptorHitDetectAdapter,
+    .render = dll410_render,
+    .free = gDll19AObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDll19AObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDll19AObjDescriptorExtraSizeAdapter,
+};;

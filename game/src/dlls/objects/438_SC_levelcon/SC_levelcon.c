@@ -1,27 +1,27 @@
 #include "dlls/objects/438_SC_levelcon.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "main/audio/music_api.h"
+#include "main/gamebit_latch.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_show_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/gametext_show.h"
+#include "main/lightmap.h"
 #include "main/map_load.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
 #include "main/screen_transition.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/sky_interface.h"
 #include "sys/objects.h"
 
@@ -89,7 +89,7 @@ typedef struct ScLevelControlState {
     f32 helpTextTimer;
     f32 exitTimer;
     f32 fadeTimer;
-    GameBitLatchState musicLatches;
+    int musicLatches;
     u8 totemComboIndex;
     u8 animEventState;
     u8 playerMapCell;
@@ -522,17 +522,40 @@ static void sc_levelcontrol_release(void) {
 static void sc_levelcontrol_initialise(void) {
 }
 
-ObjectDescriptor12 gSC_levelcontrolObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_levelcontrol_initialise,
-    .release = (ObjectDescriptorCallback)sc_levelcontrol_release,
-    .init = (ObjectDescriptorCallback)sc_levelcontrol_init,
-    .update = (ObjectDescriptorCallback)sc_levelcontrol_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_levelcontrol_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_levelcontrol_render,
-    .free = (ObjectDescriptorCallback)sc_levelcontrol_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_levelcontrol_getObjectTypeId,
-    .getExtraSize = sc_levelcontrol_getExtraSize,
-    .slot0A = (ObjectDescriptorCallback)sc_levelcontrol_applyAnimEventState,
-    .slot0B = (ObjectDescriptorCallback)sc_levelcontrol_getAnimEventState,
+OBJECT_INIT_ADAPTER(gSC_levelcontrolObjDescriptorInitAdapter, sc_levelcontrol_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSC_levelcontrolObjDescriptorHitDetectAdapter, sc_levelcontrol_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_levelcontrolObjDescriptorFreeAdapter, sc_levelcontrol_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSC_levelcontrolObjDescriptorTypeIdAdapter, sc_levelcontrol_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_levelcontrolObjDescriptorExtraSizeAdapter, sc_levelcontrol_getExtraSize)
+
+typedef struct SC_levelcontrolObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(sc_levelcontrol_applyAnimEventState)* sc_levelcontrol_applyAnimEventState;
+    __typeof__(sc_levelcontrol_getAnimEventState)* sc_levelcontrol_getAnimEventState;
+} SC_levelcontrolObjDescriptorTypeInterface;
+
+struct SC_levelcontrolObjDescriptorType {
+    ObjectDescriptorHeader header;
+    SC_levelcontrolObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_levelcontrolObjDescriptorAcquire, sc_levelcontrol_initialise)
+
+struct SC_levelcontrolObjDescriptorType gSC_levelcontrolObjDescriptor = {
+    {
+        .metadata[3] = OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        .acquire = gSC_levelcontrolObjDescriptorAcquire,
+        .release = sc_levelcontrol_release,
+    },
+    {
+        .init = gSC_levelcontrolObjDescriptorInitAdapter,
+        .update = sc_levelcontrol_update,
+        .hitDetect = gSC_levelcontrolObjDescriptorHitDetectAdapter,
+        .render = sc_levelcontrol_render,
+        .free = gSC_levelcontrolObjDescriptorFreeAdapter,
+        .getObjectTypeId = gSC_levelcontrolObjDescriptorTypeIdAdapter,
+        .getExtraSize = gSC_levelcontrolObjDescriptorExtraSizeAdapter,
+        .sc_levelcontrol_applyAnimEventState = sc_levelcontrol_applyAnimEventState,
+        .sc_levelcontrol_getAnimEventState = sc_levelcontrol_getAnimEventState,
+    },
 };

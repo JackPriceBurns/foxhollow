@@ -3,13 +3,13 @@
 #include "dolphin/pad.h"
 #include "game/objects/object.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objtype.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 
 #define DOOR_LOCK_OBJECT_GROUP                       0xF
 #define DOOR_LOCK_INPUT_PORT                         0
@@ -216,19 +216,27 @@ void DoorLock_init(GameObject* obj, DoorLockPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gDoorLockObjDescriptorInitAdapter, DoorLock_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDoorLockObjDescriptorFreeAdapter, DoorLock_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDoorLockObjDescriptorExtraSizeAdapter, DoorLock_getExtraSize)
+
 ObjectDescriptor gDoorLockObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDoorLockObjDescriptorInitAdapter,
+    DoorLock_update,
     0,
+    DoorLock_render,
+    gDoorLockObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)DoorLock_init,
-    (ObjectDescriptorCallback)DoorLock_update,
-    0,
-    (ObjectDescriptorCallback)DoorLock_render,
-    (ObjectDescriptorCallback)DoorLock_free,
-    0,
-    DoorLock_getExtraSize,
+    gDoorLockObjDescriptorExtraSizeAdapter,
 };

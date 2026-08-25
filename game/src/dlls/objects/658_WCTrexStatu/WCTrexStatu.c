@@ -137,11 +137,30 @@ void wctrexstatu_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWCTrexStatuObjDescriptorInitAdapter, wctrexstatu_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gWCTrexStatuObjDescriptorUpdateAdapter, wctrexstatu_update)
+OBJECT_FREE_ADAPTER(gWCTrexStatuObjDescriptorFreeAdapter, wctrexstatu_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTrexStatuObjDescriptorExtraSizeAdapter, wctrexstatu_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTrexStatuObjDescriptorAcquire, wctrexstatu_initialise)
+
 ObjectDescriptor gWCTrexStatuObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wctrexstatu_initialise, (ObjectDescriptorCallback)wctrexstatu_release, 0,
-    (ObjectDescriptorCallback)wctrexstatu_init, (ObjectDescriptorCallback)wctrexstatu_update,
-    (ObjectDescriptorCallback)wctrexstatu_hitDetect, (ObjectDescriptorCallback)wctrexstatu_render,
-    (ObjectDescriptorCallback)wctrexstatu_free, (ObjectDescriptorCallback)wctrexstatu_getObjectTypeId,
-    wctrexstatu_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTrexStatuObjDescriptorAcquire,
+        wctrexstatu_release,
+    },
+    0,
+    gWCTrexStatuObjDescriptorInitAdapter,
+    gWCTrexStatuObjDescriptorUpdateAdapter,
+    wctrexstatu_hitDetect,
+    wctrexstatu_render,
+    gWCTrexStatuObjDescriptorFreeAdapter,
+    wctrexstatu_getObjectTypeId,
+    gWCTrexStatuObjDescriptorExtraSizeAdapter,
 };

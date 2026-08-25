@@ -2,7 +2,7 @@
 #define DLLS_OBJECTS_521_WM_LEVEL_CON_H_
 
 #include "dlls/object_descriptor.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object_fwd.h"
 
 /* WM_LevelControl_getExtraSize() allocates this complete 0x1C-byte state. */
@@ -14,7 +14,7 @@ typedef struct WMLevelControlState {
     u8 unknown0A;  /* Set to 0x1E for map-event mode 7. */
     u8 unknown0B;  /* Cleared during init. */
     u8 unknown0C[4];
-    GameBitLatchState musicLatch;
+    int musicLatch;
     u8 musicLatchesDisabled; /* Set for map-event mode 7. */
     u8 unknown15[3];
     u32 frameCounter; /* Frames since init. */

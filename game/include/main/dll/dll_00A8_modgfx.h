@@ -10,16 +10,14 @@ typedef void (*DllA8SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnPara
                              void* alternateStyle);
 
 typedef struct DllA8ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     DllA8SpawnFn spawn;
 } DllA8ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(DllA8ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(DllA8ResourceDescriptor) == 0x20);

@@ -20,7 +20,7 @@
  * arwprojectile_launchForward + arwprojectile_setParamScalar live in the
  * arwarwingbo translation unit (dll_029C).
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
 #include "main/pad.h"
@@ -32,7 +32,7 @@
 #include "main/object_render.h"
 #include "dolphin/mtx/vec.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_limited_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
@@ -341,19 +341,30 @@ void arwingandrossstuff_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gArwingAndrossStuffObjDescriptorInitAdapter, arwingandrossstuff_init, obj, placement)
+OBJECT_FREE_ADAPTER(gArwingAndrossStuffObjDescriptorFreeAdapter, arwingandrossstuff_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gArwingAndrossStuffObjDescriptorTypeIdAdapter, arwingandrossstuff_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gArwingAndrossStuffObjDescriptorExtraSizeAdapter, arwingandrossstuff_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gArwingAndrossStuffObjDescriptorAcquire, arwingandrossstuff_initialise)
+
 ObjectDescriptor gArwingAndrossStuffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwingandrossstuff_initialise,
-    (ObjectDescriptorCallback)arwingandrossstuff_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gArwingAndrossStuffObjDescriptorAcquire,
+        arwingandrossstuff_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)arwingandrossstuff_init,
-    (ObjectDescriptorCallback)arwingandrossstuff_update,
-    (ObjectDescriptorCallback)arwingandrossstuff_hitDetect,
-    (ObjectDescriptorCallback)arwingandrossstuff_render,
-    (ObjectDescriptorCallback)arwingandrossstuff_free,
-    (ObjectDescriptorCallback)arwingandrossstuff_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwingandrossstuff_getExtraSize,
+    gArwingAndrossStuffObjDescriptorInitAdapter,
+    arwingandrossstuff_update,
+    arwingandrossstuff_hitDetect,
+    arwingandrossstuff_render,
+    gArwingAndrossStuffObjDescriptorFreeAdapter,
+    gArwingAndrossStuffObjDescriptorTypeIdAdapter,
+    gArwingAndrossStuffObjDescriptorExtraSizeAdapter,
 };

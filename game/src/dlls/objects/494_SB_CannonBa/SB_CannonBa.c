@@ -9,7 +9,7 @@
  */
 #include "dlls/objects/494_SB_CannonBa.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
@@ -212,19 +212,30 @@ void SB_CannonBall_release(void) {
 void SB_CannonBall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_CannonBallObjDescriptorInitAdapter, SB_CannonBall_init, obj)
+OBJECT_FREE_ADAPTER(gSB_CannonBallObjDescriptorFreeAdapter, SB_CannonBall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_CannonBallObjDescriptorTypeIdAdapter, SB_CannonBall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_CannonBallObjDescriptorExtraSizeAdapter, SB_CannonBall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_CannonBallObjDescriptorAcquire, SB_CannonBall_initialise)
+
 ObjectDescriptor gSB_CannonBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_CannonBallObjDescriptorAcquire,
+        SB_CannonBall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_CannonBall_initialise,
-    SB_CannonBall_release,
-    0,
-    (ObjectDescriptorCallback)SB_CannonBall_init,
-    (ObjectDescriptorCallback)SB_CannonBall_update,
-    (ObjectDescriptorCallback)SB_CannonBall_hitDetect,
-    (ObjectDescriptorCallback)SB_CannonBall_render,
-    (ObjectDescriptorCallback)SB_CannonBall_free,
-    (ObjectDescriptorCallback)SB_CannonBall_getObjectTypeId,
-    SB_CannonBall_getExtraSize,
+    gSB_CannonBallObjDescriptorInitAdapter,
+    SB_CannonBall_update,
+    SB_CannonBall_hitDetect,
+    SB_CannonBall_render,
+    gSB_CannonBallObjDescriptorFreeAdapter,
+    gSB_CannonBallObjDescriptorTypeIdAdapter,
+    gSB_CannonBallObjDescriptorExtraSizeAdapter,
 };

@@ -25,7 +25,7 @@
 #include "main/object_render.h"
 #include "main/debug.h"
 #include "sys/objects.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/vecmath.h"
 #include "main/dll/dll22cstate_struct.h"
 #include "main/dll/dbholecontrol1state_struct.h"
@@ -42,18 +42,17 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/dll_023F_dbegg.h"
 #include "main/gamebits.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/pad.h"
 #include "main/objhits.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "dlls/object_descriptor.h"
 #include "dolphin/mtx/vec.h"
 #include "dolphin/pad.h"
-#include "main/lightmap_api.h"
-#include "main/track_bbox_api.h"
+#include "main/lightmap.h"
+#include "main/track_bbox.h"
 #include "main/object_update_list.h"
 
 #define DBEGG_OBJGROUP         0x24
@@ -746,7 +745,7 @@ void dbegg_update(GameObject* obj)
             }
             break;
         case DBEGG_MODE_CURVE_FOLLOW:
-            if (Curve_AdvanceAlongPath(&egg->curve.curve, 0.6f) != 0 || egg->curve.atSegmentEnd != 0)
+            if (Curve_AdvanceAlongPath(&egg->curve.curve, 0.6f) != 0 || egg->curve.curve.idx != 0)
             {
                 if ((*gRomCurveInterface)->goNextPoint(&egg->curve) != 0)
                 {
@@ -755,9 +754,9 @@ void dbegg_update(GameObject* obj)
             }
             else
             {
-                (obj)->anim.velocityX = egg->curve.posX - (obj)->anim.localPosX;
-                (obj)->anim.velocityY = egg->curve.posY - (obj)->anim.localPosY;
-                (obj)->anim.velocityZ = egg->curve.posZ - (obj)->anim.localPosZ;
+                (obj)->anim.velocityX = egg->curve.curve.sample[0] - (obj)->anim.localPosX;
+                (obj)->anim.velocityY = egg->curve.curve.sample[1] - (obj)->anim.localPosY;
+                (obj)->anim.velocityZ = egg->curve.curve.sample[2] - (obj)->anim.localPosZ;
                 fx = sqrtf(
                     (obj)->anim.velocityZ * (obj)->anim.velocityZ +
                     ((obj)->anim.velocityX * (obj)->anim.velocityX + (obj)->anim.velocityY * (obj)->anim.velocityY));
@@ -807,7 +806,7 @@ void dbegg_update(GameObject* obj)
             }
             else
             {
-                int n = (int)(PSVECMag(&obj->anim.velocity) / 0.5f);
+                int n = (int)(PSVECMag((Vec*)&obj->anim.velocityX) / 0.5f);
                 for (i = 0; i < n; i++)
                 {
                     (*gPartfxInterface)->spawnObject((void*)obj, DBEGG_PARTFX_HOMING_TRAIL, NULL, 1, -1, NULL);
@@ -890,21 +889,34 @@ void dbegg_initialise(void)
 {
 }
 
-ObjectDescriptor12 gDB_eggObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dbegg_initialise,
-    (ObjectDescriptorCallback)dbegg_release,
-    0,
-    (ObjectDescriptorCallback)dbegg_init,
-    (ObjectDescriptorCallback)dbegg_update,
-    (ObjectDescriptorCallback)dbegg_hitDetect,
-    (ObjectDescriptorCallback)dbegg_render,
-    (ObjectDescriptorCallback)dbegg_free,
-    (ObjectDescriptorCallback)dbegg_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)dbegg_getExtraSize,
-    (ObjectDescriptorCallback)dbegg_isActive,
-    (ObjectDescriptorCallback)dbegg_setLaunchVelocity,
+OBJECT_INIT_ADAPTER(gDB_eggObjDescriptorInitAdapter, dbegg_init, obj)
+OBJECT_FREE_ADAPTER(gDB_eggObjDescriptorFreeAdapter, dbegg_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDB_eggObjDescriptorTypeIdAdapter, dbegg_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDB_eggObjDescriptorExtraSizeAdapter, dbegg_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDB_eggObjDescriptorAcquire, dbegg_initialise)
+
+DbeggDescriptor gDB_eggObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDB_eggObjDescriptorAcquire,
+        dbegg_release,
+    },
+    {
+        0,
+        gDB_eggObjDescriptorInitAdapter,
+        dbegg_update,
+        dbegg_hitDetect,
+        dbegg_render,
+        gDB_eggObjDescriptorFreeAdapter,
+        gDB_eggObjDescriptorTypeIdAdapter,
+        gDB_eggObjDescriptorExtraSizeAdapter,
+        dbegg_isActive,
+        dbegg_setLaunchVelocity,
+    },
 };

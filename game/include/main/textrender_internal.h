@@ -3,9 +3,9 @@
 
 #include "dolphin/dvd.h"
 #include "dolphin/gx/GXStruct.h"
-#include "main/gametext_box_api.h"
+#include "main/gametext_box.h"
 #include "main/gametext_internal.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/texture.h"
 
 STATIC_ASSERT(offsetof(GameTextBox, style) == 0x13);

@@ -8,7 +8,7 @@
 typedef void (*DllA3SpawnFn)(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags);
 
 typedef struct DllA3Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     DllA3SpawnFn spawn;
 } DllA3Interface;
 
@@ -17,17 +17,15 @@ STATIC_ASSERT(offsetof(DllA3Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(DllA3Interface) == 0x08);
 
 typedef struct DllA3ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     DllA3SpawnFn spawn;
     u32 padding;
 } DllA3ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(DllA3ResourceDescriptor, padding) == 0x20);

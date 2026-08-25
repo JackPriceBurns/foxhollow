@@ -7,16 +7,14 @@
 typedef int (*ProjroombeamUnsupportedFn)(void);
 
 typedef struct ProjroombeamResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjroombeamUnsupportedFn unsupported;
 } ProjroombeamResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjroombeamResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjroombeamResourceDescriptor) == 0x20);

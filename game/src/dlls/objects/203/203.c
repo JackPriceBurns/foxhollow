@@ -5,7 +5,7 @@
  * its sequence state requests it. No retail object name is known.
  */
 #include "dlls/objects/203.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
@@ -23,7 +23,7 @@
 #include "main/obj_message.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 #define DLL_CB_OBJGROUP                     3
 #define DLL_CB_FLAG400_PENDING_HIT_REACTION 0x2
@@ -306,17 +306,17 @@ int dll_CB_seqFn(GameObject* obj, int unused, ObjSeqState* sequenceState) {
             sequenceState->flags &= ~OBJSEQ_CONTROL_RESTART_AT_SAVED_FRAME;
             path = (RomCurveWalker*)state->path;
             if ((state->flags400 & BADDIE_FLAG400_PATH_ACTIVE) != 0) {
-                if ((Curve_AdvanceAlongPath((Curve*)path, state->baddie.animSpeedA) != 0 || path->atSegmentEnd != 0) &&
+                if ((Curve_AdvanceAlongPath((Curve*)path, state->baddie.animSpeedA) != 0 || path->curve.idx != 0) &&
                     (*gRomCurveInterface)->goNextPoint(path) != 0) {
                     state->flags400 &= ~BADDIE_FLAG400_PATH_ACTIVE;
                 }
                 state->baddie.animSpeedA = gDllCBDefaultAnimSpeed[0];
-                obj->anim.rotX = getAngle(path->tangentX, path->tangentZ) + 0x8000;
-                obj->anim.rotY = getAngle(path->tangentZ, path->tangentY) + 0x4000;
-                obj->anim.rotZ = getAngle(path->tangentY, path->tangentX) + 0x4000;
-                obj->anim.localPosX = path->posX;
-                obj->anim.localPosY = path->posY;
-                obj->anim.localPosZ = path->posZ;
+                obj->anim.rotX = getAngle(path->curve.tangent[0], path->curve.tangent[2]) + 0x8000;
+                obj->anim.rotY = getAngle(path->curve.tangent[2], path->curve.tangent[1]) + 0x4000;
+                obj->anim.rotZ = getAngle(path->curve.tangent[1], path->curve.tangent[0]) + 0x4000;
+                obj->anim.localPosX = path->curve.sample[0];
+                obj->anim.localPosY = path->curve.sample[1];
+                obj->anim.localPosZ = path->curve.sample[2];
             }
             break;
         }
@@ -408,18 +408,18 @@ void dll_CB_update(GameObject* obj) {
     if ((state->flags400 & BADDIE_FLAG400_PATH_ACTIVE) == 0) {
         return;
     }
-    if (Curve_AdvanceAlongPath((Curve*)path, state->baddie.animSpeedA) != 0 || path->atSegmentEnd != 0) {
+    if (Curve_AdvanceAlongPath((Curve*)path, state->baddie.animSpeedA) != 0 || path->curve.idx != 0) {
         if ((*gRomCurveInterface)->goNextPoint(path) != 0) {
             state->flags400 = state->flags400 & ~BADDIE_FLAG400_PATH_ACTIVE;
         }
     }
     state->baddie.animSpeedA = gDllCBDefaultAnimSpeed[0];
-    obj->anim.rotX = (s16)(getAngle(path->tangentX, path->tangentZ) + 0x8000);
-    obj->anim.rotY = (s16)(getAngle(path->tangentZ, path->tangentY) + 0x4000);
-    obj->anim.rotZ = (s16)(getAngle(path->tangentY, path->tangentX) + 0x4000);
-    obj->anim.localPosX = path->posX;
-    obj->anim.localPosY = path->posY;
-    obj->anim.localPosZ = path->posZ;
+    obj->anim.rotX = (s16)(getAngle(path->curve.tangent[0], path->curve.tangent[2]) + 0x8000);
+    obj->anim.rotY = (s16)(getAngle(path->curve.tangent[2], path->curve.tangent[1]) + 0x4000);
+    obj->anim.rotZ = (s16)(getAngle(path->curve.tangent[1], path->curve.tangent[0]) + 0x4000);
+    obj->anim.localPosX = path->curve.sample[0];
+    obj->anim.localPosY = path->curve.sample[1];
+    obj->anim.localPosZ = path->curve.sample[2];
 }
 
 void dll_CB_init(GameObject* obj, DllCBPlacement* placement, int flags) {
@@ -474,21 +474,45 @@ u8 gDllCBHitReactionDamage[32] = {
 
 DllCBMoveHandler gDllCBMoveHandlers[4];
 
-ObjectDescriptor12 gDllCBObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dll_CB_initialise,
-    (ObjectDescriptorCallback)dll_CB_release,
-    0,
-    (ObjectDescriptorCallback)dll_CB_init,
-    (ObjectDescriptorCallback)dll_CB_update,
-    (ObjectDescriptorCallback)dll_CB_hitDetect,
-    (ObjectDescriptorCallback)dll_CB_render,
-    (ObjectDescriptorCallback)dll_CB_free,
-    (ObjectDescriptorCallback)dll_CB_getObjectTypeId,
-    dll_CB_getExtraSize,
-    (ObjectDescriptorCallback)dll_CB_getControlMode,
-    (ObjectDescriptorCallback)dll_CB_handleMessage,
+OBJECT_INIT_ADAPTER(gDllCBObjDescriptorInitAdapter, dll_CB_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gDllCBObjDescriptorFreeAdapter, dll_CB_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDllCBObjDescriptorTypeIdAdapter, dll_CB_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllCBObjDescriptorExtraSizeAdapter, dll_CB_getExtraSize)
+
+typedef struct DllCBObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(dll_CB_getControlMode)* dll_CB_getControlMode;
+    __typeof__(dll_CB_handleMessage)* dll_CB_handleMessage;
+} DllCBObjDescriptorTypeInterface;
+
+struct DllCBObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DllCBObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDllCBObjDescriptorAcquire, dll_CB_initialise)
+
+struct DllCBObjDescriptorType gDllCBObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDllCBObjDescriptorAcquire,
+        dll_CB_release,
+    },
+    {
+        0,
+        gDllCBObjDescriptorInitAdapter,
+        dll_CB_update,
+        dll_CB_hitDetect,
+        dll_CB_render,
+        gDllCBObjDescriptorFreeAdapter,
+        gDllCBObjDescriptorTypeIdAdapter,
+        gDllCBObjDescriptorExtraSizeAdapter,
+        dll_CB_getControlMode,
+        dll_CB_handleMessage,
+    },
 };

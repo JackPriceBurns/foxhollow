@@ -2,6 +2,7 @@
 #define MAIN_DLL_DBSTEALERWORMCONTROL_STRUCT_H_
 
 #include "types.h"
+#include "game/objects/object_interface.h"
 #include "main/model_engine.h"
 
 struct GameObject;
@@ -16,7 +17,7 @@ struct GameObject;
    worms reach through obj->anim.dll. */
 typedef struct DbStealerwormInterface
 {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     int (*getControlMode)(struct GameObject* worm);
     intptr_t (*handleMessage)(struct GameObject* worm, u8 msg, int* out);
 } DbStealerwormInterface;
@@ -59,10 +60,7 @@ typedef struct DbStealerwormControl
     u8 flags14; /* bits 1/2 */
     u8 flags15; /* bits 1/4 */
     u8 unk16[2];
-    union {
-        intptr_t linkedObj;
-        struct GameObject* linkedObject; /* ObjMsg target object */
-    };
+    struct GameObject* linkedObject; /* ObjMsg target object */
     s16 msgSlotIndex; /* queued message-config slot index (-1 = none); pushed as the type-7 frame payload */
     u8 unk1E[2];
     const DbStealerwormScriptStep* routeCursor;
@@ -73,10 +71,7 @@ typedef struct DbStealerwormControl
     u8 msgAdvance; /* set to advance to / pop the next queued message next tick */
     u8 unk35[3];
     f32 spawnAccumulator; /* 0x38: accumulates on worm move-done; when over threshold, triggers a spawn-search and subtracts the threshold */
-    union {
-        intptr_t savedTargetObj; /* cached target-object handle */
-        struct GameObject* savedTargetObject;
-    };
+    struct GameObject* savedTargetObject;
     u8 unk40[4];
     DbStealerwormFlags44 flags44;
     u8 unk45[3];

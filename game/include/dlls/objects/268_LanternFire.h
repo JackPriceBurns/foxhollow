@@ -4,7 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 
 #define LANTERN_FIREFLY_PLACEMENT_SIZE 0x24
 #define LANTERN_FIREFLY_STATE_SIZE     0x74
@@ -58,10 +58,14 @@ typedef void (*LanternFireFlyReleaseFromLanternCallback)(GameObject* firefly);
 typedef void (*LanternFireFlySetAnchorCallback)(GameObject* firefly, f32 x, f32 y, f32 z);
 
 typedef struct LanternFireFlyRuntimeInterface {
-    void* callbacksBeforeRelease[9];
+    OBJECT_INTERFACE_FIELDS;
+    void (*setTargetPosition)(GameObject* firefly, f32* position);
     LanternFireFlyReleaseFromLanternCallback releaseFromLantern;
     LanternFireFlySetAnchorCallback setAnchor;
 } LanternFireFlyRuntimeInterface;
+
+OBJECT_DESCRIPTOR_TYPE(LanternFireFlyDescriptor, LanternFireFlyRuntimeInterface);
+OBJECT_DESCRIPTOR_WITH_PADDING_TYPE(LanternFireFlyDescriptorWithPadding, LanternFireFlyDescriptor);
 
 STATIC_ASSERT(offsetof(LanternFireFlyPlacement, base) == 0x0);
 STATIC_ASSERT(offsetof(LanternFireFlyPlacement, wanderRange) == 0x18);
@@ -118,6 +122,6 @@ void LanternFireFly_init(GameObject* obj, LanternFireFlyPlacement* placement);
 void LanternFireFly_release(void);
 void LanternFireFly_initialise(void);
 
-extern ObjectDescriptor13WithPadding gLanternFireFlyObjDescriptor;
+extern LanternFireFlyDescriptorWithPadding gLanternFireFlyObjDescriptor;
 
 #endif /* DLLS_OBJECTS_268_LANTERNFIRE_H_ */

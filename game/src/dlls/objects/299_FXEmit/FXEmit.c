@@ -4,7 +4,7 @@
  */
 #include "dlls/objects/299_FXEmit.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/debug.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
@@ -13,7 +13,7 @@
 #include "main/gamebits.h"
 #include "main/resource.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/vecmath.h"
 #include "main/objseq.h"
 
@@ -391,19 +391,31 @@ void FXEmit_initialise(void) {
 
 char sFXEmitDebugFormat[12] = "%x   %f %f\n";
 
+OBJECT_INIT_ADAPTER(gFXEmitObjDescriptorInitAdapter, FXEmit_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gFXEmitObjDescriptorHitDetectAdapter, FXEmit_hitDetect)
+OBJECT_FREE_ADAPTER(gFXEmitObjDescriptorFreeAdapter, FXEmit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFXEmitObjDescriptorTypeIdAdapter, FXEmit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFXEmitObjDescriptorExtraSizeAdapter, FXEmit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFXEmitObjDescriptorAcquire, FXEmit_initialise)
+
 ObjectDescriptor gFXEmitObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFXEmitObjDescriptorAcquire,
+        FXEmit_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)FXEmit_initialise,
-    (ObjectDescriptorCallback)FXEmit_release,
-    0,
-    (ObjectDescriptorCallback)FXEmit_init,
-    (ObjectDescriptorCallback)FXEmit_update,
-    (ObjectDescriptorCallback)FXEmit_hitDetect,
-    (ObjectDescriptorCallback)FXEmit_render,
-    (ObjectDescriptorCallback)FXEmit_free,
-    (ObjectDescriptorCallback)FXEmit_getObjectTypeId,
-    FXEmit_getExtraSize,
+    gFXEmitObjDescriptorInitAdapter,
+    FXEmit_update,
+    gFXEmitObjDescriptorHitDetectAdapter,
+    FXEmit_render,
+    gFXEmitObjDescriptorFreeAdapter,
+    gFXEmitObjDescriptorTypeIdAdapter,
+    gFXEmitObjDescriptorExtraSizeAdapter,
 };

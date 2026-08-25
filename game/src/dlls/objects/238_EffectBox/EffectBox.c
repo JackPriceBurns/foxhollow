@@ -7,8 +7,8 @@
  * actions when they enter the box; the Tricky action is a no-op.
  */
 #include "dlls/objects/238_EffectBox.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/dll/player_api.h"
+#include "dolphin/math.h"
+#include "main/dll/player.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
@@ -172,19 +172,30 @@ void EffectBox_release(void) {
 void EffectBox_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gEffectBoxObjDescriptorInitAdapter, EffectBox_init, obj, placement)
+OBJECT_FREE_ADAPTER(gEffectBoxObjDescriptorFreeAdapter, EffectBox_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gEffectBoxObjDescriptorTypeIdAdapter, EffectBox_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gEffectBoxObjDescriptorExtraSizeAdapter, EffectBox_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gEffectBoxObjDescriptorAcquire, EffectBox_initialise)
+
 ObjectDescriptor gEffectBoxObjDescriptor = {
-    0,                                                   /* reserved0 */
-    0,                                                   /* reserved1 */
-    0,                                                   /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                    /* slotCountAndFlags */
-    (ObjectDescriptorCallback)EffectBox_initialise,      /* initialise */
-    (ObjectDescriptorCallback)EffectBox_release,         /* release */
-    0,                                                   /* slot02 */
-    (ObjectDescriptorCallback)EffectBox_init,            /* init */
-    (ObjectDescriptorCallback)EffectBox_update,          /* update */
-    (ObjectDescriptorCallback)EffectBox_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)EffectBox_render,          /* render */
-    (ObjectDescriptorCallback)EffectBox_free,            /* free */
-    (ObjectDescriptorCallback)EffectBox_getObjectTypeId, /* getObjectTypeId */
-    EffectBox_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gEffectBoxObjDescriptorAcquire,
+        EffectBox_release,
+    },
+    0,
+    gEffectBoxObjDescriptorInitAdapter,
+    EffectBox_update,
+    EffectBox_hitDetect,
+    EffectBox_render,
+    gEffectBoxObjDescriptorFreeAdapter,
+    gEffectBoxObjDescriptorTypeIdAdapter,
+    gEffectBoxObjDescriptorExtraSizeAdapter,
 };

@@ -172,19 +172,31 @@ int wcblock_isPlayerAwayFromStoredCell(GameObject* obj, WCBlockState* state, Gam
 
 #undef WCBLOCK_GRID_IFACE
 
+OBJECT_INIT_ADAPTER(gWCBouncyCraObjDescriptorInitAdapter, WCBouncyCra_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCBouncyCraObjDescriptorHitDetectAdapter, WCBouncyCra_hitDetect)
+OBJECT_FREE_ADAPTER(gWCBouncyCraObjDescriptorFreeAdapter, WCBouncyCra_free)
+OBJECT_TYPE_ID_ADAPTER(gWCBouncyCraObjDescriptorTypeIdAdapter, WCBouncyCra_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCBouncyCraObjDescriptorExtraSizeAdapter, WCBouncyCra_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCBouncyCraObjDescriptorAcquire, WCBouncyCra_initialise)
+
 ObjectDescriptor gWCBouncyCraObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCBouncyCraObjDescriptorAcquire,
+        WCBouncyCra_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)WCBouncyCra_initialise,
-    (ObjectDescriptorCallback)WCBouncyCra_release,
-    0,
-    (ObjectDescriptorCallback)WCBouncyCra_init,
-    (ObjectDescriptorCallback)WCBouncyCra_update,
-    (ObjectDescriptorCallback)WCBouncyCra_hitDetect,
-    (ObjectDescriptorCallback)WCBouncyCra_render,
-    (ObjectDescriptorCallback)WCBouncyCra_free,
-    (ObjectDescriptorCallback)WCBouncyCra_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)WCBouncyCra_getExtraSize,
+    gWCBouncyCraObjDescriptorInitAdapter,
+    WCBouncyCra_update,
+    gWCBouncyCraObjDescriptorHitDetectAdapter,
+    WCBouncyCra_render,
+    gWCBouncyCraObjDescriptorFreeAdapter,
+    gWCBouncyCraObjDescriptorTypeIdAdapter,
+    gWCBouncyCraObjDescriptorExtraSizeAdapter,
 };

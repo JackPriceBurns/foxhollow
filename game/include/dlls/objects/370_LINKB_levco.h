@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/sky.h"
 
 typedef enum LINKBLevelControlStage {
@@ -16,7 +16,7 @@ typedef enum LINKBLevelControlStage {
 } LINKBLevelControlStage;
 
 typedef struct LINKBLevelControlState {
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     s8 trickyHitCount : 2;
     u8 stage : 3;
     u8 unusedStageBits : 3;

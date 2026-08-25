@@ -5,7 +5,7 @@
  * spiral motion, and fadeout.
  */
 #include "dlls/objects/227_Fireball.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/dll_000A_expgfx.h"
@@ -15,10 +15,10 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_02B1_cmbsrc.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
@@ -445,22 +445,33 @@ void Fireball_release(void) {
 void Fireball_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gFireballObjDescriptorInitAdapter, Fireball_init, obj)
+OBJECT_FREE_ADAPTER(gFireballObjDescriptorFreeAdapter, Fireball_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFireballObjDescriptorTypeIdAdapter, Fireball_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFireballObjDescriptorExtraSizeAdapter, Fireball_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFireballObjDescriptorAcquire, Fireball_initialise)
+
 ObjectDescriptor10WithPadding gFireballObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gFireballObjDescriptorAcquire,
+            Fireball_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)Fireball_initialise,
-        (ObjectDescriptorCallback)Fireball_release,
-        0,
-        (ObjectDescriptorCallback)Fireball_init,
-        (ObjectDescriptorCallback)Fireball_update,
-        (ObjectDescriptorCallback)Fireball_hitDetect,
-        (ObjectDescriptorCallback)Fireball_render,
-        (ObjectDescriptorCallback)Fireball_free,
-        (ObjectDescriptorCallback)Fireball_getObjectTypeId,
-        Fireball_getExtraSize,
+        gFireballObjDescriptorInitAdapter,
+        Fireball_update,
+        Fireball_hitDetect,
+        Fireball_render,
+        gFireballObjDescriptorFreeAdapter,
+        gFireballObjDescriptorTypeIdAdapter,
+        gFireballObjDescriptorExtraSizeAdapter,
     },
     0,
 };

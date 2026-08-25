@@ -10,8 +10,7 @@
  * it fires a burst of flame particles, fades its alpha out, and frees
  * itself once it falls past the floor.
  */
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "game/objects/object_setup.h"
@@ -19,8 +18,8 @@
 #include "main/dll/expgfx_interface.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/VF/dll_0218_vfpminifire.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 
@@ -179,19 +178,31 @@ void VFP_MiniFire_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_MiniFireObjDescriptorInitAdapter, VFP_MiniFire_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_MiniFireObjDescriptorHitDetectAdapter, VFP_MiniFire_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_MiniFireObjDescriptorFreeAdapter, VFP_MiniFire_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_MiniFireObjDescriptorTypeIdAdapter, VFP_MiniFire_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_MiniFireObjDescriptorExtraSizeAdapter, VFP_MiniFire_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_MiniFireObjDescriptorAcquire, VFP_MiniFire_initialise)
+
 ObjectDescriptor gVFP_MiniFireObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_MiniFireObjDescriptorAcquire,
+        VFP_MiniFire_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_MiniFire_initialise,
-    (ObjectDescriptorCallback)VFP_MiniFire_release,
-    0,
-    (ObjectDescriptorCallback)VFP_MiniFire_init,
-    (ObjectDescriptorCallback)VFP_MiniFire_update,
-    (ObjectDescriptorCallback)VFP_MiniFire_hitDetect,
-    (ObjectDescriptorCallback)VFP_MiniFire_render,
-    (ObjectDescriptorCallback)VFP_MiniFire_free,
-    (ObjectDescriptorCallback)VFP_MiniFire_getObjectTypeId,
-    VFP_MiniFire_getExtraSize,
+    gVFP_MiniFireObjDescriptorInitAdapter,
+    VFP_MiniFire_update,
+    gVFP_MiniFireObjDescriptorHitDetectAdapter,
+    VFP_MiniFire_render,
+    gVFP_MiniFireObjDescriptorFreeAdapter,
+    gVFP_MiniFireObjDescriptorTypeIdAdapter,
+    gVFP_MiniFireObjDescriptorExtraSizeAdapter,
 };

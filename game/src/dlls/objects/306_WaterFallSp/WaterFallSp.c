@@ -4,12 +4,12 @@
  */
 #include "dlls/objects/306_WaterFallSp.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -155,19 +155,28 @@ void WaterFallSpray_init(GameObject* obj, WaterFallSprayPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gWaterFallSprayObjDescriptorInitAdapter, WaterFallSpray_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gWaterFallSprayObjDescriptorRenderAdapter, WaterFallSpray_render)
+OBJECT_FREE_ADAPTER(gWaterFallSprayObjDescriptorFreeAdapter, WaterFallSpray_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gWaterFallSprayObjDescriptorExtraSizeAdapter, WaterFallSpray_getExtraSize)
+
 ObjectDescriptor gWaterFallSprayObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gWaterFallSprayObjDescriptorInitAdapter,
+    WaterFallSpray_update,
     0,
+    gWaterFallSprayObjDescriptorRenderAdapter,
+    gWaterFallSprayObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)WaterFallSpray_init,
-    (ObjectDescriptorCallback)WaterFallSpray_update,
-    0,
-    (ObjectDescriptorCallback)WaterFallSpray_render,
-    (ObjectDescriptorCallback)WaterFallSpray_free,
-    0,
-    WaterFallSpray_getExtraSize,
+    gWaterFallSprayObjDescriptorExtraSizeAdapter,
 };

@@ -4,7 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/model_light.h"
 #include "main/objseq.h"
 
@@ -34,7 +34,7 @@ typedef struct DFSHShrineState {
     ModelLightStruct* light;
     f32 rewardTimer;
     f32 idleChimeTimer;
-    GameBitLatchState musicLatch;
+    int musicLatch;
     s16 startDelayFrames;
     s16 transitionTimer;
     u8 unknown14[0x1A - 0x14];

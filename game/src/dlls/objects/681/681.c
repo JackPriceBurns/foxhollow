@@ -216,11 +216,32 @@ void PointLight_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gPointLightObjDescriptorInitAdapter, PointLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gPointLightObjDescriptorHitDetectAdapter, PointLight_hitDetect)
+OBJECT_RENDER_ADAPTER(gPointLightObjDescriptorRenderAdapter, PointLight_render, obj)
+OBJECT_FREE_ADAPTER(gPointLightObjDescriptorFreeAdapter, PointLight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPointLightObjDescriptorTypeIdAdapter, PointLight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPointLightObjDescriptorExtraSizeAdapter, PointLight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPointLightObjDescriptorAcquire, PointLight_initialise)
+
 ObjectDescriptor gPointLightObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)PointLight_initialise, (ObjectDescriptorCallback)PointLight_release, 0,
-    (ObjectDescriptorCallback)PointLight_init, (ObjectDescriptorCallback)PointLight_update,
-    (ObjectDescriptorCallback)PointLight_hitDetect, (ObjectDescriptorCallback)PointLight_render,
-    (ObjectDescriptorCallback)PointLight_free, (ObjectDescriptorCallback)PointLight_getObjectTypeId,
-    PointLight_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPointLightObjDescriptorAcquire,
+        PointLight_release,
+    },
+    0,
+    gPointLightObjDescriptorInitAdapter,
+    PointLight_update,
+    gPointLightObjDescriptorHitDetectAdapter,
+    gPointLightObjDescriptorRenderAdapter,
+    gPointLightObjDescriptorFreeAdapter,
+    gPointLightObjDescriptorTypeIdAdapter,
+    gPointLightObjDescriptorExtraSizeAdapter,
 };

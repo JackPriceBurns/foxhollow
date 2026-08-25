@@ -9,7 +9,7 @@
  * last-seen bit is cached so the sweep only runs on a transition; lastBit
  * starts at CONTROLLIGHT_LAST_BIT_INVALID to force the first update.
  */
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
 #include "main/dll/LGT/dll_02AC_lgtcontrollight.h"
@@ -102,19 +102,32 @@ void ControlLight_release(void) {
 void ControlLight_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gControlLightObjDescriptorInitAdapter, ControlLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gControlLightObjDescriptorHitDetectAdapter, ControlLight_hitDetect)
+OBJECT_RENDER_ADAPTER(gControlLightObjDescriptorRenderAdapter, ControlLight_render)
+OBJECT_FREE_ADAPTER(gControlLightObjDescriptorFreeAdapter, ControlLight_free)
+OBJECT_TYPE_ID_ADAPTER(gControlLightObjDescriptorTypeIdAdapter, ControlLight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gControlLightObjDescriptorExtraSizeAdapter, ControlLight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gControlLightObjDescriptorAcquire, ControlLight_initialise)
+
 ObjectDescriptor gControlLightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gControlLightObjDescriptorAcquire,
+        ControlLight_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ControlLight_initialise,
-    (ObjectDescriptorCallback)ControlLight_release,
-    0,
-    (ObjectDescriptorCallback)ControlLight_init,
-    (ObjectDescriptorCallback)ControlLight_update,
-    (ObjectDescriptorCallback)ControlLight_hitDetect,
-    (ObjectDescriptorCallback)ControlLight_render,
-    (ObjectDescriptorCallback)ControlLight_free,
-    (ObjectDescriptorCallback)ControlLight_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ControlLight_getExtraSize,
+    gControlLightObjDescriptorInitAdapter,
+    ControlLight_update,
+    gControlLightObjDescriptorHitDetectAdapter,
+    gControlLightObjDescriptorRenderAdapter,
+    gControlLightObjDescriptorFreeAdapter,
+    gControlLightObjDescriptorTypeIdAdapter,
+    gControlLightObjDescriptorExtraSizeAdapter,
 };

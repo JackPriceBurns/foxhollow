@@ -1,20 +1,20 @@
 #include "dlls/objects/439.h"
 
 #include "dlls/objects/279_AppleOnTree.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_path.h"
 #include "main/objHitReact_types.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
-#include "main/shader_api.h"
+#include "main/objprint.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -341,15 +341,25 @@ static void sc_musictree_release(void) {
 static void sc_musictree_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSC_MusicTreeObjDescriptorInitAdapter, sc_musictree_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSC_MusicTreeObjDescriptorHitDetectAdapter, sc_musictree_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_MusicTreeObjDescriptorFreeAdapter, sc_musictree_free)
+OBJECT_TYPE_ID_ADAPTER(gSC_MusicTreeObjDescriptorTypeIdAdapter, sc_musictree_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_MusicTreeObjDescriptorExtraSizeAdapter, sc_musictree_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_MusicTreeObjDescriptorAcquire, sc_musictree_initialise)
+
 ObjectDescriptor gSC_MusicTreeObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_musictree_initialise,
-    .release = (ObjectDescriptorCallback)sc_musictree_release,
-    .init = (ObjectDescriptorCallback)sc_musictree_init,
-    .update = (ObjectDescriptorCallback)sc_musictree_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_musictree_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_musictree_render,
-    .free = (ObjectDescriptorCallback)sc_musictree_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_musictree_getObjectTypeId,
-    .getExtraSize = sc_musictree_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_MusicTreeObjDescriptorAcquire,
+        .release = sc_musictree_release,
+    },
+    .init = gSC_MusicTreeObjDescriptorInitAdapter,
+    .update = sc_musictree_update,
+    .hitDetect = gSC_MusicTreeObjDescriptorHitDetectAdapter,
+    .render = sc_musictree_render,
+    .free = gSC_MusicTreeObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_MusicTreeObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_MusicTreeObjDescriptorExtraSizeAdapter,
+};;

@@ -1,5 +1,5 @@
 #include "musyx/snd3d_room.h"
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "musyx/synth_delay.h"
 #include "musyx/snd3d.h"
 

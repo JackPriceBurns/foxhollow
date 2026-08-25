@@ -6,7 +6,7 @@
 
 #include "dlls/objects/449_DIMSnowBall.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
@@ -341,19 +341,30 @@ s16 gDimSnowballCoords[DIM_SNOWBALL_PATH_COORDINATE_COUNT] = {
     23520, -16375, 5300,   23548, -16520, 5358,   23577, -16667, 5416,
 };
 
+OBJECT_INIT_ADAPTER(gDIMSnowBallObjDescriptorInitAdapter, dimsnowball_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDIMSnowBallObjDescriptorFreeAdapter, dimsnowball_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMSnowBallObjDescriptorTypeIdAdapter, dimsnowball_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMSnowBallObjDescriptorExtraSizeAdapter, dimsnowball_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMSnowBallObjDescriptorAcquire, dimsnowball_initialise)
+
 ObjectDescriptor gDIMSnowBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMSnowBallObjDescriptorAcquire,
+        dimsnowball_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimsnowball_initialise,
-    (ObjectDescriptorCallback)dimsnowball_release,
-    0,
-    (ObjectDescriptorCallback)dimsnowball_init,
-    (ObjectDescriptorCallback)dimsnowball_update,
-    (ObjectDescriptorCallback)dimsnowball_hitDetect,
-    (ObjectDescriptorCallback)dimsnowball_render,
-    (ObjectDescriptorCallback)dimsnowball_free,
-    (ObjectDescriptorCallback)dimsnowball_getObjectTypeId,
-    dimsnowball_getExtraSize,
+    gDIMSnowBallObjDescriptorInitAdapter,
+    dimsnowball_update,
+    dimsnowball_hitDetect,
+    dimsnowball_render,
+    gDIMSnowBallObjDescriptorFreeAdapter,
+    gDIMSnowBallObjDescriptorTypeIdAdapter,
+    gDIMSnowBallObjDescriptorExtraSizeAdapter,
 };

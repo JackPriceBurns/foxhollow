@@ -1,7 +1,7 @@
 #include "dlls/object_descriptor.h"
 #include "main/checkpoint_interface.h"
 #include "main/checkpoint_route.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/curve.h"
 #include "main/vecmath.h"
 #include "game/objects/object.h"
@@ -230,11 +230,11 @@ void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte)
     out_vec[2] = (f32)(s32)randomGetRange(0, 0x63) / 100.0f;
     alt_found = 0;
     {
-        s32 forwardLink = Checkpoint_ReadLink(&n->forwardLink0);
+        s32 forwardLink = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
         if (forwardLink != 0)
         {
             CheckpointRouteEntry* m = Checkpoint_find(forwardLink, &local_idx);
-            if (m != NULL && Checkpoint_ReadLink(&m->forwardLink0) > -1)
+            if (m != NULL && Checkpoint_ReadLink(&m->forwardLinkIds[0]) > -1)
             {
                 alt_found = 1;
             }
@@ -244,11 +244,11 @@ void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte)
     {
         if (alt_found != 0)
         {
-            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLink0);
+            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
         }
         else
         {
-            s32 backLink = Checkpoint_ReadLink(&n->backLink0);
+            s32 backLink = Checkpoint_ReadLink(&n->backLinkIds[0]);
             if (backLink > -1)
             {
                 *(s32*)(out_vec + 4) = backLink;
@@ -258,14 +258,14 @@ void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte)
     }
     else
     {
-        s32 backLink = Checkpoint_ReadLink(&n->backLink0);
+        s32 backLink = Checkpoint_ReadLink(&n->backLinkIds[0]);
         if (backLink != 0)
         {
             *(s32*)(out_vec + 4) = backLink;
         }
         else if (alt_found != 0)
         {
-            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLink0);
+            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
             *flag_byte = 0;
         }
     }
@@ -321,13 +321,13 @@ s32 Checkpoint_advanceRoute(CheckpointCursor* out, CheckpointNavState* o, f32 di
         {
             return 1;
         }
-        if (Checkpoint_ReadLink(&n->forwardLink0) < 0)
+        if (Checkpoint_ReadLink(&n->forwardLinkIds[0]) < 0)
         {
             o->route.startCheckpointId = -1;
             return 1;
         }
         alt = 0;
-        if (Checkpoint_ReadLink(&n->forwardLink1) > -1 && o->branchFlag != 0)
+        if (Checkpoint_ReadLink(&n->forwardLinkIds[1]) > -1 && o->branchFlag != 0)
         {
             alt = 1;
         }
@@ -380,7 +380,7 @@ s32 Checkpoint_advanceRoute(CheckpointCursor* out, CheckpointNavState* o, f32 di
             o->route.pathT = 0.9999f;
             if (alt != 0 && o->route.startCheckpointId < 0)
             {
-                o->route.startCheckpointId = Checkpoint_ReadLink(&n->backLink0);
+                o->route.startCheckpointId = Checkpoint_ReadLink(&n->backLinkIds[0]);
             }
         }
         else if (clamp == 1 && seg < dist)
@@ -389,7 +389,7 @@ s32 Checkpoint_advanceRoute(CheckpointCursor* out, CheckpointNavState* o, f32 di
             o->route.pathT = 0.0f;
             if (alt != 0 && o->route.startCheckpointId < 0)
             {
-                o->route.startCheckpointId = Checkpoint_ReadLink(&n->forwardLink0);
+                o->route.startCheckpointId = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
             }
         }
         else
@@ -516,7 +516,7 @@ void Checkpoint_rewindRoute(CheckpointRouteState* o)
     }
     else
     {
-        while ((nxt = Checkpoint_ReadLink(&ret->backLink0)) > -1)
+        while ((nxt = Checkpoint_ReadLink(&ret->backLinkIds[0])) > -1)
         {
             ret = Checkpoint_find(nxt, &local_idx);
             o->linkDepth = o->linkDepth + 1;
@@ -571,18 +571,18 @@ int Checkpoint_getRouteHeading(GameObject* obj, CheckpointRouteState* state)
     sinv = mathCosf((3.1415927f * (f32)(cp->heading << 8)) / 32768.0f);
     offs = -(cp->posX * cosv + cp->posZ * sinv);
     dist = offs + (cosv * obj->anim.localPosX + sinv * obj->anim.localPosZ);
-    if (Checkpoint_ReadLink(&cp->backLink0) > -1 && dist >= 0.0f)
+    if (Checkpoint_ReadLink(&cp->backLinkIds[0]) > -1 && dist >= 0.0f)
     {
-        state->currentCheckpointId = Checkpoint_ReadLink(&cp->backLink0);
+        state->currentCheckpointId = Checkpoint_ReadLink(&cp->backLinkIds[0]);
         state->routeProgress = 0.99f;
         state->linkDepth = state->linkDepth - 1;
         return cp->heading;
     }
-    if (Checkpoint_ReadLink(&cp->forwardLink0) < 0)
+    if (Checkpoint_ReadLink(&cp->forwardLinkIds[0]) < 0)
     {
         return cp->heading;
     }
-    cp2 = Checkpoint_find(Checkpoint_ReadLink(&cp->forwardLink0), &slotC);
+    cp2 = Checkpoint_find(Checkpoint_ReadLink(&cp->forwardLinkIds[0]), &slotC);
     ang = getAngle(cp2->posX - cp->posX, cp2->posZ - cp->posZ);
     sin2 = mathSinf((3.1415927f * (f32)(cp2->heading << 8)) / 32768.0f);
     cos2 = mathCosf((3.1415927f * (f32)(cp2->heading << 8)) / 32768.0f);
@@ -591,7 +591,7 @@ int Checkpoint_getRouteHeading(GameObject* obj, CheckpointRouteState* state)
     zero = 0.0f;
     if (dist2 < zero)
     {
-        state->currentCheckpointId = Checkpoint_ReadLink(&cp->forwardLink0);
+        state->currentCheckpointId = Checkpoint_ReadLink(&cp->forwardLinkIds[0]);
         state->routeProgress = zero;
         state->linkDepth = state->linkDepth + 1;
         return ang;
@@ -822,7 +822,7 @@ void Checkpoint_Remove(CheckpointRouteEntry* obj)
     CheckpointSlot* p = gCheckpointRouteTable;
     CheckpointSlot* e;
 
-    while (i < (count = gCheckpointRouteCount) && obj->sortKey != p[i].key)
+    while (i < (count = gCheckpointRouteCount) && obj->checkpointId != p[i].key)
     {
         i++;
     }
@@ -847,7 +847,7 @@ void Checkpoint_Add(CheckpointRouteEntry* entry)
     int i = 0;
     CheckpointSlot* p = gCheckpointRouteTable;
     int count;
-    while (i < (count = gCheckpointRouteCount) && entry->sortKey > p[i].key)
+    while (i < (count = gCheckpointRouteCount) && entry->checkpointId > p[i].key)
     {
         i++;
     }
@@ -863,7 +863,7 @@ void Checkpoint_Add(CheckpointRouteEntry* entry)
     }
     gCheckpointRouteCount = gCheckpointRouteCount + 1;
     gCheckpointRouteTable[i].entry = entry;
-    gCheckpointRouteTable[i].key = entry->sortKey;
+    gCheckpointRouteTable[i].key = entry->checkpointId;
 }
 
 void Checkpoint_reset(void)
@@ -880,52 +880,54 @@ void Checkpoint_initialise(void)
     gCheckpointRankItemsPending = gCheckpointPartFxListBuffer;
     gCheckpointRankItems = gCheckpointPartFxListBuffer + 10;
 }
+typedef struct CheckpointDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(Checkpoint_reset)* reset;
+    __typeof__(Checkpoint_Add)* add;
+    __typeof__(Checkpoint_Remove)* remove;
+    __typeof__(Checkpoint_findRouteForObject)* findRouteForObject;
+    __typeof__(Checkpoint_getRouteHeading)* getRouteHeading;
+    __typeof__(Checkpoint_advanceRoute)* advanceRoute;
+    __typeof__(Checkpoint_func09_ret_1)* slot09;
+    __typeof__(Checkpoint_getRandomLinkedVector)* getRandomLinkedVector;
+    __typeof__(Checkpoint_find)* find;
+    __typeof__(Checkpoint_rewindRoute)* rewindRoute;
+    __typeof__(Checkpoint_queueRouteRankItem)* queueRouteRankItem;
+    __typeof__(Checkpoint_getRouteRankItems)* getRouteRankItems;
+    __typeof__(Checkpoint_getRouteRank)* getRouteRank;
+    __typeof__(Checkpoint_getRouteRankItem)* getRouteRankItem;
+    __typeof__(Checkpoint_onGameLoop)* onGameLoop;
+} CheckpointDllInterfaceCallbacks;
+
 typedef struct CheckpointDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback reset;
-    ObjectDescriptorCallback add;
-    ObjectDescriptorCallback remove;
-    ObjectDescriptorCallback findRouteForObject;
-    ObjectDescriptorCallback getRouteHeading;
-    ObjectDescriptorCallback advanceRoute;
-    ObjectDescriptorCallback slot09;
-    ObjectDescriptorCallback getRandomLinkedVector;
-    ObjectDescriptorCallback find;
-    ObjectDescriptorCallback rewindRoute;
-    ObjectDescriptorCallback queueRouteRankItem;
-    ObjectDescriptorCallback getRouteRankItems;
-    ObjectDescriptorCallback getRouteRank;
-    ObjectDescriptorCallback getRouteRankItem;
-    ObjectDescriptorCallback onGameLoop;
+    ResourceDescriptorHeader header;
+    CheckpointDllInterfaceCallbacks interface;
 } CheckpointDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gCheckpointResourceAcquire, Checkpoint_initialise)
+
 CheckpointDllInterface Checkpoint_funcs = {
-    0,
-    0,
-    0,
-    0x00110000,
-    (ObjectDescriptorCallback)Checkpoint_initialise,
-    (ObjectDescriptorCallback)Checkpoint_release,
-    0,
-    (ObjectDescriptorCallback)Checkpoint_reset,
-    (ObjectDescriptorCallback)Checkpoint_Add,
-    (ObjectDescriptorCallback)Checkpoint_Remove,
-    (ObjectDescriptorCallback)Checkpoint_findRouteForObject,
-    (ObjectDescriptorCallback)Checkpoint_getRouteHeading,
-    (ObjectDescriptorCallback)Checkpoint_advanceRoute,
-    (ObjectDescriptorCallback)Checkpoint_func09_ret_1,
-    (ObjectDescriptorCallback)Checkpoint_getRandomLinkedVector,
-    (ObjectDescriptorCallback)Checkpoint_find,
-    (ObjectDescriptorCallback)Checkpoint_rewindRoute,
-    (ObjectDescriptorCallback)Checkpoint_queueRouteRankItem,
-    (ObjectDescriptorCallback)Checkpoint_getRouteRankItems,
-    (ObjectDescriptorCallback)Checkpoint_getRouteRank,
-    (ObjectDescriptorCallback)Checkpoint_getRouteRankItem,
-    (ObjectDescriptorCallback)Checkpoint_onGameLoop,
+    {
+        {0, 0, 0, 0x00110000},
+        gCheckpointResourceAcquire,
+        Checkpoint_release,
+    },
+    {
+        NULL,
+        Checkpoint_reset,
+        Checkpoint_Add,
+        Checkpoint_Remove,
+        Checkpoint_findRouteForObject,
+        Checkpoint_getRouteHeading,
+        Checkpoint_advanceRoute,
+        Checkpoint_func09_ret_1,
+        Checkpoint_getRandomLinkedVector,
+        Checkpoint_find,
+        Checkpoint_rewindRoute,
+        Checkpoint_queueRouteRankItem,
+        Checkpoint_getRouteRankItems,
+        Checkpoint_getRouteRank,
+        Checkpoint_getRouteRankItem,
+        Checkpoint_onGameLoop,
+    },
 };

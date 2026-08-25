@@ -7,18 +7,17 @@
 #include "dlls/objects/260_SmallBasket.h"
 #include "dlls/objects/237.h"
 #include "dlls/objects/262.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
-#include "main/audio/sfx_object_query_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_005B_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_state.h"
 #include "main/dll/player_status.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEvent.h"
@@ -30,12 +29,12 @@
 #include "main/objhits.h"
 #include "main/pad.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/sky_interface.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/mapEventTypes.h"
@@ -72,21 +71,6 @@
 /* Remaining retail OBJECTS.bin child names; Scarab IDs live in their canonical header. */
 #define SMALLBASKET_CHILD_OBJECT_ENERGY_EGG COLLECTIBLE_ITEM_ENERGY_EGG
 #define SMALLBASKET_CHILD_OBJECT_APPLE      COLLECTIBLE_ITEM_APPLE
-
-/* Known fields shared by the 0x24- and 0x30-byte child placement records. */
-typedef union SmallBasketCollisionResults {
-    TrackHitResults record;
-    struct {
-        f32 hitInfo[4][4];
-        f32 radii[4];
-        s8 hitAxes[12];
-    };
-} SmallBasketCollisionResults;
-
-STATIC_ASSERT(offsetof(SmallBasketCollisionResults, hitInfo) == 0x0);
-STATIC_ASSERT(offsetof(SmallBasketCollisionResults, radii) == 0x40);
-STATIC_ASSERT(offsetof(SmallBasketCollisionResults, hitAxes) == 0x50);
-STATIC_ASSERT(sizeof(SmallBasketCollisionResults) == sizeof(TrackHitResults));
 
 int gSmallBasketDisableOnHit = 1;
 f32 gSmallBasketChainHitRadius = 15.0f;
@@ -454,7 +438,7 @@ int SmallBasket_resolveCollision(GameObject* obj) {
     int hitIndex;
     u8 hitMask;
     f32 zero;
-    SmallBasketCollisionResults hitResults;
+    TrackHitResults hitResults;
     f32 endPoints[12];
     f32 startPoints[12];
     TrackQueryBounds sweptBounds;
@@ -481,8 +465,8 @@ int SmallBasket_resolveCollision(GameObject* obj) {
         startPoints[1] = obj->anim.previousLocalPosY;
         startPoints[2] = obj->anim.previousLocalPosZ;
         hitResults.radii[0] = (f32)hitState->primaryRadius;
-        *(hitAxes = hitResults.hitAxes) = -1;
-        hitAxes[4] = 3;
+        *(hitAxes = (s8*)hitResults.surfaceTypes) = -1;
+        hitResults.queryTypes[0] = 3;
     } else {
         return 0;
     }
@@ -504,11 +488,11 @@ int SmallBasket_resolveCollision(GameObject* obj) {
         hitState->contactPosX = endPoints[hitIndex * 3];
         hitState->contactPosY = endPointY[hitIndex * 3];
         hitState->contactPosZ = endPointZ[hitIndex * 3];
-        gSmallBasketHitVelocity[0] = hitResults.hitInfo[hitIndex][0];
-        gSmallBasketHitVelocity[1] = hitResults.hitInfo[hitIndex][1];
-        gSmallBasketHitVelocity[2] = hitResults.hitInfo[hitIndex][2];
-        gSmallBasketHitVelocity[3] = hitResults.hitInfo[hitIndex][3];
-        if (hitResults.record.objects[hitIndex] != 0) {
+        gSmallBasketHitVelocity[0] = hitResults.planes[hitIndex][0];
+        gSmallBasketHitVelocity[1] = hitResults.planes[hitIndex][1];
+        gSmallBasketHitVelocity[2] = hitResults.planes[hitIndex][2];
+        gSmallBasketHitVelocity[3] = hitResults.planes[hitIndex][3];
+        if (hitResults.objects[hitIndex] != 0) {
             hitState->contactFlags |= OBJHITS_CONTACT_FLAG_KIND_NONZERO;
             obj->anim.localPosX = hitState->contactPosX;
             obj->anim.localPosY = hitState->contactPosY;
@@ -902,19 +886,27 @@ void SmallBasket_init(GameObject* obj, SmallBasketPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gSmallBasketObjDescriptorInitAdapter, SmallBasket_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSmallBasketObjDescriptorFreeAdapter, SmallBasket_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSmallBasketObjDescriptorExtraSizeAdapter, SmallBasket_getExtraSize)
+
 ObjectDescriptor gSmallBasketObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gSmallBasketObjDescriptorInitAdapter,
+    SmallBasket_update,
     0,
+    SmallBasket_render,
+    gSmallBasketObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SmallBasket_init,
-    (ObjectDescriptorCallback)SmallBasket_update,
-    0,
-    (ObjectDescriptorCallback)SmallBasket_render,
-    (ObjectDescriptorCallback)SmallBasket_free,
-    0,
-    SmallBasket_getExtraSize,
+    gSmallBasketObjDescriptorExtraSizeAdapter,
 };

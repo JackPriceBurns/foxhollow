@@ -6,7 +6,7 @@
 
 #define OBJPRINT_OBJECT(obj)            ((ObjAnimComponent*)(obj))
 #define OBJPRINT_MODEL_INSTANCE(obj)    (OBJPRINT_OBJECT(obj)->modelInstance)
-#define OBJPRINT_BANK_TABLE(obj)        ((int**)OBJPRINT_OBJECT(obj)->banks)
+#define OBJPRINT_BANK_TABLE(obj)        ((int**)OBJPRINT_OBJECT(obj)->modelBanks)
 #define OBJPRINT_ACTIVE_BANK_INDEX(obj) (OBJPRINT_OBJECT(obj)->bankIndex)
 #define OBJPRINT_ACTIVE_BANK(obj)       ((int*)OBJPRINT_BANK_TABLE(obj)[OBJPRINT_ACTIVE_BANK_INDEX(obj)])
 #define OBJPRINT_MODEL_COUNT(model)     (((ObjDef*)(model))->modelCount)

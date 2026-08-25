@@ -19,10 +19,10 @@ void projquakeshock_release(void) {
 void projquakeshock_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjquakeshockResourceDescriptorAcquire, projquakeshock_initialise)
+
 ProjquakeshockResourceDescriptor gProjquakeshockResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projquakeshock_initialise,
-    projquakeshock_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjquakeshockResourceDescriptorAcquire, projquakeshock_release },
     NULL,
     projquakeshock_doUnsupported,
 };

@@ -31,6 +31,7 @@ enum ScLevelControlAnimState {
 
 void sc_levelcontrol_setAnimEventState(GameObject* obj, enum ScLevelControlAnimState animEventState);
 
-extern ObjectDescriptor12 gSC_levelcontrolObjDescriptor;
+struct SC_levelcontrolObjDescriptorType;
+extern struct SC_levelcontrolObjDescriptorType gSC_levelcontrolObjDescriptor;
 
 #endif /* DLLS_OBJECTS_438_SC_LEVELCON_H_ */

@@ -6,8 +6,8 @@
  * particle effects.
  */
 #include "dlls/objects/215.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -17,8 +17,6 @@
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
 #include "main/objhits.h"
 
 #define KALDACHOMPSPIT_HIT_VOLUME_SLOT_EXPLOSIVE 31
@@ -233,19 +231,30 @@ void KaldachomSpit_release(void) {
 void KaldachomSpit_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKaldachomSpObjDescriptorInitAdapter, KaldachomSpit_init, obj)
+OBJECT_FREE_ADAPTER(gKaldachomSpObjDescriptorFreeAdapter, KaldachomSpit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKaldachomSpObjDescriptorTypeIdAdapter, KaldachomSpit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKaldachomSpObjDescriptorExtraSizeAdapter, KaldachomSpit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKaldachomSpObjDescriptorAcquire, KaldachomSpit_initialise)
+
 ObjectDescriptor gKaldachomSpObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKaldachomSpObjDescriptorAcquire,
+        KaldachomSpit_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KaldachomSpit_initialise,
-    (ObjectDescriptorCallback)KaldachomSpit_release,
-    0,
-    (ObjectDescriptorCallback)KaldachomSpit_init,
-    (ObjectDescriptorCallback)KaldachomSpit_update,
-    (ObjectDescriptorCallback)KaldachomSpit_hitDetect,
-    (ObjectDescriptorCallback)KaldachomSpit_render,
-    (ObjectDescriptorCallback)KaldachomSpit_free,
-    (ObjectDescriptorCallback)KaldachomSpit_getObjectTypeId,
-    KaldachomSpit_getExtraSize,
+    gKaldachomSpObjDescriptorInitAdapter,
+    KaldachomSpit_update,
+    KaldachomSpit_hitDetect,
+    KaldachomSpit_render,
+    gKaldachomSpObjDescriptorFreeAdapter,
+    gKaldachomSpObjDescriptorTypeIdAdapter,
+    gKaldachomSpObjDescriptorExtraSizeAdapter,
 };

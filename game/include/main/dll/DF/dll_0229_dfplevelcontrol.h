@@ -18,16 +18,18 @@ STATIC_ASSERT(sizeof(DfpLevelControlPlacement) == 0x1C);
 /* Export table reached by the electric-floor puzzle objects through anim.dll. */
 typedef struct DfpLevelControlInterface
 {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     void (*copySafeFloorTiles)(GameObject* controller, u8* out);
 } DfpLevelControlInterface;
+
+OBJECT_DESCRIPTOR_TYPE(DfpLevelControlDescriptor, DfpLevelControlInterface);
 
 #define DFP_LEVEL_CONTROL_INTERFACE(controller) \
     ((DfpLevelControlInterface*)*((GameObject*)(controller))->anim.dll)
 
 STATIC_ASSERT(offsetof(DfpLevelControlInterface, copySafeFloorTiles) == 0x20);
 
-extern ObjectDescriptor11ExtraSize gDFP_LevelControlObjDescriptor;
+extern DfpLevelControlDescriptor gDFP_LevelControlObjDescriptor;
 extern s16 gDFPLevelControlSafeFloorTiles[10];
 
 void DFP_LevelControl_updateAct2(GameObject* obj);

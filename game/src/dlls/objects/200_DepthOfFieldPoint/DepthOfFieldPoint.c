@@ -8,7 +8,7 @@
 #include "dlls/objects/200_DepthOfFieldPoint.h"
 #include "game/objects/object.h"
 #include "main/objseq.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 
 #define DEPTHOFFIELDPOINT_SEQEV_DISABLE       0
 #define DEPTHOFFIELDPOINT_SEQEV_ENABLE        1
@@ -68,19 +68,26 @@ void depthoffieldpoint_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gDepthOfFieldPointObjDescriptorInitAdapter, depthoffieldpoint_init, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDepthOfFieldPointObjDescriptorExtraSizeAdapter, depthoffieldpoint_getExtraSize)
+
 ObjectDescriptor gDepthOfFieldPointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDepthOfFieldPointObjDescriptorInitAdapter,
+    depthoffieldpoint_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)depthoffieldpoint_init,
-    (ObjectDescriptorCallback)depthoffieldpoint_update,
-    0,
-    0,
-    0,
-    0,
-    depthoffieldpoint_getExtraSize,
+    gDepthOfFieldPointObjDescriptorExtraSizeAdapter,
 };

@@ -21,10 +21,10 @@ void projenergise1_release(void) {
 void projenergise1_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjenergise1ResourceDescriptorAcquire, projenergise1_initialise)
+
 Projenergise1ResourceDescriptor gProjenergise1ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projenergise1_initialise,
-    projenergise1_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjenergise1ResourceDescriptorAcquire, projenergise1_release },
     NULL,
     projenergise1_doUnsupported,
 };

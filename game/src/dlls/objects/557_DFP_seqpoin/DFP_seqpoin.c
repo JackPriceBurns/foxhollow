@@ -12,8 +12,8 @@
 #include "main/mapEventTypes.h"
 #include "main/dll/DF/dll_022D_dfpseqpoint.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "dlls/object_descriptor.h"
@@ -236,19 +236,31 @@ void DFP_seqpoint_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDFP_seqpointObjDescriptorInitAdapter, DFP_seqpoint_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFP_seqpointObjDescriptorHitDetectAdapter, DFP_seqpoint_hitDetect)
+OBJECT_FREE_ADAPTER(gDFP_seqpointObjDescriptorFreeAdapter, DFP_seqpoint_free)
+OBJECT_TYPE_ID_ADAPTER(gDFP_seqpointObjDescriptorTypeIdAdapter, DFP_seqpoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFP_seqpointObjDescriptorExtraSizeAdapter, DFP_seqpoint_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFP_seqpointObjDescriptorAcquire, DFP_seqpoint_initialise)
+
 ObjectDescriptor gDFP_seqpointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFP_seqpointObjDescriptorAcquire,
+        DFP_seqpoint_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DFP_seqpoint_initialise,
-    (ObjectDescriptorCallback)DFP_seqpoint_release,
-    0,
-    (ObjectDescriptorCallback)DFP_seqpoint_init,
-    (ObjectDescriptorCallback)DFP_seqpoint_update,
-    (ObjectDescriptorCallback)DFP_seqpoint_hitDetect,
-    (ObjectDescriptorCallback)DFP_seqpoint_render,
-    (ObjectDescriptorCallback)DFP_seqpoint_free,
-    (ObjectDescriptorCallback)DFP_seqpoint_getObjectTypeId,
-    DFP_seqpoint_getExtraSize,
+    gDFP_seqpointObjDescriptorInitAdapter,
+    DFP_seqpoint_update,
+    gDFP_seqpointObjDescriptorHitDetectAdapter,
+    DFP_seqpoint_render,
+    gDFP_seqpointObjDescriptorFreeAdapter,
+    gDFP_seqpointObjDescriptorTypeIdAdapter,
+    gDFP_seqpointObjDescriptorExtraSizeAdapter,
 };

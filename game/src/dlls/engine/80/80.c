@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0050_cameramodecrawl.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
@@ -62,13 +62,13 @@ void CameraModeCrawl_copyToCurrent(void* actionData, int recordSize) {
 
         coordinate = targetPosition[0];
         camera->anim.worldPosX = coordinate;
-        camera->probePosX = coordinate;
+        camera->probePos.x = coordinate;
         coordinate = targetPosition[1];
         camera->anim.worldPosY = coordinate;
-        camera->probePosY = coordinate;
+        camera->probePos.y = coordinate;
         coordinate = targetPosition[2];
         camera->anim.worldPosZ = coordinate;
-        camera->probePosZ = coordinate;
+        camera->probePos.z = coordinate;
     }
     Obj_TransformWorldPointToLocal(camera->anim.worldPosX, camera->anim.worldPosY, camera->anim.worldPosZ,
                                    &camera->anim.localPosX, &camera->anim.localPosY, &camera->anim.localPosZ,
@@ -149,10 +149,10 @@ void CameraModeCrawl_release(void) {
 void CameraModeCrawl_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeCrawlDescriptorAcquire, CameraModeCrawl_initialise)
+
 CameraModeCrawlDescriptor gCameraModeCrawlDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeCrawl_initialise,
-    CameraModeCrawl_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeCrawlDescriptorAcquire, CameraModeCrawl_release },
     NULL,
     CameraModeCrawl_init,
     CameraModeCrawl_update,

@@ -1,6 +1,6 @@
 #include "dlls/objects/372_CCriverflow.h"
 #include "game/objects/object.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 
 #define CC_RIVER_FLOW_OBJECT_GROUP 0x14
@@ -59,19 +59,28 @@ void ccRiverFlow_init(GameObject* obj, CCRiverFlowPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gCCRiverFlowObjDescriptorInitAdapter, ccRiverFlow_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gCCRiverFlowObjDescriptorRenderAdapter, ccRiverFlow_render)
+OBJECT_FREE_ADAPTER(gCCRiverFlowObjDescriptorFreeAdapter, ccRiverFlow_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCRiverFlowObjDescriptorExtraSizeAdapter, ccRiverFlow_getExtraSize)
+
 ObjectDescriptor gCCRiverFlowObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gCCRiverFlowObjDescriptorInitAdapter,
+    ccRiverFlow_update,
     0,
+    gCCRiverFlowObjDescriptorRenderAdapter,
+    gCCRiverFlowObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccRiverFlow_init,
-    (ObjectDescriptorCallback)ccRiverFlow_update,
-    0,
-    (ObjectDescriptorCallback)ccRiverFlow_render,
-    (ObjectDescriptorCallback)ccRiverFlow_free,
-    0,
-    ccRiverFlow_getExtraSize,
+    gCCRiverFlowObjDescriptorExtraSizeAdapter,
 };

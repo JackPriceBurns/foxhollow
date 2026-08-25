@@ -1,10 +1,10 @@
-#include "main/audio/sfx_limited_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/objhits.h"
 #include "main/obj_path.h"
 #include "main/vecmath.h"
@@ -53,8 +53,7 @@
 
 #define ARWSQUADRON_CHILD_OBJ_PROJECTILE 0x6ae
 
-union ArwSquadronConstU32 { u32 u; };
-const union ArwSquadronConstU32 gArwSquadronDefaultCurveMode = { 0x28 };
+const u32 gArwSquadronDefaultCurveMode = 0x28;
 
 const f32 gArwSquadronRangeZBehind[1] = {-100.0f};
 
@@ -550,7 +549,7 @@ void ARWSquadron_init(GameObject* obj, ArwSquadronSetup* setup)
     f32 fxScale;
     f32 pathSpeedScale = 0.25f;
 
-    curveMode = gArwSquadronDefaultCurveMode.u;
+    curveMode = gArwSquadronDefaultCurveMode;
     state = (ArwSquadronState*)obj->extra;
     setupData = setup;
     flags = &state->flags.init;
@@ -663,9 +662,9 @@ void ARWSquadron_init(GameObject* obj, ArwSquadronSetup* setup)
         if ((*gRomCurveInterface)->initCurve(&state->curve, obj, 200.0f, &curveMode, -1) == 0)
         {
             flags->followingCurve = 1;
-            obj->anim.localPosX = state->curve.posX;
-            obj->anim.localPosY = state->curve.posY;
-            obj->anim.localPosZ = state->curve.posZ;
+            obj->anim.localPosX = state->curve.curve.sample[0];
+            obj->anim.localPosY = state->curve.curve.sample[1];
+            obj->anim.localPosZ = state->curve.curve.sample[2];
             arwsquadron_applyCommandParams(obj, state);
         }
     }
@@ -678,10 +677,30 @@ void ARWSquadron_init(GameObject* obj, ArwSquadronSetup* setup)
     state->dialogueVariant = setupData->dialogueVariant;
 }
 
+OBJECT_INIT_ADAPTER(gARWSquadronObjDescriptorInitAdapter, ARWSquadron_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWSquadronObjDescriptorHitDetectAdapter, ARWSquadron_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWSquadronObjDescriptorRenderAdapter, ARWSquadron_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gARWSquadronObjDescriptorFreeAdapter, ARWSquadron_free)
+OBJECT_TYPE_ID_ADAPTER(gARWSquadronObjDescriptorTypeIdAdapter, ARWSquadron_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWSquadronObjDescriptorExtraSizeAdapter, ARWSquadron_getExtraSize)
+
 ObjectDescriptor gARWSquadronObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS, 0, 0, 0,
-    (ObjectDescriptorCallback)ARWSquadron_init, (ObjectDescriptorCallback)ARWSquadron_update,
-    (ObjectDescriptorCallback)ARWSquadron_hitDetect, (ObjectDescriptorCallback)ARWSquadron_render,
-    (ObjectDescriptorCallback)ARWSquadron_free, (ObjectDescriptorCallback)ARWSquadron_getObjectTypeId,
-    ARWSquadron_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gARWSquadronObjDescriptorInitAdapter,
+    ARWSquadron_update,
+    gARWSquadronObjDescriptorHitDetectAdapter,
+    gARWSquadronObjDescriptorRenderAdapter,
+    gARWSquadronObjDescriptorFreeAdapter,
+    gARWSquadronObjDescriptorTypeIdAdapter,
+    gARWSquadronObjDescriptorExtraSizeAdapter,
 };

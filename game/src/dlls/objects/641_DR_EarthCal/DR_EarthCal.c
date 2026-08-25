@@ -1,7 +1,7 @@
 /* DR_EarthCal (DLL 641) */
 #include "main/dll/DR/dll_0281_drearthcal.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/obj_trigger.h"
 #include "main/objfx.h"
 #include "main/objtype.h"
@@ -94,21 +94,46 @@ void drearthcal_release(void) {
 void drearthcal_initialise(void) {
 }
 
-ObjectDescriptor12 gDrEarthCalObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    (ObjectDescriptorCallback)drearthcal_initialise,
-    (ObjectDescriptorCallback)drearthcal_release,
-    0,
-    (ObjectDescriptorCallback)drearthcal_init,
-    (ObjectDescriptorCallback)drearthcal_update,
-    (ObjectDescriptorCallback)drearthcal_hitDetect,
-    (ObjectDescriptorCallback)drearthcal_render,
-    (ObjectDescriptorCallback)drearthcal_free,
-    (ObjectDescriptorCallback)drearthcal_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drearthcal_getExtraSize,
-    (ObjectDescriptorCallback)drearthcal_func0A,
-    0,
+OBJECT_INIT_ADAPTER(gDrEarthCalObjDescriptorInitAdapter, drearthcal_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrEarthCalObjDescriptorHitDetectAdapter, drearthcal_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrEarthCalObjDescriptorRenderAdapter, drearthcal_render)
+OBJECT_FREE_ADAPTER(gDrEarthCalObjDescriptorFreeAdapter, drearthcal_free)
+OBJECT_TYPE_ID_ADAPTER(gDrEarthCalObjDescriptorTypeIdAdapter, drearthcal_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrEarthCalObjDescriptorExtraSizeAdapter, drearthcal_getExtraSize)
+
+typedef struct DrEarthCalObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(drearthcal_func0A)* drearthcal_func0A;
+} DrEarthCalObjDescriptorTypeInterface;
+
+struct DrEarthCalObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DrEarthCalObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDrEarthCalObjDescriptorAcquire, drearthcal_initialise)
+
+struct DrEarthCalObjDescriptorType gDrEarthCalObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        },
+        gDrEarthCalObjDescriptorAcquire,
+        drearthcal_release,
+    },
+    {
+        0,
+        gDrEarthCalObjDescriptorInitAdapter,
+        drearthcal_update,
+        gDrEarthCalObjDescriptorHitDetectAdapter,
+        gDrEarthCalObjDescriptorRenderAdapter,
+        gDrEarthCalObjDescriptorFreeAdapter,
+        gDrEarthCalObjDescriptorTypeIdAdapter,
+        gDrEarthCalObjDescriptorExtraSizeAdapter,
+        drearthcal_func0A,
+        0,
+    },
 };

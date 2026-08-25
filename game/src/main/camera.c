@@ -3,14 +3,14 @@
 #include "main/pi_dolphin.h"
 #include "main/frame_timing.h"
 #include "game/objects/object.h"
-#include "main/pause_menu_api.h"
-#include "main/shader_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/pause_menu.h"
+#include "main/shader.h"
+#include "dolphin/math.h"
 #include "dolphin/gx/GXLegacy.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/mtx.h"
-#include "track/intersect_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "track/intersect.h"
+#include "main/rcp_dolphin.h"
 #include "dolphin/mtx/vec.h"
 #include "main/vecmath.h"
 
@@ -37,34 +37,6 @@ s16 gCameraViewportYOffset;
 #define FH_CAMERA_SAFE_AREA_MARGIN 0
 s16 gCameraFarPlaneTransitionFrames;
 s16 gCameraFarPlaneTransitionFramesLeft;
-
-typedef struct CameraMatrixStorage {
-    CameraMatrix inverseYawTransforms[0x1E];
-    union {
-        CameraMatrix yawTransforms[0x22];
-        struct {
-            CameraMatrix objectYawTransforms[0x1F];
-            CameraMatrix scratchTransform;
-            CameraMatrix remainingYawTransforms[2];
-        };
-    };
-    f32 worldMatrix[64];
-    CameraMatrix defaultModelMatrix;
-    Camera cameras[CAMERA_COUNT];
-    CameraMatrix viewRotationMatrix;
-    CameraMatrix inverseViewRotationMatrix;
-    CameraMatrix viewMatrix;
-    CameraMatrix inverseViewMatrix;
-    CameraProjectionMatrix projectionMatrix;
-} CameraMatrixStorage;
-
-STATIC_ASSERT(offsetof(CameraMatrixStorage, yawTransforms) == 0x780);
-STATIC_ASSERT(offsetof(CameraMatrixStorage, scratchTransform) == 0xF40);
-STATIC_ASSERT(offsetof(CameraMatrixStorage, worldMatrix) == 0x1000);
-STATIC_ASSERT(offsetof(CameraMatrixStorage, defaultModelMatrix) == 0x1100);
-STATIC_ASSERT(offsetof(CameraMatrixStorage, cameras) == 0x1140);
-STATIC_ASSERT(offsetof(CameraMatrixStorage, projectionMatrix) == 0x16C0);
-STATIC_ASSERT(sizeof(CameraMatrixStorage) == 0x1700);
 
 void Obj_RotateLocalOffsetByYaw(f32* local, f32* out, s8 yawIndex) {
     s32 matrixOffset;

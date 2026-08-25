@@ -2,7 +2,7 @@
 #define DLLS_OBJECTS_478_DIM2LAVACON_H_
 
 #include "dlls/object_descriptor.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 
@@ -30,9 +30,18 @@ typedef struct Dim2LavaControlState {
     u8 heatEffectAlpha;
     u8 phase;
     u8 unknown05[3];
-    GameBitLatchState musicLatch;
+    int musicLatch;
     int musicTriggerId;
 } Dim2LavaControlState;
+
+typedef struct Dim2LavaControlInterface {
+    OBJECT_INTERFACE_FIELDS;
+    void (*tickCountdown)(GameObject* obj);
+} Dim2LavaControlInterface;
+
+OBJECT_DESCRIPTOR_TYPE(Dim2LavaControlDescriptor, Dim2LavaControlInterface);
+
+#define DIM2_LAVA_CONTROL_INTERFACE(control) ((Dim2LavaControlInterface*)*((GameObject*)(control))->anim.dll)
 
 STATIC_ASSERT(offsetof(Dim2LavaControlPlacementView, base) == 0x00);
 STATIC_ASSERT(offsetof(Dim2LavaControlPlacementView, unknown18) == 0x18);
@@ -59,6 +68,6 @@ void dim2lavacontrol_update(GameObject* obj);
 void dim2lavacontrol_init(GameObject* obj, const Dim2LavaControlPlacementView* placement);
 
 extern u8 gDim2LavaHeatAlphaTargets[DIM2_LAVA_CONTROL_HEAT_ALPHA_TARGET_COUNT];
-extern ObjectDescriptor12 gDIM2LavaControlObjDescriptor;
+extern Dim2LavaControlDescriptor gDIM2LavaControlObjDescriptor;
 
 #endif /* DLLS_OBJECTS_478_DIM2LAVACON_H_ */

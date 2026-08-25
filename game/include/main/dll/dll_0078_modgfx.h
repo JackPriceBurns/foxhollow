@@ -9,7 +9,7 @@
 typedef void (*Dll78SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags);
 
 typedef struct Dll78Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll78SpawnFn spawn;
 } Dll78Interface;
 
@@ -18,16 +18,14 @@ STATIC_ASSERT(offsetof(Dll78Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll78Interface) == 0x08);
 
 typedef struct Dll78ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll78SpawnFn spawn;
 } Dll78ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll78ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll78ResourceDescriptor) == 0x20);

@@ -12,16 +12,15 @@
 #include "main/dll/modgfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/mapEventTypes.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 
 #define DLLF7_OBJECT_TYPE_ID 2
@@ -239,19 +238,31 @@ void dll_F7_release(void) {
 void dll_F7_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDllF7ObjDescriptorInitAdapter, dll_F7_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDllF7ObjDescriptorHitDetectAdapter, dll_F7_hitDetect)
+OBJECT_FREE_ADAPTER(gDllF7ObjDescriptorFreeAdapter, dll_F7_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDllF7ObjDescriptorTypeIdAdapter, dll_F7_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllF7ObjDescriptorExtraSizeAdapter, dll_F7_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDllF7ObjDescriptorAcquire, dll_F7_initialise)
+
 ObjectDescriptor gDllF7ObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)dll_F7_initialise,      /* initialise */
-    (ObjectDescriptorCallback)dll_F7_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)dll_F7_init,            /* init */
-    (ObjectDescriptorCallback)dll_F7_update,          /* update */
-    (ObjectDescriptorCallback)dll_F7_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)dll_F7_render,          /* render */
-    (ObjectDescriptorCallback)dll_F7_free,            /* free */
-    (ObjectDescriptorCallback)dll_F7_getObjectTypeId, /* getObjectTypeId */
-    dll_F7_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDllF7ObjDescriptorAcquire,
+        dll_F7_release,
+    },
+    0,
+    gDllF7ObjDescriptorInitAdapter,
+    dll_F7_update,
+    gDllF7ObjDescriptorHitDetectAdapter,
+    dll_F7_render,
+    gDllF7ObjDescriptorFreeAdapter,
+    gDllF7ObjDescriptorTypeIdAdapter,
+    gDllF7ObjDescriptorExtraSizeAdapter,
 };

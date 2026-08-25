@@ -4,10 +4,10 @@
  */
 #include "dlls/objects/311_AlphaAnimat.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/mm.h"
 #include "main/object_render.h"
 
@@ -230,19 +230,31 @@ void AlphaAnimator_release(void) {
 void AlphaAnimator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gAlphaAnimatorObjDescriptorInitAdapter, AlphaAnimator_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gAlphaAnimatorObjDescriptorHitDetectAdapter, AlphaAnimator_hitDetect)
+OBJECT_FREE_ADAPTER(gAlphaAnimatorObjDescriptorFreeAdapter, AlphaAnimator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gAlphaAnimatorObjDescriptorTypeIdAdapter, AlphaAnimator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAlphaAnimatorObjDescriptorExtraSizeAdapter, AlphaAnimator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gAlphaAnimatorObjDescriptorAcquire, AlphaAnimator_initialise)
+
 ObjectDescriptor gAlphaAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gAlphaAnimatorObjDescriptorAcquire,
+        AlphaAnimator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)AlphaAnimator_initialise,
-    (ObjectDescriptorCallback)AlphaAnimator_release,
-    0,
-    (ObjectDescriptorCallback)AlphaAnimator_init,
-    (ObjectDescriptorCallback)AlphaAnimator_update,
-    (ObjectDescriptorCallback)AlphaAnimator_hitDetect,
-    (ObjectDescriptorCallback)AlphaAnimator_render,
-    (ObjectDescriptorCallback)AlphaAnimator_free,
-    (ObjectDescriptorCallback)AlphaAnimator_getObjectTypeId,
-    AlphaAnimator_getExtraSize,
+    gAlphaAnimatorObjDescriptorInitAdapter,
+    AlphaAnimator_update,
+    gAlphaAnimatorObjDescriptorHitDetectAdapter,
+    AlphaAnimator_render,
+    gAlphaAnimatorObjDescriptorFreeAdapter,
+    gAlphaAnimatorObjDescriptorTypeIdAdapter,
+    gAlphaAnimatorObjDescriptorExtraSizeAdapter,
 };

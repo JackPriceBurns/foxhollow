@@ -11,9 +11,7 @@
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/obj_path.h"
 #include "main/objseq.h"
 
@@ -150,19 +148,27 @@ void dll500_init(GameObject* obj, const Dll1F4PlacementView* placement) {
     obj->animEventCallback = dll500_processAnimEvents;
 }
 
+OBJECT_INIT_ADAPTER(gDll1F4ObjDescriptorInitAdapter, dll500_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDll1F4ObjDescriptorFreeAdapter, dll500_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1F4ObjDescriptorExtraSizeAdapter, dll500_getExtraSize)
+
 ObjectDescriptor gDll1F4ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDll1F4ObjDescriptorInitAdapter,
+    dll500_update,
     0,
+    dll500_render,
+    gDll1F4ObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dll500_init,
-    (ObjectDescriptorCallback)dll500_update,
-    0,
-    (ObjectDescriptorCallback)dll500_render,
-    (ObjectDescriptorCallback)dll500_free,
-    0,
-    dll500_getExtraSize,
+    gDll1F4ObjDescriptorExtraSizeAdapter,
 };

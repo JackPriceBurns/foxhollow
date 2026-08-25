@@ -5,7 +5,7 @@
 #include "game/objects/object.h"
 #include "main/dll/partfx_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 
 enum CcGasVentPhase {
@@ -59,11 +59,20 @@ static void ccGasVent_init(GameObject* obj) {
     objAddObjectType(obj, CC_GAS_VENT_OBJECT_GROUP);
 }
 
+OBJECT_INIT_ADAPTER(gCCGasVentObjDescriptorInitAdapter, ccGasVent_init, obj)
+OBJECT_RENDER_ADAPTER(gCCGasVentObjDescriptorRenderAdapter, ccGasVent_render)
+OBJECT_FREE_ADAPTER(gCCGasVentObjDescriptorFreeAdapter, ccGasVent_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCGasVentObjDescriptorExtraSizeAdapter, ccGasVent_getExtraSize)
+
 ObjectDescriptor gCCGasVentObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccGasVent_init,
-    .update = (ObjectDescriptorCallback)ccGasVent_update,
-    .render = (ObjectDescriptorCallback)ccGasVent_render,
-    .free = (ObjectDescriptorCallback)ccGasVent_free,
-    .getExtraSize = ccGasVent_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCGasVentObjDescriptorInitAdapter,
+    .update = ccGasVent_update,
+    .render = gCCGasVentObjDescriptorRenderAdapter,
+    .free = gCCGasVentObjDescriptorFreeAdapter,
+    .getExtraSize = gCCGasVentObjDescriptorExtraSizeAdapter,
+};;

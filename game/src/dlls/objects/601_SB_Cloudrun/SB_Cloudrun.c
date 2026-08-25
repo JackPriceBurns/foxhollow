@@ -15,21 +15,21 @@
  * "(d - 0x10000) + 1" forms below are the shortest-arc angle wrap-clamps.
  */
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/obj_path.h"
 #include "sys/objects.h"
 #include "dolphin/mtx.h"
 #include "main/dll/cloudaction_interface.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/dll/partfx_interface.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll_000A_expgfx.h"
-#include "main/dll/player_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/dll/player.h"
+#include "main/track_dolphin.h"
 #include "main/objtype.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/object_render.h"
 #include "main/dll/WC/dll_0259_sbcloudrunner.h"
 #include "main/dll/bwalphaanim.h"
@@ -37,10 +37,11 @@
 #include "main/resource.h"
 #include "main/gamebits.h"
 #include "main/texture.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/pad.h"
 #include "dlls/object_descriptor.h"
-#include "main/dll/ship_battle_api.h"
+#include "dlls/objects/common/vehicle.h"
+#include "main/dll/ship_battle.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 #include "main/objseq.h"
@@ -620,7 +621,7 @@ int SB_CloudRunner_getRacePosition(void)
 }
 
 
-f32 SB_CloudRunner_func19(int unused, f32* p)
+f32 SB_CloudRunner_func19(GameObject* unused, f32* p)
 {
     f32 v = 0.0f;
     *p = v;
@@ -628,7 +629,7 @@ f32 SB_CloudRunner_func19(int unused, f32* p)
 }
 
 
-void SB_CloudRunner_getPlayerAnim(int obj, f32* out, int* outInt)
+void SB_CloudRunner_getPlayerAnim(GameObject* obj, f32* out, int* outInt)
 {
     *out = 0.0f;
     *outInt = 0;
@@ -847,33 +848,59 @@ void SB_CloudRunner_initialise(void)
 {
 }
 
-ObjectDescriptor24 gSB_CloudRunnerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SB_CloudRunner_initialise,
-    (ObjectDescriptorCallback)SB_CloudRunner_release,
-    0,
-    (ObjectDescriptorCallback)SB_CloudRunner_init,
-    (ObjectDescriptorCallback)SB_CloudRunner_update,
-    (ObjectDescriptorCallback)SB_CloudRunner_hitDetect,
-    (ObjectDescriptorCallback)SB_CloudRunner_render,
-    (ObjectDescriptorCallback)SB_CloudRunner_free,
-    (ObjectDescriptorCallback)SB_CloudRunner_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)SB_CloudRunner_getExtraSize,
-    (ObjectDescriptorCallback)SB_CloudRunner_canMount,
-    (ObjectDescriptorCallback)SB_CloudRunner_getMountSide,
-    (ObjectDescriptorCallback)SB_CloudRunner_getRiderPosition,
-    (ObjectDescriptorCallback)SB_CloudRunner_canDismount,
-    (ObjectDescriptorCallback)SB_CloudRunner_getDismountSide,
-    (ObjectDescriptorCallback)SB_CloudRunner_getCameraPosition,
-    (ObjectDescriptorCallback)SB_CloudRunner_getMountState,
-    (ObjectDescriptorCallback)SB_CloudRunner_setMountState,
-    (ObjectDescriptorCallback)SB_CloudRunner_getPlayerAnim,
-    (ObjectDescriptorCallback)SB_CloudRunner_func19,
-    (ObjectDescriptorCallback)SB_CloudRunner_getRacePosition,
-    (ObjectDescriptorCallback)SB_CloudRunner_func21,
-    (ObjectDescriptorCallback)SB_CloudRunner_handleRiderScale,
-    (ObjectDescriptorCallback)SB_CloudRunner_func23,
+OBJECT_INIT_ADAPTER(gSB_CloudRunnerObjDescriptorInitAdapter, SB_CloudRunner_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSB_CloudRunnerObjDescriptorHitDetectAdapter, SB_CloudRunner_hitDetect)
+OBJECT_FREE_ADAPTER(gSB_CloudRunnerObjDescriptorFreeAdapter, SB_CloudRunner_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_CloudRunnerObjDescriptorTypeIdAdapter, SB_CloudRunner_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_CloudRunnerObjDescriptorExtraSizeAdapter, SB_CloudRunner_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gSB_CloudRunnerObjDescriptorCanMountAdapter, SB_CloudRunner_canMount)
+VEHICLE_MOUNT_SIDE_ADAPTER(gSB_CloudRunnerObjDescriptorMountSideAdapter, SB_CloudRunner_getMountSide)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gSB_CloudRunnerObjDescriptorCanDismountAdapter, SB_CloudRunner_canDismount)
+VEHICLE_DISMOUNT_SIDE_ADAPTER(gSB_CloudRunnerObjDescriptorDismountSideAdapter, SB_CloudRunner_getDismountSide)
+VEHICLE_MOUNT_STATE_ADAPTER(gSB_CloudRunnerObjDescriptorMountStateAdapter, SB_CloudRunner_getMountState)
+VEHICLE_SET_MOUNT_STATE_ADAPTER(gSB_CloudRunnerObjDescriptorSetMountStateAdapter, SB_CloudRunner_setMountState)
+VEHICLE_NORMALIZED_SPEED_ADAPTER(gSB_CloudRunnerObjDescriptorNormalizedSpeedAdapter, SB_CloudRunner_func19, obj, speed)
+VEHICLE_RACE_POSITION_ADAPTER(gSB_CloudRunnerObjDescriptorRacePositionAdapter, SB_CloudRunner_getRacePosition)
+VEHICLE_RESET_POSITION_ADAPTER(gSB_CloudRunnerObjDescriptorResetPositionAdapter, SB_CloudRunner_func21)
+VEHICLE_RIDER_SCALE_ADAPTER(gSB_CloudRunnerObjDescriptorRiderScaleAdapter, SB_CloudRunner_handleRiderScale, obj)
+VEHICLE_LOOK_TARGET_ADAPTER(gSB_CloudRunnerObjDescriptorLookTargetAdapter, SB_CloudRunner_func23)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_CloudRunnerObjDescriptorAcquire, SB_CloudRunner_initialise)
+
+VehicleDescriptor gSB_CloudRunnerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_CloudRunnerObjDescriptorAcquire,
+        SB_CloudRunner_release,
+    },
+    {
+        0,
+        gSB_CloudRunnerObjDescriptorInitAdapter,
+        SB_CloudRunner_update,
+        gSB_CloudRunnerObjDescriptorHitDetectAdapter,
+        SB_CloudRunner_render,
+        gSB_CloudRunnerObjDescriptorFreeAdapter,
+        gSB_CloudRunnerObjDescriptorTypeIdAdapter,
+        gSB_CloudRunnerObjDescriptorExtraSizeAdapter,
+        gSB_CloudRunnerObjDescriptorCanMountAdapter,
+        gSB_CloudRunnerObjDescriptorMountSideAdapter,
+        SB_CloudRunner_getRiderPosition,
+        gSB_CloudRunnerObjDescriptorCanDismountAdapter,
+        gSB_CloudRunnerObjDescriptorDismountSideAdapter,
+        SB_CloudRunner_getCameraPosition,
+        gSB_CloudRunnerObjDescriptorMountStateAdapter,
+        gSB_CloudRunnerObjDescriptorSetMountStateAdapter,
+        SB_CloudRunner_getPlayerAnim,
+        gSB_CloudRunnerObjDescriptorNormalizedSpeedAdapter,
+        gSB_CloudRunnerObjDescriptorRacePositionAdapter,
+        gSB_CloudRunnerObjDescriptorResetPositionAdapter,
+        gSB_CloudRunnerObjDescriptorRiderScaleAdapter,
+        gSB_CloudRunnerObjDescriptorLookTargetAdapter,
+    },
 };

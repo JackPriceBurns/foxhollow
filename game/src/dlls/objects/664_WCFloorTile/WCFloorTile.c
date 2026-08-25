@@ -17,9 +17,9 @@
 #include "main/dll/ARW/dll_029C_arwarwingbo.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 
 
@@ -185,19 +185,31 @@ void wcfloortile_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWCFloorTileObjDescriptorInitAdapter, wcfloortile_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gWCFloorTileObjDescriptorHitDetectAdapter, wcfloortile_hitDetect)
+OBJECT_FREE_ADAPTER(gWCFloorTileObjDescriptorFreeAdapter, wcfloortile_free)
+OBJECT_TYPE_ID_ADAPTER(gWCFloorTileObjDescriptorTypeIdAdapter, wcfloortile_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCFloorTileObjDescriptorExtraSizeAdapter, wcfloortile_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCFloorTileObjDescriptorAcquire, wcfloortile_initialise)
+
 ObjectDescriptor gWCFloorTileObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCFloorTileObjDescriptorAcquire,
+        wcfloortile_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wcfloortile_initialise,
-    (ObjectDescriptorCallback)wcfloortile_release,
-    0,
-    (ObjectDescriptorCallback)wcfloortile_init,
-    (ObjectDescriptorCallback)wcfloortile_update,
-    (ObjectDescriptorCallback)wcfloortile_hitDetect,
-    (ObjectDescriptorCallback)wcfloortile_render,
-    (ObjectDescriptorCallback)wcfloortile_free,
-    (ObjectDescriptorCallback)wcfloortile_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wcfloortile_getExtraSize,
+    gWCFloorTileObjDescriptorInitAdapter,
+    wcfloortile_update,
+    gWCFloorTileObjDescriptorHitDetectAdapter,
+    wcfloortile_render,
+    gWCFloorTileObjDescriptorFreeAdapter,
+    gWCFloorTileObjDescriptorTypeIdAdapter,
+    gWCFloorTileObjDescriptorExtraSizeAdapter,
 };

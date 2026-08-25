@@ -4,8 +4,8 @@
 #include "types.h"
 #include "global.h"
 #include "game/objects/object.h"
-#include "main/track_dolphin_api.h"
-#include "main/track_bbox_api.h"
+#include "main/track_dolphin.h"
+#include "main/track_bbox.h"
 
 #define CURVES_COLLISION_STATE_SIZE                   0x268
 #define CURVES_COLLISION_STATE_ACTIVE                 0x04000000

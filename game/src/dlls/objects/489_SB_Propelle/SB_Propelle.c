@@ -12,8 +12,7 @@
 #include "dlls/objects/489_SB_Propelle.h"
 
 #include "dlls/objects/488_SB_Galleon.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/obj_path.h"
@@ -171,19 +170,26 @@ void SB_Propeller_init(GameObject* obj, SBPropellerPlacementView* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gSB_PropellerObjDescriptorInitAdapter, SB_Propeller_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_PropellerObjDescriptorExtraSizeAdapter, SB_Propeller_getExtraSize)
+
 ObjectDescriptor gSB_PropellerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSB_PropellerObjDescriptorInitAdapter,
+    SB_Propeller_update,
+    SB_Propeller_hitDetect,
+    SB_Propeller_render,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SB_Propeller_init,
-    (ObjectDescriptorCallback)SB_Propeller_update,
-    (ObjectDescriptorCallback)SB_Propeller_hitDetect,
-    (ObjectDescriptorCallback)SB_Propeller_render,
-    0,
-    0,
-    SB_Propeller_getExtraSize,
+    gSB_PropellerObjDescriptorExtraSizeAdapter,
 };

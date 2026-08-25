@@ -314,66 +314,66 @@ s16 dll_8D_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
         command->z = 97.0f;
         command++;
     }
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
     if (variant == 0) {
-        packet.position[0] = 0.0f;
-        packet.position[1] = 0.0f;
-        packet.position[2] = 0.0f;
+        packet.context.position[0] = 0.0f;
+        packet.context.position[1] = 0.0f;
+        packet.context.position[2] = 0.0f;
     } else {
-        packet.position[0] = 0.0f;
-        packet.position[1] = 0.0f;
-        packet.position[2] = 0.0f;
+        packet.context.position[0] = 0.0f;
+        packet.context.position[1] = 0.0f;
+        packet.context.position[2] = 0.0f;
     }
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 9;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = command - commands;
-    packet.sequenceParams[0] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[0])];
-    packet.sequenceParams[1] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[1])];
-    packet.sequenceParams[2] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[2])];
-    packet.sequenceParams[3] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[3])];
-    packet.sequenceParams[4] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[4])];
-    packet.sequenceParams[5] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[5])];
-    packet.sequenceParams[6] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[6])];
-    packet.commands = (GfxCmd*)((u8*)&packet + offsetof(ModgfxSpawnPacket, entries));
-    packet.flags = 0x4000000;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
-        if ((u32)packet.sourceObj != 0) {
-            GameObject* anchorObj = packet.sourceObj;
-            packet.position[0] += anchorObj->anim.worldPosX;
-            packet.position[1] += anchorObj->anim.worldPosY;
-            packet.position[2] += anchorObj->anim.worldPosZ;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 9;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = command - commands;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(Dll8DEffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x4000000;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
+        if ((u32)packet.context.attachedSource != 0) {
+            GameObject* anchorObj = packet.context.attachedSource;
+            packet.context.position[0] += anchorObj->anim.worldPosX;
+            packet.context.position[1] += anchorObj->anim.worldPosY;
+            packet.context.position[2] += anchorObj->anim.worldPosZ;
         } else {
             PartFxSpawnParams* anchorParams = spawnParams;
-            packet.position[0] += anchorParams->posX;
-            packet.position[1] += anchorParams->posY;
-            packet.position[2] += anchorParams->posZ;
+            packet.context.position[0] += anchorParams->posX;
+            packet.context.position[1] += anchorParams->posY;
+            packet.context.position[2] += anchorParams->posZ;
         }
     }
     if (variant == 0) {
-        packet.modeByte = 0;
+        packet.context.modeByte = 0;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet.context, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0x156, 0);
     } else if (variant == 1) {
-        packet.modeByte = 0;
-        packet.flags |= 4;
+        packet.context.modeByte = 0;
+        packet.context.flags |= 4;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet.context, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0xC0D, 0);
     } else if (variant == 2) {
-        packet.modeByte = 0;
-        packet.flags |= 4;
+        packet.context.modeByte = 0;
+        packet.context.flags |= 4;
         ret = (*gModgfxInterface)
-                  ->spawnEffect(&packet, 0, 9, (u8*)gDll8DEffectResourceData, 8,
+                  ->spawnEffect(&packet.context, 0, 9, (u8*)gDll8DEffectResourceData, 8,
                                 &resourceData[offsetof(Dll8DEffectResourceView, triangles)], 0x23B, 0);
     }
     return ret;
@@ -399,6 +399,10 @@ u8 gDll8DEffectResourceData[sizeof(Dll8DEffectResourceView)] = {
     0x00, 0x1E, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+RESOURCE_ACQUIRE_ADAPTER(gDll8DResourceDescriptorAcquire, dll_8D_initialise)
+
 Dll8DResourceDescriptor gDll8DResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_8D_initialise, dll_8D_release, NULL, dll_8D_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll8DResourceDescriptorAcquire, dll_8D_release },
+    NULL,
+    dll_8D_spawnEffect,
 };

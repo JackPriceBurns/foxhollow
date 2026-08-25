@@ -32,6 +32,7 @@ void imAnimSpace_release(void);
 void imAnimSpace_initialise(void);
 
 extern PartFxSpawnParams gIMAnimSpacePartFxParams;
-extern ObjectDescriptor13 gIMAnimSpaceObjDescriptor;
+struct IMAnimSpaceObjDescriptorType;
+extern struct IMAnimSpaceObjDescriptorType gIMAnimSpaceObjDescriptor;
 
 #endif /* DLLS_OBJECTS_366_IMANIMSPACE_H_ */

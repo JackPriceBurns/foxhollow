@@ -5,9 +5,9 @@
 
 #include "dlls/objects/375.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objtexture.h"
 
@@ -110,19 +110,32 @@ void dll_177_release(void) {
 void dll_177_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll177ObjDescriptorInitAdapter, dll_177_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gDll177ObjDescriptorUpdateAdapter, dll_177_update)
+OBJECT_HIT_DETECT_ADAPTER(gDll177ObjDescriptorHitDetectAdapter, dll_177_hitDetect)
+OBJECT_FREE_ADAPTER(gDll177ObjDescriptorFreeAdapter, dll_177_free)
+OBJECT_TYPE_ID_ADAPTER(gDll177ObjDescriptorTypeIdAdapter, dll_177_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll177ObjDescriptorExtraSizeAdapter, dll_177_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll177ObjDescriptorAcquire, dll_177_initialise)
+
 ObjectDescriptor gDll177ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll177ObjDescriptorAcquire,
+        dll_177_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_177_initialise,
-    (ObjectDescriptorCallback)dll_177_release,
-    0,
-    (ObjectDescriptorCallback)dll_177_init,
-    (ObjectDescriptorCallback)dll_177_update,
-    (ObjectDescriptorCallback)dll_177_hitDetect,
-    (ObjectDescriptorCallback)dll_177_render,
-    (ObjectDescriptorCallback)dll_177_free,
-    (ObjectDescriptorCallback)dll_177_getObjectTypeId,
-    dll_177_getExtraSize,
+    gDll177ObjDescriptorInitAdapter,
+    gDll177ObjDescriptorUpdateAdapter,
+    gDll177ObjDescriptorHitDetectAdapter,
+    dll_177_render,
+    gDll177ObjDescriptorFreeAdapter,
+    gDll177ObjDescriptorTypeIdAdapter,
+    gDll177ObjDescriptorExtraSizeAdapter,
 };

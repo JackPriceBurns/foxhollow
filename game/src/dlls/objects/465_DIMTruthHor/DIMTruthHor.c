@@ -6,12 +6,12 @@
  */
 #include "dlls/objects/465_DIMTruthHor.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
@@ -129,19 +129,26 @@ void dimtruthhornice_init(GameObject* obj, const DimTruthHornIcePlacement* place
     }
 }
 
+OBJECT_INIT_ADAPTER(gDIMTruthHornIceObjDescriptorInitAdapter, dimtruthhornice_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMTruthHornIceObjDescriptorExtraSizeAdapter, dimtruthhornice_getExtraSize)
+
 ObjectDescriptor gDIMTruthHornIceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDIMTruthHornIceObjDescriptorInitAdapter,
+    dimtruthhornice_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dimtruthhornice_init,
-    (ObjectDescriptorCallback)dimtruthhornice_update,
-    0,
-    0,
-    0,
-    0,
-    dimtruthhornice_getExtraSize,
+    gDIMTruthHornIceObjDescriptorExtraSizeAdapter,
 };

@@ -3,13 +3,14 @@
 
 #include "types.h"
 #include "global.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/curves_collision_state.h"
 #include "game/objects/object.h"
-#include "main/objprint_sound_api.h"
-#include "main/pi_dolphin_path_api.h"
+#include "main/objprint_sound.h"
+#include "main/pi_dolphin_path.h"
 #include "main/mapEventTypes.h"
+#include "main/byte_flags.h"
 
 /* Shared TrickyState.stateFlags bits used across the Tricky sidekick / spawned
  * sibling handlers (tricky, tricky_substates, trickyfollow, tumbleweedbush,
@@ -122,25 +123,9 @@ typedef struct TrickyState {
     f32 rotStepScale;
     u32 pendingStateFlags;
     u32 stateFlags; /* the TRICKY state flag word (bit masks 0x80..0x100000) */
-    union {
-        struct {
-            u8 statusFlags;
-            u8 pad59[0x5A - 0x59];
-            s16 targetYaw; /* target facing angle: set from targetYaw (skeetla); tricky interpolates anim.rotX toward it (diff = targetYaw - rotX) under TRICKY_STATE_FLAG_ROTATE */
-        };
-        struct {
-            u8 statusFlag7 : 1;
-            u8 soundSuppressed
-                : 1; /* statusFlags bit 6: suppresses barks/voice sfx (trickySetSoundSuppressed / trickyTryPlaySound) */
-            u8 heightTracking : 1; /* statusFlags bit 5 */
-            u8 statusFlagsLow : 5;
-        };
-        struct {
-            u32 warpCooldownHi : 3;
-            u32 warpCooldown : 4; /* packed trickywarp cooldown counter (trickyShouldGoToWarpPoint) */
-            u32 warpCooldownLo : 1;
-        };
-    };
+    ByteFlags statusFlags;
+    u8 pad59[0x5A - 0x59];
+    s16 targetYaw; /* target facing angle: set from targetYaw (skeetla); tricky interpolates anim.rotX toward it (diff = targetYaw - rotX) under TRICKY_STATE_FLAG_ROTATE */
     u32 heightTrackObjId;
     f32 trackedHeight;
     TrickyJumpArc jumpArc; /* 0x64: ballistic hop arc */
@@ -343,16 +328,7 @@ typedef struct TrickyState {
     f32 colorFadeTimer;
     u8 colorVariant;
     u8 pendingEnergy;
-    union {
-        u8 flags82E; /* bit flags 5/6/7 (tricky/tricky_substates) */
-        struct {
-            u8 blendPending
-                : 1; /* bit 7: requests priming of model blend channel 1 (Tricky_updateBlendChannelWeight consumes) */
-            u8 blendActive : 1; /* bit 6: blend channel 1 ramp is running */
-            u8 flag82EBit5 : 1;
-            u8 flags82ERest : 5;
-        };
-    };
+    ByteFlags flags82E;
     u8 pad82F[0x830 - 0x82F];
     f32 blendWeight;
     f32 blendVelocity; /* blendWeight ramp rate: += 0.004f*timeDelta toward the target, damped by 0.7f near it, zeroed at the clamp (tricky) */
@@ -361,6 +337,17 @@ typedef struct TrickyState {
     f32 trackTargetPos[3];
     CurvesCollisionState pathControlState;
 } TrickyState;
+
+static inline u8 TrickyState_GetWarpCooldown(const TrickyState* state)
+{
+    return (ByteFlags_GetRaw(&state->statusFlags) >> 1) & 0xF;
+}
+
+static inline void TrickyState_SetWarpCooldown(TrickyState* state, u8 value)
+{
+    u8 flags = ByteFlags_GetRaw(&state->statusFlags);
+    ByteFlags_SetRaw(&state->statusFlags, (flags & ~0x1E) | ((value & 0xF) << 1));
+}
 
 STATIC_ASSERT(sizeof(TrickyState) == 0x840);
 STATIC_ASSERT(offsetof(TrickyState, stateFlags) == 0x54);

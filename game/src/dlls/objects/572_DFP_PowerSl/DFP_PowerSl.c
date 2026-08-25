@@ -80,19 +80,28 @@ void dfppowersl_init(GameObject* obj, DfpPowerSlMapData* mapData) {
     ObjHits_SetHitVolumeSlot(&obj->anim, DFPPOWERSL_HIT_VOLUME_SLOT, DFPPOWERSL_HIT_VOLUME_ENABLED, 0);
 }
 
+OBJECT_INIT_ADAPTER(gDfppowerslObjDescriptorInitAdapter, dfppowersl_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDfppowerslObjDescriptorRenderAdapter, dfppowersl_render, obj)
+OBJECT_FREE_ADAPTER(gDfppowerslObjDescriptorFreeAdapter, dfppowersl_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfppowerslObjDescriptorExtraSizeAdapter, dfppowersl_getExtraSize)
+
 ObjectDescriptor gDfppowerslObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDfppowerslObjDescriptorInitAdapter,
+    dfppowersl_update,
     0,
+    gDfppowerslObjDescriptorRenderAdapter,
+    gDfppowerslObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dfppowersl_init,
-    (ObjectDescriptorCallback)dfppowersl_update,
-    0,
-    (ObjectDescriptorCallback)dfppowersl_render,
-    (ObjectDescriptorCallback)dfppowersl_free,
-    0,
-    dfppowersl_getExtraSize,
+    gDfppowerslObjDescriptorExtraSizeAdapter,
 };

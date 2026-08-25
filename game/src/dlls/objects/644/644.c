@@ -20,16 +20,15 @@
 #include "main/object_render.h"
 #include "sys/objects.h"
 #include "main/objfx.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/curve_eval.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/dll/dll_0284_shopitem.h"
-#include "main/dll/dll_020B_firefly.h"
 #include "main/dll/SP/dll_0285_spshop.h"
-#include "main/dll/tricky_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/gameloop_api.h"
+#include "main/dll/tricky.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/gameloop.h"
 #include "main/newclouds.h"
 #include "main/model.h"
 #include "main/pad.h"
@@ -39,9 +38,9 @@
 #include "dolphin/pad.h"
 #include "main/vecmath.h"
 #include "main/obj_message.h"
-#include "main/objprint_render_api.h"
-#include "track/intersect_depth_state_api.h"
-#include "main/hud_visibility_api.h"
+#include "main/objprint_render.h"
+#include "track/intersect_depth_state.h"
+#include "main/hud_visibility.h"
 
 #define SHOPITEM_TARGET_OBJGROUP 9
 
@@ -190,7 +189,7 @@ void shopitem_onSeqFree(GameObject* obj)
 {
     ShopItemState* state = obj->extra;
     ShopItemDef* def = (ShopItemDef*)obj->anim.placementData;
-    PushcartState97* b = &state->flags97;
+    ShopItemFlags* b = &state->flags97;
     if (b->flag_40 == 0)
     {
         GameObject* vptr = (GameObject*)state->vendorObj;
@@ -218,7 +217,7 @@ int shopitem_SeqFn(GameObject* obj, int unused, ObjSeqState* seq)
     seq->flags &= ~4;
     seq->savedFlags &= ~4;
 
-    if ((int)objAnim->banks[objAnim->bankIndex] != 0)
+    if ((int)objAnim->modelBanks[objAnim->bankIndex] != 0)
     {
         ObjAnim_AdvanceCurrentMove(obj, 0.005f, timeDelta, NULL);
     }
@@ -227,32 +226,32 @@ int shopitem_SeqFn(GameObject* obj, int unused, ObjSeqState* seq)
     {
     case SHOPITEM_SEQ_BSPLINE:
     {
-        f32 splineT = s->splineT;
+        f32 splineT = s->flight.splineT;
         if (splineT > 1.0f)
         {
             u32 segCounter;
-            s->splineT = splineT - 1.0f;
-            segCounter = s->segCounter;
+            s->flight.splineT = splineT - 1.0f;
+            segCounter = s->flight.pathAge;
             if (segCounter >= 4)
             {
-                s->segCounter += 1;
+                s->flight.pathAge += 1;
             }
             else
             {
-                firefly_pickWanderTarget(obj, (FireFlyState*)sub);
+                firefly_pickWanderTarget(obj, &s->flight);
             }
-            firefly_shiftPathHistory(obj, (FireFlyState*)sub);
+            firefly_shiftPathHistory(obj, &s->flight);
         }
     }
         {
             (obj)->anim.localPosX =
-                Curve_EvalBSpline(s->controlX, s->splineT, 0);
+                Curve_EvalBSpline(s->flight.splineX, s->flight.splineT, 0);
             (obj)->anim.localPosY =
-                Curve_EvalBSpline(s->controlY, s->splineT, 0);
+                Curve_EvalBSpline(s->flight.splineY, s->flight.splineT, 0);
             (obj)->anim.localPosZ =
-                Curve_EvalBSpline(s->controlZ, s->splineT, 0);
-            s->splineT =
-                s->splineSpeed * timeDelta + s->splineT;
+                Curve_EvalBSpline(s->flight.splineZ, s->flight.splineT, 0);
+            s->flight.splineT =
+                s->flight.splineSpeed * timeDelta + s->flight.splineT;
             (obj)->anim.rotX = getAngle((obj)->anim.localPosX - (obj)->anim.previousLocalPosX,
                                         (obj)->anim.localPosZ - (obj)->anim.previousLocalPosZ);
             (*gPartfxInterface)->spawnObject((void*)obj, 415, NULL, 1, -1, NULL);
@@ -396,30 +395,30 @@ void shopitem_update(GameObject* obj)
             {
             case SHOPITEM_SEQ_BSPLINE:
             {
-                f32 splineT = s->splineT;
+                f32 splineT = s->flight.splineT;
                 if (splineT > 1.0f)
                 {
                     u32 segCounter;
-                    s->splineT = splineT - 1.0f;
-                    segCounter = s->segCounter;
+                    s->flight.splineT = splineT - 1.0f;
+                    segCounter = s->flight.pathAge;
                     if (segCounter >= 4)
                     {
-                        s->segCounter++;
+                        s->flight.pathAge++;
                     }
                     else
                     {
-                        firefly_pickWanderTarget(obj, (FireFlyState*)state);
+                        firefly_pickWanderTarget(obj, &s->flight);
                     }
-                    firefly_shiftPathHistory(obj, (FireFlyState*)state);
+                    firefly_shiftPathHistory(obj, &s->flight);
                 }
                 (obj)->anim.localPosX =
-                    Curve_EvalBSpline(s->controlX, s->splineT, 0);
+                    Curve_EvalBSpline(s->flight.splineX, s->flight.splineT, 0);
                 (obj)->anim.localPosY =
-                    Curve_EvalBSpline(s->controlY, s->splineT, 0);
+                    Curve_EvalBSpline(s->flight.splineY, s->flight.splineT, 0);
                 (obj)->anim.localPosZ =
-                    Curve_EvalBSpline(s->controlZ, s->splineT, 0);
-                s->splineT =
-                    s->splineSpeed * timeDelta + s->splineT;
+                    Curve_EvalBSpline(s->flight.splineZ, s->flight.splineT, 0);
+                s->flight.splineT =
+                    s->flight.splineSpeed * timeDelta + s->flight.splineT;
                 (obj)->anim.rotX = getAngle((obj)->anim.localPosX - (obj)->anim.previousLocalPosX,
                                             (obj)->anim.localPosZ - (obj)->anim.previousLocalPosZ);
                 (*gPartfxInterface)->spawnObject((void*)obj, 0x19F, NULL, 1, -1, NULL);
@@ -458,7 +457,7 @@ void shopitem_init(GameObject* obj, ShopItemDef* data)
     switch ((obj)->anim.romDefNo)
     {
     case SHOPITEM_SEQ_BSPLINE:
-        firefly_initFlightRec(obj, (FireFlyState*)state);
+        firefly_initFlightRec(obj, &s->flight);
         break;
     case SHOPITEM_SEQ_AMBIENT:
         (*gPartfxInterface)->spawnObject((void*)obj, SHOPITEM_PARTFX_AMBIENT, NULL, 4, -1, NULL);
@@ -478,19 +477,31 @@ void shopitem_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gShopItemObjDescriptorInitAdapter, shopitem_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gShopItemObjDescriptorHitDetectAdapter, shopitem_hitDetect)
+OBJECT_FREE_ADAPTER(gShopItemObjDescriptorFreeAdapter, shopitem_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gShopItemObjDescriptorTypeIdAdapter, shopitem_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gShopItemObjDescriptorExtraSizeAdapter, shopitem_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gShopItemObjDescriptorAcquire, shopitem_initialise)
+
 ObjectDescriptor gShopItemObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gShopItemObjDescriptorAcquire,
+        shopitem_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)shopitem_initialise,
-    (ObjectDescriptorCallback)shopitem_release,
-    0,
-    (ObjectDescriptorCallback)shopitem_init,
-    (ObjectDescriptorCallback)shopitem_update,
-    (ObjectDescriptorCallback)shopitem_hitDetect,
-    (ObjectDescriptorCallback)shopitem_render,
-    (ObjectDescriptorCallback)shopitem_free,
-    (ObjectDescriptorCallback)shopitem_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)shopitem_getExtraSize,
+    gShopItemObjDescriptorInitAdapter,
+    shopitem_update,
+    gShopItemObjDescriptorHitDetectAdapter,
+    shopitem_render,
+    gShopItemObjDescriptorFreeAdapter,
+    gShopItemObjDescriptorTypeIdAdapter,
+    gShopItemObjDescriptorExtraSizeAdapter,
 };

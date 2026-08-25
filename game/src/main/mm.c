@@ -3,20 +3,19 @@
 #include "types.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/dll/savegame.h"
-#include "main/dll/dll_0017_savegame_api.h"
-#include "main/attract_movie_api.h"
+#include "main/dll/dll_0017_savegame.h"
+#include "main/attract_movie.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/os/OSArena.h"
 #include "dolphin/os/OSTime.h"
 #include "main/mm.h"
-#include "main/pi_dolphin_api.h"
-#include "main/pi_flush_api.h"
+#include "main/pi_dolphin.h"
+#include "main/pi_flush.h"
 #include "string.h"
 #include "dolphin/os/OSAlloc.h"
 #include "dolphin/os/OSInterrupt.h"
 
 #include "main/gameloop_internal.h"
-#include "main/pi_dolphin.h"
 u8 gMmRegionCount;
 s16 gMmDeferredFreeCount;
 int gMmFreeDelay;

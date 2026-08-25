@@ -90,19 +90,31 @@ void WM_Planets_release(void) {
 void WM_Planets_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_PlanetsObjDescriptorInitAdapter, WM_Planets_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_PlanetsObjDescriptorHitDetectAdapter, WM_Planets_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_PlanetsObjDescriptorFreeAdapter, WM_Planets_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_PlanetsObjDescriptorTypeIdAdapter, WM_Planets_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_PlanetsObjDescriptorExtraSizeAdapter, WM_Planets_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_PlanetsObjDescriptorAcquire, WM_Planets_initialise)
+
 ObjectDescriptor gWM_PlanetsObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_PlanetsObjDescriptorAcquire,
+        WM_Planets_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)WM_Planets_initialise,
-    (ObjectDescriptorCallback)WM_Planets_release,
-    0,
-    (ObjectDescriptorCallback)WM_Planets_init,
-    (ObjectDescriptorCallback)WM_Planets_update,
-    (ObjectDescriptorCallback)WM_Planets_hitDetect,
-    (ObjectDescriptorCallback)WM_Planets_render,
-    (ObjectDescriptorCallback)WM_Planets_free,
-    (ObjectDescriptorCallback)WM_Planets_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)WM_Planets_getExtraSize,
+    gWM_PlanetsObjDescriptorInitAdapter,
+    WM_Planets_update,
+    gWM_PlanetsObjDescriptorHitDetectAdapter,
+    WM_Planets_render,
+    gWM_PlanetsObjDescriptorFreeAdapter,
+    gWM_PlanetsObjDescriptorTypeIdAdapter,
+    gWM_PlanetsObjDescriptorExtraSizeAdapter,
 };

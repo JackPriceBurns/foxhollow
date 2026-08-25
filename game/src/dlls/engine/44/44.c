@@ -1,5 +1,5 @@
 #include "main/dll/partfxspawn_struct.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/vecmath.h"
@@ -148,15 +148,18 @@ void Effect19_initialise(void)
 {
 }
 
-ObjectDescriptor6 Effect19_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect19_initialise,
-    (ObjectDescriptorCallback)Effect19_release,
-    0,
-    (ObjectDescriptorCallback)Effect19_func03_nop,
-    (ObjectDescriptorCallback)Effect19_spawnObject,
-    (ObjectDescriptorCallback)Effect19_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect19Resource, Effect19_initialise, Effect19_spawnObject, Effect19_updateFrameState)
+
+EffectResourceDescriptor Effect19_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect19ResourceAcquire,
+        Effect19_release,
+    },
+    {
+        NULL,
+        Effect19_func03_nop,
+        gEffect19ResourceSpawn,
+        gEffect19ResourceUpdate,
+    },
 };

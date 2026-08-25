@@ -32,7 +32,7 @@ int dbstealerworm_stateHandlerB05(GameObject* obj, BaddieState* baddie);
 int dbstealerworm_stateHandlerB06(GameObject* obj, BaddieState* baddie);
 void dbstealerworm_launchIceBall(GameObject* obj, BaddieState* baddie);
 
-s16 dbstealerworm_getControlMode(GameObject* obj);
+int dbstealerworm_getControlMode(GameObject* obj);
 int dbstealerworm_getExtraSize(void);
 int dbstealerworm_getObjectTypeId(void);
 void dbstealerworm_free(GameObject* obj);

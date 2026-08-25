@@ -8,7 +8,7 @@
 #include "dlls/objects/422_SH_tricky.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
 
 #define SH_TRICKY_TRIGGER_GAMEBIT 0x94
@@ -67,19 +67,26 @@ void shTricky_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
+OBJECT_INIT_ADAPTER(gSHTrickyObjDescriptorInitAdapter, shTricky_init, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSHTrickyObjDescriptorExtraSizeAdapter, shTricky_getExtraSize)
+
 ObjectDescriptor gSHTrickyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSHTrickyObjDescriptorInitAdapter,
+    shTricky_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)shTricky_init,
-    (ObjectDescriptorCallback)shTricky_update,
-    0,
-    0,
-    0,
-    0,
-    shTricky_getExtraSize,
+    gSHTrickyObjDescriptorExtraSizeAdapter,
 };

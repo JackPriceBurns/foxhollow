@@ -2,14 +2,14 @@
 
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/obj_path.h"
 #include "main/objtype.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/objseq.h"
 
 #define IM_SNOW_CLAW_SEQ_ID             0x16D
@@ -311,19 +311,30 @@ void imSnowClaw_release(void) {
 void imSnowClaw_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIMSnowClawObjDescriptorInitAdapter, imSnowClaw_init, obj, placement)
+OBJECT_FREE_ADAPTER(gIMSnowClawObjDescriptorFreeAdapter, imSnowClaw_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIMSnowClawObjDescriptorTypeIdAdapter, imSnowClaw_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMSnowClawObjDescriptorExtraSizeAdapter, imSnowClaw_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIMSnowClawObjDescriptorAcquire, imSnowClaw_initialise)
+
 ObjectDescriptor gIMSnowClawObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIMSnowClawObjDescriptorAcquire,
+        imSnowClaw_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)imSnowClaw_initialise,
-    (ObjectDescriptorCallback)imSnowClaw_release,
-    0,
-    (ObjectDescriptorCallback)imSnowClaw_init,
-    (ObjectDescriptorCallback)imSnowClaw_update,
-    (ObjectDescriptorCallback)imSnowClaw_hitDetect,
-    (ObjectDescriptorCallback)imSnowClaw_render,
-    (ObjectDescriptorCallback)imSnowClaw_free,
-    (ObjectDescriptorCallback)imSnowClaw_getObjectTypeId,
-    imSnowClaw_getExtraSize,
+    gIMSnowClawObjDescriptorInitAdapter,
+    imSnowClaw_update,
+    imSnowClaw_hitDetect,
+    imSnowClaw_render,
+    gIMSnowClawObjDescriptorFreeAdapter,
+    gIMSnowClawObjDescriptorTypeIdAdapter,
+    gIMSnowClawObjDescriptorExtraSizeAdapter,
 };

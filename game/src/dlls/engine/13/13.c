@@ -1,9 +1,9 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/partfx_interface.h"
 #include "main/camera.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_000D_playershadow.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 
 s16 gPlayerShadowCamRotY;
@@ -177,30 +177,32 @@ void playerShadow_setMode(u8 v)
         gPlayerShadowMode = v;
     }
 }
+typedef struct PlayerShadowDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(playerShadow_func03_nop)* slot03;
+    __typeof__(playerShadow_renderObject)* renderObject;
+    __typeof__(playerShadow_setMode)* setMode;
+} PlayerShadowDllInterfaceCallbacks;
+
 typedef struct PlayerShadowDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback slot03;
-    ObjectDescriptorCallback renderObject;
-    ObjectDescriptorCallback setMode;
+    ResourceDescriptorHeader header;
+    PlayerShadowDllInterfaceCallbacks interface;
 } PlayerShadowDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gplayerShadowResourceAcquire, playerShadow_initialise)
+
 PlayerShadowDllInterface playerShadow_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)playerShadow_initialise,
-    (ObjectDescriptorCallback)playerShadow_release,
-    0,
-    (ObjectDescriptorCallback)playerShadow_func03_nop,
-    (ObjectDescriptorCallback)playerShadow_renderObject,
-    (ObjectDescriptorCallback)playerShadow_setMode,
+    {
+        {0, 0, 0, 0x00050000},
+        gplayerShadowResourceAcquire,
+        playerShadow_release,
+    },
+    {
+        NULL,
+        playerShadow_func03_nop,
+        playerShadow_renderObject,
+        playerShadow_setMode,
+    },
 };
 
 void playerShadow_renderObject(GameObject* obj)

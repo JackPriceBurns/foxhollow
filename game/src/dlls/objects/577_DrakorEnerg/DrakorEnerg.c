@@ -13,18 +13,18 @@
  * draw helper (objRenderModelAndHitVolumes) and particle bursts come from
  * gPartfxInterface / objfx_spawnFlaggedTrailBurst.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "dolphin/mtx/vec.h"
 #include "main/dll/drakorenergystate_struct.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
 #include "main/gamebits.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_0241_drakorenergy.h"
@@ -140,7 +140,7 @@ void drakorenergy_update(GameObject* o)
         {
             s->mode = DRAKORENERGY_MODE_CHASING;
         }
-        objfx_spawnFlaggedTrailBurst((void*)o, gDrakorEnergyTrailScale, 1, 0xc22, 0x14, (void*)&o->anim.velocity);
+        objfx_spawnFlaggedTrailBurst((void*)o, gDrakorEnergyTrailScale, 1, 0xc22, 0x14, (void*)&o->anim.velocityX);
         break;
     case DRAKORENERGY_MODE_CHASING:
         dist = Vec_xzDistance(&o->anim.worldPosX, &player->anim.worldPosX);
@@ -154,20 +154,20 @@ void drakorenergy_update(GameObject* o)
         {
             spd = gDrakorEnergyChaseSpeed;
             Obj_PredictInterceptPoint(player, spd / 1.2f,
-                                      &o->anim.localPos, &interceptPt);
-            PSVECSubtract(&interceptPt, &o->anim.localPos, &seekDir);
+                                      (Vec3f*)&o->anim.localPosX, &interceptPt);
+            PSVECSubtract(&interceptPt, (Vec*)&o->anim.localPosX, &seekDir);
             PSVECNormalize(&seekDir, &seekDir);
             if (dist < spd)
             {
                 spd = dist;
             }
-            PSVECScale(&seekDir, &o->anim.velocity, spd);
+            PSVECScale(&seekDir, (Vec*)&o->anim.velocityX, spd);
             objMove(o, o->anim.velocityX * timeDelta, o->anim.velocityY * timeDelta,
                     o->anim.velocityZ * timeDelta);
             colorRGB.arg2 = 0xff;
             colorRGB.arg1 = 0;
             colorRGB.arg0 = 0xff;
-            objfx_spawnFlaggedTrailBurst((void*)o, gDrakorEnergyTrailScale, 1, 0xc22, 0x14, (void*)&o->anim.velocity);
+            objfx_spawnFlaggedTrailBurst((void*)o, gDrakorEnergyTrailScale, 1, 0xc22, 0x14, (void*)&o->anim.velocityX);
         }
         break;
     case DRAKORENERGY_MODE_RESET:
@@ -206,21 +206,46 @@ void drakorenergy_initialise(void)
 {
 }
 
-ObjectDescriptor12 gDrakorEnergyObjDescriptor = {
-    0,
-    0,
-    0,
-    0xB0000,
-    (ObjectDescriptorCallback)drakorenergy_initialise,
-    (ObjectDescriptorCallback)drakorenergy_release,
-    0,
-    (ObjectDescriptorCallback)drakorenergy_init,
-    (ObjectDescriptorCallback)drakorenergy_update,
-    (ObjectDescriptorCallback)drakorenergy_hitDetect,
-    (ObjectDescriptorCallback)drakorenergy_render,
-    (ObjectDescriptorCallback)drakorenergy_free,
-    (ObjectDescriptorCallback)drakorenergy_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drakorenergy_getExtraSize,
-    (ObjectDescriptorCallback)drakorenergy_isIdle,
-    (ObjectDescriptorCallback)DrakorEnergy_func0B_nop,
+OBJECT_INIT_ADAPTER(gDrakorEnergyObjDescriptorInitAdapter, drakorenergy_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrakorEnergyObjDescriptorHitDetectAdapter, drakorenergy_hitDetect)
+OBJECT_FREE_ADAPTER(gDrakorEnergyObjDescriptorFreeAdapter, drakorenergy_free)
+OBJECT_TYPE_ID_ADAPTER(gDrakorEnergyObjDescriptorTypeIdAdapter, drakorenergy_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrakorEnergyObjDescriptorExtraSizeAdapter, drakorenergy_getExtraSize)
+
+typedef struct DrakorEnergyObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(drakorenergy_isIdle)* drakorenergy_isIdle;
+    __typeof__(DrakorEnergy_func0B_nop)* DrakorEnergy_func0B_nop;
+} DrakorEnergyObjDescriptorTypeInterface;
+
+struct DrakorEnergyObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DrakorEnergyObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDrakorEnergyObjDescriptorAcquire, drakorenergy_initialise)
+
+struct DrakorEnergyObjDescriptorType gDrakorEnergyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            0xB0000,
+        },
+        gDrakorEnergyObjDescriptorAcquire,
+        drakorenergy_release,
+    },
+    {
+        0,
+        gDrakorEnergyObjDescriptorInitAdapter,
+        drakorenergy_update,
+        gDrakorEnergyObjDescriptorHitDetectAdapter,
+        drakorenergy_render,
+        gDrakorEnergyObjDescriptorFreeAdapter,
+        gDrakorEnergyObjDescriptorTypeIdAdapter,
+        gDrakorEnergyObjDescriptorExtraSizeAdapter,
+        drakorenergy_isIdle,
+        DrakorEnergy_func0B_nop,
+    },
 };

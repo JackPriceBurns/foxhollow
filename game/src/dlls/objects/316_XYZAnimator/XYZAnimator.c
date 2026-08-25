@@ -2,16 +2,16 @@
 #include "dlls/objects/316_XYZAnimator.h"
 
 #include "dolphin/os/OSCache.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/map_block.h"
 #include "main/mm.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "main/pi_dolphin_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/pi_dolphin.h"
+#include "main/track_dolphin.h"
 
 f32 XyzAnimator_getCoordinate(GameObject* obj, u8 coordinate) {
     XyzAnimatorState* state;
@@ -532,19 +532,26 @@ void XyzAnimator_init(GameObject* obj) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gXYZAnimatorObjDescriptorInitAdapter, XyzAnimator_init, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gXYZAnimatorObjDescriptorExtraSizeAdapter, XyzAnimator_getExtraSize)
+
 ObjectDescriptor gXYZAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gXYZAnimatorObjDescriptorInitAdapter,
+    XyzAnimator_update,
     0,
+    XyzAnimator_render,
+    XyzAnimator_free,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)XyzAnimator_init,
-    (ObjectDescriptorCallback)XyzAnimator_update,
-    0,
-    (ObjectDescriptorCallback)XyzAnimator_render,
-    (ObjectDescriptorCallback)XyzAnimator_free,
-    0,
-    XyzAnimator_getExtraSize,
+    gXYZAnimatorObjDescriptorExtraSizeAdapter,
 };

@@ -7,7 +7,7 @@
  */
 #include "dlls/objects/199_DIM2RoofRub.h"
 #include "dolphin/mtx.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/dll/partfx_interface.h"
@@ -16,8 +16,8 @@
 #include "main/obj_list.h"
 #include "main/objfx.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
-#include "main/shader_api.h"
+#include "main/objprint_render.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "main/objseq.h"
 
@@ -294,19 +294,28 @@ void dim2roofrub_init(GameObject* obj, DIM2RoofRubPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gDIM2RoofRubObjDescriptorInitAdapter, dim2roofrub_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDIM2RoofRubObjDescriptorRenderAdapter, dim2roofrub_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gDIM2RoofRubObjDescriptorFreeAdapter, dim2roofrub_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2RoofRubObjDescriptorExtraSizeAdapter, dim2roofrub_getExtraSize)
+
 ObjectDescriptor gDIM2RoofRubObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDIM2RoofRubObjDescriptorInitAdapter,
+    dim2roofrub_update,
     0,
+    gDIM2RoofRubObjDescriptorRenderAdapter,
+    gDIM2RoofRubObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dim2roofrub_init,
-    (ObjectDescriptorCallback)dim2roofrub_update,
-    0,
-    (ObjectDescriptorCallback)dim2roofrub_render,
-    (ObjectDescriptorCallback)dim2roofrub_free,
-    0,
-    dim2roofrub_getExtraSize,
+    gDIM2RoofRubObjDescriptorExtraSizeAdapter,
 };

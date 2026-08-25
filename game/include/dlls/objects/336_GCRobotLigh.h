@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 
 typedef struct GcRobotLightBeamStatusFlags {
     u8 playerCaught : 1;

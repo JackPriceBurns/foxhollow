@@ -150,19 +150,31 @@ void dbholecontrol1_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDBHoleControl1ObjDescriptorInitAdapter, dbholecontrol1_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDBHoleControl1ObjDescriptorHitDetectAdapter, dbholecontrol1_hitDetect)
+OBJECT_FREE_ADAPTER(gDBHoleControl1ObjDescriptorFreeAdapter, dbholecontrol1_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDBHoleControl1ObjDescriptorTypeIdAdapter, dbholecontrol1_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDBHoleControl1ObjDescriptorExtraSizeAdapter, dbholecontrol1_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDBHoleControl1ObjDescriptorAcquire, dbholecontrol1_initialise)
+
 ObjectDescriptor gDBHoleControl1ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDBHoleControl1ObjDescriptorAcquire,
+        dbholecontrol1_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dbholecontrol1_initialise,
-    (ObjectDescriptorCallback)dbholecontrol1_release,
-    0,
-    (ObjectDescriptorCallback)dbholecontrol1_init,
-    (ObjectDescriptorCallback)dbholecontrol1_update,
-    (ObjectDescriptorCallback)dbholecontrol1_hitDetect,
-    (ObjectDescriptorCallback)dbholecontrol1_render,
-    (ObjectDescriptorCallback)dbholecontrol1_free,
-    (ObjectDescriptorCallback)dbholecontrol1_getObjectTypeId,
-    dbholecontrol1_getExtraSize,
+    gDBHoleControl1ObjDescriptorInitAdapter,
+    dbholecontrol1_update,
+    gDBHoleControl1ObjDescriptorHitDetectAdapter,
+    dbholecontrol1_render,
+    gDBHoleControl1ObjDescriptorFreeAdapter,
+    gDBHoleControl1ObjDescriptorTypeIdAdapter,
+    gDBHoleControl1ObjDescriptorExtraSizeAdapter,
 };

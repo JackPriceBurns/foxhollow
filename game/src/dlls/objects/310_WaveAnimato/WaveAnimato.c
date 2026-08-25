@@ -4,7 +4,7 @@
  */
 #include "dlls/objects/310_WaveAnimato.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/mm.h"
 #include "main/object_render.h"
@@ -227,23 +227,49 @@ void WaveAnimator_release(void) {
 void WaveAnimator_initialise(void) {
 }
 
-ObjectDescriptor14 gWaveAnimatorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    (ObjectDescriptorCallback)WaveAnimator_initialise,
-    (ObjectDescriptorCallback)WaveAnimator_release,
-    0,
-    (ObjectDescriptorCallback)WaveAnimator_init,
-    (ObjectDescriptorCallback)WaveAnimator_update,
-    (ObjectDescriptorCallback)WaveAnimator_hitDetect,
-    (ObjectDescriptorCallback)WaveAnimator_render,
-    (ObjectDescriptorCallback)WaveAnimator_free,
-    (ObjectDescriptorCallback)WaveAnimator_getObjectTypeId,
-    WaveAnimator_getExtraSize,
-    (ObjectDescriptorCallback)WaveAnimator_setScale,
-    (ObjectDescriptorCallback)WaveAnimator_func0B,
-    (ObjectDescriptorCallback)WaveAnimator_modelMtxFn,
-    0,
+OBJECT_INIT_ADAPTER(gWaveAnimatorObjDescriptorInitAdapter, WaveAnimator_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gWaveAnimatorObjDescriptorUpdateAdapter, WaveAnimator_update)
+OBJECT_FREE_ADAPTER(gWaveAnimatorObjDescriptorFreeAdapter, WaveAnimator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWaveAnimatorObjDescriptorTypeIdAdapter, WaveAnimator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWaveAnimatorObjDescriptorExtraSizeAdapter, WaveAnimator_getExtraSize)
+
+typedef struct WaveAnimatorObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(WaveAnimator_setScale)* WaveAnimator_setScale;
+    __typeof__(WaveAnimator_func0B)* WaveAnimator_func0B;
+    __typeof__(WaveAnimator_modelMtxFn)* WaveAnimator_modelMtxFn;
+} WaveAnimatorObjDescriptorTypeInterface;
+
+struct WaveAnimatorObjDescriptorType {
+    ObjectDescriptorHeader header;
+    WaveAnimatorObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gWaveAnimatorObjDescriptorAcquire, WaveAnimator_initialise)
+
+struct WaveAnimatorObjDescriptorType gWaveAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        gWaveAnimatorObjDescriptorAcquire,
+        WaveAnimator_release,
+    },
+    {
+        0,
+        gWaveAnimatorObjDescriptorInitAdapter,
+        gWaveAnimatorObjDescriptorUpdateAdapter,
+        WaveAnimator_hitDetect,
+        WaveAnimator_render,
+        gWaveAnimatorObjDescriptorFreeAdapter,
+        gWaveAnimatorObjDescriptorTypeIdAdapter,
+        gWaveAnimatorObjDescriptorExtraSizeAdapter,
+        WaveAnimator_setScale,
+        WaveAnimator_func0B,
+        WaveAnimator_modelMtxFn,
+        0,
+    },
 };

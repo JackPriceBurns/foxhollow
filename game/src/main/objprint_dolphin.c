@@ -1,20 +1,20 @@
 #include "game/objects/object.h"
 #include "main/texture.h"
 #include "main/model_light.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/frame_timing.h"
-#include "main/objprint_render_api.h"
-#include "main/objprint_dolphin_api.h"
+#include "main/objprint_render.h"
+#include "main/objprint_dolphin.h"
 #include "main/model.h"
 #include "sys/objects.h"
-#include "main/objlib_api.h"
-#include "main/shader_api.h"
-#include "main/pi_dolphin_api.h"
+#include "main/objlib.h"
+#include "main/shader.h"
+#include "main/pi_dolphin.h"
 #include "main/curve_eval.h"
 #include "main/audio/sfx.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/newshadows.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
@@ -30,30 +30,29 @@
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "track/intersect_api.h"
-#include "track/intersect_fog_api.h"
-#include "main/newshadows_shadow_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/dll_0017_savegame_api.h"
+#include "dolphin/math.h"
+#include "track/intersect.h"
+#include "track/intersect_fog.h"
+#include "main/newshadows_shadow.h"
+#include "main/dll/player.h"
+#include "main/dll/dll_0017_savegame.h"
 #include "main/objprint_internal.h"
 #include "main/dll/partfx_interface.h"
 #include "dolphin/os/OSReport.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "main/pad.h"
-#include "main/pi_data_file_api.h"
-#include "main/pi_dolphin.h"
-#include "main/pi_flush_api.h"
-#include "main/sky_api.h"
-#include "main/textrender_api.h"
+#include "main/pi_data_file.h"
+#include "main/pi_flush.h"
+#include "main/sky.h"
+#include "main/textrender.h"
 #include "main/camera_interface.h"
 #include "main/mapEvent.h"
-#include "main/model_render_instrs_api.h"
-#include "main/model_runtime_api.h"
+#include "main/model_render_instrs.h"
+#include "main/model_runtime.h"
 #include "main/object_transform.h"
 #include "main/map_load.h"
-#include "main/objprint_load_api.h"
-#include "main/objprint_api.h"
+#include "main/objprint_load.h"
+#include "main/objprint.h"
 #include "main/table_file.h"
 #include "main/fileio.h"
 #include "main/vecmath.h"
@@ -61,10 +60,10 @@
 #include "dolphin/gx/GXDispList.h"
 #include "main/dll/FRONT/n_options.h"
 #include "main/dll/dll_80136a40.h"
-#include "track/intersect_depth_read_api.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_hud_api.h"
-#include "track/intersect_texture_api.h"
+#include "track/intersect_depth_read.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_hud.h"
+#include "track/intersect_texture.h"
 #include "dolphin/os.h"
 #include "dolphin/mtx/vec.h"
 #include "main/objprint_dolphin_internal.h"
@@ -373,7 +372,7 @@ int objFuzzShellRenderCb(GameObject* obj, int* model, int ropIdx)
     GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
     GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     t164 = NULL;
-    getNewShadowCausticTexture((u32*)&t164);
+    getNewShadowCausticTexture(&t164);
     selectTexture(t164, 4);
     newshadows_getReflectionScrollOffsets(&sx, &sy);
     PSMTXTrans(mtxR, 0.5f * sx, 0.5f * sy, 0.0f);
@@ -653,7 +652,7 @@ int objFuzzRenderCb(GameObject* obj, ObjModel* model, int ropIdx)
         coord = 1;
     }
     texRef4 = NULL;
-    getNewShadowCausticTexture((u32*)&texRef4);
+    getNewShadowCausticTexture(&texRef4);
     selectTexture(texRef4, 4);
     newshadows_getReflectionScrollOffsets(&sx, &sy);
     PSMTXTrans(mtxR, 0.5f * sx, 0.5f * sy, 0.0f);
@@ -785,17 +784,16 @@ int lbl_803DB49C = -1;
 #define OBJPRINT_MODEL_DEF(obj)         (((ObjAnimComponent*)(obj))->modelInstance)
 
 
-void objFuzzSetupGxState(void* objArg)
+void objFuzzSetupGxState(GameObject* obj)
 {
     ModelLightStruct* renderHandle;
-    void* obj = objArg;
     GXColor savedEnvColor = sObjFuzzSavedEnvColor;
     Texture** shadowTable;
     int shadowStride;
     int shadowParam;
     float mtx[12];
 
-    renderHandle = objCreateLight((void*)obj, '\0');
+    renderHandle = objCreateLight(obj, '\0');
     if (renderHandle != 0x0)
     {
         modelLightStruct_setLightKind(renderHandle, MODEL_LIGHT_KIND_DIRECTIONAL);
@@ -805,7 +803,7 @@ void objFuzzSetupGxState(void* objArg)
         modelLightChannel_configure(2, 0, 0);
         GXSetChanAmbColor(GX_ALPHA0, *(GXColor*)&lbl_803DB470);
         GXSetChanMatColor(GX_ALPHA0, *(GXColor*)&lbl_803DB468);
-        modelLightStruct_loadChannelLight(2, renderHandle, (GameObject*)obj);
+        modelLightStruct_loadChannelLight(2, renderHandle, obj);
         modelLightChannels_applyGXControls();
         ModelLightStruct_free(renderHandle);
     }
@@ -2377,7 +2375,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
                                        (u8**)((ObjModel*)am)->blendAnimData,
                                        ((ModelFileHeader*)m)->flags24 & 8);
         }
-        if (((ModelFileHeader*)m)->hitSphereCount != 0)
+        if (((ModelFileHeader*)m)->hitVolumeCount != 0)
         {
             objUpdateHitSpheres((u8*)am, m, (u8*)obj, NULL, (u8*)obj2);
         }
@@ -2705,7 +2703,7 @@ static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 pas
                                            ((ModelFileHeader*)m)->flags24 & 8);
             }
         }
-        if (((ModelFileHeader*)m)->hitSphereCount != 0)
+        if (((ModelFileHeader*)m)->hitVolumeCount != 0)
         {
             objUpdateHitSpheres((u8*)am, m, (u8*)obj, NULL, (u8*)obj2);
         }
@@ -2972,7 +2970,7 @@ void objUpdateHitVolumeTransforms(GameObject* obj)
     int i;
     base = obj->anim.modelInstance->hitVolumes;
     q = obj->anim.hitVolumeTransforms;
-    if (!(*(u8*)&obj->anim.resetHitboxMode & 0x28))
+    if (!(*(u8*)&obj->anim.resetHitboxFlags & 0x28))
     {
         model = (int*)Obj_GetActiveModel(obj);
         i = 0;

@@ -72,19 +72,32 @@ void spitembeam_release(void) {
 void spitembeam_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSPitembeamObjDescriptorInitAdapter, spitembeam_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSPitembeamObjDescriptorHitDetectAdapter, spitembeam_hitDetect)
+OBJECT_RENDER_ADAPTER(gSPitembeamObjDescriptorRenderAdapter, spitembeam_render)
+OBJECT_FREE_ADAPTER(gSPitembeamObjDescriptorFreeAdapter, spitembeam_free)
+OBJECT_TYPE_ID_ADAPTER(gSPitembeamObjDescriptorTypeIdAdapter, spitembeam_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSPitembeamObjDescriptorExtraSizeAdapter, spitembeam_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSPitembeamObjDescriptorAcquire, spitembeam_initialise)
+
 ObjectDescriptor gSPitembeamObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSPitembeamObjDescriptorAcquire,
+        spitembeam_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)spitembeam_initialise,
-    (ObjectDescriptorCallback)spitembeam_release,
-    0,
-    (ObjectDescriptorCallback)spitembeam_init,
-    (ObjectDescriptorCallback)spitembeam_update,
-    (ObjectDescriptorCallback)spitembeam_hitDetect,
-    (ObjectDescriptorCallback)spitembeam_render,
-    (ObjectDescriptorCallback)spitembeam_free,
-    (ObjectDescriptorCallback)spitembeam_getObjectTypeId,
-    spitembeam_getExtraSize,
+    gSPitembeamObjDescriptorInitAdapter,
+    spitembeam_update,
+    gSPitembeamObjDescriptorHitDetectAdapter,
+    gSPitembeamObjDescriptorRenderAdapter,
+    gSPitembeamObjDescriptorFreeAdapter,
+    gSPitembeamObjDescriptorTypeIdAdapter,
+    gSPitembeamObjDescriptorExtraSizeAdapter,
 };

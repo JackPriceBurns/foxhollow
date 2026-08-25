@@ -119,19 +119,32 @@ void VFP_lavastar_initialise(void)
     sVfpLavaPoolEffectResource = Resource_Acquire(0xA6, 1);
 }
 
+OBJECT_INIT_ADAPTER(gVFP_lavastarObjDescriptorInitAdapter, VFP_lavastar_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_lavastarObjDescriptorHitDetectAdapter, VFP_lavastar_hitDetect)
+OBJECT_RENDER_ADAPTER(gVFP_lavastarObjDescriptorRenderAdapter, VFP_lavastar_render)
+OBJECT_FREE_ADAPTER(gVFP_lavastarObjDescriptorFreeAdapter, VFP_lavastar_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_lavastarObjDescriptorTypeIdAdapter, VFP_lavastar_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_lavastarObjDescriptorExtraSizeAdapter, VFP_lavastar_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_lavastarObjDescriptorAcquire, VFP_lavastar_initialise)
+
 ObjectDescriptor gVFP_lavastarObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_lavastarObjDescriptorAcquire,
+        VFP_lavastar_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_lavastar_initialise,
-    (ObjectDescriptorCallback)VFP_lavastar_release,
-    0,
-    (ObjectDescriptorCallback)VFP_lavastar_init,
-    (ObjectDescriptorCallback)VFP_lavastar_update,
-    (ObjectDescriptorCallback)VFP_lavastar_hitDetect,
-    (ObjectDescriptorCallback)VFP_lavastar_render,
-    (ObjectDescriptorCallback)VFP_lavastar_free,
-    (ObjectDescriptorCallback)VFP_lavastar_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_lavastar_getExtraSize,
+    gVFP_lavastarObjDescriptorInitAdapter,
+    VFP_lavastar_update,
+    gVFP_lavastarObjDescriptorHitDetectAdapter,
+    gVFP_lavastarObjDescriptorRenderAdapter,
+    gVFP_lavastarObjDescriptorFreeAdapter,
+    gVFP_lavastarObjDescriptorTypeIdAdapter,
+    gVFP_lavastarObjDescriptorExtraSizeAdapter,
 };

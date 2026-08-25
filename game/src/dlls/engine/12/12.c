@@ -38,20 +38,23 @@ void projgfx_release_doUnsupported(void) {
 void projgfx_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjgfxResourceAcquire, projgfx_initialise)
+
 ProjgfxDllInterface projgfx_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    projgfx_initialise,
-    (ObjectDescriptorCallback)projgfx_release_doUnsupported,
-    0,
-    projgfx_onMapSetup,
-    (ObjectDescriptorCallback)projgfx_func04_ret_m1,
-    (ObjectDescriptorCallback)projgfx_func05_nop,
-    (ObjectDescriptorCallback)projgfx_func06_nop,
-    (ObjectDescriptorCallback)projgfx_func07_nop,
-    (ObjectDescriptorCallback)projgfx_getObjectTypeId,
-    (ObjectDescriptorCallback)projgfx_setzscale_doUnsupported,
-    (ObjectDescriptorCallback)projgfx_rayhit_doUnsupported,
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_11_SLOTS},
+        gProjgfxResourceAcquire,
+        projgfx_release_doUnsupported,
+    },
+    {
+        {0},
+        projgfx_onMapSetup,
+        projgfx_func04_ret_m1,
+        projgfx_func05_nop,
+        projgfx_func06_nop,
+        projgfx_func07_nop,
+        projgfx_getObjectTypeId,
+        projgfx_setzscale_doUnsupported,
+        projgfx_rayhit_doUnsupported,
+    },
 };

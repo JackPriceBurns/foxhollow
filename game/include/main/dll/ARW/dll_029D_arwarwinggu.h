@@ -11,16 +11,20 @@ typedef struct ArwingGuTextureState
     int textureFrame;
 } ArwingGuTextureState;
 
-typedef union ArwingGuState
+typedef struct ArwingGuGunState
 {
-    ArwingGuTextureState texture;
     f32 visibleTimer;
+} ArwingGuGunState;
+
+typedef struct ArwingGuBombState
+{
     u8 fadeIn;
-} ArwingGuState;
+} ArwingGuBombState;
 
 STATIC_ASSERT(sizeof(ArwingGuTextureState) == 8);
 STATIC_ASSERT(offsetof(ArwingGuTextureState, textureFrame) == 0x04);
-STATIC_ASSERT(sizeof(ArwingGuState) == 8);
+STATIC_ASSERT(sizeof(ArwingGuGunState) == 4);
+STATIC_ASSERT(sizeof(ArwingGuBombState) == 1);
 
 extern ObjectDescriptor gARWArwingGuObjDescriptor;
 

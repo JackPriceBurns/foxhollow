@@ -10,16 +10,7 @@
 #define WCPRESSURES_TRACKED_COUNT 10
 
 typedef struct WCPressuresSetup {
-    union {
-        ObjPlacement base;
-        struct {
-            u8 pad00[8];
-            f32 x;
-            f32 y;
-            f32 z;
-            u8 pad14[4];
-        };
-    };
+    ObjPlacement base;
     u8 objectTypeHi;
     u8 modelIndex;
     s16 solvedBit;

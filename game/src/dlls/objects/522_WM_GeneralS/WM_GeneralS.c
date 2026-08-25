@@ -13,7 +13,7 @@
 #include "dlls/objects/298_CFCrate.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -194,19 +194,32 @@ void WM_GeneralScales_release(void) {
 void WM_GeneralScales_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_GeneralScalesObjDescriptorInitAdapter, WM_GeneralScales_init, obj)
+OBJECT_UPDATE_ADAPTER(gWM_GeneralScalesObjDescriptorUpdateAdapter, WM_GeneralScales_update)
+OBJECT_HIT_DETECT_ADAPTER(gWM_GeneralScalesObjDescriptorHitDetectAdapter, WM_GeneralScales_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_GeneralScalesObjDescriptorFreeAdapter, WM_GeneralScales_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_GeneralScalesObjDescriptorTypeIdAdapter, WM_GeneralScales_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_GeneralScalesObjDescriptorExtraSizeAdapter, WM_GeneralScales_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_GeneralScalesObjDescriptorAcquire, WM_GeneralScales_initialise)
+
 ObjectDescriptor gWM_GeneralScalesObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_GeneralScalesObjDescriptorAcquire,
+        WM_GeneralScales_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_GeneralScales_initialise,
-    WM_GeneralScales_release,
-    0,
-    (ObjectDescriptorCallback)WM_GeneralScales_init,
-    WM_GeneralScales_update,
-    WM_GeneralScales_hitDetect,
-    (ObjectDescriptorCallback)WM_GeneralScales_render,
-    (ObjectDescriptorCallback)WM_GeneralScales_free,
-    (ObjectDescriptorCallback)WM_GeneralScales_getObjectTypeId,
-    WM_GeneralScales_getExtraSize,
+    gWM_GeneralScalesObjDescriptorInitAdapter,
+    gWM_GeneralScalesObjDescriptorUpdateAdapter,
+    gWM_GeneralScalesObjDescriptorHitDetectAdapter,
+    WM_GeneralScales_render,
+    gWM_GeneralScalesObjDescriptorFreeAdapter,
+    gWM_GeneralScalesObjDescriptorTypeIdAdapter,
+    gWM_GeneralScalesObjDescriptorExtraSizeAdapter,
 };

@@ -37,14 +37,12 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/audio/sfx_ids.h"
 #include "main/frame_timing.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "main/dll/dll_022C_dll22c.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/render_lactions_api.h"
+#include "main/audio/sfx.h"
+#include "main/render_lactions.h"
 
 /*
  * DbStealerwormControl - the per-family control record hung off
@@ -295,19 +293,31 @@ void dll_22C_initialise_nop(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDll22CObjDescriptorInitAdapter, dll_22C_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll22CObjDescriptorHitDetectAdapter, dll_22C_hitDetect_nop)
+OBJECT_FREE_ADAPTER(gDll22CObjDescriptorFreeAdapter, dll_22C_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll22CObjDescriptorTypeIdAdapter, dll_22C_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll22CObjDescriptorExtraSizeAdapter, dll_22C_getExtraSize_ret_16)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll22CObjDescriptorAcquire, dll_22C_initialise_nop)
+
 ObjectDescriptor gDll22CObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll22CObjDescriptorAcquire,
+        dll_22C_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_22C_initialise_nop,
-    (ObjectDescriptorCallback)dll_22C_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_22C_init,
-    (ObjectDescriptorCallback)dll_22C_update,
-    (ObjectDescriptorCallback)dll_22C_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_22C_render,
-    (ObjectDescriptorCallback)dll_22C_free,
-    (ObjectDescriptorCallback)dll_22C_getObjectTypeId,
-    dll_22C_getExtraSize_ret_16,
+    gDll22CObjDescriptorInitAdapter,
+    dll_22C_update,
+    gDll22CObjDescriptorHitDetectAdapter,
+    dll_22C_render,
+    gDll22CObjDescriptorFreeAdapter,
+    gDll22CObjDescriptorTypeIdAdapter,
+    gDll22CObjDescriptorExtraSizeAdapter,
 };

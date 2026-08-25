@@ -7,26 +7,25 @@
  */
 #include "dlls/objects/395_CClevcontro.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_show_api.h"
+#include "main/gamebits.h"
+#include "main/gametext_show.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/sky.h"
-#include "main/sky_api.h"
 #include "main/sky_interface.h"
 #include "sys/objects/lifecycle.h"
 
@@ -49,7 +48,7 @@ enum CcLevelControlObjectGroup {
 
 typedef struct CcLevelControlState {
     f32 textTimer;
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     int musicTriggerId;
     u32 mapAct;
 } CcLevelControlState;
@@ -106,14 +105,14 @@ static void ccLevelControl_update(GameObject* obj) {
     if ((*gSkyInterface)->getSunPosition(NULL) != 0) {
         if (state->musicTriggerId != -1) {
             state->musicTriggerId = -1;
-            if (state->gameBitLatch.activeMask & CC_LEVEL_CONTROL_LATCH_DAY_NIGHT) {
+            if (state->gameBitLatch & CC_LEVEL_CONTROL_LATCH_DAY_NIGHT) {
                 Music_Trigger(MUSICTRIG_Arwing_Crash, 0);
             }
         }
     } else {
         if (state->musicTriggerId != MUSICTRIG_Arwing_Crash) {
             state->musicTriggerId = MUSICTRIG_Arwing_Crash;
-            if (state->gameBitLatch.activeMask & CC_LEVEL_CONTROL_LATCH_DAY_NIGHT) {
+            if (state->gameBitLatch & CC_LEVEL_CONTROL_LATCH_DAY_NIGHT) {
                 Music_Trigger(MUSICTRIG_Arwing_Crash, 1);
             }
         }
@@ -147,16 +146,16 @@ static void ccLevelControl_update(GameObject* obj) {
         (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, CC_LEVEL_CONTROL_OBJECT_GROUP_1D, 1);
     }
     tricky = getTrickyObject();
-    if (state->gameBitLatch.activeMask & CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION) {
+    if (state->gameBitLatch & CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION) {
         if (mainGetBit(GAMEBIT_CC_CameraActionStop) != 0 || mainGetBit(GAMEBIT_CC_CameraActionGate) == 0 ||
             (tricky->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) != 0) {
-            state->gameBitLatch.activeMask &= ~CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION;
+            state->gameBitLatch &= ~CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION;
             (*gCameraInterface)->loadTriggeredCamAction(CAMCONTROL_TRIGGER_KIND_LOAD_ACTION, 1, 0);
         }
     } else {
         if (mainGetBit(GAMEBIT_CC_CameraActionStop) == 0 && mainGetBit(GAMEBIT_CC_CameraActionReady) != 0 &&
             mainGetBit(GAMEBIT_CC_CameraActionGate) != 0 && mainGetBit(GAMEBIT_CC_CameraActionBlocked) == 0) {
-            state->gameBitLatch.activeMask |= CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION;
+            state->gameBitLatch |= CC_LEVEL_CONTROL_LATCH_CAMERA_ACTION;
             (*gCameraInterface)->loadTriggeredCamAction(CAMCONTROL_TRIGGER_KIND_QUEUE_TYPE1, 1, 0);
         }
     }
@@ -186,11 +185,19 @@ static void ccLevelControl_init(GameObject* obj) {
     state->mapAct = (u32)(u8)(*gMapEventInterface)->getMapAct(obj->anim.mapEventSlot);
 }
 
+OBJECT_INIT_ADAPTER(gCCLevelControlObjDescriptorInitAdapter, ccLevelControl_init, obj)
+OBJECT_FREE_ADAPTER(gCCLevelControlObjDescriptorFreeAdapter, ccLevelControl_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCLevelControlObjDescriptorExtraSizeAdapter, ccLevelControl_getExtraSize)
+
 ObjectDescriptor gCCLevelControlObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccLevelControl_init,
-    .update = (ObjectDescriptorCallback)ccLevelControl_update,
-    .render = (ObjectDescriptorCallback)ccLevelControl_render,
-    .free = (ObjectDescriptorCallback)ccLevelControl_free,
-    .getExtraSize = ccLevelControl_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCLevelControlObjDescriptorInitAdapter,
+    .update = ccLevelControl_update,
+    .render = ccLevelControl_render,
+    .free = gCCLevelControlObjDescriptorFreeAdapter,
+    .getExtraSize = gCCLevelControlObjDescriptorExtraSizeAdapter,
+};;

@@ -7,36 +7,36 @@
 #define SAVE_SELECT_CHOOSE_SLOT_COUNT 4
 #include "foxhollow_quit.h"
 #include "main/dll/dll_0035_saveselectscreen.h"
-#include "main/textrender_api.h"
-#include "track/intersect_hud_api.h"
+#include "main/textrender.h"
+#include "track/intersect_hud.h"
 #include "PowerPC_EABI_Support/Msl/MSL_C/MSL_Common/printf.h"
 #include "dolphin/pad.h"
 #include "main/screen_transition.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/frame_timing.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/dll/FRONT/title_menu.h"
 #include "main/texture.h"
 #include "main/mm.h"
 #include "main/debug.h"
 #include "main/dll/FRONT/dll_39.h"
-#include "main/dll/dll_02C0_front_api.h"
-#include "main/dll/front_game_text_box_api.h"
-#include "main/gametext_api.h"
-#include "main/gametext_show_api.h"
+#include "main/dll/dll_02C0_front.h"
+#include "main/dll/front_game_text_box.h"
+#include "main/gametext.h"
+#include "main/gametext_show.h"
 #include "main/model_engine.h"
 #include "main/map_load.h"
 #include "main/fileio.h"
 #include "main/mapEventTypes.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/savegame.h"
-#include "main/dll/dll_0017_savegame_api.h"
+#include "main/dll/dll_0017_savegame.h"
 #include "main/dll/player_status.h"
 #include "main/dll/dll_003D_titlemenuitem.h"
 #include "string.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_str_api.h"
+#include "main/audio/sfx.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show_str.h"
 #include "main/pad.h"
 #include "main/dll/dll_43.h"
 
@@ -1287,30 +1287,21 @@ u8 lbl_8031A7F8[12] = {0, 0, 5, 213, 0, 0, 5, 214, 0, 0, 5, 212};
 void* lbl_8031A804[4] = {(void*)0x00000000, (void*)0x00000000, (void*)0x00000000, (void*)0x00000000};
 u16 saveFileSelect_debugCheatSequence[6] = {0x4000, 0x8000, 0x4000, 0x8000, 4, 0};
 u16 saveFileSelect_slotCheatSequence[6] = {0x400, 0x800, 0x8000, 0x8000, 2, 0};
-typedef struct SaveSelectScreenDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback run;
-    ObjectDescriptorCallback frameEnd_nop;
-    ObjectDescriptorCallback render;
-} SaveSelectScreenDllInterface;
 
-SaveSelectScreenDllInterface SaveSelectScreen_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)SaveSelectScreen_initialise,
-    (ObjectDescriptorCallback)SaveSelectScreen_release,
-    0,
-    (ObjectDescriptorCallback)SaveSelectScreen_run,
-    (ObjectDescriptorCallback)SaveSelectScreen_frameEnd_nop,
-    (ObjectDescriptorCallback)SaveSelectScreen_render,
+UI_RESOURCE_ADAPTERS(gSaveSelectScreenUiResource, SaveSelectScreen_initialise, SaveSelectScreen_run, SaveSelectScreen_render, arg0)
+
+UiResourceDescriptor SaveSelectScreen_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gSaveSelectScreenUiResourceAcquire,
+        SaveSelectScreen_release,
+    },
+    {
+        NULL,
+        gSaveSelectScreenUiResourceFrameStart,
+        SaveSelectScreen_frameEnd_nop,
+        gSaveSelectScreenUiResourceDraw,
+    },
 };
 char sFrontendTimeFormat[14] = "%3d:%02d:%02d";
 char sSaveGameBinPathFormat[] = "/savegame/save%d.bin";

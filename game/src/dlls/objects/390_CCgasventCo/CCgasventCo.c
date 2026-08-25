@@ -3,20 +3,18 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_object_volume_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
 #include "main/game_ui_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "main/pi_dolphin_api.h"
+#include "main/pi_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -82,7 +80,7 @@ static u8 ccGasVentControl_countUnblockedVents(GameObject* obj, CcGasVentControl
         for (u8 i = 0; i < CC_GAS_VENT_COUNT; i++) {
             GameObject* nearestBlocker =
                 objGetNearestTypeTo(CC_GAS_VENT_BLOCKER_OBJECT_GROUP, vents[i], 0);
-            if (getXZDistanceSquared(&vents[i]->anim.worldPos.x, &nearestBlocker->anim.worldPos.x) > 100.0f) {
+            if (getXZDistanceSquared(&vents[i]->anim.worldPosX, &nearestBlocker->anim.worldPosX) > 100.0f) {
                 unblockedVentCount++;
             }
         }
@@ -158,7 +156,7 @@ static void ccGasVentControl_update(GameObject* obj) {
             if (state->gasHeightOffset > 50.0f) {
                 state->gasHeightOffset = 50.0f;
             }
-            if (player->anim.localPos.y <= obj->anim.localPos.y + state->gasHeightOffset) {
+            if (player->anim.localPosY <= obj->anim.localPosY + state->gasHeightOffset) {
                 state->airRemaining = -(timeDelta * unblockedVentCount - state->airRemaining);
             } else {
                 state->airRemaining = 16.0f * timeDelta + state->airRemaining;
@@ -166,13 +164,15 @@ static void ccGasVentControl_update(GameObject* obj) {
                     state->airRemaining = 6000.0f;
                 }
             }
-            enableHeavyFog(obj->anim.localPos.y + state->gasHeightOffset,
-                           obj->anim.localPos.y - 15.0f, 800.0f, 0.1f, 0.0005f, 0);
+            enableHeavyFog(obj->anim.localPosY + state->gasHeightOffset,
+                           obj->anim.localPosY - 15.0f, 800.0f, 0.1f, 0.0005f, 0);
             if (state->airRemaining >= 0.0f) {
                 (*gGameUIInterface)->runAirMeter((int)state->airRemaining);
             } else {
                 (*gGameUIInterface)->airMeterShutdown();
-                obj->anim.localPos = player->anim.localPos;
+                obj->anim.localPosX = player->anim.localPosX;
+                obj->anim.localPosY = player->anim.localPosY;
+                obj->anim.localPosZ = player->anim.localPosZ;
                 (*gObjectTriggerInterface)->runSequence(CC_GAS_VENT_SEQUENCE_RESTART, obj, -1);
                 (*gCameraInterface)->setMode(0x42, 0, 1, 0, NULL, 0x1E, 0xFF);
                 state->phase = CC_GAS_VENT_CONTROL_PHASE_RESTART;
@@ -195,7 +195,7 @@ static void ccGasVentControl_update(GameObject* obj) {
     case CC_GAS_VENT_CONTROL_PHASE_SAVE_POINT: {
         GameObject* player = Obj_GetPlayerObject();
 
-        (*gMapEventInterface)->savePoint(&player->anim.localPos.x, player->anim.rotX, 1, 0);
+        (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 1, 0);
         state->phase = CC_GAS_VENT_CONTROL_PHASE_WAIT_FOR_CLEAR;
         break;
     }
@@ -218,11 +218,19 @@ static void ccGasVentControl_init(GameObject* obj, const CcGasVentControlPlaceme
     }
 }
 
+OBJECT_INIT_ADAPTER(gCCGasVentControlObjDescriptorInitAdapter, ccGasVentControl_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCCGasVentControlObjDescriptorFreeAdapter, ccGasVentControl_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCGasVentControlObjDescriptorExtraSizeAdapter, ccGasVentControl_getExtraSize)
+
 ObjectDescriptor gCCGasVentControlObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccGasVentControl_init,
-    .update = (ObjectDescriptorCallback)ccGasVentControl_update,
-    .render = (ObjectDescriptorCallback)ccGasVentControl_render,
-    .free = (ObjectDescriptorCallback)ccGasVentControl_free,
-    .getExtraSize = ccGasVentControl_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCGasVentControlObjDescriptorInitAdapter,
+    .update = ccGasVentControl_update,
+    .render = ccGasVentControl_render,
+    .free = gCCGasVentControlObjDescriptorFreeAdapter,
+    .getExtraSize = gCCGasVentControlObjDescriptorExtraSizeAdapter,
+};;

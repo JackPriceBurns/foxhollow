@@ -1,15 +1,15 @@
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -17,7 +17,7 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
@@ -27,26 +27,23 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/wispbaddie_baddie.h"
-#include "main/audio/sfx_position_api.h"
 #include "main/audio/sfx_ids.h"
 #include "main/dll/baddie_setmove.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/dll/seqobj11d_ext.h"
 #include "main/dll/wispbaddieseq_ext.h"
-#include "main/gameloop_api.h"
-#include "main/audio/sfx.h"
+#include "main/gameloop.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/gamebits.h"
 #include "main/dll/objfsa.h"
 #include "main/dll/newseqobj_baddie.h"
 #include "main/dll/baddie_frozen.h"
 #include "main/game_ui_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/model.h"
 #include "main/object_transform.h"
 #include "main/dll/player_target.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dlls/objects/225_WispBaddie.h"
 #include "main/trig_float_helpers.h"
 #include "main/obj_link.h"
@@ -65,10 +62,9 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/fall_ladders.h"
 #include "main/dll/fireflyLantern.h"
-#include "main/dll/duster_api.h"
-#include "main/track_bbox_api.h"
-#include "main/sky_interface.h"
 #include "main/dll/duster.h"
+#include "main/track_bbox.h"
+#include "main/sky_interface.h"
 #include "dlls/objects/216_PinPonSpike.h"
 #include "main/dll/duster_wb.h"
 #include "main/obj_query.h"
@@ -80,8 +76,6 @@
 #include "main/dll/hagabon_mk2.h"
 #include "main/dll/snowworm.h"
 #include "main/dll/baddiewhirlpool.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
 
 /* Baddie-family animation data shared with the sequence-driver TUs. */
 
@@ -204,7 +198,7 @@ void gcRobotPatrol_update(GameObject* obj, u8* state)
     {
         int step;
 
-        if (Curve_AdvanceAlongPath(&path->curve, ((EnemyState*)state)->pathStep) != 0 || path->atSegmentEnd != 0)
+        if (Curve_AdvanceAlongPath(&path->curve, ((EnemyState*)state)->pathStep) != 0 || path->curve.idx != 0)
         {
             if ((*gRomCurveInterface)->goNextPoint(path) != 0)
             {
@@ -215,17 +209,17 @@ void gcRobotPatrol_update(GameObject* obj, u8* state)
                 }
             }
         }
-        obj->anim.velocityX = (path->posX - obj->anim.localPosX) / timeDelta;
-        obj->anim.velocityZ = (path->posZ - obj->anim.localPosZ) / timeDelta;
+        obj->anim.velocityX = (path->curve.sample[0] - obj->anim.localPosX) / timeDelta;
+        obj->anim.velocityZ = (path->curve.sample[2] - obj->anim.localPosZ) / timeDelta;
         step = (s8)def->rotX;
         if (step == 0)
         {
-            baddieTurnTowardPoint(obj, state, path->posX, path->posZ, 0xf, 0);
+            baddieTurnTowardPoint(obj, state, path->curve.sample[0], path->curve.sample[2], 0xf, 0);
         }
         else if (((EnemyState*)state)->controlFlags & BADDIE_CONTROL_PATH_FOLLOW)
         {
             spd = step << 8;
-            if ((int)(10.0f * path->tangentY) >= 0)
+            if ((int)(10.0f * path->curve.tangent[1]) >= 0)
             {
                 step = spd;
             }
@@ -234,8 +228,8 @@ void gcRobotPatrol_update(GameObject* obj, u8* state)
                 step = -spd;
             }
             obj->anim.rotX = obj->anim.rotX - step;
-            baddieTurnTowardPoint(obj, state, path->posX, path->posZ, 0xf, 0);
-            if ((int)(10.0f * path->tangentY) >= 0)
+            baddieTurnTowardPoint(obj, state, path->curve.sample[0], path->curve.sample[2], 0xf, 0);
+            if ((int)(10.0f * path->curve.tangent[1]) >= 0)
             {
                 step = spd;
             }
@@ -247,10 +241,10 @@ void gcRobotPatrol_update(GameObject* obj, u8* state)
         }
         else
         {
-            step = ((int)(10.0f * path->tangentY) >= 0) ? step : -step;
+            step = ((int)(10.0f * path->curve.tangent[1]) >= 0) ? step : -step;
             obj->anim.rotX += step;
         }
-        if (obj->anim.localPosY - path->posY < -1.0f)
+        if (obj->anim.localPosY - path->curve.sample[1] < -1.0f)
         {
             if (Sfx_IsPlayingFromObject(obj, SFXTRIG_dn_boar1_c_18d) == 0)
             {

@@ -12,7 +12,7 @@
  * arwprojectile_launchForward + arwprojectile_setParamScalar (called from
  * arwarwing's bomb release; the projectile object itself is DLL 0x29B).
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/ARW/dll_029C_arwarwingbo.h"
 #include "main/dll/ARW/dll_029A_arwarwing.h"
@@ -152,9 +152,9 @@ void arwarwingbo_update(GameObject* obj)
 
 void arwarwingbo_init(GameObject* obj, ArwingBombSetup* setup)
 {
-    (obj)->anim.rotX = (s16)(setup->rotX << 8);
-    (obj)->anim.rotY = (s16)(setup->rotY << 8);
-    (obj)->anim.rotZ = (s16)(setup->rotZ << 8);
+    (obj)->anim.rotX = (s16)(setup->yaw << 8);
+    (obj)->anim.rotY = (s16)(setup->pitch << 8);
+    (obj)->anim.rotZ = (s16)(setup->roll << 8);
     objAddObjectType(obj, ARWARWINGBO_OBJGROUP);
 }
 
@@ -182,19 +182,31 @@ void arwarwingbo_setActiveVisible(GameObject* obj, u8 active, u8 visible)
     }
 }
 
+OBJECT_INIT_ADAPTER(gARWArwingBoObjDescriptorInitAdapter, arwarwingbo_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWArwingBoObjDescriptorHitDetectAdapter, arwarwingbo_hitDetect)
+OBJECT_FREE_ADAPTER(gARWArwingBoObjDescriptorFreeAdapter, arwarwingbo_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gARWArwingBoObjDescriptorTypeIdAdapter, arwarwingbo_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWArwingBoObjDescriptorExtraSizeAdapter, arwarwingbo_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWArwingBoObjDescriptorAcquire, arwarwingbo_initialise)
+
 ObjectDescriptor gARWArwingBoObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwarwingbo_initialise,
-    (ObjectDescriptorCallback)arwarwingbo_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWArwingBoObjDescriptorAcquire,
+        arwarwingbo_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)arwarwingbo_init,
-    (ObjectDescriptorCallback)arwarwingbo_update,
-    (ObjectDescriptorCallback)arwarwingbo_hitDetect,
-    (ObjectDescriptorCallback)arwarwingbo_render,
-    (ObjectDescriptorCallback)arwarwingbo_free,
-    (ObjectDescriptorCallback)arwarwingbo_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwarwingbo_getExtraSize,
+    gARWArwingBoObjDescriptorInitAdapter,
+    arwarwingbo_update,
+    gARWArwingBoObjDescriptorHitDetectAdapter,
+    arwarwingbo_render,
+    gARWArwingBoObjDescriptorFreeAdapter,
+    gARWArwingBoObjDescriptorTypeIdAdapter,
+    gARWArwingBoObjDescriptorExtraSizeAdapter,
 };

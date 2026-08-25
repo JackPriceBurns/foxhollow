@@ -3,7 +3,7 @@
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/dll/partfx_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_path.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
@@ -144,7 +144,9 @@ static void nwTreeBridge_render(GameObject* obj, int renderArg2, int renderArg3,
         Vec3f pathPosition;
 
         ObjPath_GetPointWorldPosition(obj, 0, &pathPosition.x, &pathPosition.y, &pathPosition.z, 0);
-        state->pathTarget->anim.localPos = pathPosition;
+        state->pathTarget->anim.localPosX = pathPosition.x;
+        state->pathTarget->anim.localPosY = pathPosition.y;
+        state->pathTarget->anim.localPosZ = pathPosition.z;
     }
 }
 
@@ -191,19 +193,21 @@ static void nwTreeBridge_init(GameObject* obj, const NwTreeBridgePlacement* plac
     state->targetSearchAttempts = 4;
 }
 
+OBJECT_INIT_ADAPTER(gNWTreeBridgeObjDescriptorInitAdapter, nwTreeBridge_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gNWTreeBridgeObjDescriptorExtraSizeAdapter, nwTreeBridge_getExtraSize)
+
 ObjectDescriptor gNWTreeBridgeObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = NULL,
-    .release = NULL,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)nwTreeBridge_init,
-    .update = (ObjectDescriptorCallback)nwTreeBridge_update,
+    .init = gNWTreeBridgeObjDescriptorInitAdapter,
+    .update = nwTreeBridge_update,
     .hitDetect = NULL,
-    .render = (ObjectDescriptorCallback)nwTreeBridge_render,
+    .render = nwTreeBridge_render,
     .free = NULL,
     .getObjectTypeId = NULL,
-    .getExtraSize = nwTreeBridge_getExtraSize,
-};
+    .getExtraSize = gNWTreeBridgeObjDescriptorExtraSizeAdapter,
+};;

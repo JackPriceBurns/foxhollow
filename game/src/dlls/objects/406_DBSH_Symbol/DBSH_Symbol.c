@@ -8,15 +8,12 @@
 
 #include "dolphin/pad.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_object_volume_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/obj_list.h"
 #include "main/objseq.h"
@@ -265,11 +262,19 @@ static void dbshSymbol_init(GameObject* obj) {
     obj->anim.modelState->flags &= ~(u64)OBJ_MODEL_STATE_SHADOW_VISIBLE;
 }
 
+OBJECT_INIT_ADAPTER(gDBSHSymbolObjDescriptorInitAdapter, dbshSymbol_init, obj)
+OBJECT_FREE_ADAPTER(gDBSHSymbolObjDescriptorFreeAdapter, dbshSymbol_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gDBSHSymbolObjDescriptorExtraSizeAdapter, dbshSymbol_getExtraSize)
+
 ObjectDescriptor gDBSHSymbolObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)dbshSymbol_init,
-    .update = (ObjectDescriptorCallback)dbshSymbol_update,
-    .render = (ObjectDescriptorCallback)dbshSymbol_render,
-    .free = (ObjectDescriptorCallback)dbshSymbol_free,
-    .getExtraSize = dbshSymbol_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gDBSHSymbolObjDescriptorInitAdapter,
+    .update = dbshSymbol_update,
+    .render = dbshSymbol_render,
+    .free = gDBSHSymbolObjDescriptorFreeAdapter,
+    .getExtraSize = gDBSHSymbolObjDescriptorExtraSizeAdapter,
+};;

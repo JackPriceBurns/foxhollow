@@ -91,19 +91,21 @@ typedef struct DFropenodeRenderState {
 } DFropenodeRenderState;
 
 typedef struct DFropenodeInterface {
-    ObjectInterface object;
+    OBJECT_INTERFACE_FIELDS;
     void (*getPlaneEquation)(GameObject* obj, DFropenodePlaneEquation* out);
     void (*getWorldPosAtPhase)(f32 phase, GameObject* obj, f32* xOut, f32* yOut, f32* zOut);
     void (*advancePhaseByDistance)(GameObject* obj, f32* phase, f32 distance);
     void (*applyForceAtPhase)(f32 phase, f32 force, GameObject* obj);
     int (*findNearestRopePoint)(GameObject* obj, f32 worldX, f32 worldY, f32 worldZ, f32* distanceOut, f32* phaseOut,
                                 u8* sideOut);
-    int (*getAngle)(GameObject* obj);
+    s16 (*getAngle)(GameObject* obj);
     void (*setVisible)(GameObject* obj, int visible);
-    int (*isVisible)(GameObject* obj);
+    s16 (*isVisible)(GameObject* obj);
     void (*setMinY)(GameObject* obj, f32 value);
     void (*clearLinkedObj)(GameObject* obj);
 } DFropenodeInterface;
+
+OBJECT_DESCRIPTOR_TYPE(DFropenodeDescriptor, DFropenodeInterface);
 
 STATIC_ASSERT(offsetof(DFropenodePlacement, base) == 0x00);
 STATIC_ASSERT(offsetof(DFropenodePlacement, nodeId) == 0x18);
@@ -204,6 +206,6 @@ void DFropenode_init(GameObject* obj, DFropenodePlacement* placement);
 void DFropenode_release(void);
 void DFropenode_initialise(void);
 
-extern ObjectDescriptor20 gDFropenodeObjDescriptor;
+extern DFropenodeDescriptor gDFropenodeObjDescriptor;
 
 #endif /* DLLS_OBJECTS_373_DFROPENODE_H_ */

@@ -101,23 +101,51 @@ void checkpoint4_release(void) {
 void checkpoint4_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gCheckpoint4ObjDescriptor = {
+OBJECT_INIT_ADAPTER(gCheckpoint4ObjDescriptorInitAdapter, checkpoint4_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCheckpoint4ObjDescriptorFreeAdapter, checkpoint4_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCheckpoint4ObjDescriptorTypeIdAdapter, checkpoint4_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCheckpoint4ObjDescriptorExtraSizeAdapter, checkpoint4_getExtraSize)
+
+typedef struct Checkpoint4ObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(checkpoint4_func0A)* checkpoint4_func0A;
+} Checkpoint4ObjDescriptorTypeInterface;
+
+typedef struct Checkpoint4ObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    Checkpoint4ObjDescriptorTypeInterface interface;
+} Checkpoint4ObjDescriptorTypeCore;
+
+struct Checkpoint4ObjDescriptorType {
+    Checkpoint4ObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gCheckpoint4ObjDescriptorAcquire, checkpoint4_initialise)
+
+struct Checkpoint4ObjDescriptorType gCheckpoint4ObjDescriptor = {
     {
-        0,                                                     /* reserved0 */
-        0,                                                     /* reserved1 */
-        0,                                                     /* reserved2 */
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,                      /* slotCountAndFlags */
-        (ObjectDescriptorCallback)checkpoint4_initialise,      /* initialise */
-        (ObjectDescriptorCallback)checkpoint4_release,         /* release */
-        0,                                                     /* slot02 */
-        (ObjectDescriptorCallback)checkpoint4_init,            /* init */
-        (ObjectDescriptorCallback)checkpoint4_update,          /* update */
-        (ObjectDescriptorCallback)checkpoint4_hitDetect,       /* hitDetect */
-        (ObjectDescriptorCallback)checkpoint4_render,          /* render */
-        (ObjectDescriptorCallback)checkpoint4_free,            /* free */
-        (ObjectDescriptorCallback)checkpoint4_getObjectTypeId, /* getObjectTypeId */
-        checkpoint4_getExtraSize,                              /* getExtraSize */
-        (ObjectDescriptorCallback)checkpoint4_func0A,        /* slot0A */
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gCheckpoint4ObjDescriptorAcquire,
+            checkpoint4_release,
+        },
+        {
+            0,
+            gCheckpoint4ObjDescriptorInitAdapter,
+            checkpoint4_update,
+            checkpoint4_hitDetect,
+            checkpoint4_render,
+            gCheckpoint4ObjDescriptorFreeAdapter,
+            gCheckpoint4ObjDescriptorTypeIdAdapter,
+            gCheckpoint4ObjDescriptorExtraSizeAdapter,
+            checkpoint4_func0A,
+        },
     },
-    0, /* padding */
+    0,
 };

@@ -65,10 +65,7 @@ typedef struct DrcreatorState
     s16 spawnGameBit;  /* 0x4 */
     s16 spawnInterval; /* 0x6: base interval reloaded into spawnTimer */
     s16 spawnTimer;    /* 0x8 */
-    union {
-        s16 timerVariance;  /* timed-spawn random delay */
-        s16 velocitySpread; /* sequence-event X/Z launch spread */
-    };
+    s16 timerVariance;  /* timed-spawn random delay */
     u8 padC[0x18 - 0xC];
     DrcreatorStateFlags flags;
     u8 pad19[0x1C - 0x19];

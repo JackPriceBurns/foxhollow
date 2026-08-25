@@ -5,7 +5,7 @@
  * The crystal rises as Krazoa Spirits return. The sun layers drive the
  * finale quake, environment effects, fade, and view-dependent glare.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dlls/object_descriptor.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
@@ -15,10 +15,10 @@
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtexture.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/lightmap_api.h"
+#include "main/audio/sfx.h"
+#include "main/lightmap.h"
 #include "main/mm.h"
 #include "sys/objects/lifecycle.h"
 #include "main/objseq.h"
@@ -547,19 +547,31 @@ void wmsun_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWM_sunObjDescriptorInitAdapter, wmsun_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_sunObjDescriptorHitDetectAdapter, wmsun_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_sunObjDescriptorFreeAdapter, wmsun_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_sunObjDescriptorTypeIdAdapter, wmsun_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_sunObjDescriptorExtraSizeAdapter, wmsun_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_sunObjDescriptorAcquire, wmsun_initialise)
+
 ObjectDescriptor gWM_sunObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_sunObjDescriptorAcquire,
+        wmsun_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wmsun_initialise,
-    (ObjectDescriptorCallback)wmsun_release,
-    0,
-    (ObjectDescriptorCallback)wmsun_init,
-    (ObjectDescriptorCallback)wmsun_update,
-    (ObjectDescriptorCallback)wmsun_hitDetect,
-    (ObjectDescriptorCallback)wmsun_render,
-    (ObjectDescriptorCallback)wmsun_free,
-    (ObjectDescriptorCallback)wmsun_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wmsun_getExtraSize,
+    gWM_sunObjDescriptorInitAdapter,
+    wmsun_update,
+    gWM_sunObjDescriptorHitDetectAdapter,
+    wmsun_render,
+    gWM_sunObjDescriptorFreeAdapter,
+    gWM_sunObjDescriptorTypeIdAdapter,
+    gWM_sunObjDescriptorExtraSizeAdapter,
 };

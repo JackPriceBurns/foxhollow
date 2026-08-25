@@ -33,19 +33,33 @@ void platform1_release(void) {
 void platform1_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPlatform1ObjDescriptorInitAdapter, platform1_init)
+OBJECT_UPDATE_ADAPTER(gPlatform1ObjDescriptorUpdateAdapter, platform1_controlUnsupported)
+OBJECT_HIT_DETECT_ADAPTER(gPlatform1ObjDescriptorHitDetectAdapter, platform1_hitDetect)
+OBJECT_RENDER_ADAPTER(gPlatform1ObjDescriptorRenderAdapter, platform1_drawUnsupported)
+OBJECT_FREE_ADAPTER(gPlatform1ObjDescriptorFreeAdapter, platform1_free)
+OBJECT_TYPE_ID_ADAPTER(gPlatform1ObjDescriptorTypeIdAdapter, platform1_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPlatform1ObjDescriptorExtraSizeAdapter, platform1_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPlatform1ObjDescriptorAcquire, platform1_initialise)
+
 ObjectDescriptor gPlatform1ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPlatform1ObjDescriptorAcquire,
+        platform1_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    platform1_initialise,
-    platform1_release,
-    0,
-    platform1_init,
-    platform1_controlUnsupported,
-    platform1_hitDetect,
-    platform1_drawUnsupported,
-    platform1_free,
-    (ObjectDescriptorCallback)platform1_getObjectTypeId,
-    platform1_getExtraSize,
+    gPlatform1ObjDescriptorInitAdapter,
+    gPlatform1ObjDescriptorUpdateAdapter,
+    gPlatform1ObjDescriptorHitDetectAdapter,
+    gPlatform1ObjDescriptorRenderAdapter,
+    gPlatform1ObjDescriptorFreeAdapter,
+    gPlatform1ObjDescriptorTypeIdAdapter,
+    gPlatform1ObjDescriptorExtraSizeAdapter,
 };

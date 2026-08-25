@@ -2,13 +2,13 @@
 #include "dlls/object_descriptor.h"
 #include "dolphin/mtx.h"
 #include "main/dll/rom_curve_def.h"
-#include "main/audio/music_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/audio/music.h"
+#include "dolphin/math.h"
 #include "main/camera_interface.h"
 #include "main/pad.h"
 #include "main/vecmath.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/map_load.h"
 #include "main/mapEventTypes.h"
 #include "main/mm.h"
@@ -17,8 +17,8 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint.h"
+#include "main/objprint_character.h"
 #include "main/dll/DR/dll_0250_ktrex.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/dll_0262_drakormissile.h"
@@ -40,13 +40,13 @@
 #include "main/dll/dll_0263_gmmazewell.h"
 #include "main/player_control_interface.h"
 #include "main/dll/DR/dll_024F_ktrexlevel.h"
-#include "main/camera_shake_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/camera_shake.h"
+#include "main/audio/sfx.h"
 #include "main/model.h"
 #include "main/dll/dll_005A_staffcollision.h"
 #include "main/dll/partfx_interface.h"
 #include "main/model_light.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 
 GroundBaddieState* gKTRexRuntime;
 KTRexArenaState* gKTRexState;
@@ -1008,7 +1008,7 @@ int ktrex_stateHandlerB00(GameObject* obj, GroundBaddieState* runtime)
 static inline f32* KTRex_GetActiveContactPointTable(GameObject* obj)
 {
     ObjAnimComponent* objAnim = &obj->anim;
-    ObjModel* model = objAnim->banks[objAnim->bankIndex];
+    ObjModel* model = objAnim->modelBanks[objAnim->bankIndex];
     return (f32*)model->activeHitVolumeSpheres;
 }
 
@@ -1804,24 +1804,54 @@ KTRexLaneTuning gKTRexLaneTuning = {
     },
 };
 
-ObjectDescriptor12WithPadding gKtRexObjDescriptor = {
+OBJECT_INIT_ADAPTER(gKtRexObjDescriptorInitAdapter, ktrex_init, obj, placement, flags)
+OBJECT_RENDER_ADAPTER(gKtRexObjDescriptorRenderAdapter, ktrex_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gKtRexObjDescriptorFreeAdapter, ktrex_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKtRexObjDescriptorTypeIdAdapter, ktrex_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtRexObjDescriptorExtraSizeAdapter, ktrex_getExtraSize)
+
+typedef struct KtRexObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(ktrex_getControlMode)* ktrex_getControlMode;
+    __typeof__(ktrex_func0B)* ktrex_func0B;
+} KtRexObjDescriptorTypeInterface;
+
+typedef struct KtRexObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    KtRexObjDescriptorTypeInterface interface;
+} KtRexObjDescriptorTypeCore;
+
+struct KtRexObjDescriptorType {
+    KtRexObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gKtRexObjDescriptorAcquire, ktrex_initialise)
+
+struct KtRexObjDescriptorType gKtRexObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-        (ObjectDescriptorCallback)ktrex_initialise,
-        (ObjectDescriptorCallback)ktrex_release,
-        0,
-        (ObjectDescriptorCallback)ktrex_init,
-        (ObjectDescriptorCallback)ktrex_update,
-        (ObjectDescriptorCallback)ktrex_hitDetect,
-        (ObjectDescriptorCallback)ktrex_render,
-        (ObjectDescriptorCallback)ktrex_free,
-        (ObjectDescriptorCallback)ktrex_getObjectTypeId,
-        ktrex_getExtraSize,
-        (ObjectDescriptorCallback)ktrex_getControlMode,
-        (ObjectDescriptorCallback)ktrex_func0B,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+            },
+            gKtRexObjDescriptorAcquire,
+            ktrex_release,
+        },
+        {
+            0,
+            gKtRexObjDescriptorInitAdapter,
+            ktrex_update,
+            ktrex_hitDetect,
+            gKtRexObjDescriptorRenderAdapter,
+            gKtRexObjDescriptorFreeAdapter,
+            gKtRexObjDescriptorTypeIdAdapter,
+            gKtRexObjDescriptorExtraSizeAdapter,
+            ktrex_getControlMode,
+            ktrex_func0B,
+        },
     },
     0,
 };

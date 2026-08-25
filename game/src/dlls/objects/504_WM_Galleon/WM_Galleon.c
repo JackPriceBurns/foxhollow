@@ -8,10 +8,10 @@
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
-#include "main/render_lactions_api.h"
+#include "main/dll/player.h"
+#include "main/render_lactions.h"
 #include "main/resource.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 
 u32 gWmGalleonFrameStep = 3;
 
@@ -232,19 +232,30 @@ void WM_Galleon_release(void) {
 void WM_Galleon_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_GalleonObjDescriptorInitAdapter, WM_Galleon_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_GalleonObjDescriptorHitDetectAdapter, WM_Galleon_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gWM_GalleonObjDescriptorTypeIdAdapter, WM_Galleon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_GalleonObjDescriptorExtraSizeAdapter, WM_Galleon_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_GalleonObjDescriptorAcquire, WM_Galleon_initialise)
+
 ObjectDescriptor gWM_GalleonObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_GalleonObjDescriptorAcquire,
+        WM_Galleon_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_Galleon_initialise,
-    WM_Galleon_release,
-    0,
-    (ObjectDescriptorCallback)WM_Galleon_init,
-    (ObjectDescriptorCallback)WM_Galleon_update,
-    WM_Galleon_hitDetect,
-    (ObjectDescriptorCallback)WM_Galleon_render,
-    (ObjectDescriptorCallback)WM_Galleon_free,
-    (ObjectDescriptorCallback)WM_Galleon_getObjectTypeId,
-    WM_Galleon_getExtraSize,
+    gWM_GalleonObjDescriptorInitAdapter,
+    WM_Galleon_update,
+    gWM_GalleonObjDescriptorHitDetectAdapter,
+    WM_Galleon_render,
+    WM_Galleon_free,
+    gWM_GalleonObjDescriptorTypeIdAdapter,
+    gWM_GalleonObjDescriptorExtraSizeAdapter,
 };

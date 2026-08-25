@@ -1,6 +1,6 @@
 #include "main/dll/DR/dll_0280_drcloudper.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/gamebits.h"
@@ -101,8 +101,8 @@ static void drCloudPer_init(GameObject* obj, const DrCloudPerPlacement* placemen
     state->normal.y = 0.0f;
     state->normal.z = mathCosf(3.1415927f * obj->anim.rotX / 32768.0f);
     state->planeDistance =
-        -(state->normal.z * obj->anim.localPos.z +
-          (state->normal.x * obj->anim.localPos.x + state->normal.y * obj->anim.localPos.y));
+        -(state->normal.z * obj->anim.localPosZ +
+          (state->normal.x * obj->anim.localPosX + state->normal.y * obj->anim.localPosY));
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_UPDATE_DISABLED;
     if (placement->cloudIndex == mainGetBit(GAMEBIT_DR_ActiveCloud)) {
         drCloudPer_enableMapAnimation(obj);
@@ -115,17 +115,42 @@ static void drCloudPer_release(void) {
 static void drCloudPer_initialise(void) {
 }
 
-ObjectDescriptor12 gDrCloudPerObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    .initialise = (ObjectDescriptorCallback)drCloudPer_initialise,
-    .release = (ObjectDescriptorCallback)drCloudPer_release,
-    .init = (ObjectDescriptorCallback)drCloudPer_init,
-    .update = (ObjectDescriptorCallback)drCloudPer_update,
-    .hitDetect = (ObjectDescriptorCallback)drCloudPer_hitDetect,
-    .render = (ObjectDescriptorCallback)drCloudPer_render,
-    .free = (ObjectDescriptorCallback)drCloudPer_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)drCloudPer_getObjectTypeId,
-    .getExtraSize = drCloudPer_getExtraSize,
-    .slot0A = (ObjectDescriptorCallback)drCloudPer_activate,
-    .slot0B = (ObjectDescriptorCallback)drCloudPer_selectActiveCloud,
+OBJECT_INIT_ADAPTER(gDrCloudPerObjDescriptorInitAdapter, drCloudPer_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gDrCloudPerObjDescriptorUpdateAdapter, drCloudPer_update)
+OBJECT_HIT_DETECT_ADAPTER(gDrCloudPerObjDescriptorHitDetectAdapter, drCloudPer_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrCloudPerObjDescriptorRenderAdapter, drCloudPer_render)
+OBJECT_FREE_ADAPTER(gDrCloudPerObjDescriptorFreeAdapter, drCloudPer_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrCloudPerObjDescriptorTypeIdAdapter, drCloudPer_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrCloudPerObjDescriptorExtraSizeAdapter, drCloudPer_getExtraSize)
+
+typedef struct DrCloudPerObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(drCloudPer_activate)* drCloudPer_activate;
+    __typeof__(drCloudPer_selectActiveCloud)* drCloudPer_selectActiveCloud;
+} DrCloudPerObjDescriptorTypeInterface;
+
+struct DrCloudPerObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DrCloudPerObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDrCloudPerObjDescriptorAcquire, drCloudPer_initialise)
+
+struct DrCloudPerObjDescriptorType gDrCloudPerObjDescriptor = {
+    {
+        .metadata[3] = OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        .acquire = gDrCloudPerObjDescriptorAcquire,
+        .release = drCloudPer_release,
+    },
+    {
+        .init = gDrCloudPerObjDescriptorInitAdapter,
+        .update = gDrCloudPerObjDescriptorUpdateAdapter,
+        .hitDetect = gDrCloudPerObjDescriptorHitDetectAdapter,
+        .render = gDrCloudPerObjDescriptorRenderAdapter,
+        .free = gDrCloudPerObjDescriptorFreeAdapter,
+        .getObjectTypeId = gDrCloudPerObjDescriptorTypeIdAdapter,
+        .getExtraSize = gDrCloudPerObjDescriptorExtraSizeAdapter,
+        .drCloudPer_activate = drCloudPer_activate,
+        .drCloudPer_selectActiveCloud = drCloudPer_selectActiveCloud,
+    },
 };

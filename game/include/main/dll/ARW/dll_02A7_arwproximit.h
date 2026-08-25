@@ -2,7 +2,7 @@
 #define MAIN_DLL_ARW_DLL_02A7_ARWPROXIMIT_H_
 
 #include "game/objects/object.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 #include "global.h"
 
 

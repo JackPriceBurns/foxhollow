@@ -62,20 +62,18 @@ STATIC_ASSERT(offsetof(CameraModeClimbState, unk36) == 0x36);
 STATIC_ASSERT(sizeof(CameraModeClimbState) == 0x38);
 
 typedef struct CameraModeClimbDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int mode, CameraModeClimbTransition* transition);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeClimbDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeClimbDescriptor, update) == 0x20);

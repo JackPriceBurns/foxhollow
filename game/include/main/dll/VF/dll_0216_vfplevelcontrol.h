@@ -4,17 +4,13 @@
 #include "game/objects/object.h"
 #include "types.h"
 #include "global.h"
+#include "main/gamebit_latch.h"
 
-typedef union VfpLevelControlLatch
+typedef struct VfpLevelControlLatch
 {
-    u8 raw[8];
-
-    struct
-    {
-        u8 pad00[4];
-        u8 sequenceStep; /* 0x04: index of the next sequence bit to light */
-        u8 pad05[3];
-    } fields;
+    int musicLatch;
+    u8 sequenceStep;
+    u8 pad05[3];
 } VfpLevelControlLatch;
 
 typedef struct VfpLevelControlState
@@ -36,7 +32,8 @@ STATIC_ASSERT(offsetof(VfpLevelControlState, unk02) == 0x02);
 STATIC_ASSERT(offsetof(VfpLevelControlState, areaMode) == 0x0E);
 STATIC_ASSERT(offsetof(VfpLevelControlState, latch) == 0x14);
 STATIC_ASSERT(sizeof(VfpLevelControlState) == 0x1c);
-STATIC_ASSERT(offsetof(VfpLevelControlLatch, fields.sequenceStep) == 0x04);
+STATIC_ASSERT(offsetof(VfpLevelControlLatch, musicLatch) == 0x00);
+STATIC_ASSERT(offsetof(VfpLevelControlLatch, sequenceStep) == 0x04);
 STATIC_ASSERT(offsetof(VfpLevelControlSetup, areaMode) == 0x1A);
 
 extern int gVfpLevelControlTimer;

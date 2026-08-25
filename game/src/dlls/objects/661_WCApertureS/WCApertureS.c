@@ -14,7 +14,7 @@
 #include "main/dll/partfx_interface.h"
 #include "main/camera_interface.h"
 #include "main/camera.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/dll/WC/dll_0295_wcapertures.h"
@@ -255,11 +255,29 @@ void wcapertures_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWCApertureSObjDescriptorInitAdapter, wcapertures_init, obj, placement)
+OBJECT_FREE_ADAPTER(gWCApertureSObjDescriptorFreeAdapter, wcapertures_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCApertureSObjDescriptorExtraSizeAdapter, wcapertures_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCApertureSObjDescriptorAcquire, wcapertures_initialise)
+
 ObjectDescriptor gWCApertureSObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wcapertures_initialise, (ObjectDescriptorCallback)wcapertures_release, 0,
-    (ObjectDescriptorCallback)wcapertures_init, (ObjectDescriptorCallback)wcapertures_update,
-    (ObjectDescriptorCallback)wcapertures_hitDetect, (ObjectDescriptorCallback)wcapertures_render,
-    (ObjectDescriptorCallback)wcapertures_free, (ObjectDescriptorCallback)wcapertures_getObjectTypeId,
-    wcapertures_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCApertureSObjDescriptorAcquire,
+        wcapertures_release,
+    },
+    0,
+    gWCApertureSObjDescriptorInitAdapter,
+    wcapertures_update,
+    wcapertures_hitDetect,
+    wcapertures_render,
+    gWCApertureSObjDescriptorFreeAdapter,
+    wcapertures_getObjectTypeId,
+    gWCApertureSObjDescriptorExtraSizeAdapter,
 };

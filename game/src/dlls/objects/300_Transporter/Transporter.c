@@ -4,27 +4,27 @@
  */
 #include "dlls/objects/300_Transporter.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/gamebits.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/lightmap_render_control.h"
 #include "main/loaded_file_flags.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
-#include "main/objprint_render_api.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/shader_api.h"
-#include "main/sky_api.h"
+#include "main/objprint_render.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/shader.h"
+#include "main/sky.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/obj_trigger.h"
 #include "main/objfx.h"
 #include "main/objseq.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 /* recurring shimmer emitted randomly across all warp-pulse stages */
@@ -586,19 +586,27 @@ void Transporter_init(GameObject* obj, TransporterPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gTransporterObjDescriptorInitAdapter, Transporter_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gTransporterObjDescriptorRenderAdapter, Transporter_render)
+OBJECT_EXTRA_SIZE_ADAPTER(gTransporterObjDescriptorExtraSizeAdapter, Transporter_getExtraSize)
+
 ObjectDescriptor gTransporterObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gTransporterObjDescriptorInitAdapter,
+    Transporter_update,
+    Transporter_hitDetect,
+    gTransporterObjDescriptorRenderAdapter,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)Transporter_init,
-    (ObjectDescriptorCallback)Transporter_update,
-    (ObjectDescriptorCallback)Transporter_hitDetect,
-    (ObjectDescriptorCallback)Transporter_render,
-    0,
-    0,
-    Transporter_getExtraSize,
+    gTransporterObjDescriptorExtraSizeAdapter,
 };

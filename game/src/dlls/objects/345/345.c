@@ -3,10 +3,10 @@
 #include "dlls/objects/345.h"
 
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/model.h"
 #include "main/object_render.h"
-#include "main/track_dolphin_map_api.h"
+#include "main/track_dolphin_map.h"
 #include "sys/objects.h"
 
 #define BLASTED_GAMEBIT_DAMAGE_BASE         0x2DE
@@ -170,19 +170,31 @@ void blasted_release(void) {
 void blasted_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gBlastedObjDescriptorInitAdapter, blasted_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gBlastedObjDescriptorHitDetectAdapter, blasted_hitDetect)
+OBJECT_FREE_ADAPTER(gBlastedObjDescriptorFreeAdapter, blasted_free)
+OBJECT_TYPE_ID_ADAPTER(gBlastedObjDescriptorTypeIdAdapter, blasted_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBlastedObjDescriptorExtraSizeAdapter, blasted_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBlastedObjDescriptorAcquire, blasted_initialise)
+
 ObjectDescriptor gBlastedObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBlastedObjDescriptorAcquire,
+        blasted_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)blasted_initialise,
-    (ObjectDescriptorCallback)blasted_release,
-    0,
-    (ObjectDescriptorCallback)blasted_init,
-    (ObjectDescriptorCallback)blasted_update,
-    (ObjectDescriptorCallback)blasted_hitDetect,
-    (ObjectDescriptorCallback)blasted_render,
-    (ObjectDescriptorCallback)blasted_free,
-    (ObjectDescriptorCallback)blasted_getObjectTypeId,
-    blasted_getExtraSize,
+    gBlastedObjDescriptorInitAdapter,
+    blasted_update,
+    gBlastedObjDescriptorHitDetectAdapter,
+    blasted_render,
+    gBlastedObjDescriptorFreeAdapter,
+    gBlastedObjDescriptorTypeIdAdapter,
+    gBlastedObjDescriptorExtraSizeAdapter,
 };

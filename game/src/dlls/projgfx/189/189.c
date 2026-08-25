@@ -20,10 +20,10 @@ void projsunshock_release(void) {
 void projsunshock_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjsunshockResourceDescriptorAcquire, projsunshock_initialise)
+
 ProjsunshockResourceDescriptor gProjsunshockResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projsunshock_initialise,
-    projsunshock_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjsunshockResourceDescriptorAcquire, projsunshock_release },
     NULL,
     projsunshock_doUnsupported,
 };

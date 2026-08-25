@@ -2,9 +2,9 @@
 
 #include "dlls/objects/284.h"
 #include "main/dll/ARW/dll_029D_arwarwinggu.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/loaded_file_flags.h"
@@ -19,8 +19,8 @@
 #include "main/objtexture.h"
 #include "main/objtype.h"
 #include "main/obj_trigger.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -439,17 +439,17 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
         obj->anim.rotZ = 0;
         if (obj->anim.currentMoveProgress >= lbl_803E3BBC && !state->flags.reactionDone) {
             reactionCompleteGameBit = ObjAnim_ReadPlacementS16(
-                &obj->anim, &placement->reactionCompleteGameBit);
+                &obj->anim, &placement->secondaryGameBit);
             if (reactionCompleteGameBit > 0) {
                 mainSetBits(reactionCompleteGameBit, 1);
             }
 
-            switch (placement->hitReactionType) {
+            switch (placement->variant) {
             case LANDED_ARWING_REACTION_SPAWN_DEBRIS:
                 if (Obj_IsLoadingLocked() != 0) {
                     spawnIndex = 0;
                     yOffset = lbl_803E3BB8;
-                    while (spawnIndex < placement->debrisCount) {
+                    while (spawnIndex < placement->spawnCount) {
                         setup =
                             Obj_AllocObjectSetup(LANDED_ARWING_CHILD_OBJECT_SETUP_SIZE, LANDED_ARWING_DEBRIS_OBJECT_ID);
                         setup->posX = obj->anim.localPosX;
@@ -468,7 +468,7 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
                     StaffActivatedPlacement* otherPlacement =
                         (StaffActivatedPlacement*)other->anim.placementData;
                     s16 siblingGameBit = ObjAnim_ReadPlacementS16(
-                        &other->anim, &otherPlacement->siblingGameBit);
+                        &other->anim, &otherPlacement->primaryGameBit);
                     otherState = other->extra;
                     if (siblingGameBit > 0) {
                         mainSetBits(siblingGameBit, 1);
@@ -485,7 +485,7 @@ void landed_arwing_updateHitReaction(GameObject* obj, LandedArwingHitReactionSta
         state->flags.impactHandled = 1;
         state->animationStepScale = lbl_803E3BC4;
     } else {
-        if (placement->hitReactionType == LANDED_ARWING_REACTION_JITTER) {
+        if (placement->variant == LANDED_ARWING_REACTION_JITTER) {
             obj->anim.rotY = randomGetRange(-200, 200);
             obj->anim.rotZ = randomGetRange(-200, 200);
         }
@@ -508,11 +508,10 @@ void landed_arwing_updateDamageTexture(GameObject* obj, LandedArwingHitReactionS
     placement = (StaffActivatedPlacement*)obj->anim.placementData;
     flags = &state->flags;
     damageStateGameBit = ObjAnim_ReadPlacementS16(
-        &obj->anim, &placement->damageStateGameBit);
+        &obj->anim, &placement->secondaryGameBit);
     damagedGameBit = ObjAnim_ReadPlacementS16(
-        &obj->anim, &placement->damagedGameBit);
-    activeGameBit = ObjAnim_ReadPlacementS16(
-        &obj->anim, &placement->activeGameBit);
+        &obj->anim, &placement->primaryGameBit);
+    activeGameBit = damagedGameBit;
     if (damageStateGameBit != LANDED_ARWING_GAME_BIT_NONE) {
         bit = mainGetBit(damageStateGameBit);
         flags->damageStateGameBitSet = bit;
@@ -548,19 +547,27 @@ void landed_arwing_updateDamageTexture(GameObject* obj, LandedArwingHitReactionS
     }
 }
 
+OBJECT_INIT_ADAPTER(gLanded_ArwingObjDescriptorInitAdapter, landed_arwing_init, obj, placement)
+OBJECT_FREE_ADAPTER(gLanded_ArwingObjDescriptorFreeAdapter, landed_arwing_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gLanded_ArwingObjDescriptorExtraSizeAdapter, landed_arwing_getExtraSize)
+
 ObjectDescriptor gLanded_ArwingObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gLanded_ArwingObjDescriptorInitAdapter,
+    landed_arwing_update,
     0,
+    landed_arwing_render,
+    gLanded_ArwingObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)landed_arwing_init,
-    (ObjectDescriptorCallback)landed_arwing_update,
-    0,
-    (ObjectDescriptorCallback)landed_arwing_render,
-    (ObjectDescriptorCallback)landed_arwing_free,
-    0,
-    landed_arwing_getExtraSize,
+    gLanded_ArwingObjDescriptorExtraSizeAdapter,
 };

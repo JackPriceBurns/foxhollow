@@ -1,12 +1,12 @@
 #include "dlls/objects/371_LINK_levcon.h"
 
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/dll/savegame_load_api.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/dll/savegame_load.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "main/sky_interface.h"
 #include "sys/objects.h"
 
@@ -180,19 +180,27 @@ void linkLevelControl_init(GameObject* obj) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gLINKLevelControlObjDescriptorInitAdapter, linkLevelControl_init, obj)
+OBJECT_FREE_ADAPTER(gLINKLevelControlObjDescriptorFreeAdapter, linkLevelControl_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gLINKLevelControlObjDescriptorExtraSizeAdapter, linkLevelControl_getExtraSize)
+
 ObjectDescriptor gLINKLevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gLINKLevelControlObjDescriptorInitAdapter,
+    linkLevelControl_update,
     0,
     0,
+    gLINKLevelControlObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)linkLevelControl_init,
-    (ObjectDescriptorCallback)linkLevelControl_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)linkLevelControl_free,
-    0,
-    linkLevelControl_getExtraSize,
+    gLINKLevelControlObjDescriptorExtraSizeAdapter,
 };

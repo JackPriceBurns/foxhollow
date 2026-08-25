@@ -25,8 +25,8 @@
 #include "main/objseq.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/object_render.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/game_timer_control_api.h"
+#include "main/audio/sfx.h"
+#include "main/game_timer_control.h"
 
 #define WCBEACON_RENDER_TYPE_BASE  0x400
 #define WCBEACON_RENDER_TYPE_SHIFT 0xb
@@ -182,19 +182,26 @@ void wcbeacon_init(GameObject* obj, WCBeaconSetup* setup)
     }
 }
 
+OBJECT_INIT_ADAPTER(gWCBeaconObjDescriptorInitAdapter, wcbeacon_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCBeaconObjDescriptorExtraSizeAdapter, wcbeacon_getExtraSize)
+
 ObjectDescriptor gWCBeaconObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gWCBeaconObjDescriptorInitAdapter,
+    wcbeacon_update,
     0,
+    wcbeacon_render,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)wcbeacon_init,
-    (ObjectDescriptorCallback)wcbeacon_update,
-    0,
-    (ObjectDescriptorCallback)wcbeacon_render,
-    0,
-    (ObjectDescriptorCallback)wcbeacon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wcbeacon_getExtraSize,
+    wcbeacon_getObjectTypeId,
+    gWCBeaconObjDescriptorExtraSizeAdapter,
 };

@@ -5,18 +5,16 @@
  */
 #include "dlls/objects/379_DFSH_LaserB.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0081_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/resource.h"
 #include "main/texture.h"
@@ -255,19 +253,32 @@ void dfshLaserBeam_release(void) {
 void dfshLaserBeam_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDFSHLaserBeamObjDescriptorInitAdapter, dfshLaserBeam_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFSHLaserBeamObjDescriptorHitDetectAdapter, dfshLaserBeam_hitDetect)
+OBJECT_RENDER_ADAPTER(gDFSHLaserBeamObjDescriptorRenderAdapter, dfshLaserBeam_render)
+OBJECT_FREE_ADAPTER(gDFSHLaserBeamObjDescriptorFreeAdapter, dfshLaserBeam_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDFSHLaserBeamObjDescriptorTypeIdAdapter, dfshLaserBeam_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFSHLaserBeamObjDescriptorExtraSizeAdapter, dfshLaserBeam_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFSHLaserBeamObjDescriptorAcquire, dfshLaserBeam_initialise)
+
 ObjectDescriptor gDFSHLaserBeamObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFSHLaserBeamObjDescriptorAcquire,
+        dfshLaserBeam_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dfshLaserBeam_initialise,
-    (ObjectDescriptorCallback)dfshLaserBeam_release,
-    0,
-    (ObjectDescriptorCallback)dfshLaserBeam_init,
-    (ObjectDescriptorCallback)dfshLaserBeam_update,
-    (ObjectDescriptorCallback)dfshLaserBeam_hitDetect,
-    (ObjectDescriptorCallback)dfshLaserBeam_render,
-    (ObjectDescriptorCallback)dfshLaserBeam_free,
-    (ObjectDescriptorCallback)dfshLaserBeam_getObjectTypeId,
-    dfshLaserBeam_getExtraSize,
+    gDFSHLaserBeamObjDescriptorInitAdapter,
+    dfshLaserBeam_update,
+    gDFSHLaserBeamObjDescriptorHitDetectAdapter,
+    gDFSHLaserBeamObjDescriptorRenderAdapter,
+    gDFSHLaserBeamObjDescriptorFreeAdapter,
+    gDFSHLaserBeamObjDescriptorTypeIdAdapter,
+    gDFSHLaserBeamObjDescriptorExtraSizeAdapter,
 };

@@ -5,7 +5,7 @@ if (NOT CMAKE_BUILD_TYPE)
             "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif ()
 
-project(foxhollow LANGUAGES C CXX VERSION 0.4.1)
+project(foxhollow LANGUAGES C CXX VERSION 0.5.0)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
@@ -119,6 +119,7 @@ list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollo
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_hook.cpp)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/debug_overlay.cpp)
+    list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_gallery_ui.cpp)
 endif ()
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 if (NOT FOXHOLLOW_VERSION)

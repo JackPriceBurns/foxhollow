@@ -93,15 +93,25 @@ static void ktTorch_release(void) {
 static void ktTorch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKT_TorchObjDescriptorInitAdapter, ktTorch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gKT_TorchObjDescriptorHitDetectAdapter, ktTorch_hitDetect)
+OBJECT_FREE_ADAPTER(gKT_TorchObjDescriptorFreeAdapter, ktTorch_free)
+OBJECT_TYPE_ID_ADAPTER(gKT_TorchObjDescriptorTypeIdAdapter, ktTorch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKT_TorchObjDescriptorExtraSizeAdapter, ktTorch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKT_TorchObjDescriptorAcquire, ktTorch_initialise)
+
 ObjectDescriptor gKT_TorchObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)ktTorch_initialise,
-    .release = (ObjectDescriptorCallback)ktTorch_release,
-    .init = (ObjectDescriptorCallback)ktTorch_init,
-    .update = (ObjectDescriptorCallback)ktTorch_update,
-    .hitDetect = (ObjectDescriptorCallback)ktTorch_hitDetect,
-    .render = (ObjectDescriptorCallback)ktTorch_render,
-    .free = (ObjectDescriptorCallback)ktTorch_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)ktTorch_getObjectTypeId,
-    .getExtraSize = ktTorch_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gKT_TorchObjDescriptorAcquire,
+        .release = ktTorch_release,
+    },
+    .init = gKT_TorchObjDescriptorInitAdapter,
+    .update = ktTorch_update,
+    .hitDetect = gKT_TorchObjDescriptorHitDetectAdapter,
+    .render = ktTorch_render,
+    .free = gKT_TorchObjDescriptorFreeAdapter,
+    .getObjectTypeId = gKT_TorchObjDescriptorTypeIdAdapter,
+    .getExtraSize = gKT_TorchObjDescriptorExtraSizeAdapter,
+};;

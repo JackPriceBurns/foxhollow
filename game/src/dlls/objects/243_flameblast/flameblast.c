@@ -36,22 +36,24 @@ static int flameblast_resetFlight(GameObject* obj, FlameblastState* state) {
         return 0;
     }
 
-    obj->anim.velocity = (Vec3f){0.0f, 0.0f, -1.5f};
+    obj->anim.velocityX = 0.0f;
+    obj->anim.velocityY = 0.0f;
+    obj->anim.velocityZ = -1.5f;
     rotation = (MatrixTransform){
         .rotX = tricky->anim.rotX + trickyGetAimPitchOffset(tricky),
         .rotY = tricky->anim.rotY,
         .rotZ = tricky->anim.rotZ,
         .scale = 1.0f,
     };
-    vecRotateZXY(&rotation.rotX, &obj->anim.velocity.x);
+    vecRotateZXY(&rotation.rotX, &obj->anim.velocityX);
     if ((tricky->objectFlags & OBJECT_OBJFLAG_RENDERED) != 0) {
         origin = trickyGetQueuedPathParticlePos(tricky);
     } else {
-        origin = &tricky->anim.localPos;
+        origin = (Vec3f*)&tricky->anim.localPosX;
     }
-    state->launchOrigin.x = -(0.4f * obj->anim.velocity.x - origin->x);
-    state->launchOrigin.y = -(0.4f * obj->anim.velocity.y - origin->y);
-    state->launchOrigin.z = -(0.4f * obj->anim.velocity.z - origin->z);
+    state->launchOrigin.x = -(0.4f * obj->anim.velocityX - origin->x);
+    state->launchOrigin.y = -(0.4f * obj->anim.velocityY - origin->y);
+    state->launchOrigin.z = -(0.4f * obj->anim.velocityZ - origin->z);
     if (state->hitVolumeDelayCycles != 0) {
         state->hitVolumeDelayCycles--;
     } else {
@@ -85,9 +87,9 @@ static void flameblast_update(GameObject* obj) {
         ObjHits_SetHitVolumeSlot(&obj->anim, 0x1A, 1, 0);
     }
 
-    obj->anim.localPos.x = obj->anim.velocity.x * state->cycleTimer + state->launchOrigin.x;
-    obj->anim.localPos.y = obj->anim.velocity.y * state->cycleTimer + state->launchOrigin.y;
-    obj->anim.localPos.z = obj->anim.velocity.z * state->cycleTimer + state->launchOrigin.z;
+    obj->anim.localPosX = obj->anim.velocityX * state->cycleTimer + state->launchOrigin.x;
+    obj->anim.localPosY = obj->anim.velocityY * state->cycleTimer + state->launchOrigin.y;
+    obj->anim.localPosZ = obj->anim.velocityZ * state->cycleTimer + state->launchOrigin.z;
 }
 
 static void flameblast_init(GameObject* obj, const FlameblastPlacement* placement) {
@@ -98,10 +100,18 @@ static void flameblast_init(GameObject* obj, const FlameblastPlacement* placemen
     state->hitVolumeDelayCycles = 2;
 }
 
+OBJECT_INIT_ADAPTER(gFlameblastObjDescriptorInitAdapter, flameblast_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gFlameblastObjDescriptorRenderAdapter, flameblast_render, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gFlameblastObjDescriptorExtraSizeAdapter, flameblast_getExtraSize)
+
 ObjectDescriptor gFlameblastObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)flameblast_init,
-    .update = (ObjectDescriptorCallback)flameblast_update,
-    .render = (ObjectDescriptorCallback)flameblast_render,
-    .getExtraSize = flameblast_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gFlameblastObjDescriptorInitAdapter,
+    .update = flameblast_update,
+    .render = gFlameblastObjDescriptorRenderAdapter,
+    .getExtraSize = gFlameblastObjDescriptorExtraSizeAdapter,
+};;

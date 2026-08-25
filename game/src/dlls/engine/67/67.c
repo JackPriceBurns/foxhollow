@@ -3,16 +3,16 @@
  */
 #include "main/dll/dll_0043_cameramodestaffanim.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
 #include "string.h"
 #include "types.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
 #include "main/dll/dll_0049_cameramodecombat.h"
 #include "main/frame_timing.h"
@@ -33,11 +33,11 @@ u8 CameraModeStaffAnim_samplePath(f32* outX, f32* height, f32* outZ, GameObject*
     work.localX = gCameraModeStaffAnimState->pointsX[gCameraModeStaffAnimState->pathCurve.count - 2];
     work.localY = *height;
     work.localZ = gCameraModeStaffAnimState->pointsZ[gCameraModeStaffAnimState->pathCurve.count - 2];
-    work.prevLocalX = work.localX;
-    work.prevLocalY = work.localY;
-    work.prevLocalZ = work.localZ;
-    Obj_TransformLocalPointToWorld((double)work.prevLocalX, (double)work.prevLocalY, (double)work.prevLocalZ,
-                                   &work.prevWorldX, &work.prevWorldY, &work.prevWorldZ, work.localFrameObj);
+    work.savedLocalPos.x = work.localX;
+    work.savedLocalPos.y = work.localY;
+    work.savedLocalPos.z = work.localZ;
+    Obj_TransformLocalPointToWorld((double)work.savedLocalPos.x, (double)work.savedLocalPos.y, (double)work.savedLocalPos.z,
+                                   &work.probePos.x, &work.probePos.y, &work.probePos.z, work.localFrameObj);
     work.focusObj = &target->anim;
     gCameraModeNormalDescriptor.follow(&work, &target->anim);
     Obj_TransformLocalPointToWorld(work.localX, work.localY, work.localZ, &work.worldX, &work.worldY, &work.worldZ,
@@ -238,9 +238,9 @@ void CameraModeStaffAnim_update(CameraObject* camera) {
             if (needsReset == 1) {
                 camcontrol_onTargetTraceBlocked(1);
             }
-            camera->probePosX = camera->anim.worldPosX;
-            camera->probePosY = camera->anim.worldPosY;
-            camera->probePosZ = camera->anim.worldPosZ;
+            camera->probePos.x = camera->anim.worldPosX;
+            camera->probePos.y = camera->anim.worldPosY;
+            camera->probePos.z = camera->anim.worldPosZ;
             needsReset = 1;
         }
         (*gCameraInterface)->getRelativePosition(camera, &relX, &relY, &relZ, &relDistXZ, 0.0f, 0);
@@ -441,10 +441,10 @@ void CameraModeStaffAnim_release(void) {
 void CameraModeStaffAnim_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeStaffAnimDescriptorAcquire, CameraModeStaffAnim_initialise)
+
 CameraModeStaffAnimDescriptor gCameraModeStaffAnimDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeStaffAnim_initialise,
-    CameraModeStaffAnim_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeStaffAnimDescriptorAcquire, CameraModeStaffAnim_release },
     NULL,
     CameraModeStaffAnim_init,
     CameraModeStaffAnim_update,

@@ -122,20 +122,18 @@ STATIC_ASSERT(offsetof(CameraModeViewfinderState, clampedPositionY) == 0x130);
 STATIC_ASSERT(sizeof(CameraModeViewfinderState) == 0x134);
 
 typedef struct CameraModeViewfinderDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int mode, CameraModeViewfinderSettings* settings);
     void (*update)(CameraObject* camera);
     void (*free)(CameraObject* camera);
     void (*copyToCurrent)(const CameraModeViewfinderPose* pose);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeViewfinderDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeViewfinderDescriptor, update) == 0x20);

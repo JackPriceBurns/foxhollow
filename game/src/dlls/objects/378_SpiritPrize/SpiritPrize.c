@@ -1,10 +1,10 @@
 #include "dlls/objects/378_SpiritPrize.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/frame_timing.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/model_light.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
@@ -195,19 +195,31 @@ void spiritPrize_release(void) {
 void spiritPrize_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSpiritPrizeObjDescriptorInitAdapter, spiritPrize_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSpiritPrizeObjDescriptorHitDetectAdapter, spiritPrize_hitDetect)
+OBJECT_FREE_ADAPTER(gSpiritPrizeObjDescriptorFreeAdapter, spiritPrize_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSpiritPrizeObjDescriptorTypeIdAdapter, spiritPrize_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSpiritPrizeObjDescriptorExtraSizeAdapter, spiritPrize_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSpiritPrizeObjDescriptorAcquire, spiritPrize_initialise)
+
 ObjectDescriptor gSpiritPrizeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSpiritPrizeObjDescriptorAcquire,
+        spiritPrize_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)spiritPrize_initialise,
-    (ObjectDescriptorCallback)spiritPrize_release,
-    0,
-    (ObjectDescriptorCallback)spiritPrize_init,
-    (ObjectDescriptorCallback)spiritPrize_update,
-    (ObjectDescriptorCallback)spiritPrize_hitDetect,
-    (ObjectDescriptorCallback)spiritPrize_render,
-    (ObjectDescriptorCallback)spiritPrize_free,
-    (ObjectDescriptorCallback)spiritPrize_getObjectTypeId,
-    spiritPrize_getExtraSize,
+    gSpiritPrizeObjDescriptorInitAdapter,
+    spiritPrize_update,
+    gSpiritPrizeObjDescriptorHitDetectAdapter,
+    spiritPrize_render,
+    gSpiritPrizeObjDescriptorFreeAdapter,
+    gSpiritPrizeObjDescriptorTypeIdAdapter,
+    gSpiritPrizeObjDescriptorExtraSizeAdapter,
 };

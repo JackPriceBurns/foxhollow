@@ -6,7 +6,7 @@
 #include "game/objects/object.h"
 #include "main/byte_flags.h"
 #include "main/dll/baddie_state.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 struct PlayerMoveSlot;
 
@@ -69,13 +69,7 @@ typedef struct KnockBits
 } KnockBits;
 
 typedef struct PlayerState {
-    union {
-        BaddieState baddie;
-        struct {
-            u8 padCameraSlideVector[0x1A4];
-            Vec3f cameraSlideVector;
-        };
-    };
+    BaddieState baddie;
     PlayerStatus* playerStatus;
     u32 flags360; /* player state flag word; bits 2/0x2000/0x800000/0x2000000... */
     CharacterEyeAnimState eyeAnimState; /* 0x364: head-aim / eye-blink record (characterDoEyeAnims / playerUpdateBlinkAnimation) */
@@ -87,14 +81,8 @@ typedef struct PlayerState {
     u8 maxMoneyAddAmount;
     u8 pad3E9[0x3EC - 0x3E9];
     f32 randomTimer3EC;
-    union {
-        u8 flagByte3F0; /* whole-byte view: loaded once where several bits are tested together */
-        ByteFlags flags3F0; /* bit4/5 move-mode gates, bit6/7 etc. */
-    };
-    union {
-        u8 flagByte3F1; /* whole-byte view: loaded once where several bits are tested together */
-        ByteFlags flags3F1; /* bit0/bit4/bit5 gate locomotion/yaw-arc paths */
-    };
+    ByteFlags flags3F0;
+    ByteFlags flags3F1;
     ByteFlags flags3F2;
     ByteFlags flags3F3;
     ByteFlags flags3F4;
@@ -439,8 +427,6 @@ typedef struct PlayerState {
     s16* triggerGameBitPtr; /* 0x8dc: pointer (from ObjMsg 0x7000a param) to the sequence-trigger's s16 descriptor; *ptr = gamebit index (mainGetBit/mainSetBits), *(ptr+2) copied into unk688 */
 } PlayerState;
 
-STATIC_ASSERT(offsetof(PlayerState, cameraSlideVector) == 0x1A4);
-
 STATIC_ASSERT(sizeof(PlayerState) == 0x8E0);
 STATIC_ASSERT(offsetof(PlayerStatus, magic) == 0x4);
 STATIC_ASSERT(offsetof(PlayerStatus, maxMagic) == 0x6);
@@ -452,5 +438,10 @@ STATIC_ASSERT(offsetof(PlayerState, footPoints) == 0x3C4);
 STATIC_ASSERT(offsetof(PlayerState, pendingFxFlags) == 0x8D8);
 STATIC_ASSERT(offsetof(PlayerState, blendPlane) == 0x51C);
 STATIC_ASSERT(offsetof(PlayerState, groundNormalX) == 0x56C);
+
+
+
+void playerSetHitReactionVariant(GameObject* unusedPlayer, u8 type);
+
 
 #endif /* MAIN_DLL_PLAYER_STATE_H_ */

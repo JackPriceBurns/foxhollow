@@ -1,15 +1,15 @@
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -17,7 +17,7 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
@@ -27,26 +27,23 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/wispbaddie_baddie.h"
-#include "main/audio/sfx_position_api.h"
 #include "main/audio/sfx_ids.h"
 #include "main/dll/baddie_setmove.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/dll/seqobj11d_ext.h"
 #include "main/dll/wispbaddieseq_ext.h"
-#include "main/gameloop_api.h"
-#include "main/audio/sfx.h"
+#include "main/gameloop.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/gamebits.h"
 #include "main/dll/objfsa.h"
 #include "main/dll/newseqobj_baddie.h"
 #include "main/dll/baddie_frozen.h"
 #include "main/game_ui_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/model.h"
 #include "main/object_transform.h"
 #include "main/dll/player_target.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dlls/objects/225_WispBaddie.h"
 #include "main/trig_float_helpers.h"
 #include "main/obj_link.h"
@@ -65,10 +62,9 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/fall_ladders.h"
 #include "main/dll/fireflyLantern.h"
-#include "main/dll/duster_api.h"
-#include "main/track_bbox_api.h"
-#include "main/sky_interface.h"
 #include "main/dll/duster.h"
+#include "main/track_bbox.h"
+#include "main/sky_interface.h"
 #include "dlls/objects/216_PinPonSpike.h"
 #include "main/dll/duster_wb.h"
 #include "main/obj_query.h"
@@ -167,7 +163,7 @@ void weevil_updateIdle(GameObject* obj, void* state)
     if ((((EnemyState*)state)->controlFlags & BADDIE_CONTROL_PATH_FOLLOW) != 0)
     {
         if (Curve_AdvanceAlongPath(&curve->curve, ((EnemyState*)state)->pathStep) != 0 ||
-            curve->atSegmentEnd != 0)
+            curve->curve.idx != 0)
         {
             if ((*gRomCurveInterface)->goNextPoint(curve) != 0)
             {
@@ -183,7 +179,7 @@ void weevil_updateIdle(GameObject* obj, void* state)
         {
             if ((obj)->anim.currentMove == 0)
             {
-                baddieTurnTowardPoint(obj, state, curve->posX, curve->posZ, 0x3c, 0);
+                baddieTurnTowardPoint(obj, state, curve->curve.sample[0], curve->curve.sample[2], 0x3c, 0);
             }
             if (((EnemyState*)state)->weevil.approachTimer > 0.0f)
             {
@@ -215,8 +211,8 @@ void weevil_updateIdle(GameObject* obj, void* state)
     {
         baddieSetMove(obj, state, 0, 0.5f, 0, 3);
     }
-    (obj)->anim.rotY = ((EnemyState*)state)->spawnRotY;
-    (obj)->anim.rotZ = ((EnemyState*)state)->spawnRotZ;
+    (obj)->anim.rotY = ((EnemyState*)state)->pathControl.tiltPitch;
+    (obj)->anim.rotZ = ((EnemyState*)state)->pathControl.tiltRoll;
     ((EnemyState*)state)->weevil.gruntTimer = ((EnemyState*)state)->weevil.gruntTimer - timeDelta;
     if (((EnemyState*)state)->weevil.gruntTimer <= 0.0f)
     {
@@ -282,8 +278,8 @@ void weevil_updateEngaged(GameObject* obj, void* state)
                     ((GameObject*)((EnemyState*)state)->trackedObj)->anim.localPosZ, 1, 0);
         Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_25d);
     }
-    obj->anim.rotY = ((EnemyState*)state)->spawnRotY;
-    obj->anim.rotZ = ((EnemyState*)state)->spawnRotZ;
+    obj->anim.rotY = ((EnemyState*)state)->pathControl.tiltPitch;
+    obj->anim.rotZ = ((EnemyState*)state)->pathControl.tiltRoll;
     if (((EnemyState*)state)->userData2 != 0)
     {
         ((EnemyState*)state)->userData2 -= 1;

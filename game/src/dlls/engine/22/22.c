@@ -1,12 +1,12 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "main/screen_transition.h"
-#include "main/gx_scissor_api.h"
+#include "main/gx_scissor.h"
 #include "main/dll/dll_0016_screentransition.h"
 #include "main/camera.h"
 #include "main/frame_timing.h"
 #include "main/fileio.h"
-#include "track/intersect_hud_api.h"
+#include "track/intersect_hud.h"
 
 #define SCREEN_TRANSITION_ALPHA_MIDPOINT 127.0f
 #define SCREEN_TRANSITION_ALPHA_SCALE    2.0f
@@ -328,36 +328,36 @@ void screenTransition_update(int p1, int p2, int p3)
         break;
     }
 }
+typedef struct ScreenTransitionDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(screenTransition_update)* update;
+    __typeof__(screenTransition_fadeOut)* fadeOut;
+    __typeof__(screenTransition_fadeIn)* fadeIn;
+    __typeof__(screenTransition_fadeFrom)* fadeFrom;
+    __typeof__(screenTransition_isDone)* isDone;
+    __typeof__(screenTransition_getAlpha)* getAlpha;
+    void* slot09;
+} ScreenTransitionDllInterfaceCallbacks;
+
 typedef struct ScreenTransitionDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback fadeOut;
-    ObjectDescriptorCallback fadeIn;
-    ObjectDescriptorCallback fadeFrom;
-    ObjectDescriptorCallback isDone;
-    ObjectDescriptorCallback getAlpha;
-    ObjectDescriptorCallback slot09;
+    ResourceDescriptorHeader header;
+    ScreenTransitionDllInterfaceCallbacks interface;
 } ScreenTransitionDllInterface;
 
 ScreenTransitionDllInterface screenTransition_funcs = {
-    0,
-    0,
-    0,
-    0x00080000,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)screenTransition_update,
-    (ObjectDescriptorCallback)screenTransition_fadeOut,
-    (ObjectDescriptorCallback)screenTransition_fadeIn,
-    (ObjectDescriptorCallback)screenTransition_fadeFrom,
-    (ObjectDescriptorCallback)screenTransition_isDone,
-    (ObjectDescriptorCallback)screenTransition_getAlpha,
-    0,
+    {
+        {0, 0, 0, 0x00080000},
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        screenTransition_update,
+        screenTransition_fadeOut,
+        screenTransition_fadeIn,
+        screenTransition_fadeFrom,
+        screenTransition_isDone,
+        screenTransition_getAlpha,
+        NULL,
+    },
 };

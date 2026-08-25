@@ -156,11 +156,32 @@ void arwgenerato_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWGeneratoObjDescriptorInitAdapter, arwgenerato_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWGeneratoObjDescriptorHitDetectAdapter, arwgenerato_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWGeneratoObjDescriptorRenderAdapter, arwgenerato_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gARWGeneratoObjDescriptorFreeAdapter, arwgenerato_free)
+OBJECT_TYPE_ID_ADAPTER(gARWGeneratoObjDescriptorTypeIdAdapter, arwgenerato_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWGeneratoObjDescriptorExtraSizeAdapter, arwgenerato_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWGeneratoObjDescriptorAcquire, arwgenerato_initialise)
+
 ObjectDescriptor gARWGeneratoObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwgenerato_initialise, (ObjectDescriptorCallback)arwgenerato_release, 0,
-    (ObjectDescriptorCallback)arwgenerato_init, (ObjectDescriptorCallback)arwgenerato_update,
-    (ObjectDescriptorCallback)arwgenerato_hitDetect, (ObjectDescriptorCallback)arwgenerato_render,
-    (ObjectDescriptorCallback)arwgenerato_free, (ObjectDescriptorCallback)arwgenerato_getObjectTypeId,
-    arwgenerato_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWGeneratoObjDescriptorAcquire,
+        arwgenerato_release,
+    },
+    0,
+    gARWGeneratoObjDescriptorInitAdapter,
+    arwgenerato_update,
+    gARWGeneratoObjDescriptorHitDetectAdapter,
+    gARWGeneratoObjDescriptorRenderAdapter,
+    gARWGeneratoObjDescriptorFreeAdapter,
+    gARWGeneratoObjDescriptorTypeIdAdapter,
+    gARWGeneratoObjDescriptorExtraSizeAdapter,
 };

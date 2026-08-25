@@ -110,6 +110,11 @@ u8 gDllAASequenceResourceData[sizeof(DllAASequenceResourceView)] = {
     2,   0,   3,   0,   4,   0,   5,   0,   6,   0,   7,   0,   8,   0,   9,   0,   10,  0,   11,  0,   12,  0,   13,
     0,   14,  0,   15,  0,   16,  0,   17,  0,   18,  0,   19,  0,   20,  0,   0,   0,   0,   0,   5,   0,   30,  0,
     40,  0,   0,   0,   0,   0,   0,   0,   0};
+RESOURCE_ACQUIRE_ADAPTER(gDllAAResourceDescriptorAcquire, dll_AA_initialise)
+
 DllAAResourceDescriptor gDllAAResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_AA_initialise, dll_AA_release, NULL, dll_AA_spawnSequence, 0,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDllAAResourceDescriptorAcquire, dll_AA_release },
+    NULL,
+    dll_AA_spawnSequence,
+    0,
 };

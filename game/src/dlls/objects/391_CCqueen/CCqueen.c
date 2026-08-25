@@ -5,11 +5,11 @@
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/object_render.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 enum CcQueenMoveConfig {
@@ -53,7 +53,7 @@ static void ccQueen_update(GameObject* obj) {
     if (mainGetBit(GAMEBIT_CC_QueenApproached) == 0 && mainGetBit(GAMEBIT_CC_GasVentPuzzleComplete) != 0) {
         GameObject* player = Obj_GetPlayerObject();
 
-        if (vec3f_distanceSquared(&obj->anim.worldPos.x, &player->anim.worldPos.x) < 18225.0f) {
+        if (vec3f_distanceSquared(&obj->anim.worldPosX, &player->anim.worldPosX) < 18225.0f) {
             mainSetBits(GAMEBIT_CC_QueenApproached, 1);
         }
     }
@@ -80,10 +80,17 @@ static void ccQueen_init(GameObject* obj, const CcQueenPlacement* placement) {
     state->moveLib.modeBits |= 0x0A;
 }
 
+OBJECT_INIT_ADAPTER(gCCQueenObjDescriptorInitAdapter, ccQueen_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCQueenObjDescriptorExtraSizeAdapter, ccQueen_getExtraSize)
+
 ObjectDescriptor gCCQueenObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccQueen_init,
-    .update = (ObjectDescriptorCallback)ccQueen_update,
-    .render = (ObjectDescriptorCallback)ccQueen_render,
-    .getExtraSize = ccQueen_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCQueenObjDescriptorInitAdapter,
+    .update = ccQueen_update,
+    .render = ccQueen_render,
+    .getExtraSize = gCCQueenObjDescriptorExtraSizeAdapter,
+};;

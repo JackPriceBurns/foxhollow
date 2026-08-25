@@ -3,7 +3,7 @@
 #include "dolphin/os.h"
 #include "game/objects/object.h"
 #include "main/objseq.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 
 #define SEQ_OBJ2_GROUP                               0xF
@@ -77,13 +77,13 @@ extern const char sSeqObjDiagnosticFormats[];
 extern const char sSeqObjNeedAndUsedBitFormat[];
 
 static int SeqObj2_animEventCallback(GameObject* obj, int* unused, ObjSeqState* animUpdate) {
-    SeqObjectPlacement* placement;
+    SeqObj2Placement* placement;
     SeqObj2State* state;
     int eventIndex;
 
     (void)unused;
 
-    placement = (SeqObjectPlacement*)obj->anim.placementData;
+    placement = (SeqObj2Placement*)obj->anim.placementData;
     state = obj->extra;
     for (eventIndex = 0; eventIndex < animUpdate->eventCount; eventIndex++) {
         int eventId = animUpdate->eventIds[eventIndex];
@@ -123,13 +123,13 @@ void SeqObj2_hitDetect(void) {
 
 void SeqObj2_update(GameObject* obj) {
     SeqObj2State* state;
-    SeqObjectPlacement* placement;
+    SeqObj2Placement* placement;
     SeqObj2DataLayout* data;
     u32 sequenceParam;
 
     data = (SeqObj2DataLayout*)&gSeqObj2ObjDescriptor;
     state = obj->extra;
-    placement = (SeqObjectPlacement*)obj->anim.placementData;
+    placement = (SeqObj2Placement*)obj->anim.placementData;
 
     if ((state->flags & SEQ_OBJ2_STATE_PREEMPT_SEQUENCE) != 0) {
         if ((placement->flags & SEQ_OBJ2_FLAG_CLEAR_REQUIRED_BEFORE_PREEMPT) != 0) {
@@ -174,7 +174,7 @@ void SeqObj2_update(GameObject* obj) {
     }
 }
 
-void SeqObj2_init(GameObject* obj, SeqObjectPlacement* placement) {
+void SeqObj2_init(GameObject* obj, SeqObj2Placement* placement) {
     SeqObj2State* state;
 
     state = obj->extra;
@@ -210,19 +210,32 @@ const char sSeqObjDiagnosticFormats[SEQ_OBJ2_DIAGNOSTIC_FORMATS_SIZE] =
 const char sSeqObjNeedAndUsedBitFormat[SEQ_OBJ2_NEED_AND_USED_BIT_STORAGE_SIZE] =
     "newseqobj %d: Need Bit %d, Used Bit %d\n";
 
+OBJECT_INIT_ADAPTER(gSeqObj2ObjDescriptorInitAdapter, SeqObj2_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSeqObj2ObjDescriptorHitDetectAdapter, SeqObj2_hitDetect)
+OBJECT_RENDER_ADAPTER(gSeqObj2ObjDescriptorRenderAdapter, SeqObj2_render)
+OBJECT_FREE_ADAPTER(gSeqObj2ObjDescriptorFreeAdapter, SeqObj2_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSeqObj2ObjDescriptorTypeIdAdapter, SeqObj2_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSeqObj2ObjDescriptorExtraSizeAdapter, SeqObj2_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSeqObj2ObjDescriptorAcquire, SeqObj2_initialise)
+
 ObjectDescriptor gSeqObj2ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSeqObj2ObjDescriptorAcquire,
+        SeqObj2_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SeqObj2_initialise,
-    SeqObj2_release,
-    0,
-    (ObjectDescriptorCallback)SeqObj2_init,
-    (ObjectDescriptorCallback)SeqObj2_update,
-    SeqObj2_hitDetect,
-    SeqObj2_render,
-    (ObjectDescriptorCallback)SeqObj2_free,
-    (ObjectDescriptorCallback)SeqObj2_getObjectTypeId,
-    SeqObj2_getExtraSize,
+    gSeqObj2ObjDescriptorInitAdapter,
+    SeqObj2_update,
+    gSeqObj2ObjDescriptorHitDetectAdapter,
+    gSeqObj2ObjDescriptorRenderAdapter,
+    gSeqObj2ObjDescriptorFreeAdapter,
+    gSeqObj2ObjDescriptorTypeIdAdapter,
+    gSeqObj2ObjDescriptorExtraSizeAdapter,
 };

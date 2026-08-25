@@ -117,45 +117,45 @@ void dll_98_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commands[8].x = 1.0f;
     commands[8].y = 1.0f;
     commands[8].z = 1.0f;
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = 0.0f;
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
     if ((u32)invertY != 0) {
-        packet.position[1] = -2.0f;
+        packet.context.position[1] = -2.0f;
     } else {
-        packet.position[1] = 2.0f;
+        packet.context.position[1] = 2.0f;
     }
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 0x12;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0x10;
-    packet.flags = 0x4080400;
-    packet.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd) * 9) - commands;
-    packet.sequenceParams[0] = resource->sequenceParams[0];
-    packet.sequenceParams[1] = resource->sequenceParams[1];
-    packet.sequenceParams[2] = resource->sequenceParams[2];
-    packet.sequenceParams[3] = resource->sequenceParams[3];
-    packet.sequenceParams[4] = resource->sequenceParams[4];
-    packet.sequenceParams[5] = resource->sequenceParams[5];
-    packet.sequenceParams[6] = resource->sequenceParams[6];
-    packet.commands = (GfxCmd*)((u8*)&packet + offsetof(ModgfxSpawnPacket, entries));
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
-        if ((u32)packet.sourceObj != 0) {
-            packet.position[0] += packet.sourceObj->anim.worldPosX;
-            packet.position[1] += packet.sourceObj->anim.worldPosY;
-            packet.position[2] += packet.sourceObj->anim.worldPosZ;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 0x12;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x10;
+    packet.context.flags = 0x4080400;
+    packet.context.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd) * 9) - commands;
+    packet.context.sequenceParams[0] = resource->sequenceParams[0];
+    packet.context.sequenceParams[1] = resource->sequenceParams[1];
+    packet.context.sequenceParams[2] = resource->sequenceParams[2];
+    packet.context.sequenceParams[3] = resource->sequenceParams[3];
+    packet.context.sequenceParams[4] = resource->sequenceParams[4];
+    packet.context.sequenceParams[5] = resource->sequenceParams[5];
+    packet.context.sequenceParams[6] = resource->sequenceParams[6];
+    packet.context.commands = packet.entries;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
+        if ((u32)packet.context.attachedSource != 0) {
+            packet.context.position[0] += packet.context.attachedSource->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
         } else {
-            packet.position[0] += spawnParams->posX;
-            packet.position[1] += spawnParams->posY;
-            packet.position[2] += spawnParams->posZ;
+            packet.context.position[0] += spawnParams->posX;
+            packet.context.position[1] += spawnParams->posY;
+            packet.context.position[2] += spawnParams->posZ;
         }
     }
     if (variant == 0) {
@@ -166,7 +166,7 @@ void dll_98_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
         effectId = 0x3F3;
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0x12,
+        ->spawnEffect(&packet.context, 0, 0x12,
                       (u32)invertY != 0 ? &resourceData[offsetof(Dll98EffectResourceView, invertedVertices)]
                                         : (u8*)gDll98EffectResourceData,
                       0x10, &resourceData[offsetof(Dll98EffectResourceView, triangles)], effectId, 0);
@@ -211,10 +211,10 @@ u16 gDll98EffectResourceData[sizeof(Dll98EffectResourceView) / sizeof(u16)] = {
     0x000e, 0x000f, 0x0010, 0x0011, 0x0000, 0x0000, 0x0064, 0x0064, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000,
 };
+RESOURCE_ACQUIRE_ADAPTER(gDll98ResourceDescriptorAcquire, dll_98_initialise)
+
 Dll98ResourceDescriptor gDll98ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    dll_98_initialise,
-    dll_98_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll98ResourceDescriptorAcquire, dll_98_release },
     NULL,
     dll_98_spawnEffect,
     0x00000000,

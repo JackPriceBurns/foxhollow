@@ -16,7 +16,7 @@
 #include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/obj_path.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
@@ -31,8 +31,6 @@
 #include "dlls/object_descriptor.h"
 #include "dolphin/mtx/vec.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
 
 f32 gDRBarrelGrThrowScale = 2.0f;
 f32 gDrBarrelGenGrabYOffset = -50.0f;
@@ -335,9 +333,9 @@ void DR_BarrelGr_init(GameObject* obj, DrbarrelgrPlacement* setup)
     s16toFloat(&state->timer, range);
     obj->anim.rotX = (s16)(placement->spawnYawByte << 8);
     (*gRomCurveInterface)->initCurve(&state->curve, (void*)obj, 500.0f, &one, 0);
-    obj->anim.localPosX = state->curve.posX;
-    obj->anim.localPosZ = state->curve.posZ;
-    obj->anim.localPosY = state->curve.posY;
+    obj->anim.localPosX = state->curve.curve.sample[0];
+    obj->anim.localPosZ = state->curve.curve.sample[2];
+    obj->anim.localPosY = state->curve.curve.sample[1];
 }
 
 void DR_BarrelGr_release(void)
@@ -348,19 +346,32 @@ void DR_BarrelGr_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrBarrelGrObjDescriptorInitAdapter, DR_BarrelGr_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrBarrelGrObjDescriptorHitDetectAdapter, DR_BarrelGr_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrBarrelGrObjDescriptorRenderAdapter, DR_BarrelGr_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gDrBarrelGrObjDescriptorFreeAdapter, DR_BarrelGr_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrBarrelGrObjDescriptorTypeIdAdapter, DR_BarrelGr_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrBarrelGrObjDescriptorExtraSizeAdapter, DR_BarrelGr_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrBarrelGrObjDescriptorAcquire, DR_BarrelGr_initialise)
+
 ObjectDescriptor gDrBarrelGrObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrBarrelGrObjDescriptorAcquire,
+        DR_BarrelGr_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_BarrelGr_initialise,
-    (ObjectDescriptorCallback)DR_BarrelGr_release,
-    0,
-    (ObjectDescriptorCallback)DR_BarrelGr_init,
-    (ObjectDescriptorCallback)DR_BarrelGr_update,
-    (ObjectDescriptorCallback)DR_BarrelGr_hitDetect,
-    (ObjectDescriptorCallback)DR_BarrelGr_render,
-    (ObjectDescriptorCallback)DR_BarrelGr_free,
-    (ObjectDescriptorCallback)DR_BarrelGr_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DR_BarrelGr_getExtraSize,
+    gDrBarrelGrObjDescriptorInitAdapter,
+    DR_BarrelGr_update,
+    gDrBarrelGrObjDescriptorHitDetectAdapter,
+    gDrBarrelGrObjDescriptorRenderAdapter,
+    gDrBarrelGrObjDescriptorFreeAdapter,
+    gDrBarrelGrObjDescriptorTypeIdAdapter,
+    gDrBarrelGrObjDescriptorExtraSizeAdapter,
 };

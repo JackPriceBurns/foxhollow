@@ -3,14 +3,14 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 
 struct ObjSeqState;
 
 typedef struct IMIceMountainState {
     u8 eventState;
     u8 pad01[0x03];
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     s8 warpCountdown;
     u8 pad09;
     s16 musicTrack;

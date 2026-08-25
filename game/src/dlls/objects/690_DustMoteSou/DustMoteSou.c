@@ -138,19 +138,31 @@ void dustmotesou_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDustMoteSouObjDescriptorInitAdapter, dustmotesou_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDustMoteSouObjDescriptorHitDetectAdapter, dustmotesou_hitDetect)
+OBJECT_FREE_ADAPTER(gDustMoteSouObjDescriptorFreeAdapter, dustmotesou_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDustMoteSouObjDescriptorTypeIdAdapter, dustmotesou_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDustMoteSouObjDescriptorExtraSizeAdapter, dustmotesou_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDustMoteSouObjDescriptorAcquire, dustmotesou_initialise)
+
 ObjectDescriptor gDustMoteSouObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDustMoteSouObjDescriptorAcquire,
+        dustmotesou_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dustmotesou_initialise,
-    (ObjectDescriptorCallback)dustmotesou_release,
-    0,
-    (ObjectDescriptorCallback)dustmotesou_init,
-    (ObjectDescriptorCallback)dustmotesou_update,
-    (ObjectDescriptorCallback)dustmotesou_hitDetect,
-    (ObjectDescriptorCallback)dustmotesou_render,
-    (ObjectDescriptorCallback)dustmotesou_free,
-    (ObjectDescriptorCallback)dustmotesou_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)dustmotesou_getExtraSize,
+    gDustMoteSouObjDescriptorInitAdapter,
+    dustmotesou_update,
+    gDustMoteSouObjDescriptorHitDetectAdapter,
+    dustmotesou_render,
+    gDustMoteSouObjDescriptorFreeAdapter,
+    gDustMoteSouObjDescriptorTypeIdAdapter,
+    gDustMoteSouObjDescriptorExtraSizeAdapter,
 };

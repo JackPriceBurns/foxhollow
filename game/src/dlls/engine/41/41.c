@@ -1,5 +1,5 @@
 #include "main/dll/waterfxcfg_struct.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "game/objects/object.h"
 #include "main/dll_000A_expgfx.h"
@@ -19,17 +19,20 @@ f32 gEffect16TimedScrollPhaseB = 0.3f;
 
 WaterfxCfg gEffect16DefaultSpawnSource;
 
-ObjectDescriptor6 Effect16_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect16_initialise,
-    (ObjectDescriptorCallback)Effect16_release,
-    0,
-    (ObjectDescriptorCallback)Effect16_func03_nop,
-    (ObjectDescriptorCallback)Effect16_spawnObject,
-    (ObjectDescriptorCallback)Effect16_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect16Resource, Effect16_initialise, Effect16_spawnObject, Effect16_updateFrameState)
+
+EffectResourceDescriptor Effect16_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect16ResourceAcquire,
+        Effect16_release,
+    },
+    {
+        NULL,
+        Effect16_func03_nop,
+        gEffect16ResourceSpawn,
+        gEffect16ResourceUpdate,
+    },
 };
 
 int Effect16_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

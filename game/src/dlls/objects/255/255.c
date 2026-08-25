@@ -5,7 +5,7 @@
  * behaviour, proximity effects, and a two-phase collection burst.
  */
 #include "dlls/objects/255.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/os/OSReport.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
@@ -18,10 +18,9 @@
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/dll/player_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player.h"
+#include "main/gamebits.h"
 #include "main/obj_link.h"
 #include "main/obj_message.h"
 #include "sys/objects/lifecycle.h"
@@ -202,13 +201,13 @@ void MagicDust_update(GameObject* obj) {
             if (obj->anim.modelState != NULL) {
                 obj->anim.modelState->flags |= OBJ_MODEL_STATE_SHADOW_FADE_OUT;
             }
-            (*gPathControlInterface)->attachObject((void*)obj, (void*)state);
+            (*gPathControlInterface)->attachObject((void*)obj, &state->path);
             return;
         }
         if (obj->anim.modelState != NULL) {
             obj->anim.modelState->flags &= ~(long long)OBJ_MODEL_STATE_SHADOW_FADE_OUT;
         }
-        state->unk25B = 1;
+        state->path.subtype = 1;
         if ((state->flags & MAGICGEM_FLAG_MOTION_MASK) == 0) {
             obj->anim.velocityX *= MAGICGEM_VELOCITY_DAMPING;
             obj->anim.velocityZ *= MAGICGEM_VELOCITY_DAMPING;
@@ -256,10 +255,10 @@ void MagicDust_update(GameObject* obj) {
             return;
         }
         if ((state->flags & MAGICGEM_FLAG_MOTION_MASK) == 0) {
-            (*gPathControlInterface)->update((void*)obj, (void*)state, timeDelta);
-            (*gPathControlInterface)->apply((void*)obj, (void*)state);
-            (*gPathControlInterface)->advance((void*)obj, (void*)state, timeDelta);
-            if (state->contacted != 0) {
+            (*gPathControlInterface)->update((void*)obj, &state->path, timeDelta);
+            (*gPathControlInterface)->apply((void*)obj, &state->path);
+            (*gPathControlInterface)->advance((void*)obj, &state->path, timeDelta);
+            if (state->path.surfaceCounter != 0) {
                 f32 velocityX = -obj->anim.velocityX;
                 f32 velocityY = -obj->anim.velocityY;
                 f32 velocityZ = -obj->anim.velocityZ;
@@ -267,7 +266,7 @@ void MagicDust_update(GameObject* obj) {
                 if (speed > MAGICGEM_BOUNCE_SFX_SPEED) {
                     Sfx_PlayFromObject(obj, SFXTRIG_en_lflsh3_c_16b);
                 }
-                if (state->contactNormalY >= MAGICGEM_FLOOR_NORMAL_THRESHOLD) {
+                if (state->path.segmentHits.planes[0][1] >= MAGICGEM_FLOOR_NORMAL_THRESHOLD) {
                     obj->anim.velocityY = -obj->anim.velocityY;
                     obj->anim.velocityY *= MAGICGEM_BOUNCE_RESTITUTION_Y;
                 } else {
@@ -405,10 +404,10 @@ void MagicDust_init(GameObject* obj, CollectibleSetup* placement) {
     }
     state->collectRadius = MAGICGEM_COLLECT_RADIUS;
     if ((obj->anim.flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
-        (*gPathControlInterface)->init((void*)state, 0, MAGICGEM_PATH_FLAGS, 0);
+        (*gPathControlInterface)->init(&state->path, 0, MAGICGEM_PATH_FLAGS, 0);
         (*gPathControlInterface)
-            ->setup((void*)state, MAGICGEM_PATH_POINT_COUNT, sMagicGemPathData, &state->collectRadius, pathParams);
-        (*gPathControlInterface)->attachObject((void*)obj, (void*)state);
+            ->setup(&state->path, MAGICGEM_PATH_POINT_COUNT, sMagicGemPathData, &state->collectRadius, pathParams);
+        (*gPathControlInterface)->attachObject((void*)obj, &state->path);
     }
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     if ((state->flags & MAGICGEM_FLAG_BURST1) != 0) {
@@ -420,19 +419,27 @@ void MagicDust_init(GameObject* obj, CollectibleSetup* placement) {
     ObjMsg_AllocQueue(obj, MAGICGEM_MESSAGE_SLOTS);
 }
 
+OBJECT_INIT_ADAPTER(gMagicGemObjDescriptorInitAdapter, MagicDust_init, obj, placement)
+OBJECT_FREE_ADAPTER(gMagicGemObjDescriptorFreeAdapter, MagicDust_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gMagicGemObjDescriptorExtraSizeAdapter, MagicDust_getExtraSize)
+
 ObjectDescriptor gMagicGemObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gMagicGemObjDescriptorInitAdapter,
+    MagicDust_update,
     0,
+    MagicDust_render,
+    gMagicGemObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicDust_init,
-    (ObjectDescriptorCallback)MagicDust_update,
-    0,
-    (ObjectDescriptorCallback)MagicDust_render,
-    (ObjectDescriptorCallback)MagicDust_free,
-    0,
-    MagicDust_getExtraSize,
+    gMagicGemObjDescriptorExtraSizeAdapter,
 };

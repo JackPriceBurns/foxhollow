@@ -5,7 +5,7 @@
 #include "game/objects/object.h"
 #include "main/byte_flags.h"
 #include "main/dll/curve_walker.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_sound.h"
 #include "main/model_light.h"
 #include "main/objseq.h"
 #include "global.h"
@@ -29,14 +29,7 @@ typedef struct BossDrakorState
     f32 attackTimer;
     f32 attackTimerDuration;
     f32 jawAnimTimer;
-    union {
-        struct {
-            f32 homePosX;
-            f32 homePosY;
-            f32 homePosZ;
-        };
-        Vec3f homePos;
-    };
+    Vec3f homePos;
     RomCurveWalker curveWalker; /* 0x28: the rom-curve walker this boss follows */
     ObjSoundState soundState; /* 0x130 */
     ModelLightStruct* lightObj; /* 0x160 */

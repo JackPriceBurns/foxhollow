@@ -1,5 +1,5 @@
 #include "src/musyx/runtime/synth_internal.h"
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "musyx/synth_callback.h"
 #include "musyx/synth_control.h"
 #include "musyx/synth_handle.h"

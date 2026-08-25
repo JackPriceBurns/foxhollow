@@ -1,8 +1,8 @@
 /* Runs the final Andross boss fight from the Arwing. */
 #include "main/dll/dll_02BC_andross.h"
-#include "main/audio/music_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/pi_dolphin_api.h"
+#include "main/audio/music.h"
+#include "dolphin/math.h"
+#include "main/pi_dolphin.h"
 #include "main/map_load.h"
 #include "main/audio/sfx.h"
 #include "main/camera_interface.h"
@@ -28,14 +28,12 @@
 #include "main/dll/dll_02BD_androsshand.h"
 #include "main/dll/ARW/dll_029F_arwbombcoll.h"
 #include "main/model.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/gamebit_ids.h"
 #include "main/object_render.h"
-#include "main/maketex_sequence_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/maketex_sequence.h"
 
 s16 gAndrossSwayPhaseX;
 s16 gAndrossSwayPhaseY;
@@ -329,13 +327,13 @@ int andross_trackArwingVelocity(AndrossState* state, f32 clampRange, f32 scale, 
     }
 
     clampedSpeed = ANDROSS_CLAMP(distance / scale, -clampRange, clampRange);
-    state->velX = clampedSpeed * mathSinf(3.1415927f * heading / 32768.0f);
-    state->velY = clampedSpeed * mathCosf(3.1415927f * heading / 32768.0f);
+    state->velocity.x = clampedSpeed * mathSinf(3.1415927f * heading / 32768.0f);
+    state->velocity.y = clampedSpeed * mathCosf(3.1415927f * heading / 32768.0f);
 
     arwarwing_getVelocity(&vel, state->arwingObj);
-    state->velX -= vel.x * gAndrossArwingVelDamp;
-    state->velY -= vel.y * gAndrossArwingVelDamp;
-    state->velZ = zVelocity;
+    state->velocity.x -= vel.x * gAndrossArwingVelDamp;
+    state->velocity.y -= vel.y * gAndrossArwingVelDamp;
+    state->velocity.z = zVelocity;
 
     return targetReached;
 }
@@ -645,9 +643,9 @@ void andross_update(GameObject* boss) {
         phaseChanged = 1;
     }
     state->prevFightPhase = currentState;
-    state->velX = 0.0f;
-    state->velY = 0.0f;
-    state->velZ = 0.0f;
+    state->velocity.x = 0.0f;
+    state->velocity.y = 0.0f;
+    state->velocity.z = 0.0f;
     if (-0x4000 < state->targetRotX && boss->anim.rotX < 0x4000) {
         pathIndex = 1;
     }
@@ -1161,7 +1159,7 @@ void andross_update(GameObject* boss) {
                 state->actionState = 0x10;
                 state->arwingFlightActive = 1;
                 state->arwingObj->anim.localPosZ = state->cachedPosZ;
-                state->velZ = 0.0f;
+                state->velocity.z = 0.0f;
                 gAndrossDistortPhase = gAndrossDistortPhaseReset;
                 gAndrossDistortPhase += gAndrossDistortPhaseStep;
                 if (gAndrossDistortPhase > ANDROSS_DISTORT_PHASE_WRAP) {
@@ -1580,11 +1578,11 @@ void andross_update(GameObject* boss) {
     boss->anim.localPosY += boss->anim.velocityY;
     boss->anim.localPosZ += boss->anim.velocityZ;
 
-    if (state->velZ == 0.0f) {
+    if (state->velocity.z == 0.0f) {
         if (state->arwingFlightActive != 0) {
             andross_trackArwingVelocity(state, gAndrossArwingFlightClampRange, gAndrossArwingFlightVelocityScale, 0.0f);
         } else {
-            state->velZ = gAndrossArwingFollowScale * (state->savedPosZ - state->arwingObj->anim.localPosZ);
+            state->velocity.z = gAndrossArwingFollowScale * (state->savedPosZ - state->arwingObj->anim.localPosZ);
         }
     }
 
@@ -1709,19 +1707,30 @@ f32 gAndrossRingProjectileScale = 5.0f;
 int gAndrossProjectileForwardStep = 7;
 int gAndrossSpawnedObjectLifetime = 200;
 
+OBJECT_INIT_ADAPTER(gAndrossObjDescriptorInitAdapter, andross_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gAndrossObjDescriptorHitDetectAdapter, andross_hitDetect)
+OBJECT_RENDER_ADAPTER(gAndrossObjDescriptorRenderAdapter, andross_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gAndrossObjDescriptorFreeAdapter, andross_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gAndrossObjDescriptorTypeIdAdapter, andross_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAndrossObjDescriptorExtraSizeAdapter, andross_getExtraSize)
+
 ObjectDescriptor gAndrossObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)andross_init,
-    (ObjectDescriptorCallback)andross_update,
-    (ObjectDescriptorCallback)andross_hitDetect,
-    (ObjectDescriptorCallback)andross_render,
-    (ObjectDescriptorCallback)andross_free,
-    (ObjectDescriptorCallback)andross_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)andross_getExtraSize,
+    gAndrossObjDescriptorInitAdapter,
+    andross_update,
+    gAndrossObjDescriptorHitDetectAdapter,
+    gAndrossObjDescriptorRenderAdapter,
+    gAndrossObjDescriptorFreeAdapter,
+    gAndrossObjDescriptorTypeIdAdapter,
+    gAndrossObjDescriptorExtraSizeAdapter,
 };

@@ -9,15 +9,15 @@
  * integrator, the RomCurve follow-velocity drivers and a heading/roll/pitch
  * smoother.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
 #include "main/model_light.h"
 #include "main/voxmaps.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/rom_curve_def.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/dll/barrelgener_state.h"
 #include "game/objects/object.h"
@@ -262,8 +262,8 @@ int Obj_UpdateRomCurveFollowVelocityIndexed(GameObject* obj, RomCurveWalker* rou
     f32 dist, ang;
 
     result = 0;
-    delta[0] = obj->anim.localPosX - route->posX;
-    delta[2] = obj->anim.localPosZ - route->posZ;
+    delta[0] = obj->anim.localPosX - route->curve.sample[0];
+    delta[2] = obj->anim.localPosZ - route->curve.sample[2];
     {
         f32 xx = delta[0] * delta[0];
         f32 zz = delta[2] * delta[2];
@@ -271,7 +271,7 @@ int Obj_UpdateRomCurveFollowVelocityIndexed(GameObject* obj, RomCurveWalker* rou
     }
     if (dist < arriveRadius)
     {
-        if (Curve_AdvanceAlongPath(&route->curve, advanceStep) != 0 || route->atSegmentEnd != 0)
+        if (Curve_AdvanceAlongPath(&route->curve, advanceStep) != 0 || route->curve.idx != 0)
         {
             if ((*gRomCurveInterface)->goNextPointIndexed(route, *pickIdx) != 0)
                 result = -1;
@@ -281,15 +281,15 @@ int Obj_UpdateRomCurveFollowVelocityIndexed(GameObject* obj, RomCurveWalker* rou
         }
         speed = 2.0f * advanceStep;
     }
-    delta[0] = route->posX - obj->anim.localPosX;
-    delta[1] = route->posY - obj->anim.localPosY;
-    delta[2] = route->posZ - obj->anim.localPosZ;
+    delta[0] = route->curve.sample[0] - obj->anim.localPosX;
+    delta[1] = route->curve.sample[1] - obj->anim.localPosY;
+    delta[2] = route->curve.sample[2] - obj->anim.localPosZ;
     if ((u8)flag == 0)
     {
         BaddieState* state = obj->extra;
         s16 raw;
-        delta[0] = obj->anim.localPosX - route->posX;
-        delta[2] = obj->anim.localPosZ - route->posZ;
+        delta[0] = obj->anim.localPosX - route->curve.sample[0];
+        delta[2] = obj->anim.localPosZ - route->curve.sample[2];
         raw = (s16)getAngle(delta[0], delta[2]);
         ang = Obj_HeadingRadians(raw);
         state->moveInputX = speed * -mathSinf(ang);
@@ -311,8 +311,8 @@ int Obj_UpdateRomCurveFollowVelocity(GameObject* obj, RomCurveWalker* route, f32
     f32 dist, ang;
 
     result = 0;
-    delta[0] = obj->anim.localPosX - route->posX;
-    delta[2] = obj->anim.localPosZ - route->posZ;
+    delta[0] = obj->anim.localPosX - route->curve.sample[0];
+    delta[2] = obj->anim.localPosZ - route->curve.sample[2];
     {
         f32 xx = delta[0] * delta[0];
         f32 zz = delta[2] * delta[2];
@@ -320,7 +320,7 @@ int Obj_UpdateRomCurveFollowVelocity(GameObject* obj, RomCurveWalker* route, f32
     }
     if (dist < arriveRadius)
     {
-        if (Curve_AdvanceAlongPath(&route->curve, advanceStep) != 0 || route->atSegmentEnd != 0)
+        if (Curve_AdvanceAlongPath(&route->curve, advanceStep) != 0 || route->curve.idx != 0)
         {
             if ((*gRomCurveInterface)->goNextPoint(route) != 0)
                 result = -1;
@@ -329,15 +329,15 @@ int Obj_UpdateRomCurveFollowVelocity(GameObject* obj, RomCurveWalker* route, f32
         }
         speed = 2.0f * advanceStep;
     }
-    delta[0] = route->posX - obj->anim.localPosX;
-    delta[1] = route->posY - obj->anim.localPosY;
-    delta[2] = route->posZ - obj->anim.localPosZ;
+    delta[0] = route->curve.sample[0] - obj->anim.localPosX;
+    delta[1] = route->curve.sample[1] - obj->anim.localPosY;
+    delta[2] = route->curve.sample[2] - obj->anim.localPosZ;
     if ((u8)flag == 0)
     {
         BaddieState* state = obj->extra;
         s16 raw;
-        delta[0] = obj->anim.localPosX - route->posX;
-        delta[2] = obj->anim.localPosZ - route->posZ;
+        delta[0] = obj->anim.localPosX - route->curve.sample[0];
+        delta[2] = obj->anim.localPosZ - route->curve.sample[2];
         raw = (s16)getAngle(delta[0], delta[2]);
         ang = Obj_HeadingRadians(raw);
         state->moveInputX = speed * -mathSinf(ang);

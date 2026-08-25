@@ -7,7 +7,7 @@
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 
 #define VFP_PLATFORM_LAVABLOCK_OBJ 960
 
@@ -380,19 +380,31 @@ void VFP_Platform_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_PlatformObjDescriptorInitAdapter, VFP_Platform_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_PlatformObjDescriptorHitDetectAdapter, VFP_Platform_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_PlatformObjDescriptorFreeAdapter, VFP_Platform_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_PlatformObjDescriptorTypeIdAdapter, VFP_Platform_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_PlatformObjDescriptorExtraSizeAdapter, VFP_Platform_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_PlatformObjDescriptorAcquire, VFP_Platform_initialise)
+
 ObjectDescriptor gVFP_PlatformObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_PlatformObjDescriptorAcquire,
+        VFP_Platform_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_Platform_initialise,
-    (ObjectDescriptorCallback)VFP_Platform_release,
-    0,
-    (ObjectDescriptorCallback)VFP_Platform_init,
-    (ObjectDescriptorCallback)VFP_Platform_update,
-    (ObjectDescriptorCallback)VFP_Platform_hitDetect,
-    (ObjectDescriptorCallback)VFP_Platform_render,
-    (ObjectDescriptorCallback)VFP_Platform_free,
-    (ObjectDescriptorCallback)VFP_Platform_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_Platform_getExtraSize,
+    gVFP_PlatformObjDescriptorInitAdapter,
+    VFP_Platform_update,
+    gVFP_PlatformObjDescriptorHitDetectAdapter,
+    VFP_Platform_render,
+    gVFP_PlatformObjDescriptorFreeAdapter,
+    gVFP_PlatformObjDescriptorTypeIdAdapter,
+    gVFP_PlatformObjDescriptorExtraSizeAdapter,
 };

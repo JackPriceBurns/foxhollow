@@ -5,7 +5,7 @@
 #include "musyx/inp_ctrl.h"
 #include "musyx/snd_service.h"
 #include "musyx/data_tables.h"
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "musyx/voice_alloc.h"
 #include "musyx/voice_id.h"
 #include "musyx/voice_manage.h"

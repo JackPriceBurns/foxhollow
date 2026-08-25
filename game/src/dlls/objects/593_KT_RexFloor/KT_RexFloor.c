@@ -11,13 +11,13 @@
  */
 #include "dlls/object_descriptor.h"
 #include "dolphin/mtx.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/DR/dll_024F_ktrexlevel.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/DR/dll_0251_ktrexfloorswitch.h"
 
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
 #include "main/objtexture.h"
@@ -420,19 +420,32 @@ void KT_RexFloorSwitch_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gKtRexFloorSwitchObjDescriptorInitAdapter, KT_RexFloorSwitch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gKtRexFloorSwitchObjDescriptorHitDetectAdapter, KT_RexFloorSwitch_hitDetect)
+OBJECT_RENDER_ADAPTER(gKtRexFloorSwitchObjDescriptorRenderAdapter, KT_RexFloorSwitch_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gKtRexFloorSwitchObjDescriptorFreeAdapter, KT_RexFloorSwitch_free)
+OBJECT_TYPE_ID_ADAPTER(gKtRexFloorSwitchObjDescriptorTypeIdAdapter, KT_RexFloorSwitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtRexFloorSwitchObjDescriptorExtraSizeAdapter, KT_RexFloorSwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKtRexFloorSwitchObjDescriptorAcquire, KT_RexFloorSwitch_initialise)
+
 ObjectDescriptor gKtRexFloorSwitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKtRexFloorSwitchObjDescriptorAcquire,
+        KT_RexFloorSwitch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_initialise,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_release,
-    0,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_init,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_update,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_hitDetect,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_render,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_free,
-    (ObjectDescriptorCallback)KT_RexFloorSwitch_getObjectTypeId,
-    KT_RexFloorSwitch_getExtraSize,
+    gKtRexFloorSwitchObjDescriptorInitAdapter,
+    KT_RexFloorSwitch_update,
+    gKtRexFloorSwitchObjDescriptorHitDetectAdapter,
+    gKtRexFloorSwitchObjDescriptorRenderAdapter,
+    gKtRexFloorSwitchObjDescriptorFreeAdapter,
+    gKtRexFloorSwitchObjDescriptorTypeIdAdapter,
+    gKtRexFloorSwitchObjDescriptorExtraSizeAdapter,
 };

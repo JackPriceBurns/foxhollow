@@ -6,8 +6,8 @@
  * The launch-angle helper is also used by the duster object family.
  */
 #include "dlls/objects/216_PinPonSpike.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
@@ -129,19 +129,30 @@ void pinponspike_release(void) {
 void pinponspike_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPinPonSpikeObjDescriptorInitAdapter, pinponspike_init, obj)
+OBJECT_FREE_ADAPTER(gPinPonSpikeObjDescriptorFreeAdapter, pinponspike_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPinPonSpikeObjDescriptorTypeIdAdapter, pinponspike_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPinPonSpikeObjDescriptorExtraSizeAdapter, pinponspike_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPinPonSpikeObjDescriptorAcquire, pinponspike_initialise)
+
 ObjectDescriptor gPinPonSpikeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPinPonSpikeObjDescriptorAcquire,
+        pinponspike_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)pinponspike_initialise,
-    (ObjectDescriptorCallback)pinponspike_release,
-    0,
-    (ObjectDescriptorCallback)pinponspike_init,
-    (ObjectDescriptorCallback)pinponspike_update,
-    (ObjectDescriptorCallback)pinponspike_hitDetect,
-    (ObjectDescriptorCallback)pinponspike_render,
-    (ObjectDescriptorCallback)pinponspike_free,
-    (ObjectDescriptorCallback)pinponspike_getObjectTypeId,
-    pinponspike_getExtraSize,
+    gPinPonSpikeObjDescriptorInitAdapter,
+    pinponspike_update,
+    pinponspike_hitDetect,
+    pinponspike_render,
+    gPinPonSpikeObjDescriptorFreeAdapter,
+    gPinPonSpikeObjDescriptorTypeIdAdapter,
+    gPinPonSpikeObjDescriptorExtraSizeAdapter,
 };

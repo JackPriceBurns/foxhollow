@@ -24,7 +24,7 @@
 #include "main/dll/FRONT/picmenu.h"
 #include "main/dll/FRONT/n_options.h"
 #include "dolphin/gx/GXGeometry.h"
-#include "main/pi_dolphin_api.h"
+#include "main/pi_dolphin.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/os/OSInterrupt.h"
 #include "dolphin/os/OSMessage.h"
@@ -34,8 +34,8 @@
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
 #include "string.h"
-#include "track/intersect_depth_state_api.h"
-#include "main/attract_movie_api.h"
+#include "track/intersect_depth_state.h"
+#include "main/attract_movie.h"
 
 static const GXColorS10 sMovieTevColor0 = {-90, 0, -114, 135};
 static const GXColor sMovieKColor0 = {0x00, 0x00, 0xE2, 0x58};

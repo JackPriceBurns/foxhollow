@@ -109,19 +109,32 @@ void ARWBlocker_release(void) {
 void ARWBlocker_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gARWBlockerObjDescriptorInitAdapter, ARWBlocker_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWBlockerObjDescriptorHitDetectAdapter, ARWBlocker_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWBlockerObjDescriptorRenderAdapter, ARWBlocker_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gARWBlockerObjDescriptorFreeAdapter, ARWBlocker_free)
+OBJECT_TYPE_ID_ADAPTER(gARWBlockerObjDescriptorTypeIdAdapter, ARWBlocker_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWBlockerObjDescriptorExtraSizeAdapter, ARWBlocker_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWBlockerObjDescriptorAcquire, ARWBlocker_initialise)
+
 ObjectDescriptor gARWBlockerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWBlockerObjDescriptorAcquire,
+        ARWBlocker_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWBlocker_initialise,
-    (ObjectDescriptorCallback)ARWBlocker_release,
-    0,
-    (ObjectDescriptorCallback)ARWBlocker_init,
-    (ObjectDescriptorCallback)ARWBlocker_update,
-    (ObjectDescriptorCallback)ARWBlocker_hitDetect,
-    (ObjectDescriptorCallback)ARWBlocker_render,
-    (ObjectDescriptorCallback)ARWBlocker_free,
-    (ObjectDescriptorCallback)ARWBlocker_getObjectTypeId,
-    ARWBlocker_getExtraSize,
+    gARWBlockerObjDescriptorInitAdapter,
+    ARWBlocker_update,
+    gARWBlockerObjDescriptorHitDetectAdapter,
+    gARWBlockerObjDescriptorRenderAdapter,
+    gARWBlockerObjDescriptorFreeAdapter,
+    gARWBlockerObjDescriptorTypeIdAdapter,
+    gARWBlockerObjDescriptorExtraSizeAdapter,
 };

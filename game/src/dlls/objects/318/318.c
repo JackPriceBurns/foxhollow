@@ -1,7 +1,7 @@
 /* Controls the spinning ice shards launched during the DIM boss fight. */
 #include "dlls/objects/318.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/path_control_interface.h"
@@ -205,10 +205,10 @@ void DIMBossIceSmash_update(GameObject* obj) {
             obj->anim.rotY = state->angVelY * timeDelta + (f32)obj->anim.rotY;
             obj->anim.rotZ = state->angVelZ * timeDelta + (f32)obj->anim.rotZ;
             if ((placement->flags & DIM_BOSS_ICE_SMASH_PLACEMENT_PATH_CONTROL) != 0) {
-                (*gPathControlInterface)->update(obj, state, timeDelta);
-                (*gPathControlInterface)->apply(obj, state);
-                (*gPathControlInterface)->advance(obj, state, timeDelta);
-                if (state->hasCollision != 0) {
+                (*gPathControlInterface)->update(obj, &state->path, timeDelta);
+                (*gPathControlInterface)->apply(obj, &state->path);
+                (*gPathControlInterface)->advance(obj, &state->path, timeDelta);
+                if (state->path.surfaceCounter != 0) {
                     nx = -obj->anim.velocityX;
                     ny = -obj->anim.velocityY;
                     nz = -obj->anim.velocityZ;
@@ -219,9 +219,9 @@ void DIMBossIceSmash_update(GameObject* obj) {
                         ny = ny * inv;
                         nz = nz * inv;
                     }
-                    fx = state->collisionNormalX;
-                    fy = state->collisionNormalY;
-                    fz = state->collisionNormalZ;
+                    fx = state->path.segmentHits.planes[0][0];
+                    fy = state->path.segmentHits.planes[0][1];
+                    fz = state->path.segmentHits.planes[0][2];
                     dot = 2.0f * (nz * fz + (nx * fx + ny * fy));
                     obj->anim.velocityX = fx * dot;
                     obj->anim.velocityY = fy * dot;
@@ -275,9 +275,10 @@ void DIMBossIceSmash_init(GameObject* obj, DimBossIceSmashPlacement* placement) 
     state->stateFlags = initState;
     gDIMBossIceSmashActivationStarted = 0;
     if ((placement->flags & DIM_BOSS_ICE_SMASH_PLACEMENT_PATH_CONTROL) != 0) {
-        (*gPathControlInterface)->init(state, 0, DIM_BOSS_ICE_SMASH_PATH_INIT_FLAGS, 1);
-        (*gPathControlInterface)->setup(state, 1, gDIMBossIceSmashPathPoint, gDIMBossIceSmashPathParams, pathParams);
-        (*gPathControlInterface)->attachObject(obj, state);
+        (*gPathControlInterface)->init(&state->path, 0, DIM_BOSS_ICE_SMASH_PATH_INIT_FLAGS, 1);
+        (*gPathControlInterface)
+            ->setup(&state->path, 1, gDIMBossIceSmashPathPoint, gDIMBossIceSmashPathParams, pathParams);
+        (*gPathControlInterface)->attachObject(obj, &state->path);
     }
 }
 
@@ -287,22 +288,34 @@ void DIMBossIceSmash_release(void) {
 void DIMBossIceSmash_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMBossIceSmashObjDescriptorInitAdapter, DIMBossIceSmash_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMBossIceSmashObjDescriptorHitDetectAdapter, DIMBossIceSmash_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMBossIceSmashObjDescriptorFreeAdapter, DIMBossIceSmash_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMBossIceSmashObjDescriptorTypeIdAdapter, DIMBossIceSmash_getObjectTypeId, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMBossIceSmashObjDescriptorExtraSizeAdapter, DIMBossIceSmash_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMBossIceSmashObjDescriptorAcquire, DIMBossIceSmash_initialise)
+
 ObjectDescriptor10WithPadding gDIMBossIceSmashObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gDIMBossIceSmashObjDescriptorAcquire,
+            DIMBossIceSmash_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)DIMBossIceSmash_initialise,
-        (ObjectDescriptorCallback)DIMBossIceSmash_release,
-        0,
-        (ObjectDescriptorCallback)DIMBossIceSmash_init,
-        (ObjectDescriptorCallback)DIMBossIceSmash_update,
-        (ObjectDescriptorCallback)DIMBossIceSmash_hitDetect,
-        (ObjectDescriptorCallback)DIMBossIceSmash_render,
-        (ObjectDescriptorCallback)DIMBossIceSmash_free,
-        (ObjectDescriptorCallback)DIMBossIceSmash_getObjectTypeId,
-        DIMBossIceSmash_getExtraSize,
+        gDIMBossIceSmashObjDescriptorInitAdapter,
+        DIMBossIceSmash_update,
+        gDIMBossIceSmashObjDescriptorHitDetectAdapter,
+        DIMBossIceSmash_render,
+        gDIMBossIceSmashObjDescriptorFreeAdapter,
+        gDIMBossIceSmashObjDescriptorTypeIdAdapter,
+        gDIMBossIceSmashObjDescriptorExtraSizeAdapter,
     },
     0,
 };

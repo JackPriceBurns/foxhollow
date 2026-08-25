@@ -6,11 +6,11 @@
  * object returns through the shared Magic Cave gamebits.
  */
 #include "dlls/objects/287_MagicCaveTo.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
-#include "main/dll/dll_00E2_staff_api.h"
+#include "main/dll/dll_00E2_staff.h"
 #include "main/dll/objfx.h"
 #include "main/dll/player_objects.h"
 #include "main/frame_timing.h"
@@ -21,9 +21,9 @@
 #include "main/objfx.h"
 #include "main/objseq.h"
 #include "main/pad.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 #define MAGIC_CAVE_TOP_MAP_UNLOAD_FLAGS 0x20000000
@@ -319,19 +319,27 @@ void MagicCaveTop_init(GameObject* obj, MagicCaveTopPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gMagicCaveTopObjDescriptorInitAdapter, MagicCaveTop_init, obj, placement)
+OBJECT_FREE_ADAPTER(gMagicCaveTopObjDescriptorFreeAdapter, MagicCaveTop_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gMagicCaveTopObjDescriptorExtraSizeAdapter, MagicCaveTop_getExtraSize)
+
 ObjectDescriptor gMagicCaveTopObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gMagicCaveTopObjDescriptorInitAdapter,
+    MagicCaveTop_update,
     0,
     0,
+    gMagicCaveTopObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicCaveTop_init,
-    (ObjectDescriptorCallback)MagicCaveTop_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicCaveTop_free,
-    0,
-    MagicCaveTop_getExtraSize,
+    gMagicCaveTopObjDescriptorExtraSizeAdapter,
 };

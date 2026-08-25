@@ -10,7 +10,7 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "sys/objects.h"
 #include "main/light_internal.h"
 
@@ -58,10 +58,10 @@ void vfpdoorswitch_updateExplodingVariant(GameObject* obj)
             if (obj->anim.currentMoveProgress >= 1.0f)
             {
                 Vec vec;
-                PSVECSubtract(&camView->position, &obj->anim.localPos, &vec);
+                PSVECSubtract((Vec*)&camView->x, (Vec*)&obj->anim.localPosX, &vec);
                 PSVECNormalize(&vec, &vec);
                 PSVECScale(&vec, &vec, 100.0f);
-                PSVECAdd(&obj->anim.localPos, &vec, &obj->anim.localPos);
+                PSVECAdd((Vec*)&obj->anim.localPosX, &vec, (Vec*)&obj->anim.localPosX);
                 obj->anim.worldPosX = obj->anim.localPosX;
                 obj->anim.worldPosY = obj->anim.localPosY;
                 obj->anim.worldPosZ = obj->anim.localPosZ;
@@ -157,19 +157,31 @@ void VFP_DoorSwitch_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_DoorSwitchObjDescriptorInitAdapter, VFP_DoorSwitch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_DoorSwitchObjDescriptorHitDetectAdapter, VFP_DoorSwitch_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_DoorSwitchObjDescriptorFreeAdapter, VFP_DoorSwitch_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_DoorSwitchObjDescriptorTypeIdAdapter, VFP_DoorSwitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_DoorSwitchObjDescriptorExtraSizeAdapter, VFP_DoorSwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_DoorSwitchObjDescriptorAcquire, VFP_DoorSwitch_initialise)
+
 ObjectDescriptor gVFP_DoorSwitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_DoorSwitchObjDescriptorAcquire,
+        VFP_DoorSwitch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_initialise,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_release,
-    0,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_init,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_update,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_hitDetect,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_render,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_free,
-    (ObjectDescriptorCallback)VFP_DoorSwitch_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_DoorSwitch_getExtraSize,
+    gVFP_DoorSwitchObjDescriptorInitAdapter,
+    VFP_DoorSwitch_update,
+    gVFP_DoorSwitchObjDescriptorHitDetectAdapter,
+    VFP_DoorSwitch_render,
+    gVFP_DoorSwitchObjDescriptorFreeAdapter,
+    gVFP_DoorSwitchObjDescriptorTypeIdAdapter,
+    gVFP_DoorSwitchObjDescriptorExtraSizeAdapter,
 };

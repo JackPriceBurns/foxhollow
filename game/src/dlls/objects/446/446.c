@@ -6,7 +6,7 @@
 
 #include "dlls/objects/446.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -14,7 +14,7 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
@@ -257,8 +257,8 @@ void lavaball1be_init(GameObject* obj, DimLavaProjectilePlacement* placement) {
         horizontalVelocity = DIM_LAVA_VELOCITY_SCALE *
                              (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->horizontalSpeed);
         state->floorY = obj->anim.localPosY;
-        state->targetObjectId = placement->targetObjectId;
-        placement->targetObjectId = -1;
+        state->targetObjectId = placement->base.ident;
+        placement->base.ident = -1;
         obj->anim.velocityX =
             horizontalVelocity * -mathSinf(DIM_LAVA_PI * (f32)obj->anim.rotX / DIM_LAVA_ANGLE_UNITS_HALF_CIRCLE);
         obj->anim.velocityY = verticalVelocity;
@@ -295,21 +295,34 @@ void lavaball1be_release(void) {
 void lavaball1be_initialise(void) {
 }
 
-ObjectDescriptor12 gLavaBall1BEObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)lavaball1be_initialise,
-    (ObjectDescriptorCallback)lavaball1be_release,
-    0,
-    (ObjectDescriptorCallback)lavaball1be_init,
-    (ObjectDescriptorCallback)lavaball1be_update,
-    (ObjectDescriptorCallback)lavaball1be_hitDetect,
-    (ObjectDescriptorCallback)lavaball1be_render,
-    (ObjectDescriptorCallback)lavaball1be_free,
-    (ObjectDescriptorCallback)lavaball1be_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)lavaball1be_getExtraSize,
-    (ObjectDescriptorCallback)lavaball1be_relaunch,
-    (ObjectDescriptorCallback)lavaball1be_isInactive,
+OBJECT_INIT_ADAPTER(gLavaBall1BEObjDescriptorInitAdapter, lavaball1be_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLavaBall1BEObjDescriptorHitDetectAdapter, lavaball1be_hitDetect)
+OBJECT_RENDER_ADAPTER(gLavaBall1BEObjDescriptorRenderAdapter, lavaball1be_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gLavaBall1BEObjDescriptorFreeAdapter, lavaball1be_free, obj)
+
+RESOURCE_ACQUIRE_ADAPTER(gLavaBall1BEObjDescriptorAcquire, lavaball1be_initialise)
+
+DimLavaProjectileDescriptor gLavaBall1BEObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gLavaBall1BEObjDescriptorAcquire,
+        lavaball1be_release,
+    },
+    {
+        0,
+        gLavaBall1BEObjDescriptorInitAdapter,
+        lavaball1be_update,
+        gLavaBall1BEObjDescriptorHitDetectAdapter,
+        gLavaBall1BEObjDescriptorRenderAdapter,
+        gLavaBall1BEObjDescriptorFreeAdapter,
+        lavaball1be_getObjectTypeId,
+        lavaball1be_getExtraSize,
+        lavaball1be_relaunch,
+        lavaball1be_isInactive,
+    },
 };

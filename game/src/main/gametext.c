@@ -1,8 +1,8 @@
-#include "main/gametext_api.h"
+#include "main/gametext.h"
 #include "main/gametext_internal.h"
 #include "main/gametext_shared_internal.h"
-#include "main/textrender_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/textrender.h"
+#include "main/rcp_dolphin.h"
 #include "main/camera.h"
 
 char sMapDirectoryNameArwing[] = "Arwing";

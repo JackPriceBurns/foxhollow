@@ -1,5 +1,4 @@
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
@@ -122,19 +121,32 @@ void DR_CageControl_release(void) {
 void DR_CageControl_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDrCageControlObjDescriptorInitAdapter, DR_CageControl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrCageControlObjDescriptorHitDetectAdapter, DR_CageControl_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrCageControlObjDescriptorRenderAdapter, DR_CageControl_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrCageControlObjDescriptorFreeAdapter, DR_CageControl_free)
+OBJECT_TYPE_ID_ADAPTER(gDrCageControlObjDescriptorTypeIdAdapter, DR_CageControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrCageControlObjDescriptorExtraSizeAdapter, DR_CageControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrCageControlObjDescriptorAcquire, DR_CageControl_initialise)
+
 ObjectDescriptor gDrCageControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrCageControlObjDescriptorAcquire,
+        DR_CageControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_CageControl_initialise,
-    (ObjectDescriptorCallback)DR_CageControl_release,
-    0,
-    (ObjectDescriptorCallback)DR_CageControl_init,
-    (ObjectDescriptorCallback)DR_CageControl_update,
-    (ObjectDescriptorCallback)DR_CageControl_hitDetect,
-    (ObjectDescriptorCallback)DR_CageControl_render,
-    (ObjectDescriptorCallback)DR_CageControl_free,
-    (ObjectDescriptorCallback)DR_CageControl_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DR_CageControl_getExtraSize,
+    gDrCageControlObjDescriptorInitAdapter,
+    DR_CageControl_update,
+    gDrCageControlObjDescriptorHitDetectAdapter,
+    gDrCageControlObjDescriptorRenderAdapter,
+    gDrCageControlObjDescriptorFreeAdapter,
+    gDrCageControlObjDescriptorTypeIdAdapter,
+    gDrCageControlObjDescriptorExtraSizeAdapter,
 };

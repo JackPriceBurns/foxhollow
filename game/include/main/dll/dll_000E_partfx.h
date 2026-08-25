@@ -5,14 +5,8 @@
 #include "main/dll/partfx_interface.h"
 #include "game/objects/object_fwd.h"
 
-typedef int (*PartFxSpawnCallback)(GameObject*, int, PartFxSpawnParams*, u32, u8, void*);
-
-typedef struct PartFxResourceVTable {
-    void (*pad00_slots[2])(void);
-    PartFxSpawnCallback spawnObject;
-} PartFxResourceVTable;
-
-STATIC_ASSERT(offsetof(PartFxResourceVTable, spawnObject) == sizeof(void*) * 2);
+typedef EffectSpawnObjectFn PartFxSpawnCallback;
+typedef EffectInterface PartFxResourceVTable;
 
 typedef struct PartFxResource {
     PartFxResourceVTable* vtable;

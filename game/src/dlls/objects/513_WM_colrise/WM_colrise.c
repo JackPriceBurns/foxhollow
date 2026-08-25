@@ -2,11 +2,10 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 
@@ -121,19 +120,31 @@ void WM_colrise_release(void) {
 void WM_colrise_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_colriseObjDescriptorInitAdapter, WM_colrise_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_colriseObjDescriptorHitDetectAdapter, WM_colrise_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_colriseObjDescriptorFreeAdapter, WM_colrise_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_colriseObjDescriptorTypeIdAdapter, WM_colrise_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_colriseObjDescriptorExtraSizeAdapter, WM_colrise_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_colriseObjDescriptorAcquire, WM_colrise_initialise)
+
 ObjectDescriptor gWM_colriseObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_colriseObjDescriptorAcquire,
+        WM_colrise_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_colrise_initialise,
-    WM_colrise_release,
-    0,
-    (ObjectDescriptorCallback)WM_colrise_init,
-    (ObjectDescriptorCallback)WM_colrise_update,
-    WM_colrise_hitDetect,
-    (ObjectDescriptorCallback)WM_colrise_render,
-    WM_colrise_free,
-    (ObjectDescriptorCallback)WM_colrise_getObjectTypeId,
-    WM_colrise_getExtraSize,
+    gWM_colriseObjDescriptorInitAdapter,
+    WM_colrise_update,
+    gWM_colriseObjDescriptorHitDetectAdapter,
+    WM_colrise_render,
+    gWM_colriseObjDescriptorFreeAdapter,
+    gWM_colriseObjDescriptorTypeIdAdapter,
+    gWM_colriseObjDescriptorExtraSizeAdapter,
 };

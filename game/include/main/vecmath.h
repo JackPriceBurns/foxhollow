@@ -2,7 +2,7 @@
 #define MAIN_VECMATH_H_
 
 #include "global.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 
 typedef struct MatrixTransform
 {

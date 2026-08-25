@@ -1,14 +1,14 @@
 #include "dlls/objects/278_WM_Column.h"
 
 #include "main/carryable_interface.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/object_render.h"
 #include "main/obj_list.h"
 #include "main/objtype.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 
 #define WM_COLUMN_GROUP                        4
 #define WM_COLUMN_TARGET_GROUP                 0x10
@@ -31,7 +31,7 @@
 #define WM_COLUMN_MODEL_SCALE                  1.0f
 
 int WM_Column_getExtraSize(void) {
-    return WM_COLUMN_STATE_SIZE;
+    return sizeof(CarryableState);
 }
 
 int WM_Column_getObjectTypeId(void) {
@@ -59,12 +59,12 @@ void WM_Column_update(GameObject* obj) {
     int objectIndex;
     int objectCount;
     GameObject* candidate;
-    WMColumnState* state;
+    CarryableState* state;
     GameObject* player;
 
     state = obj->extra;
     nearestDistance = WM_COLUMN_INITIAL_SEARCH_DISTANCE;
-    if ((*gCarryableInterface)->updateHeld(obj, obj->extra) != 0) {
+    if ((*gCarryableInterface)->updateHeld(obj, state) != 0) {
         if ((obj->userData1 & WM_COLUMN_USER_FLAG_CLEAR_SPOT_ON_GRAB) != 0) {
             objects = ObjList_GetObjects(&objectIndex, &objectCount);
             for (; objectIndex < objectCount; objectIndex++) {
@@ -132,7 +132,7 @@ void WM_Column_update(GameObject* obj) {
 }
 
 void WM_Column_init(GameObject* obj, WMColumnPlacement* placement) {
-    WMColumnState* state = obj->extra;
+    CarryableState* state = obj->extra;
 
     obj->anim.rotX = (s16)(placement->initialYaw << WM_COLUMN_ROTATION_SHIFT);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
@@ -151,19 +151,31 @@ void WM_Column_release(void) {
 void WM_Column_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_ColumnObjDescriptorInitAdapter, WM_Column_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_ColumnObjDescriptorHitDetectAdapter, WM_Column_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_ColumnObjDescriptorFreeAdapter, WM_Column_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_ColumnObjDescriptorTypeIdAdapter, WM_Column_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_ColumnObjDescriptorExtraSizeAdapter, WM_Column_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_ColumnObjDescriptorAcquire, WM_Column_initialise)
+
 ObjectDescriptor gWM_ColumnObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_ColumnObjDescriptorAcquire,
+        WM_Column_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)WM_Column_initialise,
-    (ObjectDescriptorCallback)WM_Column_release,
-    0,
-    (ObjectDescriptorCallback)WM_Column_init,
-    (ObjectDescriptorCallback)WM_Column_update,
-    (ObjectDescriptorCallback)WM_Column_hitDetect,
-    (ObjectDescriptorCallback)WM_Column_render,
-    (ObjectDescriptorCallback)WM_Column_free,
-    (ObjectDescriptorCallback)WM_Column_getObjectTypeId,
-    WM_Column_getExtraSize,
+    gWM_ColumnObjDescriptorInitAdapter,
+    WM_Column_update,
+    gWM_ColumnObjDescriptorHitDetectAdapter,
+    WM_Column_render,
+    gWM_ColumnObjDescriptorFreeAdapter,
+    gWM_ColumnObjDescriptorTypeIdAdapter,
+    gWM_ColumnObjDescriptorExtraSizeAdapter,
 };

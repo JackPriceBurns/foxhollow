@@ -2,7 +2,6 @@
 #define MAIN_PAD_H_
 
 #include "types.h"
-#include "main/pad_api.h"
 
 extern f32 gRumbleTimer;
 extern u8 joypadDisabled;
@@ -51,5 +50,12 @@ u16 padGetTriggersPressed(int port);
 u16 padGetTriggers(int port);
 int initControllers(void);
 void doNothing_endOfFrame(void);
+
+
+
+u32 buttonGetDisabled(int port);
+void buttonDisable(int port, u32 mask);
+void doRumble(f32 duration);
+
 
 #endif /* MAIN_PAD_H_ */

@@ -1,11 +1,11 @@
 #include "dlls/object_descriptor.h"
-#include "main/dll/player_api.h"
-#include "main/track_bbox_api.h"
+#include "main/dll/player.h"
+#include "main/track_bbox.h"
 #include "main/frame_timing.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
-#include "main/shader_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/shader.h"
+#include "dolphin/math.h"
 #include "main/mapEventTypes.h"
 #include "main/mm.h"
 #include "main/vecmath.h"
@@ -36,8 +36,8 @@
 #include "main/dll/dll_0019_dll19func0.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/objtype.h"
-#include "main/lightmap_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/lightmap.h"
+#include "main/audio/sfx.h"
 #include "main/obj_message.h"
 #include "main/objhits.h"
 #include "main/dll/curve_walker.h"
@@ -71,8 +71,7 @@ STATIC_ASSERT(sizeof(Dll19ChildObjectIdTable) == 0xA);
 
 const u16 sDll19DropObjectIds[4] = {0x02C4, 0x02CD, 0x02CE, 0x02CF};
 const u16 sDll19DropObjectIdsAlt[4] = {0x000B, 0x000B, 0x000B, 0x000B};
-union Dll19ConstU32 { u32 u; };
-const union Dll19ConstU32 gDll19DefaultCurveMode = { 2 };
+const u32 gDll19DefaultCurveMode = 2;
 
 
 const Dll19ChildObjectIdTable gDll19ChildObjectIds = {{0x23, 0x69, 0x33, 0x64, 0x1D}};
@@ -198,7 +197,7 @@ void dll_19_initGroundBaddie(GameObject* obj, GroundBaddiePlacement* config, u8*
     int curveLocal;
     u8 byteLocal;
 
-    curveLocal = gDll19DefaultCurveMode.u;
+    curveLocal = gDll19DefaultCurveMode;
     byteLocal = 1;
     ((GroundBaddieState*)state)->control = (void*)(state + sizeof(GroundBaddieState));
     ((GroundBaddieState*)state)->targetState = 0;
@@ -717,7 +716,7 @@ GameObject* dll_19_findAggroTarget(GameObject* self, void* state, f32 frange, in
                 delta = getAngle(-dp[0], -dp[2]) & 0xffff;
                 if (self->anim.parent != NULL)
                 {
-                    delta -= (self->anim.rotX + self->anim.parentAnim->rotX) & 0xffff;
+                    delta -= (self->anim.rotX + self->anim.parent->anim.rotX) & 0xffff;
                     if (delta > 0x8000)
                     {
                         delta -= 0xffff;
@@ -1250,72 +1249,74 @@ void dll_19_func04_nop(void)
 void dll_19_func03_nop(void)
 {
 }
+typedef struct Dll19InterfaceCallbacks {
+    void* slot02;
+    __typeof__(dll_19_func03_nop)* slot03;
+    __typeof__(dll_19_func04_nop)* slot04;
+    __typeof__(dll_19_func05)* slot05;
+    __typeof__(dll_19_updateMovementBlend)* updateMovementBlend;
+    __typeof__(dll_19_getTargetGeometry)* getTargetGeometry;
+    __typeof__(dll_19_getClearDirectionMask)* getClearDirectionMask;
+    __typeof__(dll_19_func09_ret_0)* slot09;
+    __typeof__(dll_19_func0A)* slot0A;
+    __typeof__(dll_19_func0B)* slot0B;
+    __typeof__(dll_19_startHitReaction)* startHitReaction;
+    __typeof__(dll_19_updateGravity)* updateGravity;
+    __typeof__(dll_19_isObjectValid)* isObjectValid;
+    __typeof__(dll_19_updateSequenceMovement)* updateSequenceMovement;
+    __typeof__(dll_19_func10)* slot10;
+    __typeof__(dll_19_pollCameraTarget)* pollCameraTarget;
+    __typeof__(dll_19_releaseState)* releaseState;
+    __typeof__(dll_19_shouldDropTarget)* shouldDropTarget;
+    __typeof__(dll_19_findAggroTarget)* findAggroTarget;
+    __typeof__(dll_19_dropCollectable)* dropCollectable;
+    __typeof__(dll_19_updateHitReaction)* updateHitReaction;
+    __typeof__(dll_19_processMessages)* processMessages;
+    __typeof__(dll_19_initGroundBaddie)* initGroundBaddie;
+    __typeof__(dll_19_changeWeapon)* changeWeapon;
+    __typeof__(dll_19_getHealthFraction)* getHealthFraction;
+    void* slot1B;
+} Dll19InterfaceCallbacks;
+
 typedef struct Dll19Interface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback slot03;
-    ObjectDescriptorCallback slot04;
-    ObjectDescriptorCallback slot05;
-    ObjectDescriptorCallback updateMovementBlend;
-    ObjectDescriptorCallback getTargetGeometry;
-    ObjectDescriptorCallback getClearDirectionMask;
-    ObjectDescriptorCallback slot09;
-    ObjectDescriptorCallback slot0A;
-    ObjectDescriptorCallback slot0B;
-    ObjectDescriptorCallback startHitReaction;
-    ObjectDescriptorCallback updateGravity;
-    ObjectDescriptorCallback isObjectValid;
-    ObjectDescriptorCallback updateSequenceMovement;
-    ObjectDescriptorCallback slot10;
-    ObjectDescriptorCallback pollCameraTarget;
-    ObjectDescriptorCallback releaseState;
-    ObjectDescriptorCallback shouldDropTarget;
-    ObjectDescriptorCallback findAggroTarget;
-    ObjectDescriptorCallback dropCollectable;
-    ObjectDescriptorCallback updateHitReaction;
-    ObjectDescriptorCallback processMessages;
-    ObjectDescriptorCallback initGroundBaddie;
-    ObjectDescriptorCallback changeWeapon;
-    ObjectDescriptorCallback getHealthFraction;
-    ObjectDescriptorCallback slot1B;
+    ResourceDescriptorHeader header;
+    Dll19InterfaceCallbacks interface;
 } Dll19Interface;
 
+RESOURCE_ACQUIRE_ADAPTER(gdll_19ResourceAcquire, dll_19_func03_nop)
+
 Dll19Interface dll_19 = {
-    0,
-    0,
-    0,
-    0x001a0000,
-    (ObjectDescriptorCallback)dll_19_func03_nop,
-    (ObjectDescriptorCallback)dll_19_func04_nop,
-    0,
-    (ObjectDescriptorCallback)dll_19_func03_nop,
-    (ObjectDescriptorCallback)dll_19_func04_nop,
-    (ObjectDescriptorCallback)dll_19_func05,
-    (ObjectDescriptorCallback)dll_19_updateMovementBlend,
-    (ObjectDescriptorCallback)dll_19_getTargetGeometry,
-    (ObjectDescriptorCallback)dll_19_getClearDirectionMask,
-    (ObjectDescriptorCallback)dll_19_func09_ret_0,
-    (ObjectDescriptorCallback)dll_19_func0A,
-    (ObjectDescriptorCallback)dll_19_func0B,
-    (ObjectDescriptorCallback)dll_19_startHitReaction,
-    (ObjectDescriptorCallback)dll_19_updateGravity,
-    (ObjectDescriptorCallback)dll_19_isObjectValid,
-    (ObjectDescriptorCallback)dll_19_updateSequenceMovement,
-    (ObjectDescriptorCallback)dll_19_func10,
-    (ObjectDescriptorCallback)dll_19_pollCameraTarget,
-    (ObjectDescriptorCallback)dll_19_releaseState,
-    (ObjectDescriptorCallback)dll_19_shouldDropTarget,
-    (ObjectDescriptorCallback)dll_19_findAggroTarget,
-    (ObjectDescriptorCallback)dll_19_dropCollectable,
-    (ObjectDescriptorCallback)dll_19_updateHitReaction,
-    (ObjectDescriptorCallback)dll_19_processMessages,
-    (ObjectDescriptorCallback)dll_19_initGroundBaddie,
-    (ObjectDescriptorCallback)dll_19_changeWeapon,
-    (ObjectDescriptorCallback)dll_19_getHealthFraction,
-    0,
+    {
+        {0, 0, 0, 0x001a0000},
+        gdll_19ResourceAcquire,
+        dll_19_func04_nop,
+    },
+    {
+        NULL,
+        dll_19_func03_nop,
+        dll_19_func04_nop,
+        dll_19_func05,
+        dll_19_updateMovementBlend,
+        dll_19_getTargetGeometry,
+        dll_19_getClearDirectionMask,
+        dll_19_func09_ret_0,
+        dll_19_func0A,
+        dll_19_func0B,
+        dll_19_startHitReaction,
+        dll_19_updateGravity,
+        dll_19_isObjectValid,
+        dll_19_updateSequenceMovement,
+        dll_19_func10,
+        dll_19_pollCameraTarget,
+        dll_19_releaseState,
+        dll_19_shouldDropTarget,
+        dll_19_findAggroTarget,
+        dll_19_dropCollectable,
+        dll_19_updateHitReaction,
+        dll_19_processMessages,
+        dll_19_initGroundBaddie,
+        dll_19_changeWeapon,
+        dll_19_getHealthFraction,
+        NULL,
+    },
 };

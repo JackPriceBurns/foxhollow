@@ -8,7 +8,7 @@
 #include "dlls/objects/509_WM_LaserTar.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
@@ -78,19 +78,31 @@ void WM_LaserTarget_release(void) {
 void WM_LaserTarget_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_LaserTargetObjDescriptorInitAdapter, WM_LaserTarget_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_LaserTargetObjDescriptorHitDetectAdapter, WM_LaserTarget_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_LaserTargetObjDescriptorFreeAdapter, WM_LaserTarget_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_LaserTargetObjDescriptorTypeIdAdapter, WM_LaserTarget_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_LaserTargetObjDescriptorExtraSizeAdapter, WM_LaserTarget_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_LaserTargetObjDescriptorAcquire, WM_LaserTarget_initialise)
+
 ObjectDescriptor gWM_LaserTargetObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_LaserTargetObjDescriptorAcquire,
+        WM_LaserTarget_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_LaserTarget_initialise,
-    WM_LaserTarget_release,
-    0,
-    (ObjectDescriptorCallback)WM_LaserTarget_init,
-    (ObjectDescriptorCallback)WM_LaserTarget_update,
-    WM_LaserTarget_hitDetect,
-    (ObjectDescriptorCallback)WM_LaserTarget_render,
-    WM_LaserTarget_free,
-    (ObjectDescriptorCallback)WM_LaserTarget_getObjectTypeId,
-    WM_LaserTarget_getExtraSize,
+    gWM_LaserTargetObjDescriptorInitAdapter,
+    WM_LaserTarget_update,
+    gWM_LaserTargetObjDescriptorHitDetectAdapter,
+    WM_LaserTarget_render,
+    gWM_LaserTargetObjDescriptorFreeAdapter,
+    gWM_LaserTargetObjDescriptorTypeIdAdapter,
+    gWM_LaserTargetObjDescriptorExtraSizeAdapter,
 };

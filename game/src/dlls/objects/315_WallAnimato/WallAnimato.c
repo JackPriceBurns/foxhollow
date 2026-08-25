@@ -1,13 +1,13 @@
 /* Tricky-activated wall that emits debris while its completion timer advances. */
 #include "dlls/objects/315_WallAnimato.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/partfx_interface.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/vecmath.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
@@ -152,23 +152,33 @@ void WallAnimator_init(GameObject* objAddress, WallAnimatorPlacement* placement)
     }
 }
 
-ObjectDescriptor14 gWallAnimatorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)WallAnimator_init,
-    (ObjectDescriptorCallback)WallAnimator_update,
-    0,
-    (ObjectDescriptorCallback)WallAnimator_render,
-    (ObjectDescriptorCallback)WallAnimator_free,
-    0,
-    WallAnimator_getExtraSize,
-    (ObjectDescriptorCallback)WallAnimator_applyImpact,
-    (ObjectDescriptorCallback)WallAnimator_isComplete,
-    (ObjectDescriptorCallback)WallAnimator_getEnergyCost,
-    0,
+OBJECT_INIT_ADAPTER(gWallAnimatorObjDescriptorInitAdapter, WallAnimator_init, obj, placement)
+OBJECT_FREE_ADAPTER(gWallAnimatorObjDescriptorFreeAdapter, WallAnimator_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gWallAnimatorObjDescriptorExtraSizeAdapter, WallAnimator_getExtraSize)
+
+WallAnimatorDescriptor gWallAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gWallAnimatorObjDescriptorInitAdapter,
+        WallAnimator_update,
+        0,
+        WallAnimator_render,
+        gWallAnimatorObjDescriptorFreeAdapter,
+        0,
+        gWallAnimatorObjDescriptorExtraSizeAdapter,
+        WallAnimator_applyImpact,
+        WallAnimator_isComplete,
+        WallAnimator_getEnergyCost,
+        0,
+    },
 };

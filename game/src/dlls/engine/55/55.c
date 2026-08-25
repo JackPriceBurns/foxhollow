@@ -8,26 +8,24 @@
 #include "main/dll/dll_003D_titlemenuitem.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/dll/savedata_struct.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "dolphin/os/OSRtc.h"
-#include "main/rcp_dolphin_state_api.h"
+#include "main/rcp_dolphin_state.h"
 #include "main/model_engine.h"
-#include "main/dll/dll_02C0_front_api.h"
-#include "main/dll/front_game_text_box_api.h"
+#include "main/dll/dll_02C0_front.h"
+#include "main/dll/front_game_text_box.h"
 #include "main/frame_timing.h"
-#include "main/gametext_box_api.h"
-#include "main/gametext_show_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/gametext_box.h"
+#include "main/gametext_show.h"
+#include "main/lightmap_render_control.h"
 #include "main/dll/FRONT/title_menu.h"
 #include "main/dll/dll_0015_curves.h"
-#include "main/gametext_color_api.h"
+#include "main/gametext_color.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/dll/dll_02C0_front.h"
-#include "main/lightmap_api.h"
-#include "main/rcp_dolphin_render_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/sfx.h"
+#include "main/lightmap.h"
+#include "main/rcp_dolphin_render.h"
 #include "main/dll/dll_4E.h"
 #include "foxhollow_config.h"
 
@@ -621,17 +619,20 @@ static void optionsScreenNormalizePanelEntries(void)
     gOptionsPanelEntriesNormalized = 1;
 }
 
-ObjectDescriptor6 OptionsScreen_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)OptionsScreen_initialise,
-    (ObjectDescriptorCallback)OptionsScreen_release,
-    0,
-    (ObjectDescriptorCallback)OptionsScreen_frameStart,
-    (ObjectDescriptorCallback)OptionsScreen_frameEnd,
-    (ObjectDescriptorCallback)OptionsScreen_render,
+UI_RESOURCE_ADAPTERS(gOptionsScreenUiResource, OptionsScreen_initialise, OptionsScreen_frameStart, OptionsScreen_render, arg0)
+
+UiResourceDescriptor OptionsScreen_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gOptionsScreenUiResourceAcquire,
+        OptionsScreen_release,
+    },
+    {
+        NULL,
+        gOptionsScreenUiResourceFrameStart,
+        OptionsScreen_frameEnd,
+        gOptionsScreenUiResourceDraw,
+    },
 };
 
 

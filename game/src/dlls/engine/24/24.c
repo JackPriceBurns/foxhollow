@@ -1,25 +1,25 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/partfx_interface.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "main/gamebits.h"
 #include "main/mm.h"
 #include "main/texture.h"
 #include "main/model.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_text_color_api.h"
+#include "main/lightmap.h"
+#include "main/lightmap_text_color.h"
 #include "main/dll/dll_0018_boneparticleeffect.h"
 #include "main/vecmath.h"
 #include "main/camera.h"
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/mtx.h"
-#include "main/rcp_dolphin_api.h"
-#include "track/intersect_api.h"
-#include "track/intersect_geom_api.h"
-#include "track/intersect_render_setup_api.h"
+#include "main/rcp_dolphin.h"
+#include "track/intersect.h"
+#include "track/intersect_geom.h"
+#include "track/intersect_render_setup.h"
 
 s16 gBoneParticleEffectTimer;
 s32 gBoneParticleScrollOffset;
@@ -99,7 +99,7 @@ void boneParticleEffect_update(void* ctx, int renderParam, u8* obj) {
         gBoneParticleEffectTimer = 0xf;
         Sfx_PlayFromObject(gobj, SFXTRIG_id_281);
     }
-    model = (ObjModel*)gobj->anim.banks[gobj->anim.bankIndex];
+    model = (ObjModel*)gobj->anim.modelBanks[gobj->anim.bankIndex];
     if (gBoneParticleStageIndex > 6) {
         gBoneParticleStageIndex = 0;
     }
@@ -425,36 +425,38 @@ void boneParticleEffect_initialise(void) {
         }
     }
 }
+typedef struct BoneParticleEffectDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(boneParticleEffect_func03_nop)* slot03;
+    __typeof__(boneParticleEffect_func04_nop)* slot04;
+    __typeof__(boneParticleEffect_spawnAtBones)* spawnAtBones;
+    __typeof__(boneParticleEffect_func06_nop)* slot06;
+    __typeof__(boneParticleEffect_update)* update;
+    __typeof__(boneParticleEffect_func08_nop)* slot08;
+    void* slot09;
+} BoneParticleEffectDllInterfaceCallbacks;
+
 typedef struct BoneParticleEffectDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback slot03;
-    ObjectDescriptorCallback slot04;
-    ObjectDescriptorCallback spawnAtBones;
-    ObjectDescriptorCallback slot06;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback slot08;
-    ObjectDescriptorCallback slot09;
+    ResourceDescriptorHeader header;
+    BoneParticleEffectDllInterfaceCallbacks interface;
 } BoneParticleEffectDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gboneParticleEffectResourceAcquire, boneParticleEffect_initialise)
+
 BoneParticleEffectDllInterface boneParticleEffect_funcs = {
-    0,
-    0,
-    0,
-    0x00080000,
-    (ObjectDescriptorCallback)boneParticleEffect_initialise,
-    (ObjectDescriptorCallback)boneParticleEffect_release,
-    0,
-    (ObjectDescriptorCallback)boneParticleEffect_func03_nop,
-    (ObjectDescriptorCallback)boneParticleEffect_func04_nop,
-    (ObjectDescriptorCallback)boneParticleEffect_spawnAtBones,
-    (ObjectDescriptorCallback)boneParticleEffect_func06_nop,
-    (ObjectDescriptorCallback)boneParticleEffect_update,
-    (ObjectDescriptorCallback)boneParticleEffect_func08_nop,
-    0,
+    {
+        {0, 0, 0, 0x00080000},
+        gboneParticleEffectResourceAcquire,
+        boneParticleEffect_release,
+    },
+    {
+        NULL,
+        boneParticleEffect_func03_nop,
+        boneParticleEffect_func04_nop,
+        boneParticleEffect_spawnAtBones,
+        boneParticleEffect_func06_nop,
+        boneParticleEffect_update,
+        boneParticleEffect_func08_nop,
+        NULL,
+    },
 };

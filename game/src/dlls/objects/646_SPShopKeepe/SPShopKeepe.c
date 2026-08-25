@@ -4,24 +4,23 @@
  * The TU contains the shopkeeper's state handlers, its object-sequence
  * callbacks, and the shopkeeper object implementation.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/baddie_state.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
-#include "main/gametext_show_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
+#include "main/gametext_show.h"
+#include "main/track_dolphin.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/boneparticleeffect_interface.h"
 #include "main/dll/shopkeeperstate_struct.h"
-#include "main/dll/pushcartstate97_types.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEvent.h"
 #include "main/model_engine.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/obj_trigger.h"
 #include "game/objects/object_setup.h"
 #include "main/dll/dll_002E_moveLib.h"
@@ -37,13 +36,12 @@
 #include "main/vecmath.h"
 #include "main/dll/SP/dll_0285_spshop.h"
 #include "main/dll/SP/dll_0286_spshopkeeper.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/mapEventTypes.h"
-#include "main/rcp_dolphin_api.h"
 
 #define SHOPKEEPER_GAMEBIT_HAS_MONEY        0x61D
 #define SHOPKEEPER_GAMEBIT_SCARAB_GAME_WON  0x624
@@ -676,8 +674,6 @@ void ShopKeeper_startScarabGame(GameObject* obj)
     state->flags9D4 = 0;
 }
 
-STATIC_ASSERT(sizeof(ShopItemState) == 0xEC);
-
 STATIC_ASSERT(sizeof(ShopkeeperState) == 0x9D8);
 STATIC_ASSERT(offsetof(ShopkeeperState, msgStack) == 0x9B0);
 
@@ -1060,19 +1056,31 @@ void ShopKeeper_initialise(void)
     gShopKeeperDefaultStateHandler = ShopKeeper_defaultStateHandler;
 }
 
+OBJECT_INIT_ADAPTER(gShopKeeperObjDescriptorInitAdapter, ShopKeeper_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gShopKeeperObjDescriptorHitDetectAdapter, ShopKeeper_hitDetect)
+OBJECT_FREE_ADAPTER(gShopKeeperObjDescriptorFreeAdapter, ShopKeeper_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gShopKeeperObjDescriptorTypeIdAdapter, ShopKeeper_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gShopKeeperObjDescriptorExtraSizeAdapter, ShopKeeper_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gShopKeeperObjDescriptorAcquire, ShopKeeper_initialise)
+
 ObjectDescriptor gShopKeeperObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gShopKeeperObjDescriptorAcquire,
+        ShopKeeper_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ShopKeeper_initialise,
-    (ObjectDescriptorCallback)ShopKeeper_release,
-    0,
-    (ObjectDescriptorCallback)ShopKeeper_init,
-    (ObjectDescriptorCallback)ShopKeeper_update,
-    (ObjectDescriptorCallback)ShopKeeper_hitDetect,
-    (ObjectDescriptorCallback)ShopKeeper_render,
-    (ObjectDescriptorCallback)ShopKeeper_free,
-    (ObjectDescriptorCallback)ShopKeeper_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ShopKeeper_getExtraSize,
+    gShopKeeperObjDescriptorInitAdapter,
+    ShopKeeper_update,
+    gShopKeeperObjDescriptorHitDetectAdapter,
+    ShopKeeper_render,
+    gShopKeeperObjDescriptorFreeAdapter,
+    gShopKeeperObjDescriptorTypeIdAdapter,
+    gShopKeeperObjDescriptorExtraSizeAdapter,
 };

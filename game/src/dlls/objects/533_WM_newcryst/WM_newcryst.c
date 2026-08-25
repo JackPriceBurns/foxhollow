@@ -56,10 +56,10 @@ int WM_newcrystal_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
         switch (animUpdate->eventIds[eventIndex])
         {
         case WMNEWCRYSTAL_EVENT_DETONATE:
-            PSVECSubtract(&Camera_GetCurrent()->position, &obj->anim.localPos, &cameraDelta);
+            PSVECSubtract((Vec*)&Camera_GetCurrent()->x, (Vec*)&obj->anim.localPosX, &cameraDelta);
             PSVECNormalize(&cameraDelta, &cameraDelta);
             PSVECScale(&cameraDelta, &cameraDelta, 100.0f);
-            PSVECAdd(&obj->anim.localPos, &cameraDelta, &obj->anim.localPos);
+            PSVECAdd((Vec*)&obj->anim.localPosX, &cameraDelta, (Vec*)&obj->anim.localPosX);
             obj->anim.worldPosX = obj->anim.localPosX;
             obj->anim.worldPosY = obj->anim.localPosY;
             obj->anim.worldPosZ = obj->anim.localPosZ;
@@ -154,19 +154,32 @@ void WM_newcrystal_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWM_newcrystalObjDescriptorInitAdapter, WM_newcrystal_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gWM_newcrystalObjDescriptorUpdateAdapter, WM_newcrystal_update)
+OBJECT_HIT_DETECT_ADAPTER(gWM_newcrystalObjDescriptorHitDetectAdapter, WM_newcrystal_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_newcrystalObjDescriptorFreeAdapter, WM_newcrystal_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_newcrystalObjDescriptorTypeIdAdapter, WM_newcrystal_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_newcrystalObjDescriptorExtraSizeAdapter, WM_newcrystal_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_newcrystalObjDescriptorAcquire, WM_newcrystal_initialise)
+
 ObjectDescriptor gWM_newcrystalObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_newcrystalObjDescriptorAcquire,
+        WM_newcrystal_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_newcrystal_initialise,
-    WM_newcrystal_release,
-    0,
-    (ObjectDescriptorCallback)WM_newcrystal_init,
-    WM_newcrystal_update,
-    WM_newcrystal_hitDetect,
-    (ObjectDescriptorCallback)WM_newcrystal_render,
-    WM_newcrystal_free,
-    (ObjectDescriptorCallback)WM_newcrystal_getObjectTypeId,
-    WM_newcrystal_getExtraSize,
+    gWM_newcrystalObjDescriptorInitAdapter,
+    gWM_newcrystalObjDescriptorUpdateAdapter,
+    gWM_newcrystalObjDescriptorHitDetectAdapter,
+    WM_newcrystal_render,
+    gWM_newcrystalObjDescriptorFreeAdapter,
+    gWM_newcrystalObjDescriptorTypeIdAdapter,
+    gWM_newcrystalObjDescriptorExtraSizeAdapter,
 };

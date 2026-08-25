@@ -13,16 +13,6 @@
  * host is unsafe: every pointer in ObjAnimComponent widens, while the manual
  * padding in the controller's copy does not.
  *
- * This is the canonical native layout. The anonymous views below retain the
- * intentional aliases used by the two APIs without relying on 32-bit byte
- * offsets:
- *
- *   localFrameObj == anim.parent
- *   focusObj      == anim.targetObj
- *   prevLocal     == savedLocalPos
- *   fovY          == fov
- *   prevWorld     == probePos
- *   overrideTarget == targetObj
  */
 typedef struct CameraObject {
     union {
@@ -61,43 +51,12 @@ typedef struct CameraObject {
     u16 objectFlags;
     u16 cameraObjectReserved;
 
-    union {
-        Vec3f savedLocalPos;
-        struct {
-            f32 prevLocalX;
-            f32 prevLocalY;
-            f32 prevLocalZ;
-        };
-    };
-    union {
-        f32 fov;
-        f32 fovY;
-    };
-    union {
-        struct {
-            f32 probePosX;
-            f32 probePosY;
-            f32 probePosZ;
-        };
-        struct {
-            f32 prevWorldX;
-            f32 prevWorldY;
-            f32 prevWorldZ;
-        };
-    };
-    union {
-        f32 unkC4;
-        f32 focusMoveAverage;
-    };
+    Vec3f savedLocalPos;
+    f32 fov;
+    Vec3f probePos;
+    f32 focusMoveAverage;
     f32 focusMoveHistory[5];
-    union {
-        struct {
-            f32 overrideWorldX;
-            f32 overrideWorldY;
-            f32 overrideWorldZ;
-        };
-        Vec3f overrideWorldPos;
-    };
+    Vec3f overrideWorldPos;
     u8 cameraModeReserved[12];
     f32 blendProgress;
     f32 blendStep;
@@ -112,10 +71,7 @@ typedef struct CameraObject {
     f32 blendStartY;
     f32 blendStartZ;
     f32 blendStartFovY;
-    union {
-        void* targetObj;
-        GameObject* overrideTarget;
-    };
+    GameObject* targetObj;
     GameObject* targetReticleOverride;
     GameObject* currentTarget;
     GameObject* targetReticleFocus;
@@ -144,9 +100,5 @@ STATIC_ASSERT(offsetof(CameraObject, anim.hitVolumeTransforms) == offsetof(Camer
 STATIC_ASSERT(offsetof(CameraObject, anim.previousLocalPosY) == offsetof(CameraObject, collisionSweepState));
 STATIC_ASSERT(offsetof(CameraObject, anim.previousLocalPosZ) == offsetof(CameraObject, collisionSweepFlags));
 STATIC_ASSERT(offsetof(CameraObject, anim.targetObj) == offsetof(CameraObject, focusObj));
-STATIC_ASSERT(offsetof(CameraObject, savedLocalPos) == offsetof(CameraObject, prevLocalX));
-STATIC_ASSERT(offsetof(CameraObject, fov) == offsetof(CameraObject, fovY));
-STATIC_ASSERT(offsetof(CameraObject, probePosX) == offsetof(CameraObject, prevWorldX));
-STATIC_ASSERT(offsetof(CameraObject, targetObj) == offsetof(CameraObject, overrideTarget));
 
 #endif /* MAIN_CAMERA_OBJECT_H_ */

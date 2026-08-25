@@ -55,19 +55,32 @@ void TexScroll_release(void) {
 void TexScroll_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gTexscrollObjDescriptorInitAdapter, TexScroll_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gTexscrollObjDescriptorUpdateAdapter, TexScroll_update)
+OBJECT_HIT_DETECT_ADAPTER(gTexscrollObjDescriptorHitDetectAdapter, TexScroll_hitDetect)
+OBJECT_FREE_ADAPTER(gTexscrollObjDescriptorFreeAdapter, TexScroll_free)
+OBJECT_TYPE_ID_ADAPTER(gTexscrollObjDescriptorTypeIdAdapter, TexScroll_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTexscrollObjDescriptorExtraSizeAdapter, TexScroll_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTexscrollObjDescriptorAcquire, TexScroll_initialise)
+
 ObjectDescriptor gTexscrollObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gTexscrollObjDescriptorAcquire,
+        TexScroll_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)TexScroll_initialise,
-    (ObjectDescriptorCallback)TexScroll_release,
-    0,
-    (ObjectDescriptorCallback)TexScroll_init,
-    (ObjectDescriptorCallback)TexScroll_update,
-    (ObjectDescriptorCallback)TexScroll_hitDetect,
-    (ObjectDescriptorCallback)TexScroll_render,
-    (ObjectDescriptorCallback)TexScroll_free,
-    (ObjectDescriptorCallback)TexScroll_getObjectTypeId,
-    TexScroll_getExtraSize,
+    gTexscrollObjDescriptorInitAdapter,
+    gTexscrollObjDescriptorUpdateAdapter,
+    gTexscrollObjDescriptorHitDetectAdapter,
+    TexScroll_render,
+    gTexscrollObjDescriptorFreeAdapter,
+    gTexscrollObjDescriptorTypeIdAdapter,
+    gTexscrollObjDescriptorExtraSizeAdapter,
 };

@@ -7,7 +7,7 @@
 #include "dlls/objects/219_MikaBomb.h"
 #include "dlls/objects/220_MikaBombShadow.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/dll_005B_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/frame_timing.h"
@@ -15,9 +15,8 @@
 #include "main/resource.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/track_dolphin_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/track_dolphin.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -148,19 +147,29 @@ void MikaBomb_release(void) {
 void MikaBomb_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMikaBombObjDescriptorInitAdapter, MikaBomb_init, obj)
+OBJECT_TYPE_ID_ADAPTER(gMikaBombObjDescriptorTypeIdAdapter, MikaBomb_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMikaBombObjDescriptorExtraSizeAdapter, MikaBomb_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMikaBombObjDescriptorAcquire, MikaBomb_initialise)
+
 ObjectDescriptor gMikaBombObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMikaBombObjDescriptorAcquire,
+        MikaBomb_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MikaBomb_initialise,
-    (ObjectDescriptorCallback)MikaBomb_release,
-    0,
-    (ObjectDescriptorCallback)MikaBomb_init,
-    (ObjectDescriptorCallback)MikaBomb_update,
-    (ObjectDescriptorCallback)MikaBomb_hitDetect,
-    (ObjectDescriptorCallback)MikaBomb_render,
-    (ObjectDescriptorCallback)MikaBomb_free,
-    (ObjectDescriptorCallback)MikaBomb_getObjectTypeId,
-    MikaBomb_getExtraSize,
+    gMikaBombObjDescriptorInitAdapter,
+    MikaBomb_update,
+    MikaBomb_hitDetect,
+    MikaBomb_render,
+    MikaBomb_free,
+    gMikaBombObjDescriptorTypeIdAdapter,
+    gMikaBombObjDescriptorExtraSizeAdapter,
 };

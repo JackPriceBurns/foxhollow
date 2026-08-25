@@ -19,9 +19,8 @@
  * thrown sub-object.
  */
 #include "main/dll/partfx_interface.h"
-#include "main/dll/objfx_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/dll/objfx.h"
+#include "main/audio/sfx.h"
 #include "main/object_render.h"
 #include "main/debug.h"
 #include "main/dll/dll22cstate_struct.h"
@@ -29,6 +28,7 @@
 #include "main/dll/dbeggstate_struct.h"
 #include "main/dll/drakorenergystate_struct.h"
 #include "main/dll/dbstealerwormcontrol_struct.h"
+#include "main/dll/dll_023F_dbegg.h"
 #include "main/dll/dfp_types.h"
 #include "game/objects/object.h"
 #include "main/mapEventTypes.h"
@@ -38,30 +38,27 @@
 #include "main/objseq.h"
 #include "main/objfx.h"
 #include "main/gamebits.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/frame_timing.h"
 #include "main/objhits.h"
 #include "main/player_control_interface.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/vecmath.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
 #include "main/obj_path.h"
-#define OBJ_YAW_DELTA_RETURNS_S16
 #include "main/obj_query.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/dll_00E2_staff_api.h"
+#include "main/dll/dll_00E2_staff.h"
 #include "main/dll/dll_0242_dbstealerworm.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/baddie_control_interface.h"
+#include "dlls/object_descriptor.h"
 
 typedef struct DbStealerwormObjDescriptorLayout
 {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    void (*callbacks[12])(void);
+    ObjectDescriptorHeader header;
+    DbStealerwormInterface interface;
     char debugStrings[0x5C];
 } DbStealerwormObjDescriptorLayout;
 
@@ -198,11 +195,11 @@ int dbstealerworm_stateHandlerB06(GameObject* obj, BaddieState* baddie)
             }
             break;
         }
-        if (sub->msgSlotIndex == -1 && (ptr = (char*)sub->savedTargetObj) != NULL)
+        if (sub->msgSlotIndex == -1 && (ptr = (char*)sub->savedTargetObject) != NULL)
         {
             if (DB_STEALERWORM_INTERFACE(ptr)->getControlMode((GameObject*)ptr) == 0)
             {
-                sub->savedTargetObj = 0;
+                sub->savedTargetObject = NULL;
                 sub->msgAdvance = 1;
             }
         }
@@ -642,7 +639,7 @@ int dbstealerworm_stateHandlerA0C(GameObject* obj, BaddieState* baddie, f32 t)
 
     sub->flags15 &= ~4;
     sub->flags14 |= DBWORM_FLAG14_FX_DUST;
-    logPrintf(gDBstealerwormObjDescriptor.debugStrings + 0x34, sub->savedTargetObj, sub->linkedObj);
+    logPrintf(gDBstealerwormObjDescriptor.debugStrings + 0x34, sub->savedTargetObject, sub->linkedObject);
     if (sub->savedTargetObject == NULL)
     {
         player = Obj_GetPlayerObject();
@@ -730,7 +727,7 @@ int dbstealerworm_stateHandlerA0C(GameObject* obj, BaddieState* baddie, f32 t)
                     if (DB_STEALERWORM_INTERFACE(best)
                             ->handleMessage(best, 0x82, (int*)sub->linkedObject) != 0)
                     {
-                        sub->savedTargetObj = 0;
+                        sub->savedTargetObject = NULL;
                         queue = sub->msgStack;
                         msgC[0] = 0xa;
                         msgC[1] = 1;
@@ -867,7 +864,7 @@ int dbstealerworm_stateHandlerA0B(GameObject* obj, BaddieState* baddie, f32 t)
             sub->msgAdvance = 1;
             {
                 intptr_t tD;
-                tD = sub->savedTargetObj;
+                tD = (intptr_t)sub->savedTargetObject;
                 mq = sub->msgStack;
                 msgD[0] = 7;
                 msgD[1] = 1;
@@ -919,7 +916,7 @@ int dbstealerworm_stateHandlerA0B(GameObject* obj, BaddieState* baddie, f32 t)
             sub->msgAdvance = 1;
             {
                 intptr_t tG;
-                tG = sub->savedTargetObj;
+                tG = (intptr_t)sub->savedTargetObject;
                 mq = sub->msgStack;
                 msgG[0] = 0xd;
                 msgG[1] = 1;
@@ -1066,7 +1063,7 @@ int dbstealerworm_stateHandlerA0A(GameObject* obj, BaddieState* state)
             launchVelocity[0] = 0.0f;
             launchVelocity[2] = 2.3333333f;
             ObjMsg_SendToObject(control->linkedObject, 0x11, obj, 0x11);
-            ((int (*)(GameObject*, f32*))control->linkedObject->anim.dll[0][9])(control->linkedObject, launchVelocity);
+            DB_EGG_INTERFACE(control->linkedObject)->setLaunchVelocity(control->linkedObject, launchVelocity);
             control->linkedObject = NULL;
             control->msgSlotIndex = -1;
         }
@@ -1647,7 +1644,7 @@ int dbstealerworm_stateHandlerA05(GameObject* obj, BaddieState* baddie)
                 Stack_Push(msgStack, frame);
             }
         }
-        control->savedTargetObj = 0;
+        control->savedTargetObject = NULL;
     }
     bs->stateTag = 16;
     bs->moveSpeed = 0.015f;
@@ -2161,18 +2158,18 @@ intptr_t dbstealerworm_handleMessage(GameObject* obj, u8 msg, int* out)
         {
             break;
         }
-        sub->savedTargetObj = (intptr_t)out;
+        sub->savedTargetObject = (GameObject*)out;
         result = 1;
         break;
     case 0x83:
-        result = sub->savedTargetObj;
+        result = (intptr_t)sub->savedTargetObject;
         break;
     }
     return result;
 }
 
 
-s16 dbstealerworm_getControlMode(GameObject* obj)
+int dbstealerworm_getControlMode(GameObject* obj)
 {
     return ((BaddieState*)obj->extra)->controlMode;
 }
@@ -2433,6 +2430,13 @@ void dbstealerworm_initialise(void)
     DBstealerwo_setFuncPtrs();
 }
 
+OBJECT_INIT_ADAPTER(gDBstealerwormObjDescriptorInitAdapter, dbstealerworm_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gDBstealerwormObjDescriptorFreeAdapter, dbstealerworm_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDBstealerwormObjDescriptorTypeIdAdapter, dbstealerworm_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDBstealerwormObjDescriptorExtraSizeAdapter, dbstealerworm_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDBstealerwormObjDescriptorAcquire, dbstealerworm_initialise)
+
 void DBstealerwo_setFuncPtrs(void)
 {
     gDBStealerWormStateHandlersA[0] = dbstealerworm_stateHandlerA00;
@@ -2560,24 +2564,22 @@ f32 gDbStealerwormKillAvoidWeights[10] = {2.0f, 0.8f, 0.4f, 2.0f, 0.0f, 0.0f, 0.
 void* gDBStealerWormStateHandlersA[17];
 
 DbStealerwormObjDescriptorLayout gDBstealerwormObjDescriptor = {
-    0,
-    0,
-    0,
-    0x000b0000,
-    {
-        (void (*)(void))dbstealerworm_initialise,
-        (void (*)(void))dbstealerworm_release,
-        0,
-        (void (*)(void))dbstealerworm_init,
-        (void (*)(void))dbstealerworm_update,
-        (void (*)(void))dbstealerworm_hitDetect,
-        (void (*)(void))dbstealerworm_render,
-        (void (*)(void))dbstealerworm_free,
-        (void (*)(void))dbstealerworm_getObjectTypeId,
-        (void (*)(void))dbstealerworm_getExtraSize,
-        (void (*)(void))dbstealerworm_getControlMode,
-        (void (*)(void))dbstealerworm_handleMessage,
+    .header = {
+        .metadata = { 0, 0, 0, 0x000b0000 },
+        .acquire = gDBstealerwormObjDescriptorAcquire,
+        .release = dbstealerworm_release,
     },
-    " Stack -------------------\n\000%i : %s : Opand %i \n\000\000\000\000 HAS BALL : %x= %x\n\000 THROW "
-    "CHANCE %i \n",
+    .interface = {
+        .init = gDBstealerwormObjDescriptorInitAdapter,
+        .update = dbstealerworm_update,
+        .hitDetect = dbstealerworm_hitDetect,
+        .render = dbstealerworm_render,
+        .free = gDBstealerwormObjDescriptorFreeAdapter,
+        .getObjectTypeId = gDBstealerwormObjDescriptorTypeIdAdapter,
+        .getExtraSize = gDBstealerwormObjDescriptorExtraSizeAdapter,
+        .getControlMode = dbstealerworm_getControlMode,
+        .handleMessage = dbstealerworm_handleMessage,
+    },
+    .debugStrings = " Stack -------------------\n\000%i : %s : Opand %i \n\000\000\000\000 HAS BALL : %x= %x\n\000 THROW "
+                    "CHANCE %i \n",
 };

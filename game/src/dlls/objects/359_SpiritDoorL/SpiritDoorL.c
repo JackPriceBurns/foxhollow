@@ -4,14 +4,13 @@
 
 #include "dlls/objects/343_SpiritDoorS.h"
 
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0051_cameramodecannon.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/object_transform.h"
@@ -19,7 +18,7 @@
 #include "main/objseq.h"
 #include "main/objtexture.h"
 #include "main/objtype.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 #define SPIRIT_DOOR_LOCK_LOOP_SFX  0x423
@@ -150,7 +149,7 @@ void SpiritDoorLock_update(GameObject* obj) {
             }
             obj->anim.rotZ = angle;
             Obj_TransformLocalVectorByWorldMatrix(obj, orbitOffset, worldOffset);
-            PSVECAdd(&obj->anim.localPos, (Vec*)worldOffset, &orbitObjects[i]->anim.localPos);
+            PSVECAdd((Vec*)&obj->anim.localPosX, (Vec*)worldOffset, (Vec*)&orbitObjects[i]->anim.localPosX);
             orbitObjects[i]->anim.rotX = obj->anim.rotX;
             orbitObjects[i]->anim.rotZ = (s16)(angle + SPIRIT_DOOR_LOCK_HALF_TURN);
             orbitObjects[i]->anim.rootMotionScale = obj->anim.rootMotionScale;
@@ -213,19 +212,31 @@ void SpiritDoorLock_release(void) {
 void SpiritDoorLock_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSpiritDoorLockObjDescriptorInitAdapter, SpiritDoorLock_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gSpiritDoorLockObjDescriptorHitDetectAdapter, SpiritDoorLock_hitDetect)
+OBJECT_FREE_ADAPTER(gSpiritDoorLockObjDescriptorFreeAdapter, SpiritDoorLock_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSpiritDoorLockObjDescriptorTypeIdAdapter, SpiritDoorLock_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSpiritDoorLockObjDescriptorExtraSizeAdapter, SpiritDoorLock_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSpiritDoorLockObjDescriptorAcquire, SpiritDoorLock_initialise)
+
 ObjectDescriptor gSpiritDoorLockObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSpiritDoorLockObjDescriptorAcquire,
+        SpiritDoorLock_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SpiritDoorLock_initialise,
-    (ObjectDescriptorCallback)SpiritDoorLock_release,
-    0,
-    (ObjectDescriptorCallback)SpiritDoorLock_init,
-    (ObjectDescriptorCallback)SpiritDoorLock_update,
-    (ObjectDescriptorCallback)SpiritDoorLock_hitDetect,
-    (ObjectDescriptorCallback)SpiritDoorLock_render,
-    (ObjectDescriptorCallback)SpiritDoorLock_free,
-    (ObjectDescriptorCallback)SpiritDoorLock_getObjectTypeId,
-    SpiritDoorLock_getExtraSize,
+    gSpiritDoorLockObjDescriptorInitAdapter,
+    SpiritDoorLock_update,
+    gSpiritDoorLockObjDescriptorHitDetectAdapter,
+    SpiritDoorLock_render,
+    gSpiritDoorLockObjDescriptorFreeAdapter,
+    gSpiritDoorLockObjDescriptorTypeIdAdapter,
+    gSpiritDoorLockObjDescriptorExtraSizeAdapter,
 };

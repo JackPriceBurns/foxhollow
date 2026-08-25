@@ -7,7 +7,7 @@
  */
 #include "dlls/objects/245_SidekickBal.h"
 #include "dolphin/mtx/vec.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/os/OSReport.h"
 #include "dolphin/pad.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -16,7 +16,7 @@
 #include "main/dll/player_state.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
@@ -25,9 +25,9 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/tricky_api.h"
-#include "main/dll/player_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/dll/tricky.h"
+#include "main/dll/player.h"
+#include "main/audio/sfx.h"
 
 extern char sSidekickBallYVelDepthFormat[];
 extern char sSidekickBallDotFormat[];
@@ -82,12 +82,12 @@ static inline void sidekickBall_throw(GameObject* obj, f32 velocityX, f32 veloci
     obj->anim.velocityZ = velocityZ;
     ObjHits_EnableObject((GameObject*)(objectId = (int)obj));
     ObjHits_SyncObjectPositionIfDirty((GameObject*)objectId);
-    state->hittableLatch = 1;
+    state->path.subtype = 1;
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
     state->previousPosZ = obj->anim.localPosZ;
     if (fhConfigRevision() == 1) {
-        (*gPathControlInterface)->attachObject(obj, state);
+        (*gPathControlInterface)->attachObject(obj, &state->path);
     }
 }
 
@@ -195,7 +195,7 @@ void sidekickBall_setIdle(GameObject* obj, GameObject* source) {
     state->fadeTimer = 0.0f;
     state->ballMode = SIDEKICK_BALL_IDLE;
     ObjHits_DisableObject(obj);
-    state->hittableLatch = 0;
+    state->path.subtype = 0;
 }
 
 void sidekickBall_launch(GameObject* obj, GameObject* source, f32 velocityX, f32 velocityY, f32 velocityZ) {
@@ -208,12 +208,12 @@ void sidekickBall_launch(GameObject* obj, GameObject* source, f32 velocityX, f32
     obj->anim.velocityZ = velocityZ;
     ObjHits_EnableObject((GameObject*)(objectId = (int)obj));
     ObjHits_SyncObjectPositionIfDirty((GameObject*)objectId);
-    state->hittableLatch = 1;
+    state->path.subtype = 1;
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
     state->previousPosZ = obj->anim.localPosZ;
     if (fhConfigRevision() == 1) {
-        (*gPathControlInterface)->attachObject(obj, state);
+        (*gPathControlInterface)->attachObject(obj, &state->path);
     }
 }
 
@@ -301,19 +301,19 @@ void SidekickBall_update(GameObject* obj) {
         break;
     }
 
-    if (fhConfigRevision() == 0 || state->hittableLatch == 1) {
-        (*gPathControlInterface)->update(obj, state, timeDelta);
-        (*gPathControlInterface)->apply(obj, state);
-        (*gPathControlInterface)->advance(obj, state, timeDelta);
+    if (fhConfigRevision() == 0 || state->path.subtype == 1) {
+        (*gPathControlInterface)->update(obj, &state->path, timeDelta);
+        (*gPathControlInterface)->apply(obj, &state->path);
+        (*gPathControlInterface)->advance(obj, &state->path, timeDelta);
     } else {
-        (*gPathControlInterface)->attachObject(obj, state);
+        (*gPathControlInterface)->attachObject(obj, &state->path);
     }
 }
 
 static inline int sidekickBall_updateFloorDepth(GameObject* obj, SidekickBallState* state) {
-    if (state->floorHeight > 0.0f) {
-        state->floorY = state->floorBaseY;
-        state->floorDepth = state->floorHeight;
+    if (state->path.resultWaterDepth > 0.0f) {
+        state->floorY = state->path.resultWaterY;
+        state->floorDepth = state->path.resultWaterDepth;
         return 1;
     }
     if (sidekickBall_floatsNotEqual(state->floorY, 0.0f)) {
@@ -361,7 +361,7 @@ u8 trickyBallMove(GameObject* obj) {
 
     if ((deltaX + deltaY + deltaZ) < SIDEKICKBALL_MOVEMENT_EPSILON) {
     } else {
-        PSVECSubtract(&obj->anim.localPos, (Vec*)&state->previousPosX, &collisionNormal);
+        PSVECSubtract((Vec*)&obj->anim.localPosX, (Vec*)&state->previousPosX, &collisionNormal);
         speed = restitution = SIDEKICKBALL_RESTITUTION;
         hasCollisionNormal = 1;
         hasMovementDelta = 1;
@@ -385,19 +385,19 @@ u8 trickyBallMove(GameObject* obj) {
     }
 
     objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
-    if (fhConfigRevision() == 0 || state->hittableLatch == 1) {
-        (*gPathControlInterface)->update(obj, state, timeDelta);
-        (*gPathControlInterface)->apply(obj, state);
-        (*gPathControlInterface)->advance(obj, state, timeDelta);
+    if (fhConfigRevision() == 0 || state->path.subtype == 1) {
+        (*gPathControlInterface)->update(obj, &state->path, timeDelta);
+        (*gPathControlInterface)->apply(obj, &state->path);
+        (*gPathControlInterface)->advance(obj, &state->path, timeDelta);
     } else {
-        (*gPathControlInterface)->attachObject(obj, state);
+        (*gPathControlInterface)->attachObject(obj, &state->path);
     }
 
-    if (state->hasCollisionNormal != 0) {
+    if (state->path.surfaceCounter != 0) {
         hasCollisionNormal = 1;
-        collisionNormal.x = state->collisionNormal[0];
-        collisionNormal.y = state->collisionNormal[1];
-        collisionNormal.z = state->collisionNormal[2];
+        collisionNormal.x = state->path.segmentHits.planes[0][0];
+        collisionNormal.y = state->path.segmentHits.planes[0][1];
+        collisionNormal.z = state->path.segmentHits.planes[0][2];
     }
 
     if (hasCollisionNormal != 0) {
@@ -426,10 +426,10 @@ u8 trickyBallMove(GameObject* obj) {
             obj->anim.velocityY -= reflectedY;
             obj->anim.velocityZ -= reflectedZ;
             if (sidekickBall_floatsEqual(state->floorY, 0.0f) && (speed < SIDEKICKBALL_STOP_BOUNCING_SPEED) &&
-                (state->hasCollisionNormal != 0)) {
+                (state->path.surfaceCounter != 0)) {
                 return 2;
             }
-            PSVECScale(&obj->anim.velocity, &obj->anim.velocity, speed * restitution);
+            PSVECScale((Vec*)&obj->anim.velocityX, (Vec*)&obj->anim.velocityX, speed * restitution);
         }
     }
 
@@ -458,12 +458,13 @@ void SidekickBall_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
     hitState = (ObjHitsPriorityState*)obj->anim.hitReactState;
     state->primaryRadius = hitState->primaryRadius;
-    (*gPathControlInterface)->init(state, 0, SIDEKICKBALL_PATH_CONFIG, 1);
-    (*gPathControlInterface)->setLocalPointCollision(state, 1, gSidekickBallPathPointData, &state->primaryRadius, 1);
-    (*gPathControlInterface)->setup(state, 1, gSidekickBallPathPointData, &state->primaryRadius, &pathFlag);
-    (*gPathControlInterface)->attachObject((void*)obj, state);
+    (*gPathControlInterface)->init(&state->path, 0, SIDEKICKBALL_PATH_CONFIG, 1);
+    (*gPathControlInterface)
+        ->setLocalPointCollision(&state->path, 1, gSidekickBallPathPointData, &state->primaryRadius, 1);
+    (*gPathControlInterface)->setup(&state->path, 1, gSidekickBallPathPointData, &state->primaryRadius, &pathFlag);
+    (*gPathControlInterface)->attachObject((void*)obj, &state->path);
     ObjHits_DisableObject(obj);
-    state->hittableLatch = 0;
+    state->path.subtype = 0;
     ObjMsg_AllocQueue((void*)obj, SIDEKICKBALL_MESSAGE_CAPACITY);
     mainSetBits(GAMEBIT_ITEM_TrickyBall_Usable, 0);
 }
@@ -476,19 +477,27 @@ char sSidekickBallYVelDepthFormat[] = "yvel %f, depth %f\n";
 
 char sSidekickBallDotFormat[] = " dot %f ";
 
+OBJECT_INIT_ADAPTER(gSidekickBallObjDescriptorInitAdapter, SidekickBall_init, obj)
+OBJECT_FREE_ADAPTER(gSidekickBallObjDescriptorFreeAdapter, SidekickBall_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSidekickBallObjDescriptorExtraSizeAdapter, SidekickBall_getExtraSize)
+
 ObjectDescriptor gSidekickBallObjDescriptor = {
-    0,                                             /* reserved0 */
-    0,                                             /* reserved1 */
-    0,                                             /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,              /* slotCountAndFlags */
-    0,                                             /* initialise */
-    0,                                             /* release */
-    0,                                             /* slot02 */
-    (ObjectDescriptorCallback)SidekickBall_init,   /* init */
-    (ObjectDescriptorCallback)SidekickBall_update, /* update */
-    0,                                             /* hitDetect */
-    (ObjectDescriptorCallback)SidekickBall_render, /* render */
-    (ObjectDescriptorCallback)SidekickBall_free,   /* free */
-    0,                                             /* getObjectTypeId */
-    SidekickBall_getExtraSize,                     /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSidekickBallObjDescriptorInitAdapter,
+    SidekickBall_update,
+    0,
+    SidekickBall_render,
+    gSidekickBallObjDescriptorFreeAdapter,
+    0,
+    gSidekickBallObjDescriptorExtraSizeAdapter,
 };

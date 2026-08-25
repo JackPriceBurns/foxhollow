@@ -5,12 +5,7 @@
 #include "main/checkpoint_route.h"
 #include "game/objects/object.h"
 
-typedef struct CheckpointRankItem {
-    u8 pad00[0x0C];
-    f32 routeProgress;
-    u8 pad10[0x0C];
-    s32 linkDepth;
-} CheckpointRankItem;
+typedef CheckpointRouteState CheckpointRankItem;
 
 typedef struct CheckpointInterface {
     void (*unused00)(void);

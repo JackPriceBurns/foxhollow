@@ -8,13 +8,13 @@
 
 #include "dlls/objects/377_DFSH_ObjCre.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_placement.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/resource.h"
 #include "sys/objects.h"
@@ -131,19 +131,31 @@ void dfshObjCreator_release(void) {
 void dfshObjCreator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDFSHObjCreatorObjDescriptorInitAdapter, dfshObjCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFSHObjCreatorObjDescriptorHitDetectAdapter, dfshObjCreator_hitDetect)
+OBJECT_FREE_ADAPTER(gDFSHObjCreatorObjDescriptorFreeAdapter, dfshObjCreator_free)
+OBJECT_TYPE_ID_ADAPTER(gDFSHObjCreatorObjDescriptorTypeIdAdapter, dfshObjCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFSHObjCreatorObjDescriptorExtraSizeAdapter, dfshObjCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFSHObjCreatorObjDescriptorAcquire, dfshObjCreator_initialise)
+
 ObjectDescriptor gDFSHObjCreatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFSHObjCreatorObjDescriptorAcquire,
+        dfshObjCreator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dfshObjCreator_initialise,
-    (ObjectDescriptorCallback)dfshObjCreator_release,
-    0,
-    (ObjectDescriptorCallback)dfshObjCreator_init,
-    (ObjectDescriptorCallback)dfshObjCreator_update,
-    (ObjectDescriptorCallback)dfshObjCreator_hitDetect,
-    (ObjectDescriptorCallback)dfshObjCreator_render,
-    (ObjectDescriptorCallback)dfshObjCreator_free,
-    (ObjectDescriptorCallback)dfshObjCreator_getObjectTypeId,
-    dfshObjCreator_getExtraSize,
+    gDFSHObjCreatorObjDescriptorInitAdapter,
+    dfshObjCreator_update,
+    gDFSHObjCreatorObjDescriptorHitDetectAdapter,
+    dfshObjCreator_render,
+    gDFSHObjCreatorObjDescriptorFreeAdapter,
+    gDFSHObjCreatorObjDescriptorTypeIdAdapter,
+    gDFSHObjCreatorObjDescriptorExtraSizeAdapter,
 };

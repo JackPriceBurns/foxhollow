@@ -36,19 +36,33 @@ void area_release(void) {
 void area_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gAreaObjDescriptorInitAdapter, area_init, obj)
+OBJECT_UPDATE_ADAPTER(gAreaObjDescriptorUpdateAdapter, area_update)
+OBJECT_HIT_DETECT_ADAPTER(gAreaObjDescriptorHitDetectAdapter, area_hitDetect)
+OBJECT_RENDER_ADAPTER(gAreaObjDescriptorRenderAdapter, area_render)
+OBJECT_FREE_ADAPTER(gAreaObjDescriptorFreeAdapter, area_free)
+OBJECT_TYPE_ID_ADAPTER(gAreaObjDescriptorTypeIdAdapter, area_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAreaObjDescriptorExtraSizeAdapter, area_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gAreaObjDescriptorAcquire, area_initialise)
+
 ObjectDescriptor gAreaObjDescriptor = {
-    0,                                              /* reserved0 */
-    0,                                              /* reserved1 */
-    0,                                              /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,               /* slotCountAndFlags */
-    (ObjectDescriptorCallback)area_initialise,      /* initialise */
-    (ObjectDescriptorCallback)area_release,         /* release */
-    0,                                              /* slot02 */
-    (ObjectDescriptorCallback)area_init,            /* init */
-    (ObjectDescriptorCallback)area_update,          /* update */
-    (ObjectDescriptorCallback)area_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)area_render,          /* render */
-    (ObjectDescriptorCallback)area_free,            /* free */
-    (ObjectDescriptorCallback)area_getObjectTypeId, /* getObjectTypeId */
-    area_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gAreaObjDescriptorAcquire,
+        area_release,
+    },
+    0,
+    gAreaObjDescriptorInitAdapter,
+    gAreaObjDescriptorUpdateAdapter,
+    gAreaObjDescriptorHitDetectAdapter,
+    gAreaObjDescriptorRenderAdapter,
+    gAreaObjDescriptorFreeAdapter,
+    gAreaObjDescriptorTypeIdAdapter,
+    gAreaObjDescriptorExtraSizeAdapter,
 };

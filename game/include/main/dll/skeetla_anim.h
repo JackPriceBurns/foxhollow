@@ -1,0 +1,9 @@
+#ifndef MAIN_DLL_SKEETLA_ANIM_H_
+#define MAIN_DLL_SKEETLA_ANIM_H_
+
+#include "types.h"
+#include "game/objects/object_fwd.h"
+
+int trickyRequestMove(GameObject* obj, int newState, f32 speed, u32 flags);
+
+#endif /* MAIN_DLL_SKEETLA_ANIM_H_ */

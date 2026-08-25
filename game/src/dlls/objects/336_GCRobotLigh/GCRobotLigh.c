@@ -3,13 +3,13 @@
 #include "dlls/objects/336_GCRobotLigh.h"
 
 #include "dolphin/mtx/vec.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/model_light.h"
 #include "main/obj_link.h"
 #include "main/object_transform.h"
 #include "main/objhits.h"
 #include "main/sky.h"
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/voxmaps.h"
 #include "sys/objects.h"
 
@@ -116,7 +116,7 @@ void gcRobotLightBeam_update(GameObject* obj) {
     Obj_TransformLocalVectorByWorldMatrix(obj, gGcRobotLightBeamLocalDirection, worldDirection);
     voxmaps_traceScaledVectorEnd(lightPosition, &obj->anim.localPosX, worldDirection, gGcRobotLightBeamTraceDistance);
     PSVECScale((Vec*)gGcRobotLightBeamLocalDirection, (Vec*)lightPosition,
-               PSVECDistance(&obj->anim.localPos, (Vec*)lightPosition));
+               PSVECDistance((Vec*)&obj->anim.localPosX, (Vec*)lightPosition));
     skyGetSunColor(0, &red, &green, &blue);
     if (state->pointLight != NULL) {
         modelLightStruct_setDiffuseColor(state->pointLight, (s32)(GCROBOTLIGHTBEAM_AMBIENT_COLOR_SCALE * (f32)(u32)red),
@@ -142,22 +142,34 @@ void gcRobotLightBeam_release(void) {
 void gcRobotLightBeam_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGCRobotLightBeamObjDescriptorInitAdapter, gcRobotLightBeam_init, obj)
+OBJECT_RENDER_ADAPTER(gGCRobotLightBeamObjDescriptorRenderAdapter, gcRobotLightBeam_render)
+OBJECT_FREE_ADAPTER(gGCRobotLightBeamObjDescriptorFreeAdapter, gcRobotLightBeam_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gGCRobotLightBeamObjDescriptorTypeIdAdapter, gcRobotLightBeam_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGCRobotLightBeamObjDescriptorExtraSizeAdapter, gcRobotLightBeam_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGCRobotLightBeamObjDescriptorAcquire, gcRobotLightBeam_initialise)
+
 ObjectDescriptor10WithPadding gGCRobotLightBeamObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gGCRobotLightBeamObjDescriptorAcquire,
+            gcRobotLightBeam_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)gcRobotLightBeam_initialise,
-        (ObjectDescriptorCallback)gcRobotLightBeam_release,
-        0,
-        (ObjectDescriptorCallback)gcRobotLightBeam_init,
-        (ObjectDescriptorCallback)gcRobotLightBeam_update,
-        (ObjectDescriptorCallback)gcRobotLightBeam_hitDetect,
-        (ObjectDescriptorCallback)gcRobotLightBeam_render,
-        (ObjectDescriptorCallback)gcRobotLightBeam_free,
-        (ObjectDescriptorCallback)gcRobotLightBeam_getObjectTypeId,
-        gcRobotLightBeam_getExtraSize,
+        gGCRobotLightBeamObjDescriptorInitAdapter,
+        gcRobotLightBeam_update,
+        gcRobotLightBeam_hitDetect,
+        gGCRobotLightBeamObjDescriptorRenderAdapter,
+        gGCRobotLightBeamObjDescriptorFreeAdapter,
+        gGCRobotLightBeamObjDescriptorTypeIdAdapter,
+        gGCRobotLightBeamObjDescriptorExtraSizeAdapter,
     },
     0,
 };

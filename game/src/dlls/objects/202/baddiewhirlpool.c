@@ -5,7 +5,7 @@
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "sys/objects.h"
-#include "track/intersect_whirlpool_api.h"
+#include "track/intersect_whirlpool.h"
 
 typedef enum IceBaddieObjectGroup {
     ICE_BADDIE_WHIRLPOOL_OBJECT_GROUP = 80

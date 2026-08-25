@@ -55,10 +55,7 @@ typedef struct DIMbossTopState {
     f32 introSinkHeight;
     s32 defeatTimer;
     u8 stompDustDelay;
-    union {
-        u8 unknownB5;
-        u8 meltEntryIndex;
-    };
+    u8 meltEntryIndex;
     DIMbossSteamFlags steamFlags;
 } DIMbossTopState;
 
@@ -85,10 +82,6 @@ typedef struct DIMbossHitDetectAnimHandlerTable {
     int (*liftSlam)(GameObject* obj, BaddieState* state);
     int (*tonsilSlam)(GameObject* obj, BaddieState* state);
 } DIMbossHitDetectAnimHandlerTable;
-
-typedef struct DIMbossRuntime {
-    GroundBaddieState groundBaddie;
-} DIMbossRuntime;
 
 /*
  * This type models only the placement prefix consumed by the callbacks; it
@@ -122,15 +115,11 @@ STATIC_ASSERT(offsetof(DIMbossTopState, icicle.fadeTimer) == 0xA8);
 STATIC_ASSERT(offsetof(DIMbossTopState, introSinkHeight) == 0xAC);
 STATIC_ASSERT(offsetof(DIMbossTopState, defeatTimer) == 0xB0);
 STATIC_ASSERT(offsetof(DIMbossTopState, stompDustDelay) == 0xB4);
-STATIC_ASSERT(offsetof(DIMbossTopState, unknownB5) == 0xB5);
 STATIC_ASSERT(offsetof(DIMbossTopState, meltEntryIndex) == 0xB5);
 STATIC_ASSERT(offsetof(DIMbossTopState, steamFlags) == 0xB6);
 
 STATIC_ASSERT(sizeof(DIMbossAnimHandlerTable) == 0x18);
 STATIC_ASSERT(sizeof(DIMbossHitDetectAnimHandlerTable) == 0x30);
-
-STATIC_ASSERT(offsetof(DIMbossRuntime, groundBaddie) == 0x000);
-STATIC_ASSERT(sizeof(DIMbossRuntime) == sizeof(GroundBaddieState));
 
 STATIC_ASSERT(offsetof(DIMbossPlacementView, base) == 0x00);
 STATIC_ASSERT(offsetof(DIMbossPlacementView, eventId) == 0x2C);
@@ -158,11 +147,11 @@ int DIMbossHitDetect_resetIdleMove(GameObject* obj, u8* state);
 
 void DIMboss_spawnBlueWhiteEffect(DIMbossEffectMarker* source, f32* velocity);
 void DIMboss_createStateLight(GameObject* obj, u8 isGreen);
-void DIMboss_updateSequenceEffects(GameObject* obj, DIMbossRuntime* runtime);
-void DIMboss_updateWarpAndEffects(GameObject* obj, DIMbossRuntime* runtime);
+void DIMboss_updateSequenceEffects(GameObject* obj, GroundBaddieState* runtime);
+void DIMboss_updateWarpAndEffects(GameObject* obj, GroundBaddieState* runtime);
 void DIMboss_updateHitResponse(GameObject* obj, BaddieState* playerState);
-void DIMboss_updateCombatState(GameObject* obj, ObjSeqState* animUpdate, DIMbossRuntime* runtime,
-                                  DIMbossRuntime* updateRuntime);
+void DIMboss_updateCombatState(GameObject* obj, ObjSeqState* animUpdate, GroundBaddieState* runtime,
+                               GroundBaddieState* updateRuntime);
 
 int DIMboss_updateState(GameObject* obj, u32 state, ObjSeqState* animUpdate);
 void DIMboss_func0B(void);
@@ -178,7 +167,8 @@ void DIMboss_release(void);
 void DIMboss_initialise(void);
 void DIMboss_initialiseAnimTables(void);
 
-extern ObjectDescriptor12 gDIM_BossObjDescriptor;
+struct DIM_BossObjDescriptorType;
+extern struct DIM_BossObjDescriptorType gDIM_BossObjDescriptor;
 extern DIMbossAnimHandlerTable gDIMbossAnimTable;
 extern DIMbossHitDetectAnimHandlerTable gDIMbossHitDetectAnimTable;
 extern MoveLibState gDIMbossAnimController;

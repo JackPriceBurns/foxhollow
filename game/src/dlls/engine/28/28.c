@@ -1,25 +1,28 @@
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
 #include "main/dll/modgfx.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_001C_effect3.h"
 #include "main/vecmath.h"
 
 PartFxSpawnParams gEffect3DefaultSpawnParams;
-ObjectDescriptor6 Effect3_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect3_initialise,
-    (ObjectDescriptorCallback)Effect3_release,
-    0,
-    (ObjectDescriptorCallback)Effect3_func03_nop,
-    (ObjectDescriptorCallback)Effect3_spawnObject,
-    (ObjectDescriptorCallback)Effect3_func05_nop,
+EFFECT_RESOURCE_ADAPTERS(gEffect3Resource, Effect3_initialise, Effect3_spawnObject, Effect3_func05_nop)
+
+EffectResourceDescriptor Effect3_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect3ResourceAcquire,
+        Effect3_release,
+    },
+    {
+        NULL,
+        Effect3_func03_nop,
+        gEffect3ResourceSpawn,
+        gEffect3ResourceUpdate,
+    },
 };
 
 static inline PartFxSpawnParams* Effect3_getDefaultSpawnParams(void) {

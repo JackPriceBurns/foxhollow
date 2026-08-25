@@ -24,7 +24,7 @@
  * CLAUDE.md matching notes.
  */
 #include "main/dll/partfx_interface.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/camera_interface.h"
 #include "main/camera.h"
@@ -34,16 +34,16 @@
 #include "main/objhits.h"
 #include "main/pad.h"
 #include "main/screen_transition.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "main/dll/path_control_interface.h"
 #include "main/dll/player_state.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/headdisplay.h"
 #include "game/objects/object.h"
 #include "sys/objects/lifecycle.h"
-#include "main/objprint_api.h"
-#include "main/modellight_api.h"
+#include "main/objprint.h"
+#include "main/modellight.h"
 #include "main/objfx.h"
 #include "sys/objects.h"
 #include "main/objtype.h"
@@ -64,30 +64,19 @@
 #include "main/object_render.h"
 #include "dolphin/mtx/vec.h"
 #include "main/debug.h"
-#include "main/maketex_sequence_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/maketex_sequence.h"
+#include "main/audio/sfx.h"
+#include "main/audio/music.h"
 #include "main/loaded_file_flags.h"
 #include "main/map_load.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/pi_dolphin_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/pi_dolphin.h"
 
 GameObject* gArwing;
 
 u8 gArwingCourseMapIds[8] = {7, 0x13, 0x0D, 0x0C, 2, 0, 0, 0};
 
 const ArwInitCfg gArwingInitConfig = {0x05030303, 0x03030303, 0x0303};
-
-typedef struct ArwarwingState
-{
-    u8 pad0[0x47C - 0x0];
-    u16 score; /* 0x47C: u16 view of ArwingState.score; +200 per pickup, capped at 9999 */
-    u8 pad47E[0x498 - 0x47E];
-} ArwarwingState;
 
 typedef struct ArwInitCfgAB
 {
@@ -532,14 +521,14 @@ void arwarwing_spawnBomb(GameObject* obj, ArwingState* state, int side)
     else
         ObjPath_GetPointWorldPosition(obj, 6, &px, &py, &pz, 0);
     setup = (ArwingBombSetup*)Obj_AllocObjectSetup(0x20, ARWARWING_CHILD_OBJ_BOMB_PROJECTILE);
-    ((ArwingBombSetup*)setup)->head.posX = px;
-    ((ArwingBombSetup*)setup)->head.posY = py;
-    ((ArwingBombSetup*)setup)->head.posZ = pz;
+    ((ArwingBombSetup*)setup)->base.posX = px;
+    ((ArwingBombSetup*)setup)->base.posY = py;
+    ((ArwingBombSetup*)setup)->base.posZ = pz;
     ((ArwingBombSetup*)setup)->yaw = obj->anim.rotX >> 8;
     ((ArwingBombSetup*)setup)->pitch = obj->anim.rotY >> 8;
     ((ArwingBombSetup*)setup)->roll = obj->anim.rotZ >> 8;
-    ((ArwingBombSetup*)setup)->head.color[0] = 1;
-    ((ArwingBombSetup*)setup)->head.color[1] = 1;
+    ((ArwingBombSetup*)setup)->base.color[0] = 1;
+    ((ArwingBombSetup*)setup)->base.color[1] = 1;
     arwing->activeBombObj = loadObjectAtObject(obj, &setup->base);
     arwprojectile_setParamScalar(arwing->activeBombObj, arwing->bombProjectileParam);
     arwprojectile_launchForward(arwing->activeBombObj, arwing->bombProjectileLifetime);
@@ -1140,13 +1129,12 @@ int arwarwing_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
         case 7:
             if (!state->flags339.scoreFlag)
             {
-                ArwarwingState* scoreView = obj->extra;
                 int clampedScore;
-                scoreView->score += 0xc8;
-                clampedScore = scoreView->score;
+                state->score += 0xc8;
+                clampedScore = state->score;
                 if ((u16)clampedScore > 0x270f)
                     clampedScore = 0x270f;
-                scoreView->score = clampedScore;
+                state->score = clampedScore;
             }
             registerNewScore((s8)state->scoreSlot, state->score,
                              state->collectedRings, 2);
@@ -1863,19 +1851,31 @@ void arwarwing_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWArwingObjDescriptorInitAdapter, arwarwing_init, obj)
+OBJECT_RENDER_ADAPTER(gARWArwingObjDescriptorRenderAdapter, arwarwing_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gARWArwingObjDescriptorFreeAdapter, arwarwing_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gARWArwingObjDescriptorTypeIdAdapter, arwarwing_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWArwingObjDescriptorExtraSizeAdapter, arwarwing_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWArwingObjDescriptorAcquire, arwarwing_initialise)
+
 ObjectDescriptor gARWArwingObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwarwing_initialise,
-    (ObjectDescriptorCallback)arwarwing_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWArwingObjDescriptorAcquire,
+        arwarwing_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)arwarwing_init,
-    (ObjectDescriptorCallback)arwarwing_update,
-    (ObjectDescriptorCallback)arwarwing_hitDetect,
-    (ObjectDescriptorCallback)arwarwing_render,
-    (ObjectDescriptorCallback)arwarwing_free,
-    (ObjectDescriptorCallback)arwarwing_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwarwing_getExtraSize,
+    gARWArwingObjDescriptorInitAdapter,
+    arwarwing_update,
+    arwarwing_hitDetect,
+    gARWArwingObjDescriptorRenderAdapter,
+    gARWArwingObjDescriptorFreeAdapter,
+    gARWArwingObjDescriptorTypeIdAdapter,
+    gARWArwingObjDescriptorExtraSizeAdapter,
 };

@@ -40,7 +40,9 @@ void iceblast_update(GameObject* obj) {
     GameObject* pathObj;
 
     if (player != NULL && (pathObj = player->childObjs[0]) != NULL) {
-        obj->anim.rotation = pathObj->anim.rotation;
+        obj->anim.rotX = pathObj->anim.rotX;
+        obj->anim.rotY = pathObj->anim.rotY;
+        obj->anim.rotZ = pathObj->anim.rotZ;
     } else {
         return;
     }
@@ -62,7 +64,7 @@ void iceblast_update(GameObject* obj) {
         obj->anim.velocityX = 0.0f;
         obj->anim.velocityZ = 0.0f;
         obj->anim.velocityY = -3.0f;
-        vecRotateZXY(&rotationArg.rotX, &obj->anim.velocity.x);
+        vecRotateZXY(&rotationArg.rotX, &obj->anim.velocityX);
         ObjPath_GetPointWorldPosition(pathObj, 0, &obj->anim.localPosX, &obj->anim.localPosY, &obj->anim.localPosZ,
                                       0);
         ObjHits_EnableObject(obj);
@@ -88,19 +90,31 @@ void iceblast_release(void) {
 void iceblast_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIceblastObjDescriptorInitAdapter, iceblast_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gIceblastObjDescriptorRenderAdapter, iceblast_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gIceblastObjDescriptorFreeAdapter, iceblast_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIceblastObjDescriptorTypeIdAdapter, iceblast_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIceblastObjDescriptorExtraSizeAdapter, iceblast_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIceblastObjDescriptorAcquire, iceblast_initialise)
+
 ObjectDescriptor gIceblastObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIceblastObjDescriptorAcquire,
+        iceblast_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)iceblast_initialise,
-    (ObjectDescriptorCallback)iceblast_release,
-    0,
-    (ObjectDescriptorCallback)iceblast_init,
-    (ObjectDescriptorCallback)iceblast_update,
-    (ObjectDescriptorCallback)iceblast_hitDetect,
-    (ObjectDescriptorCallback)iceblast_render,
-    (ObjectDescriptorCallback)iceblast_free,
-    (ObjectDescriptorCallback)iceblast_getObjectTypeId,
-    iceblast_getExtraSize,
+    gIceblastObjDescriptorInitAdapter,
+    iceblast_update,
+    iceblast_hitDetect,
+    gIceblastObjDescriptorRenderAdapter,
+    gIceblastObjDescriptorFreeAdapter,
+    gIceblastObjDescriptorTypeIdAdapter,
+    gIceblastObjDescriptorExtraSizeAdapter,
 };

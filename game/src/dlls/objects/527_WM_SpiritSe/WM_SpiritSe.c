@@ -55,19 +55,32 @@ void wmspiritset_release(void) {
 void wmspiritset_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_SpiritSetObjDescriptorInitAdapter, wmspiritset_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gWM_SpiritSetObjDescriptorUpdateAdapter, wmspiritset_update)
+OBJECT_HIT_DETECT_ADAPTER(gWM_SpiritSetObjDescriptorHitDetectAdapter, wmspiritset_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_SpiritSetObjDescriptorFreeAdapter, wmspiritset_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_SpiritSetObjDescriptorTypeIdAdapter, wmspiritset_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_SpiritSetObjDescriptorExtraSizeAdapter, wmspiritset_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_SpiritSetObjDescriptorAcquire, wmspiritset_initialise)
+
 ObjectDescriptor gWM_SpiritSetObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_SpiritSetObjDescriptorAcquire,
+        wmspiritset_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wmspiritset_initialise,
-    (ObjectDescriptorCallback)wmspiritset_release,
-    0,
-    (ObjectDescriptorCallback)wmspiritset_init,
-    (ObjectDescriptorCallback)wmspiritset_update,
-    (ObjectDescriptorCallback)wmspiritset_hitDetect,
-    (ObjectDescriptorCallback)wmspiritset_render,
-    (ObjectDescriptorCallback)wmspiritset_free,
-    (ObjectDescriptorCallback)wmspiritset_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wmspiritset_getExtraSize,
+    gWM_SpiritSetObjDescriptorInitAdapter,
+    gWM_SpiritSetObjDescriptorUpdateAdapter,
+    gWM_SpiritSetObjDescriptorHitDetectAdapter,
+    wmspiritset_render,
+    gWM_SpiritSetObjDescriptorFreeAdapter,
+    gWM_SpiritSetObjDescriptorTypeIdAdapter,
+    gWM_SpiritSetObjDescriptorExtraSizeAdapter,
 };

@@ -37,4 +37,10 @@ void screens_remove(void);
 void screens_run(int unused);
 void screens_show(int id);
 
+
+#include "types.h"
+
+void* saveGameGetCurHint(void);
+
+
 #endif

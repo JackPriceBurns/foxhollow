@@ -38,19 +38,33 @@ void laser_releaseUnsupported(void) {
 void laser_initialiseUnsupported(void) {
 }
 
+OBJECT_INIT_ADAPTER(gLaserUnsupportedObjDescriptorInitAdapter, laser_init)
+OBJECT_UPDATE_ADAPTER(gLaserUnsupportedObjDescriptorUpdateAdapter, laser_updateUnsupported)
+OBJECT_HIT_DETECT_ADAPTER(gLaserUnsupportedObjDescriptorHitDetectAdapter, laser_hitDetectUnsupported)
+OBJECT_RENDER_ADAPTER(gLaserUnsupportedObjDescriptorRenderAdapter, laser_renderUnsupported)
+OBJECT_FREE_ADAPTER(gLaserUnsupportedObjDescriptorFreeAdapter, laser_freeUnsupported)
+OBJECT_TYPE_ID_ADAPTER(gLaserUnsupportedObjDescriptorTypeIdAdapter, laser_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLaserUnsupportedObjDescriptorExtraSizeAdapter, laser_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLaserUnsupportedObjDescriptorAcquire, laser_initialiseUnsupported)
+
 ObjectDescriptor gLaserUnsupportedObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLaserUnsupportedObjDescriptorAcquire,
+        laser_releaseUnsupported,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    laser_initialiseUnsupported,
-    laser_releaseUnsupported,
-    0,
-    laser_init,
-    laser_updateUnsupported,
-    laser_hitDetectUnsupported,
-    laser_renderUnsupported,
-    laser_freeUnsupported,
-    (ObjectDescriptorCallback)laser_getObjectTypeId,
-    laser_getExtraSize,
+    gLaserUnsupportedObjDescriptorInitAdapter,
+    gLaserUnsupportedObjDescriptorUpdateAdapter,
+    gLaserUnsupportedObjDescriptorHitDetectAdapter,
+    gLaserUnsupportedObjDescriptorRenderAdapter,
+    gLaserUnsupportedObjDescriptorFreeAdapter,
+    gLaserUnsupportedObjDescriptorTypeIdAdapter,
+    gLaserUnsupportedObjDescriptorExtraSizeAdapter,
 };

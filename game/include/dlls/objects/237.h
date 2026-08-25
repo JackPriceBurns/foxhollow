@@ -159,7 +159,7 @@ STATIC_ASSERT(offsetof(CollectibleModelSetup, pickupRadius) == 0x8);
 
 /* Complete runtime interface beginning at gCollectibleObjDescriptor's slot02. */
 typedef struct CollectibleInterface {
-    ObjectInterface base;
+    OBJECT_INTERFACE_FIELDS;
     int (*getIsHidden)(GameObject* collectible);
     void (*setDisabled)(GameObject* collectible, int disabled);
     int (*getHitRegionId)(GameObject* collectible);
@@ -168,6 +168,8 @@ typedef struct CollectibleInterface {
     u8 (*getVisibilityBitClear)(GameObject* collectible);
     void (*setPosition)(GameObject* collectible, f32 x, f32 y, f32 z);
 } CollectibleInterface;
+
+OBJECT_DESCRIPTOR_TYPE(CollectibleDescriptor, CollectibleInterface);
 
 STATIC_ASSERT(offsetof(CollectibleInterface, getIsHidden) == 0x20);
 STATIC_ASSERT(offsetof(CollectibleInterface, setDisabled) == 0x24);
@@ -201,6 +203,6 @@ void collectible_init(GameObject* obj, CollectibleSetup* setup);
 void collectible_release(void);
 void collectible_initialise(void);
 
-extern ObjectDescriptor17 gCollectibleObjDescriptor;
+extern CollectibleDescriptor gCollectibleObjDescriptor;
 
 #endif /* DLLS_OBJECTS_237_H_ */

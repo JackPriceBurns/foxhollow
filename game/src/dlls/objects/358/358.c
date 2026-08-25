@@ -5,7 +5,7 @@
 #include "main/frame_timing.h"
 #include "main/model.h"
 #include "main/object_render.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
 
@@ -38,7 +38,7 @@ void exploded_initDebrisState(GameObject* obj, ExplodedPlacement* placement, int
         center.sum[1] = zero;
         center.sum[2] = zero;
 
-        model = (ModelFileHeader*)obj->anim.banks[placement->modelBankIndex];
+        model = (ModelFileHeader*)obj->anim.modelBanks[placement->modelBankIndex];
         for (vertexIndex = 0; vertexIndex < model->vertexCount; vertexIndex++) {
             Model_GetVertexPosition(model, vertexIndex, center.vertex);
             center.sum[0] = center.vertex[0] + center.sum[0];
@@ -88,13 +88,13 @@ void exploded_seedDebrisMotion(GameObject* obj, ExplodedState* state, ExplodedPl
     state->spin.z = (f32)ObjAnim_ReadPlacementS16(&obj->anim, &placement->spin.z);
 
     {
-        u16 floorOffsetRaw = ObjAnim_ReadPlacementU16(&obj->anim, &placement->floorOffsetRaw);
-        if (floorOffsetRaw == 0) {
+        s16 floorOffset = ObjAnim_ReadPlacementS16(&obj->anim, &placement->floorOffset);
+        if (floorOffset == 0) {
             trackGetHeightAboveGround(obj, obj->anim.localPosX, obj->anim.localPosY - 10.0f,
                                       obj->anim.localPosZ, groundHeight, 0);
             state->floorHeight = obj->anim.localPosY - groundHeight[0];
         } else {
-            state->floorHeight = obj->anim.localPosY + (f32)(s16)floorOffsetRaw;
+            state->floorHeight = obj->anim.localPosY + (f32)floorOffset;
         }
     }
 
@@ -147,7 +147,7 @@ int exploded_stepDebrisPhysics(GameObject* obj, ExplodedState* state) {
     f32 worldBefore[3];
 
     stopped = 0.0f;
-    Obj_TransformLocalPointByWorldMatrix((u8*)obj, &state->localCenter.x, worldBefore, 0);
+    Obj_TransformLocalPointByWorldMatrix(obj, &state->localCenter.x, worldBefore, 0);
     obj->anim.velocityX = timeDelta * state->acceleration.x + obj->anim.velocityX;
     obj->anim.velocityY = timeDelta * state->acceleration.y + obj->anim.velocityY;
     obj->anim.velocityZ = timeDelta * state->acceleration.z + obj->anim.velocityZ;
@@ -197,7 +197,7 @@ int exploded_stepDebrisPhysics(GameObject* obj, ExplodedState* state) {
     obj->anim.rotX = (s16)(state->spin.x * timeDelta + (f32)(s32)obj->anim.rotX);
     obj->anim.rotY = (s16)(state->spin.y * timeDelta + (f32)(s32)obj->anim.rotY);
     obj->anim.rotZ = (s16)(state->spin.z * timeDelta + (f32)(s32)obj->anim.rotZ);
-    Obj_TransformLocalPointByWorldMatrix((u8*)obj, &state->localCenter.x, worldAfter, 0);
+    Obj_TransformLocalPointByWorldMatrix(obj, &state->localCenter.x, worldAfter, 0);
     worldAfter[0] = worldBefore[0] - worldAfter[0];
     worldAfter[1] = worldBefore[1] - worldAfter[1];
     worldAfter[2] = worldBefore[2] - worldAfter[2];
@@ -277,25 +277,39 @@ void exploded_release(void) {
 void exploded_initialise(void) {
 }
 
-ObjectDescriptor16 gExplodedObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    (ObjectDescriptorCallback)exploded_initialise,
-    (ObjectDescriptorCallback)exploded_release,
-    0,
-    (ObjectDescriptorCallback)exploded_init,
-    (ObjectDescriptorCallback)exploded_update,
-    (ObjectDescriptorCallback)exploded_hitDetect,
-    (ObjectDescriptorCallback)exploded_render,
-    (ObjectDescriptorCallback)exploded_free,
-    (ObjectDescriptorCallback)exploded_getObjectTypeId,
-    exploded_getExtraSize,
-    (ObjectDescriptorCallback)exploded_getPhase,
-    0,
-    0,
-    0,
-    0,
-    0,
+OBJECT_INIT_ADAPTER(gExplodedObjDescriptorInitAdapter, exploded_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gExplodedObjDescriptorHitDetectAdapter, exploded_hitDetect)
+OBJECT_FREE_ADAPTER(gExplodedObjDescriptorFreeAdapter, exploded_free)
+OBJECT_TYPE_ID_ADAPTER(gExplodedObjDescriptorTypeIdAdapter, exploded_getObjectTypeId, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gExplodedObjDescriptorExtraSizeAdapter, exploded_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gExplodedObjDescriptorAcquire, exploded_initialise)
+
+ExplodedDescriptor gExplodedObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        },
+        gExplodedObjDescriptorAcquire,
+        exploded_release,
+    },
+    {
+        0,
+        gExplodedObjDescriptorInitAdapter,
+        exploded_update,
+        gExplodedObjDescriptorHitDetectAdapter,
+        exploded_render,
+        gExplodedObjDescriptorFreeAdapter,
+        gExplodedObjDescriptorTypeIdAdapter,
+        gExplodedObjDescriptorExtraSizeAdapter,
+        exploded_getPhase,
+        0,
+        0,
+        0,
+        0,
+        0,
+    },
 };

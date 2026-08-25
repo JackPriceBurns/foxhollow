@@ -29,40 +29,6 @@ typedef union StaffCollisionEffectResource {
 
 STATIC_ASSERT(sizeof(StaffCollisionEffectResource) == 0x64);
 
-typedef struct StaffCollisionSpawnPacket {
-    GfxCmd* commands;
-    GameObject* sourceObj;
-    u8 pad08[0x18];
-    f32 velocity[3];
-    f32 position[3];
-    f32 scale;
-    u32 drawGroupStride;
-    u32 drawGroupCount;
-    s16 mode;
-    s16 sequenceParams[7];
-    u32 flags;
-    u8 modeByte;
-    u8 initialStateByte;
-    u8 byte5A;
-    u8 textureFrameTimer;
-    u8 sourceYawIndex;
-    s8 commandCount;
-    u8 pad5E[2];
-} StaffCollisionSpawnPacket;
-
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, commands) == 0x00);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, sourceObj) == 0x04);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, velocity) == 0x20);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, position) == 0x2C);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, scale) == 0x38);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, drawGroupStride) == 0x3C);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, drawGroupCount) == 0x40);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, mode) == 0x44);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, sequenceParams) == 0x46);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, flags) == 0x54);
-STATIC_ASSERT(offsetof(StaffCollisionSpawnPacket, commandCount) == 0x5D);
-STATIC_ASSERT(sizeof(StaffCollisionSpawnPacket) == 0x60);
-
 u8 gStaffCollisionDefaultColorData[8] = {0, 0, 0, 1, 0, 2, 0, 0};
 u8 gStaffCollisionDefaultIndices[8] = {0, 0, 0, 1, 0, 2, 0, 0};
 u8 gStaffCollisionAlternateIndices[8] = {0, 0, 0, 1, 0, 2, 0, 3};
@@ -76,7 +42,7 @@ StaffCollisionEffectResource gStaffCollisionEffectResourceData = {
 void StaffCollision_spawn(GameObject* sourceObj, int mode, PartFxSpawnParams* spawnParams, u32 spawnFlags,
                           int unusedModelId, const StaffCollisionColorArgs* colorArgs) {
     MatrixTransform transform;
-    StaffCollisionSpawnPacket packet;
+    ModgfxSpawnContext packet;
     GfxCmd commandStorage[32];
     GfxCmd* commands = commandStorage;
     int spawnCount;
@@ -154,8 +120,8 @@ void StaffCollision_spawn(GameObject* sourceObj, int mode, PartFxSpawnParams* sp
         transform.rotX = rotationX;
         vecRotateZXY(&transform.rotX, &commands[3].x);
         packet.modeByte = 0;
-        packet.sourceObj = sourceObj;
-        packet.mode = mode;
+        packet.attachedSource = sourceObj;
+        packet.sourceMode = mode;
         packet.position[0] = 0.0f;
         packet.position[1] = 0.0f;
         packet.position[2] = 0.0f;
@@ -180,14 +146,14 @@ void StaffCollision_spawn(GameObject* sourceObj, int mode, PartFxSpawnParams* sp
         packet.flags = 0x2000490;
         packet.flags |= spawnFlags;
         if ((packet.flags & 1) != 0) {
-            if (packet.sourceObj != NULL && spawnParams != NULL) {
-                packet.position[0] += packet.sourceObj->anim.worldPosX + spawnParams->posX;
-                packet.position[1] += packet.sourceObj->anim.worldPosY + spawnParams->posY;
-                packet.position[2] += packet.sourceObj->anim.worldPosZ + spawnParams->posZ;
-            } else if (packet.sourceObj != NULL) {
-                packet.position[0] += packet.sourceObj->anim.worldPosX;
-                packet.position[1] += packet.sourceObj->anim.worldPosY;
-                packet.position[2] += packet.sourceObj->anim.worldPosZ;
+            if (packet.attachedSource != NULL && spawnParams != NULL) {
+                packet.position[0] += packet.attachedSource->anim.worldPosX + spawnParams->posX;
+                packet.position[1] += packet.attachedSource->anim.worldPosY + spawnParams->posY;
+                packet.position[2] += packet.attachedSource->anim.worldPosZ + spawnParams->posZ;
+            } else if (packet.attachedSource != NULL) {
+                packet.position[0] += packet.attachedSource->anim.worldPosX;
+                packet.position[1] += packet.attachedSource->anim.worldPosY;
+                packet.position[2] += packet.attachedSource->anim.worldPosZ;
             } else if (spawnParams != NULL) {
                 packet.position[0] += spawnParams->posX;
                 packet.position[1] += spawnParams->posY;
@@ -203,5 +169,8 @@ void StaffCollision_spawn(GameObject* sourceObj, int mode, PartFxSpawnParams* sp
 }
 
 StaffCollisionResourceDescriptor gStaffCollisionResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, NULL, NULL, NULL, StaffCollision_spawn, 0x00000000,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, NULL, NULL },
+    NULL,
+    StaffCollision_spawn,
+    0x00000000,
 };

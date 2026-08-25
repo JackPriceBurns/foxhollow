@@ -6,18 +6,18 @@
  */
 #include "dlls/objects/471_DIM2SnowBal.h"
 #include "dlls/objects/472_DIM2PathGen.h"
+#include "dlls/objects/478_DIM2LavaCon.h"
 
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/curve.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -121,7 +121,7 @@ void dim2snowball_update(GameObject* obj) {
                 objects = ObjList_GetObjects(&objectIndex, &objectCount);
                 sharpClaw = dim2snowball_findSharpClaw(objects, &objectIndex, &objectCount);
                 if (sharpClaw != NULL) {
-                    ((void (*)(GameObject*))sharpClaw->anim.dll[0][8])(sharpClaw);
+                    DIM2_LAVA_CONTROL_INTERFACE(sharpClaw)->tickCountdown(sharpClaw);
                 }
                 Sfx_PlayFromObject(obj, SFXTRIG_en_nlite1_c);
             }
@@ -214,9 +214,9 @@ void dim2snowball_update(GameObject* obj) {
 void dim2snowball_init(GameObject* obj, Dim2SnowBallPlacement* placement) {
     Dim2SnowBallState* state = obj->extra;
 
-    state->targetObjectId = placement->targetObjectId;
+    state->targetObjectId = placement->base.ident;
     state->flags = (u8)(state->flags | DIM2_SNOWBALL_FLAG_FADING_IN);
-    placement->targetObjectId = -1;
+    placement->base.ident = -1;
     *(s16*)obj = (s16)((s32)placement->rotationXByte << 8);
     obj->anim.alpha = 0;
     {
@@ -236,19 +236,31 @@ void dim2snowball_release(void) {
 void dim2snowball_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIM2SnowBallObjDescriptorInitAdapter, dim2snowball_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2SnowBallObjDescriptorHitDetectAdapter, dim2snowball_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2SnowBallObjDescriptorFreeAdapter, dim2snowball_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM2SnowBallObjDescriptorTypeIdAdapter, dim2snowball_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2SnowBallObjDescriptorExtraSizeAdapter, dim2snowball_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2SnowBallObjDescriptorAcquire, dim2snowball_initialise)
+
 ObjectDescriptor gDIM2SnowBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIM2SnowBallObjDescriptorAcquire,
+        dim2snowball_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dim2snowball_initialise,
-    (ObjectDescriptorCallback)dim2snowball_release,
-    0,
-    (ObjectDescriptorCallback)dim2snowball_init,
-    (ObjectDescriptorCallback)dim2snowball_update,
-    (ObjectDescriptorCallback)dim2snowball_hitDetect,
-    (ObjectDescriptorCallback)dim2snowball_render,
-    (ObjectDescriptorCallback)dim2snowball_free,
-    (ObjectDescriptorCallback)dim2snowball_getObjectTypeId,
-    dim2snowball_getExtraSize,
+    gDIM2SnowBallObjDescriptorInitAdapter,
+    dim2snowball_update,
+    gDIM2SnowBallObjDescriptorHitDetectAdapter,
+    dim2snowball_render,
+    gDIM2SnowBallObjDescriptorFreeAdapter,
+    gDIM2SnowBallObjDescriptorTypeIdAdapter,
+    gDIM2SnowBallObjDescriptorExtraSizeAdapter,
 };

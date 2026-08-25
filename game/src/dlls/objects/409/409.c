@@ -8,16 +8,16 @@
 #include "main/dll/modgfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/pad.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/shader.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "main/obj_message.h"
 #include "sys/objects/lifecycle.h"
@@ -414,19 +414,31 @@ void dll409_release(void) {
 void dll409_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll199ObjDescriptorInitAdapter, dll409_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll199ObjDescriptorHitDetectAdapter, dll409_hitDetect)
+OBJECT_FREE_ADAPTER(gDll199ObjDescriptorFreeAdapter, dll409_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll199ObjDescriptorTypeIdAdapter, dll409_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll199ObjDescriptorExtraSizeAdapter, dll409_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll199ObjDescriptorAcquire, dll409_initialise)
+
 ObjectDescriptor gDll199ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll199ObjDescriptorAcquire,
+        dll409_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll409_initialise,
-    (ObjectDescriptorCallback)dll409_release,
-    0,
-    (ObjectDescriptorCallback)dll409_init,
-    (ObjectDescriptorCallback)dll409_update,
-    (ObjectDescriptorCallback)dll409_hitDetect,
-    (ObjectDescriptorCallback)dll409_render,
-    (ObjectDescriptorCallback)dll409_free,
-    (ObjectDescriptorCallback)dll409_getObjectTypeId,
-    dll409_getExtraSize,
+    gDll199ObjDescriptorInitAdapter,
+    dll409_update,
+    gDll199ObjDescriptorHitDetectAdapter,
+    dll409_render,
+    gDll199ObjDescriptorFreeAdapter,
+    gDll199ObjDescriptorTypeIdAdapter,
+    gDll199ObjDescriptorExtraSizeAdapter,
 };

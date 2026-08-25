@@ -21,10 +21,10 @@ void projlightning7_release(void) {
 void projlightning7_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjlightning7ResourceDescriptorAcquire, projlightning7_initialise)
+
 Projlightning7ResourceDescriptor gProjlightning7ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning7_initialise,
-    projlightning7_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjlightning7ResourceDescriptorAcquire, projlightning7_release },
     NULL,
     projlightning7_doUnsupported,
 };

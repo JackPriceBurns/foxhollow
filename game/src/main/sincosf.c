@@ -1,5 +1,5 @@
 #include "dolphin.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 
 extern const float gSinCosCosCoeff0 = 1.0f;
 extern const float gSinCosSinCoeff1 = 0.78539425f;

@@ -75,19 +75,31 @@ void dll502_release(void) {
 void dll502_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1F6ObjDescriptorInitAdapter, dll502_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1F6ObjDescriptorHitDetectAdapter, dll502_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1F6ObjDescriptorFreeAdapter, dll502_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1F6ObjDescriptorTypeIdAdapter, dll502_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1F6ObjDescriptorExtraSizeAdapter, dll502_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1F6ObjDescriptorAcquire, dll502_initialise)
+
 ObjectDescriptor gDll1F6ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1F6ObjDescriptorAcquire,
+        dll502_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dll502_initialise,
-    dll502_release,
-    0,
-    (ObjectDescriptorCallback)dll502_init,
-    (ObjectDescriptorCallback)dll502_update,
-    dll502_hitDetect,
-    (ObjectDescriptorCallback)dll502_render,
-    dll502_free,
-    (ObjectDescriptorCallback)dll502_getObjectTypeId,
-    dll502_getExtraSize,
+    gDll1F6ObjDescriptorInitAdapter,
+    dll502_update,
+    gDll1F6ObjDescriptorHitDetectAdapter,
+    dll502_render,
+    gDll1F6ObjDescriptorFreeAdapter,
+    gDll1F6ObjDescriptorTypeIdAdapter,
+    gDll1F6ObjDescriptorExtraSizeAdapter,
 };

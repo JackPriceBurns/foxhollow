@@ -1,8 +1,9 @@
 #ifndef MAIN_DLL_WC_DLL_028D_WCLEVELCONT_H_
 #define MAIN_DLL_WC_DLL_028D_WCLEVELCONT_H_
 
+#include "dlls/object_descriptor.h"
 #include "global.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object.h"
 #include "main/objseq.h"
 
@@ -10,28 +11,24 @@ typedef struct WCLevelContInterface WCLevelContInterface;
 
 struct WCLevelContInterface
 {
-    void (*pad00_slots[8])(void);
-    void (*tileAToWorldPos)(GameObject* obj, int tileX, int tileY, f32* outX, f32* outZ,
-                            WCLevelContInterface* iface);
-    void (*worldPosToTileA)(GameObject* obj, f32 x, f32 z, s16* outTileX, s16* outTileY,
-                            WCLevelContInterface* iface);
-    void (*setTileA)(int value, int tileX, int tileY, WCLevelContInterface* iface);
-    int (*getTileA)(int tileX, int tileY, WCLevelContInterface* iface);
-    void (*getInitialTileXYA)(int value, s16* outTileX, s16* outTileY, WCLevelContInterface* iface);
-    void (*getSolvedTileXYA)(int value, s16* outTileX, s16* outTileY, WCLevelContInterface* iface);
-    u8 (*traceMoveA)(GameObject* obj, int tileX, int tileY, f32* outX, f32* outZ, int dx, int dy,
-                     WCLevelContInterface* iface);
-    void (*tileBToWorldPos)(GameObject* obj, int tileX, int tileY, f32* outX, f32* outZ,
-                            WCLevelContInterface* iface);
-    void (*worldPosToTileB)(GameObject* obj, f32 x, f32 z, s16* outTileX, s16* outTileY,
-                            WCLevelContInterface* iface);
-    void (*setTileB)(int value, int tileX, int tileY, WCLevelContInterface* iface);
-    int (*getTileB)(int tileX, int tileY, WCLevelContInterface* iface);
-    void (*getInitialTileXYB)(int value, s16* outTileX, s16* outTileY, WCLevelContInterface* iface);
-    void (*getSolvedTileXYB)(int value, s16* outTileX, s16* outTileY, WCLevelContInterface* iface);
-    u8 (*traceMoveB)(GameObject* obj, int tileX, int tileY, f32* outX, f32* outZ, int dx, int dy,
-                     WCLevelContInterface* iface);
+    OBJECT_INTERFACE_FIELDS;
+    void (*tileAToWorldPos)(GameObject* obj, s16 tileX, s16 tileY, f32* outX, f32* outZ);
+    void (*worldPosToTileA)(GameObject* obj, f32 x, f32 z, s16* outTileX, s16* outTileY);
+    void (*setTileA)(int value, s16 tileX, s16 tileY);
+    int (*getTileA)(s16 tileX, s16 tileY);
+    void (*getInitialTileXYA)(s16 value, s16* outTileX, s16* outTileY);
+    void (*getSolvedTileXYA)(s16 value, s16* outTileX, s16* outTileY);
+    int (*traceMoveA)(GameObject* obj, s16 tileX, s16 tileY, f32* outX, f32* outZ, int dx, int dy);
+    void (*tileBToWorldPos)(GameObject* obj, s16 tileX, s16 tileY, f32* outX, f32* outZ);
+    void (*worldPosToTileB)(GameObject* obj, f32 x, f32 z, s16* outTileX, s16* outTileY);
+    void (*setTileB)(int value, s16 tileX, s16 tileY);
+    int (*getTileB)(s16 tileX, s16 tileY);
+    void (*getInitialTileXYB)(s16 value, s16* outTileX, s16* outTileY);
+    void (*getSolvedTileXYB)(s16 value, s16* outTileX, s16* outTileY);
+    int (*traceMoveB)(GameObject* obj, s16 tileX, s16 tileY, f32* outX, f32* outZ, int dx, int dy);
 };
+
+OBJECT_DESCRIPTOR_TYPE(WCLevelContDescriptor, WCLevelContInterface);
 
 #define WC_LEVEL_CONT_INTERFACE(controller) (*(WCLevelContInterface**)((controller)->anim.dll))
 
@@ -86,7 +83,7 @@ typedef struct WcLevelControlState
     u8 mode;
     u8 previousMode;
     u8 pad0E[0x10 - 0x0E];
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     WclevelcontFlags dialogueFlags;
     u8 pad15;
     u16 thorntailMusicId;
@@ -108,10 +105,9 @@ STATIC_ASSERT(offsetof(WcLevelControlState, thorntailMusicId) == 0x16);
 STATIC_ASSERT(offsetof(WcLevelControlState, ambientMusicId) == 0x18);
 STATIC_ASSERT(offsetof(WcLevelControlState, completionFlags) == 0x1A);
 
-typedef union WcTileGrid
+typedef struct WcTileGrid
 {
     u8 g[8][8];
-    u64 align8;
 } WcTileGrid;
 
 extern WcTileGrid gWcTileGridBSolved;

@@ -2,9 +2,9 @@
 #include "main/gamebits.h"
 #include "main/frame_timing.h"
 #include "dolphin/pad.h"
-#include "main/hud_visibility_api.h"
+#include "main/hud_visibility.h"
 #include "main/pad.h"
-#include "track/intersect_screen_api.h"
+#include "track/intersect_screen.h"
 #include "main/dll/dll_003B_menu.h"
 
 s8 gMenuSelectedId;
@@ -105,40 +105,42 @@ void Menu_initialise(void) {
     gMenuSelectedId = 0;
     gMenuArmed = 0;
 }
+typedef struct MenuDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(Menu_reset)* reset;
+    __typeof__(Menu_open)* open;
+    __typeof__(Menu_addItem)* addItem;
+    __typeof__(Menu_addItemEx)* addItemEx;
+    __typeof__(Menu_setCancelId)* setCancelId;
+    __typeof__(Menu_poll)* poll;
+    __typeof__(Menu_func09_nop)* slot09;
+    __typeof__(Menu_setArmed)* setArmed;
+    __typeof__(Menu_getItemCount)* getItemCount;
+} MenuDllInterfaceCallbacks;
+
 typedef struct MenuDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback reset;
-    ObjectDescriptorCallback open;
-    ObjectDescriptorCallback addItem;
-    ObjectDescriptorCallback addItemEx;
-    ObjectDescriptorCallback setCancelId;
-    ObjectDescriptorCallback poll;
-    ObjectDescriptorCallback slot09;
-    ObjectDescriptorCallback setArmed;
-    ObjectDescriptorCallback getItemCount;
+    ResourceDescriptorHeader header;
+    MenuDllInterfaceCallbacks interface;
 } MenuDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gMenuResourceAcquire, Menu_initialise)
+
 MenuDllInterface Menu_funcs = {
-    0,
-    0,
-    0,
-    0x000b0000,
-    (ObjectDescriptorCallback)Menu_initialise,
-    (ObjectDescriptorCallback)Menu_release,
-    0,
-    (ObjectDescriptorCallback)Menu_reset,
-    (ObjectDescriptorCallback)Menu_open,
-    (ObjectDescriptorCallback)Menu_addItem,
-    (ObjectDescriptorCallback)Menu_addItemEx,
-    (ObjectDescriptorCallback)Menu_setCancelId,
-    (ObjectDescriptorCallback)Menu_poll,
-    (ObjectDescriptorCallback)Menu_func09_nop,
-    (ObjectDescriptorCallback)Menu_setArmed,
-    (ObjectDescriptorCallback)Menu_getItemCount,
+    {
+        {0, 0, 0, 0x000b0000},
+        gMenuResourceAcquire,
+        Menu_release,
+    },
+    {
+        NULL,
+        Menu_reset,
+        Menu_open,
+        Menu_addItem,
+        Menu_addItemEx,
+        Menu_setCancelId,
+        Menu_poll,
+        Menu_func09_nop,
+        Menu_setArmed,
+        Menu_getItemCount,
+    },
 };

@@ -1,5 +1,5 @@
 #include "game/objects/object.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
@@ -17,17 +17,20 @@ f32 gEffect17AnimProgressC = 0.1f;
 f32 gEffect17AnimProgressD = 0.3f;
 
 
-ObjectDescriptor6 Effect17_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect17_initialise,
-    (ObjectDescriptorCallback)Effect17_release,
-    0,
-    (ObjectDescriptorCallback)Effect17_func03_nop,
-    (ObjectDescriptorCallback)Effect17_spawnObject,
-    (ObjectDescriptorCallback)Effect17_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect17Resource, Effect17_initialise, Effect17_spawnObject, Effect17_updateFrameState)
+
+EffectResourceDescriptor Effect17_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect17ResourceAcquire,
+        Effect17_release,
+    },
+    {
+        NULL,
+        Effect17_func03_nop,
+        gEffect17ResourceSpawn,
+        gEffect17ResourceUpdate,
+    },
 };
 
 int Effect17_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

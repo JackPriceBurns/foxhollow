@@ -1,6 +1,6 @@
 /* DLL 608: ProximityMine-family object callbacks. */
 #include "main/dll/partfx_interface.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/proximitymine.h"
 #include "main/frame_timing.h"
 #include "sys/objects.h"
@@ -10,15 +10,13 @@
 #include "main/objtexture.h"
 #include "main/vecmath.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/lightmap_api.h"
-#include "main/track_dolphin_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/maketex_timer_api.h"
+#include "dolphin/math.h"
+#include "main/lightmap.h"
+#include "main/track_dolphin.h"
+#include "main/audio/sfx.h"
+#include "main/maketex_timer.h"
 #include "main/obj_path.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects/lifecycle.h"
 #include "main/model_light.h"
 
@@ -431,19 +429,31 @@ void ProximityMine_initialise(void)
     return;
 }
 
+OBJECT_INIT_ADAPTER(gProximityMineObjDescriptorInitAdapter, ProximityMine_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gProximityMineObjDescriptorRenderAdapter, ProximityMine_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gProximityMineObjDescriptorFreeAdapter, ProximityMine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gProximityMineObjDescriptorTypeIdAdapter, ProximityMine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gProximityMineObjDescriptorExtraSizeAdapter, ProximityMine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gProximityMineObjDescriptorAcquire, ProximityMine_initialise)
+
 ObjectDescriptor gProximityMineObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gProximityMineObjDescriptorAcquire,
+        ProximityMine_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ProximityMine_initialise,
-    (ObjectDescriptorCallback)ProximityMine_release,
-    0,
-    (ObjectDescriptorCallback)ProximityMine_init,
-    (ObjectDescriptorCallback)ProximityMine_update,
-    (ObjectDescriptorCallback)ProximityMine_hitDetect,
-    (ObjectDescriptorCallback)ProximityMine_render,
-    (ObjectDescriptorCallback)ProximityMine_free,
-    (ObjectDescriptorCallback)ProximityMine_getObjectTypeId,
-    ProximityMine_getExtraSize,
+    gProximityMineObjDescriptorInitAdapter,
+    ProximityMine_update,
+    ProximityMine_hitDetect,
+    gProximityMineObjDescriptorRenderAdapter,
+    gProximityMineObjDescriptorFreeAdapter,
+    gProximityMineObjDescriptorTypeIdAdapter,
+    gProximityMineObjDescriptorExtraSizeAdapter,
 };

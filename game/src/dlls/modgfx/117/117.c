@@ -130,44 +130,44 @@ s16 dll_75_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* sp
     commandCursor[0].x = 999.0f;
     commandCursor[0].y = startFrame;
     commandCursor[0].z = endFrame;
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = originOffset;
-    packet.position[1] = originOffset;
-    packet.position[2] = originOffset;
-    packet.velocity[0] = originOffset;
-    packet.velocity[1] = originOffset;
-    packet.velocity[2] = originOffset;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 0;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 0;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = (commandCursor + 1) - commands;
-    packet.sequenceParams[0] = gDll75SequenceParams.params[0];
-    packet.sequenceParams[1] = gDll75SequenceParams.params[1];
-    packet.sequenceParams[2] = gDll75SequenceParams.params[2];
-    packet.sequenceParams[3] = gDll75SequenceParams.params[3];
-    packet.sequenceParams[4] = gDll75SequenceParams.params[4];
-    packet.sequenceParams[5] = gDll75SequenceParams.params[5];
-    packet.sequenceParams[6] = gDll75SequenceParams.params[6];
-    packet.commands = (GfxCmd*)((u8*)&packet + 0x60);
-    packet.flags = 0x10800;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = originOffset;
+    packet.context.position[1] = originOffset;
+    packet.context.position[2] = originOffset;
+    packet.context.velocity[0] = originOffset;
+    packet.context.velocity[1] = originOffset;
+    packet.context.velocity[2] = originOffset;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 0;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 0;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = (commandCursor + 1) - commands;
+    packet.context.sequenceParams[0] = gDll75SequenceParams.params[0];
+    packet.context.sequenceParams[1] = gDll75SequenceParams.params[1];
+    packet.context.sequenceParams[2] = gDll75SequenceParams.params[2];
+    packet.context.sequenceParams[3] = gDll75SequenceParams.params[3];
+    packet.context.sequenceParams[4] = gDll75SequenceParams.params[4];
+    packet.context.sequenceParams[5] = gDll75SequenceParams.params[5];
+    packet.context.sequenceParams[6] = gDll75SequenceParams.params[6];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x10800;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
         if (sourceObj != NULL) {
-            packet.position[0] = originOffset + sourceObj->anim.worldPosX;
-            packet.position[1] = originOffset + sourceObj->anim.worldPosY;
-            packet.position[2] = originOffset + sourceObj->anim.worldPosZ;
+            packet.context.position[0] = originOffset + sourceObj->anim.worldPosX;
+            packet.context.position[1] = originOffset + sourceObj->anim.worldPosY;
+            packet.context.position[2] = originOffset + sourceObj->anim.worldPosZ;
         } else {
-            packet.position[0] = originOffset + spawnParams->posX;
-            packet.position[1] = originOffset + spawnParams->posY;
-            packet.position[2] = originOffset + spawnParams->posZ;
+            packet.context.position[0] = originOffset + spawnParams->posX;
+            packet.context.position[1] = originOffset + spawnParams->posY;
+            packet.context.position[2] = originOffset + spawnParams->posZ;
         }
     }
-    return (*gModgfxInterface)->spawnEffect(&packet, 0, 0, 0, 0, 0, 0, 0);
+    return (*gModgfxInterface)->spawnEffect(&packet.context, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void dll_75_release(void) {
@@ -176,6 +176,10 @@ void dll_75_release(void) {
 void dll_75_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDll75ResourceDescriptorAcquire, dll_75_initialise)
+
 Dll75ResourceDescriptor gDll75ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_75_initialise, dll_75_release, NULL, dll_75_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll75ResourceDescriptorAcquire, dll_75_release },
+    NULL,
+    dll_75_spawnEffect,
 };

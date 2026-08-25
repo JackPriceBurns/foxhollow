@@ -6,16 +6,12 @@
 #include "main/model_light.h"
 
 typedef struct DIMbossSpitState {
-    union {
-        s16 phase;
-        s16 burstTimer;
-    };
+    s16 phaseTimer;
     s16 unknown02;
     ModelLightStruct* light;
 } DIMbossSpitState;
 
-STATIC_ASSERT(offsetof(DIMbossSpitState, phase) == 0x00);
-STATIC_ASSERT(offsetof(DIMbossSpitState, burstTimer) == 0x00);
+STATIC_ASSERT(offsetof(DIMbossSpitState, phaseTimer) == 0x00);
 STATIC_ASSERT(offsetof(DIMbossSpitState, unknown02) == 0x02);
 STATIC_ASSERT(offsetof(DIMbossSpitState, light) == 0x04);
 STATIC_ASSERT(sizeof(DIMbossSpitState) == 0x08);

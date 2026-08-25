@@ -7,10 +7,10 @@
  * (DR_Creator_SeqFn).
  */
 #include "main/dll/DR/dll_0265_drcreator.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/debug.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/objseq.h"
@@ -61,11 +61,11 @@ int DR_Creator_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
                     projectile->anim.rotX = randomGetRange(0, 65535);
                     projectile->anim.velocityX =
                         0.2f *
-                        (f32)randomGetRange(-state->velocitySpread, state->velocitySpread);
+                        (f32)randomGetRange(-state->timerVariance, state->timerVariance);
                     projectile->anim.velocityY = 0.2f * (f32)state->speedScale;
                     projectile->anim.velocityZ =
                         0.2f *
-                        (f32)randomGetRange(-state->velocitySpread, state->velocitySpread);
+                        (f32)randomGetRange(-state->timerVariance, state->timerVariance);
                     projectile->ownerObj = obj;
                 }
             }
@@ -188,19 +188,32 @@ void DR_Creator_initialise(void)
 
 char sDrCreatorTimeFormat[15] = " Time %i : %i \000";
 
+OBJECT_INIT_ADAPTER(gDrCreatorObjDescriptorInitAdapter, DR_Creator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrCreatorObjDescriptorHitDetectAdapter, DR_Creator_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrCreatorObjDescriptorRenderAdapter, DR_Creator_render)
+OBJECT_FREE_ADAPTER(gDrCreatorObjDescriptorFreeAdapter, DR_Creator_free)
+OBJECT_TYPE_ID_ADAPTER(gDrCreatorObjDescriptorTypeIdAdapter, DR_Creator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrCreatorObjDescriptorExtraSizeAdapter, DR_Creator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrCreatorObjDescriptorAcquire, DR_Creator_initialise)
+
 ObjectDescriptor gDrCreatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrCreatorObjDescriptorAcquire,
+        DR_Creator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_Creator_initialise,
-    (ObjectDescriptorCallback)DR_Creator_release,
-    0,
-    (ObjectDescriptorCallback)DR_Creator_init,
-    (ObjectDescriptorCallback)DR_Creator_update,
-    (ObjectDescriptorCallback)DR_Creator_hitDetect,
-    (ObjectDescriptorCallback)DR_Creator_render,
-    (ObjectDescriptorCallback)DR_Creator_free,
-    (ObjectDescriptorCallback)DR_Creator_getObjectTypeId,
-    DR_Creator_getExtraSize,
+    gDrCreatorObjDescriptorInitAdapter,
+    DR_Creator_update,
+    gDrCreatorObjDescriptorHitDetectAdapter,
+    gDrCreatorObjDescriptorRenderAdapter,
+    gDrCreatorObjDescriptorFreeAdapter,
+    gDrCreatorObjDescriptorTypeIdAdapter,
+    gDrCreatorObjDescriptorExtraSizeAdapter,
 };

@@ -1,4 +1,4 @@
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "musyx/synth_voice.h"
 
 #include "musyx/mcmd.h"

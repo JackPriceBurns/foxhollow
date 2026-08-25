@@ -2,6 +2,7 @@
 #define DLLS_OBJECTS_488_SB_GALLEON_H_
 
 #include "dlls/object_descriptor.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object.h"
 #include "main/objseq.h"
 
@@ -69,7 +70,7 @@ typedef struct SBGalleonState {
     u8 envfxActs[6];
     u8 skyFlag;
     f32 textTimer;
-    u8 gameBitLatch[4];
+    int gameBitLatch;
 } SBGalleonState;
 
 STATIC_ASSERT(offsetof(SBGalleonState, driftX) == 0x00);
@@ -157,7 +158,8 @@ STATIC_ASSERT(sizeof(SBGalleonVtbl) == 0x30);
 
 #define SB_GALLEON_VTBL(galleon) ((SBGalleonVtbl*)*((GameObject*)(galleon))->anim.dll)
 
-extern ObjectDescriptor15 gSB_GalleonObjDescriptor;
+struct SB_GalleonObjDescriptorType;
+extern struct SB_GalleonObjDescriptorType gSB_GalleonObjDescriptor;
 
 void SB_Galleon_updateFlight(GameObject* obj);
 void SB_Galleon_updateEnvfxGameBits(SBGalleonState* state);

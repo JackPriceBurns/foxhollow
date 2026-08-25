@@ -3,15 +3,15 @@
 #include "dlls/objects/346.h"
 #include "dlls/objects/358.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/gamebits_api.h"
+#include "dolphin/math.h"
+#include "main/gamebits.h"
 #include "main/model.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 
 #define EXPLODABLE_FRAGMENT_SETUP_MODE           5
 #define EXPLODABLE_RECIPE_FLAG_HIDE_OBJECT       0x01
@@ -62,7 +62,7 @@ GameObject* explodable_spawnFragmentObject(GameObject* obj, int fragmentObjectId
     fragmentPlacement->scaleByte =
         (s8)(int)(20.0f * (obj->anim.rootMotionScale / obj->anim.modelInstance->rootMotionScaleBase));
     fragmentPlacement->lifetimeFrames = chunk->launchDelayBase;
-    fragmentPlacement->floorOffsetRaw = (int)chunk->height;
+    fragmentPlacement->floorOffset = (int)chunk->height;
     return objSetupObject((ObjPlacement*)fragmentPlacement, EXPLODABLE_FRAGMENT_SETUP_MODE, obj->anim.mapEventSlot, -1,
                            NULL);
 }
@@ -336,19 +336,27 @@ ExplodableBreakRecipe gExplodableBreakRecipeTable[EXPLODABLE_RECIPE_COUNT] = {
     {2071, 2072, 705, 50, 0, {0, 0}},
 };
 
+OBJECT_INIT_ADAPTER(gExplodableObjDescriptorInitAdapter, explodable_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gExplodableObjDescriptorRenderAdapter, explodable_render)
+OBJECT_EXTRA_SIZE_ADAPTER(gExplodableObjDescriptorExtraSizeAdapter, explodable_getExtraSize)
+
 ObjectDescriptor gExplodableObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gExplodableObjDescriptorInitAdapter,
+    explodable_update,
     0,
+    gExplodableObjDescriptorRenderAdapter,
+    explodable_free,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)explodable_init,
-    (ObjectDescriptorCallback)explodable_update,
-    0,
-    (ObjectDescriptorCallback)explodable_render,
-    (ObjectDescriptorCallback)explodable_free,
-    0,
-    explodable_getExtraSize,
+    gExplodableObjDescriptorExtraSizeAdapter,
 };

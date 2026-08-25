@@ -5,14 +5,14 @@
  * speed and animation in response to the player and priority hits.
  */
 #include "dlls/objects/259_CurveFish.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_0015_curves.h"
 #include "main/dll/objfsa.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/objhits.h"
 
 typedef enum CurveFishMode {
@@ -51,7 +51,7 @@ typedef enum CurveFishMode {
 #define CURVEFISH_YAW_HALF_TURN 0x8000
 #define CURVEFISH_YAW_WRAP      0xFFFF
 
-const CurveFishCurveQueryKey gCurveFishCurveQueryKey = { ROMCURVE_TYPE_CURVEFISH };
+const u32 gCurveFishCurveQueryKey = ROMCURVE_TYPE_CURVEFISH;
 
 int CurveFish_getExtraSize(void) {
     return sizeof(CurveFishState);
@@ -84,7 +84,7 @@ void CurveFish_update(GameObject* obj) {
     placement = (CurveFishPlacement*)obj->anim.placementData;
     player = Obj_GetPlayerObject();
     placementReloaded = (CurveFishPlacement*)obj->anim.placementData;
-    curveQuery = gCurveFishCurveQueryKey.type;
+    curveQuery = gCurveFishCurveQueryKey;
 
     state->modeTimer += timeDelta;
 
@@ -172,15 +172,15 @@ void CurveFish_update(GameObject* obj) {
         if (state->speed != 0.0f) {
             travelDistanceSq = state->speed * timeDelta;
             travelDistanceSq *= travelDistanceSq;
-            distanceSq = getXZDistanceSquared(&state->route.posX, &obj->anim.localPosX);
+            distanceSq = getXZDistanceSquared(&state->route.curve.sample[0], &obj->anim.localPosX);
             pathAdvanceCount = 0;
             while (travelDistanceSq > distanceSq && pathAdvanceCount < CURVEFISH_PATH_ADVANCE_LIMIT) {
                 Curve_AdvanceAlongPath(&state->route.curve, CURVEFISH_PATH_ADVANCE_STEP);
-                distanceSq = getXZDistanceSquared(&state->route.posX, &obj->anim.localPosX);
+                distanceSq = getXZDistanceSquared(&state->route.curve.sample[0], &obj->anim.localPosX);
                 pathAdvanceCount++;
             }
 
-            if (state->route.atSegmentEnd != 0) {
+            if (state->route.curve.idx != 0) {
                 nextNode = (*gRomCurveInterface)->getRandomUnblockedLink((RomCurveDef*)state->route.nodeA4, 0);
                 if (RomCurve_advanceToNextSegment(&state->route, (*gRomCurveInterface)->getById(nextNode)) != 0) {
                     state->mode = CURVEFISH_MODE_WAIT;
@@ -190,9 +190,9 @@ void CurveFish_update(GameObject* obj) {
                 }
             }
 
-            dx = state->route.posX - obj->anim.localPosX;
-            dy = (state->route.posY + (f32)(u32)placement->targetYOffset) - obj->anim.localPosY;
-            dz = state->route.posZ - obj->anim.localPosZ;
+            dx = state->route.curve.sample[0] - obj->anim.localPosX;
+            dy = (state->route.curve.sample[1] + (f32)(u32)placement->targetYOffset) - obj->anim.localPosY;
+            dz = state->route.curve.sample[2] - obj->anim.localPosZ;
             directionMagnitude = sqrtf(dx * dx + dy * dy + dz * dz);
             dx /= directionMagnitude;
             dy /= directionMagnitude;
@@ -240,19 +240,26 @@ void CurveFish_init(GameObject* obj, CurveFishPlacement* placement) {
     state->maxSpeed = (f32)(u32)placement->speedChange / CURVEFISH_SPEED_PERCENT_SCALE;
 }
 
+OBJECT_INIT_ADAPTER(gCurveFishObjDescriptorInitAdapter, CurveFish_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCurveFishObjDescriptorExtraSizeAdapter, CurveFish_getExtraSize)
+
 ObjectDescriptor gCurveFishObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gCurveFishObjDescriptorInitAdapter,
+    CurveFish_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)CurveFish_init,
-    (ObjectDescriptorCallback)CurveFish_update,
-    0,
-    0,
-    0,
-    0,
-    CurveFish_getExtraSize,
+    gCurveFishObjDescriptorExtraSizeAdapter,
 };

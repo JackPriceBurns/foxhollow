@@ -7,7 +7,7 @@
  */
 #include "dlls/objects/254_MagicPlant.h"
 #include "dlls/objects/255.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/partfx_interface.h"
@@ -17,13 +17,11 @@
 #include "main/obj_path.h"
 #include "main/objfx.h"
 #include "main/object_render.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/mm.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
@@ -421,19 +419,27 @@ void MagicPlant_init(GameObject* obj, MagicPlantPlacement* placement) {
     obj->animEventCallback = MagicPlant_SeqFn;
 }
 
+OBJECT_INIT_ADAPTER(gMagicPlantObjDescriptorInitAdapter, MagicPlant_init, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gMagicPlantObjDescriptorTypeIdAdapter, MagicPlant_getObjectTypeId, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gMagicPlantObjDescriptorExtraSizeAdapter, MagicPlant_getExtraSize)
+
 ObjectDescriptor gMagicPlantObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gMagicPlantObjDescriptorInitAdapter,
+    MagicPlant_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicPlant_init,
-    (ObjectDescriptorCallback)MagicPlant_update,
-    0,
-    (ObjectDescriptorCallback)MagicPlant_render,
-    (ObjectDescriptorCallback)MagicPlant_free,
-    (ObjectDescriptorCallback)MagicPlant_getObjectTypeId,
-    MagicPlant_getExtraSize,
+    MagicPlant_render,
+    MagicPlant_free,
+    gMagicPlantObjDescriptorTypeIdAdapter,
+    gMagicPlantObjDescriptorExtraSizeAdapter,
 };

@@ -7,7 +7,7 @@
 
 #include "dlls/objects/472_DIM2PathGen.h"
 #include "main/curve.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
@@ -144,19 +144,31 @@ void dim2icefloe_release(void) {
 void dim2icefloe_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIM2IceFloeObjDescriptorInitAdapter, dim2icefloe_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2IceFloeObjDescriptorHitDetectAdapter, dim2icefloe_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2IceFloeObjDescriptorFreeAdapter, dim2icefloe_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM2IceFloeObjDescriptorTypeIdAdapter, dim2icefloe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2IceFloeObjDescriptorExtraSizeAdapter, dim2icefloe_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2IceFloeObjDescriptorAcquire, dim2icefloe_initialise)
+
 ObjectDescriptor gDIM2IceFloeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIM2IceFloeObjDescriptorAcquire,
+        dim2icefloe_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dim2icefloe_initialise,
-    (ObjectDescriptorCallback)dim2icefloe_release,
-    0,
-    (ObjectDescriptorCallback)dim2icefloe_init,
-    (ObjectDescriptorCallback)dim2icefloe_update,
-    (ObjectDescriptorCallback)dim2icefloe_hitDetect,
-    (ObjectDescriptorCallback)dim2icefloe_render,
-    (ObjectDescriptorCallback)dim2icefloe_free,
-    (ObjectDescriptorCallback)dim2icefloe_getObjectTypeId,
-    dim2icefloe_getExtraSize,
+    gDIM2IceFloeObjDescriptorInitAdapter,
+    dim2icefloe_update,
+    gDIM2IceFloeObjDescriptorHitDetectAdapter,
+    dim2icefloe_render,
+    gDIM2IceFloeObjDescriptorFreeAdapter,
+    gDIM2IceFloeObjDescriptorTypeIdAdapter,
+    gDIM2IceFloeObjDescriptorExtraSizeAdapter,
 };

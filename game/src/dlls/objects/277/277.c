@@ -1,6 +1,6 @@
 #include "dlls/objects/277.h"
 
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
@@ -166,19 +166,31 @@ void dll_115_release(void) {
 void dll_115_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll115ObjDescriptorInitAdapter, dll_115_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll115ObjDescriptorHitDetectAdapter, dll_115_hitDetect)
+OBJECT_FREE_ADAPTER(gDll115ObjDescriptorFreeAdapter, dll_115_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll115ObjDescriptorTypeIdAdapter, dll_115_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll115ObjDescriptorExtraSizeAdapter, dll_115_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll115ObjDescriptorAcquire, dll_115_initialise)
+
 ObjectDescriptor gDll115ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll115ObjDescriptorAcquire,
+        dll_115_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_115_initialise,
-    (ObjectDescriptorCallback)dll_115_release,
-    0,
-    (ObjectDescriptorCallback)dll_115_init,
-    (ObjectDescriptorCallback)dll_115_update,
-    (ObjectDescriptorCallback)dll_115_hitDetect,
-    (ObjectDescriptorCallback)dll_115_render,
-    (ObjectDescriptorCallback)dll_115_free,
-    (ObjectDescriptorCallback)dll_115_getObjectTypeId,
-    dll_115_getExtraSize,
+    gDll115ObjDescriptorInitAdapter,
+    dll_115_update,
+    gDll115ObjDescriptorHitDetectAdapter,
+    dll_115_render,
+    gDll115ObjDescriptorFreeAdapter,
+    gDll115ObjDescriptorTypeIdAdapter,
+    gDll115ObjDescriptorExtraSizeAdapter,
 };

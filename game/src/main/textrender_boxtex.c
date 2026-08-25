@@ -1,5 +1,5 @@
-#include "main/rcp_dolphin_api.h"
-#include "main/textrender_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/textrender.h"
 #include "main/textrender_internal.h"
 #include "dolphin/os/OSCache.h"
 

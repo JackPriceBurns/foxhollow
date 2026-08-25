@@ -9,7 +9,7 @@
 #include "main/obj_message.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 
 int dll507_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     Dll1FBState* state = obj->extra;
@@ -78,19 +78,31 @@ void dll507_release(void) {
 void dll507_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1FBObjDescriptorInitAdapter, dll507_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1FBObjDescriptorHitDetectAdapter, dll507_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1FBObjDescriptorFreeAdapter, dll507_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1FBObjDescriptorTypeIdAdapter, dll507_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1FBObjDescriptorExtraSizeAdapter, dll507_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1FBObjDescriptorAcquire, dll507_initialise)
+
 ObjectDescriptor gDll1FBObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1FBObjDescriptorAcquire,
+        dll507_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dll507_initialise,
-    dll507_release,
-    0,
-    (ObjectDescriptorCallback)dll507_init,
-    (ObjectDescriptorCallback)dll507_update,
-    dll507_hitDetect,
-    (ObjectDescriptorCallback)dll507_render,
-    dll507_free,
-    (ObjectDescriptorCallback)dll507_getObjectTypeId,
-    dll507_getExtraSize,
+    gDll1FBObjDescriptorInitAdapter,
+    dll507_update,
+    gDll1FBObjDescriptorHitDetectAdapter,
+    dll507_render,
+    gDll1FBObjDescriptorFreeAdapter,
+    gDll1FBObjDescriptorTypeIdAdapter,
+    gDll1FBObjDescriptorExtraSizeAdapter,
 };

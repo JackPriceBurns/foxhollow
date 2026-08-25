@@ -18,10 +18,10 @@ void projrobotfire_release(void) {
 void projrobotfire_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjrobotfireResourceDescriptorAcquire, projrobotfire_initialise)
+
 ProjrobotfireResourceDescriptor gProjrobotfireResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projrobotfire_initialise,
-    projrobotfire_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjrobotfireResourceDescriptorAcquire, projrobotfire_release },
     NULL,
     projrobotfire_doUnsupported,
 };

@@ -2,10 +2,10 @@
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/game_ui_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
-#include "main/objprint_render_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/objprint_render.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 typedef enum SpellStoneUseMode {
@@ -62,7 +62,7 @@ static void spellStoneUse_updateInteraction(GameObject* obj, SpellStoneUseUiEven
 
     obj->anim.resetHitboxFlags &= (u8)~INTERACT_FLAG_DISABLED;
     if ((*gGameUIInterface)->isItemBeingUsed(event) != 0 &&
-        Vec_distance(&obj->anim.worldPos.x, &player->anim.worldPos.x) < 100.0f) {
+        Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) < 100.0f) {
         mainSetBits(state->completionGameBit, 1);
         state->used = 1;
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
@@ -127,15 +127,24 @@ static void spellStoneUse_release(void) {
 static void spellStoneUse_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSpellStoneUseObjDescriptorInitAdapter, spellStoneUse_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSpellStoneUseObjDescriptorFreeAdapter, spellStoneUse_free)
+OBJECT_TYPE_ID_ADAPTER(gSpellStoneUseObjDescriptorTypeIdAdapter, spellStoneUse_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSpellStoneUseObjDescriptorExtraSizeAdapter, spellStoneUse_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSpellStoneUseObjDescriptorAcquire, spellStoneUse_initialise)
+
 ObjectDescriptor gSpellStoneUseObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)spellStoneUse_initialise,
-    .release = (ObjectDescriptorCallback)spellStoneUse_release,
-    .init = (ObjectDescriptorCallback)spellStoneUse_init,
-    .update = (ObjectDescriptorCallback)spellStoneUse_update,
-    .hitDetect = (ObjectDescriptorCallback)spellStoneUse_hitDetect,
-    .render = (ObjectDescriptorCallback)spellStoneUse_render,
-    .free = (ObjectDescriptorCallback)spellStoneUse_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)spellStoneUse_getObjectTypeId,
-    .getExtraSize = spellStoneUse_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSpellStoneUseObjDescriptorAcquire,
+        .release = spellStoneUse_release,
+    },
+    .init = gSpellStoneUseObjDescriptorInitAdapter,
+    .update = spellStoneUse_update,
+    .hitDetect = spellStoneUse_hitDetect,
+    .render = spellStoneUse_render,
+    .free = gSpellStoneUseObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSpellStoneUseObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSpellStoneUseObjDescriptorExtraSizeAdapter,
+};;

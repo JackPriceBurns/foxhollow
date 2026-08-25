@@ -57,6 +57,7 @@ void DIM_BossGut2_init(GameObject* obj, u8* placementAddress, int isAltVariant);
 void DIM_BossGut2_release(void);
 void DIM_BossGut2_initialise(void);
 
-extern ObjectDescriptor12 gDIM_BossGut2ObjDescriptor;
+struct DIM_BossGut2ObjDescriptorType;
+extern struct DIM_BossGut2ObjDescriptorType gDIM_BossGut2ObjDescriptor;
 
 #endif /* DLLS_OBJECTS_483_DIM_BOSSGUT_H_ */

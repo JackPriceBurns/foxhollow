@@ -6,16 +6,16 @@
  */
 #include "dlls/objects/487_DIMbossfire.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model_light.h"
 #include "main/objhits.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -173,7 +173,7 @@ void dimbossfire_update(GameObject* obj) {
     return;
 }
 
-void dimbossfire_init(GameObject* obj, u32 placementAddress, int isAltVariant) {
+void dimbossfire_init(GameObject* obj, void* placement, int isAltVariant) {
     u8 durationIndex;
     DimBossFireState* state;
 
@@ -195,19 +195,30 @@ void dimbossfire_release(void) {
 void dimbossfire_initialise(void) {
 }
 
+OBJECT_HIT_DETECT_ADAPTER(gDIMbossfireObjDescriptorHitDetectAdapter, dimbossfire_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMbossfireObjDescriptorFreeAdapter, dimbossfire_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMbossfireObjDescriptorTypeIdAdapter, dimbossfire_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMbossfireObjDescriptorExtraSizeAdapter, dimbossfire_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMbossfireObjDescriptorAcquire, dimbossfire_initialise)
+
 ObjectDescriptor gDIMbossfireObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMbossfireObjDescriptorAcquire,
+        dimbossfire_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dimbossfire_initialise,
-    dimbossfire_release,
-    0,
-    (ObjectDescriptorCallback)dimbossfire_init,
-    (ObjectDescriptorCallback)dimbossfire_update,
-    dimbossfire_hitDetect,
-    (ObjectDescriptorCallback)dimbossfire_render,
-    (ObjectDescriptorCallback)dimbossfire_free,
-    (ObjectDescriptorCallback)dimbossfire_getObjectTypeId,
-    dimbossfire_getExtraSize,
+    dimbossfire_init,
+    dimbossfire_update,
+    gDIMbossfireObjDescriptorHitDetectAdapter,
+    dimbossfire_render,
+    gDIMbossfireObjDescriptorFreeAdapter,
+    gDIMbossfireObjDescriptorTypeIdAdapter,
+    gDIMbossfireObjDescriptorExtraSizeAdapter,
 };

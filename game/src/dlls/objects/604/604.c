@@ -2,10 +2,10 @@
 
 #include "dlls/objects/364.h"
 #include "main/audio/sfx.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "dlls/object_descriptor.h"
 #include "main/frame_timing.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/gamebits.h"
 #include "main/objtype.h"
 #include "main/object_render.h"
@@ -17,16 +17,16 @@
 #include "main/objfx.h"
 #include "main/objseq.h"
 #include "game/objects/object_setup.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_sequence_api.h"
-#include "main/maketex_timer_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/shader_api.h"
+#include "main/maketex_random.h"
+#include "main/maketex_sequence.h"
+#include "main/maketex_timer.h"
+#include "dolphin/math.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "main/obj_link.h"
 #include "main/obj_path.h"
 #include "main/dll/dll_0255_snowbike.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/byte_flags.h"
 
 f32 gSnowClawPulseScale = 1.0f;
 f32 gSnowClawPulseOffsetY = -15.0f;
@@ -87,14 +87,7 @@ typedef struct SnowclawState
     u8 tickCounter;
     u8 padA7[0xA8 - 0xA7];
     u16 moveIdBase;
-    union {
-        u8 flags;
-        struct {
-            u8 b0 : 1;
-            u8 flag6 : 1;
-            u8 rest : 6;
-        };
-    };
+    ByteFlags stateFlags;
     u8 padAB[0xAC - 0xAB];
     f32 particleAlpha;
 } SnowclawState;
@@ -421,7 +414,7 @@ int snowclaw_animEventCallback(GameObject* obj, int a2, ObjSeqState* seq)
             if (found != 0)
             {
                 SNOWCLAW_TARGET_INTERFACE(found)->setState((GameObject*)found, 2);
-                s->b0 = 0;
+                s->stateFlags.b80 = 0;
             }
             break;
         }
@@ -431,7 +424,7 @@ int snowclaw_animEventCallback(GameObject* obj, int a2, ObjSeqState* seq)
             if (found != 0)
             {
                 SNOWCLAW_TARGET_INTERFACE(found)->setState((GameObject*)found, 0);
-                s->b0 = 1;
+                s->stateFlags.b80 = 1;
             }
             break;
         }
@@ -525,7 +518,7 @@ void snowclaw_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
             obj->anim.renderAlpha = s->mountAlpha;
         }
         if ((obj)->childCount == 0 && (obj)->anim.romDefNo == SNOWCLAW_SEQID_CR_SNOWCLAW &&
-            s->b0 != 0)
+            s->stateFlags.b80 != 0)
         {
             near = objGetNearestTypeTo(SNOWCLAW_TARGET_OBJGROUP, obj, &dist);
             if (near != NULL && SNOWCLAW_TARGET_INTERFACE(near)->getState(near) != 0 &&
@@ -538,7 +531,7 @@ void snowclaw_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
         ObjPath_GetPointWorldPosition(obj, 1, &s->posX, &s->posY,
                                       &s->posZ, 0);
         obj->anim.renderAlpha = oldFlag;
-        if (s->flag6 != 0)
+        if (s->stateFlags.b40 != 0)
         {
             if (s->particleAlpha != zero)
             {
@@ -547,7 +540,7 @@ void snowclaw_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
             }
             else
             {
-                s->flag6 = 0;
+                s->stateFlags.b40 = 0;
             }
             objDoParticleFx(obj, 1.0f, 3, s->particleAlpha, 0);
         }
@@ -609,7 +602,7 @@ void snowclaw_hitDetect(GameObject* obj)
                 {
                     (*gObjectTriggerInterface)->runSequence(0, (void*)obj, 3);
                 }
-                s->flag6 = 1;
+                s->stateFlags.b40 = 1;
                 s->particleAlpha = 1.0f;
                 s->velX =
                     0.1f * mathSinf(3.1415927f * (f32)obj->anim.rotX / 32768.0f);
@@ -668,7 +661,7 @@ void snowclaw_update(GameObject* obj)
 
     pulseTable = gSnowClawPulseTable;
     s = obj->extra;
-    if (((SnowclawState*)obj->extra)->hitFlag != 0 && ((SnowclawState*)obj->extra)->flag6 != 0)
+    if (((SnowclawState*)obj->extra)->hitFlag != 0 && ((SnowclawState*)obj->extra)->stateFlags.b40 != 0)
     {
         s->particleAlpha = 0.0f;
     }
@@ -833,7 +826,7 @@ void snowclaw_init(GameObject* obj, SnowclawPlacement* placement)
     s16toFloat(&inner->attackTimer, gSnowClawAttackTimerByRank[3]);
     seqPairTablePrepare((u8*)gSnowClawMoveTable, 6);
     gSnowClawDropBombAngle = 0x96;
-    inner->b0 = 0;
+    inner->stateFlags.b80 = 0;
 }
 
 void snowclaw_release(void)
@@ -844,19 +837,30 @@ void snowclaw_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gSnowClawObjDescriptorInitAdapter, snowclaw_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSnowClawObjDescriptorFreeAdapter, snowclaw_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSnowClawObjDescriptorTypeIdAdapter, snowclaw_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSnowClawObjDescriptorExtraSizeAdapter, snowclaw_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSnowClawObjDescriptorAcquire, snowclaw_initialise)
+
 ObjectDescriptor gSnowClawObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSnowClawObjDescriptorAcquire,
+        snowclaw_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)snowclaw_initialise,
-    (ObjectDescriptorCallback)snowclaw_release,
-    0,
-    (ObjectDescriptorCallback)snowclaw_init,
-    (ObjectDescriptorCallback)snowclaw_update,
-    (ObjectDescriptorCallback)snowclaw_hitDetect,
-    (ObjectDescriptorCallback)snowclaw_render,
-    (ObjectDescriptorCallback)snowclaw_free,
-    (ObjectDescriptorCallback)snowclaw_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)snowclaw_getExtraSize,
+    gSnowClawObjDescriptorInitAdapter,
+    snowclaw_update,
+    snowclaw_hitDetect,
+    snowclaw_render,
+    gSnowClawObjDescriptorFreeAdapter,
+    gSnowClawObjDescriptorTypeIdAdapter,
+    gSnowClawObjDescriptorExtraSizeAdapter,
 };

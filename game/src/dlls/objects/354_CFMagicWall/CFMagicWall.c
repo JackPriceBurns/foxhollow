@@ -1,6 +1,6 @@
 #include "dlls/objects/354_CFMagicWall.h"
 #include "main/camera.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_query.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
@@ -69,19 +69,31 @@ void cfmagicwall_release(void) {
 void cfmagicwall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFMagicWallObjDescriptorInitAdapter, cfmagicwall_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFMagicWallObjDescriptorHitDetectAdapter, cfmagicwall_hitDetect)
+OBJECT_FREE_ADAPTER(gCFMagicWallObjDescriptorFreeAdapter, cfmagicwall_free)
+OBJECT_TYPE_ID_ADAPTER(gCFMagicWallObjDescriptorTypeIdAdapter, cfmagicwall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFMagicWallObjDescriptorExtraSizeAdapter, cfmagicwall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFMagicWallObjDescriptorAcquire, cfmagicwall_initialise)
+
 ObjectDescriptor gCFMagicWallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFMagicWallObjDescriptorAcquire,
+        cfmagicwall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfmagicwall_initialise,
-    (ObjectDescriptorCallback)cfmagicwall_release,
-    0,
-    (ObjectDescriptorCallback)cfmagicwall_init,
-    (ObjectDescriptorCallback)cfmagicwall_update,
-    (ObjectDescriptorCallback)cfmagicwall_hitDetect,
-    (ObjectDescriptorCallback)cfmagicwall_render,
-    (ObjectDescriptorCallback)cfmagicwall_free,
-    (ObjectDescriptorCallback)cfmagicwall_getObjectTypeId,
-    cfmagicwall_getExtraSize,
+    gCFMagicWallObjDescriptorInitAdapter,
+    cfmagicwall_update,
+    gCFMagicWallObjDescriptorHitDetectAdapter,
+    cfmagicwall_render,
+    gCFMagicWallObjDescriptorFreeAdapter,
+    gCFMagicWallObjDescriptorTypeIdAdapter,
+    gCFMagicWallObjDescriptorExtraSizeAdapter,
 };

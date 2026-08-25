@@ -4,7 +4,7 @@
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
 #include "main/resource.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_000E_partfx.h"
 #include "main/dll/dll_001B_effect2.h"
@@ -310,7 +310,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
     cfg.renderFlags = 0;
     cfg.effectIdByte = state.effectId;
     cfg.attachedSource = sourceObj;
-    *(state.startPos = cfg.startPos) = 0.0f;
+    *(state.startPos = &cfg.startPosX) = 0.0f;
     cfg.startPosY = 0.0f;
     cfg.startPosZ = 0.0f;
     cfg.velocityX = 0.0f;
@@ -1166,7 +1166,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = sourceObj->anim.rotZ;
         rot.rotY = sourceObj->anim.rotY;
         rot.rotX = sourceObj->anim.rotX;
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.initialAlpha = 0xcd;
         cfg.behaviorFlags = 0x100110;
         cfg.scale = 0.00003f * (f32)(s32)randomGetRange(0x96, 200);
@@ -1203,7 +1203,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = sourceObj->anim.rotZ;
         rot.rotY = sourceObj->anim.rotY;
         rot.rotX = sourceObj->anim.rotX;
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.scale = 0.0003f * (f32)(s32)randomGetRange(8, 0x14);
         cfg.lifetimeFrames = randomGetRange(0x3c, 0x78);
         cfg.behaviorFlags = 0x80180000;
@@ -1247,7 +1247,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = sourceObj->anim.rotZ;
         rot.rotY = sourceObj->anim.rotY;
         rot.rotX = sourceObj->anim.rotX;
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.initialAlpha = 0xff;
         cfg.scale = 0.000006f * (f32)(s32)randomGetRange(0x96, 200);
         cfg.behaviorFlags = 0x2000110;
@@ -1268,7 +1268,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = sourceObj->anim.rotZ;
         rot.rotY = sourceObj->anim.rotY;
         rot.rotX = sourceObj->anim.rotX;
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.initialAlpha = 0xff;
         cfg.scale = 0.00004f * (f32)(s32)randomGetRange(10, 0x14);
         cfg.behaviorFlags = 0x2000110;
@@ -2099,7 +2099,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = 2000 - randomGetRange(0, 4000);
         rot.rotY = 2000 - randomGetRange(0, 4000);
         rot.rotX = 2000 - randomGetRange(0, 4000);
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.scale = 0.0036f;
         cfg.lifetimeFrames = 0x50;
         cfg.linkGroup = 8;
@@ -2390,7 +2390,7 @@ int partfx_spawnObject(GameObject* sourceObj, int effectValue, PartFxSpawnParams
         rot.rotZ = rotZ;
         rot.rotY = rotY;
         rot.rotX = rotX;
-        vecRotateZXY(&rot.rotX, cfg.velocity);
+        vecRotateZXY(&rot.rotX, &cfg.velocityX);
         cfg.scale = 0.0005f;
         cfg.lifetimeFrames = 0x32;
         cfg.textureSetupFlags = 0;
@@ -3796,17 +3796,20 @@ EmitterCfg gEffect2VelocityRangeTable = {
     {0x00, 0x00},
 };
 
-ObjectDescriptor6 partfx_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)partfx_initialise,
-    (ObjectDescriptorCallback)partfx_release,
-    0,
-    (ObjectDescriptorCallback)partfx_onMapSetup,
-    (ObjectDescriptorCallback)partfx_spawnObject,
-    (ObjectDescriptorCallback)partfx_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gPartfxResource, partfx_initialise, partfx_spawnObject, partfx_updateFrameState)
+
+EffectResourceDescriptor partfx_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gPartfxResourceAcquire,
+        partfx_release,
+    },
+    {
+        NULL,
+        partfx_onMapSetup,
+        gPartfxResourceSpawn,
+        gPartfxResourceUpdate,
+    },
 };
 
 char sModgfxAlphaDebugFormat[10] = "alpha %d\n";

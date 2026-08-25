@@ -1,22 +1,21 @@
 #include "dlls/objects/424_SH_killermu.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
 #include "main/obj_path.h"
 #include "main/objtype.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -121,9 +120,9 @@ static void enemyMushroom_resetToSpawn(GameObject* obj, EnemyMushroomState* stat
     obj->anim.rotX = randomGetRange(-0x5DC, 0x5DC);
     obj->anim.alpha = 0xFF;
     obj->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
-    obj->anim.localPos.x = placement->base.posX;
-    obj->anim.localPos.y = placement->base.posY;
-    obj->anim.localPos.z = placement->base.posZ;
+    obj->anim.localPosX = placement->base.posX;
+    obj->anim.localPosY = placement->base.posY;
+    obj->anim.localPosZ = placement->base.posZ;
 
     if (enableTimer != 0) {
         obj->anim.rootMotionScale = 0.00001f;
@@ -142,7 +141,7 @@ static void enemyMushroom_tryHitPlayer(GameObject* obj, EnemyMushroomState* stat
         return;
     }
 
-    if (Vec_distance(&obj->anim.worldPos.x, &player->anim.worldPos.x) <= state->hitRadius &&
+    if (Vec_distance(&obj->anim.worldPosX, &player->anim.worldPosX) <= state->hitRadius &&
         !EmissionController_IsLingering(player) && !playerGetFlags3F0Bit5(player) &&
         !(player->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK)) {
         ObjHits_RecordObjectHit(player, obj, ENEMY_MUSHROOM_CONTACT_HIT, 1, 0);
@@ -314,9 +313,9 @@ static void enemyMushroom_updateIdle(GameObject* obj, EnemyMushroomState* state,
                                      const EnemyMushroomPlacement* placement) {
     obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
 
-    f32 dx = player->anim.localPos.x - obj->anim.localPos.x;
-    f32 dy = player->anim.localPos.y - obj->anim.localPos.y;
-    f32 dz = player->anim.localPos.z - obj->anim.localPos.z;
+    f32 dx = player->anim.localPosX - obj->anim.localPosX;
+    f32 dy = player->anim.localPosY - obj->anim.localPosY;
+    f32 dz = player->anim.localPosZ - obj->anim.localPosZ;
     if ((u16)(int)sqrtf(dx * dx + dy * dy + dz * dz) >= (u16)(int)(1.5f * (f32)placement->detectRange)) {
         return;
     }
@@ -471,7 +470,7 @@ static void enemyMushroom_init(GameObject* obj, EnemyMushroomPlacement* placemen
     if (state->respawnFrameLimit < 0x708) {
         state->respawnFrameLimit = 0x708;
     }
-    obj->anim.localPos.y = placement->base.posY - 2.0f;
+    obj->anim.localPosY = placement->base.posY - 2.0f;
     if (obj->anim.modelState != NULL) {
         obj->anim.modelState->flags |= OBJ_MODEL_STATE_UNREAD_0800 | OBJ_MODEL_STATE_UNREAD_0010;
     }
@@ -487,19 +486,26 @@ static void enemyMushroom_release(void) {
 static void enemyMushroom_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gEnemyMushroomObjDescriptorInitAdapter, enemyMushroom_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gEnemyMushroomObjDescriptorHitDetectAdapter, enemyMushroom_hitDetect)
+OBJECT_RENDER_ADAPTER(gEnemyMushroomObjDescriptorRenderAdapter, enemyMushroom_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gEnemyMushroomObjDescriptorFreeAdapter, enemyMushroom_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gEnemyMushroomObjDescriptorExtraSizeAdapter, enemyMushroom_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gEnemyMushroomObjDescriptorAcquire, enemyMushroom_initialise)
+
 ObjectDescriptor gEnemyMushroomObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = enemyMushroom_initialise,
-    .release = enemyMushroom_release,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gEnemyMushroomObjDescriptorAcquire,
+        .release = enemyMushroom_release,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)enemyMushroom_init,
-    .update = (ObjectDescriptorCallback)enemyMushroom_update,
-    .hitDetect = enemyMushroom_hitDetect,
-    .render = (ObjectDescriptorCallback)enemyMushroom_render,
-    .free = (ObjectDescriptorCallback)enemyMushroom_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)enemyMushroom_getObjectTypeId,
-    .getExtraSize = enemyMushroom_getExtraSize,
-};
+    .init = gEnemyMushroomObjDescriptorInitAdapter,
+    .update = enemyMushroom_update,
+    .hitDetect = gEnemyMushroomObjDescriptorHitDetectAdapter,
+    .render = gEnemyMushroomObjDescriptorRenderAdapter,
+    .free = gEnemyMushroomObjDescriptorFreeAdapter,
+    .getObjectTypeId = enemyMushroom_getObjectTypeId,
+    .getExtraSize = gEnemyMushroomObjDescriptorExtraSizeAdapter,
+};;

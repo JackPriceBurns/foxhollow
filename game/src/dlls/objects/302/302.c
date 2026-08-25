@@ -49,19 +49,32 @@ void CFLightWall_release(void) {
 void CFLightWall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFLightWallObjDescriptorInitAdapter, CFLightWall_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gCFLightWallObjDescriptorUpdateAdapter, CFLightWall_update)
+OBJECT_HIT_DETECT_ADAPTER(gCFLightWallObjDescriptorHitDetectAdapter, CFLightWall_hitDetect)
+OBJECT_FREE_ADAPTER(gCFLightWallObjDescriptorFreeAdapter, CFLightWall_free)
+OBJECT_TYPE_ID_ADAPTER(gCFLightWallObjDescriptorTypeIdAdapter, CFLightWall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFLightWallObjDescriptorExtraSizeAdapter, CFLightWall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFLightWallObjDescriptorAcquire, CFLightWall_initialise)
+
 ObjectDescriptor gCFLightWallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFLightWallObjDescriptorAcquire,
+        CFLightWall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)CFLightWall_initialise,
-    (ObjectDescriptorCallback)CFLightWall_release,
-    0,
-    (ObjectDescriptorCallback)CFLightWall_init,
-    (ObjectDescriptorCallback)CFLightWall_update,
-    (ObjectDescriptorCallback)CFLightWall_hitDetect,
-    (ObjectDescriptorCallback)CFLightWall_render,
-    (ObjectDescriptorCallback)CFLightWall_free,
-    (ObjectDescriptorCallback)CFLightWall_getObjectTypeId,
-    CFLightWall_getExtraSize,
+    gCFLightWallObjDescriptorInitAdapter,
+    gCFLightWallObjDescriptorUpdateAdapter,
+    gCFLightWallObjDescriptorHitDetectAdapter,
+    CFLightWall_render,
+    gCFLightWallObjDescriptorFreeAdapter,
+    gCFLightWallObjDescriptorTypeIdAdapter,
+    gCFLightWallObjDescriptorExtraSizeAdapter,
 };

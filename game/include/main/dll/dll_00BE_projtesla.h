@@ -7,16 +7,14 @@
 typedef int (*ProjteslaUnsupportedFn)(void);
 
 typedef struct ProjteslaResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjteslaUnsupportedFn unsupported;
 } ProjteslaResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjteslaResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjteslaResourceDescriptor) == 0x20);

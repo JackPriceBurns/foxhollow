@@ -6,8 +6,8 @@
  */
 #include "dlls/objects/468_WORLDAstero.h"
 
-#include "main/fcos16_approx_api.h"
-#include "main/fsin16_approx_api.h"
+#include "main/fcos16_approx.h"
+#include "main/fsin16_approx.h"
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
@@ -124,19 +124,32 @@ void worldasteroids_release(void) {
 void worldasteroids_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWorldAsteroidsObjDescriptorInitAdapter, worldasteroids_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gWorldAsteroidsObjDescriptorHitDetectAdapter, worldasteroids_hitDetect)
+OBJECT_RENDER_ADAPTER(gWorldAsteroidsObjDescriptorRenderAdapter, worldasteroids_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gWorldAsteroidsObjDescriptorFreeAdapter, worldasteroids_free)
+OBJECT_TYPE_ID_ADAPTER(gWorldAsteroidsObjDescriptorTypeIdAdapter, worldasteroids_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWorldAsteroidsObjDescriptorExtraSizeAdapter, worldasteroids_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWorldAsteroidsObjDescriptorAcquire, worldasteroids_initialise)
+
 ObjectDescriptor gWorldAsteroidsObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWorldAsteroidsObjDescriptorAcquire,
+        worldasteroids_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)worldasteroids_initialise,
-    (ObjectDescriptorCallback)worldasteroids_release,
-    0,
-    (ObjectDescriptorCallback)worldasteroids_init,
-    (ObjectDescriptorCallback)worldasteroids_update,
-    (ObjectDescriptorCallback)worldasteroids_hitDetect,
-    (ObjectDescriptorCallback)worldasteroids_render,
-    (ObjectDescriptorCallback)worldasteroids_free,
-    (ObjectDescriptorCallback)worldasteroids_getObjectTypeId,
-    worldasteroids_getExtraSize,
+    gWorldAsteroidsObjDescriptorInitAdapter,
+    worldasteroids_update,
+    gWorldAsteroidsObjDescriptorHitDetectAdapter,
+    gWorldAsteroidsObjDescriptorRenderAdapter,
+    gWorldAsteroidsObjDescriptorFreeAdapter,
+    gWorldAsteroidsObjDescriptorTypeIdAdapter,
+    gWorldAsteroidsObjDescriptorExtraSizeAdapter,
 };

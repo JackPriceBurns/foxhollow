@@ -8,19 +8,15 @@
 #include "main/camera_interface.h"
 #include "main/resource.h"
 
-typedef struct CamcontrolTriggeredAction CamcontrolTriggeredAction;
-
 typedef struct CamcontrolResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
+    ResourceDescriptorHeader header;
     CameraInterface interface;
     void (*queueSavedAction)(int blendFrames, u8 queueMode);
 } CamcontrolResourceDescriptor;
 
-STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, interface) == 0x18);
 STATIC_ASSERT(offsetof(CamcontrolResourceDescriptor, queueSavedAction) == 0x88);
 STATIC_ASSERT(sizeof(CamcontrolResourceDescriptor) == 0x8C);

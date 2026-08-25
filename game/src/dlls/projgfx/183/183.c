@@ -20,10 +20,10 @@ void projship1_release(void) {
 void projship1_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjship1ResourceDescriptorAcquire, projship1_initialise)
+
 Projship1ResourceDescriptor gProjship1ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projship1_initialise,
-    projship1_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjship1ResourceDescriptorAcquire, projship1_release },
     NULL,
     projship1_doUnsupported,
 };

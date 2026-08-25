@@ -2,6 +2,9 @@
 #define MAIN_DLL_PLAYER_MOTION_H_
 
 #include "game/objects/object.h"
+
+typedef struct PlayerState PlayerState;
+
 void objSetXRot(GameObject* playerObj, int heading);
 f32 playerGetVerticalVel(GameObject* playerObj);
 void playerSetVerticalVel(GameObject* playerObj, f32 liftVelocityY);
@@ -26,5 +29,15 @@ static inline void Player_GetAimAngles(GameObject* playerObj, s16* outYaw, s16* 
 {
     playerGetAimAngles(playerObj, outYaw, outPitch);
 }
+
+
+#include "global.h"
+#include "main/dll/baddie_state.h"
+
+void playerUpdateMotionState(GameObject* obj, PlayerState* motionState, BaddieState* baddieState);
+void playerClampVelocityAndMove(GameObject* obj, f32 timeDelta);
+void playerUpdateVelocityFromMotion(GameObject* obj, PlayerState* motionState, BaddieState* baddieState,
+                                    f32 unusedTimeDelta);
+
 
 #endif

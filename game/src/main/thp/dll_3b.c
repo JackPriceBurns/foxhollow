@@ -117,7 +117,7 @@ static void* AudioDecoderForOnMemory(void* param) {
     AttractMovieReadBuffer readBuffer;
 
     player = &gAttractMoviePlayer;
-    stride = player->frameStride;
+    stride = player->initReadSize;
     readBuffer.ptr = param;
     frame = 0;
     while (true) {
@@ -128,7 +128,7 @@ static void* AudioDecoderForOnMemory(void* param) {
         if (frameInGroup == (framesPerGroup - 1)) {
             if ((player->playFlags & 1) != 0) {
                 stride = fhSwap32(*(u32*)readBuffer.ptr);
-                readBuffer.ptr = player->loopFrame;
+                readBuffer.ptr = player->movieData;
             } else {
                 OSSuspendThread(&gAttractMovieAudioDecodeThread.thread);
             }

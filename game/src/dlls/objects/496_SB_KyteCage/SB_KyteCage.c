@@ -13,16 +13,16 @@
 #include "dlls/objects/496_SB_KyteCage.h"
 
 #include "dolphin/pad.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/obj_link.h"
 #include "main/obj_list.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
-#include "main/pad_api.h"
-#include "main/render_lactions_api.h"
+#include "main/pad.h"
+#include "main/render_lactions.h"
 
 /* objType of the loose Kyte child the cage attaches */
 #define SB_KYTECAGE_KYTE_OBJECT_TYPE 0x121
@@ -178,19 +178,32 @@ void SB_KyteCage_release(void) {
 void SB_KyteCage_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_KyteCageObjDescriptorInitAdapter, SB_KyteCage_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSB_KyteCageObjDescriptorHitDetectAdapter, SB_KyteCage_hitDetect)
+OBJECT_RENDER_ADAPTER(gSB_KyteCageObjDescriptorRenderAdapter, SB_KyteCage_render)
+OBJECT_FREE_ADAPTER(gSB_KyteCageObjDescriptorFreeAdapter, SB_KyteCage_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_KyteCageObjDescriptorTypeIdAdapter, SB_KyteCage_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_KyteCageObjDescriptorExtraSizeAdapter, SB_KyteCage_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_KyteCageObjDescriptorAcquire, SB_KyteCage_initialise)
+
 ObjectDescriptor gSB_KyteCageObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_KyteCageObjDescriptorAcquire,
+        SB_KyteCage_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_KyteCage_initialise,
-    SB_KyteCage_release,
-    0,
-    (ObjectDescriptorCallback)SB_KyteCage_init,
-    (ObjectDescriptorCallback)SB_KyteCage_update,
-    SB_KyteCage_hitDetect,
-    SB_KyteCage_render,
-    (ObjectDescriptorCallback)SB_KyteCage_free,
-    (ObjectDescriptorCallback)SB_KyteCage_getObjectTypeId,
-    SB_KyteCage_getExtraSize,
+    gSB_KyteCageObjDescriptorInitAdapter,
+    SB_KyteCage_update,
+    gSB_KyteCageObjDescriptorHitDetectAdapter,
+    gSB_KyteCageObjDescriptorRenderAdapter,
+    gSB_KyteCageObjDescriptorFreeAdapter,
+    gSB_KyteCageObjDescriptorTypeIdAdapter,
+    gSB_KyteCageObjDescriptorExtraSizeAdapter,
 };

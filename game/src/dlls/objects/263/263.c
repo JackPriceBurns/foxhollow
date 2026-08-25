@@ -13,16 +13,14 @@
 #include "main/dll/player_state.h"
 #include "main/frame_timing.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/object_render.h"
 #include "main/pad.h"
-#include "main/pad_api.h"
 #include "main/resource.h"
 #include "main/sky_interface.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/obj_message.h"
 #include "main/obj_query.h"
 #include "main/objtype.h"
@@ -458,19 +456,30 @@ void windLift107_release(void) {
 void windLift107_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWindLift107ObjDescriptorInitAdapter, windLift107_init, obj, placement)
+OBJECT_FREE_ADAPTER(gWindLift107ObjDescriptorFreeAdapter, windLift107_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWindLift107ObjDescriptorTypeIdAdapter, windLift107_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWindLift107ObjDescriptorExtraSizeAdapter, windLift107_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWindLift107ObjDescriptorAcquire, windLift107_initialise)
+
 ObjectDescriptor gWindLift107ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWindLift107ObjDescriptorAcquire,
+        windLift107_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)windLift107_initialise,
-    (ObjectDescriptorCallback)windLift107_release,
-    0,
-    (ObjectDescriptorCallback)windLift107_init,
-    (ObjectDescriptorCallback)windLift107_update,
-    (ObjectDescriptorCallback)windLift107_hitDetect,
-    (ObjectDescriptorCallback)windLift107_render,
-    (ObjectDescriptorCallback)windLift107_free,
-    (ObjectDescriptorCallback)windLift107_getObjectTypeId,
-    windLift107_getExtraSize,
+    gWindLift107ObjDescriptorInitAdapter,
+    windLift107_update,
+    windLift107_hitDetect,
+    windLift107_render,
+    gWindLift107ObjDescriptorFreeAdapter,
+    gWindLift107ObjDescriptorTypeIdAdapter,
+    gWindLift107ObjDescriptorExtraSizeAdapter,
 };

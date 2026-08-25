@@ -19,10 +19,10 @@ void projcore2_release(void) {
 void projcore2_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjcore2ResourceDescriptorAcquire, projcore2_initialise)
+
 Projcore2ResourceDescriptor gProjcore2ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projcore2_initialise,
-    projcore2_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjcore2ResourceDescriptorAcquire, projcore2_release },
     NULL,
     projcore2_doUnsupported,
 };

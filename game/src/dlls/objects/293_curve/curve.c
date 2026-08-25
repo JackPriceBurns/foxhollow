@@ -49,21 +49,43 @@ void curve_init(GameObject* obj, RomCurveDef* placement) {
     }
 }
 
-ObjectDescriptor12 gCurveObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)curve_init,
-    0,
-    0,
-    (ObjectDescriptorCallback)curve_render,
-    (ObjectDescriptorCallback)curve_free,
-    (ObjectDescriptorCallback)curve_getObjectTypeId,
-    curve_getExtraSize,
-    (ObjectDescriptorCallback)curve_func0A,
-    (ObjectDescriptorCallback)curve_func0B,
+OBJECT_INIT_ADAPTER(gCurveObjDescriptorInitAdapter, curve_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCurveObjDescriptorFreeAdapter, curve_free)
+OBJECT_TYPE_ID_ADAPTER(gCurveObjDescriptorTypeIdAdapter, curve_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCurveObjDescriptorExtraSizeAdapter, curve_getExtraSize)
+
+typedef struct CurveObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(curve_func0A)* curve_func0A;
+    __typeof__(curve_func0B)* curve_func0B;
+} CurveObjDescriptorTypeInterface;
+
+struct CurveObjDescriptorType {
+    ObjectDescriptorHeader header;
+    CurveObjDescriptorTypeInterface interface;
+};
+
+struct CurveObjDescriptorType gCurveObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gCurveObjDescriptorInitAdapter,
+        0,
+        0,
+        curve_render,
+        gCurveObjDescriptorFreeAdapter,
+        gCurveObjDescriptorTypeIdAdapter,
+        gCurveObjDescriptorExtraSizeAdapter,
+        curve_func0A,
+        curve_func0B,
+    },
 };

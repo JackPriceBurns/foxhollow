@@ -1,6 +1,7 @@
 #ifndef DLLS_OBJECTS_COMMON_VEHICLE_H_
 #define DLLS_OBJECTS_COMMON_VEHICLE_H_
 
+#include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 
 enum VehicleMountState {
@@ -17,9 +18,7 @@ enum VehicleMountState {
  * SB_CloudRunner, HighTop and DrakorHoverPad.
  */
 typedef struct VehicleInterface {
-    void* pad00[4];
-    void (*render)(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, int visible);
-    void* pad14[3];
+    OBJECT_INTERFACE_FIELDS;
     int (*canMount)(GameObject* obj, GameObject* player);
     int (*getMountSide)(GameObject* obj);
     void (*getRiderPosition)(GameObject* obj, f32* outX, f32* outY, f32* outZ);
@@ -35,6 +34,42 @@ typedef struct VehicleInterface {
     void (*handleRiderScale)(GameObject* obj, f32 rootMotionScaleBase);
     void (*getLookTargetYaw)(GameObject* obj, int mode, int* out);
 } VehicleInterface;
+
+OBJECT_DESCRIPTOR_TYPE(VehicleDescriptor, VehicleInterface);
+
+typedef struct VehicleDescriptorWithPadding {
+    VehicleDescriptor descriptor;
+    u32 padding;
+} VehicleDescriptorWithPadding;
+
+#define VEHICLE_CAN_MOUNT_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj, GameObject* player) { return callback(__VA_ARGS__); }
+#define VEHICLE_MOUNT_SIDE_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj) { return callback(__VA_ARGS__); }
+#define VEHICLE_RIDER_POSITION_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, f32* x, f32* y, f32* z) { callback(__VA_ARGS__); }
+#define VEHICLE_CAN_DISMOUNT_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj, GameObject* player) { return callback(__VA_ARGS__); }
+#define VEHICLE_DISMOUNT_SIDE_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj) { return callback(__VA_ARGS__); }
+#define VEHICLE_CAMERA_POSITION_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, f32* x, f32* y, f32* z) { callback(__VA_ARGS__); }
+#define VEHICLE_MOUNT_STATE_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj) { return callback(__VA_ARGS__); }
+#define VEHICLE_SET_MOUNT_STATE_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, int mountState) { callback(__VA_ARGS__); }
+#define VEHICLE_PLAYER_ANIM_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, f32* blend, int* anim) { callback(__VA_ARGS__); }
+#define VEHICLE_NORMALIZED_SPEED_ADAPTER(adapter, callback, ...) \
+    static f32 adapter(GameObject* obj, f32* speed) { return callback(__VA_ARGS__); }
+#define VEHICLE_RACE_POSITION_ADAPTER(adapter, callback, ...) \
+    static int adapter(GameObject* obj) { return callback(__VA_ARGS__); }
+#define VEHICLE_RESET_POSITION_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj) { callback(__VA_ARGS__); }
+#define VEHICLE_RIDER_SCALE_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, f32 scale) { callback(__VA_ARGS__); }
+#define VEHICLE_LOOK_TARGET_ADAPTER(adapter, callback, ...) \
+    static void adapter(GameObject* obj, int mode, int* out) { callback(__VA_ARGS__); }
 
 #define VEHICLE_INTERFACE(vehicle) ((VehicleInterface*)*((GameObject*)(vehicle))->anim.dll)
 

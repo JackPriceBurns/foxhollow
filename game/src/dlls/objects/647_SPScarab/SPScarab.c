@@ -16,13 +16,12 @@
 #include "main/frame_timing.h"
 #include "main/model.h"
 #include "sys/objects.h"
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/objfx.h"
 #include "main/vecmath.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 
 const u8 gSpScarabPaletteBytes[3] = {0x02, 0x13, 0x16};
 
@@ -194,19 +193,32 @@ void SPScarab_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gSPScarabObjDescriptorInitAdapter, SPScarab_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSPScarabObjDescriptorHitDetectAdapter, SPScarab_hitDetect)
+OBJECT_RENDER_ADAPTER(gSPScarabObjDescriptorRenderAdapter, SPScarab_render)
+OBJECT_FREE_ADAPTER(gSPScarabObjDescriptorFreeAdapter, SPScarab_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSPScarabObjDescriptorTypeIdAdapter, SPScarab_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSPScarabObjDescriptorExtraSizeAdapter, SPScarab_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSPScarabObjDescriptorAcquire, SPScarab_initialise)
+
 ObjectDescriptor gSPScarabObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSPScarabObjDescriptorAcquire,
+        SPScarab_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SPScarab_initialise,
-    (ObjectDescriptorCallback)SPScarab_release,
-    0,
-    (ObjectDescriptorCallback)SPScarab_init,
-    (ObjectDescriptorCallback)SPScarab_update,
-    (ObjectDescriptorCallback)SPScarab_hitDetect,
-    (ObjectDescriptorCallback)SPScarab_render,
-    (ObjectDescriptorCallback)SPScarab_free,
-    (ObjectDescriptorCallback)SPScarab_getObjectTypeId,
-    SPScarab_getExtraSize,
+    gSPScarabObjDescriptorInitAdapter,
+    SPScarab_update,
+    gSPScarabObjDescriptorHitDetectAdapter,
+    gSPScarabObjDescriptorRenderAdapter,
+    gSPScarabObjDescriptorFreeAdapter,
+    gSPScarabObjDescriptorTypeIdAdapter,
+    gSPScarabObjDescriptorExtraSizeAdapter,
 };

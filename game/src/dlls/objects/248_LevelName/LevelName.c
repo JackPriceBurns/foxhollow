@@ -5,13 +5,13 @@
  * optional game bit records that the placement has already been shown.
  */
 #include "dlls/objects/248_LevelName.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/gametext_internal.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/objseq.h"
 
 #define LEVELNAME_OBJECT_TYPE_ID 0
@@ -145,19 +145,32 @@ void LevelName_release(void) {
 void LevelName_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gLevelNameObjDescriptorInitAdapter, LevelName_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLevelNameObjDescriptorHitDetectAdapter, LevelName_hitDetect)
+OBJECT_RENDER_ADAPTER(gLevelNameObjDescriptorRenderAdapter, LevelName_render)
+OBJECT_FREE_ADAPTER(gLevelNameObjDescriptorFreeAdapter, LevelName_free)
+OBJECT_TYPE_ID_ADAPTER(gLevelNameObjDescriptorTypeIdAdapter, LevelName_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLevelNameObjDescriptorExtraSizeAdapter, LevelName_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLevelNameObjDescriptorAcquire, LevelName_initialise)
+
 ObjectDescriptor gLevelNameObjDescriptor = {
-    0,                                                   /* reserved0 */
-    0,                                                   /* reserved1 */
-    0,                                                   /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                    /* slotCountAndFlags */
-    (ObjectDescriptorCallback)LevelName_initialise,      /* initialise */
-    (ObjectDescriptorCallback)LevelName_release,         /* release */
-    0,                                                   /* slot02 */
-    (ObjectDescriptorCallback)LevelName_init,            /* init */
-    (ObjectDescriptorCallback)LevelName_update,          /* update */
-    (ObjectDescriptorCallback)LevelName_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)LevelName_render,          /* render */
-    (ObjectDescriptorCallback)LevelName_free,            /* free */
-    (ObjectDescriptorCallback)LevelName_getObjectTypeId, /* getObjectTypeId */
-    LevelName_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLevelNameObjDescriptorAcquire,
+        LevelName_release,
+    },
+    0,
+    gLevelNameObjDescriptorInitAdapter,
+    LevelName_update,
+    gLevelNameObjDescriptorHitDetectAdapter,
+    gLevelNameObjDescriptorRenderAdapter,
+    gLevelNameObjDescriptorFreeAdapter,
+    gLevelNameObjDescriptorTypeIdAdapter,
+    gLevelNameObjDescriptorExtraSizeAdapter,
 };

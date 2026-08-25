@@ -4,15 +4,14 @@
 #include "main/fileio.h"
 #include "main/frame_timing.h"
 #include "main/maketex.h"
-#include "main/maketex_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_sequence_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_random.h"
+#include "main/maketex_sequence.h"
+#include "main/maketex_timer.h"
 #include "main/mm.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/vecmath.h"
 #include "string.h"
-#include "track/intersect_card_api.h"
+#include "track/intersect_card.h"
 
 volatile s32 gSaveCardState = 0xD;
 char* sMemoryCardFileName = sMemoryCardFileNameString;

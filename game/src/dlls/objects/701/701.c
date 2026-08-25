@@ -12,11 +12,11 @@
  * health the hand explodes (DIMexplosionFn) and goes to state 9. The
  * damage texture index is written into the model's texture slot.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/objtexture.h"
 #include "main/pad.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/dll/dll_02BC_andross.h"
@@ -26,8 +26,7 @@
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/ARW/dll_029A_arwarwing.h"
 #include "main/obj_path.h"
 #include "main/objhits.h"
@@ -476,19 +475,30 @@ int gAndrossHandHitImpulse = 20;
 int gAndrossHandProjectileForwardStep = 10;
 int gAndrossHandProjectileLifetime[2] = { 150 };
 
+OBJECT_INIT_ADAPTER(gAndrossHandObjDescriptorInitAdapter, AndrossHand_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gAndrossHandObjDescriptorHitDetectAdapter, AndrossHand_hitDetect)
+OBJECT_RENDER_ADAPTER(gAndrossHandObjDescriptorRenderAdapter, AndrossHand_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gAndrossHandObjDescriptorFreeAdapter, AndrossHand_free)
+OBJECT_TYPE_ID_ADAPTER(gAndrossHandObjDescriptorTypeIdAdapter, AndrossHand_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAndrossHandObjDescriptorExtraSizeAdapter, AndrossHand_getExtraSize)
+
 ObjectDescriptor gAndrossHandObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)AndrossHand_init,
-    (ObjectDescriptorCallback)AndrossHand_update,
-    (ObjectDescriptorCallback)AndrossHand_hitDetect,
-    (ObjectDescriptorCallback)AndrossHand_render,
-    (ObjectDescriptorCallback)AndrossHand_free,
-    (ObjectDescriptorCallback)AndrossHand_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)AndrossHand_getExtraSize,
+    gAndrossHandObjDescriptorInitAdapter,
+    AndrossHand_update,
+    gAndrossHandObjDescriptorHitDetectAdapter,
+    gAndrossHandObjDescriptorRenderAdapter,
+    gAndrossHandObjDescriptorFreeAdapter,
+    gAndrossHandObjDescriptorTypeIdAdapter,
+    gAndrossHandObjDescriptorExtraSizeAdapter,
 };

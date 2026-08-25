@@ -1,10 +1,10 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
 #include "main/vecmath.h"
-#include "main/maketex_random_api.h"
+#include "main/maketex_random.h"
 #include "main/dll/dll_001B_effect2.h"
 
 int lbl_803DD348;
@@ -21,17 +21,20 @@ f32 gEffect2ScrollPhaseB = 0.3f;
 PartFxSpawnParams gEffect2DefaultSpawnParams;
 
 s32 gEffect2TextureIdTable[4] = {0xDF, 0x1FC, 0x200, 0x1FB};
-ObjectDescriptor6 Effect2_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect2_initialise,
-    (ObjectDescriptorCallback)Effect2_release,
-    0,
-    (ObjectDescriptorCallback)Effect2_func03_nop,
-    (ObjectDescriptorCallback)Effect2_spawnObject,
-    (ObjectDescriptorCallback)Effect2_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect2Resource, Effect2_initialise, Effect2_spawnObject, Effect2_updateFrameState)
+
+EffectResourceDescriptor Effect2_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect2ResourceAcquire,
+        Effect2_release,
+    },
+    {
+        NULL,
+        Effect2_func03_nop,
+        gEffect2ResourceSpawn,
+        gEffect2ResourceUpdate,
+    },
 };
 
 #define FILL338()                                                                                                      \

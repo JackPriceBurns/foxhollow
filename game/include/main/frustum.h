@@ -5,14 +5,9 @@
 #include "main/vec_types.h"
 
 typedef struct FrustumPlane {
-    union {
-        struct {
-            f32 normalX;
-            f32 normalY;
-            f32 normalZ;
-        };
-        Vec3f normal;
-    };
+    f32 normalX;
+    f32 normalY;
+    f32 normalZ;
     f32 distance;
     u8 aabbCornerIndex;
     u8 pad[3];

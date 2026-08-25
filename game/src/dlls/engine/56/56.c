@@ -1,17 +1,17 @@
 #include "dlls/object_descriptor.h"
 #include "main/texture.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/gameloop_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/gameloop.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/dll/dll_0038_weirdunusedmenu.h"
 #include "main/dll/dll_003C_link.h"
 #include "dolphin/pad.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/savegame.h"
 #include "main/model_engine.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 
 #define WIDGET_FLAG_SAVING 0x1000
 
@@ -80,32 +80,24 @@ TitleMenuTextEntry gWeirdMenuWidgetWork[2] = {
 };
 
 u32 gWeirdMenuWidgetLayout[3] = {0x000000f9, 0xffffffff, 0x00000102};
-typedef struct WeirdUnusedMenuDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback run;
-    ObjectDescriptorCallback frameEnd;
-    ObjectDescriptorCallback render;
-    ObjectDescriptorCallback slot06;
-} WeirdUnusedMenuDllInterface;
 
-WeirdUnusedMenuDllInterface WeirdUnusedMenu_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)WeirdUnusedMenu_initialise,
-    (ObjectDescriptorCallback)WeirdUnusedMenu_release,
-    0,
-    (ObjectDescriptorCallback)WeirdUnusedMenu_run,
-    (ObjectDescriptorCallback)WeirdUnusedMenu_frameEnd,
-    (ObjectDescriptorCallback)WeirdUnusedMenu_render,
-    0,
+UI_RESOURCE_ADAPTERS(gWeirdUnusedMenuUiResource, WeirdUnusedMenu_initialise, WeirdUnusedMenu_run, WeirdUnusedMenu_render)
+
+UiResourceDescriptorWithPadding WeirdUnusedMenu_funcs = {
+    {
+        {
+            {0, 0, 0, 0x00050000},
+            gWeirdUnusedMenuUiResourceAcquire,
+            WeirdUnusedMenu_release,
+        },
+        {
+            NULL,
+            gWeirdUnusedMenuUiResourceFrameStart,
+            WeirdUnusedMenu_frameEnd,
+            gWeirdUnusedMenuUiResourceDraw,
+        },
+    },
+    NULL,
 };
 
 void WeirdUnusedMenu_render(void)

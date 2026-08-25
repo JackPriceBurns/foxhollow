@@ -2,14 +2,13 @@
 #include "main/pi_dolphin.h"
 #include "main/mapEventTypes.h"
 #include "main/dll/dll_0015_curves.h"
-#include "main/textrender_api.h"
-#include "main/gametext_api.h"
+#include "main/textrender.h"
+#include "main/gametext.h"
 #include "main/asset_load.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mm.h"
 #include "main/dll/dll_0011_screens.h"
-#include "main/dll/hint_text_api.h"
-#include "main/dll/dll_0011_screens_api.h"
+#include "main/dll/hint_text.h"
 
 u32 gScreenDataId;
 u32 lbl_803DD4A8;
@@ -261,28 +260,30 @@ s16 gTaskHintMapData[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,
 };
+typedef struct ScreensDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(screens_show)* show;
+    __typeof__(screens_remove)* remove;
+    __typeof__(screens_run)* run;
+} ScreensDllInterfaceCallbacks;
+
 typedef struct ScreensDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback show;
-    ObjectDescriptorCallback remove;
-    ObjectDescriptorCallback run;
+    ResourceDescriptorHeader header;
+    ScreensDllInterfaceCallbacks interface;
 } ScreensDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gscreensResourceAcquire, screens_initialise)
+
 ScreensDllInterface screens_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)screens_initialise,
-    (ObjectDescriptorCallback)screens_release,
-    0,
-    (ObjectDescriptorCallback)screens_show,
-    (ObjectDescriptorCallback)screens_remove,
-    (ObjectDescriptorCallback)screens_run,
+    {
+        {0, 0, 0, 0x00050000},
+        gscreensResourceAcquire,
+        screens_release,
+    },
+    {
+        NULL,
+        screens_show,
+        screens_remove,
+        screens_run,
+    },
 };

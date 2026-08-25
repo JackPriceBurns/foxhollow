@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define OBJHITS_SETTERS_S16
-#define OBJHITS_STATE_INDEX_S8
 #include <string.h>
 #include "main/frame_timing.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/debug.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/model.h"
 #include "main/obj_contact.h"
@@ -14,7 +12,7 @@
 #include "main/objhits.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "dolphin/os.h"
 #include "main/asset_load.h"
 #include "main/audio/sfx.h"
@@ -28,28 +26,27 @@
 #include "dolphin/mtx.h"
 #include "main/dll/objpathtransform_struct.h"
 #include "main/game_ui_interface.h"
-#include "main/lightmap_api.h"
-#include "main/dll/player_api.h"
+#include "main/lightmap.h"
+#include "main/dll/player.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/objtype.h"
 #include "main/obj_hit_region.h"
 #include "main/obj_link.h"
-#include "main/objlib_api.h"
+#include "main/objlib.h"
 #include "main/obj_message.h"
 #include "main/obj_path.h"
 #include "main/obj_query.h"
 #include "main/obj_trigger.h"
 #include "main/player_eye_anim.h"
-#include "main/pad_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/rcp_dolphin_render_api.h"
+#include "main/pad.h"
+#include "main/rcp_dolphin_render.h"
 #include "main/texture.h"
-#include "main/objprint_dolphin_api.h"
+#include "main/objprint_dolphin.h"
 #include "main/curve_eval.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/newshadows.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
@@ -60,7 +57,7 @@
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "main/objprint_internal.h"
 
 #define OBJTYPE_COUNT                 0x54
@@ -203,7 +200,7 @@ GameObject* objGetNearestType(int group, float* point, float* maxDistance) {
     entry = gObjectTypeList + index;
     while (index < limit) {
         if (*entry != 0) {
-            distanceSq = PSVECSquareDistance((Vec*)point, &((GameObject*)*entry)->anim.worldPos);
+            distanceSq = PSVECSquareDistance((Vec*)point, (Vec*)&((GameObject*)*entry)->anim.worldPosX);
             if (distanceSq < bestDistanceSq) {
                 bestDistanceSq = distanceSq;
                 nearest = *entry;

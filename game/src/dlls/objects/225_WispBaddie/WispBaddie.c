@@ -5,7 +5,7 @@
  * shared by the sequence-driven baddie objects.
  */
 #include "dlls/objects/225_WispBaddie.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/rom_curve_interface.h"
@@ -14,8 +14,7 @@
 #include "string.h"
 #include "sys/objects.h"
 #include "main/curve.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
@@ -47,13 +46,13 @@ void WispBaddie_updateMovement(GameObject* obj, WispBaddieState* state) {
 
     wave = 1.0f + mathSinf((WISPBADDIE_PI * (f32)state->pathWavePhase) / WISPBADDIE_S16_ANGLE_SCALE);
     pathEnded = Curve_AdvanceAlongPath(&curve->curve, state->hitRadius * wave);
-    if (((pathEnded != 0) || (curve->atSegmentEnd != gWispBaddieLastSegmentEnd)) &&
+    if (((pathEnded != 0) || (curve->curve.idx != gWispBaddieLastSegmentEnd)) &&
         ((*gRomCurveInterface)->goNextPoint((void*)curve) != 0) &&
         ((*gRomCurveInterface)->initCurve((void*)state->curve, (void*)obj, 400.0f, gWispBaddieCurveInitData, -1) !=
          0)) {
         state->flags = (u8)(state->flags & ~WISPBADDIE_FLAG_PATH_NEEDS_LINK);
     }
-    gWispBaddieLastSegmentEnd = curve->atSegmentEnd;
+    gWispBaddieLastSegmentEnd = curve->curve.idx;
 
     if ((state->flags & WISPBADDIE_FLAG_CHASE_PLAYER) != 0) {
         obj->anim.velocityX = 0.006f * (state->player->anim.localPosX - obj->anim.localPosX) + obj->anim.velocityX;
@@ -63,12 +62,12 @@ void WispBaddie_updateMovement(GameObject* obj, WispBaddieState* state) {
         obj->anim.velocityY = 0.006f * wave + obj->anim.velocityY;
         obj->anim.velocityZ = 0.006f * (state->player->anim.localPosZ - obj->anim.localPosZ) + obj->anim.velocityZ;
     } else {
-        obj->anim.velocityX = 0.006f * (curve->posX - obj->anim.localPosX) + obj->anim.velocityX;
+        obj->anim.velocityX = 0.006f * (curve->curve.sample[0] - obj->anim.localPosX) + obj->anim.velocityX;
 
         wave = mathSinf((WISPBADDIE_PI * (f32)state->hoverWavePhase) / WISPBADDIE_S16_ANGLE_SCALE);
-        wave = (40.0f * wave + curve->posY) - obj->anim.localPosY;
+        wave = (40.0f * wave + curve->curve.sample[1]) - obj->anim.localPosY;
         obj->anim.velocityY = 0.006f * wave + obj->anim.velocityY;
-        obj->anim.velocityZ = 0.006f * (curve->posZ - obj->anim.localPosZ) + obj->anim.velocityZ;
+        obj->anim.velocityZ = 0.006f * (curve->curve.sample[2] - obj->anim.localPosZ) + obj->anim.velocityZ;
     }
 
     obj->anim.velocityX = obj->anim.velocityX * (step = 0.9f);
@@ -187,9 +186,9 @@ void WispBaddie_update(GameObject* obj) {
         state->playerDistance = sqrtf(delta[2] * delta[2] + (delta[0] * delta[0] + delta[1] * delta[1]));
     }
     if (curve != NULL) {
-        delta[0] = curve->posX - obj->anim.worldPosX;
-        delta[1] = curve->posY - obj->anim.worldPosY;
-        delta[2] = curve->posZ - obj->anim.worldPosZ;
+        delta[0] = curve->curve.sample[0] - obj->anim.worldPosX;
+        delta[1] = curve->curve.sample[1] - obj->anim.worldPosY;
+        delta[2] = curve->curve.sample[2] - obj->anim.worldPosZ;
         state->curveDistance = sqrtf(delta[2] * delta[2] + (delta[0] * delta[0] + delta[1] * delta[1]));
     }
 
@@ -255,19 +254,30 @@ void WispBaddie_release(void) {
 void WispBaddie_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWispBaddieObjDescriptorInitAdapter, WispBaddie_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gWispBaddieObjDescriptorFreeAdapter, WispBaddie_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWispBaddieObjDescriptorTypeIdAdapter, WispBaddie_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWispBaddieObjDescriptorExtraSizeAdapter, WispBaddie_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWispBaddieObjDescriptorAcquire, WispBaddie_initialise)
+
 ObjectDescriptor gWispBaddieObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWispBaddieObjDescriptorAcquire,
+        WispBaddie_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)WispBaddie_initialise,
-    (ObjectDescriptorCallback)WispBaddie_release,
-    0,
-    (ObjectDescriptorCallback)WispBaddie_init,
-    (ObjectDescriptorCallback)WispBaddie_update,
-    (ObjectDescriptorCallback)WispBaddie_hitDetect,
-    (ObjectDescriptorCallback)WispBaddie_render,
-    (ObjectDescriptorCallback)WispBaddie_free,
-    (ObjectDescriptorCallback)WispBaddie_getObjectTypeId,
-    WispBaddie_getExtraSize,
+    gWispBaddieObjDescriptorInitAdapter,
+    WispBaddie_update,
+    WispBaddie_hitDetect,
+    WispBaddie_render,
+    gWispBaddieObjDescriptorFreeAdapter,
+    gWispBaddieObjDescriptorTypeIdAdapter,
+    gWispBaddieObjDescriptorExtraSizeAdapter,
 };

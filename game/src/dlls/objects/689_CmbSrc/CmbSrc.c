@@ -25,8 +25,7 @@
 #include "main/objfx.h"
 #include "main/dll/dll_02B1_cmbsrc.h"
 #include "main/object_render.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -696,19 +695,30 @@ u8 gCmbsrcColorRgbTable[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+OBJECT_INIT_ADAPTER(gCmbSrcObjDescriptorInitAdapter, cmbsrc_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCmbSrcObjDescriptorFreeAdapter, cmbsrc_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCmbSrcObjDescriptorTypeIdAdapter, cmbsrc_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCmbSrcObjDescriptorExtraSizeAdapter, cmbsrc_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCmbSrcObjDescriptorAcquire, cmbsrc_initialise)
+
 ObjectDescriptor gCmbSrcObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCmbSrcObjDescriptorAcquire,
+        cmbsrc_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cmbsrc_initialise,
-    (ObjectDescriptorCallback)cmbsrc_release,
-    0,
-    (ObjectDescriptorCallback)cmbsrc_init,
-    (ObjectDescriptorCallback)cmbsrc_update,
-    (ObjectDescriptorCallback)cmbsrc_hitDetect,
-    (ObjectDescriptorCallback)cmbsrc_render,
-    (ObjectDescriptorCallback)cmbsrc_free,
-    (ObjectDescriptorCallback)cmbsrc_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)cmbsrc_getExtraSize,
+    gCmbSrcObjDescriptorInitAdapter,
+    cmbsrc_update,
+    cmbsrc_hitDetect,
+    cmbsrc_render,
+    gCmbSrcObjDescriptorFreeAdapter,
+    gCmbSrcObjDescriptorTypeIdAdapter,
+    gCmbSrcObjDescriptorExtraSizeAdapter,
 };

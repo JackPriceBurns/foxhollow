@@ -2,7 +2,7 @@
 #include "main/newclouds_state.h"
 #include "main/newclouds.h"
 #include "main/newshadows.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/texture.h"
 #include "dolphin/gx/GXDispList.h"
 #include "dolphin/gx/GXEnum.h"
@@ -17,28 +17,28 @@
 #include "main/camera.h"
 #include "main/object_transform.h"
 #include "main/dll/dll_80136a40.h"
-#include "main/dll/savegame_env_api.h"
-#include "main/dll/savegame_load_api.h"
-#include "main/gameloop_api.h"
-#include "main/lightmap_api.h"
+#include "main/dll/savegame_env.h"
+#include "main/dll/savegame_load.h"
+#include "main/gameloop.h"
+#include "main/lightmap.h"
 #include "main/model_light.h"
 #include "main/mm.h"
-#include "main/render_mode_api.h"
+#include "main/render_mode.h"
 #include "main/vecmath.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "stdlib.h"
 #include "string.h"
-#include "track/intersect_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_position_api.h"
+#include "track/intersect.h"
+#include "track/intersect_render_setup.h"
+#include "main/audio/music.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/trig_float_helpers.h"
 #include "dolphin/mtx/vec.h"
 #include "main/debug.h"
-#include "main/hud_visibility_api.h"
+#include "main/hud_visibility.h"
 
 u8 gNewCloudBlizzardActivePrev;
 void* sNewCloudsTexture;
@@ -2216,40 +2216,42 @@ void newclouds_initialise(void)
     gNewCloudInitialized = 0;
 }
 int gNewCloudMusicIdByType[5] = {43, 0, 0, 0, 0};
+typedef struct NewCloudsDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(newclouds_updateEnvfxAct)* updateEnvfxAct;
+    __typeof__(newclouds_onMapSetup)* onMapSetup;
+    __typeof__(newclouds_killSnowCloud)* killSnowCloud;
+    __typeof__(newclouds_run)* run;
+    __typeof__(newclouds_renderSnowClouds)* renderSnowClouds;
+    __typeof__(newclouds_isBlizzardActive)* isBlizzardActive;
+    __typeof__(dll_07_func09)* slot09;
+    __typeof__(dll_07_func0A_nop)* slot0A;
+} NewCloudsDllInterfaceCallbacks;
+
 typedef struct NewCloudsDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback updateEnvfxAct;
-    ObjectDescriptorCallback onMapSetup;
-    ObjectDescriptorCallback killSnowCloud;
-    ObjectDescriptorCallback run;
-    ObjectDescriptorCallback renderSnowClouds;
-    ObjectDescriptorCallback isBlizzardActive;
-    ObjectDescriptorCallback slot09;
-    ObjectDescriptorCallback slot0A;
+    ResourceDescriptorHeader header;
+    NewCloudsDllInterfaceCallbacks interface;
 } NewCloudsDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gnewcloudsResourceAcquire, newclouds_initialise)
+
 NewCloudsDllInterface newclouds_funcs = {
-    0,
-    0,
-    0,
-    0x000a0000,
-    (ObjectDescriptorCallback)newclouds_initialise,
-    (ObjectDescriptorCallback)newclouds_release,
-    0,
-    (ObjectDescriptorCallback)newclouds_updateEnvfxAct,
-    (ObjectDescriptorCallback)newclouds_onMapSetup,
-    (ObjectDescriptorCallback)newclouds_killSnowCloud,
-    (ObjectDescriptorCallback)newclouds_run,
-    (ObjectDescriptorCallback)newclouds_renderSnowClouds,
-    (ObjectDescriptorCallback)newclouds_isBlizzardActive,
-    (ObjectDescriptorCallback)dll_07_func09,
-    (ObjectDescriptorCallback)dll_07_func0A_nop,
+    {
+        {0, 0, 0, 0x000a0000},
+        gnewcloudsResourceAcquire,
+        newclouds_release,
+    },
+    {
+        NULL,
+        newclouds_updateEnvfxAct,
+        newclouds_onMapSetup,
+        newclouds_killSnowCloud,
+        newclouds_run,
+        newclouds_renderSnowClouds,
+        newclouds_isBlizzardActive,
+        dll_07_func09,
+        dll_07_func0A_nop,
+    },
 };
 
 char sSnowFreeSnowCloudInvalidCloudId[] = "!!! Error non-existant cloud id - %i - in snowFreeSnowCloud\n";

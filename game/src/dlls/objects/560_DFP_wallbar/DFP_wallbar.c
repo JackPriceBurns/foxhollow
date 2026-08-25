@@ -237,22 +237,34 @@ u8 gDFPWallbarSafeFloorTiles[9] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
+OBJECT_INIT_ADAPTER(gChukaObjDescriptorInitAdapter, chuka_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gChukaObjDescriptorRenderAdapter, chuka_render)
+OBJECT_FREE_ADAPTER(gChukaObjDescriptorFreeAdapter, chuka_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gChukaObjDescriptorTypeIdAdapter, chuka_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gChukaObjDescriptorExtraSizeAdapter, chuka_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gChukaObjDescriptorAcquire, chuka_initialise)
+
 ObjectDescriptor10WithPadding gChukaObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gChukaObjDescriptorAcquire,
+            chuka_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)chuka_initialise,
-        (ObjectDescriptorCallback)chuka_release,
-        0,
-        (ObjectDescriptorCallback)chuka_init,
-        (ObjectDescriptorCallback)chuka_update,
-        (ObjectDescriptorCallback)chuka_hitDetect,
-        (ObjectDescriptorCallback)chuka_render,
-        (ObjectDescriptorCallback)chuka_free,
-        (ObjectDescriptorCallback)chuka_getObjectTypeId,
-        chuka_getExtraSize,
+        gChukaObjDescriptorInitAdapter,
+        chuka_update,
+        chuka_hitDetect,
+        gChukaObjDescriptorRenderAdapter,
+        gChukaObjDescriptorFreeAdapter,
+        gChukaObjDescriptorTypeIdAdapter,
+        gChukaObjDescriptorExtraSizeAdapter,
     },
     0,
 };

@@ -1,8 +1,8 @@
 #include "dlls/objects/431_SH_swaplift.h"
 
 #include "game/objects/object_setup.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/tricky.h"
 #include "main/gamebits.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
@@ -128,19 +128,31 @@ void warpstonelift_release(void) {
 void warpstonelift_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWarpStoneLiftObjDescriptorInitAdapter, warpstonelift_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWarpStoneLiftObjDescriptorHitDetectAdapter, warpstonelift_hitDetect)
+OBJECT_FREE_ADAPTER(gWarpStoneLiftObjDescriptorFreeAdapter, warpstonelift_free)
+OBJECT_TYPE_ID_ADAPTER(gWarpStoneLiftObjDescriptorTypeIdAdapter, warpstonelift_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWarpStoneLiftObjDescriptorExtraSizeAdapter, warpstonelift_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWarpStoneLiftObjDescriptorAcquire, warpstonelift_initialise)
+
 ObjectDescriptor gWarpStoneLiftObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWarpStoneLiftObjDescriptorAcquire,
+        warpstonelift_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)warpstonelift_initialise,
-    (ObjectDescriptorCallback)warpstonelift_release,
-    0,
-    (ObjectDescriptorCallback)warpstonelift_init,
-    (ObjectDescriptorCallback)warpstonelift_update,
-    (ObjectDescriptorCallback)warpstonelift_hitDetect,
-    (ObjectDescriptorCallback)warpstonelift_render,
-    (ObjectDescriptorCallback)warpstonelift_free,
-    (ObjectDescriptorCallback)warpstonelift_getObjectTypeId,
-    warpstonelift_getExtraSize,
+    gWarpStoneLiftObjDescriptorInitAdapter,
+    warpstonelift_update,
+    gWarpStoneLiftObjDescriptorHitDetectAdapter,
+    warpstonelift_render,
+    gWarpStoneLiftObjDescriptorFreeAdapter,
+    gWarpStoneLiftObjDescriptorTypeIdAdapter,
+    gWarpStoneLiftObjDescriptorExtraSizeAdapter,
 };

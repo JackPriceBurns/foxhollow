@@ -8,10 +8,10 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
-#include "main/track_dolphin_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/track_dolphin.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -163,19 +163,31 @@ void dim2icicle_release(void) {
 void dim2icicle_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIM2IcicleObjDescriptorInitAdapter, dim2icicle_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2IcicleObjDescriptorHitDetectAdapter, dim2icicle_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2IcicleObjDescriptorFreeAdapter, dim2icicle_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM2IcicleObjDescriptorTypeIdAdapter, dim2icicle_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2IcicleObjDescriptorExtraSizeAdapter, dim2icicle_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2IcicleObjDescriptorAcquire, dim2icicle_initialise)
+
 ObjectDescriptor gDIM2IcicleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIM2IcicleObjDescriptorAcquire,
+        dim2icicle_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dim2icicle_initialise,
-    (ObjectDescriptorCallback)dim2icicle_release,
-    0,
-    (ObjectDescriptorCallback)dim2icicle_init,
-    (ObjectDescriptorCallback)dim2icicle_update,
-    (ObjectDescriptorCallback)dim2icicle_hitDetect,
-    (ObjectDescriptorCallback)dim2icicle_render,
-    (ObjectDescriptorCallback)dim2icicle_free,
-    (ObjectDescriptorCallback)dim2icicle_getObjectTypeId,
-    dim2icicle_getExtraSize,
+    gDIM2IcicleObjDescriptorInitAdapter,
+    dim2icicle_update,
+    gDIM2IcicleObjDescriptorHitDetectAdapter,
+    dim2icicle_render,
+    gDIM2IcicleObjDescriptorFreeAdapter,
+    gDIM2IcicleObjDescriptorTypeIdAdapter,
+    gDIM2IcicleObjDescriptorExtraSizeAdapter,
 };

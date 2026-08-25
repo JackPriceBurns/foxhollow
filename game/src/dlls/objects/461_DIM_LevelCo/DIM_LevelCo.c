@@ -8,21 +8,21 @@
 
 #include "dlls/objects/461_DIM_LevelCo.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "main/audio/music_api.h"
+#include "main/gamebit_latch.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0011_screens.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
 #include "main/map_load.h"
 #include "main/object_render.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
 #include "main/sky_interface.h"
 #include "main/vecmath.h"
 #include "main/mapEventTypes.h"
@@ -101,17 +101,17 @@ void dim_levelcontrol_update(GameObject* obj) {
     gameBitD0D = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0D);
     gameBitD0E = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0E);
     state = obj->extra;
-    if ((gameBitD0B && !state->statusGameBitD0B) || (gameBitD0C && !state->statusGameBitD0C) ||
-        (gameBitD0D && !state->statusGameBitD0D) || (gameBitD0E && !state->statusGameBitD0E)) {
+    if ((gameBitD0B && !state->statusFlags.b01) || (gameBitD0C && !state->statusFlags.b02) ||
+        (gameBitD0D && !state->statusFlags.b04) || (gameBitD0E && !state->statusFlags.b08)) {
         Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
     }
-    state->statusGameBitD0B = gameBitD0B;
-    state->statusGameBitD0C = gameBitD0C;
-    state->statusGameBitD0D = gameBitD0D;
-    state->statusGameBitD0E = gameBitD0E;
-    if (!state->cannonStatusGameBit && mainGetBit(GAMEBIT_DIM_CannonRelated0A21) != 0) {
+    state->statusFlags.b01 = gameBitD0B;
+    state->statusFlags.b02 = gameBitD0C;
+    state->statusFlags.b04 = gameBitD0D;
+    state->statusFlags.b08 = gameBitD0E;
+    if (!state->statusFlags.b10 && mainGetBit(GAMEBIT_DIM_CannonRelated0A21) != 0) {
         Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
-        state->cannonStatusGameBit = 1;
+        state->statusFlags.b10 = 1;
     }
     if (obj->userData1 != 0) {
         if (mainGetBit(GAMEBIT_DIM_FlewTo) == 0 ||
@@ -177,7 +177,7 @@ void dim_levelcontrol_update(GameObject* obj) {
     if ((*gSkyInterface)->getSunPosition(0) == 0) {
         if (state->dayNightMusicTrigger != DIM_LEVEL_CONTROL_MUSICTRIG_NIGHT) {
             state->dayNightMusicTrigger = DIM_LEVEL_CONTROL_MUSICTRIG_NIGHT;
-            if (state->musicLatchMask & 4) {
+            if (state->musicLatch & 4) {
                 Music_Trigger(DIM_LEVEL_CONTROL_MUSICTRIG_DAY, 0);
                 Music_Trigger(DIM_LEVEL_CONTROL_MUSICTRIG_NIGHT, 1);
             }
@@ -185,30 +185,30 @@ void dim_levelcontrol_update(GameObject* obj) {
     } else {
         if (state->dayNightMusicTrigger != DIM_LEVEL_CONTROL_MUSICTRIG_DAY) {
             state->dayNightMusicTrigger = DIM_LEVEL_CONTROL_MUSICTRIG_DAY;
-            if (state->musicLatchMask & 4) {
+            if (state->musicLatch & 4) {
                 Music_Trigger(DIM_LEVEL_CONTROL_MUSICTRIG_NIGHT, 0);
                 Music_Trigger(DIM_LEVEL_CONTROL_MUSICTRIG_DAY, 1);
             }
         }
     }
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 1, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01A7,
+    GameBitLatch_Update(&state->musicLatch, 1, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01A7,
                           GAMEBIT_SH_Landed064B, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C1E, MUSICTRIG_drako_1);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 2, GAMEBIT_SH_WarpStoneRelated01A8,
+    GameBitLatch_Update(&state->musicLatch, 2, GAMEBIT_SH_WarpStoneRelated01A8,
                           GAMEBIT_SH_Entered00C0, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C1F,
                           DIM_LEVEL_CONTROL_MUSICTRIG_0CF);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 4, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01BA,
+    GameBitLatch_Update(&state->musicLatch, 4, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01BA,
                           GAMEBIT_IM_TrickyRelated01B9, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C20,
                           state->dayNightMusicTrigger);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 8, -1, -1, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0D8F,
+    GameBitLatch_Update(&state->musicLatch, 8, -1, -1, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0D8F,
                           DIM_LEVEL_CONTROL_MUSICTRIG_0DC);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 0x10, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01A7,
+    GameBitLatch_Update(&state->musicLatch, 0x10, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01A7,
                           GAMEBIT_SH_Landed064B, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C1E, MUSICTRIG_citytombs_ed);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 0x20, GAMEBIT_SH_WarpStoneRelated01A8,
+    GameBitLatch_Update(&state->musicLatch, 0x20, GAMEBIT_SH_WarpStoneRelated01A8,
                           GAMEBIT_SH_Entered00C0, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C1F, MUSICTRIG_Teleport);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 0x40, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01BA,
+    GameBitLatch_Update(&state->musicLatch, 0x40, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_01BA,
                           GAMEBIT_IM_TrickyRelated01B9, DIM_LEVEL_CONTROL_LATCH_GAMEBIT_0C20,
                           DIM_LEVEL_CONTROL_MUSICTRIG_035);
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 0x100, -1, -1,
+    GameBitLatch_Update(&state->musicLatch, 0x100, -1, -1,
                           GAMEBIT_DIM_TriggerLostInBlizzard, DIM_LEVEL_CONTROL_MUSICTRIG_02B);
 }
 
@@ -233,29 +233,37 @@ void dim_levelcontrol_init(GameObject* obj) {
     if (mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_089D) != 0 && mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_08A5) == 0) {
         mainSetBits(DIM_LEVEL_CONTROL_GAMEBIT_089D, 0);
     }
-    state->statusGameBitD0B = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0B);
-    state->statusGameBitD0C = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0C);
-    state->statusGameBitD0D = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0D);
-    state->statusGameBitD0E = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0E);
-    state->cannonStatusGameBit = mainGetBit(GAMEBIT_DIM_CannonRelated0A21);
+    state->statusFlags.b01 = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0B);
+    state->statusFlags.b02 = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0C);
+    state->statusFlags.b04 = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0D);
+    state->statusFlags.b08 = mainGetBit(DIM_LEVEL_CONTROL_GAMEBIT_D0E);
+    state->statusFlags.b10 = mainGetBit(GAMEBIT_DIM_CannonRelated0A21);
     (*gMapEventInterface)->setMapAct(obj->anim.mapEventSlot, 1);
     obj->objectFlags |= (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED);
     unlockLevel(0, 0, 1);
 }
 
+OBJECT_INIT_ADAPTER(gDIM_LevelControlObjDescriptorInitAdapter, dim_levelcontrol_init, obj)
+OBJECT_FREE_ADAPTER(gDIM_LevelControlObjDescriptorFreeAdapter, dim_levelcontrol_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_LevelControlObjDescriptorExtraSizeAdapter, dim_levelcontrol_getExtraSize)
+
 ObjectDescriptor gDIM_LevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDIM_LevelControlObjDescriptorInitAdapter,
+    dim_levelcontrol_update,
     0,
+    dim_levelcontrol_render,
+    gDIM_LevelControlObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dim_levelcontrol_init,
-    (ObjectDescriptorCallback)dim_levelcontrol_update,
-    0,
-    (ObjectDescriptorCallback)dim_levelcontrol_render,
-    (ObjectDescriptorCallback)dim_levelcontrol_free,
-    0,
-    dim_levelcontrol_getExtraSize,
+    gDIM_LevelControlObjDescriptorExtraSizeAdapter,
 };

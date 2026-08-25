@@ -50,7 +50,7 @@ void dimbossfire_free(GameObject* obj);
 void dimbossfire_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible);
 void dimbossfire_hitDetect(void);
 void dimbossfire_update(GameObject* obj);
-void dimbossfire_init(GameObject* obj, u32 placementAddress, int isAltVariant);
+void dimbossfire_init(GameObject* obj, void* placement, int isAltVariant);
 void dimbossfire_release(void);
 void dimbossfire_initialise(void);
 

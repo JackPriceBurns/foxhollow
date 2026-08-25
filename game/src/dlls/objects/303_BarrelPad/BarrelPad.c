@@ -71,19 +71,31 @@ void BarrelPad_release(void) {
 void BarrelPad_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gBarrelPadObjDescriptorInitAdapter, BarrelPad_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gBarrelPadObjDescriptorHitDetectAdapter, BarrelPad_hitDetect)
+OBJECT_FREE_ADAPTER(gBarrelPadObjDescriptorFreeAdapter, BarrelPad_free)
+OBJECT_TYPE_ID_ADAPTER(gBarrelPadObjDescriptorTypeIdAdapter, BarrelPad_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBarrelPadObjDescriptorExtraSizeAdapter, BarrelPad_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBarrelPadObjDescriptorAcquire, BarrelPad_initialise)
+
 ObjectDescriptor gBarrelPadObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBarrelPadObjDescriptorAcquire,
+        BarrelPad_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)BarrelPad_initialise,
-    (ObjectDescriptorCallback)BarrelPad_release,
-    0,
-    (ObjectDescriptorCallback)BarrelPad_init,
-    (ObjectDescriptorCallback)BarrelPad_update,
-    (ObjectDescriptorCallback)BarrelPad_hitDetect,
-    (ObjectDescriptorCallback)BarrelPad_render,
-    (ObjectDescriptorCallback)BarrelPad_free,
-    (ObjectDescriptorCallback)BarrelPad_getObjectTypeId,
-    BarrelPad_getExtraSize,
+    gBarrelPadObjDescriptorInitAdapter,
+    BarrelPad_update,
+    gBarrelPadObjDescriptorHitDetectAdapter,
+    BarrelPad_render,
+    gBarrelPadObjDescriptorFreeAdapter,
+    gBarrelPadObjDescriptorTypeIdAdapter,
+    gBarrelPadObjDescriptorExtraSizeAdapter,
 };

@@ -23,14 +23,13 @@
 #include "dlls/objects/488_SB_Galleon.h"
 #include "dlls/objects/494_SB_CannonBa.h"
 #include "dlls/objects/504_WM_Galleon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/expgfx_interface.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
@@ -345,19 +344,27 @@ void SB_ShipGun_init(GameObject* obj) {
     state->volleyCount = 0;
 }
 
+OBJECT_INIT_ADAPTER(gSB_ShipGunObjDescriptorInitAdapter, SB_ShipGun_init, obj)
+OBJECT_FREE_ADAPTER(gSB_ShipGunObjDescriptorFreeAdapter, SB_ShipGun_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_ShipGunObjDescriptorExtraSizeAdapter, SB_ShipGun_getExtraSize)
+
 ObjectDescriptor gSB_ShipGunObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gSB_ShipGunObjDescriptorInitAdapter,
+    SB_ShipGun_update,
     0,
+    SB_ShipGun_render,
+    gSB_ShipGunObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SB_ShipGun_init,
-    (ObjectDescriptorCallback)SB_ShipGun_update,
-    0,
-    (ObjectDescriptorCallback)SB_ShipGun_render,
-    (ObjectDescriptorCallback)SB_ShipGun_free,
-    0,
-    SB_ShipGun_getExtraSize,
+    gSB_ShipGunObjDescriptorExtraSizeAdapter,
 };

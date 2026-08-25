@@ -4,15 +4,15 @@
  */
 #include "dlls/objects/467.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/stream_api.h"
+#include "dolphin/math.h"
+#include "main/audio/stream.h"
 #include "main/camera.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
-#include "main/gx_scissor_api.h"
+#include "main/gx_scissor.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/obj_link.h"
@@ -618,19 +618,30 @@ GreatFoxFxEntry gGreatFoxEffects[GREAT_FOX_EFFECT_COUNT] = {
     {0.0f, 0.405f, 2.952f, 0.01f, 0x08, 0x40, {0x00, 0x00}},
 };
 
+OBJECT_INIT_ADAPTER(gWorldObjObjDescriptorInitAdapter, worldobj_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWorldObjObjDescriptorHitDetectAdapter, worldobj_hitDetect)
+OBJECT_FREE_ADAPTER(gWorldObjObjDescriptorFreeAdapter, worldobj_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gWorldObjObjDescriptorExtraSizeAdapter, worldobj_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWorldObjObjDescriptorAcquire, worldobj_initialise)
+
 ObjectDescriptor gWorldObjObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWorldObjObjDescriptorAcquire,
+        worldobj_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)worldobj_initialise,
-    (ObjectDescriptorCallback)worldobj_release,
-    0,
-    (ObjectDescriptorCallback)worldobj_init,
-    (ObjectDescriptorCallback)worldobj_update,
-    (ObjectDescriptorCallback)worldobj_hitDetect,
-    (ObjectDescriptorCallback)worldobj_render,
-    (ObjectDescriptorCallback)worldobj_free,
-    (ObjectDescriptorCallback)worldobj_getObjectTypeId,
-    worldobj_getExtraSize,
+    gWorldObjObjDescriptorInitAdapter,
+    worldobj_update,
+    gWorldObjObjDescriptorHitDetectAdapter,
+    worldobj_render,
+    gWorldObjObjDescriptorFreeAdapter,
+    worldobj_getObjectTypeId,
+    gWorldObjObjDescriptorExtraSizeAdapter,
 };

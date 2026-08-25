@@ -9,13 +9,13 @@
  */
 #include "dlls/objects/495_SB_CloudBal.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
@@ -207,19 +207,30 @@ void SB_CloudBall_release(void) {
 void SB_CloudBall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_CloudBallObjDescriptorInitAdapter, SB_CloudBall_init, obj)
+OBJECT_FREE_ADAPTER(gSB_CloudBallObjDescriptorFreeAdapter, SB_CloudBall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_CloudBallObjDescriptorTypeIdAdapter, SB_CloudBall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_CloudBallObjDescriptorExtraSizeAdapter, SB_CloudBall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_CloudBallObjDescriptorAcquire, SB_CloudBall_initialise)
+
 ObjectDescriptor gSB_CloudBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_CloudBallObjDescriptorAcquire,
+        SB_CloudBall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_CloudBall_initialise,
-    SB_CloudBall_release,
-    0,
-    (ObjectDescriptorCallback)SB_CloudBall_init,
-    (ObjectDescriptorCallback)SB_CloudBall_update,
-    (ObjectDescriptorCallback)SB_CloudBall_hitDetect,
-    (ObjectDescriptorCallback)SB_CloudBall_render,
-    (ObjectDescriptorCallback)SB_CloudBall_free,
-    (ObjectDescriptorCallback)SB_CloudBall_getObjectTypeId,
-    SB_CloudBall_getExtraSize,
+    gSB_CloudBallObjDescriptorInitAdapter,
+    SB_CloudBall_update,
+    SB_CloudBall_hitDetect,
+    SB_CloudBall_render,
+    gSB_CloudBallObjDescriptorFreeAdapter,
+    gSB_CloudBallObjDescriptorTypeIdAdapter,
+    gSB_CloudBallObjDescriptorExtraSizeAdapter,
 };

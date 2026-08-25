@@ -1,30 +1,30 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
-#include "main/audio/audio_control_api.h"
-#include "main/dll/dll_0017_savegame_api.h"
-#include "main/dll/savegame_object_api.h"
-#include "main/dll/player_api.h"
+#include "main/audio/audio_control.h"
+#include "main/dll/dll_0017_savegame.h"
+#include "main/dll/savegame_object.h"
+#include "main/dll/player.h"
 #include "main/model_engine.h"
-#include "main/model_engine_ui_api.h"
+#include "main/model_engine_ui.h"
 #include "string.h"
 #include "sys/objects.h"
 #include "main/map_load.h"
 #include "main/mm.h"
 #include "main/dll/savegame.h"
-#include "main/dll/savegame_env_api.h"
+#include "main/dll/savegame_env.h"
 #include "main/dll/player_state.h"
 #include "main/dll/player_status.h"
 #include "main/mapEventTypes.h"
 #include "dolphin/os/OSReboot.h"
 #include "main/gamebits.h"
-#include "main/dll/tricky_api.h"
-#include "main/textrender_api.h"
-#include "main/gameloop_api.h"
+#include "main/dll/tricky.h"
+#include "main/textrender.h"
+#include "main/gameloop.h"
 #include "main/dll/dll_0016_screentransition.h"
-#include "track/intersect_card_api.h"
+#include "track/intersect_card.h"
 #include "main/pad.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/dll/FRONT/frontend_control.h"
 
 void* pRestartPoint;
@@ -1213,122 +1213,124 @@ u16 gSaveGameMapObjGroupBits[120] = {
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 };
+typedef struct SaveGameDllInterfaceCallbacks {
+    void* slot02;
+    void* slot03;
+    void* slot04;
+    void* slot05;
+    void* slot06;
+    void* slot07;
+    __typeof__(SaveGame_func08_nop)* slot08;
+    __typeof__(SaveGame_gplaySavePoint)* gplaySavePoint;
+    __typeof__(SaveGame_gplayGotoSavegame)* gplayGotoSavegame;
+    __typeof__(SaveGame_gplayRestartPoint)* gplayRestartPoint;
+    __typeof__(SaveGame_gplayGotoRestartPoint)* gplayGotoRestartPoint;
+    __typeof__(SaveGame_gplayClearRestartPoint)* gplayClearRestartPoint;
+    __typeof__(SaveGame_gplayGetRestartGameNotCleared)* gplayGetRestartGameNotCleared;
+    void* slot0F;
+    void* slot10;
+    void* slot11;
+    __typeof__(SaveGame_getMapAct)* getMapAct;
+    __typeof__(SaveGame_gplaySetAct)* gplaySetAct;
+    __typeof__(SaveGame_setMapActLut)* setMapActLut;
+    __typeof__(SaveGame_gplayGetObjGroupStatus)* gplayGetObjGroupStatus;
+    __typeof__(SaveGame_gplaySetObjGroupStatus)* gplaySetObjGroupStatus;
+    __typeof__(SaveGame_getMapObjGroupBit)* getMapObjGroupBit;
+    __typeof__(SaveGame_mapUpdateObjGroups)* mapUpdateObjGroups;
+    __typeof__(SaveGame_mapGetObjGroups)* mapGetObjGroups;
+    __typeof__(SaveGame_resetObjGroups)* resetObjGroups;
+    __typeof__(SaveGame_gplayAddTime)* gplayAddTime;
+    __typeof__(SaveGame_gplayDidTimeExpire)* gplayDidTimeExpire;
+    __typeof__(SaveGame_gplayGetTimeRemaining)* gplayGetTimeRemaining;
+    __typeof__(SaveGame_updateTimes)* updateTimes;
+    __typeof__(SaveGame_getCurChar)* getCurChar;
+    __typeof__(SaveGame_setCharacter)* setCharacter;
+    void* slot21;
+    void* slot22;
+    void* slot23;
+    __typeof__(SaveGame_getState)* getState;
+    __typeof__(SaveGame_getPlayerStats)* getPlayerStats;
+    __typeof__(SaveGame_getCurCharPos)* getCurCharPos;
+    __typeof__(SaveGame_getTrickyStats)* getTrickyStats;
+    void* slot28;
+    void* slot29;
+    void* slot2A;
+    void* slot2B;
+    void* slot2C;
+    __typeof__(SaveGame_getPlayTime)* getPlayTime;
+    void* slot2E;
+    void* slot2F;
+    void* slot30;
+    void* slot31;
+    void* slot32;
+    void* slot33;
+} SaveGameDllInterfaceCallbacks;
+
 typedef struct SaveGameDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback slot03;
-    ObjectDescriptorCallback slot04;
-    ObjectDescriptorCallback slot05;
-    ObjectDescriptorCallback slot06;
-    ObjectDescriptorCallback slot07;
-    ObjectDescriptorCallback slot08;
-    ObjectDescriptorCallback gplaySavePoint;
-    ObjectDescriptorCallback gplayGotoSavegame;
-    ObjectDescriptorCallback gplayRestartPoint;
-    ObjectDescriptorCallback gplayGotoRestartPoint;
-    ObjectDescriptorCallback gplayClearRestartPoint;
-    ObjectDescriptorCallback gplayGetRestartGameNotCleared;
-    ObjectDescriptorCallback slot0F;
-    ObjectDescriptorCallback slot10;
-    ObjectDescriptorCallback slot11;
-    ObjectDescriptorCallback getMapAct;
-    ObjectDescriptorCallback gplaySetAct;
-    ObjectDescriptorCallback setMapActLut;
-    ObjectDescriptorCallback gplayGetObjGroupStatus;
-    ObjectDescriptorCallback gplaySetObjGroupStatus;
-    ObjectDescriptorCallback getMapObjGroupBit;
-    ObjectDescriptorCallback mapUpdateObjGroups;
-    ObjectDescriptorCallback mapGetObjGroups;
-    ObjectDescriptorCallback resetObjGroups;
-    ObjectDescriptorCallback gplayAddTime;
-    ObjectDescriptorCallback gplayDidTimeExpire;
-    ObjectDescriptorCallback gplayGetTimeRemaining;
-    ObjectDescriptorCallback updateTimes;
-    ObjectDescriptorCallback getCurChar;
-    ObjectDescriptorCallback setCharacter;
-    ObjectDescriptorCallback slot21;
-    ObjectDescriptorCallback slot22;
-    ObjectDescriptorCallback slot23;
-    ObjectDescriptorCallback getState;
-    ObjectDescriptorCallback getPlayerStats;
-    ObjectDescriptorCallback getCurCharPos;
-    ObjectDescriptorCallback getTrickyStats;
-    ObjectDescriptorCallback slot28;
-    ObjectDescriptorCallback slot29;
-    ObjectDescriptorCallback slot2A;
-    ObjectDescriptorCallback slot2B;
-    ObjectDescriptorCallback slot2C;
-    ObjectDescriptorCallback getPlayTime;
-    ObjectDescriptorCallback slot2E;
-    ObjectDescriptorCallback slot2F;
-    ObjectDescriptorCallback slot30;
-    ObjectDescriptorCallback slot31;
-    ObjectDescriptorCallback slot32;
-    ObjectDescriptorCallback slot33;
+    ResourceDescriptorHeader header;
+    SaveGameDllInterfaceCallbacks interface;
 } SaveGameDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gSaveGameResourceAcquire, SaveGame_initialise)
+
 SaveGameDllInterface SaveGame_funcs = {
-    0,
-    0,
-    0,
-    0x00330000,
-    (ObjectDescriptorCallback)SaveGame_initialise,
-    (ObjectDescriptorCallback)SaveGame_release,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SaveGame_func08_nop,
-    (ObjectDescriptorCallback)SaveGame_gplaySavePoint,
-    (ObjectDescriptorCallback)SaveGame_gplayGotoSavegame,
-    (ObjectDescriptorCallback)SaveGame_gplayRestartPoint,
-    (ObjectDescriptorCallback)SaveGame_gplayGotoRestartPoint,
-    (ObjectDescriptorCallback)SaveGame_gplayClearRestartPoint,
-    (ObjectDescriptorCallback)SaveGame_gplayGetRestartGameNotCleared,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SaveGame_getMapAct,
-    (ObjectDescriptorCallback)SaveGame_gplaySetAct,
-    (ObjectDescriptorCallback)SaveGame_setMapActLut,
-    (ObjectDescriptorCallback)SaveGame_gplayGetObjGroupStatus,
-    (ObjectDescriptorCallback)SaveGame_gplaySetObjGroupStatus,
-    (ObjectDescriptorCallback)SaveGame_getMapObjGroupBit,
-    (ObjectDescriptorCallback)SaveGame_mapUpdateObjGroups,
-    (ObjectDescriptorCallback)SaveGame_mapGetObjGroups,
-    (ObjectDescriptorCallback)SaveGame_resetObjGroups,
-    (ObjectDescriptorCallback)SaveGame_gplayAddTime,
-    (ObjectDescriptorCallback)SaveGame_gplayDidTimeExpire,
-    (ObjectDescriptorCallback)SaveGame_gplayGetTimeRemaining,
-    (ObjectDescriptorCallback)SaveGame_updateTimes,
-    (ObjectDescriptorCallback)SaveGame_getCurChar,
-    (ObjectDescriptorCallback)SaveGame_setCharacter,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SaveGame_getState,
-    (ObjectDescriptorCallback)SaveGame_getPlayerStats,
-    (ObjectDescriptorCallback)SaveGame_getCurCharPos,
-    (ObjectDescriptorCallback)SaveGame_getTrickyStats,
-    0,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SaveGame_getPlayTime,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    {
+        {0, 0, 0, 0x00330000},
+        gSaveGameResourceAcquire,
+        SaveGame_release,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        SaveGame_func08_nop,
+        SaveGame_gplaySavePoint,
+        SaveGame_gplayGotoSavegame,
+        SaveGame_gplayRestartPoint,
+        SaveGame_gplayGotoRestartPoint,
+        SaveGame_gplayClearRestartPoint,
+        SaveGame_gplayGetRestartGameNotCleared,
+        NULL,
+        NULL,
+        NULL,
+        SaveGame_getMapAct,
+        SaveGame_gplaySetAct,
+        SaveGame_setMapActLut,
+        SaveGame_gplayGetObjGroupStatus,
+        SaveGame_gplaySetObjGroupStatus,
+        SaveGame_getMapObjGroupBit,
+        SaveGame_mapUpdateObjGroups,
+        SaveGame_mapGetObjGroups,
+        SaveGame_resetObjGroups,
+        SaveGame_gplayAddTime,
+        SaveGame_gplayDidTimeExpire,
+        SaveGame_gplayGetTimeRemaining,
+        SaveGame_updateTimes,
+        SaveGame_getCurChar,
+        SaveGame_setCharacter,
+        NULL,
+        NULL,
+        NULL,
+        SaveGame_getState,
+        SaveGame_getPlayerStats,
+        SaveGame_getCurCharPos,
+        SaveGame_getTrickyStats,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        SaveGame_getPlayTime,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+    },
 };
 
 u8 gSaveGameData[SAVEGAME_LIVE_BUFFER_SIZE];

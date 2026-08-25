@@ -159,19 +159,31 @@ void cfPowerBase_release(void) {
 void cfPowerBase_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFPowerBaseObjDescriptorInitAdapter, cfPowerBase_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFPowerBaseObjDescriptorHitDetectAdapter, cfPowerBase_hitDetect)
+OBJECT_FREE_ADAPTER(gCFPowerBaseObjDescriptorFreeAdapter, cfPowerBase_free)
+OBJECT_TYPE_ID_ADAPTER(gCFPowerBaseObjDescriptorTypeIdAdapter, cfPowerBase_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFPowerBaseObjDescriptorExtraSizeAdapter, cfPowerBase_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFPowerBaseObjDescriptorAcquire, cfPowerBase_initialise)
+
 ObjectDescriptor gCFPowerBaseObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFPowerBaseObjDescriptorAcquire,
+        cfPowerBase_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPowerBase_initialise,
-    (ObjectDescriptorCallback)cfPowerBase_release,
-    0,
-    (ObjectDescriptorCallback)cfPowerBase_init,
-    (ObjectDescriptorCallback)cfPowerBase_update,
-    (ObjectDescriptorCallback)cfPowerBase_hitDetect,
-    (ObjectDescriptorCallback)cfPowerBase_render,
-    (ObjectDescriptorCallback)cfPowerBase_free,
-    (ObjectDescriptorCallback)cfPowerBase_getObjectTypeId,
-    cfPowerBase_getExtraSize,
+    gCFPowerBaseObjDescriptorInitAdapter,
+    cfPowerBase_update,
+    gCFPowerBaseObjDescriptorHitDetectAdapter,
+    cfPowerBase_render,
+    gCFPowerBaseObjDescriptorFreeAdapter,
+    gCFPowerBaseObjDescriptorTypeIdAdapter,
+    gCFPowerBaseObjDescriptorExtraSizeAdapter,
 };

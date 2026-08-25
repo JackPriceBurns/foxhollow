@@ -4,7 +4,7 @@
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
 
 #include "dlls/objects/488_SB_Galleon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
 #include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -13,7 +13,7 @@
 #include "main/debug.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_motion.h"
 #include "main/dll/player_objects.h"
 #include "main/dll/viewfinder.h"
@@ -27,8 +27,6 @@
 #include "main/vecmath.h"
 #include "string.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
 
 int lbl_803DD54C;
 CameraModeViewfinderState* gCameraModeViewfinderState;
@@ -594,10 +592,10 @@ void CameraModeViewfinder_release(void) {
 void CameraModeViewfinder_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeViewfinderDescriptorAcquire, CameraModeViewfinder_initialise)
+
 CameraModeViewfinderDescriptor gCameraModeViewfinderDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeViewfinder_initialise,
-    CameraModeViewfinder_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeViewfinderDescriptorAcquire, CameraModeViewfinder_release },
     NULL,
     CameraModeViewfinder_init,
     CameraModeViewfinder_update,

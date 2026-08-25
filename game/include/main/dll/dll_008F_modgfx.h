@@ -9,17 +9,15 @@
 typedef void (*Dll8FSpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags);
 
 typedef struct Dll8FResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll8FSpawnFn spawn;
     u32 opaqueTail;
 } Dll8FResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll8FResourceDescriptor, opaqueTail) == 0x20);

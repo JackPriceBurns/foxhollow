@@ -1,12 +1,12 @@
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx/vec.h"
 #include "dolphin/os.h"
 #include "dolphin/pad.h"
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
 #include "main/dll/dll_0048_cameramodestatic.h"
-#include "main/dll/dll_02C0_front_api.h"
+#include "main/dll/dll_02C0_front.h"
 #include "main/dll/savegame.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/mm.h"
@@ -22,8 +22,8 @@
 #include "main/dll/dll_0019_dll19func0.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/dll_B7.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/camera.h"
 #include "main/camera_interface.h"
 #include "main/model.h"
@@ -31,19 +31,19 @@
 #include "main/mldf_fileid.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/shader_map_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/shader_map.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "track/intersect_api.h"
-#include "track/intersect_depth_state_api.h"
+#include "track/intersect.h"
+#include "track/intersect_depth_state.h"
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
 #include "main/asset_load.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "string.h"
 
 struct CamcontrolTriggeredAction {
@@ -172,15 +172,19 @@ s8 gCamcontrolTargetChanged;
 CamcontrolStateStorage gCamcontrolStateStorage;
 CamcontrolHandlerEntry* gCamcontrolHandlerEntries[CAMCONTROL_HANDLER_CAPACITY];
 
+RESOURCE_ACQUIRE_ADAPTER(gCamcontrolResourceAcquireAdapter, Camera_initialise)
+
 CamcontrolResourceDescriptor gCamcontrolResourceDescriptor = {
     {
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x001d0000,
+        {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x001d0000,
+        },
+        gCamcontrolResourceAcquireAdapter,
+        Camera_release,
     },
-    (ResourceDescriptorCallback)Camera_initialise,
-    (ResourceDescriptorCallback)Camera_release,
     {
         {0},
         Camera_init,
@@ -189,8 +193,8 @@ CamcontrolResourceDescriptor gCamcontrolResourceDescriptor = {
         Camera_getMode,
         Camera_getActiveHandler,
         Camera_getDefaultHandlerEntry,
-        (CameraSetModeFn)Camera_setMode,
-        (void* (*)(int))Camera_getCamActionsBinEntry,
+        Camera_setMode,
+        Camera_getCamActionsBinEntry,
         camcontrol_loadTriggeredCamAction,
         Camera_setFocus,
         Camera_overridePos,
@@ -467,7 +471,7 @@ GameObject* camcontrol_findBestTarget(CamcontrolCameraState* cameraState, ObjAni
         if (accept == 0) {
             continue;
         }
-        if ((int)obj->anim.modelInstance->hitVolumes[obj->hitVolumeIndex].priorityUnsigned < bestPri) {
+        if (obj->anim.modelInstance->hitVolumes[obj->hitVolumeIndex].priority < bestPri) {
             continue;
         }
         if ((obj->anim.resetHitboxFlags & 0x80) || (bounds[obj->hitVolumeIndex].flags & 0x80)) {
@@ -497,15 +501,15 @@ GameObject* camcontrol_findBestTarget(CamcontrolCameraState* cameraState, ObjAni
         if (canTarget == 0) {
             continue;
         }
-        bestPri = obj->anim.modelInstance->hitVolumes[obj->hitVolumeIndex].priorityUnsigned;
+        bestPri = obj->anim.modelInstance->hitVolumes[obj->hitVolumeIndex].priority;
         i = 0;
         while (i < count &&
-               (int)targets[i]->anim.modelInstance->hitVolumes[targets[i]->hitVolumeIndex].priorityUnsigned > bestPri) {
+               targets[i]->anim.modelInstance->hitVolumes[targets[i]->hitVolumeIndex].priority > bestPri) {
             i++;
         }
         while (i < count && dist[i] < distsq &&
                bestPri ==
-                   (int)targets[i]->anim.modelInstance->hitVolumes[targets[i]->hitVolumeIndex].priorityUnsigned) {
+                   targets[i]->anim.modelInstance->hitVolumes[targets[i]->hitVolumeIndex].priority) {
             i++;
         }
         for (k = count; k > i; k--) {
@@ -564,7 +568,7 @@ void camcontrol_updateMoveAverage(CamcontrolCameraState* cameraState, ObjAnimCom
     cameraState->focusMoveHistory[2] = move3;
     move4 = cameraState->focusMoveHistory[4];
     cameraState->focusMoveHistory[3] = move4;
-    velocity = &focus->velocity;
+    velocity = (Vec3f*)&focus->velocityX;
     mag = PSVECMag(velocity);
     if (mag > 0.0f) {
         root = sqrtf(mag);
@@ -713,7 +717,7 @@ void camcontrol_applyState(CamcontrolCameraState* camera) {
         view->y = camera->worldY;
         view->z = camera->worldZ;
     }
-    gCamcontrolFovY = camera->fovY;
+    gCamcontrolFovY = camera->fov;
     if (camera->blendProgress > 0.0f) {
         f32 prog;
 
@@ -824,7 +828,7 @@ void camcontrol_applyQueuedAction(void) {
             gCamcontrolCamera->yaw = view->yaw;
             gCamcontrolCamera->pitch = view->pitch;
             gCamcontrolCamera->roll = view->roll;
-            gCamcontrolCamera->fovY = Camera_GetFovY();
+            gCamcontrolCamera->fov = Camera_GetFovY();
         }
         gCamcontrolSavedActionId = gCamcontrolActiveActionId;
         gCamcontrolSavedActionPriority = gCamcontrolActiveActionPriority;
@@ -1080,7 +1084,7 @@ void Camera_setTargetReticleOverride(GameObject* target) {
 }
 
 void Camera_setTarget(GameObject* target) {
-    gCamcontrolCamera->overrideTarget = target;
+    gCamcontrolCamera->targetObj = target;
     gCamcontrolCamera->currentTarget = target;
 }
 
@@ -1089,7 +1093,7 @@ GameObject* Camera_getTarget(void) {
 }
 
 GameObject* Camera_getOverrideTarget(void) {
-    return gCamcontrolCamera->overrideTarget;
+    return gCamcontrolCamera->targetObj;
 }
 
 void camcontrol_getRelativePosition(void* targetObj, f32* outX, f32* outY, f32* outZ, f32* outDistanceXZ,
@@ -1141,9 +1145,9 @@ void Camera_moveBy(f32 x, f32 y, f32 z) {
 
 void Camera_overridePos(f32 x, f32 y, f32 z) {
     gCamcontrolCamera->overrideWorldPosPending = 1;
-    gCamcontrolCamera->overrideWorldX = x;
-    gCamcontrolCamera->overrideWorldY = y;
-    gCamcontrolCamera->overrideWorldZ = z;
+    gCamcontrolCamera->overrideWorldPos.x = x;
+    gCamcontrolCamera->overrideWorldPos.y = y;
+    gCamcontrolCamera->overrideWorldPos.z = z;
 }
 
 void Camera_setFocus(void* target, int flags) {
@@ -1378,7 +1382,7 @@ void Camera_update(u8 framesThisStep) {
     focus = gCamcontrolCamera->focusObj;
     if (focus == NULL) {
         gCamcontrolCamera->currentTarget = NULL;
-        gCamcontrolCamera->overrideTarget = NULL;
+        gCamcontrolCamera->targetObj = NULL;
     } else {
         gCamcontrolSavedFocusLocalX = focus->localPosX;
         gCamcontrolSavedFocusLocalY = focus->localPosY;
@@ -1388,9 +1392,9 @@ void Camera_update(u8 framesThisStep) {
         gCamcontrolSavedFocusWorldZ = focus->worldPosZ;
         camcontrol_updateMoveAverage(gCamcontrolCamera, focus);
         if (gCamcontrolCamera->overrideWorldPosPending != 0) {
-            focus->worldPosX = gCamcontrolCamera->overrideWorldX;
-            focus->worldPosY = gCamcontrolCamera->overrideWorldY;
-            focus->worldPosZ = gCamcontrolCamera->overrideWorldZ;
+            focus->worldPosX = gCamcontrolCamera->overrideWorldPos.x;
+            focus->worldPosY = gCamcontrolCamera->overrideWorldPos.y;
+            focus->worldPosZ = gCamcontrolCamera->overrideWorldPos.z;
             Obj_TransformWorldPointToLocal(focus->worldPosX, focus->worldPosY, focus->worldPosZ, &focus->localPosX,
                                            &focus->localPosY, &focus->localPosZ, (GameObject*)focus->parent);
             gCamcontrolCamera->overrideWorldPosPending = 0;
@@ -1400,17 +1404,17 @@ void Camera_update(u8 framesThisStep) {
                                            gCamcontrolCamera->localZ, &gCamcontrolCamera->worldX,
                                            &gCamcontrolCamera->worldY, &gCamcontrolCamera->worldZ,
                                            gCamcontrolCamera->localFrameObj);
-            Obj_TransformLocalPointToWorld(gCamcontrolCamera->prevLocalX, gCamcontrolCamera->prevLocalY,
-                                           gCamcontrolCamera->prevLocalZ, &gCamcontrolCamera->prevWorldX,
-                                           &gCamcontrolCamera->prevWorldY, &gCamcontrolCamera->prevWorldZ,
+            Obj_TransformLocalPointToWorld(gCamcontrolCamera->savedLocalPos.x, gCamcontrolCamera->savedLocalPos.y,
+                                           gCamcontrolCamera->savedLocalPos.z, &gCamcontrolCamera->probePos.x,
+                                           &gCamcontrolCamera->probePos.y, &gCamcontrolCamera->probePos.z,
                                            gCamcontrolCamera->localFrameObj);
             Obj_TransformWorldPointToLocal(gCamcontrolCamera->worldX, gCamcontrolCamera->worldY,
                                            gCamcontrolCamera->worldZ, &gCamcontrolCamera->localX,
                                            &gCamcontrolCamera->localY, &gCamcontrolCamera->localZ,
                                            (GameObject*)focus->parent);
-            Obj_TransformWorldPointToLocal(gCamcontrolCamera->prevWorldX, gCamcontrolCamera->prevWorldY,
-                                           gCamcontrolCamera->prevWorldZ, &gCamcontrolCamera->prevLocalX,
-                                           &gCamcontrolCamera->prevLocalY, &gCamcontrolCamera->prevLocalZ,
+            Obj_TransformWorldPointToLocal(gCamcontrolCamera->probePos.x, gCamcontrolCamera->probePos.y,
+                                           gCamcontrolCamera->probePos.z, &gCamcontrolCamera->savedLocalPos.x,
+                                           &gCamcontrolCamera->savedLocalPos.y, &gCamcontrolCamera->savedLocalPos.z,
                                            (GameObject*)focus->parent);
             gCamcontrolCamera->localFrameObj = focus->parent;
         }
@@ -1428,19 +1432,19 @@ void Camera_update(u8 framesThisStep) {
         }
         camcontrol_applyQueuedAction();
         if (textActive == 0) {
-            if (gCamcontrolCamera->overrideTarget == NULL) {
+            if (gCamcontrolCamera->targetObj == NULL) {
                 target = camcontrol_findBestTarget(gCamcontrolCamera, focus);
                 gCamcontrolCamera->currentTarget = target;
             } else {
-                gCamcontrolCamera->currentTarget = gCamcontrolCamera->overrideTarget;
+                gCamcontrolCamera->currentTarget = gCamcontrolCamera->targetObj;
             }
         }
-        gCamcontrolCamera->prevLocalX = gCamcontrolCamera->localX;
-        gCamcontrolCamera->prevLocalY = gCamcontrolCamera->localY;
-        gCamcontrolCamera->prevLocalZ = gCamcontrolCamera->localZ;
-        gCamcontrolCamera->prevWorldX = gCamcontrolCamera->worldX;
-        gCamcontrolCamera->prevWorldY = gCamcontrolCamera->worldY;
-        gCamcontrolCamera->prevWorldZ = gCamcontrolCamera->worldZ;
+        gCamcontrolCamera->savedLocalPos.x = gCamcontrolCamera->localX;
+        gCamcontrolCamera->savedLocalPos.y = gCamcontrolCamera->localY;
+        gCamcontrolCamera->savedLocalPos.z = gCamcontrolCamera->localZ;
+        gCamcontrolCamera->probePos.x = gCamcontrolCamera->worldX;
+        gCamcontrolCamera->probePos.y = gCamcontrolCamera->worldY;
+        gCamcontrolCamera->probePos.z = gCamcontrolCamera->worldZ;
         gCamcontrolCamera->frameFlags = 0;
         focus->localPosX = gCamcontrolSavedFocusLocalX;
         focus->localPosY = gCamcontrolSavedFocusLocalY;
@@ -1463,14 +1467,14 @@ void Camera_init(void* focus, f32 x, f32 y, f32 z) {
     gCamcontrolCamera->worldX = x;
     gCamcontrolCamera->worldY = y;
     gCamcontrolCamera->worldZ = z;
-    gCamcontrolCamera->prevLocalX = x;
-    gCamcontrolCamera->prevLocalY = y;
-    gCamcontrolCamera->prevLocalZ = z;
-    gCamcontrolCamera->prevWorldX = x;
-    gCamcontrolCamera->prevWorldY = y;
-    gCamcontrolCamera->prevWorldZ = z;
+    gCamcontrolCamera->savedLocalPos.x = x;
+    gCamcontrolCamera->savedLocalPos.y = y;
+    gCamcontrolCamera->savedLocalPos.z = z;
+    gCamcontrolCamera->probePos.x = x;
+    gCamcontrolCamera->probePos.y = y;
+    gCamcontrolCamera->probePos.z = z;
     gCamcontrolCamera->focusObj = focus;
-    gCamcontrolCamera->fovY = 60.0f;
+    gCamcontrolCamera->fov = 60.0f;
     gCamcontrolTargetState = CAMCONTROL_TARGET_RETICLE_STATE_INACTIVE;
 }
 

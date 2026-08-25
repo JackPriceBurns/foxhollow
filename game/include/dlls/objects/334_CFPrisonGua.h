@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "game/objects/object_setup.h"
 #include "main/objseq.h"
 

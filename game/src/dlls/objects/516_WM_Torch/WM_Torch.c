@@ -1,15 +1,14 @@
 #include "dlls/objects/516_WM_Torch.h"
 
 #include "game/objects/object.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0063_modgfx.h"
 #include "main/dll/dll_0069_modgfx.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/resource.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -109,19 +108,30 @@ void wmtorch_release(void) {
 void wmtorch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_TorchObjDescriptorInitAdapter, wmtorch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_TorchObjDescriptorHitDetectAdapter, wmtorch_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gWM_TorchObjDescriptorTypeIdAdapter, wmtorch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_TorchObjDescriptorExtraSizeAdapter, wmtorch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_TorchObjDescriptorAcquire, wmtorch_initialise)
+
 ObjectDescriptor gWM_TorchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_TorchObjDescriptorAcquire,
+        wmtorch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    wmtorch_initialise,
-    wmtorch_release,
-    0,
-    (ObjectDescriptorCallback)wmtorch_init,
-    (ObjectDescriptorCallback)wmtorch_update,
-    wmtorch_hitDetect,
-    (ObjectDescriptorCallback)wmtorch_render,
-    (ObjectDescriptorCallback)wmtorch_free,
-    (ObjectDescriptorCallback)wmtorch_getObjectTypeId,
-    wmtorch_getExtraSize,
+    gWM_TorchObjDescriptorInitAdapter,
+    wmtorch_update,
+    gWM_TorchObjDescriptorHitDetectAdapter,
+    wmtorch_render,
+    wmtorch_free,
+    gWM_TorchObjDescriptorTypeIdAdapter,
+    gWM_TorchObjDescriptorExtraSizeAdapter,
 };

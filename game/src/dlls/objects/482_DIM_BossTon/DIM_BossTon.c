@@ -6,9 +6,9 @@
 #include "dlls/objects/482_DIM_BossTon.h"
 
 #include "dlls/objects/480_DIM_Boss.h"
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/camera_shake_api.h"
+#include "main/audio/music.h"
+#include "main/audio/sfx.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
@@ -22,9 +22,9 @@
 #include "main/objtype.h"
 #include "main/pad.h"
 #include "main/player_control_interface.h"
-#include "main/render_envfx_api.h"
-#include "main/shader_api.h"
-#include "main/sky_api.h"
+#include "main/render_envfx.h"
+#include "main/shader.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "main/dll/partfx_interface.h"
@@ -581,21 +581,45 @@ void DIMbosstonsil_initialise(void) {
     gDIMbosstonsilSubstateHandlers.update = DIMbosstonsil_updateHitReaction;
 }
 
-ObjectDescriptor12 gDIM_BossTonsilObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    DIMbosstonsil_initialise,
-    DIMbosstonsil_release,
-    0,
-    (ObjectDescriptorCallback)DIMbosstonsil_init,
-    (ObjectDescriptorCallback)DIMbosstonsil_update,
-    (ObjectDescriptorCallback)DIMbosstonsil_hitDetect,
-    (ObjectDescriptorCallback)DIMbosstonsil_render,
-    (ObjectDescriptorCallback)DIMbosstonsil_free,
-    (ObjectDescriptorCallback)DIMbosstonsil_getObjectTypeId,
-    DIMbosstonsil_getExtraSize,
-    (ObjectDescriptorCallback)DIMbosstonsil_getControlMode,
-    DIMbosstonsil_func0B,
+OBJECT_INIT_ADAPTER(gDIM_BossTonsilObjDescriptorInitAdapter, DIMbosstonsil_init, obj, placement, flags)
+OBJECT_RENDER_ADAPTER(gDIM_BossTonsilObjDescriptorRenderAdapter, DIMbosstonsil_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDIM_BossTonsilObjDescriptorFreeAdapter, DIMbosstonsil_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIM_BossTonsilObjDescriptorTypeIdAdapter, DIMbosstonsil_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_BossTonsilObjDescriptorExtraSizeAdapter, DIMbosstonsil_getExtraSize)
+
+typedef struct DIM_BossTonsilObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(DIMbosstonsil_getControlMode)* DIMbosstonsil_getControlMode;
+} DIM_BossTonsilObjDescriptorTypeInterface;
+
+struct DIM_BossTonsilObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DIM_BossTonsilObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM_BossTonsilObjDescriptorAcquire, DIMbosstonsil_initialise)
+
+struct DIM_BossTonsilObjDescriptorType gDIM_BossTonsilObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDIM_BossTonsilObjDescriptorAcquire,
+        DIMbosstonsil_release,
+    },
+    {
+        0,
+        gDIM_BossTonsilObjDescriptorInitAdapter,
+        DIMbosstonsil_update,
+        DIMbosstonsil_hitDetect,
+        gDIM_BossTonsilObjDescriptorRenderAdapter,
+        gDIM_BossTonsilObjDescriptorFreeAdapter,
+        gDIM_BossTonsilObjDescriptorTypeIdAdapter,
+        gDIM_BossTonsilObjDescriptorExtraSizeAdapter,
+        DIMbosstonsil_getControlMode,
+        DIMbosstonsil_func0B,
+    },
 };

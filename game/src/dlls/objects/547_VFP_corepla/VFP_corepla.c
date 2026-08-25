@@ -70,19 +70,32 @@ void VFP_coreplat_release(void) {
 void VFP_coreplat_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_coreplatObjDescriptorInitAdapter, VFP_coreplat_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gVFP_coreplatObjDescriptorUpdateAdapter, VFP_coreplat_update)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_coreplatObjDescriptorHitDetectAdapter, VFP_coreplat_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_coreplatObjDescriptorFreeAdapter, VFP_coreplat_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_coreplatObjDescriptorTypeIdAdapter, VFP_coreplat_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_coreplatObjDescriptorExtraSizeAdapter, VFP_coreplat_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_coreplatObjDescriptorAcquire, VFP_coreplat_initialise)
+
 ObjectDescriptor gVFP_coreplatObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_coreplatObjDescriptorAcquire,
+        VFP_coreplat_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_coreplat_initialise,
-    (ObjectDescriptorCallback)VFP_coreplat_release,
-    0,
-    (ObjectDescriptorCallback)VFP_coreplat_init,
-    (ObjectDescriptorCallback)VFP_coreplat_update,
-    (ObjectDescriptorCallback)VFP_coreplat_hitDetect,
-    (ObjectDescriptorCallback)VFP_coreplat_render,
-    (ObjectDescriptorCallback)VFP_coreplat_free,
-    (ObjectDescriptorCallback)VFP_coreplat_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_coreplat_getExtraSize,
+    gVFP_coreplatObjDescriptorInitAdapter,
+    gVFP_coreplatObjDescriptorUpdateAdapter,
+    gVFP_coreplatObjDescriptorHitDetectAdapter,
+    VFP_coreplat_render,
+    gVFP_coreplatObjDescriptorFreeAdapter,
+    gVFP_coreplatObjDescriptorTypeIdAdapter,
+    gVFP_coreplatObjDescriptorExtraSizeAdapter,
 };

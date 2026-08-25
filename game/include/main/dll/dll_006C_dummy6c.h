@@ -5,16 +5,14 @@
 #include "main/resource.h"
 
 typedef struct Dummy6CDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     int (*init)(void);
 } Dummy6CDescriptor;
 
-STATIC_ASSERT(offsetof(Dummy6CDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dummy6CDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dummy6CDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dummy6CDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dummy6CDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dummy6CDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dummy6CDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dummy6CDescriptor, init) == 0x1C);
 STATIC_ASSERT(sizeof(Dummy6CDescriptor) == 0x20);

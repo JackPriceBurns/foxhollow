@@ -2,7 +2,7 @@
 
 #include "dlls/objects/343_SpiritDoorS.h"
 
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objfx.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -75,19 +75,31 @@ void spiritDoorSpirit_release(void) {
 void spiritDoorSpirit_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSpiritDoorSpiritObjDescriptorInitAdapter, spiritDoorSpirit_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSpiritDoorSpiritObjDescriptorHitDetectAdapter, spiritDoorSpirit_hitDetect)
+OBJECT_FREE_ADAPTER(gSpiritDoorSpiritObjDescriptorFreeAdapter, spiritDoorSpirit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSpiritDoorSpiritObjDescriptorTypeIdAdapter, spiritDoorSpirit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSpiritDoorSpiritObjDescriptorExtraSizeAdapter, spiritDoorSpirit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSpiritDoorSpiritObjDescriptorAcquire, spiritDoorSpirit_initialise)
+
 ObjectDescriptor gSpiritDoorSpiritObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSpiritDoorSpiritObjDescriptorAcquire,
+        spiritDoorSpirit_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)spiritDoorSpirit_initialise,
-    (ObjectDescriptorCallback)spiritDoorSpirit_release,
-    0,
-    (ObjectDescriptorCallback)spiritDoorSpirit_init,
-    (ObjectDescriptorCallback)spiritDoorSpirit_update,
-    (ObjectDescriptorCallback)spiritDoorSpirit_hitDetect,
-    (ObjectDescriptorCallback)spiritDoorSpirit_render,
-    (ObjectDescriptorCallback)spiritDoorSpirit_free,
-    (ObjectDescriptorCallback)spiritDoorSpirit_getObjectTypeId,
-    spiritDoorSpirit_getExtraSize,
+    gSpiritDoorSpiritObjDescriptorInitAdapter,
+    spiritDoorSpirit_update,
+    gSpiritDoorSpiritObjDescriptorHitDetectAdapter,
+    spiritDoorSpirit_render,
+    gSpiritDoorSpiritObjDescriptorFreeAdapter,
+    gSpiritDoorSpiritObjDescriptorTypeIdAdapter,
+    gSpiritDoorSpiritObjDescriptorExtraSizeAdapter,
 };

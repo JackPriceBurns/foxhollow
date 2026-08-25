@@ -63,19 +63,31 @@ void imSpaceRing_release(void) {
 void imSpaceRing_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIMSpaceRingObjDescriptorInitAdapter, imSpaceRing_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gIMSpaceRingObjDescriptorHitDetectAdapter, imSpaceRing_hitDetect)
+OBJECT_FREE_ADAPTER(gIMSpaceRingObjDescriptorFreeAdapter, imSpaceRing_free)
+OBJECT_TYPE_ID_ADAPTER(gIMSpaceRingObjDescriptorTypeIdAdapter, imSpaceRing_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMSpaceRingObjDescriptorExtraSizeAdapter, imSpaceRing_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIMSpaceRingObjDescriptorAcquire, imSpaceRing_initialise)
+
 ObjectDescriptor gIMSpaceRingObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIMSpaceRingObjDescriptorAcquire,
+        imSpaceRing_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)imSpaceRing_initialise,
-    (ObjectDescriptorCallback)imSpaceRing_release,
-    0,
-    (ObjectDescriptorCallback)imSpaceRing_init,
-    (ObjectDescriptorCallback)imSpaceRing_update,
-    (ObjectDescriptorCallback)imSpaceRing_hitDetect,
-    (ObjectDescriptorCallback)imSpaceRing_render,
-    (ObjectDescriptorCallback)imSpaceRing_free,
-    (ObjectDescriptorCallback)imSpaceRing_getObjectTypeId,
-    imSpaceRing_getExtraSize,
+    gIMSpaceRingObjDescriptorInitAdapter,
+    imSpaceRing_update,
+    gIMSpaceRingObjDescriptorHitDetectAdapter,
+    imSpaceRing_render,
+    gIMSpaceRingObjDescriptorFreeAdapter,
+    gIMSpaceRingObjDescriptorTypeIdAdapter,
+    gIMSpaceRingObjDescriptorExtraSizeAdapter,
 };

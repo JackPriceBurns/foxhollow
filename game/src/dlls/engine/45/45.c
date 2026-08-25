@@ -1,9 +1,9 @@
 #include "game/objects/object.h"
 #include "main/dll/partfxspawn_struct.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
-#include "main/maketex_random_api.h"
+#include "main/maketex_random.h"
 #include "main/dll/dll_002D_effect20.h"
 #include "main/vecmath.h"
 
@@ -17,17 +17,20 @@ f32 gEffect20SpawnScrollB = 0.3f;
 f32 gEffect20StepScrollA = 0.1f;
 f32 gEffect20StepScrollB = 0.3f;
 
-ObjectDescriptor6 Effect20_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect20_initialise,
-    (ObjectDescriptorCallback)Effect20_release,
-    0,
-    (ObjectDescriptorCallback)Effect20_func03_nop,
-    (ObjectDescriptorCallback)Effect20_spawnObject,
-    (ObjectDescriptorCallback)Effect20_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect20Resource, Effect20_initialise, Effect20_spawnObject, Effect20_updateFrameState)
+
+EffectResourceDescriptor Effect20_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect20ResourceAcquire,
+        Effect20_release,
+    },
+    {
+        NULL,
+        Effect20_func03_nop,
+        gEffect20ResourceSpawn,
+        gEffect20ResourceUpdate,
+    },
 };
 
 int Effect20_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

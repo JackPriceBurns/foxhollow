@@ -101,7 +101,7 @@ void lightning_update(GameObject* obj) {
                                                                   LIGHTNING_LIFETIME_RANDOM_OFFSET_MAX));
             start = (f32*)((u8*)obj + offsetof(GameObject, anim.localPosX));
             target = objects[objectIndex];
-            effect = lightningCreate((const Vec3f*)start, (const Vec3f*)&target->anim.localPos, state->radiusX,
+            effect = lightningCreate((const Vec3f*)start, (const Vec3f*)&target->anim.localPosX, state->radiusX,
                                      state->radiusY, lifetime, state->width, (state->flags.alternateStyle ? 1 : 0));
             state->effect = effect;
             state->ageTimer = 0.0f;
@@ -162,19 +162,27 @@ void lightning_init(GameObject* obj, LightningPlacement* placement) {
     state->countdown = (f32)(s32)((u32)placement->initialDelay * LIGHTNING_DELAY_FRAME_SCALE);
 }
 
+OBJECT_INIT_ADAPTER(gLightningObjDescriptorInitAdapter, lightning_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gLightningObjDescriptorRenderAdapter, lightning_render, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gLightningObjDescriptorExtraSizeAdapter, lightning_getExtraSize)
+
 ObjectDescriptor gLightningObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gLightningObjDescriptorInitAdapter,
+    lightning_update,
     0,
+    gLightningObjDescriptorRenderAdapter,
+    lightning_free,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)lightning_init,
-    (ObjectDescriptorCallback)lightning_update,
-    0,
-    (ObjectDescriptorCallback)lightning_render,
-    (ObjectDescriptorCallback)lightning_free,
-    0,
-    lightning_getExtraSize,
+    gLightningObjDescriptorExtraSizeAdapter,
 };

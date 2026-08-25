@@ -10,7 +10,7 @@
  * an axis-aligned proximity test (flag bit10) or a plane-crossing test that
  * compares the Arwing's current and previous Z against the pickup's Z.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/objfx.h"
 #include "main/dll/ARW/dll_029F_arwbombcoll.h"
@@ -204,19 +204,32 @@ void ARWBombColl_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWBombCollObjDescriptorInitAdapter, ARWBombColl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWBombCollObjDescriptorHitDetectAdapter, ARWBombColl_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWBombCollObjDescriptorRenderAdapter, ARWBombColl_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gARWBombCollObjDescriptorFreeAdapter, ARWBombColl_free)
+OBJECT_TYPE_ID_ADAPTER(gARWBombCollObjDescriptorTypeIdAdapter, ARWBombColl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWBombCollObjDescriptorExtraSizeAdapter, ARWBombColl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWBombCollObjDescriptorAcquire, ARWBombColl_initialise)
+
 ObjectDescriptor gARWBombCollObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWBombColl_initialise,
-    (ObjectDescriptorCallback)ARWBombColl_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWBombCollObjDescriptorAcquire,
+        ARWBombColl_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)ARWBombColl_init,
-    (ObjectDescriptorCallback)ARWBombColl_update,
-    (ObjectDescriptorCallback)ARWBombColl_hitDetect,
-    (ObjectDescriptorCallback)ARWBombColl_render,
-    (ObjectDescriptorCallback)ARWBombColl_free,
-    (ObjectDescriptorCallback)ARWBombColl_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ARWBombColl_getExtraSize,
+    gARWBombCollObjDescriptorInitAdapter,
+    ARWBombColl_update,
+    gARWBombCollObjDescriptorHitDetectAdapter,
+    gARWBombCollObjDescriptorRenderAdapter,
+    gARWBombCollObjDescriptorFreeAdapter,
+    gARWBombCollObjDescriptorTypeIdAdapter,
+    gARWBombCollObjDescriptorExtraSizeAdapter,
 };

@@ -3,7 +3,7 @@
  * GameBits from sequence events, while the object update keeps the statue's
  * looped sound alive and stops it once the sequence has completed.
  */
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/DF/dll_0233_dfpstatue1.h"
 #include "main/gamebits.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -171,19 +171,32 @@ void DFP_Statue1_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDfpstatue1ObjDescriptorInitAdapter, DFP_Statue1_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDfpstatue1ObjDescriptorHitDetectAdapter, DFP_Statue1_hitDetect)
+OBJECT_RENDER_ADAPTER(gDfpstatue1ObjDescriptorRenderAdapter, DFP_Statue1_render)
+OBJECT_FREE_ADAPTER(gDfpstatue1ObjDescriptorFreeAdapter, DFP_Statue1_free)
+OBJECT_TYPE_ID_ADAPTER(gDfpstatue1ObjDescriptorTypeIdAdapter, DFP_Statue1_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfpstatue1ObjDescriptorExtraSizeAdapter, DFP_Statue1_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDfpstatue1ObjDescriptorAcquire, DFP_Statue1_initialise)
+
 ObjectDescriptor gDfpstatue1ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDfpstatue1ObjDescriptorAcquire,
+        DFP_Statue1_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DFP_Statue1_initialise,
-    (ObjectDescriptorCallback)DFP_Statue1_release,
-    0,
-    (ObjectDescriptorCallback)DFP_Statue1_init,
-    (ObjectDescriptorCallback)DFP_Statue1_update,
-    (ObjectDescriptorCallback)DFP_Statue1_hitDetect,
-    (ObjectDescriptorCallback)DFP_Statue1_render,
-    (ObjectDescriptorCallback)DFP_Statue1_free,
-    (ObjectDescriptorCallback)DFP_Statue1_getObjectTypeId,
-    DFP_Statue1_getExtraSize,
+    gDfpstatue1ObjDescriptorInitAdapter,
+    DFP_Statue1_update,
+    gDfpstatue1ObjDescriptorHitDetectAdapter,
+    gDfpstatue1ObjDescriptorRenderAdapter,
+    gDfpstatue1ObjDescriptorFreeAdapter,
+    gDfpstatue1ObjDescriptorTypeIdAdapter,
+    gDfpstatue1ObjDescriptorExtraSizeAdapter,
 };

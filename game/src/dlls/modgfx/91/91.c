@@ -7,7 +7,7 @@
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/modgfx_types.h"
 #include "main/model.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/vecmath.h"
 #include "main/dll/partfx_interface.h"
 
@@ -50,7 +50,9 @@ u8 gDll5BEffectResourceData[0x50] = {0,   0,   2, 88, 0, 0,  0, 15, 0, 31, 2,   
                                      0,   3,   0, 2,  0, 0,  0, 70, 0, 0,  0,   0,   0, 0, 0,   0,   0, 0,  0, 0};
 
 Dll5BResourceDescriptor gDll5BResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, NULL, NULL, NULL, dll_5B_spawnModelEffects,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, NULL, NULL },
+    NULL,
+    dll_5B_spawnModelEffects,
     "!!!! This modgfx needs an owner object\n",
 };
 
@@ -71,7 +73,7 @@ s16 dll_5B_spawnModelEffects(GameObject* sourceObj, int effectId, PartFxSpawnPar
     resources[0] = (Dll5BEffectResourceView*)gDll5BEffectResourceData;
     spawnHandle = 0;
     /* Retail resolves the model before checking for a missing owner. */
-    model = (ObjModel*)sourceObj->anim.banks[sourceObj->anim.bankIndex];
+    model = (ObjModel*)sourceObj->anim.modelBanks[sourceObj->anim.bankIndex];
     spawnCountRange = gDll5BDefaultSpawnCountRange;
     if (countRange != NULL) {
         spawnCountRange.min = countRange->min;
@@ -91,28 +93,28 @@ s16 dll_5B_spawnModelEffects(GameObject* sourceObj, int effectId, PartFxSpawnPar
     if (modelFile->textureCount == 0) {
         return -1;
     }
-    packet.modeByte = effectId;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = effectId;
-    packet.position[0] = 0.0f;
-    packet.position[1] = 0.0f;
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 4;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.sequenceParams[0] = resources[0]->sequenceParams[0];
-    packet.sequenceParams[1] = resources[0]->sequenceParams[1];
-    packet.sequenceParams[2] = resources[0]->sequenceParams[2];
-    packet.sequenceParams[3] = resources[0]->sequenceParams[3];
-    packet.sequenceParams[4] = resources[0]->sequenceParams[4];
-    packet.sequenceParams[5] = resources[0]->sequenceParams[5];
-    packet.sequenceParams[6] = resources[0]->sequenceParams[6];
+    packet.context.modeByte = effectId;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = effectId;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 4;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.sequenceParams[0] = resources[0]->sequenceParams[0];
+    packet.context.sequenceParams[1] = resources[0]->sequenceParams[1];
+    packet.context.sequenceParams[2] = resources[0]->sequenceParams[2];
+    packet.context.sequenceParams[3] = resources[0]->sequenceParams[3];
+    packet.context.sequenceParams[4] = resources[0]->sequenceParams[4];
+    packet.context.sequenceParams[5] = resources[0]->sequenceParams[5];
+    packet.context.sequenceParams[6] = resources[0]->sequenceParams[6];
     effectCount = randomGetRange(spawnCountRange.min, spawnCountRange.max);
     if (effectId == 0xc) {
         effectCount = randomGetRange(2, 6);
@@ -251,12 +253,12 @@ s16 dll_5B_spawnModelEffects(GameObject* sourceObj, int effectId, PartFxSpawnPar
         commandCursor[0].x = 0.0f;
         commandCursor[0].y = 0.0f;
         commandCursor[0].z = 0.0f;
-        packet.commands = commands;
-        packet.commandCount = (commandCursor + 1) - commands;
-        packet.flags = 0x4000000;
-        packet.flags |= spawnFlags;
+        packet.context.commands = packet.entries;
+        packet.context.commandCount = (commandCursor + 1) - commands;
+        packet.context.flags = 0x4000000;
+        packet.context.flags |= spawnFlags;
         spawnHandle = (*gModgfxInterface)
-                          ->spawnEffect(&packet, 0, 4, resources[0]->vertices, 4, resources[0]->colors, 0, texture);
+                          ->spawnEffect(&packet.context, 0, 4, resources[0]->vertices, 4, resources[0]->colors, 0, texture);
     }
     partFxSpawnCount = randomGetRange(2, 6);
     if (effectId == 7) {

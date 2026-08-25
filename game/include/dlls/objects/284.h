@@ -30,26 +30,12 @@ typedef struct StaffActivatedPlacement {
     u8 pad1A[2];       /* 0x1A */
     u8 mode;           /* 0x1C */
     u8 sizeVariant;    /* 0x1D */
-    union {
-        u8 scarabObjectSet; /* Staff-action scarab object-set index */
-        u8 hitReactionType; /* Landed-Arwing hit-reaction mode */
-    }; /* 0x1E */
-    union {
-        u8 scarabCount;
-        u8 debrisCount;
-    }; /* 0x1F */
+    u8 variant; /* 0x1E */
+    u8 spawnCount; /* 0x1F */
     u8 timedEventSeconds; /* 0x20 */
     u8 pad21;             /* 0x21 */
-    union {
-        s16 activeGameBit;
-        s16 damagedGameBit;
-        s16 siblingGameBit;
-    }; /* 0x22 */
-    union {
-        s16 lockGameBit;
-        s16 damageStateGameBit;
-        s16 reactionCompleteGameBit;
-    }; /* 0x24 */
+    s16 primaryGameBit; /* 0x22 */
+    s16 secondaryGameBit; /* 0x24 */
 } StaffActivatedPlacement;
 
 typedef struct StaffActivatedFlags {
@@ -69,10 +55,7 @@ typedef struct StaffActivatedState {
     s32 liftHeight;         /* 0x14 */
     s32 peakLiftHeight;     /* 0x18 */
     u8 liftReset;           /* 0x1C */
-    union {
-        u8 flagByte;
-        StaffActivatedFlags flags;
-    }; /* 0x1D */
+    StaffActivatedFlags flags;
     u8 pad1E[2];     /* 0x1E */
     f32 hitCooldown; /* 0x20 */
 } StaffActivatedState;
@@ -83,18 +66,12 @@ STATIC_ASSERT(offsetof(StaffActivatedPlacement, unk19) == 0x19);
 STATIC_ASSERT(offsetof(StaffActivatedPlacement, pad1A) == 0x1A);
 STATIC_ASSERT(offsetof(StaffActivatedPlacement, mode) == 0x1C);
 STATIC_ASSERT(offsetof(StaffActivatedPlacement, sizeVariant) == 0x1D);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, scarabObjectSet) == 0x1E);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, hitReactionType) == 0x1E);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, scarabCount) == 0x1F);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, debrisCount) == 0x1F);
+STATIC_ASSERT(offsetof(StaffActivatedPlacement, variant) == 0x1E);
+STATIC_ASSERT(offsetof(StaffActivatedPlacement, spawnCount) == 0x1F);
 STATIC_ASSERT(offsetof(StaffActivatedPlacement, timedEventSeconds) == 0x20);
 STATIC_ASSERT(offsetof(StaffActivatedPlacement, pad21) == 0x21);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, activeGameBit) == 0x22);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, damagedGameBit) == 0x22);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, siblingGameBit) == 0x22);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, lockGameBit) == 0x24);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, damageStateGameBit) == 0x24);
-STATIC_ASSERT(offsetof(StaffActivatedPlacement, reactionCompleteGameBit) == 0x24);
+STATIC_ASSERT(offsetof(StaffActivatedPlacement, primaryGameBit) == 0x22);
+STATIC_ASSERT(offsetof(StaffActivatedPlacement, secondaryGameBit) == 0x24);
 
 STATIC_ASSERT(sizeof(StaffActivatedFlags) == 0x1);
 STATIC_ASSERT(offsetof(StaffActivatedState, targetX) == 0x0);
@@ -105,7 +82,6 @@ STATIC_ASSERT(offsetof(StaffActivatedState, previousLiftHeight) == 0x10);
 STATIC_ASSERT(offsetof(StaffActivatedState, liftHeight) == 0x14);
 STATIC_ASSERT(offsetof(StaffActivatedState, peakLiftHeight) == 0x18);
 STATIC_ASSERT(offsetof(StaffActivatedState, liftReset) == 0x1C);
-STATIC_ASSERT(offsetof(StaffActivatedState, flagByte) == 0x1D);
 STATIC_ASSERT(offsetof(StaffActivatedState, flags) == 0x1D);
 STATIC_ASSERT(offsetof(StaffActivatedState, pad1E) == 0x1E);
 STATIC_ASSERT(offsetof(StaffActivatedState, hitCooldown) == 0x20);

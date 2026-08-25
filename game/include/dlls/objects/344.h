@@ -5,6 +5,7 @@
 #include "main/vec_types.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
+#include "main/carryable_state.h"
 
 typedef enum GunpowderBarrelObjectGroup {
     GUNPOWDER_BARREL_OBJECT_GROUP = 0x19,
@@ -39,9 +40,8 @@ typedef struct GunpowderBarrelConfigFlags {
 } GunpowderBarrelConfigFlags;
 
 typedef struct GunpowderBarrelState {
-    u8 pad00[0x07];
-    u8 unknown07;
-    u8 pad08[0x04];
+    CarryableState carryable;
+    u8 pad0A[0x02];
     GameObject* queuedHitObject;
     GameObject* linkedTimerObject;
     u8 pad14;
@@ -50,14 +50,7 @@ typedef struct GunpowderBarrelState {
     u8 fuseFrames;
     f32 respawnTimer;
     f32 releaseTimer;
-    union {
-        struct {
-            f32 throwVelocityX;
-            f32 throwVelocityY;
-            f32 throwVelocityZ;
-        };
-        Vec3f throwVelocity;
-    };
+    Vec3f throwVelocity;
     f32 hitRadius;
     f32 unknown30;
     f32 radiusGrowthPerFrame;
@@ -70,10 +63,7 @@ typedef struct GunpowderBarrelState {
     s16 homingHeadingB;
     GunpowderBarrelConfigFlags configFlags;
     u8 motionFlags;
-    union {
-        u8 heldFlagsRaw;
-        GunpowderBarrelHeldFlags heldFlags;
-    };
+    GunpowderBarrelHeldFlags heldFlags;
     u8 pad4B[0x05];
     s16 launchYaw;
     u8 pad52[0x02];
@@ -93,7 +83,7 @@ STATIC_ASSERT(sizeof(GunpowderBarrelPlacement) == 0x24);
 STATIC_ASSERT(sizeof(GunpowderBarrelHeldFlags) == 0x01);
 STATIC_ASSERT(sizeof(GunpowderBarrelConfigFlags) == 0x01);
 
-STATIC_ASSERT(offsetof(GunpowderBarrelState, unknown07) == 0x07);
+STATIC_ASSERT(offsetof(GunpowderBarrelState, carryable) == 0x00);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, queuedHitObject) == 0x0C);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, linkedTimerObject) == 0x10);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, pad14) == 0x14);
@@ -102,9 +92,7 @@ STATIC_ASSERT(offsetof(GunpowderBarrelState, detonationTrigger) == 0x16);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, fuseFrames) == 0x17);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, respawnTimer) == 0x18);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, releaseTimer) == 0x1C);
-STATIC_ASSERT(offsetof(GunpowderBarrelState, throwVelocityX) == 0x20);
-STATIC_ASSERT(offsetof(GunpowderBarrelState, throwVelocityY) == 0x24);
-STATIC_ASSERT(offsetof(GunpowderBarrelState, throwVelocityZ) == 0x28);
+STATIC_ASSERT(offsetof(GunpowderBarrelState, throwVelocity) == 0x20);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, hitRadius) == 0x2C);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, unknown30) == 0x30);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, radiusGrowthPerFrame) == 0x34);
@@ -117,7 +105,6 @@ STATIC_ASSERT(offsetof(GunpowderBarrelState, homingHeadingA) == 0x44);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, homingHeadingB) == 0x46);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, configFlags) == 0x48);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, motionFlags) == 0x49);
-STATIC_ASSERT(offsetof(GunpowderBarrelState, heldFlagsRaw) == 0x4A);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, heldFlags) == 0x4A);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, pad4B) == 0x4B);
 STATIC_ASSERT(offsetof(GunpowderBarrelState, launchYaw) == 0x50);
@@ -146,6 +133,7 @@ void gunpowderBarrel_init(GameObject* obj, GunpowderBarrelPlacement* placement);
 extern f32 gGunpowderBarrelReleaseOffset;
 extern f32 gGunpowderBarrelImpactSoundSpeedThreshold;
 extern f32 gGunpowderBarrelFallDetonationThreshold;
-extern ObjectDescriptor11WithPadding gGunpowderBarrelObjDescriptor;
+struct GunpowderBarrelObjDescriptorType;
+extern struct GunpowderBarrelObjDescriptorType gGunpowderBarrelObjDescriptor;
 
 #endif /* DLLS_OBJECTS_344_H_ */

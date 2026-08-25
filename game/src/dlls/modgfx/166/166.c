@@ -136,51 +136,51 @@ void dll_A6_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commandCursor[8].y = 14.0f;
     commandCursor[8].z = 0.05f;
 
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = 0.0f;
-    packet.position[1] = 0.0f;
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 4.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 3;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = &commandCursor[9] - commands;
-    packet.sequenceParams[0] = gDllA6SequenceParams.values[0];
-    packet.sequenceParams[1] = gDllA6SequenceParams.values[1];
-    packet.sequenceParams[2] = gDllA6SequenceParams.values[2];
-    packet.sequenceParams[3] = gDllA6SequenceParams.values[3];
-    packet.sequenceParams[4] = gDllA6SequenceParams.values[4];
-    packet.sequenceParams[5] = gDllA6SequenceParams.values[5];
-    packet.sequenceParams[6] = gDllA6SequenceParams.values[6];
-    packet.commands = (GfxCmd*)((u8*)&packet + offsetof(ModgfxSpawnPacket, entries));
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 4.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 3;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = &commandCursor[9] - commands;
+    packet.context.sequenceParams[0] = gDllA6SequenceParams.values[0];
+    packet.context.sequenceParams[1] = gDllA6SequenceParams.values[1];
+    packet.context.sequenceParams[2] = gDllA6SequenceParams.values[2];
+    packet.context.sequenceParams[3] = gDllA6SequenceParams.values[3];
+    packet.context.sequenceParams[4] = gDllA6SequenceParams.values[4];
+    packet.context.sequenceParams[5] = gDllA6SequenceParams.values[5];
+    packet.context.sequenceParams[6] = gDllA6SequenceParams.values[6];
+    packet.context.commands = packet.entries;
     fl = 0x4000400;
-    packet.flags = fl;
+    packet.context.flags = fl;
     fl |= flags;
-    packet.flags = fl;
+    packet.context.flags = fl;
     if (fl & 1) {
         if (sourceObj != NULL && spawnParams != NULL) {
-            packet.position[0] += sourceObj->anim.worldPosX + spawnParams->posX;
-            packet.position[1] += sourceObj->anim.worldPosY + spawnParams->posY;
-            packet.position[2] += sourceObj->anim.worldPosZ + spawnParams->posZ;
+            packet.context.position[0] += sourceObj->anim.worldPosX + spawnParams->posX;
+            packet.context.position[1] += sourceObj->anim.worldPosY + spawnParams->posY;
+            packet.context.position[2] += sourceObj->anim.worldPosZ + spawnParams->posZ;
         } else if (sourceObj != NULL) {
-            packet.position[0] = packet.position[0] + sourceObj->anim.worldPosX;
-            packet.position[1] = packet.position[1] + packet.sourceObj->anim.worldPosY;
-            packet.position[2] = packet.position[2] + packet.sourceObj->anim.worldPosZ;
+            packet.context.position[0] = packet.context.position[0] + sourceObj->anim.worldPosX;
+            packet.context.position[1] = packet.context.position[1] + packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] = packet.context.position[2] + packet.context.attachedSource->anim.worldPosZ;
         } else if (spawnParams != NULL) {
-            packet.position[0] = packet.position[0] + spawnParams->posX;
-            packet.position[1] = packet.position[1] + spawnParams->posY;
-            packet.position[2] = packet.position[2] + spawnParams->posZ;
+            packet.context.position[0] = packet.context.position[0] + spawnParams->posX;
+            packet.context.position[1] = packet.context.position[1] + spawnParams->posY;
+            packet.context.position[2] = packet.context.position[2] + spawnParams->posZ;
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 3, gDllA6EffectResourceData, 1, (s16*)gDllA6TriangleIndices.indices, 0x26a, 0);
+        ->spawnEffect(&packet.context, 0, 3, gDllA6EffectResourceData, 1, (s16*)gDllA6TriangleIndices.indices, 0x26a, 0);
 }
 
 void dll_A6_release(void) {
@@ -195,6 +195,10 @@ u8 gDllA6EffectResourceData[sizeof(DllA6EffectResourceView)] = {
 
 DllA6SequenceParams gDllA6SequenceParams = {{0, 0x46, 0x46, 0, 0, 0, 0}, 0};
 
+RESOURCE_ACQUIRE_ADAPTER(gDllA6ResourceDescriptorAcquire, dll_A6_initialise)
+
 DllA6ResourceDescriptor gDllA6ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_A6_initialise, dll_A6_release, NULL, dll_A6_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDllA6ResourceDescriptorAcquire, dll_A6_release },
+    NULL,
+    dll_A6_spawnEffect,
 };

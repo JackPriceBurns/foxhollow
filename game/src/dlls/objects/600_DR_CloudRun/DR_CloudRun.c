@@ -18,7 +18,7 @@
  * overlays for the placement record and for the few extra fields the
  * shared struct does not yet name.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera.h"
 #include "main/dll/partfx_interface.h"
 #include "main/debug.h"
@@ -26,7 +26,7 @@
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/frame_timing.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "main/mapEventTypes.h"
@@ -40,9 +40,9 @@
 #include "main/dll/dll_0282_barrelgener.h"
 #include "dlls/object_descriptor.h"
 #include "main/object_render.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint.h"
 #include "game/objects/object_setup.h"
 #include "main/pad.h"
 #include "game/objects/object.h"
@@ -741,15 +741,15 @@ int DR_CloudRunner_stateHandler04(GameObject* obj, CloudRunnerState* baddie)
         (obj)->anim.velocityY = fz;
         (obj)->anim.velocityZ = fz;
     }
-    (obj)->anim.localPosX = inner->curveWalker.posX;
-    (obj)->anim.localPosY = inner->curveWalker.posY;
-    (obj)->anim.localPosZ = inner->curveWalker.posZ;
+    (obj)->anim.localPosX = inner->curveWalker.curve.sample[0];
+    (obj)->anim.localPosY = inner->curveWalker.curve.sample[1];
+    (obj)->anim.localPosZ = inner->curveWalker.curve.sample[2];
     {
         int a0;
         int a1;
-        a0 = getAngle(-inner->curveWalker.tangentX, -inner->curveWalker.tangentZ) & 0xffff;
-        a1 = getAngle(inner->curveWalker.tangentY,
-                      sqrtf(inner->curveWalker.tangentX * inner->curveWalker.tangentX + inner->curveWalker.tangentZ * inner->curveWalker.tangentZ)) &
+        a0 = getAngle(-inner->curveWalker.curve.tangent[0], -inner->curveWalker.curve.tangent[2]) & 0xffff;
+        a1 = getAngle(inner->curveWalker.curve.tangent[1],
+                      sqrtf(inner->curveWalker.curve.tangent[0] * inner->curveWalker.curve.tangent[0] + inner->curveWalker.curve.tangent[2] * inner->curveWalker.curve.tangent[2])) &
              0xffff;
         a0 -= (u16)(obj)->anim.rotX;
         if (a0 > 0x8000)
@@ -959,13 +959,13 @@ int DR_CloudRunner_getRacePosition(void)
     return 0x0;
 }
 
-f32 DR_CloudRunner_func19(int obj, f32* out)
+f32 DR_CloudRunner_func19(GameObject* obj, f32* out)
 {
     *out = 5.0f;
     return 0.0f;
 }
 
-void DR_CloudRunner_getPlayerAnim(int obj, f32* a, int* b)
+void DR_CloudRunner_getPlayerAnim(GameObject* obj, f32* a, int* b)
 {
     *a = 0.0f;
     *b = 0;
@@ -1347,33 +1347,53 @@ DRCloudRunnerMoveParams gDRCloudRunnerMoveParamTable = {
 
 char sOnCloudFormat[] = "ON CLOUD=%d\n";
 
-ObjectDescriptor24 gDR_CloudRunnerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)DR_CloudRunner_initialise,
-    (ObjectDescriptorCallback)DR_CloudRunner_release,
-    0,
-    (ObjectDescriptorCallback)DR_CloudRunner_init,
-    (ObjectDescriptorCallback)DR_CloudRunner_update,
-    (ObjectDescriptorCallback)DR_CloudRunner_hitDetect,
-    (ObjectDescriptorCallback)DR_CloudRunner_render,
-    (ObjectDescriptorCallback)DR_CloudRunner_free,
-    (ObjectDescriptorCallback)DR_CloudRunner_getObjectTypeId,
-    DR_CloudRunner_getExtraSize,
-    (ObjectDescriptorCallback)DR_CloudRunner_canMount,
-    (ObjectDescriptorCallback)DR_CloudRunner_getMountSide,
-    (ObjectDescriptorCallback)DR_CloudRunner_getRiderPosition,
-    (ObjectDescriptorCallback)DR_CloudRunner_canDismount,
-    (ObjectDescriptorCallback)DR_CloudRunner_getDismountSide,
-    (ObjectDescriptorCallback)DR_CloudRunner_getCameraPosition,
-    (ObjectDescriptorCallback)DR_CloudRunner_getMountState,
-    (ObjectDescriptorCallback)DR_CloudRunner_setMountState,
-    (ObjectDescriptorCallback)DR_CloudRunner_getPlayerAnim,
-    (ObjectDescriptorCallback)DR_CloudRunner_func19,
-    (ObjectDescriptorCallback)DR_CloudRunner_getRacePosition,
-    (ObjectDescriptorCallback)DR_CloudRunner_func21,
-    (ObjectDescriptorCallback)DR_CloudRunner_handleRiderScale,
-    (ObjectDescriptorCallback)DR_CloudRunner_func23,
+OBJECT_INIT_ADAPTER(gDR_CloudRunnerObjDescriptorInitAdapter, DR_CloudRunner_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDR_CloudRunnerObjDescriptorFreeAdapter, DR_CloudRunner_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDR_CloudRunnerObjDescriptorTypeIdAdapter, DR_CloudRunner_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDR_CloudRunnerObjDescriptorExtraSizeAdapter, DR_CloudRunner_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gDR_CloudRunnerObjDescriptorCanMountAdapter, DR_CloudRunner_canMount)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gDR_CloudRunnerObjDescriptorCanDismountAdapter, DR_CloudRunner_canDismount)
+VEHICLE_MOUNT_STATE_ADAPTER(gDR_CloudRunnerObjDescriptorMountStateAdapter, DR_CloudRunner_getMountState)
+VEHICLE_RACE_POSITION_ADAPTER(gDR_CloudRunnerObjDescriptorRacePositionAdapter, DR_CloudRunner_getRacePosition)
+VEHICLE_RESET_POSITION_ADAPTER(gDR_CloudRunnerObjDescriptorResetPositionAdapter, DR_CloudRunner_func21)
+VEHICLE_RIDER_SCALE_ADAPTER(gDR_CloudRunnerObjDescriptorRiderScaleAdapter, DR_CloudRunner_handleRiderScale, obj)
+
+RESOURCE_ACQUIRE_ADAPTER(gDR_CloudRunnerObjDescriptorAcquire, DR_CloudRunner_initialise)
+
+VehicleDescriptor gDR_CloudRunnerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gDR_CloudRunnerObjDescriptorAcquire,
+        DR_CloudRunner_release,
+    },
+    {
+        0,
+        gDR_CloudRunnerObjDescriptorInitAdapter,
+        DR_CloudRunner_update,
+        DR_CloudRunner_hitDetect,
+        DR_CloudRunner_render,
+        gDR_CloudRunnerObjDescriptorFreeAdapter,
+        gDR_CloudRunnerObjDescriptorTypeIdAdapter,
+        gDR_CloudRunnerObjDescriptorExtraSizeAdapter,
+        gDR_CloudRunnerObjDescriptorCanMountAdapter,
+        DR_CloudRunner_getMountSide,
+        DR_CloudRunner_getRiderPosition,
+        gDR_CloudRunnerObjDescriptorCanDismountAdapter,
+        DR_CloudRunner_getDismountSide,
+        DR_CloudRunner_getCameraPosition,
+        gDR_CloudRunnerObjDescriptorMountStateAdapter,
+        DR_CloudRunner_setMountState,
+        DR_CloudRunner_getPlayerAnim,
+        DR_CloudRunner_func19,
+        gDR_CloudRunnerObjDescriptorRacePositionAdapter,
+        gDR_CloudRunnerObjDescriptorResetPositionAdapter,
+        gDR_CloudRunnerObjDescriptorRiderScaleAdapter,
+        DR_CloudRunner_func23,
+    },
 };

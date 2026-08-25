@@ -1,7 +1,7 @@
 /* SPShop (DLL 645) */
 #include "main/object_render.h"
-#include "main/sky_api.h"
-#include "main/render_envfx_api.h"
+#include "main/sky.h"
+#include "main/render_envfx.h"
 #include "main/dll/player_objects.h"
 #include "sys/objects.h"
 #include "main/mapEvent.h"
@@ -10,12 +10,12 @@
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/SP/dll_0285_spshop.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/music_api.h"
-#include "main/dll/player_api.h"
+#include "main/audio/music.h"
+#include "main/dll/player.h"
 #include "main/dll/player_state.h"
-#include "main/dll/player_staff_api.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/dll/player_staff.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
 #include "main/mapEventTypes.h"
@@ -383,7 +383,7 @@ void shop_update(GameObject* obj)
     }
 }
 
-static inline void shop_initBody(GameObject* obj, int objDef)
+static inline void shop_initBody(GameObject* obj)
 {
     ShopItemRow* item;
     int i;
@@ -400,9 +400,9 @@ static inline void shop_initBody(GameObject* obj, int objDef)
     mainSetBits(GAMEBIT_PlayerInShop, 1);
 }
 
-void shop_init(GameObject* obj, int objDef)
+void shop_init(GameObject* obj, void* placement, int flags)
 {
-    shop_initBody(obj, objDef);
+    shop_initBody(obj);
 }
 
 void shop_release(void)
@@ -413,33 +413,46 @@ void shop_initialise(void)
 {
 }
 
-ObjectDescriptor24 gShopObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)shop_initialise,
-    (ObjectDescriptorCallback)shop_release,
-    0,
-    (ObjectDescriptorCallback)shop_init,
-    (ObjectDescriptorCallback)shop_update,
-    (ObjectDescriptorCallback)shop_hitDetect,
-    (ObjectDescriptorCallback)shop_render,
-    (ObjectDescriptorCallback)shop_free,
-    (ObjectDescriptorCallback)shop_getObjectTypeId,
-    shop_getExtraSize,
-    (ObjectDescriptorCallback)shop_getStateField0,
-    (ObjectDescriptorCallback)shop_playSequence,
-    (ObjectDescriptorCallback)shop_isItemAvailable,
-    (ObjectDescriptorCallback)shop_isItemBought,
-    (ObjectDescriptorCallback)shop_getItemMinPrice,
-    (ObjectDescriptorCallback)shop_getItemSpecialPrice,
-    (ObjectDescriptorCallback)shop_getItemPrice,
-    (ObjectDescriptorCallback)shop_getItemTextId,
-    (ObjectDescriptorCallback)shop_setItemIndex,
-    (ObjectDescriptorCallback)shop_getItemIndex,
-    (ObjectDescriptorCallback)shop_buyItem,
-    (ObjectDescriptorCallback)shop_func15,
-    (ObjectDescriptorCallback)shop_func16,
-    (ObjectDescriptorCallback)shop_func17,
+OBJECT_HIT_DETECT_ADAPTER(gShopObjDescriptorHitDetectAdapter, shop_hitDetect)
+OBJECT_FREE_ADAPTER(gShopObjDescriptorFreeAdapter, shop_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gShopObjDescriptorTypeIdAdapter, shop_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gShopObjDescriptorExtraSizeAdapter, shop_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gShopObjDescriptorAcquire, shop_initialise)
+
+ShopDescriptor gShopObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gShopObjDescriptorAcquire,
+        shop_release,
+    },
+    {
+        0,
+        shop_init,
+        shop_update,
+        gShopObjDescriptorHitDetectAdapter,
+        shop_render,
+        gShopObjDescriptorFreeAdapter,
+        gShopObjDescriptorTypeIdAdapter,
+        gShopObjDescriptorExtraSizeAdapter,
+        shop_getStateField0,
+        shop_playSequence,
+        shop_isItemAvailable,
+        shop_isItemBought,
+        shop_getItemMinPrice,
+        shop_getItemSpecialPrice,
+        shop_getItemPrice,
+        shop_getItemTextId,
+        shop_setItemIndex,
+        shop_getItemIndex,
+        shop_buyItem,
+        shop_func15,
+        shop_func16,
+        shop_func17,
+    },
 };

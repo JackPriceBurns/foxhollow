@@ -3,7 +3,7 @@
 #include "dlls/objects/335_CFPrisonUnc.h"
 
 #include "main/audio/sfx_ids.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/obj_list.h"
@@ -11,10 +11,10 @@
 #include "main/obj_path.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -167,19 +167,31 @@ void cfPrisonUncle_release(void) {
 void cfPrisonUncle_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFPrisonUncleObjDescriptorInitAdapter, cfPrisonUncle_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gCFPrisonUncleObjDescriptorHitDetectAdapter, cfPrisonUncle_hitDetect)
+OBJECT_FREE_ADAPTER(gCFPrisonUncleObjDescriptorFreeAdapter, cfPrisonUncle_free)
+OBJECT_TYPE_ID_ADAPTER(gCFPrisonUncleObjDescriptorTypeIdAdapter, cfPrisonUncle_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFPrisonUncleObjDescriptorExtraSizeAdapter, cfPrisonUncle_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFPrisonUncleObjDescriptorAcquire, cfPrisonUncle_initialise)
+
 ObjectDescriptor gCFPrisonUncleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFPrisonUncleObjDescriptorAcquire,
+        cfPrisonUncle_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPrisonUncle_initialise,
-    (ObjectDescriptorCallback)cfPrisonUncle_release,
-    0,
-    (ObjectDescriptorCallback)cfPrisonUncle_init,
-    (ObjectDescriptorCallback)cfPrisonUncle_update,
-    (ObjectDescriptorCallback)cfPrisonUncle_hitDetect,
-    (ObjectDescriptorCallback)cfPrisonUncle_render,
-    (ObjectDescriptorCallback)cfPrisonUncle_free,
-    (ObjectDescriptorCallback)cfPrisonUncle_getObjectTypeId,
-    cfPrisonUncle_getExtraSize,
+    gCFPrisonUncleObjDescriptorInitAdapter,
+    cfPrisonUncle_update,
+    gCFPrisonUncleObjDescriptorHitDetectAdapter,
+    cfPrisonUncle_render,
+    gCFPrisonUncleObjDescriptorFreeAdapter,
+    gCFPrisonUncleObjDescriptorTypeIdAdapter,
+    gCFPrisonUncleObjDescriptorExtraSizeAdapter,
 };

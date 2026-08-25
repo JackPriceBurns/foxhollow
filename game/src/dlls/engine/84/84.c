@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0054_dll54.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/frame_timing.h"
@@ -152,10 +152,10 @@ void CameraMode54_release(void) {
 void CameraMode54_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraMode54DescriptorAcquire, CameraMode54_initialise)
+
 CameraMode54Descriptor gCameraMode54Descriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraMode54_initialise,
-    CameraMode54_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraMode54DescriptorAcquire, CameraMode54_release },
     NULL,
     CameraMode54_init,
     CameraMode54_update,

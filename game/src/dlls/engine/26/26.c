@@ -2,7 +2,7 @@
 #include "main/vecmath.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_001A_effect1.h"
 
@@ -1088,15 +1088,18 @@ void Effect1_initialise(void)
 {
 }
 
-ObjectDescriptor6 Effect1_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect1_initialise,
-    (ObjectDescriptorCallback)Effect1_release,
-    0,
-    (ObjectDescriptorCallback)Effect1_func03_nop,
-    (ObjectDescriptorCallback)Effect1_spawnObject,
-    (ObjectDescriptorCallback)Effect1_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect1Resource, Effect1_initialise, Effect1_spawnObject, Effect1_updateFrameState)
+
+EffectResourceDescriptor Effect1_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect1ResourceAcquire,
+        Effect1_release,
+    },
+    {
+        NULL,
+        Effect1_func03_nop,
+        gEffect1ResourceSpawn,
+        gEffect1ResourceUpdate,
+    },
 };

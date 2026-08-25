@@ -26,16 +26,22 @@ void SH_EmptyTumbleW_init(GameObject* obj, ShEmptyTumbleweedPlacement* placement
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gSH_EmptyTumbleWObjDescriptorInitAdapter, SH_EmptyTumbleW_init, obj, placement)
+
 ObjectDescriptor gSH_EmptyTumbleWObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SH_EmptyTumbleW_init,
-    (ObjectDescriptorCallback)SH_EmptyTumbleW_update,
+    gSH_EmptyTumbleWObjDescriptorInitAdapter,
+    SH_EmptyTumbleW_update,
     0,
     0,
     0,

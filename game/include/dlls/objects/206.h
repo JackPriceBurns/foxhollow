@@ -70,6 +70,7 @@ extern DllCEStateHandler gDllCECheckHandlers[6];
 extern int gDllCEHitReactionMoves[30];
 extern u8 gDllCEHitReactionDamage[32];
 extern PartFxSpawnParams gDllCEHitReactionScratch;
-extern ObjectDescriptor12 gDllCEObjDescriptor;
+struct DllCEObjDescriptorType;
+extern struct DllCEObjDescriptorType gDllCEObjDescriptor;
 
 #endif /* DLLS_OBJECTS_206_H_ */

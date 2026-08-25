@@ -7,13 +7,7 @@
 
 /* All 13 active-retail DIMLavaBall placements are fixed 10-word records. */
 typedef struct DimLavaBallPlacement {
-    union {
-        ObjPlacement base;
-        struct {
-            u8 unknown00[0x14];
-            s32 projectileTargetObjectId;
-        };
-    };
+    ObjPlacement base;
     s16 firePeriod;
     u8 verticalSpeed;
     u8 horizontalSpeed;
@@ -41,7 +35,7 @@ typedef struct DimLavaBallState {
 } DimLavaBallState;
 
 STATIC_ASSERT(offsetof(DimLavaBallPlacement, base) == 0x00);
-STATIC_ASSERT(offsetof(DimLavaBallPlacement, projectileTargetObjectId) == 0x14);
+STATIC_ASSERT(offsetof(DimLavaBallPlacement, base.ident) == 0x14);
 STATIC_ASSERT(offsetof(DimLavaBallPlacement, firePeriod) == 0x18);
 STATIC_ASSERT(offsetof(DimLavaBallPlacement, verticalSpeed) == 0x1A);
 STATIC_ASSERT(offsetof(DimLavaBallPlacement, horizontalSpeed) == 0x1B);
@@ -79,6 +73,7 @@ void lavaball1bf_init(GameObject* obj, const DimLavaBallPlacement* placement);
 void lavaball1bf_release(void);
 void lavaball1bf_initialise(void);
 
-extern ObjectDescriptor12 gLavaBall1BFObjDescriptor;
+struct LavaBall1BFObjDescriptorType;
+extern struct LavaBall1BFObjDescriptorType gLavaBall1BFObjDescriptor;
 
 #endif /* DLLS_OBJECTS_447_DIMLAVABALL_H_ */

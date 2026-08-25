@@ -9,13 +9,13 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_placement.h"
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mm.h"
 #include "main/object_render.h"
 #include "main/resource.h"
@@ -146,15 +146,25 @@ static void ecshCreator_release(void) {
 static void ecshCreator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gECSHCreatorObjDescriptorInitAdapter, ecshCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gECSHCreatorObjDescriptorHitDetectAdapter, ecshCreator_hitDetect)
+OBJECT_FREE_ADAPTER(gECSHCreatorObjDescriptorFreeAdapter, ecshCreator_free)
+OBJECT_TYPE_ID_ADAPTER(gECSHCreatorObjDescriptorTypeIdAdapter, ecshCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gECSHCreatorObjDescriptorExtraSizeAdapter, ecshCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gECSHCreatorObjDescriptorAcquire, ecshCreator_initialise)
+
 ObjectDescriptor gECSHCreatorObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)ecshCreator_initialise,
-    .release = (ObjectDescriptorCallback)ecshCreator_release,
-    .init = (ObjectDescriptorCallback)ecshCreator_init,
-    .update = (ObjectDescriptorCallback)ecshCreator_update,
-    .hitDetect = (ObjectDescriptorCallback)ecshCreator_hitDetect,
-    .render = (ObjectDescriptorCallback)ecshCreator_render,
-    .free = (ObjectDescriptorCallback)ecshCreator_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)ecshCreator_getObjectTypeId,
-    .getExtraSize = ecshCreator_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gECSHCreatorObjDescriptorAcquire,
+        .release = ecshCreator_release,
+    },
+    .init = gECSHCreatorObjDescriptorInitAdapter,
+    .update = ecshCreator_update,
+    .hitDetect = gECSHCreatorObjDescriptorHitDetectAdapter,
+    .render = ecshCreator_render,
+    .free = gECSHCreatorObjDescriptorFreeAdapter,
+    .getObjectTypeId = gECSHCreatorObjDescriptorTypeIdAdapter,
+    .getExtraSize = gECSHCreatorObjDescriptorExtraSizeAdapter,
+};;

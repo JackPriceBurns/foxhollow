@@ -13,11 +13,11 @@
  * The ambient effect objects are AppleOnTree instances, driven through that
  * DLL's interface (setPosition / getAnimState).
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dlls/objects/279_AppleOnTree.h"
 #include "main/frame_timing.h"
 #include "main/objHitReact.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/dll/dll_02AF_tree.h"
 #include "sys/objects.h"
 #include "main/objfx.h"
@@ -25,7 +25,7 @@
 #include "main/object_render.h"
 #include "main/obj_path.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 
@@ -369,19 +369,26 @@ TreeEffectBurst gTreeEffectBursts[] = {
     {{25.0f, 300.0f, 0.0f}, 80.0f}, {{0.0f, 50.0f, 0.0f}, 50.0f},
 };
 
+OBJECT_INIT_ADAPTER(gTreeObjDescriptorInitAdapter, tree_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gTreeObjDescriptorExtraSizeAdapter, tree_getExtraSize)
+
 ObjectDescriptor gTreeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        NULL,
+        NULL,
+    },
+    NULL,
+    gTreeObjDescriptorInitAdapter,
+    tree_update,
+    NULL,
+    tree_render,
     NULL,
     NULL,
-    NULL,
-    (ObjectDescriptorCallback)tree_init,
-    (ObjectDescriptorCallback)tree_update,
-    NULL,
-    (ObjectDescriptorCallback)tree_render,
-    NULL,
-    NULL,
-    tree_getExtraSize,
+    gTreeObjDescriptorExtraSizeAdapter,
 };

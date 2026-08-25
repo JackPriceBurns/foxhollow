@@ -7,14 +7,14 @@
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_sequence_api.h"
+#include "main/gamebits.h"
+#include "main/maketex_random.h"
+#include "main/maketex_sequence.h"
 #include "main/mapEvent.h"
 #include "main/map_load.h"
 #include "main/model.h"
 #include "main/model_engine.h"
-#include "main/model_engine_ui_api.h"
+#include "main/model_engine_ui.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 #include "main/obj_link.h"
@@ -23,26 +23,24 @@
 #include "main/objseq.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint.h"
+#include "main/objprint_character.h"
 #include "main/pad.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/shader_api.h"
-#include "main/textrender_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/shader.h"
+#include "main/textrender.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "main/mapEventTypes.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/player_api.h"
-#include "main/dll/player_spirit_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/stream_api.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/dll/player.h"
+#include "main/dll/player_spirit.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/audio/sfx.h"
+#include "main/audio/stream.h"
+#include "main/audio/audio_control.h"
 
 enum WarpStoneDustFlag {
     WARPSTONE_DUST_BURST_READY = 1 << 1,
@@ -686,15 +684,23 @@ static void warpstone_release(void) {
 static void warpstone_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWarpStoneObjDescriptorInitAdapter, warpstone_init, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gWarpStoneObjDescriptorTypeIdAdapter, warpstone_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWarpStoneObjDescriptorExtraSizeAdapter, warpstone_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWarpStoneObjDescriptorAcquire, warpstone_initialise)
+
 ObjectDescriptor gWarpStoneObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)warpstone_initialise,
-    .release = (ObjectDescriptorCallback)warpstone_release,
-    .init = (ObjectDescriptorCallback)warpstone_init,
-    .update = (ObjectDescriptorCallback)warpstone_update,
-    .hitDetect = (ObjectDescriptorCallback)warpstone_hitDetect,
-    .render = (ObjectDescriptorCallback)warpstone_render,
-    .free = (ObjectDescriptorCallback)warpstone_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)warpstone_getObjectTypeId,
-    .getExtraSize = warpstone_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gWarpStoneObjDescriptorAcquire,
+        .release = warpstone_release,
+    },
+    .init = gWarpStoneObjDescriptorInitAdapter,
+    .update = warpstone_update,
+    .hitDetect = warpstone_hitDetect,
+    .render = warpstone_render,
+    .free = warpstone_free,
+    .getObjectTypeId = gWarpStoneObjDescriptorTypeIdAdapter,
+    .getExtraSize = gWarpStoneObjDescriptorExtraSizeAdapter,
+};;

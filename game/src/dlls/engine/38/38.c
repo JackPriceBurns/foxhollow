@@ -3,7 +3,7 @@
 #include "main/dll/waterfxcfg_struct.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/dll_0026_effect13.h"
 #include "main/vecmath.h"
@@ -173,15 +173,18 @@ void Effect13_initialise(void)
 {
 }
 
-ObjectDescriptor6 Effect13_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect13_initialise,
-    (ObjectDescriptorCallback)Effect13_release,
-    0,
-    (ObjectDescriptorCallback)Effect13_func03_nop,
-    (ObjectDescriptorCallback)Effect13_spawnObject,
-    (ObjectDescriptorCallback)Effect13_func05_nop,
+EFFECT_RESOURCE_ADAPTERS_NO_EXTRA(gEffect13Resource, Effect13_initialise, Effect13_spawnObject, Effect13_func05_nop)
+
+EffectResourceDescriptor Effect13_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect13ResourceAcquire,
+        Effect13_release,
+    },
+    {
+        NULL,
+        Effect13_func03_nop,
+        gEffect13ResourceSpawn,
+        gEffect13ResourceUpdate,
+    },
 };

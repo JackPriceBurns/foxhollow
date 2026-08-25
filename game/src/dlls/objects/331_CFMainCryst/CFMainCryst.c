@@ -4,18 +4,16 @@
 #include "dolphin/mtx/vec.h"
 
 #include "dlls/objects/330_CFPowerBase.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/object_render.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -357,19 +355,31 @@ void cfMainCrystal_release(void) {
 void cfMainCrystal_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFMainCrystalObjDescriptorInitAdapter, cfMainCrystal_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFMainCrystalObjDescriptorHitDetectAdapter, cfMainCrystal_hitDetect)
+OBJECT_FREE_ADAPTER(gCFMainCrystalObjDescriptorFreeAdapter, cfMainCrystal_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCFMainCrystalObjDescriptorTypeIdAdapter, cfMainCrystal_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFMainCrystalObjDescriptorExtraSizeAdapter, cfMainCrystal_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFMainCrystalObjDescriptorAcquire, cfMainCrystal_initialise)
+
 ObjectDescriptor gCFMainCrystalObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFMainCrystalObjDescriptorAcquire,
+        cfMainCrystal_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfMainCrystal_initialise,
-    (ObjectDescriptorCallback)cfMainCrystal_release,
-    0,
-    (ObjectDescriptorCallback)cfMainCrystal_init,
-    (ObjectDescriptorCallback)cfMainCrystal_update,
-    (ObjectDescriptorCallback)cfMainCrystal_hitDetect,
-    (ObjectDescriptorCallback)cfMainCrystal_render,
-    (ObjectDescriptorCallback)cfMainCrystal_free,
-    (ObjectDescriptorCallback)cfMainCrystal_getObjectTypeId,
-    cfMainCrystal_getExtraSize,
+    gCFMainCrystalObjDescriptorInitAdapter,
+    cfMainCrystal_update,
+    gCFMainCrystalObjDescriptorHitDetectAdapter,
+    cfMainCrystal_render,
+    gCFMainCrystalObjDescriptorFreeAdapter,
+    gCFMainCrystalObjDescriptorTypeIdAdapter,
+    gCFMainCrystalObjDescriptorExtraSizeAdapter,
 };

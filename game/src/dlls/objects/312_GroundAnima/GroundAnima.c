@@ -4,18 +4,18 @@
 #include "dlls/objects/386_MMP_moonroc.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "dolphin/os/OSCache.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/mm.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objtype.h"
-#include "main/shader_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/shader.h"
+#include "main/track_dolphin.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/gamebit_ids.h"
@@ -390,23 +390,32 @@ void GroundAnimator_init(GameObject* obj, GroundAnimatorPlacement* placement) {
     }
 }
 
-ObjectDescriptor14 gGroundAnimatorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)GroundAnimator_init,
-    (ObjectDescriptorCallback)GroundAnimator_update,
-    0,
-    (ObjectDescriptorCallback)GroundAnimator_render,
-    (ObjectDescriptorCallback)GroundAnimator_free,
-    0,
-    GroundAnimator_getExtraSize,
-    (ObjectDescriptorCallback)GroundAnimator_applyPress,
-    (ObjectDescriptorCallback)GroundAnimator_isFullySunk,
-    (ObjectDescriptorCallback)GroundAnimator_getMagicCaveIndex,
-    0,
+OBJECT_INIT_ADAPTER(gGroundAnimatorObjDescriptorInitAdapter, GroundAnimator_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gGroundAnimatorObjDescriptorExtraSizeAdapter, GroundAnimator_getExtraSize)
+
+GroundAnimatorDescriptor gGroundAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gGroundAnimatorObjDescriptorInitAdapter,
+        GroundAnimator_update,
+        0,
+        GroundAnimator_render,
+        GroundAnimator_free,
+        0,
+        gGroundAnimatorObjDescriptorExtraSizeAdapter,
+        GroundAnimator_applyPress,
+        GroundAnimator_isFullySunk,
+        GroundAnimator_getMagicCaveIndex,
+        0,
+    },
 };

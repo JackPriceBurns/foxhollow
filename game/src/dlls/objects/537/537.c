@@ -80,19 +80,32 @@ void dll_219_release_nop(void) {
 void dll_219_initialise_nop(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll219ObjDescriptorInitAdapter, dll_219_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll219ObjDescriptorHitDetectAdapter, dll_219_hitDetect_nop)
+OBJECT_RENDER_ADAPTER(gDll219ObjDescriptorRenderAdapter, dll_219_render_nop)
+OBJECT_FREE_ADAPTER(gDll219ObjDescriptorFreeAdapter, dll_219_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll219ObjDescriptorTypeIdAdapter, dll_219_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll219ObjDescriptorExtraSizeAdapter, dll_219_getExtraSize_ret_4)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll219ObjDescriptorAcquire, dll_219_initialise_nop)
+
 ObjectDescriptor gDll219ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll219ObjDescriptorAcquire,
+        dll_219_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_219_initialise_nop,
-    (ObjectDescriptorCallback)dll_219_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_219_init,
-    (ObjectDescriptorCallback)dll_219_update,
-    (ObjectDescriptorCallback)dll_219_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_219_render_nop,
-    (ObjectDescriptorCallback)dll_219_free,
-    (ObjectDescriptorCallback)dll_219_getObjectTypeId,
-    dll_219_getExtraSize_ret_4,
+    gDll219ObjDescriptorInitAdapter,
+    dll_219_update,
+    gDll219ObjDescriptorHitDetectAdapter,
+    gDll219ObjDescriptorRenderAdapter,
+    gDll219ObjDescriptorFreeAdapter,
+    gDll219ObjDescriptorTypeIdAdapter,
+    gDll219ObjDescriptorExtraSizeAdapter,
 };

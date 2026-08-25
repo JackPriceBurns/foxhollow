@@ -185,19 +185,31 @@ void FEseqobject_release(void) {
 void FEseqobject_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gFEseqobjectObjDescriptorInitAdapter, FEseqobject_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gFEseqobjectObjDescriptorHitDetectAdapter, FEseqobject_hitDetect)
+OBJECT_FREE_ADAPTER(gFEseqobjectObjDescriptorFreeAdapter, FEseqobject_free)
+OBJECT_TYPE_ID_ADAPTER(gFEseqobjectObjDescriptorTypeIdAdapter, FEseqobject_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFEseqobjectObjDescriptorExtraSizeAdapter, FEseqobject_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFEseqobjectObjDescriptorAcquire, FEseqobject_initialise)
+
 ObjectDescriptor gFEseqobjectObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFEseqobjectObjDescriptorAcquire,
+        FEseqobject_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)FEseqobject_initialise,
-    (ObjectDescriptorCallback)FEseqobject_release,
-    0,
-    (ObjectDescriptorCallback)FEseqobject_init,
-    (ObjectDescriptorCallback)FEseqobject_update,
-    (ObjectDescriptorCallback)FEseqobject_hitDetect,
-    (ObjectDescriptorCallback)FEseqobject_render,
-    (ObjectDescriptorCallback)FEseqobject_free,
-    (ObjectDescriptorCallback)FEseqobject_getObjectTypeId,
-    FEseqobject_getExtraSize,
+    gFEseqobjectObjDescriptorInitAdapter,
+    FEseqobject_update,
+    gFEseqobjectObjDescriptorHitDetectAdapter,
+    FEseqobject_render,
+    gFEseqobjectObjDescriptorFreeAdapter,
+    gFEseqobjectObjDescriptorTypeIdAdapter,
+    gFEseqobjectObjDescriptorExtraSizeAdapter,
 };

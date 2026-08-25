@@ -100,19 +100,32 @@ void dll_2A3_release_nop(void) {
 void dll_2A3_initialise_nop(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll2A3ObjDescriptorInitAdapter, dll_2A3_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDll2A3ObjDescriptorHitDetectAdapter, dll_2A3_hitDetect)
+OBJECT_RENDER_ADAPTER(gDll2A3ObjDescriptorRenderAdapter, dll_2A3_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gDll2A3ObjDescriptorFreeAdapter, dll_2A3_free)
+OBJECT_TYPE_ID_ADAPTER(gDll2A3ObjDescriptorTypeIdAdapter, dll_2A3_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll2A3ObjDescriptorExtraSizeAdapter, dll_2A3_getExtraSize_ret_12)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll2A3ObjDescriptorAcquire, dll_2A3_initialise_nop)
+
 ObjectDescriptor gDll2A3ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll2A3ObjDescriptorAcquire,
+        dll_2A3_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_2A3_initialise_nop,
-    (ObjectDescriptorCallback)dll_2A3_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_2A3_init,
-    (ObjectDescriptorCallback)dll_2A3_update,
-    (ObjectDescriptorCallback)dll_2A3_hitDetect,
-    (ObjectDescriptorCallback)dll_2A3_render,
-    (ObjectDescriptorCallback)dll_2A3_free,
-    (ObjectDescriptorCallback)dll_2A3_getObjectTypeId,
-    dll_2A3_getExtraSize_ret_12,
+    gDll2A3ObjDescriptorInitAdapter,
+    dll_2A3_update,
+    gDll2A3ObjDescriptorHitDetectAdapter,
+    gDll2A3ObjDescriptorRenderAdapter,
+    gDll2A3ObjDescriptorFreeAdapter,
+    gDll2A3ObjDescriptorTypeIdAdapter,
+    gDll2A3ObjDescriptorExtraSizeAdapter,
 };

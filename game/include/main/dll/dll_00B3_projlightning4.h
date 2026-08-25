@@ -7,16 +7,14 @@
 typedef int (*Projlightning4UnsupportedFn)(void);
 
 typedef struct Projlightning4ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Projlightning4UnsupportedFn unsupported;
 } Projlightning4ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Projlightning4ResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(Projlightning4ResourceDescriptor) == 0x20);

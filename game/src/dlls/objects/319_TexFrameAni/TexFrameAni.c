@@ -4,10 +4,10 @@
 #include "main/debug.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/object_render.h"
-#include "main/shader_api.h"
-#include "main/shader_map_api.h"
+#include "main/shader.h"
+#include "main/shader_map.h"
 
 char sTexFrameAnimDebugFormat[] = " TEXFRAMEANIM %i ";
 
@@ -117,19 +117,31 @@ void TexFrameAnimator_release(void) {
 void TexFrameAnimator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gTexFrameAnimatorObjDescriptorInitAdapter, TexFrameAnimator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gTexFrameAnimatorObjDescriptorHitDetectAdapter, TexFrameAnimator_hitDetect)
+OBJECT_FREE_ADAPTER(gTexFrameAnimatorObjDescriptorFreeAdapter, TexFrameAnimator_free)
+OBJECT_TYPE_ID_ADAPTER(gTexFrameAnimatorObjDescriptorTypeIdAdapter, TexFrameAnimator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTexFrameAnimatorObjDescriptorExtraSizeAdapter, TexFrameAnimator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTexFrameAnimatorObjDescriptorAcquire, TexFrameAnimator_initialise)
+
 ObjectDescriptor gTexFrameAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gTexFrameAnimatorObjDescriptorAcquire,
+        TexFrameAnimator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)TexFrameAnimator_initialise,
-    (ObjectDescriptorCallback)TexFrameAnimator_release,
-    0,
-    (ObjectDescriptorCallback)TexFrameAnimator_init,
-    (ObjectDescriptorCallback)TexFrameAnimator_update,
-    (ObjectDescriptorCallback)TexFrameAnimator_hitDetect,
-    (ObjectDescriptorCallback)TexFrameAnimator_render,
-    (ObjectDescriptorCallback)TexFrameAnimator_free,
-    (ObjectDescriptorCallback)TexFrameAnimator_getObjectTypeId,
-    TexFrameAnimator_getExtraSize,
+    gTexFrameAnimatorObjDescriptorInitAdapter,
+    TexFrameAnimator_update,
+    gTexFrameAnimatorObjDescriptorHitDetectAdapter,
+    TexFrameAnimator_render,
+    gTexFrameAnimatorObjDescriptorFreeAdapter,
+    gTexFrameAnimatorObjDescriptorTypeIdAdapter,
+    gTexFrameAnimatorObjDescriptorExtraSizeAdapter,
 };

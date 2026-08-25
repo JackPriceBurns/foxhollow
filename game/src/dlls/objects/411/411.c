@@ -15,16 +15,16 @@
 #include "main/dll/modgfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/shader.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/obj_message.h"
 
 #define DLL19B_TARGET_OBJGROUP 0xE
@@ -419,19 +419,31 @@ void dll411_release(void) {
 void dll411_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll19BObjDescriptorInitAdapter, dll411_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll19BObjDescriptorHitDetectAdapter, dll411_hitDetect)
+OBJECT_FREE_ADAPTER(gDll19BObjDescriptorFreeAdapter, dll411_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll19BObjDescriptorTypeIdAdapter, dll411_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll19BObjDescriptorExtraSizeAdapter, dll411_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll19BObjDescriptorAcquire, dll411_initialise)
+
 ObjectDescriptor gDll19BObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll411_initialise,
-    (ObjectDescriptorCallback)dll411_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll19BObjDescriptorAcquire,
+        dll411_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)dll411_init,
-    (ObjectDescriptorCallback)dll411_update,
-    (ObjectDescriptorCallback)dll411_hitDetect,
-    (ObjectDescriptorCallback)dll411_render,
-    (ObjectDescriptorCallback)dll411_free,
-    (ObjectDescriptorCallback)dll411_getObjectTypeId,
-    dll411_getExtraSize,
+    gDll19BObjDescriptorInitAdapter,
+    dll411_update,
+    gDll19BObjDescriptorHitDetectAdapter,
+    dll411_render,
+    gDll19BObjDescriptorFreeAdapter,
+    gDll19BObjDescriptorTypeIdAdapter,
+    gDll19BObjDescriptorExtraSizeAdapter,
 };

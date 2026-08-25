@@ -9,7 +9,7 @@
 typedef void (*Dll6BSpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags);
 
 typedef struct Dll6BInterface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll6BSpawnFn spawn;
 } Dll6BInterface;
 
@@ -18,16 +18,14 @@ STATIC_ASSERT(offsetof(Dll6BInterface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll6BInterface) == 0x08);
 
 typedef struct Dll6BResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll6BSpawnFn spawn;
 } Dll6BResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll6BResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll6BResourceDescriptor) == 0x20);

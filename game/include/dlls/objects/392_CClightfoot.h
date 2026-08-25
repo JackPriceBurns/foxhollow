@@ -22,13 +22,7 @@ STATIC_ASSERT(offsetof(CCLightfootPlacement, unknown1B) == 0x1B);
 typedef struct CCLightfootState {
     GameObject* attachedWeapon;
     GameObject* playerObject;
-    union {
-        struct {
-            GameObject* targetActorA;
-            GameObject* targetActorB;
-        };
-        GameObject* targetActors[2];
-    };
+    GameObject* targetActors[2];
     u8 phase;
     u8 flags;
     u8 unknown12[2];
@@ -38,8 +32,6 @@ typedef struct CCLightfootState {
 STATIC_ASSERT(sizeof(CCLightfootState) == 0x18);
 STATIC_ASSERT(offsetof(CCLightfootState, attachedWeapon) == 0x00);
 STATIC_ASSERT(offsetof(CCLightfootState, playerObject) == 0x04);
-STATIC_ASSERT(offsetof(CCLightfootState, targetActorA) == 0x08);
-STATIC_ASSERT(offsetof(CCLightfootState, targetActorB) == 0x0C);
 STATIC_ASSERT(offsetof(CCLightfootState, targetActors) == 0x08);
 STATIC_ASSERT(offsetof(CCLightfootState, phase) == 0x10);
 STATIC_ASSERT(offsetof(CCLightfootState, flags) == 0x11);

@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0052_cameramodeforcebehind.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
 #include "main/dll/player_motion.h"
@@ -146,10 +146,10 @@ void CameraModeForceBehind_release(void) {
 void CameraModeForceBehind_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeForceBehindDescriptorAcquire, CameraModeForceBehind_initialise)
+
 CameraModeForceBehindDescriptor gCameraModeForceBehindDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeForceBehind_initialise,
-    CameraModeForceBehind_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeForceBehindDescriptorAcquire, CameraModeForceBehind_release },
     NULL,
     CameraModeForceBehind_init,
     CameraModeForceBehind_update,

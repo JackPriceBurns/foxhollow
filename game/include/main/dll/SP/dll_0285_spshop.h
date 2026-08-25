@@ -1,6 +1,7 @@
 #ifndef MAIN_DLL_SP_DLL_0285_SPSHOP_H_
 #define MAIN_DLL_SP_DLL_0285_SPSHOP_H_
 
+#include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "types.h"
 
@@ -38,15 +39,15 @@ typedef struct ShopItemRow
    through obj->anim.dll. */
 typedef struct ShopInterface
 {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     s32 (*getStateField0)(GameObject* shop);
     void (*playSequence)(GameObject* shop, int playSequence, int sequenceIndex);
     int (*isItemAvailable)(GameObject* shop, int slot);
     int (*isItemBought)(GameObject* shop, int slot);
-    int (*getItemMinPrice)(GameObject* shop, int slot);
-    int (*getItemSpecialPrice)(GameObject* shop, int slot);
+    u8 (*getItemMinPrice)(GameObject* shop, int slot);
+    u8 (*getItemSpecialPrice)(GameObject* shop, int slot);
     int (*getItemPrice)(GameObject* shop, int slot);
-    int (*getItemTextId)(GameObject* shop, int slot);
+    s16 (*getItemTextId)(GameObject* shop, int slot);
     void (*setItemIndex)(GameObject* shop, int slot);
     s32 (*getItemIndex)(GameObject* shop);
     void (*buyItem)(GameObject* shop, int price);
@@ -54,6 +55,8 @@ typedef struct ShopInterface
     void (*func16)(GameObject* shop, int delta3, int delta2);
     void (*func17)(GameObject* shop, int* out_b3, int* out_b2, int* out_b4);
 } ShopInterface;
+
+OBJECT_DESCRIPTOR_TYPE(ShopDescriptor, ShopInterface);
 
 #define SHOP_INTERFACE(shop) ((ShopInterface*)*((GameObject*)(shop))->anim.dll)
 
@@ -93,7 +96,7 @@ void shop_free(GameObject* obj);
 void shop_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void shop_hitDetect(void);
 void shop_update(GameObject* obj);
-void shop_init(GameObject* obj, int objDef);
+void shop_init(GameObject* obj, void* placement, int flags);
 void shop_release(void);
 void shop_initialise(void);
 

@@ -10,17 +10,15 @@ typedef void (*Dll98SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnPara
                              int unused, int invertY);
 
 typedef struct Dll98ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll98SpawnFn spawn;
     u32 opaqueTail;
 } Dll98ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll98ResourceDescriptor, opaqueTail) == 0x20);

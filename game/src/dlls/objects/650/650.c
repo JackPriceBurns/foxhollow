@@ -24,24 +24,23 @@
  * compiled into this TU but belong to DLL 651's state machine (a separate
  * player-following NPC): dll_028B.c installs them into gDll28BStateHandlers /
  * gDll28BSubstateHandlers and drives them via gPlayerInterface->update().
- * They operate on Dll28BAiState (earthwalker_state.h), NOT EarthWalkerState.
  * The gWcEarthWalker{Far,Near,Approach}PlayerDistance / {Chase,Walk}MoveSpeed
  * and gWcEarthWalker{IdleTimerThreshold,CurveAdvanceStep} constants are read
  * only by those 0x28B handlers (the follower AI), not by earthwalker_update.
  * Exact game-bit meanings and several encounter sub-states are inferred
  * from use, not confirmed.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/curve.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/mapEventTypes.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/dll/WC/dll_028A_wcearthwalker.h"
 #include "main/dll/dll_028B.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "game/objects/object.h"
 #include "main/dll/baddie_state.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -49,9 +48,9 @@
 #include "dlls/object_descriptor.h"
 #include "dolphin/pad.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/objprint_api.h"
-#include "main/pad_api.h"
+#include "main/audio/sfx.h"
+#include "main/objprint.h"
+#include "main/pad.h"
 #include "sys/objects.h"
 #include "main/objHitReact.h"
 #include "main/objseq.h"
@@ -69,7 +68,7 @@ int earthwalker_SeqFn(GameObject* ewObj, int unused, ObjSeqState* animUpdate, in
 
     ewState->flags &= ~1;
     characterDoEyeAnims(ewObj, &ewState->eyeAnimState);
-    if (dll_2E_updateSequenceTurn(ewObj, animUpdate, (MoveLibState*)ewState, 0, 0) != 0)
+    if (dll_2E_updateSequenceTurn(ewObj, animUpdate, &ewState->moveLib, 0, 0) != 0)
     {
         return 0;
     }
@@ -94,7 +93,7 @@ int earthwalker_SeqFn(GameObject* ewObj, int unused, ObjSeqState* animUpdate, in
 
 int earthwalker_getExtraSize(void)
 {
-    return 0x660;
+    return sizeof(EarthWalkerState);
 }
 
 int earthwalker_getObjectTypeId(void)
@@ -113,7 +112,7 @@ void earthwalker_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visi
     if (visible != 0)
     {
         objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, lbl_803E6CE0);
-        dll_2E_setTargetFromPathPoint(obj, (MoveLibState*)state, 0);
+        dll_2E_setTargetFromPathPoint(obj, &state->moveLib, 0);
     }
 }
 
@@ -123,7 +122,7 @@ void earthwalker_hitDetect(GameObject* obj)
 
     if (obj->anim.currentMove == 0x203)
     {
-        characterClampJointVecs(obj, objGetLookAtJointKeys(), ewState->hitTriggerId, 0, 0x186a0);
+        characterClampJointVecs(obj, objGetLookAtJointKeys(), ewState->moveLib.pointCount, 0, 0x186a0);
     }
 }
 ObjHitReactEntry gEarthWalkerHitReactEntries[1] = {{575, 706, -1, -1, 0, {0, 0, 0}, 0.01f, {0, 0, 0, 0}}};
@@ -158,9 +157,9 @@ void earthwalker_update(GameObject* obj)
         }
     }
 
-    prevAnim = ewState->animPhase;
-    dll_2E_updateLookAt(obj, (MoveLibState*)ewState);
-    if (ewState->encounterType >= 4 && ewState->encounterType <= 7 && prevAnim != 1 && ewState->animPhase == 1)
+    prevAnim = ewState->moveLib.phase;
+    dll_2E_updateLookAt(obj, &ewState->moveLib);
+    if (ewState->encounterType >= 4 && ewState->encounterType <= 7 && prevAnim != 1 && ewState->moveLib.phase == 1)
     {
         Sfx_PlayFromObject(obj, SFXTRIG_mammoth);
     }
@@ -440,13 +439,13 @@ void earthwalker_init(GameObject* obj, EarthWalkerPlacement* setup)
 
     local = gEarthWalkerMoveBlendData;
     obj->animEventCallback = earthwalker_SeqFn;
-    dll_2E_initState(obj, (MoveLibState*)ewState, -8192, 12743, 2);
-    dll_2E_setMoveTables((MoveLibState*)ewState, 0, &local, 2);
+    dll_2E_initState(obj, &ewState->moveLib, -8192, 12743, 2);
+    dll_2E_setMoveTables(&ewState->moveLib, 0, &local, 2);
     /* moveLib state+0x614: head look-at only engages while the target is
      * within this distance (live-verified in Dolphin - drop it below the
      * player distance and the head snaps back to neutral). */
-    dll_2E_setLookAtMaxDistance((MoveLibState*)ewState, gEarthWalkerLookAtMaxDistance);
-    ewState->moveLibFlags611 |= 2;
+    dll_2E_setLookAtMaxDistance(&ewState->moveLib, gEarthWalkerLookAtMaxDistance);
+    ewState->moveLib.modeBits |= 2;
     obj->anim.rotX = (s16)(setup->spawnRot << 8);
     ewState->encounterType = setup->encounterType;
     if (ewState->encounterType == 1)
@@ -477,7 +476,7 @@ void earthwalker_initialise(void)
 
 int dll_28B_substateHandler3(GameObject* obj, BaddieState* ai)
 {
-    Dll28BAiState* state = *(Dll28BAiState**)&obj->extra;
+    Dll28BState* state = obj->extra;
 
     if (ai->moveJustStartedB != 0)
     {
@@ -493,7 +492,7 @@ int dll_28B_substateHandler3(GameObject* obj, BaddieState* ai)
 
 int dll_28B_substateHandler2(GameObject* obj, BaddieState* ai)
 {
-    Dll28BAiState* state = *(Dll28BAiState**)&obj->extra;
+    Dll28BState* state = obj->extra;
     f32 dist;
 
     if (ai->moveJustStartedB != 0)
@@ -520,7 +519,7 @@ int dll_28B_substateHandler2(GameObject* obj, BaddieState* ai)
 
 int dll_28B_substateHandler1(GameObject* obj, BaddieState* ai)
 {
-    Dll28BAiState* state = *(Dll28BAiState**)&obj->extra;
+    Dll28BState* state = obj->extra;
     RomCurveWalker* route = &state->route;
 
     if (ai->moveJustStartedB != 0)
@@ -528,7 +527,7 @@ int dll_28B_substateHandler1(GameObject* obj, BaddieState* ai)
         state->flagsAC0 &= ~1;
         (*gPlayerInterface)->setState((void*)obj, (void*)ai, 2);
     }
-    if (Curve_AdvanceAlongPath(&route->curve, gWcEarthWalkerCurveAdvanceStep) != 0 || route->atSegmentEnd != 0)
+    if (Curve_AdvanceAlongPath(&route->curve, gWcEarthWalkerCurveAdvanceStep) != 0 || route->curve.idx != 0)
     {
         (*gRomCurveInterface)->goNextPoint(route);
     }
@@ -574,13 +573,13 @@ int dll_28B_stateHandler3(GameObject* obj, BaddieState* ai)
 
 int dll_28B_stateHandler2(GameObject* obj, BaddieState* ai)
 {
-    Dll28BAiState* state = *(Dll28BAiState**)&obj->extra;
+    Dll28BState* state = obj->extra;
 
-    obj->anim.velocityX = oneOverTimeDelta * (state->route.posX - obj->anim.localPosX);
-    obj->anim.velocityZ = oneOverTimeDelta * (state->route.posZ - obj->anim.localPosZ);
-    obj->anim.localPosX = state->route.posX;
-    obj->anim.localPosZ = state->route.posZ;
-    obj->anim.rotX = getAngle(-state->route.tangentX, -state->route.tangentZ);
+    obj->anim.velocityX = oneOverTimeDelta * (state->route.curve.sample[0] - obj->anim.localPosX);
+    obj->anim.velocityZ = oneOverTimeDelta * (state->route.curve.sample[2] - obj->anim.localPosZ);
+    obj->anim.localPosX = state->route.curve.sample[0];
+    obj->anim.localPosZ = state->route.curve.sample[2];
+    obj->anim.rotX = getAngle(-state->route.curve.tangent[0], -state->route.curve.tangent[2]);
     ObjAnim_SampleRootCurvePhase(
         &obj->anim, sqrtf(obj->anim.velocityX * obj->anim.velocityX + obj->anim.velocityZ * obj->anim.velocityZ),
         &ai->moveSpeed);
@@ -601,19 +600,30 @@ int dll_28B_stateHandler0(void)
     return 0x2;
 }
 
+OBJECT_INIT_ADAPTER(gEarthWalkerObjDescriptorInitAdapter, earthwalker_init, obj, placement)
+OBJECT_FREE_ADAPTER(gEarthWalkerObjDescriptorFreeAdapter, earthwalker_free)
+OBJECT_TYPE_ID_ADAPTER(gEarthWalkerObjDescriptorTypeIdAdapter, earthwalker_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gEarthWalkerObjDescriptorExtraSizeAdapter, earthwalker_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gEarthWalkerObjDescriptorAcquire, earthwalker_initialise)
+
 ObjectDescriptor gEarthWalkerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gEarthWalkerObjDescriptorAcquire,
+        earthwalker_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)earthwalker_initialise,
-    (ObjectDescriptorCallback)earthwalker_release,
-    0,
-    (ObjectDescriptorCallback)earthwalker_init,
-    (ObjectDescriptorCallback)earthwalker_update,
-    (ObjectDescriptorCallback)earthwalker_hitDetect,
-    (ObjectDescriptorCallback)earthwalker_render,
-    (ObjectDescriptorCallback)earthwalker_free,
-    (ObjectDescriptorCallback)earthwalker_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)earthwalker_getExtraSize,
+    gEarthWalkerObjDescriptorInitAdapter,
+    earthwalker_update,
+    earthwalker_hitDetect,
+    earthwalker_render,
+    gEarthWalkerObjDescriptorFreeAdapter,
+    gEarthWalkerObjDescriptorTypeIdAdapter,
+    gEarthWalkerObjDescriptorExtraSizeAdapter,
 };

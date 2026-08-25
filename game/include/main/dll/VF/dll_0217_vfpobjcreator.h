@@ -60,7 +60,7 @@ STATIC_ASSERT(sizeof(VfpObjCreatorSetup) == 0x28);
 int VFP_ObjCreator_getExtraSize(void);
 int VFP_ObjCreator_getObjectTypeId(void);
 void VFP_ObjCreator_free(void);
-void VFP_ObjCreator_render(int p1, int p2, int p3, int p4, int p5, s8 visible);
+void VFP_ObjCreator_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void VFP_ObjCreator_hitDetect(void);
 void VFP_ObjCreator_update(struct GameObject* obj);
 void VFP_ObjCreator_init(struct GameObject* obj, u8* init);

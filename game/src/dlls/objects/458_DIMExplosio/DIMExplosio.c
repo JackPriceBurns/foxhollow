@@ -18,7 +18,7 @@
 #include "dlls/objects/458_DIMExplosio.h"
 #include "dolphin/mtx.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/gx/GXGeometry.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
@@ -27,17 +27,16 @@
 #include "main/model.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/texture.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "track/intersect_render_setup_api.h"
+#include "track/intersect_render_setup.h"
 #include "main/camera.h"
 #include "dolphin/gx/GXTransform.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/objprint_render_api.h"
+#include "main/audio/sfx.h"
+#include "main/objprint_render.h"
 #include "sys/objects/lifecycle.h"
 
 typedef struct DimExplosionPartfxSource {
@@ -703,19 +702,31 @@ Vec gExplosionSpreadDirs[] = {
     {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
 };
 
+OBJECT_RELEASE_ADAPTER(gExplosionObjDescriptorReleaseAdapter, explosion_release, 0)
+OBJECT_INIT_ADAPTER(gExplosionObjDescriptorInitAdapter, explosion_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gExplosionObjDescriptorHitDetectAdapter, explosion_hitDetect)
+OBJECT_FREE_ADAPTER(gExplosionObjDescriptorFreeAdapter, explosion_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gExplosionObjDescriptorExtraSizeAdapter, explosion_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gExplosionObjDescriptorAcquire, explosion_initialise)
+
 ObjectDescriptor gExplosionObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gExplosionObjDescriptorAcquire,
+        gExplosionObjDescriptorReleaseAdapter,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)explosion_initialise,
-    (ObjectDescriptorCallback)explosion_release,
-    0,
-    (ObjectDescriptorCallback)explosion_init,
-    (ObjectDescriptorCallback)explosion_update,
-    (ObjectDescriptorCallback)explosion_hitDetect,
-    (ObjectDescriptorCallback)explosion_render,
-    (ObjectDescriptorCallback)explosion_free,
-    (ObjectDescriptorCallback)explosion_getObjectTypeId,
-    explosion_getExtraSize,
+    gExplosionObjDescriptorInitAdapter,
+    explosion_update,
+    gExplosionObjDescriptorHitDetectAdapter,
+    explosion_render,
+    gExplosionObjDescriptorFreeAdapter,
+    explosion_getObjectTypeId,
+    gExplosionObjDescriptorExtraSizeAdapter,
 };

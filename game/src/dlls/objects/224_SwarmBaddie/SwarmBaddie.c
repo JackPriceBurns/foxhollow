@@ -5,9 +5,8 @@
  * and particle effects from its hit-volume envelope.
  */
 #include "dlls/objects/224_SwarmBaddie.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/curve.h"
 #include "main/dll/partfx_interface.h"
@@ -45,13 +44,13 @@ void SwarmBaddie_updateMovement(GameObject* obj, SwarmBaddieState* state) {
 
     curve = state->curve;
     pathEnded = Curve_AdvanceAlongPath(&curve->curve, state->curveStep);
-    if (((pathEnded != 0) || (curve->atSegmentEnd != gSwarmBaddieLastCurvePoint)) &&
+    if (((pathEnded != 0) || (curve->curve.idx != gSwarmBaddieLastCurvePoint)) &&
         ((*gRomCurveInterface)->goNextPoint((void*)curve) != 0) &&
         ((*gRomCurveInterface)->initCurve((void*)state->curve, (void*)obj, 400.0f, gSwarmBaddieCurveInitData, -1) !=
          0)) {
         state->flags &= ~SWARMBADDIE_FLAG_PATH_NEEDS_LINK;
     }
-    gSwarmBaddieLastCurvePoint = curve->atSegmentEnd;
+    gSwarmBaddieLastCurvePoint = curve->curve.idx;
     if ((state->flags & SWARMBADDIE_FLAG_CHASE_PLAYER) != 0) {
         step = 0.003f;
         obj->anim.velocityX = step * (state->player->anim.localPosX - obj->anim.localPosX) + obj->anim.velocityX;
@@ -60,9 +59,9 @@ void SwarmBaddie_updateMovement(GameObject* obj, SwarmBaddieState* state) {
         obj->anim.velocityZ = step * (state->player->anim.localPosZ - obj->anim.localPosZ) + obj->anim.velocityZ;
     } else {
         step = 0.003f;
-        obj->anim.velocityX = step * (curve->posX - obj->anim.localPosX) + obj->anim.velocityX;
-        obj->anim.velocityY = step * (curve->posY - obj->anim.localPosY) + obj->anim.velocityY;
-        obj->anim.velocityZ = step * (curve->posZ - obj->anim.localPosZ) + obj->anim.velocityZ;
+        obj->anim.velocityX = step * (curve->curve.sample[0] - obj->anim.localPosX) + obj->anim.velocityX;
+        obj->anim.velocityY = step * (curve->curve.sample[1] - obj->anim.localPosY) + obj->anim.velocityY;
+        obj->anim.velocityZ = step * (curve->curve.sample[2] - obj->anim.localPosZ) + obj->anim.velocityZ;
     }
 
     obj->anim.velocityX = obj->anim.velocityX * (step = 0.9f);
@@ -173,9 +172,9 @@ void SwarmBaddie_update(GameObject* obj) {
         state->playerDistance = sqrtf(delta.z * delta.z + (delta.x * delta.x + delta.y * delta.y));
     }
     if (curve != NULL) {
-        delta.x = curve->posX - obj->anim.worldPosX;
-        delta.y = curve->posY - obj->anim.worldPosY;
-        delta.z = curve->posZ - obj->anim.worldPosZ;
+        delta.x = curve->curve.sample[0] - obj->anim.worldPosX;
+        delta.y = curve->curve.sample[1] - obj->anim.worldPosY;
+        delta.z = curve->curve.sample[2] - obj->anim.worldPosZ;
         state->pathDistance = sqrtf(delta.z * delta.z + (delta.x * delta.x + delta.y * delta.y));
     }
     if (((state->flags & SWARMBADDIE_FLAG_CHASE_PLAYER) != 0) && (state->pathDistance > 250.0f)) {
@@ -217,19 +216,30 @@ void SwarmBaddie_release(void) {
 void SwarmBaddie_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSwarmBaddieObjDescriptorInitAdapter, SwarmBaddie_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gSwarmBaddieObjDescriptorFreeAdapter, SwarmBaddie_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSwarmBaddieObjDescriptorTypeIdAdapter, SwarmBaddie_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSwarmBaddieObjDescriptorExtraSizeAdapter, SwarmBaddie_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSwarmBaddieObjDescriptorAcquire, SwarmBaddie_initialise)
+
 ObjectDescriptor gSwarmBaddieObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSwarmBaddieObjDescriptorAcquire,
+        SwarmBaddie_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SwarmBaddie_initialise,
-    (ObjectDescriptorCallback)SwarmBaddie_release,
-    0,
-    (ObjectDescriptorCallback)SwarmBaddie_init,
-    (ObjectDescriptorCallback)SwarmBaddie_update,
-    (ObjectDescriptorCallback)SwarmBaddie_hitDetect,
-    (ObjectDescriptorCallback)SwarmBaddie_render,
-    (ObjectDescriptorCallback)SwarmBaddie_free,
-    (ObjectDescriptorCallback)SwarmBaddie_getObjectTypeId,
-    SwarmBaddie_getExtraSize,
+    gSwarmBaddieObjDescriptorInitAdapter,
+    SwarmBaddie_update,
+    SwarmBaddie_hitDetect,
+    SwarmBaddie_render,
+    gSwarmBaddieObjDescriptorFreeAdapter,
+    gSwarmBaddieObjDescriptorTypeIdAdapter,
+    gSwarmBaddieObjDescriptorExtraSizeAdapter,
 };

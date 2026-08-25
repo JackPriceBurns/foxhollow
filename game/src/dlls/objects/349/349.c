@@ -2,10 +2,10 @@
 
 #include "dlls/objects/349.h"
 
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -161,19 +161,31 @@ void slidingDoor_release(void) {
 void slidingDoor_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSlidingDoorObjDescriptorInitAdapter, slidingDoor_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSlidingDoorObjDescriptorHitDetectAdapter, slidingDoor_hitDetect)
+OBJECT_FREE_ADAPTER(gSlidingDoorObjDescriptorFreeAdapter, slidingDoor_free)
+OBJECT_TYPE_ID_ADAPTER(gSlidingDoorObjDescriptorTypeIdAdapter, slidingDoor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSlidingDoorObjDescriptorExtraSizeAdapter, slidingDoor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSlidingDoorObjDescriptorAcquire, slidingDoor_initialise)
+
 ObjectDescriptor gSlidingDoorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSlidingDoorObjDescriptorAcquire,
+        slidingDoor_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)slidingDoor_initialise,
-    (ObjectDescriptorCallback)slidingDoor_release,
-    0,
-    (ObjectDescriptorCallback)slidingDoor_init,
-    (ObjectDescriptorCallback)slidingDoor_update,
-    (ObjectDescriptorCallback)slidingDoor_hitDetect,
-    (ObjectDescriptorCallback)slidingDoor_render,
-    (ObjectDescriptorCallback)slidingDoor_free,
-    (ObjectDescriptorCallback)slidingDoor_getObjectTypeId,
-    slidingDoor_getExtraSize,
+    gSlidingDoorObjDescriptorInitAdapter,
+    slidingDoor_update,
+    gSlidingDoorObjDescriptorHitDetectAdapter,
+    slidingDoor_render,
+    gSlidingDoorObjDescriptorFreeAdapter,
+    gSlidingDoorObjDescriptorTypeIdAdapter,
+    gSlidingDoorObjDescriptorExtraSizeAdapter,
 };

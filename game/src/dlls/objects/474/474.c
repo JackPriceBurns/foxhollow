@@ -5,16 +5,16 @@
 
 #include "dlls/objects/474.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/savegame_object.h"
 #include "main/objhits.h"
 
 int dll_1DA_getExtraSize(void) {
@@ -145,19 +145,30 @@ void dll_1DA_release(void) {
 void dll_1DA_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1DAObjDescriptorInitAdapter, dll_1DA_init, obj)
+OBJECT_FREE_ADAPTER(gDll1DAObjDescriptorFreeAdapter, dll_1DA_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1DAObjDescriptorTypeIdAdapter, dll_1DA_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1DAObjDescriptorExtraSizeAdapter, dll_1DA_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1DAObjDescriptorAcquire, dll_1DA_initialise)
+
 ObjectDescriptor gDll1DAObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1DAObjDescriptorAcquire,
+        dll_1DA_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_1DA_initialise,
-    (ObjectDescriptorCallback)dll_1DA_release,
-    0,
-    (ObjectDescriptorCallback)dll_1DA_init,
-    (ObjectDescriptorCallback)dll_1DA_update,
-    (ObjectDescriptorCallback)dll_1DA_hitDetect,
-    (ObjectDescriptorCallback)dll_1DA_render,
-    (ObjectDescriptorCallback)dll_1DA_free,
-    (ObjectDescriptorCallback)dll_1DA_getObjectTypeId,
-    dll_1DA_getExtraSize,
+    gDll1DAObjDescriptorInitAdapter,
+    dll_1DA_update,
+    dll_1DA_hitDetect,
+    dll_1DA_render,
+    gDll1DAObjDescriptorFreeAdapter,
+    gDll1DAObjDescriptorTypeIdAdapter,
+    gDll1DAObjDescriptorExtraSizeAdapter,
 };

@@ -78,10 +78,13 @@ u8 GroundAnimator_getMagicCaveIndex(GameObject* obj);
 /* gGroundAnimatorObjDescriptor from slot02 onwards: the export table Tricky
    reaches through obj->anim.dll while digging. */
 typedef struct GroundAnimatorInterface {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     f32 (*applyPress)(GameObject* obj, GameObject* sidekick);
     u8 (*isFullySunk)(GameObject* obj);
+    u8 (*getMagicCaveIndex)(GameObject* obj);
 } GroundAnimatorInterface;
+
+OBJECT_DESCRIPTOR_TYPE(GroundAnimatorDescriptor, GroundAnimatorInterface);
 
 #define GROUND_ANIMATOR_INTERFACE(digSite) ((GroundAnimatorInterface*)*((GameObject*)(digSite))->anim.dll)
 
@@ -96,6 +99,6 @@ void GroundAnimator_render(GameObject* obj, int gdl, int mtxs, int vtxs, int pol
 void GroundAnimator_update(GameObject* obj);
 void GroundAnimator_init(GameObject* obj, GroundAnimatorPlacement* placement);
 
-extern ObjectDescriptor14 gGroundAnimatorObjDescriptor;
+extern GroundAnimatorDescriptor gGroundAnimatorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_312_GROUNDANIMA_H_ */

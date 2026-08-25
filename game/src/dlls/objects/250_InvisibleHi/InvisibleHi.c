@@ -6,7 +6,7 @@
  */
 #include "dlls/objects/250_InvisibleHi.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 
 extern f32 lbl_803E3750;
@@ -132,19 +132,26 @@ void InvisibleHitSwitch_init(GameObject* obj, InvisibleHitSwitchPlacement* place
     }
 }
 
+OBJECT_INIT_ADAPTER(gInvisibleHitSwitchObjDescriptorInitAdapter, InvisibleHitSwitch_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gInvisibleHitSwitchObjDescriptorExtraSizeAdapter, InvisibleHitSwitch_getExtraSize)
+
 ObjectDescriptor gInvisibleHitSwitchObjDescriptor = {
-    0,                                                   /* reserved0 */
-    0,                                                   /* reserved1 */
-    0,                                                   /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                    /* slotCountAndFlags */
-    0,                                                   /* initialise */
-    0,                                                   /* release */
-    0,                                                   /* slot02 */
-    (ObjectDescriptorCallback)InvisibleHitSwitch_init,   /* init */
-    (ObjectDescriptorCallback)InvisibleHitSwitch_update, /* update */
-    0,                                                   /* hitDetect */
-    0,                                                   /* render */
-    0,                                                   /* free */
-    0,                                                   /* getObjectTypeId */
-    InvisibleHitSwitch_getExtraSize,                     /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gInvisibleHitSwitchObjDescriptorInitAdapter,
+    InvisibleHitSwitch_update,
+    0,
+    0,
+    0,
+    0,
+    gInvisibleHitSwitchObjDescriptorExtraSizeAdapter,
 };

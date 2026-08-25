@@ -16,16 +16,15 @@
 #include "sys/objects.h"
 #include "main/frame_timing.h"
 #include "main/vecmath.h"
-#include "main/dll/player_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/dll/player.h"
+#include "main/maketex_timer.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_024E_drakordthornbush.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/maketex_api.h"
+#include "main/audio/sfx.h"
+#include "main/maketex.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
 #include "sys/objects/lifecycle.h"
@@ -282,19 +281,30 @@ void drakord_thornbush_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrakorDThornBushObjDescriptorInitAdapter, drakord_thornbush_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDrakorDThornBushObjDescriptorFreeAdapter, drakord_thornbush_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrakorDThornBushObjDescriptorTypeIdAdapter, drakord_thornbush_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrakorDThornBushObjDescriptorExtraSizeAdapter, drakord_thornbush_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrakorDThornBushObjDescriptorAcquire, drakord_thornbush_initialise)
+
 ObjectDescriptor gDrakorDThornBushObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrakorDThornBushObjDescriptorAcquire,
+        drakord_thornbush_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)drakord_thornbush_initialise,
-    (ObjectDescriptorCallback)drakord_thornbush_release,
-    0,
-    (ObjectDescriptorCallback)drakord_thornbush_init,
-    (ObjectDescriptorCallback)drakord_thornbush_update,
-    (ObjectDescriptorCallback)drakord_thornbush_hitDetect,
-    (ObjectDescriptorCallback)drakord_thornbush_render,
-    (ObjectDescriptorCallback)drakord_thornbush_free,
-    (ObjectDescriptorCallback)drakord_thornbush_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drakord_thornbush_getExtraSize,
+    gDrakorDThornBushObjDescriptorInitAdapter,
+    drakord_thornbush_update,
+    drakord_thornbush_hitDetect,
+    drakord_thornbush_render,
+    gDrakorDThornBushObjDescriptorFreeAdapter,
+    gDrakorDThornBushObjDescriptorTypeIdAdapter,
+    gDrakorDThornBushObjDescriptorExtraSizeAdapter,
 };

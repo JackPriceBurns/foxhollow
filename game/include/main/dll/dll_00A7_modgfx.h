@@ -23,16 +23,14 @@ typedef void (*DllA7SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnPara
                              DllA7CommandParams* commandParams);
 
 typedef struct DllA7ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     DllA7SpawnFn spawn;
 } DllA7ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(DllA7ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(DllA7ResourceDescriptor) == 0x20);

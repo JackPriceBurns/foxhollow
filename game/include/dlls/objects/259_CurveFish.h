@@ -32,10 +32,6 @@ typedef struct CurveFishState {
     f32 modeTimer;        /* 0x11C */
 } CurveFishState;
 
-typedef union CurveFishCurveQueryKey {
-    u32 type;
-} CurveFishCurveQueryKey;
-
 STATIC_ASSERT(offsetof(CurveFishPlacement, base) == 0x0);
 STATIC_ASSERT(offsetof(CurveFishPlacement, rootMotionScalePercent) == 0x18);
 STATIC_ASSERT(offsetof(CurveFishPlacement, speedChange) == 0x19);
@@ -59,7 +55,7 @@ int CurveFish_getExtraSize(void);
 void CurveFish_update(GameObject* obj);
 void CurveFish_init(GameObject* obj, CurveFishPlacement* placement);
 
-extern const CurveFishCurveQueryKey gCurveFishCurveQueryKey;
+extern const u32 gCurveFishCurveQueryKey;
 extern ObjectDescriptor gCurveFishObjDescriptor;
 
 #endif /* DLLS_OBJECTS_259_CURVEFISH_H_ */

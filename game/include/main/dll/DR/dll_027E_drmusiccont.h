@@ -2,7 +2,7 @@
 #define MAIN_DLL_DR_DLL_027E_DRMUSICCONT_H_
 
 #include "game/objects/object.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "global.h"
 
 
@@ -28,7 +28,7 @@ typedef struct DrMusicContFlags
 
 typedef struct DrmusiccontState
 {
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     f32 stingerTimer;
     DrMusicContFlags flags;
 } DrmusiccontState;

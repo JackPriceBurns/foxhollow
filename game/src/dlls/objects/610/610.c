@@ -14,7 +14,7 @@
  */
 #include "main/model.h"
 #include "main/dll/dll_0262_drakormissile.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx/vec.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/frame_timing.h"
@@ -22,11 +22,10 @@
 #include "main/objfx.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "main/voxmaps.h"
 
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/vecmath.h"
 #include "main/objhits.h"
@@ -299,15 +298,15 @@ void drakormissile_update(GameObject* o)
         if (player->anim.velocityX != (mag = 0.0f) ||
             player->anim.velocityY != mag || player->anim.velocityZ != mag)
         {
-            mag = PSVECMag(&player->anim.velocity);
+            mag = PSVECMag((Vec*)&player->anim.velocityX);
         }
         mag = gDrakorMissileInterceptSpeedBias + mag;
-        Obj_PredictInterceptPoint(player, mag, &o->anim.localPos, &toTarget);
-        PSVECSubtract(&toTarget, &o->anim.localPos, &dir);
+        Obj_PredictInterceptPoint(player, mag, (Vec3f*)&o->anim.localPosX, &toTarget);
+        PSVECSubtract(&toTarget, (Vec*)&o->anim.localPosX, &dir);
         PSVECNormalize(&dir, &dir);
         PSVECScale(&dir, &dir, mag * gDrakorMissileSteerGain);
-        PSVECScale(&o->anim.velocity, &o->anim.velocity, gDrakorMissileVelocityDamping);
-        PSVECAdd(&o->anim.velocity, &dir, &o->anim.velocity);
+        PSVECScale((Vec*)&o->anim.velocityX, (Vec*)&o->anim.velocityX, gDrakorMissileVelocityDamping);
+        PSVECAdd((Vec*)&o->anim.velocityX, &dir, (Vec*)&o->anim.velocityX);
         mag = sqrtf(o->anim.velocityX * o->anim.velocityX +
                     o->anim.velocityZ * o->anim.velocityZ);
         {
@@ -437,23 +436,37 @@ void drakormissile_initialise(void)
 {
 }
 
-ObjectDescriptor14 gDrakorMissileObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
-    (ObjectDescriptorCallback)drakormissile_initialise,
-    (ObjectDescriptorCallback)drakormissile_release,
-    0,
-    (ObjectDescriptorCallback)drakormissile_init,
-    (ObjectDescriptorCallback)drakormissile_update,
-    (ObjectDescriptorCallback)drakormissile_hitDetect,
-    (ObjectDescriptorCallback)drakormissile_render,
-    (ObjectDescriptorCallback)drakormissile_free,
-    (ObjectDescriptorCallback)drakormissile_getObjectTypeId,
-    drakormissile_getExtraSize,
-    (ObjectDescriptorCallback)drakormissile_isFadingOut,
-    (ObjectDescriptorCallback)drakormissile_startStraightLaunch,
-    (ObjectDescriptorCallback)drakormissile_requestFree,
-    (ObjectDescriptorCallback)drakormissile_abortStraightFlight,
+OBJECT_INIT_ADAPTER(gDrakorMissileObjDescriptorInitAdapter, drakormissile_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrakorMissileObjDescriptorHitDetectAdapter, drakormissile_hitDetect)
+OBJECT_FREE_ADAPTER(gDrakorMissileObjDescriptorFreeAdapter, drakormissile_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrakorMissileObjDescriptorTypeIdAdapter, drakormissile_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrakorMissileObjDescriptorExtraSizeAdapter, drakormissile_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrakorMissileObjDescriptorAcquire, drakormissile_initialise)
+
+DrakorMissileDescriptor gDrakorMissileObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
+        },
+        gDrakorMissileObjDescriptorAcquire,
+        drakormissile_release,
+    },
+    {
+        0,
+        gDrakorMissileObjDescriptorInitAdapter,
+        drakormissile_update,
+        gDrakorMissileObjDescriptorHitDetectAdapter,
+        drakormissile_render,
+        gDrakorMissileObjDescriptorFreeAdapter,
+        gDrakorMissileObjDescriptorTypeIdAdapter,
+        gDrakorMissileObjDescriptorExtraSizeAdapter,
+        drakormissile_isFadingOut,
+        drakormissile_startStraightLaunch,
+        drakormissile_requestFree,
+        drakormissile_abortStraightFlight,
+    },
 };

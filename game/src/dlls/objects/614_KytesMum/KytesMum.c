@@ -26,23 +26,23 @@
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "main/objtype.h"
 #include "main/obj_trigger.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
 #include "game/objects/object_setup.h"
-#include "main/vecmath_distance_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/vecmath_distance.h"
+#include "main/audio/sfx.h"
 #include "main/vecmath.h"
 #include "dolphin/pad.h"
-#include "main/dll/player_api.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/dll/player.h"
+#include "main/dll/savegame_object.h"
 #include "main/object_update_list.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "sys/objects/lifecycle.h"
 #include "main/objseq.h"
 
@@ -259,7 +259,7 @@ int kytesmum_animEventCallback(GameObject* obj, int unused, ObjSeqState* animUpd
     }
     {
         int move2 = runtime->moveSet->moves[2];
-        int result = !dll_2E_updateSequenceTurn(obj, animUpdate, (MoveLibState*)runtime, move2, move2);
+        int result = !dll_2E_updateSequenceTurn(obj, animUpdate, &runtime->moveLib, move2, move2);
         return !result;
     }
 }
@@ -425,19 +425,32 @@ void kytesmum_initialise(void)
 
 char sKytesMumYawDiffMessage[] = " YAW DIFF ";
 
+OBJECT_INIT_ADAPTER(gKytesMumObjDescriptorInitAdapter, kytesmum_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gKytesMumObjDescriptorHitDetectAdapter, kytesmum_hitDetect)
+OBJECT_RENDER_ADAPTER(gKytesMumObjDescriptorRenderAdapter, kytesmum_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gKytesMumObjDescriptorFreeAdapter, kytesmum_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKytesMumObjDescriptorTypeIdAdapter, kytesmum_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKytesMumObjDescriptorExtraSizeAdapter, kytesmum_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKytesMumObjDescriptorAcquire, kytesmum_initialise)
+
 ObjectDescriptor gKytesMumObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKytesMumObjDescriptorAcquire,
+        kytesmum_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)kytesmum_initialise,
-    (ObjectDescriptorCallback)kytesmum_release,
-    0,
-    (ObjectDescriptorCallback)kytesmum_init,
-    (ObjectDescriptorCallback)kytesmum_update,
-    (ObjectDescriptorCallback)kytesmum_hitDetect,
-    (ObjectDescriptorCallback)kytesmum_render,
-    (ObjectDescriptorCallback)kytesmum_free,
-    (ObjectDescriptorCallback)kytesmum_getObjectTypeId,
-    kytesmum_getExtraSize,
+    gKytesMumObjDescriptorInitAdapter,
+    kytesmum_update,
+    gKytesMumObjDescriptorHitDetectAdapter,
+    gKytesMumObjDescriptorRenderAdapter,
+    gKytesMumObjDescriptorFreeAdapter,
+    gKytesMumObjDescriptorTypeIdAdapter,
+    gKytesMumObjDescriptorExtraSizeAdapter,
 };

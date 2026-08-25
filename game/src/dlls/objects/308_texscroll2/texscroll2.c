@@ -5,7 +5,7 @@
 #include "dlls/objects/308_texscroll2.h"
 
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/map_texscroll.h"
 #include "main/model.h"
 #include "main/object_render.h"
@@ -160,23 +160,52 @@ void TexScroll2_release(void) {
 void TexScroll2_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gTexscroll2ObjDescriptor = {
+OBJECT_INIT_ADAPTER(gTexscroll2ObjDescriptorInitAdapter, TexScroll2_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gTexscroll2ObjDescriptorHitDetectAdapter, TexScroll2_hitDetect)
+OBJECT_FREE_ADAPTER(gTexscroll2ObjDescriptorFreeAdapter, TexScroll2_free)
+OBJECT_TYPE_ID_ADAPTER(gTexscroll2ObjDescriptorTypeIdAdapter, TexScroll2_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTexscroll2ObjDescriptorExtraSizeAdapter, TexScroll2_getExtraSize)
+
+typedef struct Texscroll2ObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(TexScroll2_setStepY)* TexScroll2_setStepY;
+} Texscroll2ObjDescriptorTypeInterface;
+
+typedef struct Texscroll2ObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    Texscroll2ObjDescriptorTypeInterface interface;
+} Texscroll2ObjDescriptorTypeCore;
+
+struct Texscroll2ObjDescriptorType {
+    Texscroll2ObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gTexscroll2ObjDescriptorAcquire, TexScroll2_initialise)
+
+struct Texscroll2ObjDescriptorType gTexscroll2ObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)TexScroll2_initialise,
-        (ObjectDescriptorCallback)TexScroll2_release,
-        0,
-        (ObjectDescriptorCallback)TexScroll2_init,
-        (ObjectDescriptorCallback)TexScroll2_update,
-        (ObjectDescriptorCallback)TexScroll2_hitDetect,
-        (ObjectDescriptorCallback)TexScroll2_render,
-        (ObjectDescriptorCallback)TexScroll2_free,
-        (ObjectDescriptorCallback)TexScroll2_getObjectTypeId,
-        TexScroll2_getExtraSize,
-        (ObjectDescriptorCallback)TexScroll2_setStepY,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gTexscroll2ObjDescriptorAcquire,
+            TexScroll2_release,
+        },
+        {
+            0,
+            gTexscroll2ObjDescriptorInitAdapter,
+            TexScroll2_update,
+            gTexscroll2ObjDescriptorHitDetectAdapter,
+            TexScroll2_render,
+            gTexscroll2ObjDescriptorFreeAdapter,
+            gTexscroll2ObjDescriptorTypeIdAdapter,
+            gTexscroll2ObjDescriptorExtraSizeAdapter,
+            TexScroll2_setStepY,
+        },
     },
     0,
 };

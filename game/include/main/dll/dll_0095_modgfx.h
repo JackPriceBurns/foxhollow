@@ -9,16 +9,14 @@
 typedef void (*Dll95SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams);
 
 typedef struct Dll95ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll95SpawnFn spawn;
 } Dll95ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll95ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll95ResourceDescriptor) == 0x20);

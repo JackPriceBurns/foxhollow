@@ -13,7 +13,7 @@
  * The spawn cadence is driven by spawnTimer counting down spawnInterval.
  */
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
@@ -44,7 +44,7 @@ void VFP_ObjCreator_free(void)
 {
 }
 
-void VFP_ObjCreator_render(int obj, int p2, int p3, int p4, int p5, s8 visible)
+void VFP_ObjCreator_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
     if (visible == 0)
         return;
@@ -181,19 +181,31 @@ void VFP_ObjCreator_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_ObjCreatorObjDescriptorInitAdapter, VFP_ObjCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_ObjCreatorObjDescriptorHitDetectAdapter, VFP_ObjCreator_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_ObjCreatorObjDescriptorFreeAdapter, VFP_ObjCreator_free)
+OBJECT_TYPE_ID_ADAPTER(gVFP_ObjCreatorObjDescriptorTypeIdAdapter, VFP_ObjCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_ObjCreatorObjDescriptorExtraSizeAdapter, VFP_ObjCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_ObjCreatorObjDescriptorAcquire, VFP_ObjCreator_initialise)
+
 ObjectDescriptor gVFP_ObjCreatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_ObjCreatorObjDescriptorAcquire,
+        VFP_ObjCreator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_ObjCreator_initialise,
-    (ObjectDescriptorCallback)VFP_ObjCreator_release,
-    0,
-    (ObjectDescriptorCallback)VFP_ObjCreator_init,
-    (ObjectDescriptorCallback)VFP_ObjCreator_update,
-    (ObjectDescriptorCallback)VFP_ObjCreator_hitDetect,
-    (ObjectDescriptorCallback)VFP_ObjCreator_render,
-    (ObjectDescriptorCallback)VFP_ObjCreator_free,
-    (ObjectDescriptorCallback)VFP_ObjCreator_getObjectTypeId,
-    VFP_ObjCreator_getExtraSize,
+    gVFP_ObjCreatorObjDescriptorInitAdapter,
+    VFP_ObjCreator_update,
+    gVFP_ObjCreatorObjDescriptorHitDetectAdapter,
+    VFP_ObjCreator_render,
+    gVFP_ObjCreatorObjDescriptorFreeAdapter,
+    gVFP_ObjCreatorObjDescriptorTypeIdAdapter,
+    gVFP_ObjCreatorObjDescriptorExtraSizeAdapter,
 };

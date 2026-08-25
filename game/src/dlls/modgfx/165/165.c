@@ -123,46 +123,46 @@ void dll_A5_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commands[12].y = 0.0f;
     commands[12].z = 0.0f;
 
-    packet.modeByte = variant;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = 0.0f;
-    packet.position[1] = 0.0f;
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 8;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0x3c;
-    packet.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd) * 13) - commands;
-    packet.sequenceParams[0] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[0])];
-    packet.sequenceParams[1] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[1])];
-    packet.sequenceParams[2] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[2])];
-    packet.sequenceParams[3] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[3])];
-    packet.sequenceParams[4] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[4])];
-    packet.sequenceParams[5] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[5])];
-    packet.sequenceParams[6] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[6])];
-    packet.commands = commands;
-    packet.flags = 0x4040000;
-    packet.flags |= (flags | 0x80);
-    fl = packet.flags;
+    packet.context.modeByte = variant;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 8;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x3c;
+    packet.context.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd) * 13) - commands;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(DllA5EffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x4040000;
+    packet.context.flags |= (flags | 0x80);
+    fl = packet.context.flags;
     if (fl & 1) {
         if (sourceObj != NULL) {
-            packet.position[0] += sourceObj->anim.worldPosX;
-            packet.position[1] += sourceObj->anim.worldPosY;
-            packet.position[2] += sourceObj->anim.worldPosZ;
+            packet.context.position[0] += sourceObj->anim.worldPosX;
+            packet.context.position[1] += sourceObj->anim.worldPosY;
+            packet.context.position[2] += sourceObj->anim.worldPosZ;
         } else {
-            packet.position[0] += spawnParams->posX;
-            packet.position[1] += spawnParams->posY;
-            packet.position[2] += spawnParams->posZ;
+            packet.context.position[0] += spawnParams->posX;
+            packet.context.position[1] += spawnParams->posY;
+            packet.context.position[2] += spawnParams->posZ;
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 8, (u8*)gDllA5EffectResourceData, 4,
+        ->spawnEffect(&packet.context, 0, 8, (u8*)gDllA5EffectResourceData, 4,
                       &resourceData[offsetof(DllA5EffectResourceView, triangles)], 0x5e0, 0);
 }
 
@@ -179,6 +179,10 @@ u8 gDllA5EffectResourceData[sizeof(DllA5EffectResourceView)] = {
     31,  0,  0, 9,   96, 15, 160, 0,   15,  0,   31, 0, 0, 0,   2,  0,   6, 0,   0,  0,   6,   0,   4,
     0,   1,  0, 3,   0,  7,  0,   1,   0,   7,   0,  5, 0, 0,   0,  1,   0, 2,   0,  3,   0,   4,   0,
     5,   0,  6, 0,   7,  0,  0,   0,   130, 0,   26, 0, 0, 0,   0,  0,   0, 0,   0,  0,   0};
+RESOURCE_ACQUIRE_ADAPTER(gDllA5ResourceDescriptorAcquire, dll_A5_initialise)
+
 DllA5ResourceDescriptor gDllA5ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_A5_initialise, dll_A5_release, NULL, dll_A5_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDllA5ResourceDescriptorAcquire, dll_A5_release },
+    NULL,
+    dll_A5_spawnEffect,
 };

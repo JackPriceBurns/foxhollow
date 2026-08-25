@@ -20,24 +20,25 @@
  */
 #include "main/dll/dll_0271_drakorhoverpad.h"
 #include "dolphin/mtx/vec.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/curve.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/rom_curve_def.h"
 #include "game/objects/object.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "dlls/object_descriptor.h"
+#include "dlls/objects/common/vehicle.h"
 #include "main/dll/dll_0271_drakorhoverpad_internal.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/obj_path.h"
 #include "main/obj_query.h"
 #include "main/objhits.h"
@@ -110,13 +111,13 @@ int drakorhoverpad_getRacePosition(void)
     return 0x0;
 }
 
-f32 drakorhoverpad_func13(int obj, f32* out)
+f32 drakorhoverpad_func13(GameObject* obj, f32* out)
 {
     *out = 5.0f;
     return 0.0f;
 }
 
-void drakorhoverpad_getPlayerAnim(int obj, f32* outFloat, int* outFlag)
+void drakorhoverpad_getPlayerAnim(GameObject* obj, f32* outFloat, int* outFlag)
 {
     *outFloat = 0.0f;
     *outFlag = 0;
@@ -294,7 +295,7 @@ int drakorhoverpad_update(RomCurveWalker* curve, int maxIndex)
     memcpy(curve->hermX, curve->hermX2, 16);
     memcpy(curve->hermY, curve->hermY2, 16);
     memcpy(curve->hermZ, curve->hermZ2, 16);
-    if (curve->reverse != 0)
+    if (curve->curve.dir != 0)
     {
         result = drakorhoverpad_pickMaskedNextPoint((RomCurveDef*)curve->nodeA0, -1, maxIndex);
     }
@@ -313,7 +314,7 @@ int drakorhoverpad_update(RomCurveWalker* curve, int maxIndex)
 #define CM_NODE  (*CM_SLOT)
 #define AMP_NODE (*AMP_SLOT)
 #define TGT_NODE (*TGT_SLOT)
-    if (curve->reverse != 0)
+    if (curve->curve.dir != 0)
     {
         curve->hermX2[0] = CM_NODE->x;
         curve->hermX2[1] = AMP_NODE->x;
@@ -361,11 +362,11 @@ int drakorhoverpad_update(RomCurveWalker* curve, int maxIndex)
 #undef CM_SLOT
 #undef AMP_SLOT
 #undef TGT_SLOT
-    if (curve->moveNetwork != 0)
+    if (curve->curve.count != 0)
     {
         curvesSetupMoveNetworkCurve(&curve->curve);
     }
-    if (curve->reverse != 0)
+    if (curve->curve.dir != 0)
     {
         Curve_AdvanceAlongPath(&curve->curve, -1.0f);
     }
@@ -788,9 +789,9 @@ void drakorhoverpad_updateMain(GameObject* obj)
         if (f->bit20 != 0)
         {
             drakorhoverpad_initPathCurve(obj, p);
-            (obj)->anim.localPosX = p->curve.posX;
-            (obj)->anim.localPosY = p->curve.posY;
-            (obj)->anim.localPosZ = p->curve.posZ;
+            (obj)->anim.localPosX = p->curve.curve.sample[0];
+            (obj)->anim.localPosY = p->curve.curve.sample[1];
+            (obj)->anim.localPosZ = p->curve.curve.sample[2];
             p->commandSpeed = (*(f32*)&gDrakorHoverpadSpeedStep);
             Sfx_PlayFromObject(obj, SFXTRIG_id_308);
             Sfx_PlayFromObject(obj, SFXTRIG_id_30a);
@@ -800,8 +801,8 @@ void drakorhoverpad_updateMain(GameObject* obj)
     curve = &p->curve;
     if (g->f08 != 0)
     {
-        angle = (s16)getAngle(sqrtf(curve->tangentX * curve->tangentX + curve->tangentZ * curve->tangentZ),
-                              curve->tangentY);
+        angle = (s16)getAngle(sqrtf(curve->curve.tangent[0] * curve->curve.tangent[0] + curve->curve.tangent[2] * curve->curve.tangent[2]),
+                              curve->curve.tangent[1]);
         phase = 3.1415927f * (f32)angle / 32768.0f;
         wobbleY = -0.7f * mathCosf(phase);
         limit = 0.1f * (0.7f * mathSinf(phase));
@@ -852,8 +853,8 @@ void drakorhoverpad_updateMain(GameObject* obj)
     if (p->speed != 0.0f)
     {
         Curve_AdvanceAlongPath(&curve->curve, p->speed);
-        c = curve->reverse;
-        if ((c == 0 && curve->atSegmentEnd != 0) || (c != 0 && curve->atSegmentEnd == 0))
+        c = curve->curve.dir;
+        if ((c == 0 && curve->curve.idx != 0) || (c != 0 && curve->curve.idx == 0))
         {
             if (drakorhoverpad_handlePathPointEvent(obj, (u8)((RomCurveDef*)curve->nodeA0)->action,
                                                     (u8)((RomCurveDef*)curve->nodeA4)->action, &evOut) != 0)
@@ -862,9 +863,9 @@ void drakorhoverpad_updateMain(GameObject* obj)
             }
         }
     }
-    curvePos[0] = curve->posX;
-    curvePos[1] = curve->posY;
-    curvePos[2] = curve->posZ;
+    curvePos[0] = curve->curve.sample[0];
+    curvePos[1] = curve->curve.sample[1];
+    curvePos[2] = curve->curve.sample[2];
     curvePos[1] = curvePos[1] + (1.0f + mathSinf(3.1415927f *
                                                          (f32)(int)p->anglePhase /
                                                          32768.0f));
@@ -905,9 +906,9 @@ void drakorhoverpad_updateMain(GameObject* obj)
     else
     {
         s16 yawDelta;
-        phase = sqrtf(curve->tangentX * curve->tangentX + curve->tangentZ * curve->tangentZ);
-        yawDelta = (s16)(getAngle(curve->tangentX, curve->tangentZ) + 0x8000) - (obj)->anim.rotX;
-        (obj)->anim.rotY = (s16)getAngle(curve->tangentY, phase);
+        phase = sqrtf(curve->curve.tangent[0] * curve->curve.tangent[0] + curve->curve.tangent[2] * curve->curve.tangent[2]);
+        yawDelta = (s16)(getAngle(curve->curve.tangent[0], curve->curve.tangent[2]) + 0x8000) - (obj)->anim.rotX;
+        (obj)->anim.rotY = (s16)getAngle(curve->curve.tangent[1], phase);
         if (yawDelta < -0x800)
         {
             clamped = -0x800;
@@ -934,13 +935,13 @@ void drakorhoverpad_updateMain(GameObject* obj)
         }
         (obj)->anim.rotY = c;
     }
-    PSVECSubtract((Vec*)curvePos, &obj->anim.localPos, &diff);
+    PSVECSubtract((Vec*)curvePos, (Vec*)&obj->anim.localPosX, &diff);
     /* snapshot the shared steer speed before building the call args (the
      * through-pointer read keeps the load at this statement) */
     spd = gDrakorHoverpadSteerMaxSpeed;
-    Obj_SteerVelocityTowardVector(obj, &obj->anim.velocity, &diff, spd, spd / 30.0f,
+    Obj_SteerVelocityTowardVector(obj, (Vec3f*)&obj->anim.velocityX, &diff, spd, spd / 30.0f,
                                   0.3f);
-    PSVECAdd(&obj->anim.localPos, &obj->anim.velocity, &obj->anim.localPos);
+    PSVECAdd((Vec*)&obj->anim.localPosX, (Vec*)&obj->anim.velocityX, (Vec*)&obj->anim.localPosX);
 }
 
 void drakorhoverpad_initMain(GameObject* obj, void* desc)
@@ -986,33 +987,57 @@ void drakorhoverpad_initialise(void)
 {
 }
 
-ObjectDescriptor24 gDrakorHoverPadObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)drakorhoverpad_initialise,
-    (ObjectDescriptorCallback)drakorhoverpad_release,
-    0,
-    (ObjectDescriptorCallback)drakorhoverpad_initMain,
-    (ObjectDescriptorCallback)drakorhoverpad_updateMain,
-    (ObjectDescriptorCallback)drakorhoverpad_hitDetect,
-    (ObjectDescriptorCallback)drakorhoverpad_render,
-    (ObjectDescriptorCallback)drakorhoverpad_free,
-    (ObjectDescriptorCallback)drakorhoverpad_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drakorhoverpad_getExtraSize,
-    (ObjectDescriptorCallback)drakorhoverpad_canMount,
-    (ObjectDescriptorCallback)drakorhoverpad_getMountSide,
-    (ObjectDescriptorCallback)drakorhoverpad_getRiderPosition,
-    (ObjectDescriptorCallback)drakorhoverpad_canDismount,
-    (ObjectDescriptorCallback)drakorhoverpad_getDismountSide,
-    (ObjectDescriptorCallback)drakorhoverpad_getCameraPosition,
-    (ObjectDescriptorCallback)drakorhoverpad_getMountState,
-    (ObjectDescriptorCallback)drakorhoverpad_setMountState,
-    (ObjectDescriptorCallback)drakorhoverpad_getPlayerAnim,
-    (ObjectDescriptorCallback)drakorhoverpad_func13,
-    (ObjectDescriptorCallback)drakorhoverpad_getRacePosition,
-    (ObjectDescriptorCallback)drakorhoverpad_func15,
-    (ObjectDescriptorCallback)drakorhoverpad_handleRiderScale,
-    (ObjectDescriptorCallback)drakorhoverpad_func17,
+OBJECT_INIT_ADAPTER(gDrakorHoverPadObjDescriptorInitAdapter, drakorhoverpad_initMain, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrakorHoverPadObjDescriptorHitDetectAdapter, drakorhoverpad_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrakorHoverPadObjDescriptorRenderAdapter, drakorhoverpad_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrakorHoverPadObjDescriptorFreeAdapter, drakorhoverpad_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrakorHoverPadObjDescriptorTypeIdAdapter, drakorhoverpad_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrakorHoverPadObjDescriptorExtraSizeAdapter, drakorhoverpad_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gDrakorHoverPadObjDescriptorCanMountAdapter, drakorhoverpad_canMount, obj)
+VEHICLE_MOUNT_SIDE_ADAPTER(gDrakorHoverPadObjDescriptorMountSideAdapter, drakorhoverpad_getMountSide)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gDrakorHoverPadObjDescriptorCanDismountAdapter, drakorhoverpad_canDismount, obj)
+VEHICLE_DISMOUNT_SIDE_ADAPTER(gDrakorHoverPadObjDescriptorDismountSideAdapter, drakorhoverpad_getDismountSide)
+VEHICLE_MOUNT_STATE_ADAPTER(gDrakorHoverPadObjDescriptorMountStateAdapter, drakorhoverpad_getMountState)
+VEHICLE_SET_MOUNT_STATE_ADAPTER(gDrakorHoverPadObjDescriptorSetMountStateAdapter, drakorhoverpad_setMountState)
+VEHICLE_RACE_POSITION_ADAPTER(gDrakorHoverPadObjDescriptorRacePositionAdapter, drakorhoverpad_getRacePosition)
+VEHICLE_RESET_POSITION_ADAPTER(gDrakorHoverPadObjDescriptorResetPositionAdapter, drakorhoverpad_func15)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrakorHoverPadObjDescriptorAcquire, drakorhoverpad_initialise)
+
+VehicleDescriptor gDrakorHoverPadObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gDrakorHoverPadObjDescriptorAcquire,
+        drakorhoverpad_release,
+    },
+    {
+        0,
+        gDrakorHoverPadObjDescriptorInitAdapter,
+        drakorhoverpad_updateMain,
+        gDrakorHoverPadObjDescriptorHitDetectAdapter,
+        gDrakorHoverPadObjDescriptorRenderAdapter,
+        gDrakorHoverPadObjDescriptorFreeAdapter,
+        gDrakorHoverPadObjDescriptorTypeIdAdapter,
+        gDrakorHoverPadObjDescriptorExtraSizeAdapter,
+        gDrakorHoverPadObjDescriptorCanMountAdapter,
+        gDrakorHoverPadObjDescriptorMountSideAdapter,
+        drakorhoverpad_getRiderPosition,
+        gDrakorHoverPadObjDescriptorCanDismountAdapter,
+        gDrakorHoverPadObjDescriptorDismountSideAdapter,
+        drakorhoverpad_getCameraPosition,
+        gDrakorHoverPadObjDescriptorMountStateAdapter,
+        gDrakorHoverPadObjDescriptorSetMountStateAdapter,
+        drakorhoverpad_getPlayerAnim,
+        drakorhoverpad_func13,
+        gDrakorHoverPadObjDescriptorRacePositionAdapter,
+        gDrakorHoverPadObjDescriptorResetPositionAdapter,
+        drakorhoverpad_handleRiderScale,
+        drakorhoverpad_func17,
+    },
 };

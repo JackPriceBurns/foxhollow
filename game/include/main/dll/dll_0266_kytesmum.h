@@ -2,12 +2,13 @@
 #define MAIN_DLL_DLL_0266_KYTESMUM_H_
 
 #include "game/objects/object.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "global.h"
 #include "main/objanim_internal.h"
 #include "game/objects/object_setup.h"
 #include "main/objseq.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_sound.h"
+#include "main/dll/dll_002E_moveLib.h"
 
 typedef int (*KytesMumUpdateCallback)(GameObject* obj);
 
@@ -34,7 +35,8 @@ typedef struct KytesMumSetup
 
 typedef struct KytesMumRuntime
 {
-    u8 pad000[0x654];
+    MoveLibState moveLib;
+    u8 pad624[0x654 - 0x624];
     CharacterEyeAnimState eyeAnimState;
     u8 pad67C[0x8];
     ObjSoundState modelSoundState;
@@ -53,6 +55,11 @@ STATIC_ASSERT(offsetof(KytesMumSetup, yaw) == 0x18);
 STATIC_ASSERT(offsetof(KytesMumSetup, mode) == 0x19);
 STATIC_ASSERT(offsetof(KytesMumSetup, interactionRange) == 0x1A);
 STATIC_ASSERT(offsetof(KytesMumSetup, completionGameBit) == 0x1E);
+STATIC_ASSERT(sizeof(KytesMumRuntime) == 0x6EC);
+STATIC_ASSERT(offsetof(KytesMumRuntime, moveLib) == 0x0);
+STATIC_ASSERT(offsetof(KytesMumRuntime, eyeAnimState) == 0x654);
+STATIC_ASSERT(offsetof(KytesMumRuntime, modelSoundState) == 0x684);
+STATIC_ASSERT(offsetof(KytesMumRuntime, idleSfxTable) == 0x6D0);
 
 int kytesmum_getExtraSize(void);
 int kytesmum_getObjectTypeId(void);

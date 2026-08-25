@@ -2,7 +2,7 @@
 #include "main/vecmath.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_001D_effect4.h"
 
@@ -19,17 +19,20 @@ f32 gEffect4TickCyclePhaseSlow = 0.3f;
 
 
 
-ObjectDescriptor6 Effect4_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Effect4_initialise,
-    (ObjectDescriptorCallback)Effect4_release,
-    NULL,
-    (ObjectDescriptorCallback)Effect4_func03_nop,
-    (ObjectDescriptorCallback)Effect4_spawnObject,
-    (ObjectDescriptorCallback)Effect4_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect4Resource, Effect4_initialise, Effect4_spawnObject, Effect4_updateFrameState)
+
+EffectResourceDescriptor Effect4_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gEffect4ResourceAcquire,
+        Effect4_release,
+    },
+    {
+        NULL,
+        Effect4_func03_nop,
+        gEffect4ResourceSpawn,
+        gEffect4ResourceUpdate,
+    },
 };
 
 int Effect4_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

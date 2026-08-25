@@ -32,7 +32,7 @@ void battleDroidUpdate(GameObject* obj, EnemyState* state) {
 void battleDroidUpdateAttack(GameObject* obj, EnemyState* state) {
     GameObject* target = state->trackedObj;
 
-    baddieTurnTowardPoint(obj, state, target->anim.localPos.x, target->anim.localPos.z, 0xF, 0);
+    baddieTurnTowardPoint(obj, state, target->anim.localPosX, target->anim.localPosZ, 0xF, 0);
 }
 
 void battleDroidInit(GameObject* obj, EnemyState* state) {

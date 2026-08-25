@@ -29,30 +29,18 @@ typedef struct StaticCameraPlacement {
     u8 setupParam; /* 0x19 */
     u8 fov;
     u8 modeFlags;
-    union {
-        struct {
-            s16 rotX;
-            s16 rotY;
-            s16 rotZ;
-        } objectRotation;
-        struct {
-            s16 yaw;
-            s16 pitch;
-            s16 roll;
-        } cameraModeRotation;
-    };
+    s16 rotX;
+    s16 rotY;
+    s16 rotZ;
 } StaticCameraPlacement;
 
 STATIC_ASSERT(offsetof(StaticCameraPlacement, anchorId) == 0x18);
 STATIC_ASSERT(offsetof(StaticCameraPlacement, setupParam) == 0x19);
 STATIC_ASSERT(offsetof(StaticCameraPlacement, fov) == 0x1A);
 STATIC_ASSERT(offsetof(StaticCameraPlacement, modeFlags) == 0x1B);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, objectRotation.rotX) == 0x1C);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, objectRotation.rotY) == 0x1E);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, objectRotation.rotZ) == 0x20);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, cameraModeRotation.yaw) == 0x1C);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, cameraModeRotation.pitch) == 0x1E);
-STATIC_ASSERT(offsetof(StaticCameraPlacement, cameraModeRotation.roll) == 0x20);
+STATIC_ASSERT(offsetof(StaticCameraPlacement, rotX) == 0x1C);
+STATIC_ASSERT(offsetof(StaticCameraPlacement, rotY) == 0x1E);
+STATIC_ASSERT(offsetof(StaticCameraPlacement, rotZ) == 0x20);
 
 extern ObjectDescriptor gStaticCameraObjDescriptor;
 

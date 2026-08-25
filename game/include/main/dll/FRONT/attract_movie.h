@@ -52,23 +52,14 @@ typedef struct AttractMoviePlayer {
     s32 isOpen;
     u8 state;
     u8 internalState;
-    union {
-        u8 playFlag;
-        u8 playFlags;
-    };
+    u8 playFlags;
     u8 audioExists;
     s32 dvdError;
     s32 videoError;
     intptr_t isOnMemory;
-    union {
-        u8 *movieData;
-        void *loopFrame;
-    };
+    u8 *movieData;
     s32 initOffset;
-    union {
-        s32 initReadSize;
-        int frameStride;
-    };
+    s32 initReadSize;
     s32 initReadFrame;
     u32 curField;
     s64 retraceCount;
@@ -79,22 +70,10 @@ typedef struct AttractMoviePlayer {
     f32 targetVolume;
     f32 deltaVolume;
     s32 rampCount;
-    union {
-        s32 curAudioTrack;
-        s32 curVideoFrameNumber;
-    };
-    union {
-        s32 curVideoNumber;
-        s32 curAudioFrameNumber;
-    };
-    union {
-        s32 curAudioNumber;
-        AttractMovieTextureSet *curTextureSet;
-    };
-    union {
-        AttractMovieTextureSet *dispTextureSet;
-        AttractMovieAudioBuffer *curAudioBuffer;
-    };
+    s32 curVideoFrameNumber;
+    s32 curAudioFrameNumber;
+    AttractMovieTextureSet *curTextureSet;
+    AttractMovieAudioBuffer *curAudioBuffer;
     AttractMovieReadBuffer readBuffer[10];
     AttractMovieTextureSet textureSet[3];
     AttractMovieAudioBuffer audioBuffer[3];

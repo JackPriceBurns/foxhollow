@@ -2,7 +2,7 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/gamebits.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
 
@@ -120,19 +120,26 @@ void VFP_flamepoint_init(GameObject* obj, const VfpFlamePointPlacement* placemen
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
+OBJECT_INIT_ADAPTER(gVFP_flamepointObjDescriptorInitAdapter, VFP_flamepoint_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_flamepointObjDescriptorExtraSizeAdapter, VFP_flamepoint_getExtraSize)
+
 ObjectDescriptor gVFP_flamepointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gVFP_flamepointObjDescriptorInitAdapter,
+    VFP_flamepoint_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)VFP_flamepoint_init,
-    (ObjectDescriptorCallback)VFP_flamepoint_update,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorExtraSizeCallback)VFP_flamepoint_getExtraSize,
+    gVFP_flamepointObjDescriptorExtraSizeAdapter,
 };

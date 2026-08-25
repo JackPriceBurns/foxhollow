@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 
 typedef struct KaldachomSpitState {
     ModelLightStruct* light; /* 0x00 */

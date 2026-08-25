@@ -25,15 +25,10 @@ typedef struct GPSHShrineState {
     s16 orbitPhaseB;
     s16 orbitPhaseC;
     u8 solvedCount;
-    union {
-        u8 gameBitLatchStorage[4];
-        struct {
-            u8 unknown13;
-            u8 phase;
-            GPSHShrinePuzzleFlags puzzleFlags;
-            u8 unknown16;
-        };
-    };
+    u8 unknown13;
+    u8 phase;
+    GPSHShrinePuzzleFlags puzzleFlags;
+    u8 musicLatch;
     u8 unknown17;
 } GPSHShrineState;
 
@@ -46,11 +41,10 @@ STATIC_ASSERT(offsetof(GPSHShrineState, orbitPhaseA) == 0x0C);
 STATIC_ASSERT(offsetof(GPSHShrineState, orbitPhaseB) == 0x0E);
 STATIC_ASSERT(offsetof(GPSHShrineState, orbitPhaseC) == 0x10);
 STATIC_ASSERT(offsetof(GPSHShrineState, solvedCount) == 0x12);
-STATIC_ASSERT(offsetof(GPSHShrineState, gameBitLatchStorage) == 0x13);
 STATIC_ASSERT(offsetof(GPSHShrineState, unknown13) == 0x13);
 STATIC_ASSERT(offsetof(GPSHShrineState, phase) == 0x14);
 STATIC_ASSERT(offsetof(GPSHShrineState, puzzleFlags) == 0x15);
-STATIC_ASSERT(offsetof(GPSHShrineState, unknown16) == 0x16);
+STATIC_ASSERT(offsetof(GPSHShrineState, musicLatch) == 0x16);
 STATIC_ASSERT(offsetof(GPSHShrineState, unknown17) == 0x17);
 
 extern ObjectDescriptor gGPSHShrineObjDescriptor;

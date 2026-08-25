@@ -4,7 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 
 typedef struct SpiritDoorLockFlags {
     u8 unknown80 : 1;

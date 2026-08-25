@@ -114,19 +114,31 @@ void SoftBody_initialise(void)
     gSoftBodyFastPhase = 0.0f;
 }
 
+OBJECT_INIT_ADAPTER(gSoftBodyObjDescriptorInitAdapter, SoftBody_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSoftBodyObjDescriptorHitDetectAdapter, SoftBody_hitDetect)
+OBJECT_FREE_ADAPTER(gSoftBodyObjDescriptorFreeAdapter, SoftBody_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSoftBodyObjDescriptorTypeIdAdapter, SoftBody_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSoftBodyObjDescriptorExtraSizeAdapter, SoftBody_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSoftBodyObjDescriptorAcquire, SoftBody_initialise)
+
 ObjectDescriptor gSoftBodyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSoftBodyObjDescriptorAcquire,
+        SoftBody_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SoftBody_initialise,
-    (ObjectDescriptorCallback)SoftBody_release,
-    0,
-    (ObjectDescriptorCallback)SoftBody_init,
-    (ObjectDescriptorCallback)SoftBody_update,
-    (ObjectDescriptorCallback)SoftBody_hitDetect,
-    (ObjectDescriptorCallback)SoftBody_render,
-    (ObjectDescriptorCallback)SoftBody_free,
-    (ObjectDescriptorCallback)SoftBody_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)SoftBody_getExtraSize,
+    gSoftBodyObjDescriptorInitAdapter,
+    SoftBody_update,
+    gSoftBodyObjDescriptorHitDetectAdapter,
+    SoftBody_render,
+    gSoftBodyObjDescriptorFreeAdapter,
+    gSoftBodyObjDescriptorTypeIdAdapter,
+    gSoftBodyObjDescriptorExtraSizeAdapter,
 };

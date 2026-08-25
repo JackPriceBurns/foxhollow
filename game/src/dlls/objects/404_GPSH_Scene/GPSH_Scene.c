@@ -43,19 +43,32 @@ void gpshScene_release(void) {
 void gpshScene_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGPSHSceneObjDescriptorInitAdapter, gpshScene_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gGPSHSceneObjDescriptorUpdateAdapter, gpshScene_update)
+OBJECT_HIT_DETECT_ADAPTER(gGPSHSceneObjDescriptorHitDetectAdapter, gpshScene_hitDetect)
+OBJECT_FREE_ADAPTER(gGPSHSceneObjDescriptorFreeAdapter, gpshScene_free)
+OBJECT_TYPE_ID_ADAPTER(gGPSHSceneObjDescriptorTypeIdAdapter, gpshScene_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGPSHSceneObjDescriptorExtraSizeAdapter, gpshScene_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGPSHSceneObjDescriptorAcquire, gpshScene_initialise)
+
 ObjectDescriptor gGPSHSceneObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gGPSHSceneObjDescriptorAcquire,
+        gpshScene_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)gpshScene_initialise,
-    (ObjectDescriptorCallback)gpshScene_release,
-    0,
-    (ObjectDescriptorCallback)gpshScene_init,
-    (ObjectDescriptorCallback)gpshScene_update,
-    (ObjectDescriptorCallback)gpshScene_hitDetect,
-    (ObjectDescriptorCallback)gpshScene_render,
-    (ObjectDescriptorCallback)gpshScene_free,
-    (ObjectDescriptorCallback)gpshScene_getObjectTypeId,
-    gpshScene_getExtraSize,
+    gGPSHSceneObjDescriptorInitAdapter,
+    gGPSHSceneObjDescriptorUpdateAdapter,
+    gGPSHSceneObjDescriptorHitDetectAdapter,
+    gpshScene_render,
+    gGPSHSceneObjDescriptorFreeAdapter,
+    gGPSHSceneObjDescriptorTypeIdAdapter,
+    gGPSHSceneObjDescriptorExtraSizeAdapter,
 };

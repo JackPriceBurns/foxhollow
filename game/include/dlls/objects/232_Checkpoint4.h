@@ -33,6 +33,7 @@ void checkpoint4_init(GameObject* obj, const Checkpoint4Placement* placement);
 void checkpoint4_release(void);
 void checkpoint4_initialise(void);
 
-extern ObjectDescriptor11WithPadding gCheckpoint4ObjDescriptor;
+struct Checkpoint4ObjDescriptorType;
+extern struct Checkpoint4ObjDescriptorType gCheckpoint4ObjDescriptor;
 
 #endif /* DLLS_OBJECTS_232_CHECKPOINT4_H_ */

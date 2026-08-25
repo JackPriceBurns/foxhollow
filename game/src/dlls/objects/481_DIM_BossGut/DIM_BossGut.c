@@ -57,19 +57,32 @@ void DIM_BossGut_release(void) {
 void DIM_BossGut_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIM_BossGutObjDescriptorInitAdapter, DIM_BossGut_init, obj)
+OBJECT_UPDATE_ADAPTER(gDIM_BossGutObjDescriptorUpdateAdapter, DIM_BossGut_update)
+OBJECT_HIT_DETECT_ADAPTER(gDIM_BossGutObjDescriptorHitDetectAdapter, DIM_BossGut_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM_BossGutObjDescriptorFreeAdapter, DIM_BossGut_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM_BossGutObjDescriptorTypeIdAdapter, DIM_BossGut_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_BossGutObjDescriptorExtraSizeAdapter, DIM_BossGut_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM_BossGutObjDescriptorAcquire, DIM_BossGut_initialise)
+
 ObjectDescriptor gDIM_BossGutObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIM_BossGutObjDescriptorAcquire,
+        DIM_BossGut_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    DIM_BossGut_initialise,
-    DIM_BossGut_release,
-    0,
-    (ObjectDescriptorCallback)DIM_BossGut_init,
-    DIM_BossGut_update,
-    DIM_BossGut_hitDetect,
-    (ObjectDescriptorCallback)DIM_BossGut_render,
-    DIM_BossGut_free,
-    (ObjectDescriptorCallback)DIM_BossGut_getObjectTypeId,
-    DIM_BossGut_getExtraSize,
+    gDIM_BossGutObjDescriptorInitAdapter,
+    gDIM_BossGutObjDescriptorUpdateAdapter,
+    gDIM_BossGutObjDescriptorHitDetectAdapter,
+    DIM_BossGut_render,
+    gDIM_BossGutObjDescriptorFreeAdapter,
+    gDIM_BossGutObjDescriptorTypeIdAdapter,
+    gDIM_BossGutObjDescriptorExtraSizeAdapter,
 };

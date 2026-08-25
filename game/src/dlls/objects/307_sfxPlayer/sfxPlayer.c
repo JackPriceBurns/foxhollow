@@ -8,12 +8,9 @@
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/gamebits_api.h"
-#include "main/objseq_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
+#include "main/objseq.h"
 #include "main/vecmath.h"
 
 #define SFXPLAYER_GAME_BIT_NONE -1
@@ -212,19 +209,27 @@ void SfxPlayer_init(GameObject* obj, SfxPlayerPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gSfxPlayerObjDescriptorInitAdapter, SfxPlayer_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSfxPlayerObjDescriptorFreeAdapter, SfxPlayer_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSfxPlayerObjDescriptorExtraSizeAdapter, SfxPlayer_getExtraSize)
+
 ObjectDescriptor gSfxPlayerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSfxPlayerObjDescriptorInitAdapter,
+    SfxPlayer_update,
     0,
     0,
+    gSfxPlayerObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SfxPlayer_init,
-    (ObjectDescriptorCallback)SfxPlayer_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)SfxPlayer_free,
-    0,
-    SfxPlayer_getExtraSize,
+    gSfxPlayerObjDescriptorExtraSizeAdapter,
 };

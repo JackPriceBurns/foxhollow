@@ -8,19 +8,25 @@
 void setuppoint_init(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSetuppointObjDescriptorInitAdapter, setuppoint_init)
+
 ObjectDescriptor gSetuppointObjDescriptor = {
-    0,                                         /* reserved0 */
-    0,                                         /* reserved1 */
-    0,                                         /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,          /* slotCountAndFlags */
-    0,                                         /* initialise */
-    0,                                         /* release */
-    0,                                         /* slot02 */
-    (ObjectDescriptorCallback)setuppoint_init, /* init */
-    0,                                         /* update */
-    0,                                         /* hitDetect */
-    0,                                         /* render */
-    0,                                         /* free */
-    0,                                         /* getObjectTypeId */
-    0,                                         /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSetuppointObjDescriptorInitAdapter,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 };

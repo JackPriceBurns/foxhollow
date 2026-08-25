@@ -7,7 +7,7 @@ struct RomCurveDef;
 #include "types.h"
 #include "main/curve.h"
 #include "main/dll/curve_walker.h"
-#include "main/dll/objfsa_query_api.h"
+#include "main/dll/objfsa_query.h"
 
 #define OBJFSA_PATCHGROUP_PATCH_COUNT 4
 

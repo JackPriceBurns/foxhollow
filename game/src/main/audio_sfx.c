@@ -1,30 +1,23 @@
 #include "main/audio/sfx.h"
 #include "musyx/mcmd.h"
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "main/audio_internal.h"
 #include "main/camera.h"
 #include "main/gamebits.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "sys/objects.h"
-#include "main/objseq_api.h"
+#include "main/objseq.h"
 #include "main/vecmath.h"
 #define SYNTH_INTERNAL_USE_PROJECT_TYPES
 #include "src/musyx/runtime/synth_internal.h"
 #include "game/objects/object.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/gamebit_ids.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "dolphin/mtx/vec.h"
-#include "main/audio/music_api.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/music.h"
+#include "main/audio/audio_control.h"
 
 u8 gSfxTriggerExtraTable[8] = {1, 2, 4, 8, 0x10, 0x20, 0x40, 0};
 
@@ -503,7 +496,7 @@ void Sfx_PlayFromObjectEx(GameObject* obj, Vec* pos, u32 channel, u16 sfxId)
         return;
     }
     if (obj != 0 && pos == NULL) {
-        pos = &obj->anim.worldPos;
+        pos = (Vec3f*)&obj->anim.worldPosX;
         tracksObj = 1;
     }
     if (pos != NULL) {
@@ -929,13 +922,13 @@ static f32 Sfx_GetListenerRelativeDistance(Vec* soundPos, Vec* outDelta)
 
     if (player != NULL && seqNo == 0)
     {
-        listener = &player->anim.worldPos;
+        listener = (Vec3f*)&player->anim.worldPosX;
     }
     else if (slot != NULL)
     {
         if (player != NULL)
         {
-            PSVECSubtract(&slot->worldPosition, &player->anim.worldPos, &v);
+            PSVECSubtract((Vec*)&slot->worldX, (Vec*)&player->anim.worldPosX, &v);
             t = (PSVECMag(&v) - 150.0f) / 250.0f;
             if (1.0 < (t > 0.0 ? t : 0.0))
             {
@@ -946,12 +939,12 @@ static f32 Sfx_GetListenerRelativeDistance(Vec* soundPos, Vec* outDelta)
                 t2 = (t > 0.0 ? t : 0.0);
             }
             PSVECScale(&v, &v, t2);
-            PSVECAdd(&player->anim.worldPos, &v, &v);
+            PSVECAdd((Vec*)&player->anim.worldPosX, &v, &v);
             listener = &v;
         }
         else
         {
-            listener = &slot->worldPosition;
+            listener = (Vec3f*)&slot->worldX;
         }
     }
     else

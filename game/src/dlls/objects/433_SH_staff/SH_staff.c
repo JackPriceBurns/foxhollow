@@ -9,20 +9,20 @@
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/obj_path.h"
 #include "main/objhits.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/obj_trigger.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/player_staff_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player_staff.h"
+#include "main/dll/tricky.h"
 #include "main/map_load.h"
 
 enum ShStaffPhase {
@@ -452,10 +452,16 @@ static void sh_staff_update(GameObject* obj) {
     }
 }
 
+OBJECT_EXTRA_SIZE_ADAPTER(gSH_staffObjDescriptorExtraSizeAdapter, sh_staff_getExtraSize)
+
 ObjectDescriptor gSH_staffObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .update = (ObjectDescriptorCallback)sh_staff_update,
-    .render = (ObjectDescriptorCallback)sh_staff_render,
-    .free = (ObjectDescriptorCallback)sh_staff_free,
-    .getExtraSize = sh_staff_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .update = sh_staff_update,
+    .render = sh_staff_render,
+    .free = sh_staff_free,
+    .getExtraSize = gSH_staffObjDescriptorExtraSizeAdapter,
+};;

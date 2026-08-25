@@ -4,7 +4,7 @@
 #include "game/objects/object_setup.h"
 #include "types.h"
 #include "global.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/voxmaps.h"
 #include "main/dll/curves_collision_state.h"
 
@@ -144,10 +144,7 @@ typedef struct BaddieState {
     f32 nudgePosZ;
     f32 nudgeYaw; /* anim.rotX delta added as nudgeYawProgress ramps */
     BaddieStateExitFn stateExitFn; /* run once on control-mode change, then replaced by nextStateExitFn */
-    union {
-        int stateHandler; /* player state callback address */
-        BaddieStateExitFn nextStateExitFn;
-    };
+    BaddieStateExitFn nextStateExitFn;
     u8 unk30C[4];
     s32 queuedBitMask; /* 0x310: rebuilt every tick - zeroed, then OR'd with (1 << id)
         for each of the queuedBitCount queued bit ids; readers test bits 0x1/0x1000/0x4000 */

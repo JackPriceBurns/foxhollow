@@ -3,13 +3,13 @@
  */
 #include "main/dll/dll_004D_cameramodenpcspeak.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
 #include "main/frame_timing.h"
-#include "main/maketex_api.h"
+#include "main/maketex.h"
 #include "main/mm.h"
 #include "main/object_transform.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/vecmath.h"
 #include "main/obj_query.h"
 
@@ -121,10 +121,10 @@ void CameraModeNpcSpeak_update(CameraObject* camera) {
                                    (GameObject*)camera->anim.parent);
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeNpcSpeakDescriptorAcquire, CameraModeNpcSpeak_initialise)
+
 CameraModeNpcSpeakDescriptor gCameraModeNpcSpeakDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeNpcSpeak_initialise,
-    CameraModeNpcSpeak_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeNpcSpeakDescriptorAcquire, CameraModeNpcSpeak_release },
     NULL,
     CameraModeNpcSpeak_init,
     CameraModeNpcSpeak_update,
@@ -293,7 +293,7 @@ void CameraModeNpcSpeak_init(CameraObject* camera, int unused, CameraModeNpcSpea
 
     CameraModeNpcSpeak_solveOrbitPosition((GameObject*)camera->anim.targetObj, &cameraPos[0], &cameraPos[1],
                                           &cameraPos[2]);
-    camcontrol_traceMove(&camera->anim.worldPosX, cameraPos, &gCameraModeNpcSpeakState->cameraX, (u8*)&traceWork, 3,
+    camcontrol_traceMove(&camera->anim.worldPosX, cameraPos, &gCameraModeNpcSpeakState->cameraX, &traceWork, 3,
                          1, 1, 4.0f);
 }
 

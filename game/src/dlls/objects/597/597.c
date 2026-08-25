@@ -3,7 +3,7 @@
  * collision, movement, and rendering helpers.
  */
 #include "dlls/object_descriptor.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/gx/GXEnum.h"
 #include "dolphin/gx/GXGeometry.h"
@@ -15,32 +15,27 @@
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/audio/sfx.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
 #include "main/audio/sfx_ids.h"
-#include "main/audio/sfx_play_api.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
 #include "main/camera_interface.h"
 #include "main/checkpoint_interface.h"
-#include "main/dll/DR/DRpickup.h"
 #include "main/dll/SP/dll_0287_spscarab.h"
 #include "main/dll/dll_0015_curves.h"
 #include "main/dll/dll_0255_snowbike.h"
 #include "main/dll/dll_801e991c.h"
 #include "main/dll/drhightop.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/path_control_interface.h"
 #include "main/dll/ppcwgpipe_struct.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
-#include "main/gametext_show_api.h"
+#include "main/gametext_show.h"
 #include "main/lightmap.h"
-#include "main/lightmap_api.h"
-#include "main/maketex_api.h"
+#include "main/maketex.h"
 #include "main/mm.h"
 #include "main/objtype.h"
 #include "main/obj_path.h"
@@ -49,21 +44,19 @@
 #include "main/objhits.h"
 #include "main/objseq.h"
 #include "main/pad.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/shader_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/shader.h"
 #include "main/sky.h"
 #include "main/texture.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "string.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_geom_api.h"
-#include "track/intersect_render_setup_api.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_geom.h"
+#include "track/intersect_render_setup.h"
 #include "main/dll/DR/DRcradle.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
 
 #define SNOWBIKE_OBJGROUP           0xa
 #define SNOWBIKE_AIRMETER_BGTEXTURE 0x5cd
@@ -71,15 +64,7 @@
 const GXColor lbl_803E5AE0 = {5, 5, 5, 5};
 const GXColor sSnowBikeTrailTevColor = {0x20, 0x20, 0x20, 0x80};
 
-typedef union SnowBikeCheckpointRank
-{
-    CheckpointRankItem item;
-    u8 bytes[0x38];
-} SnowBikeCheckpointRank;
-
-STATIC_ASSERT(sizeof(SnowBikeCheckpointRank) == 0x38);
-
-SnowBikeCheckpointRank gSnowBikeLeaderRankItem;
+CheckpointRouteState gSnowBikeLeaderRouteState;
 
 f32 gSnowBikePathSetupPoints[19] = {
     -6.5f, 0.0f,  -13.0f, 6.5f, 0.0f, -13.0f, 6.5f, 0.0f, 13.0f, -6.5f,
@@ -634,7 +619,7 @@ f32 SnowBike_GetRouteIntensity(GameObject* obj, uintptr_t state)
 
     bikeState = (SnowBikeState*)state;
     if ((gSnowBikeLeaderRouteRank == -1) ||
-        (rank = (*gCheckpointInterface)->getRouteRank(&bikeState->rankItem), gSnowBikeLeaderRouteRank > rank))
+        (rank = (*gCheckpointInterface)->getRouteRank(&bikeState->routeState), gSnowBikeLeaderRouteRank > rank))
     {
         if (gSnowBikeLeaderRouteRank == -1)
         {
@@ -644,13 +629,10 @@ f32 SnowBike_GetRouteIntensity(GameObject* obj, uintptr_t state)
         }
         else
         {
-            /* state+0x28 is the CheckpointRankItem passed to getRouteRank;
-             * its linkDepth (+0x1C = 0x44) and routeProgress (+0xC = 0x34) are
-             * read here. These stay raw: spelling them as nested-struct members
-             * (rankItem.linkDepth / rankItem.routeProgress) shifts codegen. */
-            templateMetric = 100.0f * (f32) * (s32*)(gSnowBikeLeaderRankItem.bytes + 0x1c) +
-                             100.0f * *(f32*)(gSnowBikeLeaderRankItem.bytes + 0xc);
-            stateMetric = 100.0f * (f32)bikeState->unk044 + 100.0f * bikeState->unk034;
+            templateMetric = 100.0f * (f32)gSnowBikeLeaderRouteState.linkDepth +
+                             100.0f * gSnowBikeLeaderRouteState.routeProgress;
+            stateMetric = 100.0f * (f32)bikeState->routeState.linkDepth +
+                          100.0f * bikeState->routeState.routeProgress;
             d = templateMetric - stateMetric;
             d = (d >= 0.0f) ? d : -d;
         }
@@ -680,7 +662,7 @@ f32 SnowBike_GetRouteIntensity(GameObject* obj, uintptr_t state)
     }
     else
     {
-        rank = (*gCheckpointInterface)->getRouteRank(&bikeState->rankItem);
+        rank = (*gCheckpointInterface)->getRouteRank(&bikeState->routeState);
         if (rank == 2)
         {
             result = 7.0f;
@@ -764,7 +746,7 @@ int SnowBike_UpdateSwingBlend(GameObject* obj, SnowBikeState* state)
 
     (*gCheckpointInterface)->getRouteHeading(obj, &s->routeState);
 
-    (*gCheckpointInterface)->queueRouteRankItem(&s->rankItem);
+    (*gCheckpointInterface)->queueRouteRankItem(&s->routeState);
 
     if (hitResult != 0)
     {
@@ -844,7 +826,7 @@ int SnowBike_UpdateAttachedPosition(GameObject* obj, SnowBikeState* state)
             hitResult = (*gCheckpointInterface)
                             ->advanceRoute((u8*)state, &s->routeState, -s->localVelZ * timeDelta, s->routeMode, 1, 0);
             (*gCheckpointInterface)->getRouteHeading(obj, &s->routeState);
-            (*gCheckpointInterface)->queueRouteRankItem(&s->rankItem);
+            (*gCheckpointInterface)->queueRouteRankItem(&s->routeState);
             if (hitResult != 0)
             {
                 return 0;
@@ -884,7 +866,7 @@ int SnowBike_UpdateAttachedPosition(GameObject* obj, SnowBikeState* state)
                     ->advanceRoute((u8*)state, &s->routeState, timeDelta * SnowBike_GetRouteIntensity(obj, (uintptr_t)state), s->routeMode,
                                    1, 0);
     (*gCheckpointInterface)->getRouteHeading(obj, &s->routeState);
-    (*gCheckpointInterface)->queueRouteRankItem(&s->rankItem);
+    (*gCheckpointInterface)->queueRouteRankItem(&s->routeState);
     if (hitResult != 0)
     {
         return 0;
@@ -992,8 +974,8 @@ void SnowBike_UpdateRouteFollowing(GameObject* obj, SnowBikeState* st)
             {
                 gameTextShow(0x475);
             }
-            (*gCheckpointInterface)->queueRouteRankItem(&st->rankItem);
-            st->routeRank = (s8)(*gCheckpointInterface)->getRouteRank(&st->rankItem);
+            (*gCheckpointInterface)->queueRouteRankItem(&st->routeState);
+            st->routeRank = (s8)(*gCheckpointInterface)->getRouteRank(&st->routeState);
             routeRank = st->routeRank;
             if ((routeRank == 1) && (gSnowBikeLeaderRouteRank == -1))
             {
@@ -1002,8 +984,8 @@ void SnowBike_UpdateRouteFollowing(GameObject* obj, SnowBikeState* st)
             else
             {
                 gSnowBikeLeaderRouteRank = routeRank;
-                gSnowBikeLeaderRankItem.item.linkDepth = st->routeState.linkDepth;
-                gSnowBikeLeaderRankItem.item.routeProgress = st->routeState.routeProgress;
+                gSnowBikeLeaderRouteState.linkDepth = st->routeState.linkDepth;
+                gSnowBikeLeaderRouteState.routeProgress = st->routeState.routeProgress;
             }
         }
         gameBitSet = mainGetBit(st->gameBitPtr[1]);
@@ -1245,8 +1227,8 @@ void SnowBike_UpdateCollisionResponse(GameObject* obj, uintptr_t stateRaw)
         case 0x15:
             if (st->collisionFxTimer == zero)
             {
-                PSVECNormalize(&obj->anim.velocity, (Vec*)velNrm);
-                dot = PSVECDotProduct((Vec*)velNrm, &hitObj->anim.velocity);
+                PSVECNormalize((Vec*)&obj->anim.velocityX, (Vec*)velNrm);
+                dot = PSVECDotProduct((Vec*)velNrm, (Vec*)&hitObj->anim.velocityX);
                 PSVECScale((Vec*)&st->localVelX, (Vec*)&st->localVelX, dot * st->collisionBounceScale + 1.0f);
                 st->localVelY *= 0.2f;
                 st->collisionFxTimer = 20.0f;
@@ -1422,7 +1404,7 @@ void SnowBike_UpdateExhaustFx(GameObject* obj, uintptr_t stateRaw)
             if ((st->routeFlags.b02 == 0) && (st->timer <= 0.0f))
             {
                 st->timer = (f32)(s32)randomGetRange(5, 10);
-                if (PSVECMag(&obj->anim.velocity) > 3.0f)
+                if (PSVECMag((Vec*)&obj->anim.velocityX) > 3.0f)
                 {
                     doRumble((f32)(s32)randomGetRange(1, 3));
                 }
@@ -1517,7 +1499,6 @@ static f32 SnowBike_GetStickAngleDeg(f32 stickX, f32 stickY)
 void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state)
 {
     SnowBikeState* st;
-    PickupFlags* flags;
     int origBit4;
     f32 rate;
     f32 target;
@@ -1526,34 +1507,33 @@ void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state)
     f32 vec_args[4];
 
     st = (SnowBikeState*)state;
-    flags = (PickupFlags*)&st->routeFlags;
-    origBit4 = flags->b4;
+    origBit4 = st->routeFlags.impulseLatch;
 
     if ((st->buttonsHeld & 0x100) != 0)
     {
-        flags->b6 = 1;
+        st->routeFlags.pathActive = 1;
     }
     else
     {
-        flags->b6 = 0;
+        st->routeFlags.pathActive = 0;
     }
 
     if ((st->buttonsHeld & 0x200) != 0)
     {
-        flags->b4 = 1;
+        st->routeFlags.impulseLatch = 1;
     }
     else
     {
-        flags->b4 = 0;
+        st->routeFlags.impulseLatch = 0;
     }
 
-    if ((origBit4 == 0) && (flags->b4 != 0))
+    if ((origBit4 == 0) && (st->routeFlags.impulseLatch != 0))
     {
         Sfx_PlayFromObject((GameObject*)obj, SFXTRIG_bblast16);
     }
 
     target = 0.0f;
-    if (flags->b6 != 0)
+    if (st->routeFlags.pathActive != 0)
     {
         target = st->unk538;
     }
@@ -1562,7 +1542,7 @@ void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state)
     st->engineFxLevel = clampedRate * timeDelta + st->engineFxLevel;
 
     target = 0.0f;
-    if (flags->b4 != 0)
+    if (st->routeFlags.impulseLatch != 0)
     {
         f32 vy53c = st->unk53C;
         f32 v49c = st->localVelZ;
@@ -1630,7 +1610,7 @@ void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state)
         st->yawCurrent = (s16)((f32)delta * st->unk558 + (f32)(s32)st->yawCurrent);
     }
 
-    if (flags->b7 != 0)
+    if (st->routeFlags.resetLatch != 0)
     {
         st->unk584 = (-st->unk570) * timeDelta + st->unk584;
         {
@@ -1640,7 +1620,7 @@ void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state)
         *(s16*)(obj + 0x2) = (f32)(s32) * (s16*)(obj + 0x2) + st->unk584 * timeDelta;
     }
 
-    if (flags->b1 == 0)
+    if (st->routeFlags.b02 == 0)
     {
         vec_args[0] = st->unk414;
         vec_args[1] = st->localVelZ;
@@ -2062,7 +2042,7 @@ void SnowBike_hitDetect(GameObject* obj)
          arrayIndexOf((int*)gSnowBikeHitObjectIdTable, 10, other->anim.romDefNo) == -1) ||
         (state->linkedObject != NULL && state->collisionFxDamping <= 1.0f))
     {
-    mag = PSVECMag(&obj->anim.velocity);
+    mag = PSVECMag((Vec*)&obj->anim.velocityX);
     if (mag > 1.0f)
     {
         if (!state->routeFlags.b02)
@@ -2438,9 +2418,9 @@ void SnowBike_init(GameObject* obj, SnowBikePlacement* params, int flag)
     {
         s->routeFlags.b02 = 1;
     }
-    s->checkpointIndexA = -1;
-    s->checkpointIndexB = -1;
-    s->checkpointIndexC = -1;
+    s->routeState.startCheckpointId = -1;
+    s->routeState.matchedCheckpointId = -1;
+    s->routeState.currentCheckpointId = -1;
     s->routeFilter = params->param1c;
     s->routeMode = params->param1d;
     s->posSnapshotX = obj->anim.localPosX;
@@ -2585,33 +2565,54 @@ void SnowBike_initialise(void)
     }
 }
 
-ObjectDescriptor24 gSnowBikeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)SnowBike_initialise,
-    (ObjectDescriptorCallback)SnowBike_release,
-    NULL,
-    (ObjectDescriptorCallback)SnowBike_init,
-    (ObjectDescriptorCallback)SnowBike_update,
-    (ObjectDescriptorCallback)SnowBike_hitDetect,
-    (ObjectDescriptorCallback)SnowBike_render,
-    (ObjectDescriptorCallback)SnowBike_free,
-    (ObjectDescriptorCallback)SnowBike_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)SnowBike_getExtraSize,
-    (ObjectDescriptorCallback)SnowBike_canMount,
-    (ObjectDescriptorCallback)SnowBike_getMountSide,
-    (ObjectDescriptorCallback)SnowBike_getRiderPosition,
-    (ObjectDescriptorCallback)SnowBike_canDismount,
-    (ObjectDescriptorCallback)SnowBike_getDismountSide,
-    (ObjectDescriptorCallback)SnowBike_getCameraPosition,
-    (ObjectDescriptorCallback)SnowBike_getMountState,
-    (ObjectDescriptorCallback)SnowBike_setMountState,
-    (ObjectDescriptorCallback)SnowBike_getPlayerAnim,
-    (ObjectDescriptorCallback)SnowBike_func13,
-    (ObjectDescriptorCallback)SnowBike_getRacePosition,
-    (ObjectDescriptorCallback)SnowBike_resetToRomListPosition,
-    (ObjectDescriptorCallback)SnowBike_func16,
-    (ObjectDescriptorCallback)SnowBike_func17,
+OBJECT_INIT_ADAPTER(gSnowBikeObjDescriptorInitAdapter, SnowBike_init, obj, placement, flags)
+OBJECT_RENDER_ADAPTER(gSnowBikeObjDescriptorRenderAdapter, SnowBike_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gSnowBikeObjDescriptorFreeAdapter, SnowBike_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSnowBikeObjDescriptorTypeIdAdapter, SnowBike_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSnowBikeObjDescriptorExtraSizeAdapter, SnowBike_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gSnowBikeObjDescriptorCanMountAdapter, SnowBike_canMount, obj)
+VEHICLE_MOUNT_SIDE_ADAPTER(gSnowBikeObjDescriptorMountSideAdapter, SnowBike_getMountSide, obj)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gSnowBikeObjDescriptorCanDismountAdapter, SnowBike_canDismount)
+VEHICLE_DISMOUNT_SIDE_ADAPTER(gSnowBikeObjDescriptorDismountSideAdapter, SnowBike_getDismountSide)
+VEHICLE_RIDER_SCALE_ADAPTER(gSnowBikeObjDescriptorRiderScaleAdapter, SnowBike_func16)
+VEHICLE_LOOK_TARGET_ADAPTER(gSnowBikeObjDescriptorLookTargetAdapter, SnowBike_func17)
+
+RESOURCE_ACQUIRE_ADAPTER(gSnowBikeObjDescriptorAcquire, SnowBike_initialise)
+
+VehicleDescriptor gSnowBikeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gSnowBikeObjDescriptorAcquire,
+        SnowBike_release,
+    },
+    {
+        NULL,
+        gSnowBikeObjDescriptorInitAdapter,
+        SnowBike_update,
+        SnowBike_hitDetect,
+        gSnowBikeObjDescriptorRenderAdapter,
+        gSnowBikeObjDescriptorFreeAdapter,
+        gSnowBikeObjDescriptorTypeIdAdapter,
+        gSnowBikeObjDescriptorExtraSizeAdapter,
+        gSnowBikeObjDescriptorCanMountAdapter,
+        gSnowBikeObjDescriptorMountSideAdapter,
+        SnowBike_getRiderPosition,
+        gSnowBikeObjDescriptorCanDismountAdapter,
+        gSnowBikeObjDescriptorDismountSideAdapter,
+        SnowBike_getCameraPosition,
+        SnowBike_getMountState,
+        SnowBike_setMountState,
+        SnowBike_getPlayerAnim,
+        SnowBike_func13,
+        SnowBike_getRacePosition,
+        SnowBike_resetToRomListPosition,
+        gSnowBikeObjDescriptorRiderScaleAdapter,
+        gSnowBikeObjDescriptorLookTargetAdapter,
+    },
 };

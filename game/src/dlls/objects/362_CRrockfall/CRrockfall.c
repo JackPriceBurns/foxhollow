@@ -3,15 +3,14 @@
 
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objfx.h"
 #include "main/object_render.h"
 #include "main/resource.h"
-#include "main/track_dolphin_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/track_dolphin.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 /* anim.romDefNo variants shared by CRrockfall and IMIcicle. */
@@ -267,19 +266,31 @@ CrRockfallConfig gCrRockfallConfigTable[CR_ROCKFALL_CONFIG_COUNT] = {
     {CR_ROCKFALL_SEQ_BIG, 0x3E3, 30.0f},
 };
 
+OBJECT_INIT_ADAPTER(gCRrockfallObjDescriptorInitAdapter, crrockfall_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCRrockfallObjDescriptorHitDetectAdapter, crrockfall_hitDetect)
+OBJECT_FREE_ADAPTER(gCRrockfallObjDescriptorFreeAdapter, crrockfall_free)
+OBJECT_TYPE_ID_ADAPTER(gCRrockfallObjDescriptorTypeIdAdapter, crrockfall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCRrockfallObjDescriptorExtraSizeAdapter, crrockfall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCRrockfallObjDescriptorAcquire, crrockfall_initialise)
+
 ObjectDescriptor gCRrockfallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCRrockfallObjDescriptorAcquire,
+        crrockfall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)crrockfall_initialise,
-    (ObjectDescriptorCallback)crrockfall_release,
-    0,
-    (ObjectDescriptorCallback)crrockfall_init,
-    (ObjectDescriptorCallback)crrockfall_update,
-    (ObjectDescriptorCallback)crrockfall_hitDetect,
-    (ObjectDescriptorCallback)crrockfall_render,
-    (ObjectDescriptorCallback)crrockfall_free,
-    (ObjectDescriptorCallback)crrockfall_getObjectTypeId,
-    crrockfall_getExtraSize,
+    gCRrockfallObjDescriptorInitAdapter,
+    crrockfall_update,
+    gCRrockfallObjDescriptorHitDetectAdapter,
+    crrockfall_render,
+    gCRrockfallObjDescriptorFreeAdapter,
+    gCRrockfallObjDescriptorTypeIdAdapter,
+    gCRrockfallObjDescriptorExtraSizeAdapter,
 };

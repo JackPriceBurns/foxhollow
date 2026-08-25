@@ -11,9 +11,9 @@
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/partfx_interface.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gamebits_api.h"
-#include "main/objprint_render_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
+#include "main/objprint_render.h"
 #include "main/vecmath.h"
 
 #define DIM_ICE_WALL_SILENT_MAP_ID 7433
@@ -109,19 +109,26 @@ void dimicewall_init(GameObject* obj, DimIceWallPlacement* placement) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gDIMIceWallObjDescriptorInitAdapter, dimicewall_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMIceWallObjDescriptorExtraSizeAdapter, dimicewall_getExtraSize)
+
 ObjectDescriptor gDIMIceWallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDIMIceWallObjDescriptorInitAdapter,
+    dimicewall_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dimicewall_init,
-    (ObjectDescriptorCallback)dimicewall_update,
-    0,
-    0,
-    0,
-    0,
-    dimicewall_getExtraSize,
+    gDIMIceWallObjDescriptorExtraSizeAdapter,
 };

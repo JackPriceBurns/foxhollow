@@ -20,10 +20,10 @@ void projlightning3_release(void) {
 void projlightning3_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjlightning3ResourceDescriptorAcquire, projlightning3_initialise)
+
 Projlightning3ResourceDescriptor gProjlightning3ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning3_initialise,
-    projlightning3_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjlightning3ResourceDescriptorAcquire, projlightning3_release },
     NULL,
     projlightning3_doUnsupported,
 };

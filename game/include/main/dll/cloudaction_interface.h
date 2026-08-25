@@ -17,7 +17,7 @@ typedef void (*CloudActionFunc11NopFn)(int value);
 typedef void (*CloudActionFunc12NopFn)(f32 a, f32 b);
 
 typedef struct CloudActionInterface {
-    u8 pad00[0x04];
+    void* reserved00;
     CloudActionUpdateFn updateEnvfxAct;
     CloudActionOnMapSetupFn onMapSetup;
     CloudActionScrollTextureFn scrollTexture;

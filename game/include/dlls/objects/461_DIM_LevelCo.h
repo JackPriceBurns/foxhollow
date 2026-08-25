@@ -5,35 +5,28 @@
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 #include "global.h"
+#include "main/byte_flags.h"
+#include "main/gamebit_latch.h"
 
 /* The sole active-target retail placement is exactly the common six-word head. */
 typedef ObjPlacement DimLevelControlPlacement;
 
 typedef struct DimLevelControlState {
     f32 messageTimer;
-    s32 musicLatchMask;
+    int musicLatch;
     u8 lostInBlizzardState;
     u8 unknown09;
     s16 dayNightMusicTrigger;
     u8 lostInBlizzardDialogueFired;
     u8 dinoHornGroupEnabled;
-    union {
-        u8 statusFlags;
-        struct {
-            u8 statusGameBitD0B : 1;
-            u8 statusGameBitD0C : 1;
-            u8 statusGameBitD0D : 1;
-            u8 statusGameBitD0E : 1;
-            u8 cannonStatusGameBit : 1;
-        };
-    };
+    ByteFlags statusFlags;
     u8 unknown0F;
 } DimLevelControlState;
 
 STATIC_ASSERT(sizeof(DimLevelControlPlacement) == 0x18);
 
 STATIC_ASSERT(offsetof(DimLevelControlState, messageTimer) == 0x00);
-STATIC_ASSERT(offsetof(DimLevelControlState, musicLatchMask) == 0x04);
+STATIC_ASSERT(offsetof(DimLevelControlState, musicLatch) == 0x04);
 STATIC_ASSERT(offsetof(DimLevelControlState, lostInBlizzardState) == 0x08);
 STATIC_ASSERT(offsetof(DimLevelControlState, unknown09) == 0x09);
 STATIC_ASSERT(offsetof(DimLevelControlState, dayNightMusicTrigger) == 0x0A);

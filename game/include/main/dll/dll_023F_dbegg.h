@@ -5,8 +5,6 @@
 #include "game/objects/object_setup.h"
 #include "dlls/object_descriptor.h"
 
-extern ObjectDescriptor12 gDB_eggObjDescriptor;
-
 typedef struct DbeggPlacement
 {
     ObjPlacement base;    /* 0x00 */
@@ -25,6 +23,18 @@ typedef struct DbeggPlacement
     s16 counterGameBit;   /* 0x2C: bit incremented on delivery (>0 = active) */
     s8 unk2E;             /* 0x2E */
 } DbeggPlacement;
+
+typedef struct DbeggInterface {
+    OBJECT_INTERFACE_FIELDS;
+    int (*isActive)(GameObject* obj);
+    int (*setLaunchVelocity)(GameObject* obj, f32* velocity);
+} DbeggInterface;
+
+OBJECT_DESCRIPTOR_TYPE(DbeggDescriptor, DbeggInterface);
+
+extern DbeggDescriptor gDB_eggObjDescriptor;
+
+#define DB_EGG_INTERFACE(egg) ((DbeggInterface*)*((GameObject*)(egg))->anim.dll)
 
 STATIC_ASSERT(offsetof(DbeggPlacement, base) == 0x00);
 STATIC_ASSERT(offsetof(DbeggPlacement, forceRadiusByte) == 0x19);

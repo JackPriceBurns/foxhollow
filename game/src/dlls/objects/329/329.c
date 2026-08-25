@@ -10,8 +10,8 @@
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/music_api.h"
-#include "main/maketex_sequence_api.h"
+#include "main/audio/music.h"
+#include "main/maketex_sequence.h"
 #include "main/obj_message.h"
 
 #define CFWINDLIFT_OBJECT_GROUP     0x49
@@ -416,19 +416,31 @@ void windLift_release(void) {
 void windLift_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWindLiftObjDescriptorInitAdapter, windLift_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWindLiftObjDescriptorHitDetectAdapter, windLift_hitDetect)
+OBJECT_FREE_ADAPTER(gWindLiftObjDescriptorFreeAdapter, windLift_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWindLiftObjDescriptorTypeIdAdapter, windLift_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWindLiftObjDescriptorExtraSizeAdapter, windLift_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWindLiftObjDescriptorAcquire, windLift_initialise)
+
 ObjectDescriptor gWindLiftObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWindLiftObjDescriptorAcquire,
+        windLift_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)windLift_initialise,
-    (ObjectDescriptorCallback)windLift_release,
-    0,
-    (ObjectDescriptorCallback)windLift_init,
-    (ObjectDescriptorCallback)windLift_update,
-    (ObjectDescriptorCallback)windLift_hitDetect,
-    (ObjectDescriptorCallback)windLift_render,
-    (ObjectDescriptorCallback)windLift_free,
-    (ObjectDescriptorCallback)windLift_getObjectTypeId,
-    windLift_getExtraSize,
+    gWindLiftObjDescriptorInitAdapter,
+    windLift_update,
+    gWindLiftObjDescriptorHitDetectAdapter,
+    windLift_render,
+    gWindLiftObjDescriptorFreeAdapter,
+    gWindLiftObjDescriptorTypeIdAdapter,
+    gWindLiftObjDescriptorExtraSizeAdapter,
 };

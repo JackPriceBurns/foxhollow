@@ -1,13 +1,11 @@
 #include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/dll/WC/dll_0296_wctempledia.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/object_render.h"
-#include "main/shader_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/shader.h"
 #include "main/model.h"
 #include "main/objseq.h"
 
@@ -235,19 +233,31 @@ void wctempledia_initialise(void)
 f32 gWcTempleDiaTargetSpeedTableA[] = {64.0f, 128.0f, 256.0f};
 f32 gWcTempleDiaTargetSpeedTableB[] = {-64.0f, -128.0f, -256.0f};
 
+OBJECT_INIT_ADAPTER(gWCTempleDiaObjDescriptorInitAdapter, wctempledia_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCTempleDiaObjDescriptorHitDetectAdapter, wctempledia_hitDetect)
+OBJECT_FREE_ADAPTER(gWCTempleDiaObjDescriptorFreeAdapter, wctempledia_free)
+OBJECT_TYPE_ID_ADAPTER(gWCTempleDiaObjDescriptorTypeIdAdapter, wctempledia_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTempleDiaObjDescriptorExtraSizeAdapter, wctempledia_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTempleDiaObjDescriptorAcquire, wctempledia_initialise)
+
 ObjectDescriptor gWCTempleDiaObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTempleDiaObjDescriptorAcquire,
+        wctempledia_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wctempledia_initialise,
-    (ObjectDescriptorCallback)wctempledia_release,
-    0,
-    (ObjectDescriptorCallback)wctempledia_init,
-    (ObjectDescriptorCallback)wctempledia_update,
-    (ObjectDescriptorCallback)wctempledia_hitDetect,
-    (ObjectDescriptorCallback)wctempledia_render,
-    (ObjectDescriptorCallback)wctempledia_free,
-    (ObjectDescriptorCallback)wctempledia_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wctempledia_getExtraSize,
+    gWCTempleDiaObjDescriptorInitAdapter,
+    wctempledia_update,
+    gWCTempleDiaObjDescriptorHitDetectAdapter,
+    wctempledia_render,
+    gWCTempleDiaObjDescriptorFreeAdapter,
+    gWCTempleDiaObjDescriptorTypeIdAdapter,
+    gWCTempleDiaObjDescriptorExtraSizeAdapter,
 };

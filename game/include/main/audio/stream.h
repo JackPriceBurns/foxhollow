@@ -1,0 +1,27 @@
+#ifndef MAIN_AUDIO_STREAM_H_
+#define MAIN_AUDIO_STREAM_H_
+
+#include "types.h"
+#include "dolphin/dvd.h"
+
+extern u8 gAudioStreamDvdState;
+extern u8 gAudioStreamPlaying;
+extern s32 gAudioStreamCurrentId;
+extern u32 gAudioStreamPlayAddrCallbackResult;
+extern u8 gAudioStreamPlayAddrCallbackDone;
+
+u8 AudioStream_IsPreparing(void);
+void AudioStream_CancelPrepared(void);
+void AudioStream_StartPrepared(void);
+void AudioStream_StopCurrent(void);
+void AudioStream_StopAll(void);
+u32 AudioStream_GetMusicFadeFlagA(void);
+u32 AudioStream_GetMusicFadeFlagB(void);
+s32 AudioStream_GetCurrentId(void);
+void AudioStream_Init(void);
+void AudioStream_SetVolume(int volume);
+void AudioStream_SetDefaultVolume(int volume);
+void AudioStream_PlayAddrCallback(u32 result);
+int AudioStream_Play(int id, void (*preparedCallback)(void));
+
+#endif /* MAIN_AUDIO_STREAM_H_ */

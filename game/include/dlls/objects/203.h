@@ -66,6 +66,7 @@ extern DllCBStateHandler gDllCBStateHandlers[6];
 extern const f32 gDllCBDefaultAnimSpeed[1];
 extern int gDllCBHitReactionMoves[30];
 extern u8 gDllCBHitReactionDamage[32];
-extern ObjectDescriptor12 gDllCBObjDescriptor;
+struct DllCBObjDescriptorType;
+extern struct DllCBObjDescriptorType gDllCBObjDescriptor;
 
 #endif /* DLLS_OBJECTS_203_H_ */

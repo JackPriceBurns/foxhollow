@@ -72,19 +72,30 @@ void GCbaddieShield_release(void) {
 void GCbaddieShield_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGCbaddieShieldObjDescriptorInitAdapter, GCbaddieShield_init, obj, placement)
+OBJECT_FREE_ADAPTER(gGCbaddieShieldObjDescriptorFreeAdapter, GCbaddieShield_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gGCbaddieShieldObjDescriptorTypeIdAdapter, GCbaddieShield_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGCbaddieShieldObjDescriptorExtraSizeAdapter, GCbaddieShield_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGCbaddieShieldObjDescriptorAcquire, GCbaddieShield_initialise)
+
 ObjectDescriptor gGCbaddieShieldObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gGCbaddieShieldObjDescriptorAcquire,
+        GCbaddieShield_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)GCbaddieShield_initialise,
-    (ObjectDescriptorCallback)GCbaddieShield_release,
-    0,
-    (ObjectDescriptorCallback)GCbaddieShield_init,
-    (ObjectDescriptorCallback)GCbaddieShield_update,
-    (ObjectDescriptorCallback)GCbaddieShield_hitDetect,
-    (ObjectDescriptorCallback)GCbaddieShield_render,
-    (ObjectDescriptorCallback)GCbaddieShield_free,
-    (ObjectDescriptorCallback)GCbaddieShield_getObjectTypeId,
-    GCbaddieShield_getExtraSize,
+    gGCbaddieShieldObjDescriptorInitAdapter,
+    GCbaddieShield_update,
+    GCbaddieShield_hitDetect,
+    GCbaddieShield_render,
+    gGCbaddieShieldObjDescriptorFreeAdapter,
+    gGCbaddieShieldObjDescriptorTypeIdAdapter,
+    gGCbaddieShieldObjDescriptorExtraSizeAdapter,
 };

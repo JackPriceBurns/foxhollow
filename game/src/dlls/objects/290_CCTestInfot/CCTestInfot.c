@@ -6,10 +6,10 @@
  * player remains inside the interaction range.
  */
 #include "dlls/objects/290_CCTestInfot.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
-#include "main/minimap_api.h"
+#include "main/minimap.h"
 #include "main/obj_trigger.h"
 #include "sys/objects.h"
 
@@ -57,19 +57,26 @@ void CCTestInfot_init(GameObject* obj, CCTestInfotPlacement* placement) {
     obj->anim.rotZ = placement->rotationZ << 8;
 }
 
+OBJECT_INIT_ADAPTER(gCCTestInfotObjDescriptorInitAdapter, CCTestInfot_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCTestInfotObjDescriptorExtraSizeAdapter, CCTestInfot_getExtraSize)
+
 ObjectDescriptor gCCTestInfotObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gCCTestInfotObjDescriptorInitAdapter,
+    CCTestInfot_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)CCTestInfot_init,
-    (ObjectDescriptorCallback)CCTestInfot_update,
-    0,
-    0,
-    0,
-    0,
-    CCTestInfot_getExtraSize,
+    gCCTestInfotObjDescriptorExtraSizeAdapter,
 };

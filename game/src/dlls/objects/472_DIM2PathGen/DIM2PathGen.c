@@ -10,7 +10,7 @@
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/rom_curve_def.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -23,15 +23,15 @@
 #define DIM2_PATH_GENERATOR_CURVE_ACTION   10
 #define DIM2_PATH_GENERATOR_SNOWBALL_GROUP 47
 
-u8 DIM2PathGenerator_getCurveVals(GameObject* obj, int** outPathX, int** outPathY, int** outPathZ,
-                                  int** outPathNodeData) {
+int DIM2PathGenerator_getCurveVals(GameObject* obj, f32** outPathX, f32** outPathY, f32** outPathZ,
+                                   u8** outPathNodeData) {
     Dim2PathGeneratorState* state = obj->extra;
 
-    *outPathX = (int*)state->pathX;
-    *outPathY = (int*)state->pathY;
-    *outPathZ = (int*)state->pathZ;
+    *outPathX = state->pathX;
+    *outPathY = state->pathY;
+    *outPathZ = state->pathZ;
     if (outPathNodeData != NULL) {
-        *outPathNodeData = (int*)state->pathNodeData;
+        *outPathNodeData = state->pathNodeData;
     }
 
     return state->pointCount;
@@ -181,23 +181,37 @@ void DIM2PathGenerator_release(void) {
 void DIM2PathGenerator_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gDIM2PathGeneratorObjDescriptor = {
+OBJECT_INIT_ADAPTER(gDIM2PathGeneratorObjDescriptorInitAdapter, DIM2PathGenerator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2PathGeneratorObjDescriptorHitDetectAdapter, DIM2PathGenerator_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2PathGeneratorObjDescriptorFreeAdapter, DIM2PathGenerator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIM2PathGeneratorObjDescriptorTypeIdAdapter, DIM2PathGenerator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2PathGeneratorObjDescriptorExtraSizeAdapter, DIM2PathGenerator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2PathGeneratorObjDescriptorAcquire, DIM2PathGenerator_initialise)
+
+Dim2PathGeneratorDescriptorWithPadding gDIM2PathGeneratorObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)DIM2PathGenerator_initialise,
-        (ObjectDescriptorCallback)DIM2PathGenerator_release,
-        0,
-        (ObjectDescriptorCallback)DIM2PathGenerator_init,
-        (ObjectDescriptorCallback)DIM2PathGenerator_update,
-        (ObjectDescriptorCallback)DIM2PathGenerator_hitDetect,
-        (ObjectDescriptorCallback)DIM2PathGenerator_render,
-        (ObjectDescriptorCallback)DIM2PathGenerator_free,
-        (ObjectDescriptorCallback)DIM2PathGenerator_getObjectTypeId,
-        DIM2PathGenerator_getExtraSize,
-        (ObjectDescriptorCallback)DIM2PathGenerator_getCurveVals,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gDIM2PathGeneratorObjDescriptorAcquire,
+            DIM2PathGenerator_release,
+        },
+        {
+            0,
+            gDIM2PathGeneratorObjDescriptorInitAdapter,
+            DIM2PathGenerator_update,
+            gDIM2PathGeneratorObjDescriptorHitDetectAdapter,
+            DIM2PathGenerator_render,
+            gDIM2PathGeneratorObjDescriptorFreeAdapter,
+            gDIM2PathGeneratorObjDescriptorTypeIdAdapter,
+            gDIM2PathGeneratorObjDescriptorExtraSizeAdapter,
+            DIM2PathGenerator_getCurveVals,
+        },
     },
     0,
 };

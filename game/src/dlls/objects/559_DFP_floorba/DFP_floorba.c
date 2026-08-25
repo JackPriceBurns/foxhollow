@@ -3,7 +3,7 @@
  * rising/falling row of the electric-floor puzzle. It links to the level
  * controller object (romDefNo 0x431) to read the safe tile for each row.
  */
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/dll/DF/dll_0229_dfplevelcontrol.h"
 #include "main/dll/baddie/dll_022F_dfpfloorbar.h"
@@ -262,22 +262,33 @@ void DFP_Floorbar_initialise(void)
     }
 }
 
+OBJECT_INIT_ADAPTER(gDfpfloorbarObjDescriptorInitAdapter, DFP_Floorbar_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDfpfloorbarObjDescriptorFreeAdapter, DFP_Floorbar_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDfpfloorbarObjDescriptorTypeIdAdapter, DFP_Floorbar_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfpfloorbarObjDescriptorExtraSizeAdapter, DFP_Floorbar_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDfpfloorbarObjDescriptorAcquire, DFP_Floorbar_initialise)
+
 ObjectDescriptor10WithPadding gDfpfloorbarObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gDfpfloorbarObjDescriptorAcquire,
+            DFP_Floorbar_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)DFP_Floorbar_initialise,
-        (ObjectDescriptorCallback)DFP_Floorbar_release,
-        0,
-        (ObjectDescriptorCallback)DFP_Floorbar_init,
-        (ObjectDescriptorCallback)DFP_Floorbar_update,
-        (ObjectDescriptorCallback)DFP_Floorbar_hitDetect,
-        (ObjectDescriptorCallback)DFP_Floorbar_render,
-        (ObjectDescriptorCallback)DFP_Floorbar_free,
-        (ObjectDescriptorCallback)DFP_Floorbar_getObjectTypeId,
-        DFP_Floorbar_getExtraSize,
+        gDfpfloorbarObjDescriptorInitAdapter,
+        DFP_Floorbar_update,
+        DFP_Floorbar_hitDetect,
+        DFP_Floorbar_render,
+        gDfpfloorbarObjDescriptorFreeAdapter,
+        gDfpfloorbarObjDescriptorTypeIdAdapter,
+        gDfpfloorbarObjDescriptorExtraSizeAdapter,
     },
     0,
 };

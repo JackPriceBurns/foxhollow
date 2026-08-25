@@ -5,17 +5,17 @@
  * seeding of the safe-floor-tile table when its map-act initialization flag is
  * raised, plus gamebit-driven progression, object-group loading, and music.
  */
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/music.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dfp_types.h"
-#include "main/dll/player_api.h"
-#include "main/lightmap_api.h"
+#include "main/dll/player.h"
+#include "main/lightmap.h"
 #include "main/map_load.h"
 #include "main/obj_message.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/mapEventTypes.h"
 #include "main/gamebits.h"
 #include "main/frame_timing.h"
@@ -207,11 +207,11 @@ void DFP_LevelControl_update(GameObject* obj) {
         break;
     }
 
-    GameBitLatch_Update((GameBitLatchState*)&state->musicLatchMask, 2, -1, -1, GAMEBIT_OFP_MusicLatch,
+    GameBitLatch_Update(&state->musicLatch, 2, -1, -1, GAMEBIT_OFP_MusicLatch,
                         MUSICTRIG_mmpassalien);
-    GameBitLatch_UpdateInverted((GameBitLatchState*)&state->musicLatchMask, 4, -1, -1, GAMEBIT_OFP_MusicLatch,
+    GameBitLatch_UpdateInverted(&state->musicLatch, 4, -1, -1, GAMEBIT_OFP_MusicLatch,
                                 MUSICTRIG_blizzard);
-    GameBitLatch_UpdateInverted((GameBitLatchState*)&state->musicLatchMask, 1, -1, -1, GAMEBIT_OFP_MusicLatch,
+    GameBitLatch_UpdateInverted(&state->musicLatch, 1, -1, -1, GAMEBIT_OFP_MusicLatch,
                                 MUSICTRIG_trex_hit);
     mainSetBits(GAMEBIT_VFP_MusicLatch, 0);
 }
@@ -261,20 +261,35 @@ void DFP_LevelControl_initialise(void) {
     gDFPLevelControlSafeFloorTiles[8] = 0;
 }
 
-ObjectDescriptor11ExtraSize gDFP_LevelControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    (ObjectDescriptorCallback)DFP_LevelControl_initialise,
-    (ObjectDescriptorCallback)DFP_LevelControl_release,
-    0,
-    (ObjectDescriptorCallback)DFP_LevelControl_init,
-    (ObjectDescriptorCallback)DFP_LevelControl_update,
-    (ObjectDescriptorCallback)DFP_LevelControl_hitDetect,
-    (ObjectDescriptorCallback)DFP_LevelControl_render,
-    (ObjectDescriptorCallback)DFP_LevelControl_free,
-    (ObjectDescriptorCallback)DFP_LevelControl_getObjectTypeId,
-    DFP_LevelControl_getExtraSize,
-    (ObjectDescriptorCallback)DFP_LevelControl_copySafeFloorTiles,
+OBJECT_INIT_ADAPTER(gDFP_LevelControlObjDescriptorInitAdapter, DFP_LevelControl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFP_LevelControlObjDescriptorHitDetectAdapter, DFP_LevelControl_hitDetect)
+OBJECT_RENDER_ADAPTER(gDFP_LevelControlObjDescriptorRenderAdapter, DFP_LevelControl_render)
+OBJECT_FREE_ADAPTER(gDFP_LevelControlObjDescriptorFreeAdapter, DFP_LevelControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDFP_LevelControlObjDescriptorTypeIdAdapter, DFP_LevelControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFP_LevelControlObjDescriptorExtraSizeAdapter, DFP_LevelControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFP_LevelControlObjDescriptorAcquire, DFP_LevelControl_initialise)
+
+DfpLevelControlDescriptor gDFP_LevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        },
+        gDFP_LevelControlObjDescriptorAcquire,
+        DFP_LevelControl_release,
+    },
+    {
+        0,
+        gDFP_LevelControlObjDescriptorInitAdapter,
+        DFP_LevelControl_update,
+        gDFP_LevelControlObjDescriptorHitDetectAdapter,
+        gDFP_LevelControlObjDescriptorRenderAdapter,
+        gDFP_LevelControlObjDescriptorFreeAdapter,
+        gDFP_LevelControlObjDescriptorTypeIdAdapter,
+        gDFP_LevelControlObjDescriptorExtraSizeAdapter,
+        DFP_LevelControl_copySafeFloorTiles,
+    },
 };

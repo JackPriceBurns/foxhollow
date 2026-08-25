@@ -17,12 +17,12 @@ extern CloudEnvTbl gCloudActionEnvTbl;
 extern f32 gCloudActionGlareQuadSize[2];
 extern s32 lbl_803DB618[2];
 
-void cloudaction_func08_nop(void);
-void cloudaction_func09_nop(void);
+void cloudaction_func08_nop(f32 x, f32 y, f32 z, int intensity);
+void cloudaction_func09_nop(int enabled);
 void cloudaction_free(void);
 void cloudaction_scrollTexture(void);
 void cloudaction_onMapSetup(void);
-void cloudaction_update(int p1, int p2, u8* state, int p4, int val);
+void cloudaction_update(void* p1, void* p2, void* state, int p4, u16 val);
 void cloudaction_release(void);
 void cloudaction_initialise(void);
 void renderClouds(int a, int b, int c, int d);

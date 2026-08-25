@@ -1,17 +1,18 @@
 #include "main/texture.h"
 #include "string.h"
-#include "track/intersect_hud_api.h"
-#include "main/gametext_command_api.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
-#include "main/textrender_api.h"
+#include "track/intersect_hud.h"
+#include "main/gametext_command.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
+#include "main/textrender.h"
 #include "main/mapEventTypes.h"
 #include "main/gamebits.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_0041_warpstoneui.h"
 #include "main/resource.h"
-#include "main/gameloop_api.h"
+#include "main/model_engine.h"
+#include "main/gameloop.h"
 #include "main/dll/dll_003C_link.h"
 
 int gWarpStoneUiTextPosY = 0x140;
@@ -183,8 +184,30 @@ WarpstoneMenuItem gWarpStoneUiMenuItemTemplates[6] = {
      {0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
 };
 
-ResourceDescriptorCallbacks8 gWarpStoneUiDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    {(ResourceDescriptorCallback)WarpstoneUI_initialise, (ResourceDescriptorCallback)WarpstoneUI_release, 0x00000000,
-     (ResourceDescriptorCallback)WarpstoneUI_frameStart, (ResourceDescriptorCallback)WarpstoneUI_frameEnd,
-     (ResourceDescriptorCallback)WarpstoneUI_showUI, (ResourceDescriptorCallback)WarpstoneUI_setState, 0x00000000}};
+typedef struct WarpStoneUiResourceDescriptor {
+    ResourceDescriptorHeader header;
+    UiDllVTable interface;
+    void* trailing;
+} WarpStoneUiResourceDescriptor;
+
+RESOURCE_ACQUIRE_ADAPTER(gWarpStoneUiResourceAcquireAdapter, WarpstoneUI_initialise)
+
+static void WarpstoneUI_drawAdapter(int arg0, int arg1, int arg2) {
+    WarpstoneUI_showUI(arg0);
+}
+
+WarpStoneUiResourceDescriptor gWarpStoneUiDescriptor = {
+    {
+        {0x00000000, 0x00000000, 0x00000000, 0x00060000},
+        gWarpStoneUiResourceAcquireAdapter,
+        WarpstoneUI_release,
+    },
+    {
+        NULL,
+        WarpstoneUI_frameStart,
+        WarpstoneUI_frameEnd,
+        WarpstoneUI_drawAdapter,
+        WarpstoneUI_setState,
+    },
+    NULL,
+};

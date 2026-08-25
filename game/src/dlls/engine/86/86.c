@@ -147,7 +147,7 @@ void CameraModeArwing_init(CameraObject* camera, int mode, int unusedArg) {
     (initialOffset = (Vec*)&(state = &gCameraModeArwingState)->initialOffsetX)->x = 0.0f;
     state->initialOffsetY = 20.0f;
     state->posZOffset = -165.0f;
-    PSVECAdd(&target->anim.worldPos, initialOffset, &camera->anim.worldPos);
+    PSVECAdd((Vec*)&target->anim.worldPosX, initialOffset, (Vec*)&camera->anim.worldPosX);
     gCameraModeArwingState.active = 1;
     gCameraModeArwingState.yawScale = -0.2f;
     gCameraModeArwingState.pitchScale = 0.1f;
@@ -175,10 +175,10 @@ void CameraModeArwing_release(void) {
 void CameraModeArwing_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeArwingDescriptorAcquire, CameraModeArwing_initialise)
+
 CameraModeArwingDescriptor gCameraModeArwingDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeArwing_initialise,
-    CameraModeArwing_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeArwingDescriptorAcquire, CameraModeArwing_release },
     NULL,
     CameraModeArwing_init,
     CameraModeArwing_update,

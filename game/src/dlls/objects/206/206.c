@@ -6,7 +6,7 @@
  */
 #include "dlls/objects/206.h"
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
@@ -16,15 +16,15 @@
 #include "main/obj_list.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/sky_interface.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/objtype.h"
 
@@ -794,21 +794,46 @@ void dll_CE_initialise(void) {
     gDllCECheckHandlers[5] = dll_CE_checkChooseAttackState;
 }
 
-ObjectDescriptor12 gDllCEObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dll_CE_initialise,
-    (ObjectDescriptorCallback)dll_CE_release,
-    0,
-    (ObjectDescriptorCallback)dll_CE_init,
-    (ObjectDescriptorCallback)dll_CE_update,
-    (ObjectDescriptorCallback)dll_CE_hitDetect,
-    (ObjectDescriptorCallback)dll_CE_render,
-    (ObjectDescriptorCallback)dll_CE_free,
-    (ObjectDescriptorCallback)dll_CE_getObjectTypeId,
-    dll_CE_getExtraSize,
-    (ObjectDescriptorCallback)dll_CE_getControlMode,
-    (ObjectDescriptorCallback)dll_CE_handleMessage,
+OBJECT_INIT_ADAPTER(gDllCEObjDescriptorInitAdapter, dll_CE_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gDllCEObjDescriptorUpdateAdapter, dll_CE_update, obj, 0, 0)
+OBJECT_FREE_ADAPTER(gDllCEObjDescriptorFreeAdapter, dll_CE_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDllCEObjDescriptorTypeIdAdapter, dll_CE_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllCEObjDescriptorExtraSizeAdapter, dll_CE_getExtraSize)
+
+typedef struct DllCEObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(dll_CE_getControlMode)* dll_CE_getControlMode;
+    __typeof__(dll_CE_handleMessage)* dll_CE_handleMessage;
+} DllCEObjDescriptorTypeInterface;
+
+struct DllCEObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DllCEObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDllCEObjDescriptorAcquire, dll_CE_initialise)
+
+struct DllCEObjDescriptorType gDllCEObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDllCEObjDescriptorAcquire,
+        dll_CE_release,
+    },
+    {
+        0,
+        gDllCEObjDescriptorInitAdapter,
+        gDllCEObjDescriptorUpdateAdapter,
+        dll_CE_hitDetect,
+        dll_CE_render,
+        gDllCEObjDescriptorFreeAdapter,
+        gDllCEObjDescriptorTypeIdAdapter,
+        gDllCEObjDescriptorExtraSizeAdapter,
+        dll_CE_getControlMode,
+        dll_CE_handleMessage,
+    },
 };

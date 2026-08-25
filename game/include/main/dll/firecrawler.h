@@ -4,7 +4,7 @@
 #include "main/camera_interface.h"
 #include "game/objects/object.h"
 #include "main/model.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 #include "main/gamebits.h"
 #include "main/dll/baddie_state.h"
 #include "main/dll/baddie_setmove.h"

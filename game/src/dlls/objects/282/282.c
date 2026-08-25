@@ -184,19 +184,28 @@ void decoration11a_init(GameObject* obj, Decoration11APlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gDecoration11AObjDescriptorInitAdapter, decoration11a_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gDecoration11AObjDescriptorUpdateAdapter, decoration11a_update)
+OBJECT_FREE_ADAPTER(gDecoration11AObjDescriptorFreeAdapter, decoration11a_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gDecoration11AObjDescriptorExtraSizeAdapter, decoration11a_getExtraSize)
+
 ObjectDescriptor gDecoration11AObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDecoration11AObjDescriptorInitAdapter,
+    gDecoration11AObjDescriptorUpdateAdapter,
+    decoration11a_hitDetect,
+    decoration11a_render,
+    gDecoration11AObjDescriptorFreeAdapter,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)decoration11a_init,
-    (ObjectDescriptorCallback)decoration11a_update,
-    (ObjectDescriptorCallback)decoration11a_hitDetect,
-    (ObjectDescriptorCallback)decoration11a_render,
-    (ObjectDescriptorCallback)decoration11a_free,
-    0,
-    decoration11a_getExtraSize,
+    gDecoration11AObjDescriptorExtraSizeAdapter,
 };

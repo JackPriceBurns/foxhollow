@@ -17,4 +17,14 @@ typedef struct ByteFlags
     u8 b80 : 1;
 } ByteFlags;
 
+static inline u8 ByteFlags_GetRaw(const ByteFlags* flags)
+{
+    return *(const u8*)flags;
+}
+
+static inline void ByteFlags_SetRaw(ByteFlags* flags, u8 value)
+{
+    *(u8*)flags = value;
+}
+
 #endif /* MAIN_BYTE_FLAGS_H_ */

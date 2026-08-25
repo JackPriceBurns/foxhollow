@@ -21,33 +21,17 @@ typedef struct ArwingBombState
 
 typedef struct ArwingBombSetup
 {
-    union
-    {
-        ObjPlacement base;
-        ObjPlacement head;
-    };
-    union
-    {
-        struct
-        {
-            u8 rotZ;
-            u8 rotY;
-            u8 rotX;
-        };
-        struct
-        {
-            u8 roll;
-            u8 pitch;
-            u8 yaw;
-        };
-    };
+    ObjPlacement base;
+    u8 roll;
+    u8 pitch;
+    u8 yaw;
 } ArwingBombSetup;
 
 STATIC_ASSERT(sizeof(ArwingBombState) == 0x0C);
 STATIC_ASSERT(offsetof(ArwingBombState, explosionTimer) == 0x08);
-STATIC_ASSERT(offsetof(ArwingBombSetup, rotZ) == 0x18);
-STATIC_ASSERT(offsetof(ArwingBombSetup, rotY) == 0x19);
-STATIC_ASSERT(offsetof(ArwingBombSetup, rotX) == 0x1A);
+STATIC_ASSERT(offsetof(ArwingBombSetup, roll) == 0x18);
+STATIC_ASSERT(offsetof(ArwingBombSetup, pitch) == 0x19);
+STATIC_ASSERT(offsetof(ArwingBombSetup, yaw) == 0x1A);
 
 extern ObjectDescriptor gARWArwingBoObjDescriptor;
 

@@ -7,16 +7,14 @@
 typedef int (*ProjrobotfireUnsupportedFn)(void);
 
 typedef struct ProjrobotfireResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjrobotfireUnsupportedFn unsupported;
 } ProjrobotfireResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjrobotfireResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjrobotfireResourceDescriptor) == 0x20);

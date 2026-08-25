@@ -5,20 +5,20 @@
  */
 #include "dlls/objects/483_DIM_BossGut.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/curve.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/model_light.h"
 #include "main/obj_message.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -95,12 +95,12 @@ void dimbossgut2_updateTracking(GameObject* obj, DimBossGut2State* state) {
     control = state->groundBaddie.control;
     pathWalker = state->groundBaddie.path;
     if ((state->groundBaddie.flags400 & BADDIE_FLAG400_PATH_ACTIVE) != 0) {
-        if ((Curve_AdvanceAlongPath(&pathWalker->curve, control->pathSpeed) != 0) || pathWalker->atSegmentEnd != 0) {
+        if ((Curve_AdvanceAlongPath(&pathWalker->curve, control->pathSpeed) != 0) || pathWalker->curve.idx != 0) {
             if ((*gRomCurveInterface)->goNextPoint((void*)pathWalker) != 0) {
                 state->groundBaddie.flags400 &= ~BADDIE_FLAG400_PATH_ACTIVE;
             }
         }
-        angle = (s16)(getAngle(pathWalker->tangentX, pathWalker->tangentZ) + 0x8000);
+        angle = (s16)(getAngle(pathWalker->curve.tangent[0], pathWalker->curve.tangent[2]) + 0x8000);
         delta = (s16)(angle - (u16)obj->anim.rotX);
         if (delta > 0x8000) {
             delta = (s16)(delta - 0xffff);
@@ -126,8 +126,8 @@ void dimbossgut2_updateTracking(GameObject* obj, DimBossGut2State* state) {
         if (control->turnHeightBias > 0.0f) {
             control->turnHeightBias = control->turnHeightBias / 1.04f;
         }
-        obj->anim.localPosX = pathWalker->posX;
-        obj->anim.localPosZ = pathWalker->posZ;
+        obj->anim.localPosX = pathWalker->curve.sample[0];
+        obj->anim.localPosZ = pathWalker->curve.sample[2];
     } else {
         player = Obj_GetPlayerObject();
         rel = (int)(u16)getAngle(-(player->anim.worldPosX - obj->anim.worldPosX),
@@ -312,21 +312,45 @@ void DIM_BossGut2_release(void) {
 void DIM_BossGut2_initialise(void) {
 }
 
-ObjectDescriptor12 gDIM_BossGut2ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    DIM_BossGut2_initialise,
-    DIM_BossGut2_release,
-    0,
-    (ObjectDescriptorCallback)DIM_BossGut2_init,
-    (ObjectDescriptorCallback)DIM_BossGut2_update,
-    DIM_BossGut2_hitDetect,
-    (ObjectDescriptorCallback)DIM_BossGut2_render,
-    (ObjectDescriptorCallback)DIM_BossGut2_free,
-    (ObjectDescriptorCallback)DIM_BossGut2_getObjectTypeId,
-    DIM_BossGut2_getExtraSize,
-    (ObjectDescriptorCallback)DIM_BossGut2_func0A,
-    DIM_BossGut2_func0B,
+OBJECT_INIT_ADAPTER(gDIM_BossGut2ObjDescriptorInitAdapter, DIM_BossGut2_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gDIM_BossGut2ObjDescriptorHitDetectAdapter, DIM_BossGut2_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM_BossGut2ObjDescriptorFreeAdapter, DIM_BossGut2_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIM_BossGut2ObjDescriptorTypeIdAdapter, DIM_BossGut2_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_BossGut2ObjDescriptorExtraSizeAdapter, DIM_BossGut2_getExtraSize)
+
+typedef struct DIM_BossGut2ObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(DIM_BossGut2_func0A)* DIM_BossGut2_func0A;
+} DIM_BossGut2ObjDescriptorTypeInterface;
+
+struct DIM_BossGut2ObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DIM_BossGut2ObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM_BossGut2ObjDescriptorAcquire, DIM_BossGut2_initialise)
+
+struct DIM_BossGut2ObjDescriptorType gDIM_BossGut2ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDIM_BossGut2ObjDescriptorAcquire,
+        DIM_BossGut2_release,
+    },
+    {
+        0,
+        gDIM_BossGut2ObjDescriptorInitAdapter,
+        DIM_BossGut2_update,
+        gDIM_BossGut2ObjDescriptorHitDetectAdapter,
+        DIM_BossGut2_render,
+        gDIM_BossGut2ObjDescriptorFreeAdapter,
+        gDIM_BossGut2ObjDescriptorTypeIdAdapter,
+        gDIM_BossGut2ObjDescriptorExtraSizeAdapter,
+        DIM_BossGut2_func0A,
+        DIM_BossGut2_func0B,
+    },
 };

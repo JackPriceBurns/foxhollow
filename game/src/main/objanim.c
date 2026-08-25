@@ -19,10 +19,10 @@ void ObjAnim_SetBlendMove(ObjAnimComponent* objAnim, ObjAnimDef* animDef, ObjAni
     requestedEventState = eventState;
     requestedEventState |= eventState;
     moveIndex =
-        animDef->moveGroupBaseIndices[(s32)moveId >> OBJANIM_MOVE_GROUP_SHIFT] + (moveId & OBJANIM_MOVE_INDEX_MASK);
-    if (moveIndex >= animDef->moveCount)
+        animDef->animGroupBaseIndices[(s32)moveId >> OBJANIM_MOVE_GROUP_SHIFT] + (moveId & OBJANIM_MOVE_INDEX_MASK);
+    if (moveIndex >= animDef->animationCount)
     {
-        moveIndex = animDef->moveCount - 1;
+        moveIndex = animDef->animationCount - 1;
     }
     if (moveIndex < 0)
     {
@@ -36,7 +36,7 @@ void ObjAnim_SetBlendMove(ObjAnimComponent* objAnim, ObjAnimDef* animDef, ObjAni
             state->prevBlendCacheSlot = (u16)(OBJANIM_MOVE_CACHE_SLOT_COUNT - 1 - state->blendToggle);
             if (animDef->cachedAnimIds[moveIndex] == OBJANIM_MISSING_MOVE_ID)
             {
-                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modNo);
+                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modelId);
                 moveIndex = 0;
             }
             ObjAnim_LoadCachedMove((int)animDef->cachedAnimIds[moveIndex], (int)(s16)moveIndex,
@@ -77,24 +77,24 @@ void ObjAnim_SetBlendMove(ObjAnimComponent* objAnim, ObjAnimDef* animDef, ObjAni
 
 void Object_ObjAnimSetPrimaryBlendMove(ObjAnimComponent* objAnim, u32 moveId, int eventState)
 {
-    ObjAnimBank* bank;
+    ObjModel* model;
 
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank->animDef->moveCount != 0)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model->file->animationCount != 0)
     {
-        ObjAnim_SetBlendMove(objAnim, bank->animDef, bank->activeState, moveId, (s16)eventState);
+        ObjAnim_SetBlendMove(objAnim, model->file, model->animStateB, moveId, (s16)eventState);
     }
     return;
 }
 
 void Object_ObjAnimSetSecondaryBlendMove(ObjAnimComponent* objAnim, u32 moveId, int eventState)
 {
-    ObjAnimBank* bank;
+    ObjModel* model;
 
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank->animDef->moveCount != 0)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model->file->animationCount != 0)
     {
-        ObjAnim_SetBlendMove(objAnim, bank->animDef, bank->currentState, moveId, (s16)eventState);
+        ObjAnim_SetBlendMove(objAnim, model->file, model->animStateA, moveId, (s16)eventState);
     }
     return;
 }
@@ -102,7 +102,7 @@ void Object_ObjAnimSetSecondaryBlendMove(ObjAnimComponent* objAnim, u32 moveId, 
 int Object_ObjAnimAdvanceMove(void* objAnimHandle, f32 moveStepScale, f32 deltaTime, ObjAnimEventList* events)
 {
     ObjAnimComponent* objAnim;
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimState* state;
     ObjAnimEventTable* eventTable;
     f32 previousProgress;
@@ -122,13 +122,13 @@ int Object_ObjAnimAdvanceMove(void* objAnimHandle, f32 moveStepScale, f32 deltaT
 
     objAnim = (ObjAnimComponent*)objAnimHandle;
     wrapped = 0;
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank->animDef->moveCount == 0)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model->file->animationCount == 0)
     {
         return 0;
     }
 
-    state = bank->activeState;
+    state = model->animStateB;
     state->frameStep = moveStepScale * state->frameLength;
     if (state->eventCountdown != 0)
     {
@@ -300,7 +300,7 @@ int
 Object_ObjAnimSetMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
 {
     ObjAnimComponent* objAnim;
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimDef* animDef;
     ObjAnimState* state;
     short previousMove;
@@ -318,13 +318,13 @@ Object_ObjAnimSetMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 move
         moveProgress = 0.0f;
     }
     objAnim->activeMoveProgress = moveProgress;
-    bank = ObjAnim_GetActiveBank(objAnim);
-    animDef = bank->animDef;
-    if (animDef->moveCount == 0)
+    model = ObjAnim_GetActiveModel(objAnim);
+    animDef = model->file;
+    if (animDef->animationCount == 0)
     {
         return 0;
     }
-    state = bank->activeState;
+    state = model->animStateB;
     state->moveControlFlags = moveControlFlags;
     state->prevMoveCacheSlot = state->moveCacheSlot;
     state->prevFramePhase = state->framePhase;
@@ -349,7 +349,7 @@ Object_ObjAnimSetMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 move
             state->moveCacheSlot = state->blendToggle;
             if (animDef->cachedAnimIds[moveId] == OBJANIM_MISSING_MOVE_ID)
             {
-                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modNo);
+                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modelId);
                 moveId = 0;
             }
             ObjAnim_LoadCachedMove((int)animDef->cachedAnimIds[moveId], (int)(s16)moveId,
@@ -389,24 +389,24 @@ int ObjAnim_GetCurrentEventCountdown(ObjAnimComponent* objAnim)
 
 void ObjAnim_WriteStateWord(ObjAnimComponent* objAnim, int stateIndex, short wordIndex, int value)
 {
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimState* state;
     u16* stateWords;
     u16 stateWord;
 
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank == NULL)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model == NULL)
     {
         return;
     }
     stateWord = value;
     if (stateIndex != OBJANIM_STATE_INDEX_CURRENT)
     {
-        state = bank->activeState;
+        state = model->animStateB;
     }
     else
     {
-        state = bank->currentState;
+        state = model->animStateA;
     }
     stateWords = &state->eventCountdown;
     stateWords[wordIndex] = stateWord;
@@ -414,14 +414,14 @@ void ObjAnim_WriteStateWord(ObjAnimComponent* objAnim, int stateIndex, short wor
 
 void ObjAnim_SetCurrentEventStepFrames(ObjAnimComponent* objAnim, u32 frameCount)
 {
-    ObjAnimBank* bank;
+    ObjModel* model;
     float eventCountdownStep;
 
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank != NULL)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model != NULL)
     {
         eventCountdownStep = 16384.0f / (float)(s32)frameCount;
-        bank->currentState->eventStep = eventCountdownStep;
+        model->animStateA->eventStep = eventCountdownStep;
     }
 }
 
@@ -452,13 +452,13 @@ int ObjAnim_SampleRootCurvePhase(ObjAnimComponent* objAnim, f32 distance, float*
     s16* at;
     f32 blendDelta;
     f32 moveDelta;
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimRootCurve* curve;
     f32 previousDistance;
     ObjAnimMoveData* moveData;
     ObjAnimState* state;
     ObjAnimRootCurve* blendCurve;
-    ObjModelInstance* model;
+    ObjModelInstance* modelInstance;
     s16* axis;
     s16* blendSamples;
     s16 axisFirstSample;
@@ -482,17 +482,17 @@ int ObjAnim_SampleRootCurvePhase(ObjAnimComponent* objAnim, f32 distance, float*
     int broke;
     ObjAnimDef* animDef;
 
-    bank = ObjAnim_GetActiveBank(objAnim);
-    animDef = bank->animDef;
-    if (animDef->moveCount == 0)
+    model = ObjAnim_GetActiveModel(objAnim);
+    animDef = model->file;
+    if (animDef->animationCount == 0)
     {
         return 0;
     }
 
-    state = bank->currentState;
+    state = model->animStateA;
     rootMotionScale = objAnim->rootMotionScale;
-    model = objAnim->modelInstance;
-    targetDistance = distance * (rootMotionScale / model->rootMotionScaleBase);
+    modelInstance = objAnim->modelInstance;
+    targetDistance = distance * (rootMotionScale / modelInstance->rootMotionScaleBase);
     blendSamples = NULL;
 
     if (state->eventState != 0)
@@ -651,7 +651,7 @@ int ObjAnim_AdvanceCurrentMove(void* objAnimHandle, f32 moveStepScale, f32 delta
 {
     int segmentCount;
     ObjAnimComponent* objAnim;
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimEventTable* eventTable;
     ObjAnimMoveData* moveData;
     ObjAnimRootCurve* blendCurve;
@@ -697,13 +697,13 @@ int ObjAnim_AdvanceCurrentMove(void* objAnimHandle, f32 moveStepScale, f32 delta
                            ? -1.0f
                            : ((moveStepScale > 1.0f) ? 1.0f : moveStepScale);
 
-    bank = objAnim->banks[objAnim->bankIndex];
-    if (bank->animDef->moveCount == 0)
+    model = objAnim->modelBanks[objAnim->bankIndex];
+    if (model->file->animationCount == 0)
     {
         return 0;
     }
 
-    state = bank->currentState;
+    state = model->animStateA;
     if (state == NULL)
     {
         return 0;
@@ -861,13 +861,13 @@ int ObjAnim_AdvanceCurrentMove(void* objAnimHandle, f32 moveStepScale, f32 delta
         }
     }
 
-    if ((bank->animDef->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0)
+    if ((model->file->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0)
     {
         moveData = (ObjAnimMoveData*)(state->moveCache[state->moveCacheSlot] + OBJANIM_CACHED_MOVE_DATA_OFFSET);
     }
     else
     {
-        moveData = (ObjAnimMoveData*)bank->animDef->moveData[state->moveCacheSlot];
+        moveData = (ObjAnimMoveData*)model->file->moveData[state->moveCacheSlot];
     }
     if (ObjAnim_GetMoveDataRootCurveOffset(moveData) != 0)
     {
@@ -889,14 +889,14 @@ int ObjAnim_AdvanceCurrentMove(void* objAnimHandle, f32 moveStepScale, f32 delta
         {
             blendWeight = state->eventState / 16384.0f;
             moveWeight = 1.0f - blendWeight;
-            if ((bank->animDef->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0)
+            if ((model->file->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0)
             {
                 moveData =
                     (ObjAnimMoveData*)(state->blendMoveCache[state->blendCacheSlot] + OBJANIM_CACHED_MOVE_DATA_OFFSET);
             }
             else
             {
-                moveData = (ObjAnimMoveData*)bank->animDef->moveData[state->blendCacheSlot];
+                moveData = (ObjAnimMoveData*)model->file->moveData[state->blendCacheSlot];
             }
             blendCurve = ObjAnim_GetMoveDataRootCurve(moveData);
             blendAxis = (s16*)blendCurve;
@@ -1027,7 +1027,7 @@ int ObjAnim_SetMoveProgress(ObjAnimComponent* objAnim, f32 moveProgress)
 int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8 moveControlFlags)
 {
     ObjAnimComponent* objAnim;
-    ObjAnimBank* bank;
+    ObjModel* model;
     ObjAnimDef* animDef;
     ObjAnimState* state;
     s16 previousMove;
@@ -1049,17 +1049,17 @@ int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8
         moveProgress = 0.0f;
     }
     objAnim->currentMoveProgress = moveProgress;
-    bank = ObjAnim_GetActiveBank(objAnim);
-    if (bank == NULL)
+    model = ObjAnim_GetActiveModel(objAnim);
+    if (model == NULL)
     {
         return 0;
     }
-    animDef = bank->animDef;
-    if (animDef->moveCount == 0)
+    animDef = model->file;
+    if (animDef->animationCount == 0)
     {
         return 0;
     }
-    state = bank->currentState;
+    state = model->animStateA;
     state->moveControlFlags = moveControlFlags;
     state->prevMoveCacheSlot = state->moveCacheSlot;
     state->prevFramePhase = state->framePhase;
@@ -1075,7 +1075,7 @@ int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8
     hitState = objAnim->hitReactState;
     if ((hitState != NULL) && (ObjHitReact_GetEntries(hitState) != NULL))
     {
-        ObjHitReact_LoadMoveEntries((ObjAnimComponent*)objAnimHandle, bank, objAnim->romDefNo, hitState, requestedMoveId,
+        ObjHitReact_LoadMoveEntries((ObjAnimComponent*)objAnimHandle, model, objAnim->romDefNo, hitState, requestedMoveId,
                                     0);
     }
     if (objAnim->eventTable != NULL)
@@ -1085,11 +1085,11 @@ int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8
     previousMove = objAnim->currentMove;
     moveChanged = previousMove != requestedMoveId;
     objAnim->currentMove = requestedMoveId;
-    moveId = animDef->moveGroupBaseIndices[requestedMoveId >> OBJANIM_MOVE_GROUP_SHIFT] +
+    moveId = animDef->animGroupBaseIndices[requestedMoveId >> OBJANIM_MOVE_GROUP_SHIFT] +
              (requestedMoveId & OBJANIM_MOVE_INDEX_MASK);
-    if (moveId >= animDef->moveCount)
+    if (moveId >= animDef->animationCount)
     {
-        moveId = animDef->moveCount - 1;
+        moveId = animDef->animationCount - 1;
     }
     if (moveId < 0)
     {
@@ -1103,7 +1103,7 @@ int ObjAnim_SetCurrentMove(void* objAnimHandle, int moveId, f32 moveProgress, u8
             state->moveCacheSlot = state->blendToggle;
             if (animDef->cachedAnimIds[moveId] == OBJANIM_MISSING_MOVE_ID)
             {
-                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modNo);
+                OSReport(gObjAnimMissingCachedMoveWarning, animDef->modelId);
                 moveId = 0;
             }
             ObjAnim_LoadCachedMove((int)animDef->cachedAnimIds[moveId], (int)(s16)moveId,

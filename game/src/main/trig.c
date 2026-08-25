@@ -1,9 +1,9 @@
 #include "dolphin.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
-#include "main/fcos16_approx_api.h"
+#include "main/fcos16_approx.h"
 #include "main/trig.h"
-#include "main/fsin16_approx_api.h"
+#include "main/fsin16_approx.h"
 
 
 float fsin16Approx(int angle) {

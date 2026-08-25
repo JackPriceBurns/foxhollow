@@ -7,11 +7,10 @@
 
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 
 enum {
     DLL1DB_MOTION_STATE_TOP = 1,
@@ -177,19 +176,31 @@ void dll_1DB_release(void) {
 void dll_1DB_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1DBObjDescriptorInitAdapter, dll_1DB_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1DBObjDescriptorHitDetectAdapter, dll_1DB_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1DBObjDescriptorFreeAdapter, dll_1DB_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1DBObjDescriptorTypeIdAdapter, dll_1DB_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1DBObjDescriptorExtraSizeAdapter, dll_1DB_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1DBObjDescriptorAcquire, dll_1DB_initialise)
+
 ObjectDescriptor gDll1DBObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1DBObjDescriptorAcquire,
+        dll_1DB_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_1DB_initialise,
-    (ObjectDescriptorCallback)dll_1DB_release,
-    0,
-    (ObjectDescriptorCallback)dll_1DB_init,
-    (ObjectDescriptorCallback)dll_1DB_update,
-    (ObjectDescriptorCallback)dll_1DB_hitDetect,
-    (ObjectDescriptorCallback)dll_1DB_render,
-    (ObjectDescriptorCallback)dll_1DB_free,
-    (ObjectDescriptorCallback)dll_1DB_getObjectTypeId,
-    dll_1DB_getExtraSize,
+    gDll1DBObjDescriptorInitAdapter,
+    dll_1DB_update,
+    gDll1DBObjDescriptorHitDetectAdapter,
+    dll_1DB_render,
+    gDll1DBObjDescriptorFreeAdapter,
+    gDll1DBObjDescriptorTypeIdAdapter,
+    gDll1DBObjDescriptorExtraSizeAdapter,
 };

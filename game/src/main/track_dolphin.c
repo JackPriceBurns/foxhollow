@@ -1,28 +1,25 @@
-#define OBJHITS_STATE_INDEX_S8
-#define TEX_SETSHADER_U8
 #include "main/map_block.h"
 #include "main/texture.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_depth_read_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "main/hud_visibility_api.h"
-#include "main/lightmap_api.h"
-#include "main/shader_api.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_depth_read.h"
+#include "track/intersect_render_setup.h"
+#include "main/hud_visibility.h"
+#include "main/lightmap.h"
+#include "main/shader.h"
 #include "main/debug.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frustum.h"
 #include "main/asset_load.h"
 #include "game/objects/object.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "sys/objects.h"
 #include "main/mm.h"
 #include "main/model_light.h"
 #include "main/model.h"
-#include "main/model_render_instrs_api.h"
+#include "main/model_render_instrs.h"
 #include "main/objHitReact.h"
 #include "main/objhits.h"
-#undef OBJHITS_STATE_INDEX_S8
 #include "main/objtype.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
@@ -38,28 +35,21 @@
 #include "main/camera.h"
 #include "main/sky_state.h"
 #include "main/track_dolphin.h"
-#include "main/track_dolphin_api.h"
-#include "main/track_dolphin_shadow_api.h"
-#include "main/newshadows_shadow_api.h"
-#define TRACK_BBOX_FLAGS_S8
-#define TRACK_BBOX_MASK_TYPE s8
-#define TRACK_BBOX_ARG10_TYPE s8
-#include "main/track_bbox_api.h"
-#undef TRACK_BBOX_ARG10_TYPE
-#undef TRACK_BBOX_MASK_TYPE
-#undef TRACK_BBOX_FLAGS_S8
-#include "main/dll/player_api.h"
-#include "main/pause_menu_api.h"
+#include "main/track_dolphin_shadow.h"
+#include "main/newshadows_shadow.h"
+#include "main/track_bbox.h"
+#include "main/dll/player.h"
+#include "main/pause_menu.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/os/OSCache.h"
 #include "main/voxmaps.h"
-#include "track/intersect_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "track/intersect.h"
+#include "main/rcp_dolphin.h"
 #include "main/objmodel.h"
 #include "main/newshadows.h"
 #include "main/sky.h"
-#include "main/newshadows_texture_api.h"
-#include "main/acosf_api.h"
+#include "main/newshadows_texture.h"
+#include "main/acosf.h"
 #include "main/tex_dolphin.h"
 #include "string.h"
 
@@ -3319,7 +3309,7 @@ void trackIntersectBroadphase(GameObject* obj, TrackQueryBounds* ranges, u32 que
                     continue;
                 if (transformState->pad10E != 0)
                     continue;
-                model = (ModelFileHeader**)resetObj->banks[(s8)hitState->stateIndex];
+                model = (ModelFileHeader**)resetObj->modelBanks[(s8)hitState->stateIndex];
                 if (model == NULL)
                     continue;
                 hdr = *model;

@@ -7,10 +7,10 @@
 #include "sys/objects.h"
 #include "main/model.h"
 #include "main/dll/dll_02B3_vortex.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/hud_visibility_api.h"
+#include "main/hud_visibility.h"
 
 s16 gVortexAngleSpeed83D[4] = {8, 0x10, 0x20, 0};
 s16 gVortexAngleSpeedDefault[4] = {0x10, 0x20, 0x40, 0};
@@ -371,19 +371,31 @@ f32 gVortexScaleParams[4][3] = {
     {0.6f, 0.4f, 0.2f},
 };
 
+OBJECT_INIT_ADAPTER(gVortexObjDescriptorInitAdapter, Vortex_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVortexObjDescriptorHitDetectAdapter, Vortex_hitDetect)
+OBJECT_FREE_ADAPTER(gVortexObjDescriptorFreeAdapter, Vortex_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVortexObjDescriptorTypeIdAdapter, Vortex_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVortexObjDescriptorExtraSizeAdapter, Vortex_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVortexObjDescriptorAcquire, Vortex_initialise)
+
 ObjectDescriptor gVortexObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVortexObjDescriptorAcquire,
+        Vortex_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Vortex_initialise,
-    (ObjectDescriptorCallback)Vortex_release,
-    0,
-    (ObjectDescriptorCallback)Vortex_init,
-    (ObjectDescriptorCallback)Vortex_update,
-    (ObjectDescriptorCallback)Vortex_hitDetect,
-    (ObjectDescriptorCallback)Vortex_render,
-    (ObjectDescriptorCallback)Vortex_free,
-    (ObjectDescriptorCallback)Vortex_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)Vortex_getExtraSize,
+    gVortexObjDescriptorInitAdapter,
+    Vortex_update,
+    gVortexObjDescriptorHitDetectAdapter,
+    Vortex_render,
+    gVortexObjDescriptorFreeAdapter,
+    gVortexObjDescriptorTypeIdAdapter,
+    gVortexObjDescriptorExtraSizeAdapter,
 };

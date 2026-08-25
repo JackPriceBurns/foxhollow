@@ -25,14 +25,8 @@ typedef struct DFPRotatePStateFlags {
 
 typedef struct DFPRotatePState {
   s16 eventId;
-  union {
-    s16 config20;
-    s16 activationEventId;
-  };
-  union {
-    s16 unk4;
-    s16 variantSfxTimer;
-  };
+  s16 activationEventId;
+  s16 variantSfxTimer;
   u8 config19;
   u8 ringCount;
   DFPRotatePStateFlags flags;

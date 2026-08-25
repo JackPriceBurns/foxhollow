@@ -24,10 +24,10 @@ void projwallpower_release(void) {
 void projwallpower_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjwallpowerResourceDescriptorAcquire, projwallpower_initialise)
+
 ProjwallpowerResourceDescriptor gProjwallpowerResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projwallpower_initialise,
-    projwallpower_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjwallpowerResourceDescriptorAcquire, projwallpower_release },
     NULL,
     projwallpower_doUnsupported,
 };

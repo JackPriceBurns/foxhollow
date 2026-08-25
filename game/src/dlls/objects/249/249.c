@@ -7,13 +7,13 @@
 #include "dlls/objects/249.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/maketex_sequence_api.h"
+#include "main/audio/sfx.h"
+#include "main/maketex_sequence.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 
 #define PROJECTILE_SWITCH_OBJECT_TYPE_BASE  0x400
 #define PROJECTILE_SWITCH_OBJECT_TYPE_SHIFT 11
@@ -236,19 +236,29 @@ void ProjectileSwitch_release(void) {
 void ProjectileSwitch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gProjectileSwitchObjDescriptorInitAdapter, ProjectileSwitch_init, obj, placement)
+OBJECT_FREE_ADAPTER(gProjectileSwitchObjDescriptorFreeAdapter, ProjectileSwitch_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gProjectileSwitchObjDescriptorExtraSizeAdapter, ProjectileSwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gProjectileSwitchObjDescriptorAcquire, ProjectileSwitch_initialise)
+
 ObjectDescriptor gProjectileSwitchObjDescriptor = {
-    0,                                                          /* reserved0 */
-    0,                                                          /* reserved1 */
-    0,                                                          /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                           /* slotCountAndFlags */
-    (ObjectDescriptorCallback)ProjectileSwitch_initialise,      /* initialise */
-    (ObjectDescriptorCallback)ProjectileSwitch_release,         /* release */
-    0,                                                          /* slot02 */
-    (ObjectDescriptorCallback)ProjectileSwitch_init,            /* init */
-    (ObjectDescriptorCallback)ProjectileSwitch_update,          /* update */
-    (ObjectDescriptorCallback)ProjectileSwitch_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)ProjectileSwitch_render,          /* render */
-    (ObjectDescriptorCallback)ProjectileSwitch_free,            /* free */
-    (ObjectDescriptorCallback)ProjectileSwitch_getObjectTypeId, /* getObjectTypeId */
-    ProjectileSwitch_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gProjectileSwitchObjDescriptorAcquire,
+        ProjectileSwitch_release,
+    },
+    0,
+    gProjectileSwitchObjDescriptorInitAdapter,
+    ProjectileSwitch_update,
+    ProjectileSwitch_hitDetect,
+    ProjectileSwitch_render,
+    gProjectileSwitchObjDescriptorFreeAdapter,
+    ProjectileSwitch_getObjectTypeId,
+    gProjectileSwitchObjDescriptorExtraSizeAdapter,
 };

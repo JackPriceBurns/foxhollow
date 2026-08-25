@@ -3,7 +3,7 @@
 
 #include "game/objects/object.h"
 #include "main/dll/curves_collision_state.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/dll/path_control_interface.h"
 #include "game/objects/object_setup.h"
 #include "main/vecmath.h"

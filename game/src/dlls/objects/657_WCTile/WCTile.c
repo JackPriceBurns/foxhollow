@@ -16,20 +16,21 @@
 #include "main/gamebits.h"
 #include "main/model.h"
 #include "main/dll/WC/dll_028D_wclevelcont.h"
+#include "dlls/object_descriptor.h"
 #include "main/dll/WC/dll_0291_wctile.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 
-#define WCTILE_RENDER_TYPE_BASE    0x400
-#define WCTILE_RENDER_TYPE_SHIFT   0xb
-#define WCTILE_CONTROLLER_GROUP    9
-#define WCTILE_MODE_INIT_MOVE 0
-#define WCTILE_MODE_SOLID     1
-#define WCTILE_MODE_INACTIVE  2
-#define WCTILE_MODE_FADE_OUT  3
-#define WCTILE_MODE_FADE_IN   4
-#define WCTILE_MODE_HIDDEN    5
+#define WCTILE_RENDER_TYPE_BASE  0x400
+#define WCTILE_RENDER_TYPE_SHIFT 0xb
+#define WCTILE_CONTROLLER_GROUP  9
+#define WCTILE_MODE_INIT_MOVE    0
+#define WCTILE_MODE_SOLID        1
+#define WCTILE_MODE_INACTIVE     2
+#define WCTILE_MODE_FADE_OUT     3
+#define WCTILE_MODE_FADE_IN      4
+#define WCTILE_MODE_HIDDEN       5
 
 #define WCTILE_VARIANT_A        1
 #define WCTILE_ALPHA_STEP_SHIFT 3
@@ -42,87 +43,70 @@
 
 #define WCTILE_STATE_IFACE(state) WC_LEVEL_CONT_INTERFACE((state)->controller)
 
-int wctile_getExtraSize(void)
-{
+int wctile_getExtraSize(void) {
     return sizeof(WCTileState);
 }
 
-int wctile_getObjectTypeId(GameObject* obj)
-{
+int wctile_getObjectTypeId(GameObject* obj) {
     ObjAnimComponent* objAnim = &obj->anim;
     WCTileSetup* setup = (WCTileSetup*)obj->anim.placementData;
     int modelIndex = setup->modelIndex;
     int modelCount = objAnim->modelInstance->modelCount;
 
-    if (modelIndex >= modelCount)
-    {
+    if (modelIndex >= modelCount) {
         modelIndex = 0;
     }
     return (modelIndex << WCTILE_RENDER_TYPE_SHIFT) | WCTILE_RENDER_TYPE_BASE;
 }
 
-void wctile_free(void)
-{
+void wctile_free(void) {
 }
 
-void wctile_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
-{
-    if (visible != 0)
-    {
+void wctile_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible != 0) {
         objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
     }
 }
 
-void wctile_hitDetect(void)
-{
+void wctile_hitDetect(void) {
 }
 
-void wctile_update(GameObject* obj)
-{
+void wctile_update(GameObject* obj) {
     ObjAnimComponent* objAnim = &obj->anim;
     f32 nearest = 1e+05f;
     WCTileState* state = obj->extra;
 
-    if ((void*)state->controller == NULL)
-    {
+    if ((void*)state->controller == NULL) {
         state->controller = objGetNearestTypeTo(WCTILE_CONTROLLER_GROUP, obj, &nearest);
         objAnim->alpha = 0;
         return;
     }
     obj->anim.rotX += (s16)(1.8e+02f * timeDelta);
-    if (state->mode != WCTILE_MODE_HIDDEN)
-    {
-        if (objAnim->bankIndex == WCTILE_VARIANT_A)
-        {
-            if (mainGetBit(WCTILE_GAMEBIT_A_HIDE) != 0)
+    if (state->mode != WCTILE_MODE_HIDDEN) {
+        if (objAnim->bankIndex == WCTILE_VARIANT_A) {
+            if (mainGetBit(WCTILE_GAMEBIT_A_HIDE) != 0) {
                 state->mode = WCTILE_MODE_HIDDEN;
-            else if (mainGetBit(WCTILE_GAMEBIT_A_FADE) != 0)
+            } else if (mainGetBit(WCTILE_GAMEBIT_A_FADE) != 0) {
                 state->mode = WCTILE_MODE_FADE_OUT;
-        }
-        else
-        {
-            if (mainGetBit(WCTILE_GAMEBIT_B_HIDE) != 0)
+            }
+        } else {
+            if (mainGetBit(WCTILE_GAMEBIT_B_HIDE) != 0) {
                 state->mode = WCTILE_MODE_HIDDEN;
-            else if (mainGetBit(WCTILE_GAMEBIT_B_FADE) != 0)
+            } else if (mainGetBit(WCTILE_GAMEBIT_B_FADE) != 0) {
                 state->mode = WCTILE_MODE_FADE_OUT;
+            }
         }
     }
-    switch (state->mode)
-    {
+    switch (state->mode) {
     case WCTILE_MODE_INIT_MOVE:
-        if (objAnim->bankIndex == WCTILE_VARIANT_A)
-        {
-            WCTILE_STATE_IFACE(state)->getInitialTileXYA(state->targetTile, &state->tileX, &state->tileY,
-                                                         WCTILE_STATE_IFACE(state));
+        if (objAnim->bankIndex == WCTILE_VARIANT_A) {
+            WCTILE_STATE_IFACE(state)->getInitialTileXYA(state->targetTile, &state->tileX, &state->tileY);
             WCTILE_STATE_IFACE(state)->tileAToWorldPos(obj, state->tileX, state->tileY, &obj->anim.localPosX,
-                                                       &obj->anim.localPosZ, WCTILE_STATE_IFACE(state));
-        }
-        else
-        {
-            WCTILE_STATE_IFACE(state)->getInitialTileXYB(state->targetTile, &state->tileX, &state->tileY,
-                                                         WCTILE_STATE_IFACE(state));
+                                                       &obj->anim.localPosZ);
+        } else {
+            WCTILE_STATE_IFACE(state)->getInitialTileXYB(state->targetTile, &state->tileX, &state->tileY);
             WCTILE_STATE_IFACE(state)->tileBToWorldPos(obj, state->tileX, state->tileY, &obj->anim.localPosX,
-                                                       &obj->anim.localPosZ, WCTILE_STATE_IFACE(state));
+                                                       &obj->anim.localPosZ);
         }
         objAnim->alpha = WCTILE_ALPHA_OPAQUE;
         state->mode = WCTILE_MODE_SOLID;
@@ -133,76 +117,66 @@ void wctile_update(GameObject* obj)
     case WCTILE_MODE_HIDDEN:
         objAnim->alpha = 0;
         break;
-    case WCTILE_MODE_FADE_OUT:
-    {
+    case WCTILE_MODE_FADE_OUT: {
         int v = objAnim->alpha - (framesThisStep << WCTILE_ALPHA_STEP_SHIFT);
-        if (v < 0)
+        if (v < 0) {
             v = 0;
+        }
         objAnim->alpha = v;
     }
-        if (objAnim->alpha == 0)
-        {
-            if (objAnim->bankIndex == WCTILE_VARIANT_A)
-            {
-                WCTILE_STATE_IFACE(state)->getInitialTileXYA(state->targetTile, &state->tileX, &state->tileY,
-                                                             WCTILE_STATE_IFACE(state));
+        if (objAnim->alpha == 0) {
+            if (objAnim->bankIndex == WCTILE_VARIANT_A) {
+                WCTILE_STATE_IFACE(state)->getInitialTileXYA(state->targetTile, &state->tileX, &state->tileY);
                 WCTILE_STATE_IFACE(state)->tileAToWorldPos(obj, state->tileX, state->tileY, &obj->anim.localPosX,
-                                                           &obj->anim.localPosZ, WCTILE_STATE_IFACE(state));
+                                                           &obj->anim.localPosZ);
                 state->mode = WCTILE_MODE_FADE_IN;
-            }
-            else
-            {
-                WCTILE_STATE_IFACE(state)->getInitialTileXYB(state->targetTile, &state->tileX, &state->tileY,
-                                                             WCTILE_STATE_IFACE(state));
+            } else {
+                WCTILE_STATE_IFACE(state)->getInitialTileXYB(state->targetTile, &state->tileX, &state->tileY);
                 WCTILE_STATE_IFACE(state)->tileBToWorldPos(obj, state->tileX, state->tileY, &obj->anim.localPosX,
-                                                           &obj->anim.localPosZ, WCTILE_STATE_IFACE(state));
+                                                           &obj->anim.localPosZ);
                 state->mode = WCTILE_MODE_FADE_IN;
             }
         }
         break;
-    case WCTILE_MODE_FADE_IN:
-    {
+    case WCTILE_MODE_FADE_IN: {
         int v = objAnim->alpha + (framesThisStep << WCTILE_ALPHA_STEP_SHIFT);
-        if (v > WCTILE_ALPHA_OPAQUE)
+        if (v > WCTILE_ALPHA_OPAQUE) {
             v = WCTILE_ALPHA_OPAQUE;
+        }
         objAnim->alpha = v;
     }
-        if (objAnim->alpha >= WCTILE_ALPHA_OPAQUE)
+        if (objAnim->alpha >= WCTILE_ALPHA_OPAQUE) {
             state->mode = WCTILE_MODE_SOLID;
+        }
         break;
     case WCTILE_MODE_SOLID:
-    default:
-    {
+    default: {
         int v = objAnim->alpha + (framesThisStep << WCTILE_ALPHA_STEP_SHIFT);
-        if (v > WCTILE_ALPHA_OPAQUE)
+        if (v > WCTILE_ALPHA_OPAQUE) {
             v = WCTILE_ALPHA_OPAQUE;
+        }
         objAnim->alpha = v;
     }
-        if (objAnim->bankIndex == WCTILE_VARIANT_A)
-        {
-            if (state->targetTile !=
-                (u8)WCTILE_STATE_IFACE(state)->getTileA(state->tileX, state->tileY, WCTILE_STATE_IFACE(state)))
+        if (objAnim->bankIndex == WCTILE_VARIANT_A) {
+            if (state->targetTile != (u8)WCTILE_STATE_IFACE(state)->getTileA(state->tileX, state->tileY)) {
                 state->mode = WCTILE_MODE_INACTIVE;
-        }
-        else
-        {
-            if (state->targetTile !=
-                (u8)WCTILE_STATE_IFACE(state)->getTileB(state->tileX, state->tileY, WCTILE_STATE_IFACE(state)))
+            }
+        } else {
+            if (state->targetTile != (u8)WCTILE_STATE_IFACE(state)->getTileB(state->tileX, state->tileY)) {
                 state->mode = WCTILE_MODE_INACTIVE;
+            }
         }
         break;
     }
 }
 
-void wctile_init(GameObject* obj, WCTileSetup* setup)
-{
+void wctile_init(GameObject* obj, WCTileSetup* setup) {
     ObjAnimComponent* objAnim = &obj->anim;
     WCTileState* state = obj->extra;
 
     obj->anim.localPosY = 25.0f + setup->base.posY;
     objAnim->bankIndex = setup->modelIndex;
-    if (objAnim->bankIndex >= objAnim->modelInstance->modelCount)
-    {
+    if (objAnim->bankIndex >= objAnim->modelInstance->modelCount) {
         objAnim->bankIndex = 0;
     }
     state->targetTile = ObjAnim_ReadPlacementS16(&obj->anim, &(setup->initialTile));
@@ -210,27 +184,36 @@ void wctile_init(GameObject* obj, WCTileSetup* setup)
     objAnim->alpha = 0;
 }
 
-void wctile_release(void)
-{
+void wctile_release(void) {
 }
 
-void wctile_initialise(void)
-{
+void wctile_initialise(void) {
 }
+
+OBJECT_INIT_ADAPTER(gWCTileObjDescriptorInitAdapter, wctile_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCTileObjDescriptorHitDetectAdapter, wctile_hitDetect)
+OBJECT_FREE_ADAPTER(gWCTileObjDescriptorFreeAdapter, wctile_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTileObjDescriptorExtraSizeAdapter, wctile_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTileObjDescriptorAcquire, wctile_initialise)
 
 ObjectDescriptor gWCTileObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTileObjDescriptorAcquire,
+        wctile_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wctile_initialise,
-    (ObjectDescriptorCallback)wctile_release,
-    0,
-    (ObjectDescriptorCallback)wctile_init,
-    (ObjectDescriptorCallback)wctile_update,
-    (ObjectDescriptorCallback)wctile_hitDetect,
-    (ObjectDescriptorCallback)wctile_render,
-    (ObjectDescriptorCallback)wctile_free,
-    (ObjectDescriptorCallback)wctile_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wctile_getExtraSize,
+    gWCTileObjDescriptorInitAdapter,
+    wctile_update,
+    gWCTileObjDescriptorHitDetectAdapter,
+    wctile_render,
+    gWCTileObjDescriptorFreeAdapter,
+    wctile_getObjectTypeId,
+    gWCTileObjDescriptorExtraSizeAdapter,
 };

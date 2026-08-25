@@ -4,7 +4,7 @@
 #include "musyx/synth_job_init.h"
 #include "musyx/synth_virtual_sample.h"
 #include "musyx/synth_control.h"
-#include "musyx/snd_synth_api.h"
+#include "musyx/snd_synth.h"
 #include "musyx/synth_voice.h"
 #include "musyx/synth_config.h"
 #include "musyx/synth_delay.h"

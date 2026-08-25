@@ -1,17 +1,17 @@
 #include "dlls/objects/268_LanternFire.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/curve_eval.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -372,25 +372,38 @@ void LanternFireFly_release(void) {
 void LanternFireFly_initialise(void) {
 }
 
-ObjectDescriptor13WithPadding gLanternFireFlyObjDescriptor = {
+OBJECT_INIT_ADAPTER(gLanternFireFlyObjDescriptorInitAdapter, LanternFireFly_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLanternFireFlyObjDescriptorHitDetectAdapter, LanternFireFly_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gLanternFireFlyObjDescriptorTypeIdAdapter, LanternFireFly_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLanternFireFlyObjDescriptorExtraSizeAdapter, LanternFireFly_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLanternFireFlyObjDescriptorAcquire, LanternFireFly_initialise)
+
+LanternFireFlyDescriptorWithPadding gLanternFireFlyObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-        (ObjectDescriptorCallback)LanternFireFly_initialise,
-        (ObjectDescriptorCallback)LanternFireFly_release,
-        0,
-        (ObjectDescriptorCallback)LanternFireFly_init,
-        (ObjectDescriptorCallback)LanternFireFly_update,
-        (ObjectDescriptorCallback)LanternFireFly_hitDetect,
-        (ObjectDescriptorCallback)LanternFireFly_render,
-        (ObjectDescriptorCallback)LanternFireFly_free,
-        (ObjectDescriptorCallback)LanternFireFly_getObjectTypeId,
-        LanternFireFly_getExtraSize,
-        (ObjectDescriptorCallback)LanternFireFly_setTargetPosition,
-        (ObjectDescriptorCallback)LanternFireFly_releaseFromLantern,
-        (ObjectDescriptorCallback)LanternFireFly_setAnchor,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+            },
+            gLanternFireFlyObjDescriptorAcquire,
+            LanternFireFly_release,
+        },
+        {
+            0,
+            gLanternFireFlyObjDescriptorInitAdapter,
+            LanternFireFly_update,
+            gLanternFireFlyObjDescriptorHitDetectAdapter,
+            LanternFireFly_render,
+            LanternFireFly_free,
+            gLanternFireFlyObjDescriptorTypeIdAdapter,
+            gLanternFireFlyObjDescriptorExtraSizeAdapter,
+            LanternFireFly_setTargetPosition,
+            LanternFireFly_releaseFromLantern,
+            LanternFireFly_setAnchor,
+        },
     },
     0,
 };

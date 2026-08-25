@@ -1,6 +1,6 @@
 #include "dlls/objects/281_coldWaterCo.h"
 
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/objhits.h"
@@ -50,19 +50,26 @@ void ColdWaterControl_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
+OBJECT_INIT_ADAPTER(gColdWaterControlObjDescriptorInitAdapter, ColdWaterControl_init, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gColdWaterControlObjDescriptorExtraSizeAdapter, ColdWaterControl_getExtraSize)
+
 ObjectDescriptor gColdWaterControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gColdWaterControlObjDescriptorInitAdapter,
+    ColdWaterControl_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ColdWaterControl_init,
-    (ObjectDescriptorCallback)ColdWaterControl_update,
-    0,
-    0,
-    0,
-    0,
-    ColdWaterControl_getExtraSize,
+    gColdWaterControlObjDescriptorExtraSizeAdapter,
 };

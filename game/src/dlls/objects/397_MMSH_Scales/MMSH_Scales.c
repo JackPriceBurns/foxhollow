@@ -154,15 +154,24 @@ static void mmshScales_release(void) {
 static void mmshScales_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMSHScalesObjDescriptorInitAdapter, mmshScales_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMMSHScalesObjDescriptorHitDetectAdapter, mmshScales_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gMMSHScalesObjDescriptorTypeIdAdapter, mmshScales_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMSHScalesObjDescriptorExtraSizeAdapter, mmshScales_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMSHScalesObjDescriptorAcquire, mmshScales_initialise)
+
 ObjectDescriptor gMMSHScalesObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)mmshScales_initialise,
-    .release = (ObjectDescriptorCallback)mmshScales_release,
-    .init = (ObjectDescriptorCallback)mmshScales_init,
-    .update = (ObjectDescriptorCallback)mmshScales_update,
-    .hitDetect = (ObjectDescriptorCallback)mmshScales_hitDetect,
-    .render = (ObjectDescriptorCallback)mmshScales_render,
-    .free = (ObjectDescriptorCallback)mmshScales_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)mmshScales_getObjectTypeId,
-    .getExtraSize = mmshScales_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gMMSHScalesObjDescriptorAcquire,
+        .release = mmshScales_release,
+    },
+    .init = gMMSHScalesObjDescriptorInitAdapter,
+    .update = mmshScales_update,
+    .hitDetect = gMMSHScalesObjDescriptorHitDetectAdapter,
+    .render = mmshScales_render,
+    .free = mmshScales_free,
+    .getObjectTypeId = gMMSHScalesObjDescriptorTypeIdAdapter,
+    .getExtraSize = gMMSHScalesObjDescriptorExtraSizeAdapter,
+};;

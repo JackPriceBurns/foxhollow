@@ -1,13 +1,11 @@
 #include "dlls/objects/417_NW_mammoth.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dlls/objects/209_TumbleWeedB.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/curve.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/partfx_interface.h"
@@ -17,23 +15,23 @@
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
-#include "main/newshadows_audio_api.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
+#include "main/newshadows_audio.h"
 #include "main/objtype.h"
 #include "main/obj_path.h"
 #include "main/obj_trigger.h"
 #include "main/object_render.h"
 #include "main/objHitReact.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/screen_transition.h"
 #include "main/sky_interface.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 typedef struct NwMammothPathParams {
     u8 values[4];
@@ -800,19 +798,29 @@ void NW_mammoth_init(GameObject* obj, NwMammothPlacement* placement, int isReloa
 
 const f32 gNwMammothDefaultAnimStepScale = 0.005f;
 
+OBJECT_INIT_ADAPTER(gNW_mammothObjDescriptorInitAdapter, NW_mammoth_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gNW_mammothObjDescriptorUpdateAdapter, NW_mammoth_update, obj, 0)
+OBJECT_RENDER_ADAPTER(gNW_mammothObjDescriptorRenderAdapter, NW_mammoth_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gNW_mammothObjDescriptorFreeAdapter, NW_mammoth_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gNW_mammothObjDescriptorExtraSizeAdapter, NW_mammoth_getExtraSize)
+
 ObjectDescriptor gNW_mammothObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gNW_mammothObjDescriptorInitAdapter,
+    gNW_mammothObjDescriptorUpdateAdapter,
     0,
+    gNW_mammothObjDescriptorRenderAdapter,
+    gNW_mammothObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)NW_mammoth_init,
-    (ObjectDescriptorCallback)NW_mammoth_update,
-    0,
-    (ObjectDescriptorCallback)NW_mammoth_render,
-    (ObjectDescriptorCallback)NW_mammoth_free,
-    0,
-    NW_mammoth_getExtraSize,
+    gNW_mammothObjDescriptorExtraSizeAdapter,
 };

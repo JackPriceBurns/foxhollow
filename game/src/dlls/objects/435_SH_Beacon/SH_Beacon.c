@@ -8,14 +8,13 @@
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objfx.h"
 #include "main/objseq.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/audio/sfx.h"
+#include "main/gameloop_gamebit.h"
 #include "main/objhits.h"
 
 enum ShBeaconMode {
@@ -221,10 +220,17 @@ static void sh_beacon_init(GameObject* obj, const ShBeaconPlacement* placement) 
     obj->animEventCallback = sh_beacon_sequenceCallback;
 }
 
+OBJECT_INIT_ADAPTER(gSH_BeaconObjDescriptorInitAdapter, sh_beacon_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gSH_BeaconObjDescriptorExtraSizeAdapter, sh_beacon_getExtraSize)
+
 ObjectDescriptor gSH_BeaconObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)sh_beacon_init,
-    .update = (ObjectDescriptorCallback)sh_beacon_update,
-    .free = (ObjectDescriptorCallback)sh_beacon_free,
-    .getExtraSize = sh_beacon_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gSH_BeaconObjDescriptorInitAdapter,
+    .update = sh_beacon_update,
+    .free = sh_beacon_free,
+    .getExtraSize = gSH_BeaconObjDescriptorExtraSizeAdapter,
+};;

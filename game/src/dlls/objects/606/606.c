@@ -5,7 +5,7 @@
 #include "main/object_render.h"
 #include "sys/objects.h"
 #include "main/vecmath.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
@@ -131,7 +131,9 @@ void spellstone_update(GameObject* obj)
             {
                 GameObject* owner = obj->ownerObj;
 
-                obj->anim.localPos = owner->anim.localPos;
+                obj->anim.localPosX = owner->anim.localPosX;
+                obj->anim.localPosY = owner->anim.localPosY;
+                obj->anim.localPosZ = owner->anim.localPosZ;
             }
         }
         else
@@ -158,21 +160,47 @@ void spellstone_initialise(void)
 {
 }
 
-ObjectDescriptor12 gSpellStoneObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)spellstone_initialise,
-    (ObjectDescriptorCallback)spellstone_release,
-    0,
-    (ObjectDescriptorCallback)spellstone_init,
-    (ObjectDescriptorCallback)spellstone_update,
-    (ObjectDescriptorCallback)spellstone_hitDetect,
-    (ObjectDescriptorCallback)spellstone_render,
-    (ObjectDescriptorCallback)spellstone_free,
-    (ObjectDescriptorCallback)spellstone_getObjectTypeId,
-    spellstone_getExtraSize,
-    (ObjectDescriptorCallback)spellstone_setState,
-    (ObjectDescriptorCallback)spellstone_getState,
+OBJECT_INIT_ADAPTER(gSpellStoneObjDescriptorInitAdapter, spellstone_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSpellStoneObjDescriptorHitDetectAdapter, spellstone_hitDetect)
+OBJECT_RENDER_ADAPTER(gSpellStoneObjDescriptorRenderAdapter, spellstone_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gSpellStoneObjDescriptorFreeAdapter, spellstone_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSpellStoneObjDescriptorTypeIdAdapter, spellstone_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSpellStoneObjDescriptorExtraSizeAdapter, spellstone_getExtraSize)
+
+typedef struct SpellStoneObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(spellstone_setState)* spellstone_setState;
+    __typeof__(spellstone_getState)* spellstone_getState;
+} SpellStoneObjDescriptorTypeInterface;
+
+struct SpellStoneObjDescriptorType {
+    ObjectDescriptorHeader header;
+    SpellStoneObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gSpellStoneObjDescriptorAcquire, spellstone_initialise)
+
+struct SpellStoneObjDescriptorType gSpellStoneObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gSpellStoneObjDescriptorAcquire,
+        spellstone_release,
+    },
+    {
+        0,
+        gSpellStoneObjDescriptorInitAdapter,
+        spellstone_update,
+        gSpellStoneObjDescriptorHitDetectAdapter,
+        gSpellStoneObjDescriptorRenderAdapter,
+        gSpellStoneObjDescriptorFreeAdapter,
+        gSpellStoneObjDescriptorTypeIdAdapter,
+        gSpellStoneObjDescriptorExtraSizeAdapter,
+        spellstone_setState,
+        spellstone_getState,
+    },
 };

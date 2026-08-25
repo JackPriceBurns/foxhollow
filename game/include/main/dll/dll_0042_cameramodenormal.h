@@ -5,39 +5,9 @@
 #include "game/objects/object.h"
 #include "main/camera_object.h"
 #include "main/resource.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 
-/*
- * Camera traces use the regular track hit-result record, with camera-specific
- * names for a few of its one-query fields. Keep the two views in one union so
- * the embedded object pointers may widen without leaving the camera view at
- * legacy 32-bit offsets.
- */
-typedef union CamcontrolTraceWork {
-    TrackHitResults hits;
-    struct {
-        u8 unknown00[offsetof(TrackHitResults, radii)];
-        f32 radius;
-        u8 unknownAfterRadius[offsetof(TrackHitResults, surfaceTypes) -
-                              (offsetof(TrackHitResults, radii) + sizeof(f32))];
-        s8 bboxHit;
-        u8 unknownBeforeMode[offsetof(TrackHitResults, queryTypes) -
-                             (offsetof(TrackHitResults, surfaceTypes) + sizeof(s8))];
-        s8 mode;
-        u8 unknownBeforeHitCount[offsetof(TrackHitResults, hitCount) -
-                                 (offsetof(TrackHitResults, queryTypes) + sizeof(s8))];
-        s16 hitCount;
-        u8 blocked;
-        u8 tail[sizeof(TrackHitResults) - (offsetof(TrackHitResults, hitMask) + sizeof(u8))];
-    };
-} CamcontrolTraceWork;
-
-STATIC_ASSERT(offsetof(CamcontrolTraceWork, radius) == offsetof(TrackHitResults, radii));
-STATIC_ASSERT(offsetof(CamcontrolTraceWork, bboxHit) == offsetof(TrackHitResults, surfaceTypes));
-STATIC_ASSERT(offsetof(CamcontrolTraceWork, mode) == offsetof(TrackHitResults, queryTypes));
-STATIC_ASSERT(offsetof(CamcontrolTraceWork, hitCount) == offsetof(TrackHitResults, hitCount));
-STATIC_ASSERT(offsetof(CamcontrolTraceWork, blocked) == offsetof(TrackHitResults, hitMask));
-STATIC_ASSERT(sizeof(CamcontrolTraceWork) == sizeof(TrackHitResults));
+typedef TrackHitResults CamcontrolTraceWork;
 
 typedef struct CameraModeNormalActionSettings {
     u8 pad00[2];
@@ -251,10 +221,8 @@ STATIC_ASSERT(offsetof(CameraModeNormalState, padC9) == 0xC9);
 STATIC_ASSERT(sizeof(CameraModeNormalState) == 0xCC);
 
 typedef struct CameraModeNormalDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int mode, CameraModeNormalInitSettings* settings);
     void (*update)(CameraObject* camera);
     void (*free)(CameraObject* camera);
@@ -267,9 +235,9 @@ typedef struct CameraModeNormalDescriptor {
     void (*updateVerticalBounds)(CameraObject* camera, int flags, int collisionFlag, f32* upperBound, f32* lowerBound);
 } CameraModeNormalDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeNormalDescriptor, update) == 0x20);
@@ -285,7 +253,7 @@ STATIC_ASSERT(sizeof(CameraModeNormalDescriptor) == 0x40);
 extern CameraModeNormalState* gCameraModeNormalState;
 extern CameraModeNormalDescriptor gCameraModeNormalDescriptor;
 
-int camcontrol_traceMove(f32* fromPos, f32* toPos, f32* outPos, u8* traceWork, char traceMode, u8 runTrace, u8 runBbox,
+int camcontrol_traceMove(f32* fromPos, f32* toPos, f32* outPos, CamcontrolTraceWork* traceWork, char traceMode, u8 runTrace, u8 runBbox,
                          f32 radius);
 u8 camcontrol_traceFromTarget(f32* fromPos, GameObject* target, f32* outPos, void* unused);
 u8 camcontrol_getTargetPosition(CameraObject* camera, ObjAnimComponent* targetAnim, f32* outPos, s16* outRotY);

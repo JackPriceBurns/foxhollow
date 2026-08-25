@@ -8,7 +8,7 @@
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/obj_link.h"
 #include "main/obj_list.h"
 #include "sys/objects.h"
@@ -172,19 +172,31 @@ void dll_184_release(void) {
 void dll_184_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll184ObjDescriptorInitAdapter, dll_184_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll184ObjDescriptorHitDetectAdapter, dll_184_hitDetect)
+OBJECT_FREE_ADAPTER(gDll184ObjDescriptorFreeAdapter, dll_184_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll184ObjDescriptorTypeIdAdapter, dll_184_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll184ObjDescriptorExtraSizeAdapter, dll_184_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll184ObjDescriptorAcquire, dll_184_initialise)
+
 ObjectDescriptor gDll184ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll184ObjDescriptorAcquire,
+        dll_184_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_184_initialise,
-    (ObjectDescriptorCallback)dll_184_release,
-    0,
-    (ObjectDescriptorCallback)dll_184_init,
-    (ObjectDescriptorCallback)dll_184_update,
-    (ObjectDescriptorCallback)dll_184_hitDetect,
-    (ObjectDescriptorCallback)dll_184_render,
-    (ObjectDescriptorCallback)dll_184_free,
-    (ObjectDescriptorCallback)dll_184_getObjectTypeId,
-    dll_184_getExtraSize,
+    gDll184ObjDescriptorInitAdapter,
+    dll_184_update,
+    gDll184ObjDescriptorHitDetectAdapter,
+    dll_184_render,
+    gDll184ObjDescriptorFreeAdapter,
+    gDll184ObjDescriptorTypeIdAdapter,
+    gDll184ObjDescriptorExtraSizeAdapter,
 };

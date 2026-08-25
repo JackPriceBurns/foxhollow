@@ -9,7 +9,7 @@
 typedef void (*Dll5ESpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags);
 
 typedef struct Dll5EInterface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll5ESpawnFn spawn;
 } Dll5EInterface;
 
@@ -18,17 +18,15 @@ STATIC_ASSERT(offsetof(Dll5EInterface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll5EInterface) == 0x08);
 
 typedef struct Dll5EResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll5ESpawnFn spawn;
     u32 padding;
 } Dll5EResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll5EResourceDescriptor, padding) == 0x20);

@@ -9,19 +9,19 @@
 #include "dlls/objects/237.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0049_cameramodecombat.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/objfx.h"
-#include "main/newshadows_audio_api.h"
+#include "main/newshadows_audio.h"
 #include "main/dll/dll_005A_staffcollision.h"
 #include "main/object_render.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/dll/baddie_placement.h"
 #include "main/dll/baddie_setmove.h"
 #include "main/dll/boneparticleeffect_interface.h"
 #include "main/objtype.h"
 #include "main/obj_link.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/model.h"
@@ -29,7 +29,7 @@
 #include "main/objseq.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/dll_00C9_enemy.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "game/objects/object_setup.h"
 #include "main/objhits.h"
@@ -39,13 +39,13 @@
 #include "main/resource.h"
 #include "main/vecmath.h"
 #include "main/dll/duster.h"
-#include "main/dll/tricky_api.h"
-#include "main/lightmap_api.h"
-#include "main/shader_api.h"
+#include "main/dll/tricky.h"
+#include "main/lightmap.h"
+#include "main/shader.h"
 #include "main/frame_timing.h"
 #include "main/model_engine.h"
 #include "main/model_light.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/dll/hagabon_mk2.h"
 #include "main/dll/duster_wb.h"
@@ -65,16 +65,14 @@
 #include "main/dll/seqObj11D.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/fall_ladders.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/obj_path.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dolphin/mtx/vec.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
 #include "main/voxmaps.h"
 #include "main/dll/baddie_frozen.h"
-#include "main/dll/player_state_api.h"
+#include "main/dll/player_state.h"
 
 u8 lbl_8031DBD8[12] = {0};
 u8 lbl_8031DBE4[12] = {0};
@@ -83,22 +81,6 @@ int lbl_803DBC58[2] = {2, 3};
 f32 lbl_803DBC60 = 20.0f;
 f32 lbl_803DBC64 = 20.0f;
 f32 lbl_803DBC68 = 2.3509887e-38f;
-
-typedef struct BaddieAfterUpdateBonesCbState
-{
-    u8 pad0[0x2B0 - 0x0];
-    s16 unk2B0;
-    u16 unk2B2;
-    u8 pad2B4[0x2D8 - 0x2B4];
-    f32 freezeRecoverTimer;
-    u32 unk2DC;
-    u8 pad2E0[0x2F2 - 0x2E0];
-    u8 unk2F2;
-    u8 unk2F3;
-    u8 unk2F4;
-    u8 pad2F5[0x36C - 0x2F5];
-    s32 tailBoneChain; /* 0x36C: bone chain passed to ObjModelChain_Update for tail sim */
-} BaddieAfterUpdateBonesCbState;
 
 typedef struct
 {
@@ -865,7 +847,7 @@ uintptr_t baddie_spawnRewardDrops(GameObject* obj, void* state, int spawnBits, u
     gTrickyNearestObject = (GameObject*)nearest;
     if ((nearest->anim.romDefNo == TRICKY_OBJ_APPLE) || (nearest->anim.romDefNo == TRICKY_CHILD_OBJ_ENERGY_EGG))
     {
-        ((void (*)(GameObject*, f32, f32, f32))nearest->anim.dll[0][11])(nearest, 0.0f, 1.0f, 0.0f);
+        COLLECTIBLE_INTERFACE(nearest)->startBounceMotion(nearest, 0.0f, 1.0f, 0.0f);
     }
     return (uintptr_t)gTrickyNearestObject;
 }
@@ -953,7 +935,7 @@ u8 baddie_canSeeTarget(GameObject* obj, EnemyState* state, void* from, void* to)
     if ((visible != 0) && ((state->flags2E4 & ENEMY_FLAG2E4_BBOX_BLOCKS_SIGHT) != 0))
     {
         if (trackGetLineIntersect((f32*)from, (f32*)&probe, 1.0f, 0, &bboxHit, obj,
-                               state->bboxTraceFlags, -1, 0, 0) != 0)
+                               state->pathControl.primaryHitType, -1, 0, 0) != 0)
         {
             visible = 0;
         }
@@ -1004,7 +986,7 @@ void baddie_updateSightQuadrants(GameObject* obj, EnemyState* state, f32 radius)
             probe.y += 20.0f;
         }
         voxmaps_worldToGrid((f32*)&probe, probeGrid);
-        PSVECSubtract(&obj->anim.worldPos, &probe, &delta);
+        PSVECSubtract((Vec*)&obj->anim.worldPosX, &probe, &delta);
         if (PSVECMag(&delta) < 1905.0f)
         {
             if (obj->anim.parent != NULL)
@@ -1028,7 +1010,7 @@ void baddie_updateSightQuadrants(GameObject* obj, EnemyState* state, f32 radius)
         {
             if (trackGetLineIntersect(&obj->anim.worldPosX, (f32*)&probe, 1.0f, 0, &bboxHit,
                                    obj,
-                                   state->bboxTraceFlags, -1, 0, 0) != 0)
+                                   state->pathControl.primaryHitType, -1, 0, 0) != 0)
             {
                 visible = 0;
             }
@@ -1083,31 +1065,31 @@ void Tricky_applyFloorResponse(GameObject* obj, EnemyState* state)
         }
         if ((state->flags2E4 & ENEMY_FLAG2E4_BBOX_BLOCKS_SIGHT) == 0)
         {
-            state->physicsActive = 0;
+            state->pathControl.subtype = 0;
         }
     }
     else
     {
         if ((flags & 0xc) != 0)
         {
-            state->physicsActive = 1;
+            state->pathControl.subtype = 1;
         }
         else
         {
-            state->physicsActive = 0;
+            state->pathControl.subtype = 0;
         }
     }
 
-    (*gPathControlInterface)->update((void*)obj, &state->flags, timeDelta);
+    (*gPathControlInterface)->update((void*)obj, &state->pathControl, timeDelta);
     if ((state->flags2E4 & 4) != 0)
     {
-        (*gPathControlInterface)->apply((void*)obj, &state->flags);
+        (*gPathControlInterface)->apply((void*)obj, &state->pathControl);
     }
-    (*gPathControlInterface)->advance((void*)obj, &state->flags, timeDelta);
+    (*gPathControlInterface)->advance((void*)obj, &state->pathControl, timeDelta);
 
-    if (((state->physicsActive != 0) &&
+    if (((state->pathControl.subtype != 0) &&
          ((state->flags2E4 & ENEMY_FLAG2E4_FLOOR_RESPONSE_MASK) == 0)) &&
-        ((state->surfaceFlags & ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR) != 0))
+        ((state->pathControl.surfaceFlags & ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR) != 0))
     {
         obj->anim.velocityY = 0.0f;
         state->controlFlags |= ENEMY_CONTROL_FLOOR_SNAP_APPLIED;
@@ -1115,7 +1097,7 @@ void Tricky_applyFloorResponse(GameObject* obj, EnemyState* state)
     if ((state->flags2E4 & 0x00200000) != 0)
     {
         ObjPath_GetPointWorldPositionArray(obj, 2, 2, points);
-        objAudioDispatchEventMask(obj, state->animEventMask, 7, points, &state->flags,
+        objAudioDispatchEventMask(obj, state->animEventMask, 7, points, &state->pathControl.flags,
                                   state->pathSpeed, 1.0f);
     }
 }
@@ -1145,8 +1127,8 @@ void Tricky_findNearbyFloorHeights(GameObject* obj, EnemyState* state, f32* near
     i = 0;
     state->controlFlags &= ~ENEMY_CONTROL_SPECIAL_FLOOR_FOUND;
     zero = 0.0f;
-    state->nearestSpecialDeltaY = zero;
-    state->surfaceFlags &= ~ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
+    state->pathControl.resultWaterDepth = zero;
+    state->pathControl.surfaceFlags &= ~ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
     for (; i < hitCount; i++)
     {
         hit = hitList[0][i];
@@ -1161,11 +1143,11 @@ void Tricky_findNearbyFloorHeights(GameObject* obj, EnemyState* state, f32* near
         {
             if (absDy < nearestSpecialDelta)
             {
-                state->nearestSpecialDeltaY = dy;
-                state->surfaceFlags |= ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
+                state->pathControl.resultWaterDepth = dy;
+                state->pathControl.surfaceFlags |= ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
                 nearestSpecialDelta = absDy;
                 *nearestSpecialY = hitList[0][i]->height;
-                if (state->nearestSpecialDeltaY > 20.0f)
+                if (state->pathControl.resultWaterDepth > 20.0f)
                 {
                     state->controlFlags |=
                         (ENEMY_CONTROL_SPECIAL_FLOOR_FOUND | ENEMY_CONTROL_FLOOR_SNAP_APPLIED);
@@ -1175,7 +1157,7 @@ void Tricky_findNearbyFloorHeights(GameObject* obj, EnemyState* state, f32* near
         else if (absDy < nearestFloorDelta)
         {
             *nearestFloorY = hitY;
-            state->surfaceFlags |= ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
+            state->pathControl.surfaceFlags |= ENEMY_SURFACE_FLAG_HAS_NEARBY_FLOOR;
             nearestFloorDelta = absDy;
         }
     }
@@ -1867,7 +1849,7 @@ int enemy_SeqFn(GameObject* node, int unused, ObjSeqState* animUpdate)
             obj = getTrickyObject();
             if (obj != NULL)
             {
-                ((void (*)(GameObject*, int, GameObject*))obj->anim.dll[0][13])(obj, 1, node);
+                TRICKY_INTERFACE(obj)->commandPlayBall(obj, 1, node);
                 ((EnemyState*)sub)->controlFlags |= 0x200000LL;
                 ((EnemyState*)sub)->trackedObj = obj;
             }
@@ -2826,7 +2808,7 @@ void enemy_update(GameObject* obj)
     if ((state->controlFlags & 0x8000) != 0)
     {
         setHudForceShowMask(0);
-        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->flags);
+        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->pathControl);
         state->controlFlags &= ~0x8003;
         if ((state->flags2E4 & 0x20000) != 0)
         {
@@ -3063,32 +3045,32 @@ void enemy_init(GameObject* obj, u8* setup, int flag)
                 ((EnemyState*)state)->controlFlags |= BADDIE_CONTROL_PATH_FOLLOW;
             }
         }
-        (*gPathControlInterface)->init(&((EnemyState*)state)->flags, 0, 422, 1);
+        (*gPathControlInterface)->init(&((EnemyState*)state)->pathControl, 0, 422, 1);
         if ((((EnemyState*)state)->flags2E4 & 8) != 0)
         {
-            (*gPathControlInterface)->setLocalPointCollision(&((EnemyState*)state)->flags, 1, lbl_8031DBE4, &lbl_803DBC64, 4);
+            (*gPathControlInterface)->setLocalPointCollision(&((EnemyState*)state)->pathControl, 1, lbl_8031DBE4, &lbl_803DBC64, 4);
         }
         if ((((EnemyState*)state)->flags2E4 & 4) != 0)
         {
-            (*gPathControlInterface)->setup(&((EnemyState*)state)->flags, 1, lbl_8031DBD8, &lbl_803DBC60, &lbl_803DBC68);
+            (*gPathControlInterface)->setup(&((EnemyState*)state)->pathControl, 1, lbl_8031DBD8, &lbl_803DBC60, &lbl_803DBC68);
         }
-        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->flags);
+        (*gPathControlInterface)->attachObject(obj, &((EnemyState*)state)->pathControl);
         if ((((EnemyState*)state)->flags2E4 & 0xc) != 0)
         {
-            ((EnemyState*)state)->physicsActive = 1;
+            ((EnemyState*)state)->pathControl.subtype = 1;
         }
         if ((((EnemyState*)state)->flags2E4 & 0x8000022) != 0 || unk34 != 0 ||
             obj->anim.romDefNo == ENEMY_VAMBAT_OBJ || obj->anim.romDefNo == ENEMY_FIREBAT_OBJ)
         {
-            ((EnemyState*)state)->flags |= 0x40000;
+            ((EnemyState*)state)->pathControl.flags |= 0x40000;
         }
         else
         {
-            ((EnemyState*)state)->flags &= ~0x40000;
+            ((EnemyState*)state)->pathControl.flags &= ~0x40000;
         }
         if ((((EnemyState*)state)->flags2E4 & 4) == 0 && (((EnemyState*)state)->flags2E4 & 8) != 0)
         {
-            ((EnemyState*)state)->flags &= ~0x3800;
+            ((EnemyState*)state)->pathControl.flags &= ~0x3800;
         }
         if (obj->userData1 != 0)
         {
@@ -3129,19 +3111,29 @@ void enemy_initialise(void)
 
 const f32 lbl_803E2604 = 0.0f;
 
+OBJECT_INIT_ADAPTER(gBaddieObjDescriptorInitAdapter, enemy_initFromDescriptor, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gBaddieObjDescriptorTypeIdAdapter, enemy_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBaddieObjDescriptorExtraSizeAdapter, enemy_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBaddieObjDescriptorAcquire, enemy_initialise)
+
 ObjectDescriptor gBaddieObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBaddieObjDescriptorAcquire,
+        enemy_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)enemy_initialise,
-    (ObjectDescriptorCallback)enemy_release,
-    0,
-    (ObjectDescriptorCallback)enemy_initFromDescriptor,
-    (ObjectDescriptorCallback)enemy_update,
-    (ObjectDescriptorCallback)enemy_hitDetect,
-    (ObjectDescriptorCallback)enemy_render,
-    (ObjectDescriptorCallback)enemy_free,
-    (ObjectDescriptorCallback)enemy_getObjectTypeId,
-    enemy_getExtraSize,
+    gBaddieObjDescriptorInitAdapter,
+    enemy_update,
+    enemy_hitDetect,
+    enemy_render,
+    enemy_free,
+    gBaddieObjDescriptorTypeIdAdapter,
+    gBaddieObjDescriptorExtraSizeAdapter,
 };

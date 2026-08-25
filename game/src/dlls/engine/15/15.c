@@ -10,11 +10,10 @@
 #include "main/resource.h"
 #include "main/dll/path_control_interface.h"
 #include "main/vecmath.h"
-#include "main/lightmap_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/lightmap.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/dll/dll_000F_unk.h"
-#include "main/audio/sfx_play_api.h"
 
 u8 lbl_803DD450;
 u8 lbl_803DD44F;
@@ -260,25 +259,30 @@ void player_updateParticles(GameObject* obj, int unused, int effectId, int count
 typedef void (*ProjGfxSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags, int modelId,
                                void* unused3);
 
+typedef struct ProjGfxInterface {
+    void (*reserved)(void);
+    ProjGfxSpawnFn spawn;
+} ProjGfxInterface;
+
 void player_doProjGfx(GameObject* obj, int unusedA, int resIdBase, int count, int unusedB, int mode)
 {
     /* res: acquired projectile-gfx resource; its vtable slot 1 (retail +4) is
      * the per-instance spawn entry, dispatched `count` times with a
      * mode-selected flag (1/2/4). */
-    ObjectInterfaceHandle res = Resource_Acquire((u16)(resIdBase + 0x58), 1);
+    ProjGfxInterface** res = Resource_Acquire((u16)(resIdBase + 0x58), 1);
     while (count != 0)
     {
         if (mode == 0)
         {
-            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 1, -1, NULL);
+            (*res)->spawn(obj, 0, NULL, 1, -1, NULL);
         }
         else if (mode == 1)
         {
-            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 2, -1, NULL);
+            (*res)->spawn(obj, 0, NULL, 2, -1, NULL);
         }
         else if (mode == 2)
         {
-            ((ProjGfxSpawnFn)res[0][1])(obj, 0, NULL, 4, -1, NULL);
+            (*res)->spawn(obj, 0, NULL, 4, -1, NULL);
         }
         count--;
     }
@@ -1062,68 +1066,70 @@ void player_release(void)
 void player_initialise(void)
 {
 }
+typedef struct PlayerDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(player_init)* init;
+    __typeof__(player_update)* update;
+    __typeof__(player_updateVel)* updateVel;
+    __typeof__(player_setOverride)* setOverride;
+    __typeof__(player_setState)* setState;
+    __typeof__(player_followCurve)* followCurve;
+    __typeof__(player_moveTowardPoint)* moveTowardPoint;
+    __typeof__(player_advanceMove)* advanceMove;
+    __typeof__(dll_0F_func0B)* slot0B;
+    __typeof__(player_modelMtxFn)* modelMtxFn;
+    __typeof__(player_render2)* render2;
+    __typeof__(player_rotateTowardEnemy)* rotateTowardEnemy;
+    __typeof__(player_playSoundFn0F)* playSoundFn0F;
+    __typeof__(player_playSoundFn10)* playSoundFn10;
+    __typeof__(player_findCurve)* findCurve;
+    __typeof__(player_updateCurve)* updateCurve;
+    __typeof__(dll_0F_func13)* slot13;
+    __typeof__(player_clearXZvel)* clearXZvel;
+    __typeof__(player_setAnimIds)* setAnimIds;
+    __typeof__(player_updateSecondaryBlend)* updateSecondaryBlend;
+    __typeof__(player_doProjGfx)* doProjGfx;
+    __typeof__(player_updateParticles)* updateParticles;
+    __typeof__(dll_0F_func19_nop)* slot19;
+} PlayerDllInterfaceCallbacks;
+
 typedef struct PlayerDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback init;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback updateVel;
-    ObjectDescriptorCallback setOverride;
-    ObjectDescriptorCallback setState;
-    ObjectDescriptorCallback followCurve;
-    ObjectDescriptorCallback moveTowardPoint;
-    ObjectDescriptorCallback advanceMove;
-    ObjectDescriptorCallback slot0B;
-    ObjectDescriptorCallback modelMtxFn;
-    ObjectDescriptorCallback render2;
-    ObjectDescriptorCallback rotateTowardEnemy;
-    ObjectDescriptorCallback playSoundFn0F;
-    ObjectDescriptorCallback playSoundFn10;
-    ObjectDescriptorCallback findCurve;
-    ObjectDescriptorCallback updateCurve;
-    ObjectDescriptorCallback slot13;
-    ObjectDescriptorCallback clearXZvel;
-    ObjectDescriptorCallback setAnimIds;
-    ObjectDescriptorCallback updateSecondaryBlend;
-    ObjectDescriptorCallback doProjGfx;
-    ObjectDescriptorCallback updateParticles;
-    ObjectDescriptorCallback slot19;
+    ResourceDescriptorHeader header;
+    PlayerDllInterfaceCallbacks interface;
 } PlayerDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gplayerResourceAcquire, player_initialise)
+
 PlayerDllInterface player_funcs = {
-    0,
-    0,
-    0,
-    0x00190000,
-    (ObjectDescriptorCallback)player_initialise,
-    (ObjectDescriptorCallback)player_release,
-    0,
-    (ObjectDescriptorCallback)player_init,
-    (ObjectDescriptorCallback)player_update,
-    (ObjectDescriptorCallback)player_updateVel,
-    (ObjectDescriptorCallback)player_setOverride,
-    (ObjectDescriptorCallback)player_setState,
-    (ObjectDescriptorCallback)player_followCurve,
-    (ObjectDescriptorCallback)player_moveTowardPoint,
-    (ObjectDescriptorCallback)player_advanceMove,
-    (ObjectDescriptorCallback)dll_0F_func0B,
-    (ObjectDescriptorCallback)player_modelMtxFn,
-    (ObjectDescriptorCallback)player_render2,
-    (ObjectDescriptorCallback)player_rotateTowardEnemy,
-    (ObjectDescriptorCallback)player_playSoundFn0F,
-    (ObjectDescriptorCallback)player_playSoundFn10,
-    (ObjectDescriptorCallback)player_findCurve,
-    (ObjectDescriptorCallback)player_updateCurve,
-    (ObjectDescriptorCallback)dll_0F_func13,
-    (ObjectDescriptorCallback)player_clearXZvel,
-    (ObjectDescriptorCallback)player_setAnimIds,
-    (ObjectDescriptorCallback)player_updateSecondaryBlend,
-    (ObjectDescriptorCallback)player_doProjGfx,
-    (ObjectDescriptorCallback)player_updateParticles,
-    (ObjectDescriptorCallback)dll_0F_func19_nop,
+    {
+        {0, 0, 0, 0x00190000},
+        gplayerResourceAcquire,
+        player_release,
+    },
+    {
+        NULL,
+        player_init,
+        player_update,
+        player_updateVel,
+        player_setOverride,
+        player_setState,
+        player_followCurve,
+        player_moveTowardPoint,
+        player_advanceMove,
+        dll_0F_func0B,
+        player_modelMtxFn,
+        player_render2,
+        player_rotateTowardEnemy,
+        player_playSoundFn0F,
+        player_playSoundFn10,
+        player_findCurve,
+        player_updateCurve,
+        dll_0F_func13,
+        player_clearXZvel,
+        player_setAnimIds,
+        player_updateSecondaryBlend,
+        player_doProjGfx,
+        player_updateParticles,
+        dll_0F_func19_nop,
+    },
 };

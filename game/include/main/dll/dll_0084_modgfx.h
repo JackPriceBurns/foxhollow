@@ -10,7 +10,7 @@ typedef s16 (*Dll84SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParam
                             int owner, void* unused);
 
 typedef struct Dll84Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll84SpawnFn spawn;
 } Dll84Interface;
 
@@ -19,17 +19,15 @@ STATIC_ASSERT(offsetof(Dll84Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll84Interface) == 0x08);
 
 typedef struct Dll84ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll84SpawnFn spawn;
     u32 opaqueTail;
 } Dll84ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll84ResourceDescriptor, opaqueTail) == 0x20);

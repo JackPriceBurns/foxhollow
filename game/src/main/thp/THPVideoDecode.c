@@ -99,7 +99,7 @@ static void AttractMovieVideo_Decode(void* param) {
 
 static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
     AttractMoviePlayer* player = &gAttractMoviePlayer;
-    u32 frameSize = player->frameStride;
+    u32 frameSize = player->initReadSize;
     AttractMovieReadBuffer readBuffer;
     int i = 0;
 
@@ -123,7 +123,7 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
                             break; /* pos==cols-1, not looping: go to decode */
                         }
                         frameSize = fhSwap32(*(u32*)readBuffer.ptr);
-                        readBuffer.ptr = player->loopFrame;
+                        readBuffer.ptr = player->movieData;
                     } else {
                     u32 nextSize = fhSwap32(*(u32*)readBuffer.ptr);
                         readBuffer.ptr += frameSize;
@@ -145,7 +145,7 @@ static void* AttractMovieVideo_DecoderForOnMemory(void* param) {
             if (pos == cols - 1) {
                 if (player->playFlags & 1) {
                     frameSize = fhSwap32(*(u32*)readBuffer.ptr);
-                    readBuffer.ptr = player->loopFrame;
+                    readBuffer.ptr = player->movieData;
                 } else {
                     OSSuspendThread(&gPicMenuVideoDecodeThread);
                 }

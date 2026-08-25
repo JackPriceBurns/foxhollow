@@ -3,8 +3,9 @@
 
 #include "global.h"
 #include "main/game_timer.h"
-#include "main/model_engine_ui_api.h"
-#include "main/model_render_instrs_api.h"
+#include "main/model_engine_ui.h"
+#include "main/model_render_instrs.h"
+#include "main/resource.h"
 
 typedef struct RingBufferQueue {
     s16 count;
@@ -32,6 +33,13 @@ typedef struct ModelList {
     s16* iter;
 } ModelList;
 
+typedef struct UiResourceInterface {
+    void* field0;
+    int (*frameStart)(void);
+    void (*frameEnd)(void);
+    void (*draw)(int arg0, int arg1, int arg2);
+} UiResourceInterface;
+
 typedef struct UiDllVTable {
     void* field0;
     int (*frameStart)(void);
@@ -39,6 +47,29 @@ typedef struct UiDllVTable {
     void (*draw)(int arg0, int arg1, int arg2);
     void (*setState)(int state);
 } UiDllVTable;
+
+typedef struct UiResourceDescriptor {
+    ResourceDescriptorHeader header;
+    UiResourceInterface interface;
+} UiResourceDescriptor;
+
+typedef struct UiResourceDescriptorWithPadding {
+    UiResourceDescriptor descriptor;
+    void* padding;
+} UiResourceDescriptorWithPadding;
+
+#define UI_RESOURCE_ADAPTERS(prefix, initialiseCallback, frameStartCallback, drawCallback, ...)                 \
+    RESOURCE_ACQUIRE_ADAPTER(prefix##Acquire, initialiseCallback)                                               \
+    static int prefix##FrameStart(void) { return frameStartCallback(); }                                        \
+    static void prefix##Draw(int arg0, int arg1, int arg2) { drawCallback(__VA_ARGS__); }
+
+#define UI_RESOURCE_VOID_FRAME_ADAPTERS(prefix, initialiseCallback, frameStartCallback, drawCallback, ...)      \
+    RESOURCE_ACQUIRE_ADAPTER(prefix##Acquire, initialiseCallback)                                               \
+    static int prefix##FrameStart(void) {                                                                        \
+        frameStartCallback();                                                                                    \
+        return 0;                                                                                                \
+    }                                                                                                            \
+    static void prefix##Draw(int arg0, int arg1, int arg2) { drawCallback(__VA_ARGS__); }
 
 extern UiDllVTable** gModelEngineCurUiDllRes;
 extern u8 gModelEngineTimerState;

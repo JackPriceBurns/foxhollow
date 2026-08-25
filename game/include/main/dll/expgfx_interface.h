@@ -3,16 +3,17 @@
 
 #include "global.h"
 
+struct ExpgfxSpawnConfig;
+
 typedef void (*ExpgfxOnMapSetupFn)(void);
-typedef int (*ExpgfxSpawnEffectFn)(void* config, int preferredPoolIndex, int sourceId,
+typedef int (*ExpgfxSpawnEffectFn)(struct ExpgfxSpawnConfig* config, int preferredPoolIndex, int sourceId,
                                    int flags);
-typedef void (*ExpgfxUpdateFrameStateFn)(int sourceMode, uintptr_t sourceId, int unused0,
-                                         int unused1);
+typedef void (*ExpgfxUpdateFrameStateFn)(int sourceMode, uintptr_t sourceId);
 typedef void (*ExpgfxResetAllPoolsFn)(void);
 typedef void (*ExpgfxFreeSourceFn)(uintptr_t sourceId);
 typedef int (*ExpgfxFunc09Fn)(void);
 typedef void (*ExpgfxNopFn)(void);
-typedef void (*ExpgfxUpdateSourceFrameFlagsFn)(void* sourceObject);
+typedef int (*ExpgfxUpdateSourceFrameFlagsFn)(void* sourceObject);
 
 typedef struct ExpgfxInterface
 {

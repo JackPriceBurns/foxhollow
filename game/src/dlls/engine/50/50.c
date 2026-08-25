@@ -1,17 +1,17 @@
 #include "dolphin/os.h"
 #include "dolphin/gx/GXTexture.h"
 #include "dolphin/gx/GXGet.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/fileio.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "dlls/object_descriptor.h"
-#include "track/intersect_hud_api.h"
+#include "track/intersect_hud.h"
 #include "main/dll/tricky.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_str_api.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show_str.h"
 #include "main/map_load.h"
 #include "main/model_engine.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/sky.h"
 #include "main/dll/FRONT/dll_0032_titlescreeninit.h"
 
@@ -228,15 +228,18 @@ void TitleScreenInit_initialise(void)
     warpToMap(TITLESCREENINIT_MAP_WARP, 0);
 }
 
-ObjectDescriptor6 TitleScreenInit_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)TitleScreenInit_initialise,
-    (ObjectDescriptorCallback)TitleScreenInit_release,
-    0,
-    (ObjectDescriptorCallback)TitleScreenInit_frameStart,
-    (ObjectDescriptorCallback)TitleScreenInit_frameEnd,
-    (ObjectDescriptorCallback)TitleScreenInit_render,
+UI_RESOURCE_ADAPTERS(gTitleScreenInitUiResource, TitleScreenInit_initialise, TitleScreenInit_frameStart, TitleScreenInit_render)
+
+UiResourceDescriptor TitleScreenInit_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gTitleScreenInitUiResourceAcquire,
+        TitleScreenInit_release,
+    },
+    {
+        NULL,
+        gTitleScreenInitUiResourceFrameStart,
+        TitleScreenInit_frameEnd,
+        gTitleScreenInitUiResourceDraw,
+    },
 };

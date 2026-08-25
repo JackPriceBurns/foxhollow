@@ -5,7 +5,7 @@
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/render_lactions_api.h"
+#include "main/render_lactions.h"
 
 typedef enum MagicLightSequenceId {
     MAGIC_LIGHT_SEQUENCE_PROXIMITY = 0x16B,
@@ -146,19 +146,30 @@ void MagicLight_release(void) {
 void MagicLight_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMagicLightObjDescriptorInitAdapter, MagicLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMagicLightObjDescriptorHitDetectAdapter, MagicLight_hitDetect)
+OBJECT_FREE_ADAPTER(gMagicLightObjDescriptorFreeAdapter, MagicLight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMagicLightObjDescriptorTypeIdAdapter, MagicLight_getObjectTypeId)
+
+RESOURCE_ACQUIRE_ADAPTER(gMagicLightObjDescriptorAcquire, MagicLight_initialise)
+
 ObjectDescriptor gMagicLightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMagicLightObjDescriptorAcquire,
+        MagicLight_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MagicLight_initialise,
-    (ObjectDescriptorCallback)MagicLight_release,
-    0,
-    (ObjectDescriptorCallback)MagicLight_init,
-    (ObjectDescriptorCallback)MagicLight_update,
-    (ObjectDescriptorCallback)MagicLight_hitDetect,
-    (ObjectDescriptorCallback)MagicLight_render,
-    (ObjectDescriptorCallback)MagicLight_free,
-    (ObjectDescriptorCallback)MagicLight_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)MagicLight_getExtraSize,
+    gMagicLightObjDescriptorInitAdapter,
+    MagicLight_update,
+    gMagicLightObjDescriptorHitDetectAdapter,
+    MagicLight_render,
+    gMagicLightObjDescriptorFreeAdapter,
+    gMagicLightObjDescriptorTypeIdAdapter,
+    MagicLight_getExtraSize,
 };

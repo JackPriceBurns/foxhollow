@@ -3,7 +3,7 @@
  */
 #include "main/dll/CAM/dll_0045_camTalk.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/camera_interface.h"
 #include "main/frame_timing.h"
@@ -138,10 +138,10 @@ void CameraModeTalk_release(void) {
 void CameraModeTalk_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeTalkDescriptorAcquire, CameraModeTalk_initialise)
+
 CameraModeTalkDescriptor gCameraModeTalkDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeTalk_initialise,
-    CameraModeTalk_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeTalkDescriptorAcquire, CameraModeTalk_release },
     NULL,
     CameraModeTalk_init,
     CameraModeTalk_update,

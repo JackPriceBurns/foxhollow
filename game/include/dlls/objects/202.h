@@ -57,6 +57,7 @@ extern int gIceBaddieHitReactionMoves[30];
 extern u8 gIceBaddieHitReactionDamage[32];
 extern u8 gIceBaddieParticleArgsTable[16];
 extern u8 gIceBaddiePaletteIndexTable[32];
-extern ObjectDescriptor12 gIceBaddieObjDescriptor;
+struct IceBaddieObjDescriptorType;
+extern struct IceBaddieObjDescriptorType gIceBaddieObjDescriptor;
 
 #endif /* DLLS_OBJECTS_202_H_ */

@@ -3,17 +3,15 @@
 #include "dlls/objects/438_SC_levelcon.h"
 #include "dlls/objects/443_SC_totembon.h"
 #include "dolphin/pad.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_object_volume_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/model_engine.h"
 #include "main/obj_list.h"
@@ -335,7 +333,9 @@ static void sc_totemstrength_update(GameObject* obj) {
             u8 flags;
 
             state->flags &= (u8)~SC_TOTEM_STRENGTH_FLAG_ACTIVE;
-            obj->anim.localPos = state->savedPosition;
+            obj->anim.localPosX = state->savedPosition.x;
+            obj->anim.localPosY = state->savedPosition.y;
+            obj->anim.localPosZ = state->savedPosition.z;
             state->opponent = NULL;
             obj->anim.rotX = SC_TOTEM_STRENGTH_TRACK_INITIAL;
             state->trackOffset = SC_TOTEM_STRENGTH_TRACK_INITIAL;
@@ -384,7 +384,9 @@ static void sc_totemstrength_init(GameObject* obj) {
     state->trackOffset = SC_TOTEM_STRENGTH_TRACK_INITIAL;
     state->transitionStep = SC_TOTEM_STRENGTH_TRANSITION_RESET;
     state->opponent = NULL;
-    state->savedPosition = obj->anim.localPos;
+    state->savedPosition.x = obj->anim.localPosX;
+    state->savedPosition.y = obj->anim.localPosY;
+    state->savedPosition.z = obj->anim.localPosZ;
 }
 
 static void sc_totemstrength_release(void) {
@@ -393,15 +395,25 @@ static void sc_totemstrength_release(void) {
 static void sc_totemstrength_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSC_totemstrengthObjDescriptorInitAdapter, sc_totemstrength_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSC_totemstrengthObjDescriptorHitDetectAdapter, sc_totemstrength_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_totemstrengthObjDescriptorFreeAdapter, sc_totemstrength_free)
+OBJECT_TYPE_ID_ADAPTER(gSC_totemstrengthObjDescriptorTypeIdAdapter, sc_totemstrength_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_totemstrengthObjDescriptorExtraSizeAdapter, sc_totemstrength_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_totemstrengthObjDescriptorAcquire, sc_totemstrength_initialise)
+
 ObjectDescriptor gSC_totemstrengthObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_totemstrength_initialise,
-    .release = (ObjectDescriptorCallback)sc_totemstrength_release,
-    .init = (ObjectDescriptorCallback)sc_totemstrength_init,
-    .update = (ObjectDescriptorCallback)sc_totemstrength_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_totemstrength_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_totemstrength_render,
-    .free = (ObjectDescriptorCallback)sc_totemstrength_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_totemstrength_getObjectTypeId,
-    .getExtraSize = sc_totemstrength_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_totemstrengthObjDescriptorAcquire,
+        .release = sc_totemstrength_release,
+    },
+    .init = gSC_totemstrengthObjDescriptorInitAdapter,
+    .update = sc_totemstrength_update,
+    .hitDetect = gSC_totemstrengthObjDescriptorHitDetectAdapter,
+    .render = sc_totemstrength_render,
+    .free = gSC_totemstrengthObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_totemstrengthObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_totemstrengthObjDescriptorExtraSizeAdapter,
+};;

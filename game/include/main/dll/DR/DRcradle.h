@@ -3,9 +3,9 @@
 
 #include "types.h"
 #include "game/objects/object.h"
-#include "dlls/object_descriptor.h"
+#include "dlls/objects/common/vehicle.h"
 
-extern ObjectDescriptor24 gSnowBikeObjDescriptor;
+extern VehicleDescriptor gSnowBikeObjDescriptor;
 
 void SnowBike_func17(void);
 void SnowBike_func16(void);

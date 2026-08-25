@@ -2,7 +2,7 @@
 #define MAIN_GAMETEXT_INTERNAL_H_
 
 #include "global.h"
-#include "main/gametext_box_api.h"
+#include "main/gametext_box.h"
 
 typedef struct TaskTextEntry {
     u16 textSeqId;

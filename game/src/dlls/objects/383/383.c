@@ -3,7 +3,7 @@
 #include "dlls/objects/383.h"
 
 #include "main/dll/partfx_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
 
@@ -125,19 +125,31 @@ void moonSeedBush_release(void) {
 void moonSeedBush_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMoonSeedBushObjDescriptorInitAdapter, moonSeedBush_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMoonSeedBushObjDescriptorHitDetectAdapter, moonSeedBush_hitDetect)
+OBJECT_FREE_ADAPTER(gMoonSeedBushObjDescriptorFreeAdapter, moonSeedBush_free)
+OBJECT_TYPE_ID_ADAPTER(gMoonSeedBushObjDescriptorTypeIdAdapter, moonSeedBush_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMoonSeedBushObjDescriptorExtraSizeAdapter, moonSeedBush_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMoonSeedBushObjDescriptorAcquire, moonSeedBush_initialise)
+
 ObjectDescriptor gMoonSeedBushObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMoonSeedBushObjDescriptorAcquire,
+        moonSeedBush_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)moonSeedBush_initialise,
-    (ObjectDescriptorCallback)moonSeedBush_release,
-    0,
-    (ObjectDescriptorCallback)moonSeedBush_init,
-    (ObjectDescriptorCallback)moonSeedBush_update,
-    (ObjectDescriptorCallback)moonSeedBush_hitDetect,
-    (ObjectDescriptorCallback)moonSeedBush_render,
-    (ObjectDescriptorCallback)moonSeedBush_free,
-    (ObjectDescriptorCallback)moonSeedBush_getObjectTypeId,
-    moonSeedBush_getExtraSize,
+    gMoonSeedBushObjDescriptorInitAdapter,
+    moonSeedBush_update,
+    gMoonSeedBushObjDescriptorHitDetectAdapter,
+    moonSeedBush_render,
+    gMoonSeedBushObjDescriptorFreeAdapter,
+    gMoonSeedBushObjDescriptorTypeIdAdapter,
+    gMoonSeedBushObjDescriptorExtraSizeAdapter,
 };

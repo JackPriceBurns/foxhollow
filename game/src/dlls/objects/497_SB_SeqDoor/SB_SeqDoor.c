@@ -56,19 +56,31 @@ void SB_SeqDoor_release(void) {
 void SB_SeqDoor_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_SeqDoorObjDescriptorInitAdapter, SB_SeqDoor_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSB_SeqDoorObjDescriptorHitDetectAdapter, SB_SeqDoor_hitDetect)
+OBJECT_FREE_ADAPTER(gSB_SeqDoorObjDescriptorFreeAdapter, SB_SeqDoor_free)
+OBJECT_TYPE_ID_ADAPTER(gSB_SeqDoorObjDescriptorTypeIdAdapter, SB_SeqDoor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_SeqDoorObjDescriptorExtraSizeAdapter, SB_SeqDoor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_SeqDoorObjDescriptorAcquire, SB_SeqDoor_initialise)
+
 ObjectDescriptor gSB_SeqDoorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_SeqDoorObjDescriptorAcquire,
+        SB_SeqDoor_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_SeqDoor_initialise,
-    SB_SeqDoor_release,
-    0,
-    (ObjectDescriptorCallback)SB_SeqDoor_init,
-    (ObjectDescriptorCallback)SB_SeqDoor_update,
-    SB_SeqDoor_hitDetect,
-    (ObjectDescriptorCallback)SB_SeqDoor_render,
-    SB_SeqDoor_free,
-    (ObjectDescriptorCallback)SB_SeqDoor_getObjectTypeId,
-    SB_SeqDoor_getExtraSize,
+    gSB_SeqDoorObjDescriptorInitAdapter,
+    SB_SeqDoor_update,
+    gSB_SeqDoorObjDescriptorHitDetectAdapter,
+    SB_SeqDoor_render,
+    gSB_SeqDoorObjDescriptorFreeAdapter,
+    gSB_SeqDoorObjDescriptorTypeIdAdapter,
+    gSB_SeqDoorObjDescriptorExtraSizeAdapter,
 };

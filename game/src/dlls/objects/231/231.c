@@ -14,14 +14,13 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
@@ -233,19 +232,30 @@ void FlammableVine_release(void) {
 void FlammableVine_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gFlammableVineObjDescriptorInitAdapter, FlammableVine_init, obj, placement)
+OBJECT_FREE_ADAPTER(gFlammableVineObjDescriptorFreeAdapter, FlammableVine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFlammableVineObjDescriptorTypeIdAdapter, FlammableVine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFlammableVineObjDescriptorExtraSizeAdapter, FlammableVine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFlammableVineObjDescriptorAcquire, FlammableVine_initialise)
+
 ObjectDescriptor gFlammableVineObjDescriptor = {
-    0,                                                       /* reserved0 */
-    0,                                                       /* reserved1 */
-    0,                                                       /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                        /* slotCountAndFlags */
-    (ObjectDescriptorCallback)FlammableVine_initialise,      /* initialise */
-    (ObjectDescriptorCallback)FlammableVine_release,         /* release */
-    0,                                                       /* slot02 */
-    (ObjectDescriptorCallback)FlammableVine_init,            /* init */
-    (ObjectDescriptorCallback)FlammableVine_update,          /* update */
-    (ObjectDescriptorCallback)FlammableVine_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)FlammableVine_render,          /* render */
-    (ObjectDescriptorCallback)FlammableVine_free,            /* free */
-    (ObjectDescriptorCallback)FlammableVine_getObjectTypeId, /* getObjectTypeId */
-    FlammableVine_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFlammableVineObjDescriptorAcquire,
+        FlammableVine_release,
+    },
+    0,
+    gFlammableVineObjDescriptorInitAdapter,
+    FlammableVine_update,
+    FlammableVine_hitDetect,
+    FlammableVine_render,
+    gFlammableVineObjDescriptorFreeAdapter,
+    gFlammableVineObjDescriptorTypeIdAdapter,
+    gFlammableVineObjDescriptorExtraSizeAdapter,
 };

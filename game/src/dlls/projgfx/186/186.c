@@ -20,10 +20,10 @@ void projlightning6_release(void) {
 void projlightning6_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjlightning6ResourceDescriptorAcquire, projlightning6_initialise)
+
 Projlightning6ResourceDescriptor gProjlightning6ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning6_initialise,
-    projlightning6_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjlightning6ResourceDescriptorAcquire, projlightning6_release },
     NULL,
     projlightning6_doUnsupported,
 };

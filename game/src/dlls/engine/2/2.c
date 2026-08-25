@@ -1,6 +1,6 @@
 #include "dlls/object_descriptor.h"
 #include "main/camera_interface.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
 #include "main/dll/dll_0047_cameramodepath.h"
 #include "main/dll/dll_0049_cameramodecombat.h"
@@ -9,10 +9,10 @@
 #include "main/dll/dll_0056_cameramodearwing.h"
 #include "main/dll/dll_0057_cameramodetitle.h"
 #include "main/debug.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/vecmath.h"
 #include "game/objects/object.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "string.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
@@ -22,24 +22,23 @@
 #include "util/carry.h"
 #include "main/mm.h"
 #include "main/frame_timing.h"
-#include "main/maketex_api.h"
-#include "main/maketex_sequence_api.h"
-#include "main/maketex_timer_api.h"
-#include "main/textrender_api.h"
-#include "main/objseq_api.h"
+#include "main/maketex.h"
+#include "main/maketex_sequence.h"
+#include "main/maketex_timer.h"
+#include "main/textrender.h"
 #include "main/fileio.h"
-#include "main/audio/stream_api.h"
-#include "main/audio/audio_control_api.h"
+#include "main/audio/stream.h"
+#include "main/audio/audio_control.h"
 #include "main/table_file.h"
 #include "main/dll/partfx_interface.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/asset_load.h"
-#include "main/game_timer_control_api.h"
-#include "main/vecmath_distance_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/game_timer_control.h"
+#include "main/vecmath_distance.h"
+#include "main/rcp_dolphin.h"
 #include "main/model.h"
-#include "main/render_envfx_api.h"
-#include "main/render_sequence_api.h"
+#include "main/render_envfx.h"
+#include "main/render_sequence.h"
 #include "main/audio/sfx.h"
 #include "game/objects/object_setup.h"
 #include "main/camera.h"
@@ -51,10 +50,10 @@
 #include "main/resource.h"
 #include "main/screen_transition.h"
 #include "main/gamebits.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/sky.h"
 #include "main/sky_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_status.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
@@ -62,14 +61,10 @@
 #include "main/gamebit_ids.h"
 #include "main/mldf_fileid.h"
 #include "main/object_transform.h"
-#include "main/maketex_yield_api.h"
+#include "main/maketex_yield.h"
 #include "dolphin/os.h"
-#include "main/pi_dolphin_api.h"
-#include "main/audio/music_api.h"
-#include "main/maketex.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/pi_dolphin.h"
+#include "main/audio/music.h"
 
 typedef struct SeqRunFlags
 {
@@ -871,7 +866,7 @@ int RomCurveInterp_EvaluateOffsetPosition(RomCurveInterpState* state, f32* offse
 static inline u8* ObjSeq_GetActiveModel(GameObject* obj)
 {
     ObjAnimComponent* objAnim = &obj->anim;
-    return (u8*)objAnim->banks[objAnim->bankIndex];
+    return (u8*)objAnim->modelBanks[objAnim->bankIndex];
 }
 
 typedef struct ObjSeqLinkedPair
@@ -1970,90 +1965,92 @@ int gObjSeqMsgIds[] = {
 };
 
 s8 gObjSeqMsgSendModes[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0};
+typedef struct ObjSeqDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(ObjSeq_onMapSetup)* onMapSetup;
+    __typeof__(ObjSeq_addBgCmd)* addBgCmd;
+    __typeof__(ObjSeq_setBool)* setBool;
+    __typeof__(ObjSeq_getBool)* getBool;
+    __typeof__(ObjSeq_update)* update;
+    __typeof__(ObjSeq_updateCamera)* updateCamera;
+    __typeof__(objLoadAnimdata)* objLoadAnimdata;
+    __typeof__(ObjSeq_seqState_init)* seqState_init;
+    __typeof__(ObjSeq_seqState_free)* seqState_free;
+    __typeof__(ObjSeq_runBgCmds)* runBgCmds;
+    __typeof__(ObjSeq_resolveTargetObject)* resolveTargetObject;
+    __typeof__(ObjSeq_func0E)* slot0E;
+    __typeof__(ObjSeq_func0F)* slot0F;
+    __typeof__(ObjSeq_getGlobal4)* getGlobal4;
+    __typeof__(ObjSeq_setGlobal4)* setGlobal4;
+    __typeof__(ObjSeq_func12)* slot12;
+    __typeof__(ObjSeq_func13)* slot13;
+    __typeof__(ObjSeq_start)* start;
+    __typeof__(endObjSequence)* endObjSequence;
+    __typeof__(ObjSeq_setCamVars)* setCamVars;
+    __typeof__(ObjSeq_preempt)* preempt;
+    __typeof__(ObjSeq_yield)* yield;
+    __typeof__(ObjSeq_getGlobal3)* getGlobal3;
+    __typeof__(ObjSeq_setGlobal3)* setGlobal3;
+    __typeof__(ObjSeq_getGlobal1)* getGlobal1;
+    __typeof__(ObjSeq_setGlobal1)* setGlobal1;
+    __typeof__(ObjSeq_getGlobal2)* getGlobal2;
+    __typeof__(ObjSeq_setGlobal2)* setGlobal2;
+    __typeof__(ObjSeq_setXrot)* setXrot;
+    __typeof__(ObjSeq_TurnToFacePlayer)* turnToFacePlayer;
+    __typeof__(ObjSeq_SetObjs)* setObjs;
+    __typeof__(ObjSeq_setOverridePos)* setOverridePos;
+    __typeof__(ObjSeq_SetCoordinateSpace)* setCoordinateSpace;
+} ObjSeqDllInterfaceCallbacks;
+
 typedef struct ObjSeqDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback onMapSetup;
-    ObjectDescriptorCallback addBgCmd;
-    ObjectDescriptorCallback setBool;
-    ObjectDescriptorCallback getBool;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback updateCamera;
-    ObjectDescriptorCallback objLoadAnimdata;
-    ObjectDescriptorCallback seqState_init;
-    ObjectDescriptorCallback seqState_free;
-    ObjectDescriptorCallback runBgCmds;
-    ObjectDescriptorCallback resolveTargetObject;
-    ObjectDescriptorCallback slot0E;
-    ObjectDescriptorCallback slot0F;
-    ObjectDescriptorCallback getGlobal4;
-    ObjectDescriptorCallback setGlobal4;
-    ObjectDescriptorCallback slot12;
-    ObjectDescriptorCallback slot13;
-    ObjectDescriptorCallback start;
-    ObjectDescriptorCallback endObjSequence;
-    ObjectDescriptorCallback setCamVars;
-    ObjectDescriptorCallback preempt;
-    ObjectDescriptorCallback yield;
-    ObjectDescriptorCallback getGlobal3;
-    ObjectDescriptorCallback setGlobal3;
-    ObjectDescriptorCallback getGlobal1;
-    ObjectDescriptorCallback setGlobal1;
-    ObjectDescriptorCallback getGlobal2;
-    ObjectDescriptorCallback setGlobal2;
-    ObjectDescriptorCallback setXrot;
-    ObjectDescriptorCallback turnToFacePlayer;
-    ObjectDescriptorCallback setObjs;
-    ObjectDescriptorCallback setOverridePos;
-    ObjectDescriptorCallback setCoordinateSpace;
+    ResourceDescriptorHeader header;
+    ObjSeqDllInterfaceCallbacks interface;
 } ObjSeqDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gObjSeqResourceAcquire, ObjSeq_initialise)
+
 ObjSeqDllInterface ObjSeq_funcs = {
-    0,
-    0,
-    0,
-    0x230000,
-    (ObjectDescriptorCallback)ObjSeq_initialise,
-    (ObjectDescriptorCallback)ObjSeq_release,
-    0,
-    (ObjectDescriptorCallback)ObjSeq_onMapSetup,
-    (ObjectDescriptorCallback)ObjSeq_addBgCmd,
-    (ObjectDescriptorCallback)ObjSeq_setBool,
-    (ObjectDescriptorCallback)ObjSeq_getBool,
-    (ObjectDescriptorCallback)ObjSeq_update,
-    (ObjectDescriptorCallback)ObjSeq_updateCamera,
-    (ObjectDescriptorCallback)objLoadAnimdata,
-    (ObjectDescriptorCallback)ObjSeq_seqState_init,
-    (ObjectDescriptorCallback)ObjSeq_seqState_free,
-    (ObjectDescriptorCallback)ObjSeq_runBgCmds,
-    (ObjectDescriptorCallback)ObjSeq_resolveTargetObject,
-    (ObjectDescriptorCallback)ObjSeq_func0E,
-    (ObjectDescriptorCallback)ObjSeq_func0F,
-    (ObjectDescriptorCallback)ObjSeq_getGlobal4,
-    (ObjectDescriptorCallback)ObjSeq_setGlobal4,
-    (ObjectDescriptorCallback)ObjSeq_func12,
-    (ObjectDescriptorCallback)ObjSeq_func13,
-    (ObjectDescriptorCallback)ObjSeq_start,
-    (ObjectDescriptorCallback)endObjSequence,
-    (ObjectDescriptorCallback)ObjSeq_setCamVars,
-    (ObjectDescriptorCallback)ObjSeq_preempt,
-    (ObjectDescriptorCallback)ObjSeq_yield,
-    (ObjectDescriptorCallback)ObjSeq_getGlobal3,
-    (ObjectDescriptorCallback)ObjSeq_setGlobal3,
-    (ObjectDescriptorCallback)ObjSeq_getGlobal1,
-    (ObjectDescriptorCallback)ObjSeq_setGlobal1,
-    (ObjectDescriptorCallback)ObjSeq_getGlobal2,
-    (ObjectDescriptorCallback)ObjSeq_setGlobal2,
-    (ObjectDescriptorCallback)ObjSeq_setXrot,
-    (ObjectDescriptorCallback)ObjSeq_TurnToFacePlayer,
-    (ObjectDescriptorCallback)ObjSeq_SetObjs,
-    (ObjectDescriptorCallback)ObjSeq_setOverridePos,
-    (ObjectDescriptorCallback)ObjSeq_SetCoordinateSpace,
+    {
+        {0, 0, 0, 0x230000},
+        gObjSeqResourceAcquire,
+        ObjSeq_release,
+    },
+    {
+        NULL,
+        ObjSeq_onMapSetup,
+        ObjSeq_addBgCmd,
+        ObjSeq_setBool,
+        ObjSeq_getBool,
+        ObjSeq_update,
+        ObjSeq_updateCamera,
+        objLoadAnimdata,
+        ObjSeq_seqState_init,
+        ObjSeq_seqState_free,
+        ObjSeq_runBgCmds,
+        ObjSeq_resolveTargetObject,
+        ObjSeq_func0E,
+        ObjSeq_func0F,
+        ObjSeq_getGlobal4,
+        ObjSeq_setGlobal4,
+        ObjSeq_func12,
+        ObjSeq_func13,
+        ObjSeq_start,
+        endObjSequence,
+        ObjSeq_setCamVars,
+        ObjSeq_preempt,
+        ObjSeq_yield,
+        ObjSeq_getGlobal3,
+        ObjSeq_setGlobal3,
+        ObjSeq_getGlobal1,
+        ObjSeq_setGlobal1,
+        ObjSeq_getGlobal2,
+        ObjSeq_setGlobal2,
+        ObjSeq_setXrot,
+        ObjSeq_TurnToFacePlayer,
+        ObjSeq_SetObjs,
+        ObjSeq_setOverridePos,
+        ObjSeq_SetCoordinateSpace,
+    },
 };
 
 char sEndObjSequenceMaxFreesError[41] = "endObjSequence: max number of obj frees\n\000";
@@ -2099,7 +2096,7 @@ void ObjSeq_updateCamera(void)
         roll = obj->anim.rotZ;
         if (obj->anim.parent != NULL)
         {
-            pitch = (s16)(pitch + obj->anim.parentAnim->rotX);
+            pitch = (s16)(pitch + obj->anim.parent->anim.rotX);
         }
         lbl_803DD0DC = 1.0f;
         if ((s8)gObjSeqCameraActive == 0)
@@ -2107,9 +2104,9 @@ void ObjSeq_updateCamera(void)
             cameraPose.worldPosition.x = x;
             cameraPose.worldPosition.y = y;
             cameraPose.worldPosition.z = z;
-            cameraPose.sequenceRotation.pitch = (s16)(0x8000 - pitch);
-            cameraPose.sequenceRotation.yaw = (s16)-yaw;
-            cameraPose.sequenceRotation.roll = roll;
+            cameraPose.rotX = (s16)(0x8000 - pitch);
+            cameraPose.rotY = (s16)-yaw;
+            cameraPose.rotZ = roll;
             if ((s8)gObjSeqFovOverrideActive != 0)
             {
                 cameraPose.fov = gObjSeqFovOverrideValue;
@@ -2183,9 +2180,9 @@ void ObjSeq_updateCamera(void)
                     cameraPose.savedWorldPosition.x = gObjSeqSavedCamPosX;
                     cameraPose.savedWorldPosition.y = gObjSeqSavedCamPosY;
                     cameraPose.savedWorldPosition.z = gObjSeqSavedCamPosZ;
-                    cameraPose.sequenceRotation.pitch = gObjSeqSavedCamPitch;
-                    cameraPose.sequenceRotation.yaw = gObjSeqSavedCamYaw;
-                    cameraPose.sequenceRotation.roll = gObjSeqSavedCamRoll;
+                    cameraPose.rotX = gObjSeqSavedCamPitch;
+                    cameraPose.rotY = gObjSeqSavedCamYaw;
+                    cameraPose.rotZ = gObjSeqSavedCamRoll;
                     cameraPose.fov = gObjSeqSavedCamFov;
                     (*gCameraInterface)
                         ->setMode(OBJSEQ_CAMMODE_FIXED, 1, 0, sizeof(CameraModeFixedPose), &cameraPose, 0, 0xff);
@@ -2594,21 +2591,21 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
         break;
     case 48:
         mainSetBits(GAMEBIT_ENV_isOutdoor, 1);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A0, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A1, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A2, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A0, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A1, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A2, 0);
         break;
     case 49:
         mainSetBits(GAMEBIT_ENV_isOutdoor, 1);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B0, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B1, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B2, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B0, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B1, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_B2, 0);
         break;
     case 50:
         mainSetBits(GAMEBIT_ENV_isOutdoor, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A0, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A1, 0);
-        getEnvfxActVoid(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A2, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A0, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A1, 0);
+        getEnvfxAct(Obj_GetPlayerObject(), Obj_GetPlayerObject(), OBJSEQ_ENVFX_A2, 0);
         skyRefreshPlayerEnvFx();
         break;
     }
@@ -3771,7 +3768,7 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
         {
             break;
         }
-        animState = ((ObjAnimBank*)action)->currentState;
+        animState = ((ObjModel*)action)->animStateA;
         if (activeObj->anim.currentMove == ((ObjSeqState*)seq)->moveId)
         {
             if ((s8)animState->frameType != 0)
@@ -3818,11 +3815,11 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
         if (activeObj->anim.classId == 1)
         {
             act2 = ObjSeq_GetActiveModel(activeObj);
-            animState = ((ObjAnimBank*)act2)->currentState;
+            animState = ((ObjModel*)act2)->animStateA;
             animState->lastBlendMoveIndex = -1;
             animState->eventState = 0;
             animState->prevEventState = 0;
-            st2 = ((ObjAnimBank*)act2)->activeState;
+            st2 = ((ObjModel*)act2)->animStateB;
             if (st2 != NULL)
             {
                 st2->lastBlendMoveIndex = -1;
@@ -3964,7 +3961,7 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
             switch ((cmd->param >> 12) & 0xf)
             {
             case 2:
-                getEnvfxActVoid(activeObj, activeObj, cmd->param & 0xfff, 0);
+                getEnvfxAct(activeObj, activeObj, cmd->param & 0xfff, 0);
                 break;
             case 6:
                 warpToMap(cmd->param & 0xfff, 0);
@@ -4016,7 +4013,7 @@ int ObjSeq_ExecuteActionCommand(GameObject* obj, u8* action, u8** cmdPtr, s8 fla
             }
             break;
         case 2:
-            getEnvfxActVoid(activeObj, activeObj, cmd->param & 0xfff, 0);
+            getEnvfxAct(activeObj, activeObj, cmd->param & 0xfff, 0);
             break;
         case 6:
             if (flag8 != 0)
@@ -4398,7 +4395,7 @@ void ObjSeq_RebuildCurveStateToFrame(GameObject* obj, GameObject* seqObj, u8* se
     }
 
     state->curFrame = found;
-    action = (u8*)seqObj->anim.banks[seqObj->anim.bankIndex];
+    action = (u8*)seqObj->anim.modelBanks[seqObj->anim.bankIndex];
     if (action != NULL)
     {
         val = ObjSeq_SampleTrackCurve(seq, 13, -1);
@@ -5151,7 +5148,7 @@ static inline int ObjSeq_CheckConditionOpcode(ObjSeqState* state, GameObject* ob
 int ObjSeq_update(GameObject* obj, f32 t)
 {
     GameObject* activeObj;
-    ObjAnimBank* action;
+    ObjModel* action;
     ObjSeqCommand* cmd;
     f32 moveProgress;
     f32 groundY;
@@ -5370,7 +5367,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
         obj->anim.rotY += state->rotStepY;
         obj->anim.rotX += state->rotStepX;
 
-        action = (ObjAnimBank*)ObjSeq_GetActiveModel(activeObj);
+        action = (ObjModel*)ObjSeq_GetActiveModel(activeObj);
         gObjSeqPendingCmd0BCount = 0;
         if (action != NULL)
         {
@@ -5495,7 +5492,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
                             {
                                 t = obj;
                             }
-                            action = (ObjAnimBank*)ObjSeq_GetActiveModel(t);
+                            action = (ObjModel*)ObjSeq_GetActiveModel(t);
                             activeObj = t;
                         }
                     }
@@ -5558,7 +5555,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
         state->curEventId = 0;
         if (action != NULL && (state->flags & 4) != 0)
         {
-            action->currentState->eventCountdown = (u16)(int)(16384.0f * state->fade);
+            action->animStateA->eventCountdown = (u16)(int)(16384.0f * state->fade);
         }
         ObjSeq_UpdateCurvePosition(obj, (u8*)seq);
         if ((s8)state->groundSnapEnabled == 1 &&
@@ -5586,7 +5583,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
                 {
                     t = obj;
                 }
-                action = (ObjAnimBank*)ObjSeq_GetActiveModel(t);
+                action = (ObjModel*)ObjSeq_GetActiveModel(t);
                 activeObj = t;
             }
         }
@@ -5605,7 +5602,7 @@ int ObjSeq_update(GameObject* obj, f32 t)
                 {
                     t = obj;
                 }
-                action = (ObjAnimBank*)ObjSeq_GetActiveModel(t);
+                action = (ObjModel*)ObjSeq_GetActiveModel(t);
                 activeObj = t;
                 animatedObjFreeAndSavePlayerPos(obj, t, (u8*)seq);
             }

@@ -4,7 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 #include "main/objseq.h"
 
 #define FIREBALL_ROTATION_COUNT 5

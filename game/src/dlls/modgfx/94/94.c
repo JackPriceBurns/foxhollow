@@ -127,6 +127,11 @@ u8 gDll5ESequenceResourceData[sizeof(Dll5ESequenceResourceView)] = {
     0,   0,   1,   253, 0,   0,   2,   1,   0,   0,   2,   3,
 };
 
+RESOURCE_ACQUIRE_ADAPTER(gDll5EResourceDescriptorAcquire, dll_5E_initialise)
+
 Dll5EResourceDescriptor gDll5EResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_5E_initialise, dll_5E_release, NULL, dll_5E_spawnSequence, 0,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll5EResourceDescriptorAcquire, dll_5E_release },
+    NULL,
+    dll_5E_spawnSequence,
+    0,
 };

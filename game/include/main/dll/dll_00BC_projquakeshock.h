@@ -7,16 +7,14 @@
 typedef int (*ProjquakeshockUnsupportedFn)(void);
 
 typedef struct ProjquakeshockResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjquakeshockUnsupportedFn unsupported;
 } ProjquakeshockResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjquakeshockResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjquakeshockResourceDescriptor) == 0x20);

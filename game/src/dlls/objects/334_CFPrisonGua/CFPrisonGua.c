@@ -2,11 +2,10 @@
 
 #include "dlls/objects/334_CFPrisonGua.h"
 
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
 #include "main/dll/waterfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
@@ -14,9 +13,9 @@
 #include "main/object_render.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/objseq.h"
-#include "main/render_lactions_api.h"
+#include "main/render_lactions.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -259,19 +258,30 @@ void cfPrisonGuard_release(void) {
 void cfPrisonGuard_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFPrisonGuardObjDescriptorInitAdapter, cfPrisonGuard_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCFPrisonGuardObjDescriptorFreeAdapter, cfPrisonGuard_free)
+OBJECT_TYPE_ID_ADAPTER(gCFPrisonGuardObjDescriptorTypeIdAdapter, cfPrisonGuard_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFPrisonGuardObjDescriptorExtraSizeAdapter, cfPrisonGuard_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFPrisonGuardObjDescriptorAcquire, cfPrisonGuard_initialise)
+
 ObjectDescriptor gCFPrisonGuardObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFPrisonGuardObjDescriptorAcquire,
+        cfPrisonGuard_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPrisonGuard_initialise,
-    (ObjectDescriptorCallback)cfPrisonGuard_release,
-    0,
-    (ObjectDescriptorCallback)cfPrisonGuard_init,
-    (ObjectDescriptorCallback)cfPrisonGuard_update,
-    (ObjectDescriptorCallback)cfPrisonGuard_hitDetect,
-    (ObjectDescriptorCallback)cfPrisonGuard_render,
-    (ObjectDescriptorCallback)cfPrisonGuard_free,
-    (ObjectDescriptorCallback)cfPrisonGuard_getObjectTypeId,
-    cfPrisonGuard_getExtraSize,
+    gCFPrisonGuardObjDescriptorInitAdapter,
+    cfPrisonGuard_update,
+    cfPrisonGuard_hitDetect,
+    cfPrisonGuard_render,
+    gCFPrisonGuardObjDescriptorFreeAdapter,
+    gCFPrisonGuardObjDescriptorTypeIdAdapter,
+    gCFPrisonGuardObjDescriptorExtraSizeAdapter,
 };

@@ -12,8 +12,8 @@
 #include "main/mm.h"
 #include "main/vecmath.h"
 
-s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount, s16* vertexData, int colorCount,
-                       s16* colorData, int textureAssetId, void* textureResource);
+s16 dll_0B_spawnEffect(ModgfxSpawnContext* context, int unused, int vertexCount, const void* vertexData,
+                       int colorCount, const void* colorData, int textureAssetId, void* textureResource);
 void dll_0B_updateActiveEffects(void);
 void dll_0B_releaseAll(void);
 void dll_0B_freeSourceEffects(void* source);
@@ -31,7 +31,8 @@ void dll_0B_nextSequenceParam(void);
 void dll_0B_setSequenceParamIndex(s16 x);
 void dll_0B_setSequenceParamValue(s16 value);
 void dll_0B_setSequenceParams(void* params);
-void dll_0B_spawnSequence(void* a, void* b, void* c, void* d, void* e, int f, void* g);
+void dll_0B_spawnSequence(void* sourceObject, const void* vertexData, int vertexCount, const void* colorData,
+                          int colorCount, int textureAssetId, void* textureResource);
 void dll_0B_addSequenceFlags(u32 flags);
 s16 dll_0B_getLastSpawnHandle(void);
 void dll_0B_onMapSetup(void);

@@ -1,6 +1,6 @@
-#include "main/audio/sfx_limited_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/dfplightni.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mm.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
@@ -223,19 +223,28 @@ void DFP_Lightni_init(GameObject* obj, DfpLightniMapData* mapData)
     return;
 }
 
+OBJECT_INIT_ADAPTER(gDfplightniObjDescriptorInitAdapter, DFP_Lightni_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDfplightniObjDescriptorRenderAdapter, DFP_Lightni_render, obj)
+OBJECT_FREE_ADAPTER(gDfplightniObjDescriptorFreeAdapter, DFP_Lightni_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfplightniObjDescriptorExtraSizeAdapter, DFP_Lightni_getExtraSize)
+
 ObjectDescriptor gDfplightniObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDfplightniObjDescriptorInitAdapter,
+    DFP_Lightni_update,
     0,
+    gDfplightniObjDescriptorRenderAdapter,
+    gDfplightniObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)DFP_Lightni_init,
-    (ObjectDescriptorCallback)DFP_Lightni_update,
-    0,
-    (ObjectDescriptorCallback)DFP_Lightni_render,
-    (ObjectDescriptorCallback)DFP_Lightni_free,
-    0,
-    DFP_Lightni_getExtraSize,
+    gDfplightniObjDescriptorExtraSizeAdapter,
 };

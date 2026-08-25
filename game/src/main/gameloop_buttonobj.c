@@ -1,5 +1,5 @@
 #include "main/gameloop_internal.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 
 int getButtonObjects(GameObject*** p) {
     *p = gGameLoopButtonObjects;

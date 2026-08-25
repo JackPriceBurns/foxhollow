@@ -168,19 +168,32 @@ void ProjectedLight_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gProjectedLightObjDescriptorInitAdapter, ProjectedLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gProjectedLightObjDescriptorHitDetectAdapter, ProjectedLight_hitDetect)
+OBJECT_RENDER_ADAPTER(gProjectedLightObjDescriptorRenderAdapter, ProjectedLight_render)
+OBJECT_FREE_ADAPTER(gProjectedLightObjDescriptorFreeAdapter, ProjectedLight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gProjectedLightObjDescriptorTypeIdAdapter, ProjectedLight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gProjectedLightObjDescriptorExtraSizeAdapter, ProjectedLight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gProjectedLightObjDescriptorAcquire, ProjectedLight_initialise)
+
 ObjectDescriptor gProjectedLightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gProjectedLightObjDescriptorAcquire,
+        ProjectedLight_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ProjectedLight_initialise,
-    (ObjectDescriptorCallback)ProjectedLight_release,
-    0,
-    (ObjectDescriptorCallback)ProjectedLight_init,
-    (ObjectDescriptorCallback)ProjectedLight_update,
-    (ObjectDescriptorCallback)ProjectedLight_hitDetect,
-    (ObjectDescriptorCallback)ProjectedLight_render,
-    (ObjectDescriptorCallback)ProjectedLight_free,
-    (ObjectDescriptorCallback)ProjectedLight_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ProjectedLight_getExtraSize,
+    gProjectedLightObjDescriptorInitAdapter,
+    ProjectedLight_update,
+    gProjectedLightObjDescriptorHitDetectAdapter,
+    gProjectedLightObjDescriptorRenderAdapter,
+    gProjectedLightObjDescriptorFreeAdapter,
+    gProjectedLightObjDescriptorTypeIdAdapter,
+    gProjectedLightObjDescriptorExtraSizeAdapter,
 };

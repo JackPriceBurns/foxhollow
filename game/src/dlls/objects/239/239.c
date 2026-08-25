@@ -7,14 +7,14 @@
  */
 #include "main/vecmath.h"
 #include "dlls/objects/239.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/debug.h"
 #include "main/dll/dll_005B_modgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/maketex_api.h"
+#include "main/maketex.h"
 #include "main/model.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
@@ -23,20 +23,17 @@
 #include "main/object_transform.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtexture.h"
 #include "main/resource.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
-#include "main/vecmath.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "string.h"
 #include "sys/objects.h"
 #include "main/camera.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/savegame_object_api.h"
-#include "main/maketex.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player.h"
+#include "main/dll/savegame_object.h"
 #include "sys/objects/lifecycle.h"
 
 typedef struct PushableCollisionProbe {
@@ -970,8 +967,8 @@ void pushable_render(GameObject* obj, int fwdArg2, int fwdArg3, int fwdArg4, int
         }
         }
         {
-            ObjAnimBank* activeModelSlot = obj->anim.banks[obj->anim.bankIndex];
-            activeModelSlot->animDef->flags = activeModelSlot->animDef->flags | 2;
+            ObjModel* activeModelSlot = obj->anim.modelBanks[obj->anim.bankIndex];
+            activeModelSlot->file->flags = activeModelSlot->file->flags | 2;
         }
         objRenderModelAndHitVolumes(obj, fwdArg2, fwdArg3, fwdArg4, fwdArg5, PUSHABLE_UNIT_SCALE);
     }
@@ -1377,23 +1374,34 @@ void pushable_init(GameObject* obj, PushableObjectDef* setup) {
     }
 }
 
-ObjectDescriptor14 gPushableObjDescriptor = {
-    0,                                                  /* reserved0 */
-    0,                                                  /* reserved1 */
-    0,                                                  /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,                   /* slotCountAndFlags */
-    0,                                                  /* initialise */
-    0,                                                  /* release */
-    0,                                                  /* slot02 */
-    (ObjectDescriptorCallback)pushable_init,            /* init */
-    (ObjectDescriptorCallback)pushable_update,          /* update */
-    (ObjectDescriptorCallback)pushable_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)pushable_render,          /* render */
-    (ObjectDescriptorCallback)pushable_free,            /* free */
-    (ObjectDescriptorCallback)pushable_getObjectTypeId, /* getObjectTypeId */
-    pushable_getExtraSize,    /* slot09 */
-    (ObjectDescriptorCallback)pushable_push,        /* slot0A */
-    (ObjectDescriptorCallback)pushable_isWithinCullDistance,          /* slot0B */
-    (ObjectDescriptorCallback)pushable_setModelFlag,      /* slot0C */
-    (ObjectDescriptorCallback)pushable_isRestored,         /* slot0D */
+OBJECT_INIT_ADAPTER(gPushableObjDescriptorInitAdapter, pushable_init, obj, placement)
+OBJECT_FREE_ADAPTER(gPushableObjDescriptorFreeAdapter, pushable_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPushableObjDescriptorTypeIdAdapter, pushable_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPushableObjDescriptorExtraSizeAdapter, pushable_getExtraSize)
+
+PushableDescriptor gPushableObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gPushableObjDescriptorInitAdapter,
+        pushable_update,
+        pushable_hitDetect,
+        pushable_render,
+        gPushableObjDescriptorFreeAdapter,
+        gPushableObjDescriptorTypeIdAdapter,
+        gPushableObjDescriptorExtraSizeAdapter,
+        pushable_push,
+        pushable_isWithinCullDistance,
+        pushable_setModelFlag,
+        pushable_isRestored,
+    },
 };

@@ -1,20 +1,20 @@
 #include "dlls/objects/405_DBSH_Shrine.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "main/gamebit_latch.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
 #include "main/model_light.h"
@@ -22,9 +22,9 @@
 #include "main/objtype.h"
 #include "main/obj_message.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -60,7 +60,7 @@ enum DBSHShrineLatchFlag {
 
 typedef struct DBSHShrineState {
     ModelLightStruct* light;
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     f32 idleSfxTimer;
     s16 unknown10;
     s16 orbitPhaseA;
@@ -350,15 +350,25 @@ static void dbshShrine_release(void) {
 static void dbshShrine_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDBSHShrineObjDescriptorInitAdapter, dbshShrine_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDBSHShrineObjDescriptorHitDetectAdapter, dbshShrine_hitDetect)
+OBJECT_FREE_ADAPTER(gDBSHShrineObjDescriptorFreeAdapter, dbshShrine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDBSHShrineObjDescriptorTypeIdAdapter, dbshShrine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDBSHShrineObjDescriptorExtraSizeAdapter, dbshShrine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDBSHShrineObjDescriptorAcquire, dbshShrine_initialise)
+
 ObjectDescriptor gDBSHShrineObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dbshShrine_initialise,
-    .release = (ObjectDescriptorCallback)dbshShrine_release,
-    .init = (ObjectDescriptorCallback)dbshShrine_init,
-    .update = (ObjectDescriptorCallback)dbshShrine_update,
-    .hitDetect = (ObjectDescriptorCallback)dbshShrine_hitDetect,
-    .render = (ObjectDescriptorCallback)dbshShrine_render,
-    .free = (ObjectDescriptorCallback)dbshShrine_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dbshShrine_getObjectTypeId,
-    .getExtraSize = dbshShrine_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDBSHShrineObjDescriptorAcquire,
+        .release = dbshShrine_release,
+    },
+    .init = gDBSHShrineObjDescriptorInitAdapter,
+    .update = dbshShrine_update,
+    .hitDetect = gDBSHShrineObjDescriptorHitDetectAdapter,
+    .render = dbshShrine_render,
+    .free = gDBSHShrineObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDBSHShrineObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDBSHShrineObjDescriptorExtraSizeAdapter,
+};;

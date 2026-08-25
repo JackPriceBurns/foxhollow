@@ -35,19 +35,32 @@ void imIcePillar_release(void) {
 void imIcePillar_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIMIcePillarObjDescriptorInitAdapter, imIcePillar_init)
+OBJECT_UPDATE_ADAPTER(gIMIcePillarObjDescriptorUpdateAdapter, imIcePillar_update)
+OBJECT_HIT_DETECT_ADAPTER(gIMIcePillarObjDescriptorHitDetectAdapter, imIcePillar_hitDetect)
+OBJECT_FREE_ADAPTER(gIMIcePillarObjDescriptorFreeAdapter, imIcePillar_free)
+OBJECT_TYPE_ID_ADAPTER(gIMIcePillarObjDescriptorTypeIdAdapter, imIcePillar_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMIcePillarObjDescriptorExtraSizeAdapter, imIcePillar_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIMIcePillarObjDescriptorAcquire, imIcePillar_initialise)
+
 ObjectDescriptor gIMIcePillarObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIMIcePillarObjDescriptorAcquire,
+        imIcePillar_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)imIcePillar_initialise,
-    (ObjectDescriptorCallback)imIcePillar_release,
-    0,
-    (ObjectDescriptorCallback)imIcePillar_init,
-    (ObjectDescriptorCallback)imIcePillar_update,
-    (ObjectDescriptorCallback)imIcePillar_hitDetect,
-    (ObjectDescriptorCallback)imIcePillar_render,
-    (ObjectDescriptorCallback)imIcePillar_free,
-    (ObjectDescriptorCallback)imIcePillar_getObjectTypeId,
-    imIcePillar_getExtraSize,
+    gIMIcePillarObjDescriptorInitAdapter,
+    gIMIcePillarObjDescriptorUpdateAdapter,
+    gIMIcePillarObjDescriptorHitDetectAdapter,
+    imIcePillar_render,
+    gIMIcePillarObjDescriptorFreeAdapter,
+    gIMIcePillarObjDescriptorTypeIdAdapter,
+    gIMIcePillarObjDescriptorExtraSizeAdapter,
 };

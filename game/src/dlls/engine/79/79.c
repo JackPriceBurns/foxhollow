@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_004F_cameramode.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/curve.h"
 #include "main/frame_timing.h"
@@ -62,10 +62,10 @@ void CameraMode4F_release(void) {
 void CameraMode4F_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraMode4FDescriptorAcquire, CameraMode4F_initialise)
+
 CameraMode4FDescriptor gCameraMode4FDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraMode4F_initialise,
-    CameraMode4F_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraMode4FDescriptorAcquire, CameraMode4F_release },
     NULL,
     CameraMode4F_init,
     CameraMode4F_update,

@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0047_cameramodepath.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "game/objects/object.h"
 #include "main/camera_interface.h"
@@ -789,10 +789,10 @@ void CameraModePath_release(void) {
 void CameraModePath_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModePathDescriptorAcquire, CameraModePath_initialise)
+
 CameraModePathDescriptor gCameraModePathDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModePath_initialise,
-    CameraModePath_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModePathDescriptorAcquire, CameraModePath_release },
     NULL,
     CameraModePath_init,
     CameraModePath_update,

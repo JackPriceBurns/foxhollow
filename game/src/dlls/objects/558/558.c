@@ -37,19 +37,33 @@ void doorswitch_release(void) {
 void doorswitch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDoorswitchObjDescriptorInitAdapter, doorswitch_init)
+OBJECT_UPDATE_ADAPTER(gDoorswitchObjDescriptorUpdateAdapter, doorswitch_update)
+OBJECT_HIT_DETECT_ADAPTER(gDoorswitchObjDescriptorHitDetectAdapter, doorswitch_hitDetect)
+OBJECT_RENDER_ADAPTER(gDoorswitchObjDescriptorRenderAdapter, doorswitch_render)
+OBJECT_FREE_ADAPTER(gDoorswitchObjDescriptorFreeAdapter, doorswitch_free)
+OBJECT_TYPE_ID_ADAPTER(gDoorswitchObjDescriptorTypeIdAdapter, doorswitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDoorswitchObjDescriptorExtraSizeAdapter, doorswitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDoorswitchObjDescriptorAcquire, doorswitch_initialise)
+
 ObjectDescriptor gDoorswitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDoorswitchObjDescriptorAcquire,
+        doorswitch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)doorswitch_initialise,
-    (ObjectDescriptorCallback)doorswitch_release,
-    0,
-    (ObjectDescriptorCallback)doorswitch_init,
-    (ObjectDescriptorCallback)doorswitch_update,
-    (ObjectDescriptorCallback)doorswitch_hitDetect,
-    (ObjectDescriptorCallback)doorswitch_render,
-    (ObjectDescriptorCallback)doorswitch_free,
-    (ObjectDescriptorCallback)doorswitch_getObjectTypeId,
-    doorswitch_getExtraSize,
+    gDoorswitchObjDescriptorInitAdapter,
+    gDoorswitchObjDescriptorUpdateAdapter,
+    gDoorswitchObjDescriptorHitDetectAdapter,
+    gDoorswitchObjDescriptorRenderAdapter,
+    gDoorswitchObjDescriptorFreeAdapter,
+    gDoorswitchObjDescriptorTypeIdAdapter,
+    gDoorswitchObjDescriptorExtraSizeAdapter,
 };

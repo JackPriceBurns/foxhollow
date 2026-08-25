@@ -13,7 +13,7 @@
 #include "main/object_render.h"
 #include "main/obj_list.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "sys/objects/lifecycle.h"
 #include "dlls/objects/205_IceBall.h"
@@ -190,19 +190,30 @@ void IceBall_release(void) {
 void IceBall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIceBallObjDescriptorInitAdapter, IceBall_init, obj)
+OBJECT_FREE_ADAPTER(gIceBallObjDescriptorFreeAdapter, IceBall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIceBallObjDescriptorTypeIdAdapter, IceBall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIceBallObjDescriptorExtraSizeAdapter, IceBall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIceBallObjDescriptorAcquire, IceBall_initialise)
+
 ObjectDescriptor gIceBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIceBallObjDescriptorAcquire,
+        IceBall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)IceBall_initialise,
-    (ObjectDescriptorCallback)IceBall_release,
-    0,
-    (ObjectDescriptorCallback)IceBall_init,
-    (ObjectDescriptorCallback)IceBall_update,
-    (ObjectDescriptorCallback)IceBall_hitDetect,
-    (ObjectDescriptorCallback)IceBall_render,
-    (ObjectDescriptorCallback)IceBall_free,
-    (ObjectDescriptorCallback)IceBall_getObjectTypeId,
-    IceBall_getExtraSize,
+    gIceBallObjDescriptorInitAdapter,
+    IceBall_update,
+    IceBall_hitDetect,
+    IceBall_render,
+    gIceBallObjDescriptorFreeAdapter,
+    gIceBallObjDescriptorTypeIdAdapter,
+    gIceBallObjDescriptorExtraSizeAdapter,
 };

@@ -8,7 +8,7 @@
 #include "game/objects/object.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 
 #define DIMBOSSCRACKPAR_BASE_PARTICLE_ID 0x4C6
 #define DIMBOSSCRACKPAR_GLOW_PARTICLE_ID 0x4C8
@@ -76,19 +76,31 @@ void DIMbosscrackpar_release(void) {
 void DIMbosscrackpar_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMbosscrackparObjDescriptorInitAdapter, DIMbosscrackpar_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMbosscrackparObjDescriptorHitDetectAdapter, DIMbosscrackpar_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMbosscrackparObjDescriptorFreeAdapter, DIMbosscrackpar_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMbosscrackparObjDescriptorTypeIdAdapter, DIMbosscrackpar_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMbosscrackparObjDescriptorExtraSizeAdapter, DIMbosscrackpar_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMbosscrackparObjDescriptorAcquire, DIMbosscrackpar_initialise)
+
 ObjectDescriptor gDIMbosscrackparObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMbosscrackparObjDescriptorAcquire,
+        DIMbosscrackpar_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    DIMbosscrackpar_initialise,
-    DIMbosscrackpar_release,
-    0,
-    (ObjectDescriptorCallback)DIMbosscrackpar_init,
-    (ObjectDescriptorCallback)DIMbosscrackpar_update,
-    DIMbosscrackpar_hitDetect,
-    (ObjectDescriptorCallback)DIMbosscrackpar_render,
-    (ObjectDescriptorCallback)DIMbosscrackpar_free,
-    (ObjectDescriptorCallback)DIMbosscrackpar_getObjectTypeId,
-    DIMbosscrackpar_getExtraSize,
+    gDIMbosscrackparObjDescriptorInitAdapter,
+    DIMbosscrackpar_update,
+    gDIMbosscrackparObjDescriptorHitDetectAdapter,
+    DIMbosscrackpar_render,
+    gDIMbosscrackparObjDescriptorFreeAdapter,
+    gDIMbosscrackparObjDescriptorTypeIdAdapter,
+    gDIMbosscrackparObjDescriptorExtraSizeAdapter,
 };

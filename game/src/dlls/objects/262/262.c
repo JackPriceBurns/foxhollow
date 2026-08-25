@@ -5,7 +5,7 @@
 #include "dlls/objects/262.h"
 #include "dolphin/mtx/vec.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -14,15 +14,14 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "main/frustum.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/player_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player.h"
 #include "main/obj_message.h"
 #include "sys/objects/lifecycle.h"
 
@@ -57,60 +56,19 @@ f32 gScarabSweptHitInfo[4];
 const Vec3f sScarabStartInit = {0.0f, 0.0f, 0.0f};
 const Vec3f sScarabEndInit = {0.0f, 0.0f, 0.0f};
 
-typedef union ScarabCollisionResults {
-    TrackHitResults record;
-    struct {
-        f32 hitInfo[4][4];
-        f32 radii[4];
-        union {
-            u8 hitAxes[12];
-            s8 signedHitAxes[12];
-        };
-    };
-} ScarabCollisionResults;
-
 const u8 gScarabMoneyValues[4] = {1, 5, 10, 50};
-
-typedef struct ScarabSweepSphere {
-    f32 radii[4];   /* 0x00 */
-    s8 hitAxis;     /* 0x10 */
-    u8 pad11[3];    /* 0x11 */
-    u8 flags;       /* 0x14 */
-    u8 pad15[0x1B]; /* 0x15 */
-} ScarabSweepSphere;
 
 typedef struct ScarabCollisionScratch {
     TrackBBoxHit bboxHit;
-    union {
-        TrackHitResults record;
-        struct {
-            u8 hitResults[0x40];
-            ScarabSweepSphere sphere;
-        };
-    };
+    TrackHitResults hitResults;
 } ScarabCollisionScratch;
-
-STATIC_ASSERT(offsetof(ScarabCollisionResults, hitInfo) == 0x0);
-STATIC_ASSERT(offsetof(ScarabCollisionResults, radii) == 0x40);
-STATIC_ASSERT(offsetof(ScarabCollisionResults, hitAxes) == 0x50);
-STATIC_ASSERT(offsetof(ScarabCollisionResults, signedHitAxes) == 0x50);
-STATIC_ASSERT(sizeof(ScarabCollisionResults) == sizeof(TrackHitResults));
-STATIC_ASSERT(offsetof(ScarabSweepSphere, radii) == 0x0);
-STATIC_ASSERT(offsetof(ScarabSweepSphere, hitAxis) == 0x10);
-STATIC_ASSERT(offsetof(ScarabSweepSphere, pad11) == 0x11);
-STATIC_ASSERT(offsetof(ScarabSweepSphere, flags) == 0x14);
-STATIC_ASSERT(offsetof(ScarabSweepSphere, pad15) == 0x15);
-STATIC_ASSERT(sizeof(ScarabSweepSphere) == 0x30);
-STATIC_ASSERT(offsetof(ScarabCollisionScratch, bboxHit) == 0x0);
-STATIC_ASSERT(offsetof(ScarabCollisionScratch, sphere) ==
-              offsetof(ScarabCollisionScratch, hitResults) + 0x40);
 
 static int Scarab_resolveCollision(GameObject* obj) {
     ObjHitsPriorityState* hitState;
     TrackQueryBounds sweptBounds;
     f32 endPoints[12];
     f32 startPoints[12];
-    ScarabCollisionResults results;
+    TrackHitResults results;
     int hitIndex;
     u8 hitMask;
 
@@ -123,8 +81,8 @@ static int Scarab_resolveCollision(GameObject* obj) {
         startPoints[1] = obj->anim.previousLocalPosY;
         startPoints[2] = obj->anim.previousLocalPosZ;
         results.radii[0] = 8.0f;
-        results.signedHitAxes[0] = -1;
-        results.hitAxes[4] = 0x3;
+        results.surfaceTypes[0] = (u8)-1;
+        results.queryTypes[0] = 0x3;
     } else {
         return 0;
     }
@@ -143,16 +101,16 @@ static int Scarab_resolveCollision(GameObject* obj) {
             hitIndex = 3;
         }
 
-        *(u8*)&hitState->contactHitVolume = results.hitAxes[hitIndex];
+        *(u8*)&hitState->contactHitVolume = results.surfaceTypes[hitIndex];
         hitState->contactPosX = endPoints[hitIndex * 3];
         hitState->contactPosY = endPoints[hitIndex * 3 + 1];
         hitState->contactPosZ = endPoints[hitIndex * 3 + 2];
-        gScarabSweptHitInfo[0] = results.hitInfo[hitIndex][0];
-        gScarabSweptHitInfo[1] = results.hitInfo[hitIndex][1];
-        gScarabSweptHitInfo[2] = results.hitInfo[hitIndex][2];
-        gScarabSweptHitInfo[3] = results.hitInfo[hitIndex][3];
+        gScarabSweptHitInfo[0] = results.planes[hitIndex][0];
+        gScarabSweptHitInfo[1] = results.planes[hitIndex][1];
+        gScarabSweptHitInfo[2] = results.planes[hitIndex][2];
+        gScarabSweptHitInfo[3] = results.planes[hitIndex][3];
 
-        if (results.record.objects[hitIndex] != 0) {
+        if (results.objects[hitIndex] != 0) {
             hitState->contactFlags = *(u8*)&hitState->contactFlags | OBJHITS_CONTACT_FLAG_KIND_NONZERO;
             obj->anim.localPosX = hitState->contactPosX;
             obj->anim.localPosY = hitState->contactPosY;
@@ -401,23 +359,21 @@ void Scarab_update(GameObject* obj) {
                 startPosition.x = obj->anim.localPosX;
                 startPosition.y = obj->anim.localPosY;
                 startPosition.z = obj->anim.localPosZ;
-                {
-                    ScarabSweepSphere* sphere;
-                    (sphere = &collisionScratch.sphere)->radii[0] = 0.0f;
-                    sphere->hitAxis = -1;
-                    sphere->flags = 0;
-                    hitDetect_calcSweptSphereBounds(&sweepBounds, &startPosition.x, &endPosition.x, sphere->radii, 1);
-                }
+                collisionScratch.hitResults.radii[0] = 0.0f;
+                collisionScratch.hitResults.surfaceTypes[0] = (u8)-1;
+                collisionScratch.hitResults.queryTypes[0] = 0;
+                hitDetect_calcSweptSphereBounds(&sweepBounds, &startPosition.x, &endPosition.x,
+                                                collisionScratch.hitResults.radii, 1);
                 trackIntersectBroadphase(obj, &sweepBounds, 0, 1);
-                hitCount =
-                    trackGetIntersect(obj, (f32*)&startPosition, (f32*)&endPosition, 1, collisionScratch.hitResults, 0);
+                hitCount = trackGetIntersect(obj, (f32*)&startPosition, (f32*)&endPosition, 1,
+                                             &collisionScratch.hitResults, 0);
                 obj->anim.localPosX = endPosition.x;
                 obj->anim.localPosY = endPosition.y;
                 obj->anim.localPosZ = endPosition.z;
                 if (hitCount != 0) {
                     Scarab_applyOrientation(
                         obj, NULL, SCARAB_ORIENTATION_DIRECTION,
-                        (f32*)((u8*)&collisionScratch + offsetof(ScarabCollisionScratch, hitResults)));
+                        (f32*)&collisionScratch.hitResults);
                 }
             }
             if (ObjHits_GetPriorityHit(obj, 0, 0, 0) == SCARAB_TRIGGER_HIT_KIND) {
@@ -485,7 +441,7 @@ void Scarab_update(GameObject* obj) {
                         collisionDetected = 1;
                     } else {
                         Scarab_applyOrientation(obj, groundHits[bestGroundHitIndex], SCARAB_ORIENTATION_GROUND_NORMAL,
-                                                (f32*)collisionScratch.hitResults);
+                                                (f32*)&collisionScratch.hitResults);
                     }
                 } else {
                     obj->anim.localPosY = state->initialY;
@@ -541,21 +497,18 @@ void Scarab_update(GameObject* obj) {
                 }
                 collisionDetected = trackGetLineIntersect(&obj->anim.previousLocalPosX, &obj->anim.localPosX, 1.0f, 0,
                                                           &collisionScratch.bboxHit, obj, 8, -1, 0, 0);
-                {
-                    ScarabSweepSphere* sphere;
-                    (sphere = &collisionScratch.sphere)->radii[0] = 1.0f;
-                    sphere->hitAxis = -1;
-                    sphere->flags = 10;
-                    hitDetect_calcSweptSphereBounds(&sweepBounds, &obj->anim.previousLocalPosX, &obj->anim.localPosX,
-                                                    sphere->radii, 1);
-                }
+                collisionScratch.hitResults.radii[0] = 1.0f;
+                collisionScratch.hitResults.surfaceTypes[0] = (u8)-1;
+                collisionScratch.hitResults.queryTypes[0] = 10;
+                hitDetect_calcSweptSphereBounds(&sweepBounds, &obj->anim.previousLocalPosX, &obj->anim.localPosX,
+                                                collisionScratch.hitResults.radii, 1);
                 trackIntersectBroadphase(obj, &sweepBounds, 0, 1);
                 hitMask = trackGetIntersect(obj, &obj->anim.previousLocalPosX, &obj->anim.localPosX, 1,
-                                            collisionScratch.hitResults, 0);
+                                            &collisionScratch.hitResults, 0);
                 if (collisionDetected != 0 ||
                     Vec_distance(&obj->anim.worldPosX, &((ObjPlacement*)obj->anim.placementData)->posX) > 300.0f ||
                     ((hitMask & 1) != 0 && (hitMask & 0x10) == 0)) {
-                    PSVECSubtract((Vec*)&((ObjPlacement*)obj->anim.placementData)->posX, &obj->anim.localPos,
+                    PSVECSubtract((Vec*)&((ObjPlacement*)obj->anim.placementData)->posX, (Vec*)&obj->anim.localPosX,
                                   &homeDirection);
                     angle = (u16)getAngle(homeDirection.x, homeDirection.z);
                     heading = angle;
@@ -579,7 +532,7 @@ void Scarab_update(GameObject* obj) {
                 if (groundHits != NULL) {
                     obj->anim.localPosY = groundHits[bestGroundHitIndex]->height;
                     Scarab_applyOrientation(obj, groundHits[bestGroundHitIndex], SCARAB_ORIENTATION_GROUND_NORMAL,
-                                            (f32*)collisionScratch.hitResults);
+                                            (f32*)&collisionScratch.hitResults);
                 } else {
                     obj->anim.localPosY = state->initialY;
                 }
@@ -686,19 +639,27 @@ void Scarab_init(GameObject* obj, const ScarabPlacement* placement) {
     ObjMsg_AllocQueue(obj, 2);
 }
 
+OBJECT_INIT_ADAPTER(gScarabObjDescriptorInitAdapter, Scarab_init, obj, placement)
+OBJECT_FREE_ADAPTER(gScarabObjDescriptorFreeAdapter, Scarab_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gScarabObjDescriptorExtraSizeAdapter, Scarab_getExtraSize)
+
 ObjectDescriptor gScarabObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gScarabObjDescriptorInitAdapter,
+    Scarab_update,
     0,
+    Scarab_render,
+    gScarabObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)Scarab_init,
-    (ObjectDescriptorCallback)Scarab_update,
-    0,
-    (ObjectDescriptorCallback)Scarab_render,
-    (ObjectDescriptorCallback)Scarab_free,
-    0,
-    Scarab_getExtraSize,
+    gScarabObjDescriptorExtraSizeAdapter,
 };

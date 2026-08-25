@@ -1,5 +1,5 @@
 #include "main/dll/partfxspawn_struct.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
@@ -17,17 +17,20 @@ f32 gEffect18Progress2 = 0.1f;
 f32 gEffect18Progress3 = 0.3f;
 
 
-ObjectDescriptor6 Effect18_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect18_initialise,
-    (ObjectDescriptorCallback)Effect18_release,
-    0,
-    (ObjectDescriptorCallback)Effect18_func03_nop,
-    (ObjectDescriptorCallback)Effect18_spawnObject,
-    (ObjectDescriptorCallback)Effect18_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect18Resource, Effect18_initialise, Effect18_spawnObject, Effect18_updateFrameState)
+
+EffectResourceDescriptor Effect18_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect18ResourceAcquire,
+        Effect18_release,
+    },
+    {
+        NULL,
+        Effect18_func03_nop,
+        gEffect18ResourceSpawn,
+        gEffect18ResourceUpdate,
+    },
 };
 
 int Effect18_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

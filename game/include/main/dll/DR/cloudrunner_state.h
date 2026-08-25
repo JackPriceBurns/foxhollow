@@ -7,8 +7,8 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/dll_002E_moveLib.h"
-#include "main/objprint_sound_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_sound.h"
+#include "main/objprint_character.h"
 
 typedef struct CloudRunnerState {
     BaddieState baddie;

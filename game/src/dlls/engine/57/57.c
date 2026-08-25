@@ -2,10 +2,10 @@
 #include "main/texture.h"
 #include "dlls/object_descriptor.h"
 #include "main/model_engine.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "sys/objects.h"
 #include "main/dll/dll_0039_dummy39.h"
-#include "main/pause_menu_api.h"
+#include "main/pause_menu.h"
 
 #define DUMMY39_COUNTDOWN_FRAMES 0x28
 #define DUMMY39_WARP_MAP         0x60
@@ -44,15 +44,18 @@ void Dummy39_initialise(void) {
     gDummy39Countdown = DUMMY39_COUNTDOWN_FRAMES;
 }
 
-ObjectDescriptor6 Dummy39_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Dummy39_initialise,
-    (ObjectDescriptorCallback)Dummy39_release,
-    0,
-    (ObjectDescriptorCallback)Dummy39_run,
-    (ObjectDescriptorCallback)Dummy39_frameEnd,
-    (ObjectDescriptorCallback)Dummy39_render,
+UI_RESOURCE_ADAPTERS(gDummy39UiResource, Dummy39_initialise, Dummy39_run, Dummy39_render)
+
+UiResourceDescriptor Dummy39_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gDummy39UiResourceAcquire,
+        Dummy39_release,
+    },
+    {
+        NULL,
+        gDummy39UiResourceFrameStart,
+        Dummy39_frameEnd,
+        gDummy39UiResourceDraw,
+    },
 };

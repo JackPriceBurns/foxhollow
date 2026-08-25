@@ -4,17 +4,17 @@
  * Slot 202 has no retail object name; the iceBaddie namespace is descriptive.
  */
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -22,7 +22,7 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
@@ -33,26 +33,23 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/wispbaddie_baddie.h"
-#include "main/audio/sfx_position_api.h"
 #include "main/audio/sfx_ids.h"
 #include "main/dll/baddie_setmove.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/dll/seqobj11d_ext.h"
 #include "main/dll/wispbaddieseq_ext.h"
-#include "main/gameloop_api.h"
-#include "main/audio/sfx.h"
+#include "main/gameloop.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/gamebits.h"
 #include "main/dll/objfsa.h"
 #include "main/dll/newseqobj_baddie.h"
 #include "main/dll/baddie_frozen.h"
 #include "main/game_ui_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/model.h"
 #include "main/object_transform.h"
 #include "main/dll/player_target.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dlls/objects/225_WispBaddie.h"
 #include "main/trig_float_helpers.h"
 #include "main/obj_link.h"
@@ -71,10 +68,9 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/fall_ladders.h"
 #include "main/dll/fireflyLantern.h"
-#include "main/dll/duster_api.h"
-#include "main/track_bbox_api.h"
-#include "main/sky_interface.h"
 #include "main/dll/duster.h"
+#include "main/track_bbox.h"
+#include "main/sky_interface.h"
 #include "dlls/objects/216_PinPonSpike.h"
 #include "main/dll/duster_wb.h"
 #include "main/obj_query.h"
@@ -1190,21 +1186,46 @@ IceBaddieStateHandler gIceBaddieStateHandlersA[14];
 
 IceBaddieStateHandler gIceBaddieStateHandlersB[8];
 
-ObjectDescriptor12 gIceBaddieObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)iceBaddie_initialise,
-    (ObjectDescriptorCallback)iceBaddie_release,
-    0,
-    (ObjectDescriptorCallback)iceBaddie_init,
-    (ObjectDescriptorCallback)iceBaddie_update,
-    (ObjectDescriptorCallback)iceBaddie_hitDetect,
-    (ObjectDescriptorCallback)iceBaddie_render,
-    (ObjectDescriptorCallback)iceBaddie_free,
-    (ObjectDescriptorCallback)iceBaddie_getObjectTypeId,
-    iceBaddie_getExtraSize,
-    (ObjectDescriptorCallback)iceBaddie_getControlMode,
-    (ObjectDescriptorCallback)iceBaddie_handleMessage,
+OBJECT_INIT_ADAPTER(gIceBaddieObjDescriptorInitAdapter, iceBaddie_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gIceBaddieObjDescriptorUpdateAdapter, iceBaddie_update, obj, 0, 0)
+OBJECT_FREE_ADAPTER(gIceBaddieObjDescriptorFreeAdapter, iceBaddie_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIceBaddieObjDescriptorTypeIdAdapter, iceBaddie_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIceBaddieObjDescriptorExtraSizeAdapter, iceBaddie_getExtraSize)
+
+typedef struct IceBaddieObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(iceBaddie_getControlMode)* iceBaddie_getControlMode;
+    __typeof__(iceBaddie_handleMessage)* iceBaddie_handleMessage;
+} IceBaddieObjDescriptorTypeInterface;
+
+struct IceBaddieObjDescriptorType {
+    ObjectDescriptorHeader header;
+    IceBaddieObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gIceBaddieObjDescriptorAcquire, iceBaddie_initialise)
+
+struct IceBaddieObjDescriptorType gIceBaddieObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gIceBaddieObjDescriptorAcquire,
+        iceBaddie_release,
+    },
+    {
+        0,
+        gIceBaddieObjDescriptorInitAdapter,
+        gIceBaddieObjDescriptorUpdateAdapter,
+        iceBaddie_hitDetect,
+        iceBaddie_render,
+        gIceBaddieObjDescriptorFreeAdapter,
+        gIceBaddieObjDescriptorTypeIdAdapter,
+        gIceBaddieObjDescriptorExtraSizeAdapter,
+        iceBaddie_getControlMode,
+        iceBaddie_handleMessage,
+    },
 };

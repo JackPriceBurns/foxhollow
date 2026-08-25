@@ -35,6 +35,7 @@ void attractor_init(GameObject* obj, AttractorPlacement* placement);
 void attractor_release(void);
 void attractor_initialise(void);
 
-extern ObjectDescriptor12 gAttractorObjDescriptor;
+struct AttractorObjDescriptorType;
+extern struct AttractorObjDescriptorType gAttractorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_351_H_ */

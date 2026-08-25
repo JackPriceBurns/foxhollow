@@ -9,10 +9,10 @@
 #include "main/dll/partfx_interface.h"
 #include "main/dll/DR/dll_026F_drgenerator.h"
 #include "main/objfx.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/dll/dll_02B5_timer.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objseq.h"
 #include "main/objtexture.h"
 #include "main/objtype.h"
@@ -216,19 +216,31 @@ void drgenerator_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrGeneratorObjDescriptorInitAdapter, drgenerator_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrGeneratorObjDescriptorRenderAdapter, drgenerator_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrGeneratorObjDescriptorFreeAdapter, drgenerator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrGeneratorObjDescriptorTypeIdAdapter, drgenerator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrGeneratorObjDescriptorExtraSizeAdapter, drgenerator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrGeneratorObjDescriptorAcquire, drgenerator_initialise)
+
 ObjectDescriptor gDrGeneratorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrGeneratorObjDescriptorAcquire,
+        drgenerator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)drgenerator_initialise,
-    (ObjectDescriptorCallback)drgenerator_release,
-    0,
-    (ObjectDescriptorCallback)drgenerator_init,
-    (ObjectDescriptorCallback)drgenerator_update,
-    (ObjectDescriptorCallback)drgenerator_hitDetect,
-    (ObjectDescriptorCallback)drgenerator_render,
-    (ObjectDescriptorCallback)drgenerator_free,
-    (ObjectDescriptorCallback)drgenerator_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drgenerator_getExtraSize,
+    gDrGeneratorObjDescriptorInitAdapter,
+    drgenerator_update,
+    drgenerator_hitDetect,
+    gDrGeneratorObjDescriptorRenderAdapter,
+    gDrGeneratorObjDescriptorFreeAdapter,
+    gDrGeneratorObjDescriptorTypeIdAdapter,
+    gDrGeneratorObjDescriptorExtraSizeAdapter,
 };

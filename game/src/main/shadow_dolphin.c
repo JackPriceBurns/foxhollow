@@ -1,27 +1,24 @@
-#define OBJHITS_STATE_INDEX_S8
-#define TEX_SETSHADER_U8
 #include "main/map_block.h"
 #include "main/texture.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_depth_read_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "main/lightmap_api.h"
-#include "main/shader_api.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_depth_read.h"
+#include "track/intersect_render_setup.h"
+#include "main/lightmap.h"
+#include "main/shader.h"
 #include "main/debug.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frustum.h"
 #include "main/asset_load.h"
 #include "game/objects/object.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "sys/objects.h"
 #include "main/mm.h"
 #include "main/model_light.h"
 #include "main/model.h"
-#include "main/model_render_instrs_api.h"
+#include "main/model_render_instrs.h"
 #include "main/objHitReact.h"
 #include "main/objhits.h"
-#undef OBJHITS_STATE_INDEX_S8
 #include "main/objtype.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
@@ -37,32 +34,25 @@
 #include "main/camera.h"
 #include "main/sky_state.h"
 #include "main/track_dolphin.h"
-#include "main/track_dolphin_api.h"
-#include "main/track_dolphin_shadow_api.h"
-#include "main/newshadows_shadow_api.h"
+#include "main/track_dolphin_shadow.h"
+#include "main/newshadows_shadow.h"
 #include "dolphin/mtx/vec.h"
-#define TRACK_BBOX_FLAGS_S8
-#define TRACK_BBOX_MASK_TYPE s8
-#define TRACK_BBOX_ARG10_TYPE s8
-#include "main/track_bbox_api.h"
-#undef TRACK_BBOX_ARG10_TYPE
-#undef TRACK_BBOX_MASK_TYPE
-#undef TRACK_BBOX_FLAGS_S8
-#include "main/dll/player_api.h"
-#include "main/pause_menu_api.h"
+#include "main/track_bbox.h"
+#include "main/dll/player.h"
+#include "main/pause_menu.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/os/OSCache.h"
 #include "main/voxmaps.h"
-#include "track/intersect_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "track/intersect.h"
+#include "main/rcp_dolphin.h"
 #include "main/objmodel.h"
 #include "main/newshadows.h"
 #include "main/sky.h"
-#include "main/newshadows_texture_api.h"
-#include "main/acosf_api.h"
+#include "main/newshadows_texture.h"
+#include "main/acosf.h"
 #include "main/tex_dolphin.h"
 #include "string.h"
-#include "main/track_dolphin_sky_api.h"
+#include "main/track_dolphin_sky.h"
 
 Vec3f* gShadowVolumeBuffer;
 void* gShadowVolumeBuffers[2];
@@ -506,7 +496,7 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
     s16 savedRotX;
     s16 savedRotZ;
     s16 savedRotY;
-    uintptr_t diskTexture;
+    Texture* diskTexture;
     MtxPtr viewMtx;
     u32 i;
 
@@ -531,10 +521,10 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
         obj->anim.rotZ = 0;
     if (modelState->flags & OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE)
     {
-        memcpy(&savedLocalPos, &obj->anim.localPos, sizeof(Vec3f));
-        memcpy(&savedWorldPos, &obj->anim.worldPos, sizeof(Vec3f));
-        memcpy(&obj->anim.worldPos, &modelState->overrideWorldPos, sizeof(Vec3f));
-        memcpy(&obj->anim.localPos, &modelState->overrideWorldPos, sizeof(Vec3f));
+        memcpy(&savedLocalPos, &obj->anim.localPosX, sizeof(Vec3f));
+        memcpy(&savedWorldPos, &obj->anim.worldPosX, sizeof(Vec3f));
+        memcpy(&obj->anim.worldPosX, &modelState->overrideWorldPosX, sizeof(Vec3f));
+        memcpy(&obj->anim.localPosX, &modelState->overrideWorldPosX, sizeof(Vec3f));
     }
     Obj_BuildWorldTransformMatrix(obj, (f32*)worldMtx, 0);
     viewMtx = (MtxPtr)Camera_GetViewMatrix();
@@ -552,8 +542,7 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
         else
             projectionScale = obj->anim.hitboxScale * obj->anim.rootMotionScale;
         if (modelState->shadowRenderResource != OBJECT_SHADOW_MESH_UNCACHED ||
-            (diskTexture = getNewShadowSmallDiskTexture(),
-             (uintptr_t)modelState->shadowCastSlot->texture == diskTexture))
+            (diskTexture = getNewShadowSmallDiskTexture(), modelState->shadowCastSlot->texture == diskTexture))
         {
             GXColor color = *(GXColor*)shadowColor;
             objectShadow_setupProjectedTexture(modelState->shadowCastSlot, &color, worldMtx);
@@ -623,8 +612,8 @@ void objDrawShadowCasterMesh(Vec3f* vertices, ObjModelState* modelState, GameObj
     }
     if (modelState->flags & OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE)
     {
-        memcpy(&obj->anim.localPos, &savedLocalPos, sizeof(Vec3f));
-        memcpy(&obj->anim.worldPos, &savedWorldPos, sizeof(Vec3f));
+        memcpy(&obj->anim.localPosX, &savedLocalPos, sizeof(Vec3f));
+        memcpy(&obj->anim.worldPosX, &savedWorldPos, sizeof(Vec3f));
     }
 }
 
@@ -833,7 +822,7 @@ uintptr_t shadowInit(GameObject* obj, uintptr_t arena, int flags)
     }
     else if (obj->anim.modelInstance->renderFlags & OBJDEF_RENDERFLAG_PROJECTED_SHADOW)
     {
-        modelState->shadowTexture = (void*)textureAlloc512();
+        modelState->shadowTexture = textureAlloc512();
     }
     else if (obj->anim.modelInstance->renderFlags & 0x2)
     {
@@ -842,7 +831,7 @@ uintptr_t shadowInit(GameObject* obj, uintptr_t arena, int flags)
     }
     else
     {
-        modelState->shadowTexture = (void*)getNewShadowSmallDiskTexture();
+        modelState->shadowTexture = getNewShadowSmallDiskTexture();
     }
     if (obj->anim.modelInstance->shadowType == OBJ_SHADOW_TYPE_BIG_BOX)
     {

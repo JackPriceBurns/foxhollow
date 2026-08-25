@@ -5,7 +5,7 @@
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
 #include "main/dll/baddie_state.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 typedef struct ObjSeqState ObjSeqState;
 typedef struct ObjModel ObjModel;

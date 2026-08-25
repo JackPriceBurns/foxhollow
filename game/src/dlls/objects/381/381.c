@@ -5,7 +5,7 @@
 #include "dlls/objects/381.h"
 
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
 #include "main/objtype.h"
@@ -14,9 +14,8 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "main/curve.h"
-#include "main/pad_api.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/pad.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "sys/objects/lifecycle.h"
 
@@ -130,18 +129,18 @@ void rollingBarrel_update(GameObject* obj) {
             f32 maxAdvanceDistance = 3.0f;
             while (blocked == 0 && distanceSquared < maxAdvanceDistance * timeDelta) {
                 blocked = Curve_AdvanceAlongPath(&state->curve.curve, state->curveSpeed);
-                if (blocked == 0 && state->curve.atSegmentEnd != 0) {
+                if (blocked == 0 && state->curve.curve.idx != 0) {
                     (*gRomCurveInterface)->goNextPoint(&state->curve);
                 }
                 {
-                    f32 dx = state->curve.posX - obj->anim.previousLocalPosX;
-                    f32 dz = state->curve.posZ - obj->anim.previousLocalPosZ;
+                    f32 dx = state->curve.curve.sample[0] - obj->anim.previousLocalPosX;
+                    f32 dz = state->curve.curve.sample[2] - obj->anim.previousLocalPosZ;
                     distanceSquared = dx * dx + dz * dz;
                 }
             }
         } else {
             blocked = Curve_AdvanceAlongPath(&state->curve.curve, state->curveSpeed);
-            if (blocked == 0 && state->curve.atSegmentEnd != 0) {
+            if (blocked == 0 && state->curve.curve.idx != 0) {
                 (*gRomCurveInterface)->goNextPoint(&state->curve);
             }
         }
@@ -150,9 +149,9 @@ void rollingBarrel_update(GameObject* obj) {
         ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, obj->anim.modelInstance->primaryHitboxRadius);
 
         if (placement->base.objectId == ROLLING_BARREL_DIM2_OBJECT_ID) {
-            floorY = 5.0f + state->curve.posY;
+            floorY = 5.0f + state->curve.curve.sample[1];
         } else {
-            floorY = state->curve.posY;
+            floorY = state->curve.curve.sample[1];
         }
 
         state->verticalSpeed = -0.1f * timeDelta + state->verticalSpeed;
@@ -168,9 +167,9 @@ void rollingBarrel_update(GameObject* obj) {
             state->verticalSpeed *= -0.6f;
             obj->anim.localPosY = 2.0f * floorY - obj->anim.localPosY;
         }
-        obj->anim.localPosX = state->curve.posX;
-        obj->anim.localPosZ = state->curve.posZ;
-        obj->anim.rotX = (s16)getAngle(state->curve.tangentX, state->curve.tangentZ);
+        obj->anim.localPosX = state->curve.curve.sample[0];
+        obj->anim.localPosZ = state->curve.curve.sample[2];
+        obj->anim.rotX = (s16)getAngle(state->curve.curve.tangent[0], state->curve.curve.tangent[2]);
 
         if (state->pitchRising != 0) {
             obj->anim.rotZ = (s16)(32.0f * timeDelta + (f32)(int)obj->anim.rotZ);
@@ -269,19 +268,31 @@ void rollingBarrel_initialise(void) {
     gRollingBarrelExplodingCount = 0;
 }
 
+OBJECT_INIT_ADAPTER(gRollingBarrelObjDescriptorInitAdapter, rollingBarrel_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gRollingBarrelObjDescriptorHitDetectAdapter, rollingBarrel_hitDetect)
+OBJECT_FREE_ADAPTER(gRollingBarrelObjDescriptorFreeAdapter, rollingBarrel_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gRollingBarrelObjDescriptorTypeIdAdapter, rollingBarrel_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gRollingBarrelObjDescriptorExtraSizeAdapter, rollingBarrel_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gRollingBarrelObjDescriptorAcquire, rollingBarrel_initialise)
+
 ObjectDescriptor gRollingBarrelObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gRollingBarrelObjDescriptorAcquire,
+        rollingBarrel_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)rollingBarrel_initialise,
-    (ObjectDescriptorCallback)rollingBarrel_release,
-    0,
-    (ObjectDescriptorCallback)rollingBarrel_init,
-    (ObjectDescriptorCallback)rollingBarrel_update,
-    (ObjectDescriptorCallback)rollingBarrel_hitDetect,
-    (ObjectDescriptorCallback)rollingBarrel_render,
-    (ObjectDescriptorCallback)rollingBarrel_free,
-    (ObjectDescriptorCallback)rollingBarrel_getObjectTypeId,
-    rollingBarrel_getExtraSize,
+    gRollingBarrelObjDescriptorInitAdapter,
+    rollingBarrel_update,
+    gRollingBarrelObjDescriptorHitDetectAdapter,
+    rollingBarrel_render,
+    gRollingBarrelObjDescriptorFreeAdapter,
+    gRollingBarrelObjDescriptorTypeIdAdapter,
+    gRollingBarrelObjDescriptorExtraSizeAdapter,
 };

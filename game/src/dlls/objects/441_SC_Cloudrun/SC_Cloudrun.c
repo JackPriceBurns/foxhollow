@@ -1,7 +1,7 @@
 #include "dlls/objects/441_SC_Cloudrun.h"
 
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/dll/dll_02B1_cmbsrc.h"
@@ -214,15 +214,25 @@ static void sc_cloudrunnera_release(void) {
 static void sc_cloudrunnera_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSC_CloudrunnerAObjDescriptorInitAdapter, sc_cloudrunnera_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSC_CloudrunnerAObjDescriptorHitDetectAdapter, sc_cloudrunnera_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_CloudrunnerAObjDescriptorFreeAdapter, sc_cloudrunnera_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSC_CloudrunnerAObjDescriptorTypeIdAdapter, sc_cloudrunnera_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_CloudrunnerAObjDescriptorExtraSizeAdapter, sc_cloudrunnera_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_CloudrunnerAObjDescriptorAcquire, sc_cloudrunnera_initialise)
+
 ObjectDescriptor gSC_CloudrunnerAObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_cloudrunnera_initialise,
-    .release = (ObjectDescriptorCallback)sc_cloudrunnera_release,
-    .init = (ObjectDescriptorCallback)sc_cloudrunnera_init,
-    .update = (ObjectDescriptorCallback)sc_cloudrunnera_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_cloudrunnera_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_cloudrunnera_render,
-    .free = (ObjectDescriptorCallback)sc_cloudrunnera_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_cloudrunnera_getObjectTypeId,
-    .getExtraSize = sc_cloudrunnera_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_CloudrunnerAObjDescriptorAcquire,
+        .release = sc_cloudrunnera_release,
+    },
+    .init = gSC_CloudrunnerAObjDescriptorInitAdapter,
+    .update = sc_cloudrunnera_update,
+    .hitDetect = gSC_CloudrunnerAObjDescriptorHitDetectAdapter,
+    .render = sc_cloudrunnera_render,
+    .free = gSC_CloudrunnerAObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_CloudrunnerAObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_CloudrunnerAObjDescriptorExtraSizeAdapter,
+};;

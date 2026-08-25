@@ -1,7 +1,7 @@
 #ifndef MAIN_DLL_DLL_0014_UNK_H_
 #define MAIN_DLL_DLL_0014_UNK_H_
 
-#include "main/dll/dll_0014_api.h"
+#include "main/dll/dll_0014.h"
 #include "main/dll/rom_curve_def.h"
 #include "main/dll/objfsa.h"
 #include "main/dll/rom_curve_interface.h"

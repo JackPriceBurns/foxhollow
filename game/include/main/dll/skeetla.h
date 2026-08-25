@@ -3,8 +3,8 @@
 
 #include "types.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/dll/skeetla_anim_api.h"
-#include "main/dll/skeetla_route_api.h"
+#include "main/dll/skeetla_anim.h"
+#include "main/dll/skeetla_route.h"
 #include "game/objects/object.h"
 
 typedef struct TrickyState TrickyState;

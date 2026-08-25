@@ -2,13 +2,13 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "main/objhits.h"
-#include "main/render_lactions_api.h"
+#include "main/render_lactions.h"
 #include "sys/objects/lifecycle.h"
 
 enum Dll413Variant {
@@ -139,7 +139,9 @@ static void dll413_update(GameObject* obj) {
     spawnParams.pos = (Vec3f){0.0f, 0.0f, 0.0f};
 
     if ((state->flags & DLL413_STATE_POSITION_INITIALIZED) == 0) {
-        state->position = obj->anim.localPos;
+        state->position.x = obj->anim.localPosX;
+        state->position.y = obj->anim.localPosY;
+        state->position.z = obj->anim.localPosZ;
         state->flags |= DLL413_STATE_POSITION_INITIALIZED;
     }
 
@@ -151,7 +153,9 @@ static void dll413_update(GameObject* obj) {
 
     if (state->despawnTimer != 0) {
         dll413_startStopAction(obj, state);
-        obj->anim.velocity = (Vec3f){0.0f, 0.0f, 0.0f};
+        obj->anim.velocityX = 0.0f;
+        obj->anim.velocityY = 0.0f;
+        obj->anim.velocityZ = 0.0f;
         ObjHits_ClearHitVolumes(&obj->anim);
         state->despawnTimer--;
         if (state->despawnTimer <= 0) {
@@ -160,9 +164,9 @@ static void dll413_update(GameObject* obj) {
         return;
     }
 
-    obj->anim.previousLocalPosX = obj->anim.localPos.x;
-    obj->anim.previousLocalPosY = obj->anim.localPos.y;
-    obj->anim.previousLocalPosZ = obj->anim.localPos.z;
+    obj->anim.previousLocalPosX = obj->anim.localPosX;
+    obj->anim.previousLocalPosY = obj->anim.localPosY;
+    obj->anim.previousLocalPosZ = obj->anim.localPosZ;
 
     obj->anim.rotX = (s16)(obj->anim.rotX + state->angularVelocityX * framesThisStep);
     obj->anim.rotZ = (s16)(obj->anim.rotZ + state->angularVelocityZ * framesThisStep);
@@ -179,11 +183,13 @@ static void dll413_update(GameObject* obj) {
         state->effectTimer = 50;
     }
 
-    state->position.x += obj->anim.velocity.x * timeDelta;
-    state->position.y += obj->anim.velocity.y * timeDelta;
-    state->position.z += obj->anim.velocity.z * timeDelta;
+    state->position.x += obj->anim.velocityX * timeDelta;
+    state->position.y += obj->anim.velocityY * timeDelta;
+    state->position.z += obj->anim.velocityZ * timeDelta;
     state->spinPhase += framesThisStep * 0x5DC;
-    obj->anim.localPos = state->position;
+    obj->anim.localPosX = state->position.x;
+    obj->anim.localPosY = state->position.y;
+    obj->anim.localPosZ = state->position.z;
 
     obj->userData1 -= (intptr_t)framesThisStep;
     if (obj->userData1 < 0) {
@@ -216,19 +222,26 @@ static void dll413_release(void) {
 static void dll413_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll19DObjDescriptorInitAdapter, dll413_init, obj)
+OBJECT_RENDER_ADAPTER(gDll19DObjDescriptorRenderAdapter, dll413_render)
+OBJECT_FREE_ADAPTER(gDll19DObjDescriptorFreeAdapter, dll413_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll19DObjDescriptorTypeIdAdapter, dll413_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll19DObjDescriptorExtraSizeAdapter, dll413_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll19DObjDescriptorAcquire, dll413_initialise)
+
 ObjectDescriptor gDll19DObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dll413_initialise,
-    .release = (ObjectDescriptorCallback)dll413_release,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDll19DObjDescriptorAcquire,
+        .release = dll413_release,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)dll413_init,
-    .update = (ObjectDescriptorCallback)dll413_update,
-    .hitDetect = (ObjectDescriptorCallback)dll413_hitDetect,
-    .render = (ObjectDescriptorCallback)dll413_render,
-    .free = (ObjectDescriptorCallback)dll413_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dll413_getObjectTypeId,
-    .getExtraSize = dll413_getExtraSize,
-};
+    .init = gDll19DObjDescriptorInitAdapter,
+    .update = dll413_update,
+    .hitDetect = dll413_hitDetect,
+    .render = gDll19DObjDescriptorRenderAdapter,
+    .free = gDll19DObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDll19DObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDll19DObjDescriptorExtraSizeAdapter,
+};;

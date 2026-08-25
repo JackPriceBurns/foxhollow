@@ -16,15 +16,15 @@
 #include "main/model.h"
 #include "dolphin/mtx.h"
 #include "main/texture.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/shader_api.h"
+#include "dolphin/math.h"
+#include "main/shader.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
 #include "main/dll/ppcwgpipe_struct.h"
 #include "game/objects/object_setup.h"
 #include "game/objects/object.h"
 #include "string.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/objfx.h"
 #include "sys/objects.h"
 #include "main/mm.h"
@@ -39,24 +39,23 @@
 #include "main/curve.h"
 #include "dolphin/gx/GXDraw.h"
 #include "dolphin/gx/GXEnum.h"
-#include "main/dll/dll_00E2_staff_api.h"
+#include "main/dll/dll_00E2_staff.h"
 #include "main/dll/dll_005A_staffcollision.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/gamebit_ids.h"
 #include "main/frame_timing.h"
-#include "main/rcp_dolphin_api.h"
-#include "track/intersect_texture_api.h"
+#include "main/rcp_dolphin.h"
+#include "track/intersect_texture.h"
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/hud_visibility_api.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_geom_api.h"
-#include "track/intersect_render_setup_api.h"
+#include "main/audio/sfx.h"
+#include "main/hud_visibility.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_geom.h"
+#include "track/intersect_render_setup.h"
 #include "main/dll/partfx_interface.h"
 
 extern Texture* gStaffSwipeTextures[2];
@@ -507,7 +506,7 @@ void staff_setupSwipe(GameObject* unused1, StaffState* swipe, void* unused3, Gam
         angle = (gStaffPi[0] * (f32)(int)-ang) / gStaffAngleUnitScale[0];
         sinv = mathSinf(angle);
         cosv = mathCosf(angle);
-        model2 = ((ObjAnimBank*)Obj_GetActiveModel(obj))->currentState;
+        model2 = ((ObjModel*)Obj_GetActiveModel(obj))->animStateA;
         weaponDaTable = obj->anim.weaponDaTable;
         if (weaponDaTable != NULL && weaponDaTable->byteCount > 0) {
             f32 sw;
@@ -981,32 +980,47 @@ void staff_initialise(void) {
     staff_initialiseBody(sStaffContactSfxIds, i);
 }
 
-ObjectDescriptor23 gStaffObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_23_SLOTS,
-    (ObjectDescriptorCallback)staff_initialise,
-    (ObjectDescriptorCallback)staff_release,
-    0,
-    (ObjectDescriptorCallback)staff_init,
-    (ObjectDescriptorCallback)staff_update,
-    (ObjectDescriptorCallback)staff_hitDetect,
-    (ObjectDescriptorCallback)staff_render,
-    (ObjectDescriptorCallback)staff_free,
-    (ObjectDescriptorCallback)staff_getObjectTypeId,
-    staff_getExtraSize,
-    (ObjectDescriptorCallback)staff_func0A,
-    (ObjectDescriptorCallback)staff_func0B,
-    (ObjectDescriptorCallback)staff_updateSwipe,
-    (ObjectDescriptorCallback)staff_hitDetectGeometry,
-    (ObjectDescriptorCallback)staff_func0E,
-    (ObjectDescriptorCallback)staff_func0F,
-    (ObjectDescriptorCallback)staff_func10,
-    (ObjectDescriptorCallback)staff_setHitReactValue,
-    (ObjectDescriptorCallback)staff_addHitReactValue,
-    (ObjectDescriptorCallback)staff_getHitReactValue,
-    (ObjectDescriptorCallback)staff_getHitGeometryPoints,
-    (ObjectDescriptorCallback)staff_startSwipe,
-    (ObjectDescriptorCallback)staff_getSwipeTextureIndex,
+OBJECT_INIT_ADAPTER(gStaffObjDescriptorInitAdapter, staff_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gStaffObjDescriptorHitDetectAdapter, staff_hitDetect)
+OBJECT_RENDER_ADAPTER(gStaffObjDescriptorRenderAdapter, staff_render)
+OBJECT_FREE_ADAPTER(gStaffObjDescriptorFreeAdapter, staff_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gStaffObjDescriptorTypeIdAdapter, staff_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gStaffObjDescriptorExtraSizeAdapter, staff_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gStaffObjDescriptorAcquire, staff_initialise)
+
+StaffDescriptor gStaffObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_23_SLOTS,
+        },
+        gStaffObjDescriptorAcquire,
+        staff_release,
+    },
+    {
+        0,
+        gStaffObjDescriptorInitAdapter,
+        staff_update,
+        gStaffObjDescriptorHitDetectAdapter,
+        gStaffObjDescriptorRenderAdapter,
+        gStaffObjDescriptorFreeAdapter,
+        gStaffObjDescriptorTypeIdAdapter,
+        gStaffObjDescriptorExtraSizeAdapter,
+        staff_func0A,
+        staff_func0B,
+        staff_updateSwipe,
+        staff_hitDetectGeometry,
+        staff_func0E,
+        staff_func0F,
+        staff_func10,
+        staff_setHitReactValue,
+        staff_addHitReactValue,
+        staff_getHitReactValue,
+        staff_getHitGeometryPoints,
+        staff_startSwipe,
+        staff_getSwipeTextureIndex,
+    },
 };

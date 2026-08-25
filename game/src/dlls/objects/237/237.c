@@ -7,12 +7,12 @@
  * bounce motion until they settle.
  */
 #include "dlls/objects/237.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/ppcwgpipe_struct.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/path_control_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
@@ -23,14 +23,14 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/objprint.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/savegame_object_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/savegame_object.h"
+#include "main/gameloop_gamebit.h"
 #include "main/objtype.h"
 
 #define COLLECTIBLE_SEQ_ID_FIRE_CRYSTAL 0xA8
@@ -675,26 +675,39 @@ void collectible_release(void) {
 void collectible_initialise(void) {
 }
 
-ObjectDescriptor17 gCollectibleObjDescriptor = {
-    0,                                                           /* reserved0 */
-    0,                                                           /* reserved1 */
-    0,                                                           /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_17_SLOTS,                            /* slotCountAndFlags */
-    (ObjectDescriptorCallback)collectible_initialise,            /* initialise */
-    (ObjectDescriptorCallback)collectible_release,               /* release */
-    0,                                                           /* slot02 */
-    (ObjectDescriptorCallback)collectible_init,                  /* init */
-    (ObjectDescriptorCallback)collectible_update,                /* update */
-    (ObjectDescriptorCallback)collectible_hitDetect,             /* hitDetect */
-    (ObjectDescriptorCallback)collectible_render,                /* render */
-    (ObjectDescriptorCallback)collectible_free,                  /* free */
-    (ObjectDescriptorCallback)collectible_getObjectTypeId,       /* getObjectTypeId */
-    collectible_getExtraSize,                                    /* getExtraSize */
-    (ObjectDescriptorCallback)collectible_getIsHidden,           /* slot0A */
-    (ObjectDescriptorCallback)collectible_setDisabled,           /* slot0B */
-    (ObjectDescriptorCallback)collectible_getHitRegionId,        /* slot0C */
-    (ObjectDescriptorCallback)collectible_startBounceMotion,     /* slot0D */
-    (ObjectDescriptorCallback)collectible_setVisibilityBitClear, /* slot0E */
-    (ObjectDescriptorCallback)collectible_getVisibilityBitClear, /* slot0F */
-    (ObjectDescriptorCallback)collectible_setPosition,           /* slot10 */
+OBJECT_INIT_ADAPTER(gCollectibleObjDescriptorInitAdapter, collectible_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCollectibleObjDescriptorFreeAdapter, collectible_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCollectibleObjDescriptorTypeIdAdapter, collectible_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCollectibleObjDescriptorExtraSizeAdapter, collectible_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCollectibleObjDescriptorAcquire, collectible_initialise)
+
+CollectibleDescriptor gCollectibleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_17_SLOTS,
+        },
+        gCollectibleObjDescriptorAcquire,
+        collectible_release,
+    },
+    {
+        0,
+        gCollectibleObjDescriptorInitAdapter,
+        collectible_update,
+        collectible_hitDetect,
+        collectible_render,
+        gCollectibleObjDescriptorFreeAdapter,
+        gCollectibleObjDescriptorTypeIdAdapter,
+        gCollectibleObjDescriptorExtraSizeAdapter,
+        collectible_getIsHidden,
+        collectible_setDisabled,
+        collectible_getHitRegionId,
+        collectible_startBounceMotion,
+        collectible_setVisibilityBitClear,
+        collectible_getVisibilityBitClear,
+        collectible_setPosition,
+    },
 };

@@ -9,7 +9,7 @@
  *    delay drops from its placed height down by a fixed offset (with a
  *    buzzing sfx) and latches at the bottom.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/objseq.h"
@@ -137,19 +137,30 @@ void VFP_Ladders_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_LaddersObjDescriptorInitAdapter, VFP_Ladders_init, obj, placement)
+OBJECT_FREE_ADAPTER(gVFP_LaddersObjDescriptorFreeAdapter, VFP_Ladders_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_LaddersObjDescriptorTypeIdAdapter, VFP_Ladders_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_LaddersObjDescriptorExtraSizeAdapter, VFP_Ladders_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_LaddersObjDescriptorAcquire, VFP_Ladders_initialise)
+
 ObjectDescriptor gVFP_LaddersObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_LaddersObjDescriptorAcquire,
+        VFP_Ladders_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_Ladders_initialise,
-    (ObjectDescriptorCallback)VFP_Ladders_release,
-    0,
-    (ObjectDescriptorCallback)VFP_Ladders_init,
-    (ObjectDescriptorCallback)VFP_Ladders_update,
-    (ObjectDescriptorCallback)VFP_Ladders_hitDetect,
-    (ObjectDescriptorCallback)VFP_Ladders_render,
-    (ObjectDescriptorCallback)VFP_Ladders_free,
-    (ObjectDescriptorCallback)VFP_Ladders_getObjectTypeId,
-    VFP_Ladders_getExtraSize,
+    gVFP_LaddersObjDescriptorInitAdapter,
+    VFP_Ladders_update,
+    VFP_Ladders_hitDetect,
+    VFP_Ladders_render,
+    gVFP_LaddersObjDescriptorFreeAdapter,
+    gVFP_LaddersObjDescriptorTypeIdAdapter,
+    gVFP_LaddersObjDescriptorExtraSizeAdapter,
 };

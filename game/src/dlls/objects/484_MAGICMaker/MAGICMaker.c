@@ -11,7 +11,7 @@
 #include "main/objfx.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
 #include "dlls/objects/237.h"
@@ -132,22 +132,34 @@ void magicmaker_release(void) {
 void magicmaker_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMAGICMakerObjDescriptorInitAdapter, magicmaker_init)
+OBJECT_HIT_DETECT_ADAPTER(gMAGICMakerObjDescriptorHitDetectAdapter, magicmaker_hitDetect)
+OBJECT_FREE_ADAPTER(gMAGICMakerObjDescriptorFreeAdapter, magicmaker_free)
+OBJECT_TYPE_ID_ADAPTER(gMAGICMakerObjDescriptorTypeIdAdapter, magicmaker_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMAGICMakerObjDescriptorExtraSizeAdapter, magicmaker_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMAGICMakerObjDescriptorAcquire, magicmaker_initialise)
+
 ObjectDescriptor10WithPadding gMAGICMakerObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gMAGICMakerObjDescriptorAcquire,
+            magicmaker_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        magicmaker_initialise,
-        magicmaker_release,
-        0,
-        magicmaker_init,
-        (ObjectDescriptorCallback)magicmaker_update,
-        magicmaker_hitDetect,
-        (ObjectDescriptorCallback)magicmaker_render,
-        magicmaker_free,
-        (ObjectDescriptorCallback)magicmaker_getObjectTypeId,
-        magicmaker_getExtraSize,
+        gMAGICMakerObjDescriptorInitAdapter,
+        magicmaker_update,
+        gMAGICMakerObjDescriptorHitDetectAdapter,
+        magicmaker_render,
+        gMAGICMakerObjDescriptorFreeAdapter,
+        gMAGICMakerObjDescriptorTypeIdAdapter,
+        gMAGICMakerObjDescriptorExtraSizeAdapter,
     },
     0,
 };

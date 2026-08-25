@@ -15,7 +15,7 @@ typedef struct Dll28BState
     u8 pad9A8[0x9B0 - 0x9A8];
     RomCurveWalker route;
     f32 playerDistance;
-    u8 padABC[0xAC0 - 0xABC];
+    f32 randomTimer;
     u8 flagsAC0;
     u8 padAC1[0xAC4 - 0xAC1];
 } Dll28BState;
@@ -30,6 +30,7 @@ STATIC_ASSERT(offsetof(Dll28BState, moveLib) == 0x35C);
 STATIC_ASSERT(offsetof(Dll28BState, eyeAnimState) == 0x980);
 STATIC_ASSERT(offsetof(Dll28BState, route) == 0x9B0);
 STATIC_ASSERT(offsetof(Dll28BState, playerDistance) == 0xAB8);
+STATIC_ASSERT(offsetof(Dll28BState, randomTimer) == 0xABC);
 STATIC_ASSERT(offsetof(Dll28BState, flagsAC0) == 0xAC0);
 STATIC_ASSERT(sizeof(Dll28BMoveBlendData) == 0x10);
 

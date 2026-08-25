@@ -5,17 +5,17 @@
  */
 #include "dlls/objects/270.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/stream_api.h"
+#include "dolphin/math.h"
+#include "main/audio/stream.h"
 #include "main/camera.h"
 #include "main/dll/player_status.h"
 #include "main/frame_timing.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "main/objtexture.h"
 #include "main/screen_transition.h"
 #include "sys/objects.h"
-#include "main/dll/tricky_api.h"
-#include "main/lightmap_api.h"
+#include "main/dll/tricky.h"
+#include "main/lightmap.h"
 #include "main/rcp_dolphin.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
@@ -200,19 +200,32 @@ void DeathSeq_release(void) {
 void DeathSeq_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDeathSeqObjDescriptorInitAdapter, DeathSeq_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDeathSeqObjDescriptorHitDetectAdapter, DeathSeq_hitDetect)
+OBJECT_RENDER_ADAPTER(gDeathSeqObjDescriptorRenderAdapter, DeathSeq_render)
+OBJECT_FREE_ADAPTER(gDeathSeqObjDescriptorFreeAdapter, DeathSeq_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDeathSeqObjDescriptorTypeIdAdapter, DeathSeq_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDeathSeqObjDescriptorExtraSizeAdapter, DeathSeq_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDeathSeqObjDescriptorAcquire, DeathSeq_initialise)
+
 ObjectDescriptor gDeathSeqObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDeathSeqObjDescriptorAcquire,
+        DeathSeq_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DeathSeq_initialise,
-    (ObjectDescriptorCallback)DeathSeq_release,
-    0,
-    (ObjectDescriptorCallback)DeathSeq_init,
-    (ObjectDescriptorCallback)DeathSeq_update,
-    (ObjectDescriptorCallback)DeathSeq_hitDetect,
-    (ObjectDescriptorCallback)DeathSeq_render,
-    (ObjectDescriptorCallback)DeathSeq_free,
-    (ObjectDescriptorCallback)DeathSeq_getObjectTypeId,
-    DeathSeq_getExtraSize,
+    gDeathSeqObjDescriptorInitAdapter,
+    DeathSeq_update,
+    gDeathSeqObjDescriptorHitDetectAdapter,
+    gDeathSeqObjDescriptorRenderAdapter,
+    gDeathSeqObjDescriptorFreeAdapter,
+    gDeathSeqObjDescriptorTypeIdAdapter,
+    gDeathSeqObjDescriptorExtraSizeAdapter,
 };

@@ -2,7 +2,7 @@
 #define MAIN_CAMERA_H_
 
 #include "global.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/vec_types.h"
 #include "main/vecmath.h"
 
@@ -22,14 +22,9 @@ typedef struct Camera {
     s16 roll;
     s16 flags;
     f32 scale;
-    union {
-        struct {
-            f32 x;
-            f32 y;
-            f32 z;
-        };
-        Vec3f position;
-    };
+    f32 x;
+    f32 y;
+    f32 z;
     f32 fovY;
     u8 pad1C[4];
     Vec3f velocity;
@@ -39,14 +34,9 @@ typedef struct Camera {
     f32 shakeTime;
     f32 shakeDamping;
     GameObject* parentObject;
-    union {
-        struct {
-            f32 worldX;
-            f32 worldY;
-            f32 worldZ;
-        };
-        Vec3f worldPosition;
-    };
+    f32 worldX;
+    f32 worldY;
+    f32 worldZ;
     s16 worldYaw;
     s16 worldPitch;
     s16 worldRoll;

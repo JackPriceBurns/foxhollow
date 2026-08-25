@@ -26,7 +26,7 @@ typedef s16 (*Dll69SpawnFn)(GameObject* sourceObj, int variant, void* spawnParam
                             Dll69EffectParams* overrideParams);
 
 typedef struct Dll69Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll69SpawnFn spawn;
 } Dll69Interface;
 
@@ -35,16 +35,14 @@ STATIC_ASSERT(offsetof(Dll69Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll69Interface) == 0x08);
 
 typedef struct Dll69ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll69SpawnFn spawn;
 } Dll69ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll69ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll69ResourceDescriptor) == 0x20);

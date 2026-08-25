@@ -1,17 +1,17 @@
 #include "dlls/objects/376_DFSH_Shrine.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "dolphin/math.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_00C9_enemy.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEvent.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
@@ -19,13 +19,13 @@
 #include "main/obj_message.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
 #include "main/screen_transition.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 
 STATIC_ASSERT(sizeof(DFSHShrineFlags) == 0x01);
 
@@ -399,19 +399,31 @@ void dfshShrine_release(void) {
 void dfshShrine_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDFSHShrineObjDescriptorInitAdapter, dfshShrine_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFSHShrineObjDescriptorHitDetectAdapter, dfshShrine_hitDetect)
+OBJECT_FREE_ADAPTER(gDFSHShrineObjDescriptorFreeAdapter, dfshShrine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDFSHShrineObjDescriptorTypeIdAdapter, dfshShrine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFSHShrineObjDescriptorExtraSizeAdapter, dfshShrine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFSHShrineObjDescriptorAcquire, dfshShrine_initialise)
+
 ObjectDescriptor gDFSHShrineObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFSHShrineObjDescriptorAcquire,
+        dfshShrine_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dfshShrine_initialise,
-    (ObjectDescriptorCallback)dfshShrine_release,
-    0,
-    (ObjectDescriptorCallback)dfshShrine_init,
-    (ObjectDescriptorCallback)dfshShrine_update,
-    (ObjectDescriptorCallback)dfshShrine_hitDetect,
-    (ObjectDescriptorCallback)dfshShrine_render,
-    (ObjectDescriptorCallback)dfshShrine_free,
-    (ObjectDescriptorCallback)dfshShrine_getObjectTypeId,
-    dfshShrine_getExtraSize,
+    gDFSHShrineObjDescriptorInitAdapter,
+    dfshShrine_update,
+    gDFSHShrineObjDescriptorHitDetectAdapter,
+    dfshShrine_render,
+    gDFSHShrineObjDescriptorFreeAdapter,
+    gDFSHShrineObjDescriptorTypeIdAdapter,
+    gDFSHShrineObjDescriptorExtraSizeAdapter,
 };

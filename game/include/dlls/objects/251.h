@@ -19,30 +19,10 @@ typedef struct PressureSwitchFBPlacement {
     u8 pad22[2];        /* 0x22 */
 } PressureSwitchFBPlacement;
 
-typedef struct PressureSwitchFBFlags {
-    u8 usePressedTexture : 1;
-    u8 startPressed : 1;
-    u8 canRelease : 1;
-    u8 autoPress : 1;
-    u8 unused4 : 1;
-    u8 unused5 : 1;
-    u8 unused6 : 1;
-    u8 unused7 : 1;
-} PressureSwitchFBFlags;
-
-typedef struct PressureSwitchFBUpdateFlags {
-    u8 active : 1;
-    u8 playerOnly : 1;
-    u8 released : 1;
-    u8 latched : 1;
-    u8 unused4 : 4;
-} PressureSwitchFBUpdateFlags;
-
-typedef union PressureSwitchFBFlagViews {
-    PressureSwitchFBFlags init;
-    PressureSwitchFBUpdateFlags update;
-    u8 raw;
-} PressureSwitchFBFlagViews;
+#define PRESSURE_SWITCH_FB_FLAG_ACTIVE      0x80
+#define PRESSURE_SWITCH_FB_FLAG_PLAYER_ONLY 0x40
+#define PRESSURE_SWITCH_FB_FLAG_RELEASED    0x20
+#define PRESSURE_SWITCH_FB_FLAG_LATCHED     0x10
 
 typedef struct PressureSwitchFBTrackedPosition {
     f32 x;
@@ -56,7 +36,7 @@ typedef struct PressureSwitchFBState {
     PressureSwitchFBTrackedPosition trackedPositions[10]; /* 0x2C */
     f32 targetPosY;                                       /* 0x7C */
     f32 velocityY;                                        /* 0x80 */
-    PressureSwitchFBFlagViews flags;                      /* 0x84 */
+    u8 flags;
     u8 pad85[3];                                          /* 0x85 */
 } PressureSwitchFBState;
 

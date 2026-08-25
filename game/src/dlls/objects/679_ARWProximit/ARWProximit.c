@@ -12,7 +12,7 @@
 #include "main/dll/ARW/dll_029A_arwarwing.h"
 #include "main/dll/headdisplay.h"
 #include "main/frame_timing.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/model_light.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
@@ -246,11 +246,32 @@ void arwproximit_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWProximitObjDescriptorInitAdapter, arwproximit_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gARWProximitObjDescriptorHitDetectAdapter, arwproximit_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWProximitObjDescriptorRenderAdapter, arwproximit_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gARWProximitObjDescriptorFreeAdapter, arwproximit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gARWProximitObjDescriptorTypeIdAdapter, arwproximit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWProximitObjDescriptorExtraSizeAdapter, arwproximit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWProximitObjDescriptorAcquire, arwproximit_initialise)
+
 ObjectDescriptor gARWProximitObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwproximit_initialise, (ObjectDescriptorCallback)arwproximit_release, 0,
-    (ObjectDescriptorCallback)arwproximit_init, (ObjectDescriptorCallback)arwproximit_update,
-    (ObjectDescriptorCallback)arwproximit_hitDetect, (ObjectDescriptorCallback)arwproximit_render,
-    (ObjectDescriptorCallback)arwproximit_free, (ObjectDescriptorCallback)arwproximit_getObjectTypeId,
-    arwproximit_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWProximitObjDescriptorAcquire,
+        arwproximit_release,
+    },
+    0,
+    gARWProximitObjDescriptorInitAdapter,
+    arwproximit_update,
+    gARWProximitObjDescriptorHitDetectAdapter,
+    gARWProximitObjDescriptorRenderAdapter,
+    gARWProximitObjDescriptorFreeAdapter,
+    gARWProximitObjDescriptorTypeIdAdapter,
+    gARWProximitObjDescriptorExtraSizeAdapter,
 };

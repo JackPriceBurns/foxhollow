@@ -107,20 +107,18 @@ STATIC_ASSERT(offsetof(CameraModeArwingState, reserved5F) == 0x5F);
 STATIC_ASSERT(sizeof(CameraModeArwingState) == 0x60);
 
 typedef struct CameraModeArwingDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int mode, int unusedArg);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void* actionData, u32 recordSize);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeArwingDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeArwingDescriptor, update) == 0x20);

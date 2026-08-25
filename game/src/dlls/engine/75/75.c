@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_004B_cameramodeclimb.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0042_cameramodenormal.h"
 #include "main/frame_timing.h"
@@ -98,7 +98,7 @@ void CameraModeClimb_update(CameraObject* camera) {
     camera->anim.worldPosX = gCameraModeClimbState->smoothedDistance * trigValue + traceFrom[0];
     trigValue = mathCosf((gCamClimbPi * (f32)(s32)target->anim.rotX) / gCamClimbHalfCircleBinaryAngle);
     camera->anim.worldPosZ = gCameraModeClimbState->smoothedDistance * trigValue + traceFrom[2];
-    camcontrol_traceMove(traceFrom, &camera->anim.worldPosX, traceOut, (u8*)&traceWork, 3, 1, 1,
+    camcontrol_traceMove(traceFrom, &camera->anim.worldPosX, traceOut, &traceWork, 3, 1, 1,
                          gCamClimbTraceRadius);
     camera->anim.worldPosX = traceOut[0];
     camera->anim.worldPosY = traceOut[1];
@@ -191,10 +191,10 @@ void CameraModeClimb_release(void) {
 void CameraModeClimb_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeClimbDescriptorAcquire, CameraModeClimb_initialise)
+
 CameraModeClimbDescriptor gCameraModeClimbDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeClimb_initialise,
-    CameraModeClimb_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeClimbDescriptorAcquire, CameraModeClimb_release },
     NULL,
     CameraModeClimb_init,
     CameraModeClimb_update,

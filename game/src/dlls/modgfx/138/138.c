@@ -39,43 +39,43 @@ void dll_8A_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commands[0].x = 0.5f;
     commands[0].y = 0.5f;
     commands[0].z = 0.5f;
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = 0.0f;
-    packet.position[1] = 0.0f;
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 8;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0x10;
-    packet.flags = 0x2000492;
-    packet.commandCount = 1;
-    for (s32 paramIndex = 0; paramIndex < ARRAY_COUNT(packet.sequenceParams); paramIndex++) {
-        packet.sequenceParams[paramIndex] = fhReadBES16(&resource->sequenceParams[paramIndex]);
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 8;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x10;
+    packet.context.flags = 0x2000492;
+    packet.context.commandCount = 1;
+    for (s32 paramIndex = 0; paramIndex < ARRAY_COUNT(packet.context.sequenceParams); paramIndex++) {
+        packet.context.sequenceParams[paramIndex] = fhReadBES16(&resource->sequenceParams[paramIndex]);
     }
-    packet.commands = commands;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
+    packet.context.commands = packet.entries;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
         if (sourceObj != NULL) {
             GameObject* anchorObj = sourceObj;
-            packet.position[0] += anchorObj->anim.worldPosX;
-            packet.position[1] += anchorObj->anim.worldPosY;
-            packet.position[2] += anchorObj->anim.worldPosZ;
+            packet.context.position[0] += anchorObj->anim.worldPosX;
+            packet.context.position[1] += anchorObj->anim.worldPosY;
+            packet.context.position[2] += anchorObj->anim.worldPosZ;
         } else {
             PartFxSpawnParams* anchorParams = spawnParams;
-            packet.position[0] += anchorParams->posX;
-            packet.position[1] += anchorParams->posY;
-            packet.position[2] += anchorParams->posZ;
+            packet.context.position[0] += anchorParams->posX;
+            packet.context.position[1] += anchorParams->posY;
+            packet.context.position[2] += anchorParams->posZ;
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, ARRAY_COUNT(resource->vertices), resource->vertices,
+        ->spawnEffect(&packet.context, 0, ARRAY_COUNT(resource->vertices), resource->vertices,
                       ARRAY_COUNT(resource->triangles), resource->triangles, 0x1FD, NULL);
 }
 
@@ -85,6 +85,10 @@ void dll_8A_release(void) {
 void dll_8A_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDll8AResourceDescriptorAcquire, dll_8A_initialise)
+
 Dll8AResourceDescriptor gDll8AResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_8A_initialise, dll_8A_release, NULL, dll_8A_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll8AResourceDescriptorAcquire, dll_8A_release },
+    NULL,
+    dll_8A_spawnEffect,
 };

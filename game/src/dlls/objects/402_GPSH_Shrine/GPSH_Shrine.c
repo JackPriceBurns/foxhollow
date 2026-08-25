@@ -6,30 +6,30 @@
  */
 #include "dlls/objects/402_GPSH_Shrine.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
+#include "main/gamebit_latch.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/map_load.h"
 #include "main/mapEventTypes.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
 #include "main/screen_transition.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -286,10 +286,9 @@ void gpshShrine_update(GameObject* obj) {
         gpshShrine_updateHoverMotion(obj);
         unlockLevel(mapGetDirIdx(0x22), 1, 0);
 
-        /* This engine latch intentionally overlaps the shrine's phase and flags. */
-        GameBitLatch_Update((GameBitLatchState*)state->gameBitLatchStorage, 2, -1, -1, 0xdd2, 0xb);
-        GameBitLatch_UpdateInverted((GameBitLatchState*)state->gameBitLatchStorage, 1, -1, -1, 0xcbb, 8);
-        GameBitLatch_Update((GameBitLatchState*)state->gameBitLatchStorage, 4, -1, -1, 0xcbb, 0xc4);
+        GameBitLatch_UpdateByte(&state->musicLatch, 2, -1, -1, 0xdd2, 0xb);
+        GameBitLatch_UpdateByteInverted(&state->musicLatch, 1, -1, -1, 0xcbb, 8);
+        GameBitLatch_UpdateByte(&state->musicLatch, 4, -1, -1, 0xcbb, 0xc4);
 
         if (state->phaseDelay > (zero = 0.0f)) {
             state->phaseDelay -= timeDelta;
@@ -456,19 +455,31 @@ void gpshShrine_release(void) {
 void gpshShrine_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGPSHShrineObjDescriptorInitAdapter, gpshShrine_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gGPSHShrineObjDescriptorHitDetectAdapter, gpshShrine_hitDetect)
+OBJECT_FREE_ADAPTER(gGPSHShrineObjDescriptorFreeAdapter, gpshShrine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gGPSHShrineObjDescriptorTypeIdAdapter, gpshShrine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGPSHShrineObjDescriptorExtraSizeAdapter, gpshShrine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGPSHShrineObjDescriptorAcquire, gpshShrine_initialise)
+
 ObjectDescriptor gGPSHShrineObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gGPSHShrineObjDescriptorAcquire,
+        gpshShrine_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)gpshShrine_initialise,
-    (ObjectDescriptorCallback)gpshShrine_release,
-    0,
-    (ObjectDescriptorCallback)gpshShrine_init,
-    (ObjectDescriptorCallback)gpshShrine_update,
-    (ObjectDescriptorCallback)gpshShrine_hitDetect,
-    (ObjectDescriptorCallback)gpshShrine_render,
-    (ObjectDescriptorCallback)gpshShrine_free,
-    (ObjectDescriptorCallback)gpshShrine_getObjectTypeId,
-    gpshShrine_getExtraSize,
+    gGPSHShrineObjDescriptorInitAdapter,
+    gpshShrine_update,
+    gGPSHShrineObjDescriptorHitDetectAdapter,
+    gpshShrine_render,
+    gGPSHShrineObjDescriptorFreeAdapter,
+    gGPSHShrineObjDescriptorTypeIdAdapter,
+    gGPSHShrineObjDescriptorExtraSizeAdapter,
 };

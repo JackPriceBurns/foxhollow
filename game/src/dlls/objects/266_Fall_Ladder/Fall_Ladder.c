@@ -20,7 +20,7 @@
  */
 #include "dlls/objects/266_Fall_Ladder.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/frame_timing.h"
@@ -132,19 +132,32 @@ void Fall_Ladders_release(void) {
 void Fall_Ladders_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gFall_LaddersObjDescriptorInitAdapter, Fall_Ladders_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gFall_LaddersObjDescriptorHitDetectAdapter, Fall_Ladders_hitDetect)
+OBJECT_RENDER_ADAPTER(gFall_LaddersObjDescriptorRenderAdapter, Fall_Ladders_render)
+OBJECT_FREE_ADAPTER(gFall_LaddersObjDescriptorFreeAdapter, Fall_Ladders_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFall_LaddersObjDescriptorTypeIdAdapter, Fall_Ladders_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFall_LaddersObjDescriptorExtraSizeAdapter, Fall_Ladders_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFall_LaddersObjDescriptorAcquire, Fall_Ladders_initialise)
+
 ObjectDescriptor gFall_LaddersObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFall_LaddersObjDescriptorAcquire,
+        Fall_Ladders_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Fall_Ladders_initialise,
-    (ObjectDescriptorCallback)Fall_Ladders_release,
-    0,
-    (ObjectDescriptorCallback)Fall_Ladders_init,
-    (ObjectDescriptorCallback)Fall_Ladders_update,
-    (ObjectDescriptorCallback)Fall_Ladders_hitDetect,
-    (ObjectDescriptorCallback)Fall_Ladders_render,
-    (ObjectDescriptorCallback)Fall_Ladders_free,
-    (ObjectDescriptorCallback)Fall_Ladders_getObjectTypeId,
-    Fall_Ladders_getExtraSize,
+    gFall_LaddersObjDescriptorInitAdapter,
+    Fall_Ladders_update,
+    gFall_LaddersObjDescriptorHitDetectAdapter,
+    gFall_LaddersObjDescriptorRenderAdapter,
+    gFall_LaddersObjDescriptorFreeAdapter,
+    gFall_LaddersObjDescriptorTypeIdAdapter,
+    gFall_LaddersObjDescriptorExtraSizeAdapter,
 };

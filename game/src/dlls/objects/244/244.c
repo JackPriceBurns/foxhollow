@@ -7,17 +7,15 @@
  * partner-door messages, side-specific game bits, effects, and audio.
  */
 #include "dlls/objects/244.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/camera.h"
 #include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_object_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/obj_list.h"
 #include "main/objtype.h"
 #include "main/gamebit_ids.h"
@@ -497,19 +495,31 @@ void DoorF4_release(void) {
 void DoorF4_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDoorF4ObjDescriptorInitAdapter, DoorF4_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDoorF4ObjDescriptorHitDetectAdapter, DoorF4_hitDetect)
+OBJECT_FREE_ADAPTER(gDoorF4ObjDescriptorFreeAdapter, DoorF4_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDoorF4ObjDescriptorTypeIdAdapter, DoorF4_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDoorF4ObjDescriptorExtraSizeAdapter, DoorF4_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDoorF4ObjDescriptorAcquire, DoorF4_initialise)
+
 ObjectDescriptor gDoorF4ObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)DoorF4_initialise,      /* initialise */
-    (ObjectDescriptorCallback)DoorF4_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)DoorF4_init,            /* init */
-    (ObjectDescriptorCallback)DoorF4_update,          /* update */
-    (ObjectDescriptorCallback)DoorF4_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)DoorF4_render,          /* render */
-    (ObjectDescriptorCallback)DoorF4_free,            /* free */
-    (ObjectDescriptorCallback)DoorF4_getObjectTypeId, /* getObjectTypeId */
-    DoorF4_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDoorF4ObjDescriptorAcquire,
+        DoorF4_release,
+    },
+    0,
+    gDoorF4ObjDescriptorInitAdapter,
+    DoorF4_update,
+    gDoorF4ObjDescriptorHitDetectAdapter,
+    DoorF4_render,
+    gDoorF4ObjDescriptorFreeAdapter,
+    gDoorF4ObjDescriptorTypeIdAdapter,
+    gDoorF4ObjDescriptorExtraSizeAdapter,
 };

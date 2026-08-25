@@ -40,9 +40,12 @@ STATIC_ASSERT(sizeof(Dim2ConveyorState) == 0x14);
 /* gDIM2ConveyorObjDescriptor from slot02 onwards: the export table the player
    reaches through obj->anim.dll on a conveyor surface. */
 typedef struct Dim2ConveyorInterface {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     void (*getScrollVector)(GameObject* obj, GameObject* caller, f32 unused, f32* outX, f32* outZ);
 } Dim2ConveyorInterface;
+
+OBJECT_DESCRIPTOR_TYPE(Dim2ConveyorDescriptor, Dim2ConveyorInterface);
+OBJECT_DESCRIPTOR_WITH_PADDING_TYPE(Dim2ConveyorDescriptorWithPadding, Dim2ConveyorDescriptor);
 
 #define DIM2_CONVEYOR_INTERFACE(conveyor) ((Dim2ConveyorInterface*)*((GameObject*)(conveyor))->anim.dll)
 
@@ -59,6 +62,6 @@ void dim2conveyor_init(GameObject* obj, const Dim2ConveyorPlacement* placement);
 void dim2conveyor_release(void);
 void dim2conveyor_initialise(void);
 
-extern ObjectDescriptor11WithPadding gDIM2ConveyorObjDescriptor;
+extern Dim2ConveyorDescriptorWithPadding gDIM2ConveyorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_469_DIM2CONVEYO_H_ */

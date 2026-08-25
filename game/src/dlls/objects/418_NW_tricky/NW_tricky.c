@@ -2,16 +2,16 @@
 
 #include "game/objects/object.h"
 #include "main/audio/sfx_ids.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objtype.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -101,8 +101,8 @@ static void nwTricky_updateHerdTargets(GameObject* tricky, GameObject* player) {
         GameObject* herdObject = herdObjects[i];
 
         if (herdObject->anim.romDefNo == NW_TRICKY_OBJECT_SHARPCLAW_SNOW) {
-            f32 playerDistanceSquared = vec3f_distanceSquared(&herdObject->anim.worldPos.x, &player->anim.worldPos.x);
-            f32 trickyDistanceSquared = vec3f_distanceSquared(&herdObject->anim.worldPos.x, &tricky->anim.worldPos.x);
+            f32 playerDistanceSquared = vec3f_distanceSquared(&herdObject->anim.worldPosX, &player->anim.worldPosX);
+            f32 trickyDistanceSquared = vec3f_distanceSquared(&herdObject->anim.worldPosX, &tricky->anim.worldPosX);
 
             enemy_setTrackedObj(herdObject, trickyDistanceSquared < playerDistanceSquared ? tricky : player);
         }
@@ -177,19 +177,22 @@ static void nwTricky_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
 }
 
+OBJECT_INIT_ADAPTER(gNWTrickyObjDescriptorInitAdapter, nwTricky_init, obj)
+OBJECT_FREE_ADAPTER(gNWTrickyObjDescriptorFreeAdapter, nwTricky_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gNWTrickyObjDescriptorExtraSizeAdapter, nwTricky_getExtraSize)
+
 ObjectDescriptor gNWTrickyObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = NULL,
-    .release = NULL,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)nwTricky_init,
-    .update = (ObjectDescriptorCallback)nwTricky_update,
+    .init = gNWTrickyObjDescriptorInitAdapter,
+    .update = nwTricky_update,
     .hitDetect = NULL,
     .render = NULL,
-    .free = (ObjectDescriptorCallback)nwTricky_free,
+    .free = gNWTrickyObjDescriptorFreeAdapter,
     .getObjectTypeId = NULL,
-    .getExtraSize = nwTricky_getExtraSize,
-};
+    .getExtraSize = gNWTrickyObjDescriptorExtraSizeAdapter,
+};;

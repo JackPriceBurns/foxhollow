@@ -12,7 +12,7 @@
  * The animEventCallback snapshots tracked-tile positions or resets the
  * object and clears solvedBit.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/objtexture.h"
@@ -163,7 +163,7 @@ void wcpressures_update(GameObject* obj) {
             state->pressTimer = WCPRESSURES_FOUND_TIMER;
         }
     }
-    pressedY = ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y)) - (f32)(u32)setup->pressDepth;
+    pressedY = setup->base.posY - (f32)(u32)setup->pressDepth;
     switch (state->mode) {
     case WCPRESSURES_MODE_RAISED:
         if (state->pressTimer != 0 && obj->anim.localPosY >= pressedY) {
@@ -187,8 +187,8 @@ void wcpressures_update(GameObject* obj) {
         break;
     case WCPRESSURES_MODE_RISING:
         obj->anim.localPosY = 0.05f * timeDelta + obj->anim.localPosY;
-        if (obj->anim.localPosY > ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y))) {
-            obj->anim.localPosY = ObjAnim_ReadPlacementF32(&obj->anim, &(setup->y));
+        if (obj->anim.localPosY > setup->base.posY) {
+            obj->anim.localPosY = setup->base.posY;
             state->mode = WCPRESSURES_MODE_RAISED;
         }
         break;
@@ -244,19 +244,30 @@ void wcpressures_initialise(void) {
 
 char sWCPressuresActivateFormat[] = " Avitvate %i ";
 
+OBJECT_INIT_ADAPTER(gWCPressureSObjDescriptorInitAdapter, wcpressures_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCPressureSObjDescriptorHitDetectAdapter, wcpressures_hitDetect)
+OBJECT_FREE_ADAPTER(gWCPressureSObjDescriptorFreeAdapter, wcpressures_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCPressureSObjDescriptorExtraSizeAdapter, wcpressures_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCPressureSObjDescriptorAcquire, wcpressures_initialise)
+
 ObjectDescriptor gWCPressureSObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCPressureSObjDescriptorAcquire,
+        wcpressures_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wcpressures_initialise,
-    (ObjectDescriptorCallback)wcpressures_release,
-    0,
-    (ObjectDescriptorCallback)wcpressures_init,
-    (ObjectDescriptorCallback)wcpressures_update,
-    (ObjectDescriptorCallback)wcpressures_hitDetect,
-    (ObjectDescriptorCallback)wcpressures_render,
-    (ObjectDescriptorCallback)wcpressures_free,
-    (ObjectDescriptorCallback)wcpressures_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wcpressures_getExtraSize,
+    gWCPressureSObjDescriptorInitAdapter,
+    wcpressures_update,
+    gWCPressureSObjDescriptorHitDetectAdapter,
+    wcpressures_render,
+    gWCPressureSObjDescriptorFreeAdapter,
+    wcpressures_getObjectTypeId,
+    gWCPressureSObjDescriptorExtraSizeAdapter,
 };

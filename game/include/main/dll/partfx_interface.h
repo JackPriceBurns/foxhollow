@@ -1,9 +1,11 @@
 #ifndef MAIN_DLL_PARTFX_INTERFACE_H_
 #define MAIN_DLL_PARTFX_INTERFACE_H_
 
+#include "main/resource.h"
 #include "main/vec_types.h"
 
 struct GameObject;
+typedef struct PartFxSpawnParams PartFxSpawnParams;
 
 typedef enum PartfxFlags {
     PARTFXFLAG_NONE = 0x0,
@@ -16,8 +18,8 @@ typedef enum PartfxFlags {
     PARTFXFLAG_200000 = 0x200000
 } PartfxFlags;
 
-typedef void (*EffectSpawnObjectFn)(void *obj, int effectId, void *params, int mode,
-                                    int modelId, void *extraArg);
+typedef int (*EffectSpawnObjectFn)(struct GameObject* obj, int effectId, PartFxSpawnParams* params, u32 mode,
+                                   u8 modelId, void* extraArg);
 typedef void (*EffectOnMapSetupFn)(void);
 typedef void (*EffectUpdateFrameStateFn)(int reset);
 typedef void (*EffectFreeObjectFn)(void *obj);
@@ -69,19 +71,36 @@ STATIC_ASSERT(offsetof(PartFxSpawnParams, posY) == 0x10);
 STATIC_ASSERT(offsetof(PartFxSpawnParams, posZ) == 0x14);
 
 typedef struct EffectInterface {
-    void (*pad00_slots[1])(void);
+    void* reserved00;
     EffectOnMapSetupFn onMapSetup;
     EffectSpawnObjectFn spawnObject;
     EffectUpdateFrameStateFn updateFrameState;
-    void (*pad10_slots[2])(void);
-    EffectFreeObjectFn freeObject;
 } EffectInterface;
+
+typedef struct EffectResourceDescriptor {
+    ResourceDescriptorHeader header;
+    EffectInterface interface;
+} EffectResourceDescriptor;
+
+#define EFFECT_RESOURCE_ADAPTERS(prefix, initialiseCallback, spawnCallback, updateCallback)                     \
+    RESOURCE_ACQUIRE_ADAPTER(prefix##Acquire, initialiseCallback)                                               \
+    static int prefix##Spawn(struct GameObject* obj, int effectId, PartFxSpawnParams* params, u32 mode,          \
+                             u8 modelId, void* extraArg) {                                                       \
+        return spawnCallback(obj, effectId, params, mode, modelId, extraArg);                                   \
+    }                                                                                                           \
+    static void prefix##Update(int reset) { updateCallback(); }
+
+#define EFFECT_RESOURCE_ADAPTERS_NO_EXTRA(prefix, initialiseCallback, spawnCallback, updateCallback)            \
+    RESOURCE_ACQUIRE_ADAPTER(prefix##Acquire, initialiseCallback)                                               \
+    static int prefix##Spawn(struct GameObject* obj, int effectId, PartFxSpawnParams* params, u32 mode,          \
+                             u8 modelId, void* extraArg) {                                                       \
+        return spawnCallback(obj, effectId, params, mode, modelId);                                             \
+    }                                                                                                           \
+    static void prefix##Update(int reset) { updateCallback(); }
 
 STATIC_ASSERT(offsetof(EffectInterface, onMapSetup) == 0x04);
 STATIC_ASSERT(offsetof(EffectInterface, spawnObject) == 0x08);
 STATIC_ASSERT(offsetof(EffectInterface, updateFrameState) == 0x0C);
-STATIC_ASSERT(offsetof(EffectInterface, freeObject) == 0x18);
-
 extern EffectInterface **gPartfxInterface;
 
 #endif /* MAIN_DLL_PARTFX_INTERFACE_H_ */

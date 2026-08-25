@@ -7,16 +7,14 @@
 typedef int (*ProjwallpowerUnsupportedFn)(void);
 
 typedef struct ProjwallpowerResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjwallpowerUnsupportedFn unsupported;
 } ProjwallpowerResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjwallpowerResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjwallpowerResourceDescriptor) == 0x20);

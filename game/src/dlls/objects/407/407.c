@@ -1,11 +1,9 @@
 #include "dlls/objects/407.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
 #include "main/dll/dll_0069_modgfx.h"
@@ -14,10 +12,10 @@
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "main/voxmaps.h"
 #include "sys/objects.h"
@@ -130,9 +128,9 @@ static void dll407_render(GameObject* obj, int renderArg2, int renderArg3, int r
     state->lineOfSightVisible = 1;
     Camera* camera = Camera_GetCurrent();
     Vec3f cameraDelta = {
-        .x = camera->position.x - obj->anim.localPos.x,
-        .y = camera->position.y - obj->anim.localPos.y,
-        .z = camera->position.z - obj->anim.localPos.z,
+        .x = camera->x - obj->anim.localPosX,
+        .y = camera->y - obj->anim.localPosY,
+        .z = camera->z - obj->anim.localPosZ,
     };
     f32 distance =
         sqrtf(cameraDelta.z * cameraDelta.z + (cameraDelta.x * cameraDelta.x + cameraDelta.y * cameraDelta.y));
@@ -145,14 +143,14 @@ static void dll407_render(GameObject* obj, int renderArg2, int renderArg3, int r
         cameraDelta.z *= inverseDistance;
 
         Vec3f objectTraceStart = {
-            .x = 32.0f * cameraDelta.x + obj->anim.localPos.x,
-            .y = 32.0f * cameraDelta.y + obj->anim.localPos.y,
-            .z = 32.0f * cameraDelta.z + obj->anim.localPos.z,
+            .x = 32.0f * cameraDelta.x + obj->anim.localPosX,
+            .y = 32.0f * cameraDelta.y + obj->anim.localPosY,
+            .z = 32.0f * cameraDelta.z + obj->anim.localPosZ,
         };
         Vec3f cameraTraceEnd = {
-            .x = -20.0f * cameraDelta.x + camera->position.x,
-            .y = -20.0f * cameraDelta.y + camera->position.y,
-            .z = -20.0f * cameraDelta.z + camera->position.z,
+            .x = -20.0f * cameraDelta.x + camera->x,
+            .y = -20.0f * cameraDelta.y + camera->y,
+            .z = -20.0f * cameraDelta.z + camera->z,
         };
         VoxPos startGrid;
         VoxPos endGrid;
@@ -188,7 +186,7 @@ static void dll407_update(GameObject* obj) {
     Dll69EffectParams effectParams = sDll407EffectParams;
     Dll407EffectSpawnParams effectSpawn;
     GameObject* player = Obj_GetPlayerObject();
-    f32 distance = Vec_distance(&player->anim.worldPos.x, &obj->anim.worldPos.x);
+    f32 distance = Vec_distance(&player->anim.worldPosX, &obj->anim.worldPosX);
 
     if (Sfx_IsPlayingFromObjectChannel(obj, 0x40) != 0) {
         if (distance >= 90.0f && state->active != 0) {
@@ -336,15 +334,25 @@ static void dll407_release(void) {
 static void dll407_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll197ObjDescriptorInitAdapter, dll407_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll197ObjDescriptorHitDetectAdapter, dll407_hitDetect)
+OBJECT_FREE_ADAPTER(gDll197ObjDescriptorFreeAdapter, dll407_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll197ObjDescriptorTypeIdAdapter, dll407_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll197ObjDescriptorExtraSizeAdapter, dll407_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll197ObjDescriptorAcquire, dll407_initialise)
+
 ObjectDescriptor gDll197ObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dll407_initialise,
-    .release = (ObjectDescriptorCallback)dll407_release,
-    .init = (ObjectDescriptorCallback)dll407_init,
-    .update = (ObjectDescriptorCallback)dll407_update,
-    .hitDetect = (ObjectDescriptorCallback)dll407_hitDetect,
-    .render = (ObjectDescriptorCallback)dll407_render,
-    .free = (ObjectDescriptorCallback)dll407_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dll407_getObjectTypeId,
-    .getExtraSize = dll407_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDll197ObjDescriptorAcquire,
+        .release = dll407_release,
+    },
+    .init = gDll197ObjDescriptorInitAdapter,
+    .update = dll407_update,
+    .hitDetect = gDll197ObjDescriptorHitDetectAdapter,
+    .render = dll407_render,
+    .free = gDll197ObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDll197ObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDll197ObjDescriptorExtraSizeAdapter,
+};;

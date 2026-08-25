@@ -14,35 +14,35 @@
 #include "main/vecmath.h"
 #include "main/newclouds.h"
 #include "main/dll/DIM/dll_0256_dimsnowhorn1.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "main/mapEventTypes.h"
-#include "main/newshadows_audio_api.h"
+#include "main/newshadows_audio.h"
 #include "main/object_render.h"
-#include "main/pad_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/shader_api.h"
+#include "main/pad.h"
+#include "main/rcp_dolphin.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/dll/path_control_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/gamebit_ids.h"
 #include "main/dll/baddie_state.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/player_control_interface.h"
 #include "dlls/object_descriptor.h"
-#include "main/objprint_api.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
+#include "dlls/objects/common/vehicle.h"
+#include "main/objprint.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
 #include "main/dll/dll_00C9_enemy.h"
-#include "main/pad.h"
 #include "main/objtype.h"
 #include "dolphin/pad.h"
 #include "main/camera.h"
 #include "main/objseq.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 
 f32 gDIMSnowHorn1ModelMtx[16];
 void* gDIMSnowHorn1StateHandlers[12];
@@ -1612,33 +1612,55 @@ f32 gDIMSnowHorn1LocomotionSpeedRanges[] = {0.0f, 0.05f, 0.03f, 0.85f};
 
 const f32 gDIMSnowHorn1ZeroOffset = 0.0f;
 
-ObjectDescriptor24 gDIMSnowHorn1ObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)DIMSnowHorn1_initialise,
-    (ObjectDescriptorCallback)DIMSnowHorn1_release,
-    0,
-    (ObjectDescriptorCallback)DIMSnowHorn1_init,
-    (ObjectDescriptorCallback)DIMSnowHorn1_update,
-    (ObjectDescriptorCallback)DIMSnowHorn1_hitDetect,
-    (ObjectDescriptorCallback)DIMSnowHorn1_render,
-    (ObjectDescriptorCallback)DIMSnowHorn1_free,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getObjectTypeId,
-    DIMSnowHorn1_getExtraSize,
-    (ObjectDescriptorCallback)DIMSnowHorn1_canMount,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getMountSide,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getRiderPosition,
-    (ObjectDescriptorCallback)DIMSnowHorn1_canDismount,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getDismountSide,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getCameraPosition,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getMountState,
-    (ObjectDescriptorCallback)DIMSnowHorn1_setMountState,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getPlayerAnim,
-    (ObjectDescriptorCallback)DIMSnowHorn1_func19,
-    (ObjectDescriptorCallback)DIMSnowHorn1_getRacePosition,
-    (ObjectDescriptorCallback)DIMSnowHorn1_func21,
-    (ObjectDescriptorCallback)DIMSnowHorn1_handleRiderScale,
-    (ObjectDescriptorCallback)DIMSnowHorn1_func23,
+OBJECT_INIT_ADAPTER(gDIMSnowHorn1ObjDescriptorInitAdapter, DIMSnowHorn1_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gDIMSnowHorn1ObjDescriptorHitDetectAdapter, DIMSnowHorn1_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMSnowHorn1ObjDescriptorFreeAdapter, DIMSnowHorn1_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMSnowHorn1ObjDescriptorTypeIdAdapter, DIMSnowHorn1_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMSnowHorn1ObjDescriptorExtraSizeAdapter, DIMSnowHorn1_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gDIMSnowHorn1ObjDescriptorCanMountAdapter, DIMSnowHorn1_canMount, obj)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gDIMSnowHorn1ObjDescriptorCanDismountAdapter, DIMSnowHorn1_canDismount, obj)
+VEHICLE_MOUNT_STATE_ADAPTER(gDIMSnowHorn1ObjDescriptorMountStateAdapter, DIMSnowHorn1_getMountState)
+VEHICLE_PLAYER_ANIM_ADAPTER(gDIMSnowHorn1ObjDescriptorPlayerAnimAdapter, DIMSnowHorn1_getPlayerAnim, obj, blend, anim)
+VEHICLE_RACE_POSITION_ADAPTER(gDIMSnowHorn1ObjDescriptorRacePositionAdapter, DIMSnowHorn1_getRacePosition)
+VEHICLE_RESET_POSITION_ADAPTER(gDIMSnowHorn1ObjDescriptorResetPositionAdapter, DIMSnowHorn1_func21)
+VEHICLE_LOOK_TARGET_ADAPTER(gDIMSnowHorn1ObjDescriptorLookTargetAdapter, DIMSnowHorn1_func23)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMSnowHorn1ObjDescriptorAcquire, DIMSnowHorn1_initialise)
+
+VehicleDescriptor gDIMSnowHorn1ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gDIMSnowHorn1ObjDescriptorAcquire,
+        DIMSnowHorn1_release,
+    },
+    {
+        0,
+        gDIMSnowHorn1ObjDescriptorInitAdapter,
+        DIMSnowHorn1_update,
+        gDIMSnowHorn1ObjDescriptorHitDetectAdapter,
+        DIMSnowHorn1_render,
+        gDIMSnowHorn1ObjDescriptorFreeAdapter,
+        gDIMSnowHorn1ObjDescriptorTypeIdAdapter,
+        gDIMSnowHorn1ObjDescriptorExtraSizeAdapter,
+        gDIMSnowHorn1ObjDescriptorCanMountAdapter,
+        DIMSnowHorn1_getMountSide,
+        DIMSnowHorn1_getRiderPosition,
+        gDIMSnowHorn1ObjDescriptorCanDismountAdapter,
+        DIMSnowHorn1_getDismountSide,
+        DIMSnowHorn1_getCameraPosition,
+        gDIMSnowHorn1ObjDescriptorMountStateAdapter,
+        DIMSnowHorn1_setMountState,
+        gDIMSnowHorn1ObjDescriptorPlayerAnimAdapter,
+        DIMSnowHorn1_func19,
+        gDIMSnowHorn1ObjDescriptorRacePositionAdapter,
+        gDIMSnowHorn1ObjDescriptorResetPositionAdapter,
+        DIMSnowHorn1_handleRiderScale,
+        gDIMSnowHorn1ObjDescriptorLookTargetAdapter,
+    },
 };

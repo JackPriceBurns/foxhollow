@@ -32,19 +32,17 @@ STATIC_ASSERT(offsetof(CameraModeTitlePose, roll) == 0x10);
 STATIC_ASSERT(sizeof(CameraModeTitlePose) == 0x14);
 
 typedef struct CameraModeTitleDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera);
     void (*update)(CameraObject* camera);
     void (*loadVolumes)(void);
     void (*moveCam)(u8 newPose);
 } CameraModeTitleDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeTitleDescriptor, update) == 0x20);

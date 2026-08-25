@@ -8,10 +8,7 @@ typedef struct WarpVec
     f32 x;
     f32 y;
     f32 z;
-    union {
-        f32 pad;
-        s32 valid;
-    };
+    s32 valid;
 } WarpVec;
 
 #endif /* MAIN_WARPVEC_H_ */

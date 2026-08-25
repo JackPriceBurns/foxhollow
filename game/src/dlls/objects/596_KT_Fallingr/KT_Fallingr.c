@@ -8,7 +8,7 @@
  * bit so the burst only fires once per trigger.
  */
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/gamebits.h"
@@ -26,7 +26,7 @@ int ktfallingrocks_getObjectTypeId(void) {
     return 0x0;
 }
 
-void ktfallingrocks_free(u8* obj) {
+void ktfallingrocks_free(GameObject* obj) {
     (*gExpgfxInterface)->freeSource2((u32)obj);
 }
 
@@ -73,19 +73,32 @@ void ktfallingrocks_release(void) {
 void ktfallingrocks_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKtFallingrocksObjDescriptorInitAdapter, ktfallingrocks_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gKtFallingrocksObjDescriptorHitDetectAdapter, ktfallingrocks_hitDetect)
+OBJECT_RENDER_ADAPTER(gKtFallingrocksObjDescriptorRenderAdapter, ktfallingrocks_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gKtFallingrocksObjDescriptorFreeAdapter, ktfallingrocks_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKtFallingrocksObjDescriptorTypeIdAdapter, ktfallingrocks_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtFallingrocksObjDescriptorExtraSizeAdapter, ktfallingrocks_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKtFallingrocksObjDescriptorAcquire, ktfallingrocks_initialise)
+
 ObjectDescriptor gKtFallingrocksObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKtFallingrocksObjDescriptorAcquire,
+        ktfallingrocks_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ktfallingrocks_initialise,
-    (ObjectDescriptorCallback)ktfallingrocks_release,
-    0,
-    (ObjectDescriptorCallback)ktfallingrocks_init,
-    (ObjectDescriptorCallback)ktfallingrocks_update,
-    (ObjectDescriptorCallback)ktfallingrocks_hitDetect,
-    (ObjectDescriptorCallback)ktfallingrocks_render,
-    (ObjectDescriptorCallback)ktfallingrocks_free,
-    (ObjectDescriptorCallback)ktfallingrocks_getObjectTypeId,
-    ktfallingrocks_getExtraSize,
+    gKtFallingrocksObjDescriptorInitAdapter,
+    ktfallingrocks_update,
+    gKtFallingrocksObjDescriptorHitDetectAdapter,
+    gKtFallingrocksObjDescriptorRenderAdapter,
+    gKtFallingrocksObjDescriptorFreeAdapter,
+    gKtFallingrocksObjDescriptorTypeIdAdapter,
+    gKtFallingrocksObjDescriptorExtraSizeAdapter,
 };

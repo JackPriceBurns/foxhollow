@@ -13,19 +13,19 @@
 #include "main/object_render.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_00C9_enemy.h"
-#include "main/gameloop_gamebit_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/gameloop_gamebit.h"
+#include "main/maketex_random.h"
+#include "main/maketex_timer.h"
 #include "main/obj_message.h"
 
 #define BABYCLOUDRUNNER_MUTTER_SFX_COUNT 4
@@ -145,14 +145,12 @@ void babyCloudRunner_turnTowardTarget(GameObject* obj, GameObject* target, BabyC
     }
 }
 
-int babyCloudRunner_tryCapture(void* object) {
-    GameObject* obj;
+int babyCloudRunner_tryCapture(GameObject* obj) {
     int shouldCapture;
     BabyCloudRunnerPlacement* rangePlacement;
     BabyCloudRunnerState* state;
     BabyCloudRunnerPlacement* gameBitPlacement;
     GameObject* player;
-    obj = object;
     state = obj->extra;
     gameBitPlacement = (BabyCloudRunnerPlacement*)obj->anim.placement;
     player = Obj_GetPlayerObject();
@@ -378,7 +376,7 @@ void babyCloudRunner_update(GameObject* obj) {
                 state->runnerState == BABYCLOUDRUNNER_STATE_CHASED) {
                 f32 speed = state->curveSpeed;
                 Obj_UpdateRomCurveFollowVelocity(obj, &state->curveWalker, speed, 10.0f * speed, 5.0f * speed, 1);
-                Obj_SmoothTurnAnglesTowardVelocity(obj, &obj->anim.velocity, BABYCLOUDRUNNER_TURN_FRAMES, 10.0f, 0.2f);
+                Obj_SmoothTurnAnglesTowardVelocity(obj, (Vec3f*)&obj->anim.velocityX, BABYCLOUDRUNNER_TURN_FRAMES, 10.0f, 0.2f);
                 objMove(obj, obj->anim.velocityX, obj->anim.velocityY, obj->anim.velocityZ);
                 if (state->runnerState == BABYCLOUDRUNNER_STATE_FOLLOW_CURVE) {
                     if (state->runnerIndex != -1 && mainGetBit(state->runnerIndex + GAMEBIT_CFRelated0B2A) != 0) {
@@ -545,21 +543,35 @@ void babyCloudRunner_release(void) {
 void babyCloudRunner_initialise(void) {
 }
 
-ObjectDescriptor12 gBabyCloudRunnerObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)babyCloudRunner_initialise,
-    (ObjectDescriptorCallback)babyCloudRunner_release,
-    0,
-    (ObjectDescriptorCallback)babyCloudRunner_init,
-    (ObjectDescriptorCallback)babyCloudRunner_update,
-    (ObjectDescriptorCallback)babyCloudRunner_hitDetect,
-    (ObjectDescriptorCallback)babyCloudRunner_render,
-    (ObjectDescriptorCallback)babyCloudRunner_free,
-    (ObjectDescriptorCallback)babyCloudRunner_getObjectTypeId,
-    babyCloudRunner_getExtraSize,
-    (ObjectDescriptorCallback)babyCloudRunner_func0A,
-    (ObjectDescriptorCallback)babyCloudRunner_tryCapture,
+OBJECT_INIT_ADAPTER(gBabyCloudRunnerObjDescriptorInitAdapter, babyCloudRunner_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gBabyCloudRunnerObjDescriptorHitDetectAdapter, babyCloudRunner_hitDetect)
+OBJECT_FREE_ADAPTER(gBabyCloudRunnerObjDescriptorFreeAdapter, babyCloudRunner_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gBabyCloudRunnerObjDescriptorTypeIdAdapter, babyCloudRunner_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBabyCloudRunnerObjDescriptorExtraSizeAdapter, babyCloudRunner_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBabyCloudRunnerObjDescriptorAcquire, babyCloudRunner_initialise)
+
+BabyCloudRunnerDescriptor gBabyCloudRunnerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gBabyCloudRunnerObjDescriptorAcquire,
+        babyCloudRunner_release,
+    },
+    {
+        0,
+        gBabyCloudRunnerObjDescriptorInitAdapter,
+        babyCloudRunner_update,
+        gBabyCloudRunnerObjDescriptorHitDetectAdapter,
+        babyCloudRunner_render,
+        gBabyCloudRunnerObjDescriptorFreeAdapter,
+        gBabyCloudRunnerObjDescriptorTypeIdAdapter,
+        gBabyCloudRunnerObjDescriptorExtraSizeAdapter,
+        babyCloudRunner_func0A,
+        babyCloudRunner_tryCapture,
+    },
 };

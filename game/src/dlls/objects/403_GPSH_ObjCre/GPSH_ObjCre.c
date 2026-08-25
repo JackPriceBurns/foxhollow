@@ -9,11 +9,11 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_limited_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "sys/objects.h"
@@ -144,17 +144,26 @@ static void gpshObjCreator_release(void) {
 static void gpshObjCreator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGPSHObjCreatorObjDescriptorInitAdapter, gpshObjCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gGPSHObjCreatorObjDescriptorHitDetectAdapter, gpshObjCreator_hitDetect)
+OBJECT_FREE_ADAPTER(gGPSHObjCreatorObjDescriptorFreeAdapter, gpshObjCreator_free)
+OBJECT_TYPE_ID_ADAPTER(gGPSHObjCreatorObjDescriptorTypeIdAdapter, gpshObjCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGPSHObjCreatorObjDescriptorExtraSizeAdapter, gpshObjCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGPSHObjCreatorObjDescriptorAcquire, gpshObjCreator_initialise)
+
 ObjectDescriptor10WithPadding gGPSHObjCreatorObjDescriptor = {
-    .descriptor = {
-        .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        .initialise = (ObjectDescriptorCallback)gpshObjCreator_initialise,
-        .release = (ObjectDescriptorCallback)gpshObjCreator_release,
-        .init = (ObjectDescriptorCallback)gpshObjCreator_init,
-        .update = (ObjectDescriptorCallback)gpshObjCreator_update,
-        .hitDetect = (ObjectDescriptorCallback)gpshObjCreator_hitDetect,
-        .render = (ObjectDescriptorCallback)gpshObjCreator_render,
-        .free = (ObjectDescriptorCallback)gpshObjCreator_free,
-        .getObjectTypeId = (ObjectDescriptorCallback)gpshObjCreator_getObjectTypeId,
-        .getExtraSize = gpshObjCreator_getExtraSize,
-    },
+    .descriptor =
+        {
+            .header.metadata[3] = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            .header.acquire = gGPSHObjCreatorObjDescriptorAcquire,
+            .header.release = gpshObjCreator_release,
+            .init = gGPSHObjCreatorObjDescriptorInitAdapter,
+            .update = gpshObjCreator_update,
+            .hitDetect = gGPSHObjCreatorObjDescriptorHitDetectAdapter,
+            .render = gpshObjCreator_render,
+            .free = gGPSHObjCreatorObjDescriptorFreeAdapter,
+            .getObjectTypeId = gGPSHObjCreatorObjDescriptorTypeIdAdapter,
+            .getExtraSize = gGPSHObjCreatorObjDescriptorExtraSizeAdapter,
+        },
 };

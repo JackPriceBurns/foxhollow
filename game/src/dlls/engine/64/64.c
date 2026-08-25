@@ -1,7 +1,8 @@
 #include "main/texture.h"
 #include "main/frame_timing.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/dll/dll_0040_credits.h"
+#include "main/model_engine.h"
 #include "dlls/object_descriptor.h"
 
 #define CREDITS_TEXTURE_ID 0xC5
@@ -223,15 +224,18 @@ void Credits_initialise(void)
     gCreditsElapsedTime = 0.0f;
 }
 
-ObjectDescriptor6 gCreditsDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Credits_initialise,
-    (ObjectDescriptorCallback)Credits_release,
-    0,
-    (ObjectDescriptorCallback)Credits_frameStart,
-    (ObjectDescriptorCallback)Credits_frameEnd,
-    (ObjectDescriptorCallback)Credits_render,
+UI_RESOURCE_ADAPTERS(gCreditsDescriptorUiResource, Credits_initialise, Credits_frameStart, Credits_render)
+
+UiResourceDescriptor gCreditsDescriptor = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gCreditsDescriptorUiResourceAcquire,
+        Credits_release,
+    },
+    {
+        NULL,
+        gCreditsDescriptorUiResourceFrameStart,
+        Credits_frameEnd,
+        gCreditsDescriptorUiResourceDraw,
+    },
 };

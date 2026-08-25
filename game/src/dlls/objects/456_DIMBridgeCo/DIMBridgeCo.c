@@ -8,7 +8,7 @@
 #include "dlls/objects/456_DIMBridgeCo.h"
 
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -147,19 +147,31 @@ void dimbridgecogmai_release(void) {
 void dimbridgecogmai_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMBridgeCogMaiObjDescriptorInitAdapter, dimbridgecogmai_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMBridgeCogMaiObjDescriptorHitDetectAdapter, dimbridgecogmai_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMBridgeCogMaiObjDescriptorFreeAdapter, dimbridgecogmai_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMBridgeCogMaiObjDescriptorTypeIdAdapter, dimbridgecogmai_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMBridgeCogMaiObjDescriptorExtraSizeAdapter, dimbridgecogmai_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMBridgeCogMaiObjDescriptorAcquire, dimbridgecogmai_initialise)
+
 ObjectDescriptor gDIMBridgeCogMaiObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMBridgeCogMaiObjDescriptorAcquire,
+        dimbridgecogmai_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimbridgecogmai_initialise,
-    (ObjectDescriptorCallback)dimbridgecogmai_release,
-    0,
-    (ObjectDescriptorCallback)dimbridgecogmai_init,
-    (ObjectDescriptorCallback)dimbridgecogmai_update,
-    (ObjectDescriptorCallback)dimbridgecogmai_hitDetect,
-    (ObjectDescriptorCallback)dimbridgecogmai_render,
-    (ObjectDescriptorCallback)dimbridgecogmai_free,
-    (ObjectDescriptorCallback)dimbridgecogmai_getObjectTypeId,
-    dimbridgecogmai_getExtraSize,
+    gDIMBridgeCogMaiObjDescriptorInitAdapter,
+    dimbridgecogmai_update,
+    gDIMBridgeCogMaiObjDescriptorHitDetectAdapter,
+    dimbridgecogmai_render,
+    gDIMBridgeCogMaiObjDescriptorFreeAdapter,
+    gDIMBridgeCogMaiObjDescriptorTypeIdAdapter,
+    gDIMBridgeCogMaiObjDescriptorExtraSizeAdapter,
 };

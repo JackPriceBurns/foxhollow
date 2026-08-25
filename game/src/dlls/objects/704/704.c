@@ -20,27 +20,27 @@
 #include "main/dll/FRONT/n_options.h"
 #include "main/texture.h"
 #include "main/frame_timing.h"
-#include "main/gametext_box_api.h"
-#include "main/textrender_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/music_api.h"
+#include "main/gametext_box.h"
+#include "main/textrender.h"
+#include "dolphin/math.h"
+#include "main/audio/music.h"
 #include "main/object_render.h"
 #include "main/model_engine.h"
-#include "main/model_engine_ui_api.h"
-#include "main/sky_api.h"
+#include "main/model_engine_ui.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/dll/ppcwgpipe_struct.h"
-#include "main/gx_scissor_api.h"
+#include "main/gx_scissor.h"
 #include "main/camera_interface.h"
 #include "main/camera.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "sys/objects.h"
 #include "dlls/object_descriptor.h"
 #include "main/model.h"
-#include "main/dll/dll_003C_link_api.h"
+#include "main/dll/dll_003C_link.h"
 #include "main/dll/FRONT/dll_39.h"
 #include "main/objseq.h"
 #include "main/dll/FRONT/dll_0034_n_attractmode.h"
@@ -54,16 +54,14 @@
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/mtx.h"
-#include "main/gametext_color_api.h"
-#include "track/intersect_hud_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_command_api.h"
-#include "main/gametext_show_api.h"
+#include "main/gametext_color.h"
+#include "track/intersect_hud.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
+#include "main/gametext_command.h"
+#include "main/gametext_show.h"
 #include "main/dll/dll_02C0_front.h"
-#include "main/dll/dll_02C0_front_api.h"
-#include "main/dll/front_game_text_box_api.h"
+#include "main/dll/front_game_text_box.h"
 
 s8 gTitleScreenPrevMenuSelection = -1;
 s8 gTitleScreenPrevMenuActive = -1;
@@ -85,19 +83,15 @@ f32 gTitleScreenFoxTypeMoveRate = 0.01f;
 
 typedef struct TitlescreenState
 {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-    u8 pad6[0x18 - 0x6];
-    f32 unk18;
-    f32 unk1C;
-    f32 unk20;
-    u8 pad24[0x30 - 0x24];
+    CharacterEyeAnimState eyeAnimState;
+    u8 pad28[0x30 - 0x28];
     u8 animPhase; /* 0x30: anim state-machine phase (0-5); also the move index passed to ObjAnim_SetCurrentMove */
     s8 poseIndex; /* 0x31: per-actor pose index (romDefNo - FRONT_SEQID_FOX), or -2 for non-pilot actors */
     u8 pad32[0x34 - 0x32];
     f32 moveProgress;
 } TitlescreenState;
+
+STATIC_ASSERT(sizeof(TitlescreenState) == 0x38);
 
 typedef struct TitlescreenPlacement
 {
@@ -724,11 +718,11 @@ void TitleScreen_update(GameObject* obj)
         t = obj->anim.romDefNo;
         if (t == FRONT_SEQID_PEPPY && ((phase = state->animPhase) == 0 || phase == 4))
         {
-            characterCloseEyes(obj, state);
+            characterCloseEyes(obj, &state->eyeAnimState);
         }
         else if (t >= FRONT_SEQID_FOX && t < FRONT_SEQID_PILOTS)
         {
-            characterDoEyeAnims(obj, state);
+            characterDoEyeAnims(obj, &state->eyeAnimState);
         }
         model = Obj_GetActiveModel(obj);
         if (model->file->morphTargetCount != 0 && ObjModel_HasActiveBlendChannels(model) == 0 &&
@@ -929,7 +923,7 @@ void TitleScreen_init(GameObject* obj, u8* def)
         else if (romDefNo == FRONT_SEQID_PILOTS)
         {
             ObjAnim_SetCurrentMove(obj, 0, 1.0f, 0);
-            ObjModel_SetRenderCallback((u8*)obj->anim.banks[0], AttractMovie_DrawTextureCallback);
+            ObjModel_SetRenderCallback((u8*)obj->anim.modelBanks[0], AttractMovie_DrawTextureCallback);
         }
     }
 }
@@ -1049,22 +1043,33 @@ u8 gTitleScreenMtx[0x34];
 void* gTitleScreenTextures[TITLE_SCREEN_TEXTURE_COUNT];
 u8 gTitleScreenSfxFlagGrid[0x48];
 
+OBJECT_INIT_ADAPTER(gTitleScreenObjDescriptorInitAdapter, TitleScreen_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gTitleScreenObjDescriptorHitDetectAdapter, TitleScreen_hitDetect)
+OBJECT_FREE_ADAPTER(gTitleScreenObjDescriptorFreeAdapter, TitleScreen_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gTitleScreenObjDescriptorExtraSizeAdapter, TitleScreen_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTitleScreenObjDescriptorAcquire, TitleScreen_initialise)
+
 ObjectDescriptor10WithPadding gTitleScreenObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gTitleScreenObjDescriptorAcquire,
+            TitleScreen_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)TitleScreen_initialise,
-        (ObjectDescriptorCallback)TitleScreen_release,
-        0,
-        (ObjectDescriptorCallback)TitleScreen_init,
-        (ObjectDescriptorCallback)TitleScreen_update,
-        (ObjectDescriptorCallback)TitleScreen_hitDetect,
-        (ObjectDescriptorCallback)TitleScreen_render,
-        (ObjectDescriptorCallback)TitleScreen_free,
-        (ObjectDescriptorCallback)TitleScreen_getObjectTypeId,
-        TitleScreen_getExtraSize,
+        gTitleScreenObjDescriptorInitAdapter,
+        TitleScreen_update,
+        gTitleScreenObjDescriptorHitDetectAdapter,
+        TitleScreen_render,
+        gTitleScreenObjDescriptorFreeAdapter,
+        TitleScreen_getObjectTypeId,
+        gTitleScreenObjDescriptorExtraSizeAdapter,
     },
     0,
 };

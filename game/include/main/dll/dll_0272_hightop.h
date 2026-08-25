@@ -1,7 +1,7 @@
 #ifndef MAIN_DLL_DLL_0272_HIGHTOP_H_
 #define MAIN_DLL_DLL_0272_HIGHTOP_H_
 
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "global.h"
 #include "main/dll/DR/dr_types.h"
 #include "main/dll/baddie_state.h"
@@ -9,7 +9,7 @@
 #include "main/dll/curve_walker.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_sound.h"
 
 typedef struct HtInitData
 {
@@ -124,13 +124,13 @@ void HighTop_release(void);
 int HighTop_canDismount(void);
 int HighTop_canMount(void);
 void HighTop_setMountState(GameObject* obj, int val);
-f32 hightop_func13(int obj, f32* out);
-void HighTop_getPlayerAnim(int obj, f32* a, int* b);
+f32 hightop_func13(GameObject* obj, f32* out);
+void HighTop_getPlayerAnim(GameObject* obj, f32* a, int* b);
 void HighTop_getRiderPosition(GameObject* obj, f32* a, f32* b, f32* c);
 void HighTop_free(GameObject* obj);
 int hightop_stateHandler00(GameObject* obj);
 int hightop_stateHandler06(GameObject* obj, HighTopRuntime* runtime);
-void HighTop_getCameraPosition(int obj, f32* ox, f32* oy, f32* oz);
+void HighTop_getCameraPosition(GameObject* obj, f32* ox, f32* oy, f32* oz);
 int hightop_stateHandler03(GameObject* obj, HighTopRuntime* runtime);
 int hightop_stateHandler05(GameObject* obj, HighTopRuntime* runtime);
 int HighTop_seqFn(GameObject* obj);

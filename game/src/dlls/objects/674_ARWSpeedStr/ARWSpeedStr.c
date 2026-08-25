@@ -9,7 +9,7 @@
  */
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/dll/ARW/dll_02A2_arwspeedstr.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
@@ -84,19 +84,31 @@ void ARWSpeedStr_release(void) {
 void ARWSpeedStr_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gARWSpeedStrObjDescriptorInitAdapter, ARWSpeedStr_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWSpeedStrObjDescriptorHitDetectAdapter, ARWSpeedStr_hitDetect)
+OBJECT_FREE_ADAPTER(gARWSpeedStrObjDescriptorFreeAdapter, ARWSpeedStr_free)
+OBJECT_TYPE_ID_ADAPTER(gARWSpeedStrObjDescriptorTypeIdAdapter, ARWSpeedStr_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWSpeedStrObjDescriptorExtraSizeAdapter, ARWSpeedStr_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWSpeedStrObjDescriptorAcquire, ARWSpeedStr_initialise)
+
 ObjectDescriptor gARWSpeedStrObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWSpeedStrObjDescriptorAcquire,
+        ARWSpeedStr_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWSpeedStr_initialise,
-    (ObjectDescriptorCallback)ARWSpeedStr_release,
-    0,
-    (ObjectDescriptorCallback)ARWSpeedStr_init,
-    (ObjectDescriptorCallback)ARWSpeedStr_update,
-    (ObjectDescriptorCallback)ARWSpeedStr_hitDetect,
-    (ObjectDescriptorCallback)ARWSpeedStr_render,
-    (ObjectDescriptorCallback)ARWSpeedStr_free,
-    (ObjectDescriptorCallback)ARWSpeedStr_getObjectTypeId,
-    ARWSpeedStr_getExtraSize,
+    gARWSpeedStrObjDescriptorInitAdapter,
+    ARWSpeedStr_update,
+    gARWSpeedStrObjDescriptorHitDetectAdapter,
+    ARWSpeedStr_render,
+    gARWSpeedStrObjDescriptorFreeAdapter,
+    gARWSpeedStrObjDescriptorTypeIdAdapter,
+    gARWSpeedStrObjDescriptorExtraSizeAdapter,
 };

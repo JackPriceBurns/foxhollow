@@ -353,19 +353,31 @@ void WM_ObjCreator_release(void) {
 void WM_ObjCreator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_ObjCreatorObjDescriptorInitAdapter, WM_ObjCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_ObjCreatorObjDescriptorHitDetectAdapter, WM_ObjCreator_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_ObjCreatorObjDescriptorFreeAdapter, WM_ObjCreator_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_ObjCreatorObjDescriptorTypeIdAdapter, WM_ObjCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_ObjCreatorObjDescriptorExtraSizeAdapter, WM_ObjCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_ObjCreatorObjDescriptorAcquire, WM_ObjCreator_initialise)
+
 ObjectDescriptor gWM_ObjCreatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_ObjCreatorObjDescriptorAcquire,
+        WM_ObjCreator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_ObjCreator_initialise,
-    WM_ObjCreator_release,
-    0,
-    (ObjectDescriptorCallback)WM_ObjCreator_init,
-    (ObjectDescriptorCallback)WM_ObjCreator_update,
-    WM_ObjCreator_hitDetect,
-    (ObjectDescriptorCallback)WM_ObjCreator_render,
-    WM_ObjCreator_free,
-    (ObjectDescriptorCallback)WM_ObjCreator_getObjectTypeId,
-    WM_ObjCreator_getExtraSize,
+    gWM_ObjCreatorObjDescriptorInitAdapter,
+    WM_ObjCreator_update,
+    gWM_ObjCreatorObjDescriptorHitDetectAdapter,
+    WM_ObjCreator_render,
+    gWM_ObjCreatorObjDescriptorFreeAdapter,
+    gWM_ObjCreatorObjDescriptorTypeIdAdapter,
+    gWM_ObjCreatorObjDescriptorExtraSizeAdapter,
 };

@@ -8,10 +8,10 @@
 #include "main/dll/DR/dll_026B_drchimmey.h"
 #include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/object_render.h"
 #include "main/dll/dll_00C4_tricky.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 #define DRCHIMMEY_RESET_GAMEBIT 0xEA4
 
@@ -82,19 +82,27 @@ void DR_Chimmey_init(GameObject* obj, DRChimmeySetup* setup) {
     storeZeroToFloatParam(&state->timer);
 }
 
+OBJECT_INIT_ADAPTER(gDrChimmeyObjDescriptorInitAdapter, DR_Chimmey_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrChimmeyObjDescriptorRenderAdapter, DR_Chimmey_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrChimmeyObjDescriptorExtraSizeAdapter, DR_Chimmey_getExtraSize)
+
 ObjectDescriptor gDrChimmeyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDrChimmeyObjDescriptorInitAdapter,
+    DR_Chimmey_update,
+    0,
+    gDrChimmeyObjDescriptorRenderAdapter,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)DR_Chimmey_init,
-    (ObjectDescriptorCallback)DR_Chimmey_update,
-    0,
-    (ObjectDescriptorCallback)DR_Chimmey_render,
-    0,
-    0,
-    (ObjectDescriptorExtraSizeCallback)DR_Chimmey_getExtraSize,
+    gDrChimmeyObjDescriptorExtraSizeAdapter,
 };

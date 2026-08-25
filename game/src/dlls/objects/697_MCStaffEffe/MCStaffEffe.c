@@ -44,18 +44,26 @@ void mcstaffeffe_init(GameObject* staffEffect, McStaffEffectSetup* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gMCStaffEffeObjDescriptorInitAdapter, mcstaffeffe_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gMCStaffEffeObjDescriptorUpdateAdapter, mcstaffeffe_update)
+OBJECT_RENDER_ADAPTER(gMCStaffEffeObjDescriptorRenderAdapter, mcstaffeffe_render, obj)
+
 ObjectDescriptor gMCStaffEffeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gMCStaffEffeObjDescriptorInitAdapter,
+    gMCStaffEffeObjDescriptorUpdateAdapter,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)mcstaffeffe_init,
-    (ObjectDescriptorCallback)mcstaffeffe_update,
-    0,
-    (ObjectDescriptorCallback)mcstaffeffe_render,
+    gMCStaffEffeObjDescriptorRenderAdapter,
     0,
     0,
     0,

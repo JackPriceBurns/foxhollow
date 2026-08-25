@@ -5,17 +5,17 @@
 
 #include "dlls/objects/478_DIM2LavaCon.h"
 
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/dll_0011_screens.h"
 #include "main/dll/player_objects.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/gamebit_ids.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 
 #define DIM2_LAVA_CONTROL_ENVFX_A 0x163
@@ -139,14 +139,14 @@ void dim2lavacontrol_update(GameObject* obj) {
     }
 
     if (Player_GetHeldObject(Obj_GetPlayerObject(), &heldObject) != 0) {
-        if ((state->musicLatch.activeMask & DIM2_LAVA_CONTROL_LATCH_AREA_MUSIC) &&
+        if ((state->musicLatch & DIM2_LAVA_CONTROL_LATCH_AREA_MUSIC) &&
             state->musicTriggerId != MUSICTRIG_WLC_Puzzle_e0) {
             Music_Trigger(state->musicTriggerId, 0);
             state->musicTriggerId = MUSICTRIG_WLC_Puzzle_e0;
             Music_Trigger(MUSICTRIG_WLC_Puzzle_e0, 1);
         }
     } else {
-        if ((state->musicLatch.activeMask & DIM2_LAVA_CONTROL_LATCH_AREA_MUSIC) &&
+        if ((state->musicLatch & DIM2_LAVA_CONTROL_LATCH_AREA_MUSIC) &&
             state->musicTriggerId != MUSICTRIG_WLC_Chambers) {
             Music_Trigger(state->musicTriggerId, 0);
             state->musicTriggerId = MUSICTRIG_WLC_Chambers;
@@ -207,21 +207,31 @@ void dim2lavacontrol_init(GameObject* obj, const Dim2LavaControlPlacementView* p
     skySetEnvFxFlags(0);
 }
 
-ObjectDescriptor12 gDIM2LavaControlObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dim2lavacontrol_init,
-    (ObjectDescriptorCallback)dim2lavacontrol_update,
-    0,
-    (ObjectDescriptorCallback)dim2lavacontrol_render,
-    dim2lavacontrol_free,
-    0,
-    dim2lavacontrol_getExtraSize,
-    (ObjectDescriptorCallback)dim2lavacontrol_tickCountdown,
-    0,
+OBJECT_INIT_ADAPTER(gDIM2LavaControlObjDescriptorInitAdapter, dim2lavacontrol_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDIM2LavaControlObjDescriptorFreeAdapter, dim2lavacontrol_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2LavaControlObjDescriptorExtraSizeAdapter, dim2lavacontrol_getExtraSize)
+
+Dim2LavaControlDescriptor gDIM2LavaControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gDIM2LavaControlObjDescriptorInitAdapter,
+        dim2lavacontrol_update,
+        0,
+        dim2lavacontrol_render,
+        gDIM2LavaControlObjDescriptorFreeAdapter,
+        0,
+        gDIM2LavaControlObjDescriptorExtraSizeAdapter,
+        dim2lavacontrol_tickCountdown,
+        0,
+    },
 };

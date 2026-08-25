@@ -38,19 +38,32 @@ void FElevControl_release(void) {
 void FElevControl_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gFElevControlObjDescriptorInitAdapter, FElevControl_init, obj)
+OBJECT_UPDATE_ADAPTER(gFElevControlObjDescriptorUpdateAdapter, FElevControl_update)
+OBJECT_HIT_DETECT_ADAPTER(gFElevControlObjDescriptorHitDetectAdapter, FElevControl_hitDetect)
+OBJECT_FREE_ADAPTER(gFElevControlObjDescriptorFreeAdapter, FElevControl_free)
+OBJECT_TYPE_ID_ADAPTER(gFElevControlObjDescriptorTypeIdAdapter, FElevControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFElevControlObjDescriptorExtraSizeAdapter, FElevControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFElevControlObjDescriptorAcquire, FElevControl_initialise)
+
 ObjectDescriptor gFElevControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFElevControlObjDescriptorAcquire,
+        FElevControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)FElevControl_initialise,
-    (ObjectDescriptorCallback)FElevControl_release,
-    0,
-    (ObjectDescriptorCallback)FElevControl_init,
-    (ObjectDescriptorCallback)FElevControl_update,
-    (ObjectDescriptorCallback)FElevControl_hitDetect,
-    (ObjectDescriptorCallback)FElevControl_render,
-    (ObjectDescriptorCallback)FElevControl_free,
-    (ObjectDescriptorCallback)FElevControl_getObjectTypeId,
-    FElevControl_getExtraSize,
+    gFElevControlObjDescriptorInitAdapter,
+    gFElevControlObjDescriptorUpdateAdapter,
+    gFElevControlObjDescriptorHitDetectAdapter,
+    FElevControl_render,
+    gFElevControlObjDescriptorFreeAdapter,
+    gFElevControlObjDescriptorTypeIdAdapter,
+    gFElevControlObjDescriptorExtraSizeAdapter,
 };

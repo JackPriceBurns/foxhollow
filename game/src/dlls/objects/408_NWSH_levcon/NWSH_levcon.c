@@ -2,18 +2,18 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 
 enum NwshLevelControlMapId {
@@ -126,15 +126,25 @@ static void nwshLevelControl_release(void) {
 static void nwshLevelControl_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gNWSHLevelControlObjDescriptorInitAdapter, nwshLevelControl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gNWSHLevelControlObjDescriptorHitDetectAdapter, nwshLevelControl_hitDetect)
+OBJECT_FREE_ADAPTER(gNWSHLevelControlObjDescriptorFreeAdapter, nwshLevelControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gNWSHLevelControlObjDescriptorTypeIdAdapter, nwshLevelControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gNWSHLevelControlObjDescriptorExtraSizeAdapter, nwshLevelControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gNWSHLevelControlObjDescriptorAcquire, nwshLevelControl_initialise)
+
 ObjectDescriptor gNWSHLevelControlObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)nwshLevelControl_initialise,
-    .release = (ObjectDescriptorCallback)nwshLevelControl_release,
-    .init = (ObjectDescriptorCallback)nwshLevelControl_init,
-    .update = (ObjectDescriptorCallback)nwshLevelControl_update,
-    .hitDetect = (ObjectDescriptorCallback)nwshLevelControl_hitDetect,
-    .render = (ObjectDescriptorCallback)nwshLevelControl_render,
-    .free = (ObjectDescriptorCallback)nwshLevelControl_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)nwshLevelControl_getObjectTypeId,
-    .getExtraSize = nwshLevelControl_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gNWSHLevelControlObjDescriptorAcquire,
+        .release = nwshLevelControl_release,
+    },
+    .init = gNWSHLevelControlObjDescriptorInitAdapter,
+    .update = nwshLevelControl_update,
+    .hitDetect = gNWSHLevelControlObjDescriptorHitDetectAdapter,
+    .render = nwshLevelControl_render,
+    .free = gNWSHLevelControlObjDescriptorFreeAdapter,
+    .getObjectTypeId = gNWSHLevelControlObjDescriptorTypeIdAdapter,
+    .getExtraSize = gNWSHLevelControlObjDescriptorExtraSizeAdapter,
+};;

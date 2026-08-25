@@ -10,7 +10,6 @@
 #include "main/dll/path_control_interface.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/dll/player_status.h"
-#include "main/dll/dll19_state.h"
 #include "main/dll/baddie_state.h"
 #include "main/gamebits.h"
 #include "main/dll/modgfx.h"

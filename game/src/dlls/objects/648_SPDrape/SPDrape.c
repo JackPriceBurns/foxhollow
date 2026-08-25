@@ -12,13 +12,12 @@
  */
 #include "sys/objects.h"
 #include "main/camera.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/dll/SP/dll_0288_spdrape.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/vecmath.h"
 
 u8 gSpDrapeSwingLeftMoveTable[4] = {1, 2, 3, 0};
@@ -206,19 +205,32 @@ void spdrape_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gSPDrapeObjDescriptorInitAdapter, spdrape_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSPDrapeObjDescriptorHitDetectAdapter, spdrape_hitDetect)
+OBJECT_RENDER_ADAPTER(gSPDrapeObjDescriptorRenderAdapter, spdrape_render)
+OBJECT_FREE_ADAPTER(gSPDrapeObjDescriptorFreeAdapter, spdrape_free)
+OBJECT_TYPE_ID_ADAPTER(gSPDrapeObjDescriptorTypeIdAdapter, spdrape_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSPDrapeObjDescriptorExtraSizeAdapter, spdrape_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSPDrapeObjDescriptorAcquire, spdrape_initialise)
+
 ObjectDescriptor gSPDrapeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSPDrapeObjDescriptorAcquire,
+        spdrape_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)spdrape_initialise,
-    (ObjectDescriptorCallback)spdrape_release,
-    0,
-    (ObjectDescriptorCallback)spdrape_init,
-    (ObjectDescriptorCallback)spdrape_update,
-    (ObjectDescriptorCallback)spdrape_hitDetect,
-    (ObjectDescriptorCallback)spdrape_render,
-    (ObjectDescriptorCallback)spdrape_free,
-    (ObjectDescriptorCallback)spdrape_getObjectTypeId,
-    spdrape_getExtraSize,
+    gSPDrapeObjDescriptorInitAdapter,
+    spdrape_update,
+    gSPDrapeObjDescriptorHitDetectAdapter,
+    gSPDrapeObjDescriptorRenderAdapter,
+    gSPDrapeObjDescriptorFreeAdapter,
+    gSPDrapeObjDescriptorTypeIdAdapter,
+    gSPDrapeObjDescriptorExtraSizeAdapter,
 };

@@ -1,11 +1,11 @@
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/gx/GXLighting.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/mm.h"
 #include "main/asset_load.h"
 #include "main/render_flags.h"
-#include "main/lightmap_lifecycle_api.h"
+#include "main/lightmap_lifecycle.h"
 
 extern u32 gVisibleObjectSortKeys[];
 

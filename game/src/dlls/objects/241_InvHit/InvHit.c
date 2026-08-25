@@ -17,14 +17,14 @@
  * InvHit_free releases the expgfx source for mode 4.
  */
 #include "dlls/objects/241_InvHit.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/player_target.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/obj_list.h"
@@ -302,19 +302,32 @@ void InvHit_release(void) {
 void InvHit_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gInvHitObjDescriptorInitAdapter, InvHit_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gInvHitObjDescriptorHitDetectAdapter, InvHit_hitDetect)
+OBJECT_RENDER_ADAPTER(gInvHitObjDescriptorRenderAdapter, InvHit_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gInvHitObjDescriptorFreeAdapter, InvHit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gInvHitObjDescriptorTypeIdAdapter, InvHit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gInvHitObjDescriptorExtraSizeAdapter, InvHit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gInvHitObjDescriptorAcquire, InvHit_initialise)
+
 ObjectDescriptor gInvHitObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)InvHit_initialise,      /* initialise */
-    (ObjectDescriptorCallback)InvHit_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)InvHit_init,            /* init */
-    (ObjectDescriptorCallback)InvHit_update,          /* update */
-    (ObjectDescriptorCallback)InvHit_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)InvHit_render,          /* render */
-    (ObjectDescriptorCallback)InvHit_free,            /* free */
-    (ObjectDescriptorCallback)InvHit_getObjectTypeId, /* getObjectTypeId */
-    InvHit_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gInvHitObjDescriptorAcquire,
+        InvHit_release,
+    },
+    0,
+    gInvHitObjDescriptorInitAdapter,
+    InvHit_update,
+    gInvHitObjDescriptorHitDetectAdapter,
+    gInvHitObjDescriptorRenderAdapter,
+    gInvHitObjDescriptorFreeAdapter,
+    gInvHitObjDescriptorTypeIdAdapter,
+    gInvHitObjDescriptorExtraSizeAdapter,
 };

@@ -3,7 +3,7 @@
 
 #include "game/objects/object.h"
 #include "types.h"
-#include "main/dll/duster_api.h"
+#include "main/dll/duster.h"
 
 void pinPon_updateEngaged(GameObject* obj, int* state);
 void pinPon_init(GameObject* obj, void* state);

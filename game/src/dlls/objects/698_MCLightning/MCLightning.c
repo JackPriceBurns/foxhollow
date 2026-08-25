@@ -160,19 +160,28 @@ void mclightning_init(GameObject* obj, McLightningSetup* setup)
     state->burstEffectChance = effectScale;
 }
 
+OBJECT_INIT_ADAPTER(gMCLightningObjDescriptorInitAdapter, mclightning_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gMCLightningObjDescriptorRenderAdapter, mclightning_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gMCLightningObjDescriptorFreeAdapter, mclightning_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gMCLightningObjDescriptorExtraSizeAdapter, mclightning_getExtraSize)
+
 ObjectDescriptor gMCLightningObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gMCLightningObjDescriptorInitAdapter,
+    mclightning_update,
     0,
+    gMCLightningObjDescriptorRenderAdapter,
+    gMCLightningObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)mclightning_init,
-    (ObjectDescriptorCallback)mclightning_update,
-    0,
-    (ObjectDescriptorCallback)mclightning_render,
-    (ObjectDescriptorCallback)mclightning_free,
-    0,
-    (ObjectDescriptorExtraSizeCallback)mclightning_getExtraSize,
+    gMCLightningObjDescriptorExtraSizeAdapter,
 };

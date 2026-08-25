@@ -67,6 +67,7 @@ extern DIMbosstonsilStateHandlerTable gDIMbosstonsilStateHandlers;
 extern DIMbosstonsilSubstateHandlerTable gDIMbosstonsilSubstateHandlers;
 extern ModelLightStruct* gDIMbosstonsilLight;
 extern s8 gDIMbosstonsilRoutePhase;
-extern ObjectDescriptor12 gDIM_BossTonsilObjDescriptor;
+struct DIM_BossTonsilObjDescriptorType;
+extern struct DIM_BossTonsilObjDescriptorType gDIM_BossTonsilObjDescriptor;
 
 #endif /* DLLS_OBJECTS_482_DIM_BOSSTON_H_ */

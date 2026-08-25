@@ -149,19 +149,30 @@ void DFP_ObjCreator_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDFP_ObjCreatorObjDescriptorInitAdapter, DFP_ObjCreator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFP_ObjCreatorObjDescriptorHitDetectAdapter, DFP_ObjCreator_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gDFP_ObjCreatorObjDescriptorTypeIdAdapter, DFP_ObjCreator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFP_ObjCreatorObjDescriptorExtraSizeAdapter, DFP_ObjCreator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFP_ObjCreatorObjDescriptorAcquire, DFP_ObjCreator_initialise)
+
 ObjectDescriptor gDFP_ObjCreatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFP_ObjCreatorObjDescriptorAcquire,
+        DFP_ObjCreator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DFP_ObjCreator_initialise,
-    (ObjectDescriptorCallback)DFP_ObjCreator_release,
-    0,
-    (ObjectDescriptorCallback)DFP_ObjCreator_init,
-    (ObjectDescriptorCallback)DFP_ObjCreator_update,
-    (ObjectDescriptorCallback)DFP_ObjCreator_hitDetect,
-    (ObjectDescriptorCallback)DFP_ObjCreator_render,
-    (ObjectDescriptorCallback)DFP_ObjCreator_free,
-    (ObjectDescriptorCallback)DFP_ObjCreator_getObjectTypeId,
-    DFP_ObjCreator_getExtraSize,
+    gDFP_ObjCreatorObjDescriptorInitAdapter,
+    DFP_ObjCreator_update,
+    gDFP_ObjCreatorObjDescriptorHitDetectAdapter,
+    DFP_ObjCreator_render,
+    DFP_ObjCreator_free,
+    gDFP_ObjCreatorObjDescriptorTypeIdAdapter,
+    gDFP_ObjCreatorObjDescriptorExtraSizeAdapter,
 };

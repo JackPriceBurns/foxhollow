@@ -36,20 +36,18 @@ STATIC_ASSERT(offsetof(CameraModeCloudRunnerState, radius) == 0x0C);
 STATIC_ASSERT(sizeof(CameraModeCloudRunnerState) == 0x10);
 
 typedef struct CameraModeCloudRunnerDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int fallbackRadius, CameraModeCloudRunnerInitParams* params);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeCloudRunnerDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeCloudRunnerDescriptor, update) == 0x20);

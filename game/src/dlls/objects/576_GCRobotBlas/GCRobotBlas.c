@@ -72,19 +72,33 @@ void GCRobotBlast_release(void) {
 void GCRobotBlast_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gGCRobotBlastObjDescriptorInitAdapter, GCRobotBlast_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gGCRobotBlastObjDescriptorUpdateAdapter, GCRobotBlast_update)
+OBJECT_HIT_DETECT_ADAPTER(gGCRobotBlastObjDescriptorHitDetectAdapter, GCRobotBlast_hitDetect)
+OBJECT_RENDER_ADAPTER(gGCRobotBlastObjDescriptorRenderAdapter, GCRobotBlast_render)
+OBJECT_FREE_ADAPTER(gGCRobotBlastObjDescriptorFreeAdapter, GCRobotBlast_free)
+OBJECT_TYPE_ID_ADAPTER(gGCRobotBlastObjDescriptorTypeIdAdapter, GCRobotBlast_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGCRobotBlastObjDescriptorExtraSizeAdapter, GCRobotBlast_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGCRobotBlastObjDescriptorAcquire, GCRobotBlast_initialise)
+
 ObjectDescriptor gGCRobotBlastObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
+        },
+        gGCRobotBlastObjDescriptorAcquire,
+        GCRobotBlast_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
-    GCRobotBlast_initialise,
-    GCRobotBlast_release,
-    0,
-    (ObjectDescriptorCallback)GCRobotBlast_init,
-    GCRobotBlast_update,
-    GCRobotBlast_hitDetect,
-    GCRobotBlast_render,
-    GCRobotBlast_free,
-    (ObjectDescriptorCallback)GCRobotBlast_getObjectTypeId,
-    GCRobotBlast_getExtraSize,
+    gGCRobotBlastObjDescriptorInitAdapter,
+    gGCRobotBlastObjDescriptorUpdateAdapter,
+    gGCRobotBlastObjDescriptorHitDetectAdapter,
+    gGCRobotBlastObjDescriptorRenderAdapter,
+    gGCRobotBlastObjDescriptorFreeAdapter,
+    gGCRobotBlastObjDescriptorTypeIdAdapter,
+    gGCRobotBlastObjDescriptorExtraSizeAdapter,
 };

@@ -6,7 +6,7 @@
 #include "dlls/objects/463.h"
 
 #include "main/object_render.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 
 int dll_1CF_getExtraSize(void) {
     return 0;
@@ -49,19 +49,32 @@ void dll_1CF_release(void) {
 void dll_1CF_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1CFObjDescriptorInitAdapter, dll_1CF_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gDll1CFObjDescriptorUpdateAdapter, dll_1CF_update)
+OBJECT_HIT_DETECT_ADAPTER(gDll1CFObjDescriptorHitDetectAdapter, dll_1CF_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1CFObjDescriptorFreeAdapter, dll_1CF_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1CFObjDescriptorTypeIdAdapter, dll_1CF_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1CFObjDescriptorExtraSizeAdapter, dll_1CF_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1CFObjDescriptorAcquire, dll_1CF_initialise)
+
 ObjectDescriptor gDll1CFObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1CFObjDescriptorAcquire,
+        dll_1CF_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_1CF_initialise,
-    (ObjectDescriptorCallback)dll_1CF_release,
-    0,
-    (ObjectDescriptorCallback)dll_1CF_init,
-    (ObjectDescriptorCallback)dll_1CF_update,
-    (ObjectDescriptorCallback)dll_1CF_hitDetect,
-    (ObjectDescriptorCallback)dll_1CF_render,
-    (ObjectDescriptorCallback)dll_1CF_free,
-    (ObjectDescriptorCallback)dll_1CF_getObjectTypeId,
-    dll_1CF_getExtraSize,
+    gDll1CFObjDescriptorInitAdapter,
+    gDll1CFObjDescriptorUpdateAdapter,
+    gDll1CFObjDescriptorHitDetectAdapter,
+    dll_1CF_render,
+    gDll1CFObjDescriptorFreeAdapter,
+    gDll1CFObjDescriptorTypeIdAdapter,
+    gDll1CFObjDescriptorExtraSizeAdapter,
 };

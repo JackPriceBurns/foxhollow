@@ -4,8 +4,8 @@
 #include "dlls/objects/268_LanternFire.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
@@ -193,19 +193,28 @@ void FireFlyLantern_init(GameObject* obj, FireFlyLanternPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gFireFlyLanternObjDescriptorInitAdapter, FireFlyLantern_init, obj, placement)
+OBJECT_FREE_ADAPTER(gFireFlyLanternObjDescriptorFreeAdapter, FireFlyLantern_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFireFlyLanternObjDescriptorTypeIdAdapter, FireFlyLantern_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFireFlyLanternObjDescriptorExtraSizeAdapter, FireFlyLantern_getExtraSize)
+
 ObjectDescriptor gFireFlyLanternObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gFireFlyLanternObjDescriptorInitAdapter,
+    FireFlyLantern_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)FireFlyLantern_init,
-    (ObjectDescriptorCallback)FireFlyLantern_update,
-    0,
-    (ObjectDescriptorCallback)FireFlyLantern_render,
-    (ObjectDescriptorCallback)FireFlyLantern_free,
-    (ObjectDescriptorCallback)FireFlyLantern_getObjectTypeId,
-    FireFlyLantern_getExtraSize,
+    FireFlyLantern_render,
+    gFireFlyLanternObjDescriptorFreeAdapter,
+    gFireFlyLanternObjDescriptorTypeIdAdapter,
+    gFireFlyLanternObjDescriptorExtraSizeAdapter,
 };

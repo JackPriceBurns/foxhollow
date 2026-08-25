@@ -10,11 +10,11 @@
 #include "game/objects/object_setup.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
-#include "main/pi_dolphin_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/pi_dolphin.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
-#include "main/gamebits_api.h"
+#include "main/dll/player.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 
 typedef enum DeathGasFlags {
@@ -131,19 +131,27 @@ void DeathGas_init(GameObject* obj) {
     state->effectRadius = obj->anim.cullDistance2;
 }
 
+OBJECT_INIT_ADAPTER(gDeathGasObjDescriptorInitAdapter, DeathGas_init, obj)
+OBJECT_FREE_ADAPTER(gDeathGasObjDescriptorFreeAdapter, DeathGas_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gDeathGasObjDescriptorExtraSizeAdapter, DeathGas_getExtraSize)
+
 ObjectDescriptor gDeathGasObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDeathGasObjDescriptorInitAdapter,
+    DeathGas_update,
     0,
     0,
+    gDeathGasObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)DeathGas_init,
-    (ObjectDescriptorCallback)DeathGas_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)DeathGas_free,
-    0,
-    DeathGas_getExtraSize,
+    gDeathGasObjDescriptorExtraSizeAdapter,
 };

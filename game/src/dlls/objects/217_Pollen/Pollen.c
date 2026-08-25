@@ -8,13 +8,13 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/dll_00DA_pollenfragment_api.h"
+#include "main/dll/dll_00DA_pollenfragment.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -148,19 +148,30 @@ void Pollen_release(void) {
 void Pollen_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPollenObjDescriptorInitAdapter, Pollen_init, obj)
+OBJECT_FREE_ADAPTER(gPollenObjDescriptorFreeAdapter, Pollen_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPollenObjDescriptorTypeIdAdapter, Pollen_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPollenObjDescriptorExtraSizeAdapter, Pollen_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPollenObjDescriptorAcquire, Pollen_initialise)
+
 ObjectDescriptor gPollenObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPollenObjDescriptorAcquire,
+        Pollen_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Pollen_initialise,
-    (ObjectDescriptorCallback)Pollen_release,
-    0,
-    (ObjectDescriptorCallback)Pollen_init,
-    (ObjectDescriptorCallback)Pollen_update,
-    (ObjectDescriptorCallback)Pollen_hitDetect,
-    (ObjectDescriptorCallback)Pollen_render,
-    (ObjectDescriptorCallback)Pollen_free,
-    (ObjectDescriptorCallback)Pollen_getObjectTypeId,
-    Pollen_getExtraSize,
+    gPollenObjDescriptorInitAdapter,
+    Pollen_update,
+    Pollen_hitDetect,
+    Pollen_render,
+    gPollenObjDescriptorFreeAdapter,
+    gPollenObjDescriptorTypeIdAdapter,
+    gPollenObjDescriptorExtraSizeAdapter,
 };

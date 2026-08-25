@@ -7,14 +7,9 @@
 #include "game/objects/object_setup.h"
 #include "main/objseq.h"
 
-typedef union ARWLevelConSetup
+typedef struct ARWLevelConSetup
 {
     ObjPlacement base;
-    struct
-    {
-        u8 pad00[0x14];
-        int routeSignature;
-    };
 } ARWLevelConSetup;
 
 typedef struct ARWLevelConState
@@ -36,7 +31,7 @@ typedef struct ARWLevelConState
 } ARWLevelConState;
 
 STATIC_ASSERT(sizeof(ARWLevelConSetup) == 0x18);
-STATIC_ASSERT(offsetof(ARWLevelConSetup, routeSignature) == 0x14);
+STATIC_ASSERT(offsetof(ARWLevelConSetup, base.ident) == 0x14);
 STATIC_ASSERT(sizeof(ARWLevelConState) == 0x24);
 STATIC_ASSERT(offsetof(ARWLevelConState, sequenceSlot) == 0x14);
 STATIC_ASSERT(offsetof(ARWLevelConState, sequenceCameraId) == 0x16);

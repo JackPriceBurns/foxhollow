@@ -28,19 +28,27 @@ void siderepel_init(GameObject* obj, SideRepelPlacement* placement) {
     ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, ObjAnim_ReadPlacementU16(&obj->anim, &placement->radius) >> 3);
 }
 
+OBJECT_INIT_ADAPTER(gSiderepelObjDescriptorInitAdapter, siderepel_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSiderepelObjDescriptorFreeAdapter, siderepel_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSiderepelObjDescriptorExtraSizeAdapter, siderepel_getExtraSize)
+
 ObjectDescriptor gSiderepelObjDescriptor = {
-    0,                                        /* reserved0 */
-    0,                                        /* reserved1 */
-    0,                                        /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,         /* slotCountAndFlags */
-    0,                                        /* initialise */
-    0,                                        /* release */
-    0,                                        /* slot02 */
-    (ObjectDescriptorCallback)siderepel_init, /* init */
-    0,                                        /* update */
-    0,                                        /* hitDetect */
-    0,                                        /* render */
-    (ObjectDescriptorCallback)siderepel_free, /* free */
-    0,                                        /* getObjectTypeId */
-    siderepel_getExtraSize,                   /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gSiderepelObjDescriptorInitAdapter,
+    0,
+    0,
+    0,
+    gSiderepelObjDescriptorFreeAdapter,
+    0,
+    gSiderepelObjDescriptorExtraSizeAdapter,
 };

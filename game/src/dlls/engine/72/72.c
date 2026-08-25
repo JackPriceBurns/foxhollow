@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0048_cameramodestatic.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/dll/dll_025A_staticcamera.h"
@@ -78,11 +78,11 @@ void CameraModeStatic_update(CameraObject* camera) {
         target = (GameObject*)camera->anim.targetObj;
         placement = (StaticCameraPlacement*)gCameraModeStaticState->anchor->anim.placementData;
         placementYaw = ObjAnim_ReadPlacementS16(
-            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.yaw);
+            &gCameraModeStaticState->anchor->anim, &placement->rotX);
         placementPitch = ObjAnim_ReadPlacementS16(
-            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.pitch);
+            &gCameraModeStaticState->anchor->anim, &placement->rotY);
         placementRoll = ObjAnim_ReadPlacementS16(
-            &gCameraModeStaticState->anchor->anim, &placement->cameraModeRotation.roll);
+            &gCameraModeStaticState->anchor->anim, &placement->rotZ);
         if ((placement->modeFlags & CAMERA_MODE_STATIC_TRACK_YAW) == 0) {
             camera->anim.rotX = placementYaw + 0x8000;
         }
@@ -160,11 +160,11 @@ void CameraModeStatic_init(CameraObject* camera, int unused, const int* anchorId
     gCameraModeStaticState->anchor = anchor;
     placement = (StaticCameraPlacement*)anchor->anim.placementData;
     placementYaw = ObjAnim_ReadPlacementS16(
-        &anchor->anim, &placement->cameraModeRotation.yaw);
+        &anchor->anim, &placement->rotX);
     placementPitch = ObjAnim_ReadPlacementS16(
-        &anchor->anim, &placement->cameraModeRotation.pitch);
+        &anchor->anim, &placement->rotY);
     placementRoll = ObjAnim_ReadPlacementS16(
-        &anchor->anim, &placement->cameraModeRotation.roll);
+        &anchor->anim, &placement->rotZ);
     dx = anchor->anim.worldPosX - target->anim.worldPosX;
     dy = anchor->anim.worldPosY - target->anim.worldPosY;
     dz = anchor->anim.worldPosZ - target->anim.worldPosZ;
@@ -205,10 +205,10 @@ void CameraModeStatic_release(void) {
 void CameraModeStatic_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeStaticDescriptorAcquire, CameraModeStatic_initialise)
+
 CameraModeStaticDescriptor gCameraModeStaticDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeStatic_initialise,
-    CameraModeStatic_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeStaticDescriptorAcquire, CameraModeStatic_release },
     NULL,
     CameraModeStatic_init,
     CameraModeStatic_update,

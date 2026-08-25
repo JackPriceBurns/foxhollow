@@ -1,9 +1,9 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "sys/objects.h"
-#include "main/maketex_random_api.h"
+#include "main/maketex_random.h"
 #include "main/dll/dll_0020_effect7.h"
 #include "main/vecmath.h"
 
@@ -19,17 +19,20 @@ f32 gEffect7TexScrollPhaseB = 0.3f;
 
 PartFxSpawnParams gEffect7DefaultSpawnParams;
 
-ObjectDescriptor6 Effect7_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Effect7_initialise,
-    (ObjectDescriptorCallback)Effect7_release,
-    0,
-    (ObjectDescriptorCallback)Effect7_func03_nop,
-    (ObjectDescriptorCallback)Effect7_spawnObject,
-    (ObjectDescriptorCallback)Effect7_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect7Resource, Effect7_initialise, Effect7_spawnObject, Effect7_updateFrameState)
+
+EffectResourceDescriptor Effect7_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gEffect7ResourceAcquire,
+        Effect7_release,
+    },
+    {
+        NULL,
+        Effect7_func03_nop,
+        gEffect7ResourceSpawn,
+        gEffect7ResourceUpdate,
+    },
 };
 
 

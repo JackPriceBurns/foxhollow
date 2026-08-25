@@ -86,19 +86,31 @@ void dll_127_release(void) {
 void dll_127_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll127ObjDescriptorInitAdapter, dll_127_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll127ObjDescriptorHitDetectAdapter, dll_127_hitDetect)
+OBJECT_FREE_ADAPTER(gDll127ObjDescriptorFreeAdapter, dll_127_free)
+OBJECT_TYPE_ID_ADAPTER(gDll127ObjDescriptorTypeIdAdapter, dll_127_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll127ObjDescriptorExtraSizeAdapter, dll_127_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll127ObjDescriptorAcquire, dll_127_initialise)
+
 ObjectDescriptor gDll127ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll127ObjDescriptorAcquire,
+        dll_127_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_127_initialise,
-    (ObjectDescriptorCallback)dll_127_release,
-    0,
-    (ObjectDescriptorCallback)dll_127_init,
-    (ObjectDescriptorCallback)dll_127_update,
-    (ObjectDescriptorCallback)dll_127_hitDetect,
-    (ObjectDescriptorCallback)dll_127_render,
-    (ObjectDescriptorCallback)dll_127_free,
-    (ObjectDescriptorCallback)dll_127_getObjectTypeId,
-    dll_127_getExtraSize,
+    gDll127ObjDescriptorInitAdapter,
+    dll_127_update,
+    gDll127ObjDescriptorHitDetectAdapter,
+    dll_127_render,
+    gDll127ObjDescriptorFreeAdapter,
+    gDll127ObjDescriptorTypeIdAdapter,
+    gDll127ObjDescriptorExtraSizeAdapter,
 };

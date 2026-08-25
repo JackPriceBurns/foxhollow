@@ -2,20 +2,20 @@
 
 #include "dlls/objects/437.h"
 #include "dlls/objects/438_SC_levelcon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/music_api.h"
+#include "dolphin/math.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
@@ -291,7 +291,7 @@ static void sc_totembond_update(GameObject* obj) {
             }
         }
 
-        playerTeleport(player, &obj->anim.localPos, &obj->anim.rotation, 0);
+        playerTeleport(player, (Vec3f*)&obj->anim.localPosX, (Vec3s*)&obj->anim.rotX, 0);
         state->cameraPose.positionX = obj->anim.localPosX;
         state->cameraPose.positionY = obj->anim.localPosY + 30.0f;
         state->cameraPose.positionZ = obj->anim.localPosZ;
@@ -352,15 +352,25 @@ int sc_totembond_insertOrderedGameBit(const u16 gameBitIds[3], u16 newValue) {
     return changed;
 }
 
+OBJECT_INIT_ADAPTER(gSC_totembondObjDescriptorInitAdapter, sc_totembond_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSC_totembondObjDescriptorHitDetectAdapter, sc_totembond_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_totembondObjDescriptorFreeAdapter, sc_totembond_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSC_totembondObjDescriptorTypeIdAdapter, sc_totembond_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_totembondObjDescriptorExtraSizeAdapter, sc_totembond_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_totembondObjDescriptorAcquire, sc_totembond_initialise)
+
 ObjectDescriptor gSC_totembondObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_totembond_initialise,
-    .release = (ObjectDescriptorCallback)sc_totembond_release,
-    .init = (ObjectDescriptorCallback)sc_totembond_init,
-    .update = (ObjectDescriptorCallback)sc_totembond_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_totembond_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_totembond_render,
-    .free = (ObjectDescriptorCallback)sc_totembond_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_totembond_getObjectTypeId,
-    .getExtraSize = sc_totembond_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_totembondObjDescriptorAcquire,
+        .release = sc_totembond_release,
+    },
+    .init = gSC_totembondObjDescriptorInitAdapter,
+    .update = sc_totembond_update,
+    .hitDetect = gSC_totembondObjDescriptorHitDetectAdapter,
+    .render = sc_totembond_render,
+    .free = gSC_totembondObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_totembondObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_totembondObjDescriptorExtraSizeAdapter,
+};;

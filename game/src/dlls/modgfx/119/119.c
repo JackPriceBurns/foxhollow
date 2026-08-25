@@ -72,45 +72,45 @@ void dll_77_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commands[5].x = *(f32*)&gDll77Cmd0X;
     commands[5].y = *(f32*)&gDll77Cmd0Y;
     commands[5].z = *(f32*)&gDll77Cmd0Z;
-    packet.modeByte = 0;
+    packet.context.modeByte = 0;
     context = sourceObj;
-    packet.ctx = (int)context;
-    packet.sourceMode = variant;
-    packet.position[0] = *(f32*)&gDll77Zero;
-    packet.position[1] = *(f32*)&gDll77Zero;
-    packet.position[2] = *(f32*)&gDll77Zero;
-    packet.velocity[0] = *(f32*)&gDll77Zero;
-    packet.velocity[1] = *(f32*)&gDll77Zero;
-    packet.velocity[2] = *(f32*)&gDll77Zero;
-    packet.scale = *(f32*)&gDll77Scale;
-    packet.drawGroupCount = 0;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 0;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = (commands + 6) - packet.entries;
-    packet.sequenceParams[0] = gDll77SequenceParams.params[0];
-    packet.sequenceParams[1] = gDll77SequenceParams.params[1];
-    packet.sequenceParams[2] = gDll77SequenceParams.params[2];
-    packet.sequenceParams[3] = gDll77SequenceParams.params[3];
-    packet.sequenceParams[4] = gDll77SequenceParams.params[4];
-    packet.sequenceParams[5] = gDll77SequenceParams.params[5];
-    packet.sequenceParams[6] = gDll77SequenceParams.params[6];
-    packet.commands = packet.entries;
-    packet.flags = 0x10c00;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
+    packet.context.attachedSource = context;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = *(f32*)&gDll77Zero;
+    packet.context.position[1] = *(f32*)&gDll77Zero;
+    packet.context.position[2] = *(f32*)&gDll77Zero;
+    packet.context.velocity[0] = *(f32*)&gDll77Zero;
+    packet.context.velocity[1] = *(f32*)&gDll77Zero;
+    packet.context.velocity[2] = *(f32*)&gDll77Zero;
+    packet.context.scale = *(f32*)&gDll77Scale;
+    packet.context.drawGroupCount = 0;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 0;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = (commands + 6) - packet.entries;
+    packet.context.sequenceParams[0] = gDll77SequenceParams.params[0];
+    packet.context.sequenceParams[1] = gDll77SequenceParams.params[1];
+    packet.context.sequenceParams[2] = gDll77SequenceParams.params[2];
+    packet.context.sequenceParams[3] = gDll77SequenceParams.params[3];
+    packet.context.sequenceParams[4] = gDll77SequenceParams.params[4];
+    packet.context.sequenceParams[5] = gDll77SequenceParams.params[5];
+    packet.context.sequenceParams[6] = gDll77SequenceParams.params[6];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x10c00;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
         if ((u32)context != 0) {
-            packet.position[0] = *(f32*)&gDll77Zero + context->anim.worldPosX;
-            packet.position[1] = *(f32*)&gDll77Zero + context->anim.worldPosY;
-            packet.position[2] = *(f32*)&gDll77Zero + context->anim.worldPosZ;
+            packet.context.position[0] = *(f32*)&gDll77Zero + context->anim.worldPosX;
+            packet.context.position[1] = *(f32*)&gDll77Zero + context->anim.worldPosY;
+            packet.context.position[2] = *(f32*)&gDll77Zero + context->anim.worldPosZ;
         } else {
-            packet.position[0] = *(f32*)&gDll77Zero + spawnParams->posX;
-            packet.position[1] = *(f32*)&gDll77Zero + spawnParams->posY;
-            packet.position[2] = *(f32*)&gDll77Zero + spawnParams->posZ;
+            packet.context.position[0] = *(f32*)&gDll77Zero + spawnParams->posX;
+            packet.context.position[1] = *(f32*)&gDll77Zero + spawnParams->posY;
+            packet.context.position[2] = *(f32*)&gDll77Zero + spawnParams->posZ;
         }
     }
-    (*gModgfxInterface)->spawnEffect(&packet, 0, 0, 0, 0, 0, 0, 0);
+    (*gModgfxInterface)->spawnEffect(&packet.context, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void dll_77_release(void) {
@@ -119,6 +119,10 @@ void dll_77_release(void) {
 void dll_77_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDll77ResourceDescriptorAcquire, dll_77_initialise)
+
 Dll77ResourceDescriptor gDll77ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_77_initialise, dll_77_release, NULL, dll_77_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll77ResourceDescriptorAcquire, dll_77_release },
+    NULL,
+    dll_77_spawnEffect,
 };

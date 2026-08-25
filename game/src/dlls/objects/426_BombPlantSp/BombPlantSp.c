@@ -1,9 +1,9 @@
 #include "dlls/objects/426_BombPlantSp.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/curves_collision_state.h"
 #include "main/dll/partfx_interface.h"
@@ -11,7 +11,7 @@
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/model_light.h"
 #include "main/obj_message.h"
 #include "main/objfx.h"
@@ -237,14 +237,14 @@ static void bombPlantSpore_updateMotion(GameObject* obj, BombPlantSporeState* st
     }
 
     obj->anim.rotX += state->yawStep;
-    obj->anim.velocity.y += -0.009f * timeDelta;
-    if (obj->anim.velocity.y < -0.2f) {
-        obj->anim.velocity.y = -0.2f;
+    obj->anim.velocityY += -0.009f * timeDelta;
+    if (obj->anim.velocityY < -0.2f) {
+        obj->anim.velocityY = -0.2f;
     }
-    if (obj->anim.velocity.y > 0.0f) {
-        obj->anim.velocity.y *= 0.97f;
+    if (obj->anim.velocityY > 0.0f) {
+        obj->anim.velocityY *= 0.97f;
     }
-    if (obj->anim.velocity.y < 0.0f) {
+    if (obj->anim.velocityY < 0.0f) {
         ObjHits_EnableObject(obj);
     }
 
@@ -264,9 +264,9 @@ static void bombPlantSpore_updateMotion(GameObject* obj, BombPlantSporeState* st
         state->driftSpeed = driftStep * timeDelta + driftSpeed;
     }
 
-    obj->anim.velocity.x = state->driftSin * state->driftSpeed + state->driftBaseX;
-    obj->anim.velocity.z = state->driftCos * state->driftSpeed + state->driftBaseZ;
-    objMove(obj, obj->anim.velocity.x * timeDelta, obj->anim.velocity.y * timeDelta, obj->anim.velocity.z * timeDelta);
+    obj->anim.velocityX = state->driftSin * state->driftSpeed + state->driftBaseX;
+    obj->anim.velocityZ = state->driftCos * state->driftSpeed + state->driftBaseZ;
+    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
     (*gPathControlInterface)->update(obj, &state->path, timeDelta);
     (*gPathControlInterface)->apply(obj, &state->path);
     (*gPathControlInterface)->advance(obj, &state->path, timeDelta);
@@ -336,7 +336,7 @@ static void bombPlantSpore_init(GameObject* obj, const BombPlantSporePlacement* 
     pathParam[0] = BOMB_PLANT_SPORE_PATH_PARAM;
     state->fuseTimer = 1500.0f;
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED;
-    obj->anim.velocity.y = 2.0f;
+    obj->anim.velocityY = 2.0f;
     ObjHits_DisableObject(obj);
     state->spinAngle = (s16)randomGetRange(0, 0xFFFF);
     state->driftAmplitudeTarget = (f32)randomGetRange(0, 1000) / 1000.0f;
@@ -359,23 +359,27 @@ static void bombPlantSpore_init(GameObject* obj, const BombPlantSporePlacement* 
     state->yawStep = (s16)randomGetRange(-0x200, 0x200);
 }
 
+OBJECT_INIT_ADAPTER(gBombPlantSporeObjDescriptorInitAdapter, bombPlantSpore_init, obj, placement)
+OBJECT_FREE_ADAPTER(gBombPlantSporeObjDescriptorFreeAdapter, bombPlantSpore_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gBombPlantSporeObjDescriptorExtraSizeAdapter, bombPlantSpore_getExtraSize)
+
 ObjectDescriptor10WithPadding gBombPlantSporeObjDescriptor = {
     .descriptor =
         {
-            .reserved0 = 0,
-            .reserved1 = 0,
-            .reserved2 = 0,
-            .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-            .initialise = NULL,
-            .release = NULL,
+            .header.metadata[0] = 0,
+            .header.metadata[1] = 0,
+            .header.metadata[2] = 0,
+            .header.metadata[3] = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            .header.acquire = NULL,
+            .header.release = NULL,
             .slot02 = NULL,
-            .init = (ObjectDescriptorCallback)bombPlantSpore_init,
-            .update = (ObjectDescriptorCallback)bombPlantSpore_update,
+            .init = gBombPlantSporeObjDescriptorInitAdapter,
+            .update = bombPlantSpore_update,
             .hitDetect = NULL,
             .render = NULL,
-            .free = (ObjectDescriptorCallback)bombPlantSpore_free,
+            .free = gBombPlantSporeObjDescriptorFreeAdapter,
             .getObjectTypeId = NULL,
-            .getExtraSize = bombPlantSpore_getExtraSize,
+            .getExtraSize = gBombPlantSporeObjDescriptorExtraSizeAdapter,
         },
     .padding = 0,
 };

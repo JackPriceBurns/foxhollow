@@ -14,14 +14,14 @@
  * sets three progression game bits, kicks an env-fx act and fades the active
  * music channels. A looping object sound is kept alive while sequences run.
  */
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_0238_linkalevco.h"
 #include "main/map_load.h"
 #include "main/model_engine.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/sky_api.h"
-#include "main/audio/music_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/sky.h"
+#include "main/audio/music.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
@@ -209,19 +209,31 @@ void LinkALevControl_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gFireObjDescriptorInitAdapter, LinkALevControl_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gFireObjDescriptorHitDetectAdapter, LinkALevControl_hitDetect)
+OBJECT_FREE_ADAPTER(gFireObjDescriptorFreeAdapter, LinkALevControl_free)
+OBJECT_TYPE_ID_ADAPTER(gFireObjDescriptorTypeIdAdapter, LinkALevControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFireObjDescriptorExtraSizeAdapter, LinkALevControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFireObjDescriptorAcquire, LinkALevControl_initialise)
+
 ObjectDescriptor gFireObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFireObjDescriptorAcquire,
+        LinkALevControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    LinkALevControl_initialise,
-    LinkALevControl_release,
-    0,
-    (ObjectDescriptorCallback)LinkALevControl_init,
-    (ObjectDescriptorCallback)LinkALevControl_update,
-    LinkALevControl_hitDetect,
-    (ObjectDescriptorCallback)LinkALevControl_render,
-    LinkALevControl_free,
-    (ObjectDescriptorCallback)LinkALevControl_getObjectTypeId,
-    LinkALevControl_getExtraSize,
+    gFireObjDescriptorInitAdapter,
+    LinkALevControl_update,
+    gFireObjDescriptorHitDetectAdapter,
+    LinkALevControl_render,
+    gFireObjDescriptorFreeAdapter,
+    gFireObjDescriptorTypeIdAdapter,
+    gFireObjDescriptorExtraSizeAdapter,
 };

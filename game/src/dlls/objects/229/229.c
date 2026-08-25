@@ -14,7 +14,7 @@
  * table and switch table are owned by this TU.
  */
 #include "dlls/objects/229_Shield.h"
-#include "main/audio/sfx_object_volume_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/player_objects.h"
@@ -26,10 +26,8 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/dll/dll_00E2_staff_api.h"
-#include "main/hud_visibility_api.h"
+#include "main/dll/dll_00E2_staff.h"
+#include "main/hud_visibility.h"
 
 #define SHIELD_NORMAL_WAVE_SCALE 0.5f
 #define SHIELD_SFX_VOLUME_SCALE  0.5f
@@ -523,19 +521,30 @@ void Shield_release(void) {
 void Shield_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gShieldObjDescriptorInitAdapter, Shield_init, obj, placement)
+OBJECT_FREE_ADAPTER(gShieldObjDescriptorFreeAdapter, Shield_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gShieldObjDescriptorTypeIdAdapter, Shield_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gShieldObjDescriptorExtraSizeAdapter, Shield_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gShieldObjDescriptorAcquire, Shield_initialise)
+
 ObjectDescriptor gShieldObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gShieldObjDescriptorAcquire,
+        Shield_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Shield_initialise,
-    (ObjectDescriptorCallback)Shield_release,
-    0,
-    (ObjectDescriptorCallback)Shield_init,
-    (ObjectDescriptorCallback)Shield_update,
-    (ObjectDescriptorCallback)Shield_hitDetect,
-    (ObjectDescriptorCallback)Shield_render,
-    (ObjectDescriptorCallback)Shield_free,
-    (ObjectDescriptorCallback)Shield_getObjectTypeId,
-    Shield_getExtraSize,
+    gShieldObjDescriptorInitAdapter,
+    Shield_update,
+    Shield_hitDetect,
+    Shield_render,
+    gShieldObjDescriptorFreeAdapter,
+    gShieldObjDescriptorTypeIdAdapter,
+    gShieldObjDescriptorExtraSizeAdapter,
 };

@@ -14,7 +14,7 @@
 #include "main/fileio.h"
 #include "string.h"
 #include "main/dll/FRONT/picmenu.h"
-#include "main/attract_movie_api.h"
+#include "main/attract_movie.h"
 
 char sPicMenuThpMagic[] = "THP";
 

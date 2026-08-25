@@ -88,15 +88,18 @@ void n_rareware_initialise(void) {
     gNrarewareTransitionStarted = 0;
 }
 
-ObjectDescriptor6 n_rareware_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)n_rareware_initialise,
-    (ObjectDescriptorCallback)n_rareware_release,
-    0,
-    (ObjectDescriptorCallback)n_rareware_frameStart,
-    (ObjectDescriptorCallback)n_rareware_frameEnd,
-    (ObjectDescriptorCallback)n_rareware_render,
+UI_RESOURCE_ADAPTERS(gn_rarewareUiResource, n_rareware_initialise, n_rareware_frameStart, n_rareware_render)
+
+UiResourceDescriptor n_rareware_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gn_rarewareUiResourceAcquire,
+        n_rareware_release,
+    },
+    {
+        NULL,
+        gn_rarewareUiResourceFrameStart,
+        n_rareware_frameEnd,
+        gn_rarewareUiResourceDraw,
+    },
 };

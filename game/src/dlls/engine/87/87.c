@@ -12,10 +12,10 @@
  */
 #include "main/dll/dll_0057_cameramodetitle.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/attract_movie_api.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "dolphin/math.h"
+#include "main/attract_movie.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/dll_0015_save_settings.h"
 
@@ -172,10 +172,10 @@ CameraModeTitlePose gCameraModeTitlePoseTable[CAMERA_MODE_TITLE_POSE_COUNT] = {
     {-18876.25f, 33.25548f, 28366.39f, 9419, 3496, 170},
 };
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeTitleDescriptorAcquire, CameraModeTitle_initialise)
+
 CameraModeTitleDescriptor gCameraModeTitleDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeTitle_initialise,
-    CameraModeTitle_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeTitleDescriptorAcquire, CameraModeTitle_release },
     NULL,
     CameraModeTitle_init,
     CameraModeTitle_update,

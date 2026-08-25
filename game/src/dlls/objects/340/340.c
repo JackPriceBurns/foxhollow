@@ -3,12 +3,12 @@
 #include "dlls/objects/340.h"
 
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/obj_message.h"
-#include "main/objfx_hit_emitter_api.h"
+#include "main/objfx_hit_emitter.h"
 #include "main/objhits.h"
 
 typedef enum CfPrisonCageObjectSequenceId {
@@ -139,19 +139,29 @@ void cfPrisonCage_release(void) {
 void cfPrisonCage_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFPrisonCageObjDescriptorInitAdapter, cfPrisonCage_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCFPrisonCageObjDescriptorFreeAdapter, cfPrisonCage_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFPrisonCageObjDescriptorExtraSizeAdapter, cfPrisonCage_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFPrisonCageObjDescriptorAcquire, cfPrisonCage_initialise)
+
 ObjectDescriptor gCFPrisonCageObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFPrisonCageObjDescriptorAcquire,
+        cfPrisonCage_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPrisonCage_initialise,
-    (ObjectDescriptorCallback)cfPrisonCage_release,
-    0,
-    (ObjectDescriptorCallback)cfPrisonCage_init,
-    (ObjectDescriptorCallback)cfPrisonCage_update,
-    (ObjectDescriptorCallback)cfPrisonCage_hitDetect,
-    (ObjectDescriptorCallback)cfPrisonCage_render,
-    (ObjectDescriptorCallback)cfPrisonCage_free,
-    (ObjectDescriptorCallback)cfPrisonCage_getObjectTypeId,
-    cfPrisonCage_getExtraSize,
+    gCFPrisonCageObjDescriptorInitAdapter,
+    cfPrisonCage_update,
+    cfPrisonCage_hitDetect,
+    cfPrisonCage_render,
+    gCFPrisonCageObjDescriptorFreeAdapter,
+    cfPrisonCage_getObjectTypeId,
+    gCFPrisonCageObjDescriptorExtraSizeAdapter,
 };

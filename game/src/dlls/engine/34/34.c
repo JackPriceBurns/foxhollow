@@ -1,4 +1,4 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
@@ -18,17 +18,20 @@ f32 gEffect9PhaseD = 0.3f;
 
 PartFxSpawnParams gEffect9DefaultSpawnParams;
 
-ObjectDescriptor6 Effect9_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Effect9_initialise,
-    (ObjectDescriptorCallback)Effect9_release,
-    0,
-    (ObjectDescriptorCallback)Effect9_func03_nop,
-    (ObjectDescriptorCallback)Effect9_spawnObject,
-    (ObjectDescriptorCallback)Effect9_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect9Resource, Effect9_initialise, Effect9_spawnObject, Effect9_updateFrameState)
+
+EffectResourceDescriptor Effect9_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gEffect9ResourceAcquire,
+        Effect9_release,
+    },
+    {
+        NULL,
+        Effect9_func03_nop,
+        gEffect9ResourceSpawn,
+        gEffect9ResourceUpdate,
+    },
 };
 
 #define FILL9()                                                                                                        \

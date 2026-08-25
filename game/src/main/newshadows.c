@@ -1,28 +1,25 @@
-#define OBJHITS_STATE_INDEX_S8
-#define TEX_SETSHADER_U8
 #include "main/map_block.h"
 #include "main/texture.h"
-#include "track/intersect_depth_state_api.h"
-#include "track/intersect_depth_read_api.h"
-#include "track/intersect_render_setup_api.h"
-#include "main/hud_visibility_api.h"
-#include "main/lightmap_api.h"
-#include "main/shader_api.h"
+#include "track/intersect_depth_state.h"
+#include "track/intersect_depth_read.h"
+#include "track/intersect_render_setup.h"
+#include "main/hud_visibility.h"
+#include "main/lightmap.h"
+#include "main/shader.h"
 #include "main/debug.h"
 #include "dolphin/MSL_C/PPCEABI/bare/H/math_float_helpers.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frustum.h"
 #include "main/asset_load.h"
 #include "game/objects/object.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "sys/objects.h"
 #include "main/mm.h"
 #include "main/model_light.h"
 #include "main/model.h"
-#include "main/model_render_instrs_api.h"
+#include "main/model_render_instrs.h"
 #include "main/objHitReact.h"
 #include "main/objhits.h"
-#undef OBJHITS_STATE_INDEX_S8
 #include "main/objtype.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
@@ -37,41 +34,33 @@
 #include "main/camera.h"
 #include "main/sky_state.h"
 #include "main/track_dolphin.h"
-#include "main/track_dolphin_api.h"
-#include "main/track_dolphin_shadow_api.h"
-#include "main/newshadows_shadow_api.h"
+#include "main/track_dolphin_shadow.h"
+#include "main/newshadows_shadow.h"
 #include "dolphin/mtx/vec.h"
-#define TRACK_BBOX_FLAGS_S8
-#define TRACK_BBOX_MASK_TYPE s8
-#define TRACK_BBOX_ARG10_TYPE s8
-#include "main/track_bbox_api.h"
-#undef TRACK_BBOX_ARG10_TYPE
-#undef TRACK_BBOX_MASK_TYPE
-#undef TRACK_BBOX_FLAGS_S8
-#include "main/dll/player_api.h"
-#include "main/pause_menu_api.h"
+#include "main/track_bbox.h"
+#include "main/dll/player.h"
+#include "main/pause_menu.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/os/OSCache.h"
 #include "main/voxmaps.h"
-#include "track/intersect_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "track/intersect.h"
+#include "main/rcp_dolphin.h"
 #include "main/objmodel.h"
 #include "main/newshadows.h"
 #include "main/sky.h"
-#include "main/newshadows_texture_api.h"
-#include "main/acosf_api.h"
+#include "main/newshadows_texture.h"
+#include "main/acosf.h"
 #include "main/tex_dolphin.h"
 #include "string.h"
-#include "track/intersect_hud_api.h"
-#include "track/intersect_screen_api.h"
-#include "main/objprint_render_api.h"
-#include "main/newshadows_audio_api.h"
+#include "track/intersect_hud.h"
+#include "track/intersect_screen.h"
+#include "main/objprint_render.h"
+#include "main/newshadows_audio.h"
 #include "dolphin/gx/GXManage.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/gx/GXStruct.h"
 #include "dolphin/gx/GXTexture.h"
 #include "main/frame_timing.h"
-#include "main/sky_api.h"
 #include "main/shader_dolphin.h"
 #include "main/dll/modgfx.h"
 #include "dolphin/gx/GXFrameBuffer.h"
@@ -271,15 +260,15 @@ void updateHeavyFogTexture(int intensity)
 }
 
 Camera* gNewShadowCurrentViewSlot;
-uintptr_t gNewShadowReflectionSmallTexture;
+Texture* gNewShadowReflectionSmallTexture;
 Texture* gNewShadowCausticTexture;
-uintptr_t gNewShadowReflectionTexture2;
-uintptr_t gNewShadowDiskTexture;
-uintptr_t gNewShadowSmallDiskTexture;
-uintptr_t gNewShadowBumpTexture;
-uintptr_t gNewShadowWhirlpoolTexture;
+Texture* gNewShadowReflectionTexture2;
+Texture* gNewShadowDiskTexture;
+Texture* gNewShadowSmallDiskTexture;
+Texture* gNewShadowBumpTexture;
+Texture* gNewShadowWhirlpoolTexture;
 Texture* gNewShadowHeatHazeTexture;
-uintptr_t gNewShadowSnowFlashTexture;
+Texture* gNewShadowSnowFlashTexture;
 Texture* gNewShadowRadialTexture;
 Texture* gNewShadowDistortionTexture;
 Texture* gNewShadowHeavyFogTexture;
@@ -289,10 +278,10 @@ f32 gNewShadowReflectionScrollX;
 f32 gNewShadowReflectionScrollY;
 f32 gNewShadowDistortionWaveOffset;
 u16 gNewShadowDistortionWavePhase;
-uintptr_t gNewShadowRampTexture;
-uintptr_t gNewShadowInverseRampTexture;
-uintptr_t gNewShadowReflectionGradientTexture;
-uintptr_t gNewShadowFalloffTexture;
+Texture* gNewShadowRampTexture;
+Texture* gNewShadowInverseRampTexture;
+Texture* gNewShadowReflectionGradientTexture;
+Texture* gNewShadowFalloffTexture;
 u8 gNewShadowFrameIndex;
 int gNewShadowLightAngleY;
 int gNewShadowLightAngleX;
@@ -689,10 +678,10 @@ void renderShadows(int unused0, int unused1, int unused2)
             continue;
         if ((modelState->flags & OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE) != 0)
         {
-            memcpy(mc48, &obj->anim.localPos, sizeof(Vec3f));
-            memcpy(mc54p, &obj->anim.worldPos, sizeof(Vec3f));
-            memcpy(&obj->anim.localPos, &modelState->overrideWorldPosX, sizeof(Vec3f));
-            memcpy(&obj->anim.worldPos, &modelState->overrideWorldPosX, sizeof(Vec3f));
+            memcpy(mc48, &obj->anim.localPosX, sizeof(Vec3f));
+            memcpy(mc54p, &obj->anim.worldPosX, sizeof(Vec3f));
+            memcpy(&obj->anim.localPosX, &modelState->overrideWorldPosX, sizeof(Vec3f));
+            memcpy(&obj->anim.worldPosX, &modelState->overrideWorldPosX, sizeof(Vec3f));
         }
         castSlot = &gNewShadowCastSlots[(u8)slotIdx];
         castSlot->alpha = alpha;
@@ -879,8 +868,8 @@ void renderShadows(int unused0, int unused1, int unused2)
         slotIdx++;
         if ((modelState->flags & OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE) != 0)
         {
-            memcpy(&obj->anim.localPos, mc48, sizeof(Vec3f));
-            memcpy(&obj->anim.worldPos, mc54p, sizeof(Vec3f));
+            memcpy(&obj->anim.localPosX, mc48, sizeof(Vec3f));
+            memcpy(&obj->anim.worldPosX, mc54p, sizeof(Vec3f));
         }
     }
     clearScreenWidth();
@@ -974,7 +963,7 @@ void getNewShadowNoiseTextureFrames(Texture*** tableOut, int* frameCountOut)
     *frameCountOut = 0x10;
 }
 
-void getNewShadowSnowFlashTexture(uintptr_t* p)
+void getNewShadowSnowFlashTexture(Texture** p)
 {
     *p = gNewShadowSnowFlashTexture;
 }
@@ -1003,33 +992,33 @@ void getNewShadowRadialTexture(Texture** out)
     *out = gNewShadowRadialTexture;
 }
 
-void* textureAlloc512(void)
+Texture* textureAlloc512(void)
 {
     Texture* tex = (Texture*)textureAlloc(0x200, 0x200, 1, 0, 0, 0, 0, 0, 0);
     tex->refCount = 1;
     DCFlushRange((char*)tex + sizeof(Texture), tex->dataSize);
     return tex;
 }
-void getNewShadowRampTexture(uintptr_t* out)
+void getNewShadowRampTexture(Texture** out)
 {
     *out = gNewShadowRampTexture;
 }
 
-uintptr_t getNewShadowSmallDiskTexture(void)
+Texture* getNewShadowSmallDiskTexture(void)
 {
     return gNewShadowSmallDiskTexture;
 }
-void getNewShadowDiskTexture(uintptr_t* out)
+void getNewShadowDiskTexture(Texture** out)
 {
     *out = gNewShadowDiskTexture;
 }
-void getReflectionTexture2(uintptr_t* p)
+void getReflectionTexture2(Texture** p)
 {
     *p = gNewShadowReflectionTexture2;
 }
-void getNewShadowCausticTexture(uintptr_t* p)
+void getNewShadowCausticTexture(Texture** p)
 {
-    *p = (uintptr_t)gNewShadowCausticTexture;
+    *p = gNewShadowCausticTexture;
 }
 
 
@@ -1050,13 +1039,13 @@ f32 getNewShadowDistortionWaveOffset(void)
 
 void loadNewShadowBumpTexture(int texMapId)
 {
-    GXLoadTexObj(textureGetGXTexObj((Texture*)gNewShadowBumpTexture), texMapId);
+    GXLoadTexObj(textureGetGXTexObj(gNewShadowBumpTexture), texMapId);
 }
 
 void selectWhirlpoolTexture(int id)
 {
     register int idCopy = id;
-    Texture* p = (Texture*)gNewShadowWhirlpoolTexture;
+    Texture* p = gNewShadowWhirlpoolTexture;
     if (p->preloaded != 0)
     {
         struct _GXTexObj* obj = textureGetGXTexObj(p);
@@ -1082,22 +1071,22 @@ void selectReflectionTexture(int id)
         GXLoadTexObj(textureGetGXTexObj(p), idCopy);
     }
 }
-uintptr_t getReflectionTexture1(void)
+Texture* getReflectionTexture1(void)
 {
-    return (uintptr_t)gNewShadowReflectionTexture;
+    return gNewShadowReflectionTexture;
 }
 
 NewShadowEntry gNewShadowEntries[0x294 / sizeof(NewShadowEntry)];
-uintptr_t getNewShadowReflectionGradientTexture(void)
+Texture* getNewShadowReflectionGradientTexture(void)
 {
     return gNewShadowReflectionGradientTexture;
 }
 
-uintptr_t getNewShadowInverseRampTexture(void)
+Texture* getNewShadowInverseRampTexture(void)
 {
     return gNewShadowInverseRampTexture;
 }
-uintptr_t getNewShadowFalloffTexture(void)
+Texture* getNewShadowFalloffTexture(void)
 {
     return gNewShadowFalloffTexture;
 }
@@ -1105,7 +1094,7 @@ uintptr_t getNewShadowFalloffTexture(void)
 void loadNewShadowSmallReflectionTexture(int id)
 {
     register int idCopy = id;
-    Texture* p = (Texture*)gNewShadowReflectionSmallTexture;
+    Texture* p = gNewShadowReflectionSmallTexture;
     if (p->preloaded != 0)
     {
         struct _GXTexObj* obj = textureGetGXTexObj(p);
@@ -1123,10 +1112,10 @@ void drawReflectionTexture(void)
     GXSetTexCopySrc(0, 0, 0x50, 0x3c);
     GXSetTexCopyDst(0x50, 0x3c, GX_TF_RGB565, GX_FALSE);
     GXCopyTex((char*)gNewShadowReflectionSmallTexture + sizeof(Texture), GX_TRUE);
-    if (((Texture*)gNewShadowReflectionSmallTexture)->preloaded != 0)
+    if (gNewShadowReflectionSmallTexture->preloaded != 0)
     {
-        GXTexObj* obj = textureGetGXTexObj((Texture*)gNewShadowReflectionSmallTexture);
-        GXPreLoadEntireTexture(obj, textureGetGXTexRegion((Texture*)gNewShadowReflectionSmallTexture));
+        GXTexObj* obj = textureGetGXTexObj(gNewShadowReflectionSmallTexture);
+        GXPreLoadEntireTexture(obj, textureGetGXTexRegion(gNewShadowReflectionSmallTexture));
     }
 }
 
@@ -1143,13 +1132,13 @@ void updateReflectionTextures(void)
         GXTexObj* obj = textureGetGXTexObj(gNewShadowReflectionTexture);
         GXPreLoadEntireTexture(obj, textureGetGXTexRegion(gNewShadowReflectionTexture));
     }
-    if (((Texture*)gNewShadowReflectionTexture2)->preloaded != 0)
+    if (gNewShadowReflectionTexture2->preloaded != 0)
     {
-        GXTexObj* obj = textureGetGXTexObj((Texture*)gNewShadowReflectionTexture2);
-        GXPreLoadEntireTexture(obj, textureGetGXTexRegion((Texture*)gNewShadowReflectionTexture2));
+        GXTexObj* obj = textureGetGXTexObj(gNewShadowReflectionTexture2);
+        GXPreLoadEntireTexture(obj, textureGetGXTexRegion(gNewShadowReflectionTexture2));
     }
     if (gNewShadowReflectionTexture->preloaded == 0 ||
-        ((Texture*)gNewShadowReflectionTexture2)->preloaded == 0)
+        gNewShadowReflectionTexture2->preloaded == 0)
     {
         GXInvalidateTexAll();
     }
@@ -1772,18 +1761,18 @@ void allocLotsOfTextures(void)
     }
 
     gNewShadowReflectionTexture = textureAlloc(0x140, 0xf0, 4, 0, 0, 0, 0, 1, 1);
-    gNewShadowReflectionSmallTexture = (uintptr_t)textureAlloc(0x50, 0x3c, 4, 0, 0, 0, 0, 1, 1);
-    gNewShadowReflectionTexture2 = (uintptr_t)textureAlloc(0x140, 0xf0, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionSmallTexture = textureAlloc(0x50, 0x3c, 4, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionTexture2 = textureAlloc(0x140, 0xf0, 1, 0, 0, 0, 0, 1, 1);
 
-    gNewShadowDiskTexture = (uintptr_t)textureAlloc(0x20, 0x20, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowDiskTexture = textureAlloc(0x20, 0x20, 1, 0, 0, 0, 0, 1, 1);
     fillDiskTexture();
-    DCFlushRange((Texture*)gNewShadowDiskTexture + 1, ((Texture*)gNewShadowDiskTexture)->dataSize);
+    DCFlushRange(gNewShadowDiskTexture + 1, gNewShadowDiskTexture->dataSize);
 
-    gNewShadowSmallDiskTexture = (uintptr_t)textureAlloc(0x10, 0x10, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowSmallDiskTexture = textureAlloc(0x10, 0x10, 1, 0, 0, 0, 0, 1, 1);
     fillSmallDiskTexture();
-    DCFlushRange((Texture*)gNewShadowSmallDiskTexture + 1, ((Texture*)gNewShadowSmallDiskTexture)->dataSize);
+    DCFlushRange(gNewShadowSmallDiskTexture + 1, gNewShadowSmallDiskTexture->dataSize);
 
-    gNewShadowBumpTexture = (uintptr_t)textureAlloc(0x40, 0x40, 5, 0, 0, 0, 0, 1, 1);
+    gNewShadowBumpTexture = textureAlloc(0x40, 0x40, 5, 0, 0, 0, 0, 1, 1);
     {
         f32 mx = 0.0f;
         for (i = 0; i < 0x40; i++)
@@ -1833,7 +1822,7 @@ void allocLotsOfTextures(void)
                 fj2 = (f32)(j + 1) - 32.0f;
                 for (; i < 0x40; i++)
                 {
-                    uintptr_t dst = gNewShadowBumpTexture + lowoff;
+                    u8* dst = (u8*)gNewShadowBumpTexture + lowoff;
                     f32 cc, d1, d2, cc2, d3, n1, n2, n3, a, b, rowCoord;
                     f32 c;
                     int bi, ci, ai;
@@ -1878,23 +1867,23 @@ void allocLotsOfTextures(void)
             }
         }
     }
-    DCFlushRange((Texture*)gNewShadowBumpTexture + 1, ((Texture*)gNewShadowBumpTexture)->dataSize);
+    DCFlushRange(gNewShadowBumpTexture + 1, gNewShadowBumpTexture->dataSize);
 
-    gNewShadowWhirlpoolTexture = (uintptr_t)textureLoadAsset(0x5b0);
+    gNewShadowWhirlpoolTexture = textureLoadAsset(0x5b0);
     gNewShadowHeatHazeTexture = textureLoadAsset(0x600);
-    gNewShadowSnowFlashTexture = (uintptr_t)textureLoadAsset(0xc18);
+    gNewShadowSnowFlashTexture = textureLoadAsset(0xc18);
 
-    gNewShadowRampTexture = (uintptr_t)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 0, 0);
+    gNewShadowRampTexture = textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 0, 0);
     fillRampTexture();
-    DCFlushRange((Texture*)gNewShadowRampTexture + 1, ((Texture*)gNewShadowRampTexture)->dataSize);
+    DCFlushRange(gNewShadowRampTexture + 1, gNewShadowRampTexture->dataSize);
 
-    gNewShadowInverseRampTexture = (uintptr_t)textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowInverseRampTexture = textureAlloc(0x100, 4, 1, 0, 0, 0, 0, 1, 1);
     fillInverseRampTexture();
-    DCFlushRange((Texture*)gNewShadowInverseRampTexture + 1, ((Texture*)gNewShadowInverseRampTexture)->dataSize);
+    DCFlushRange(gNewShadowInverseRampTexture + 1, gNewShadowInverseRampTexture->dataSize);
 
-    gNewShadowFalloffTexture = (uintptr_t)textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
+    gNewShadowFalloffTexture = textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
     fillFalloffTexture();
-    DCFlushRange((Texture*)gNewShadowFalloffTexture + 1, ((Texture*)gNewShadowFalloffTexture)->dataSize);
+    DCFlushRange(gNewShadowFalloffTexture + 1, gNewShadowFalloffTexture->dataSize);
 
     gNewShadowRadialTexture = textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
     for (i = 0; i < 0x80; i++)
@@ -1937,31 +1926,30 @@ void allocLotsOfTextures(void)
     fillRingTexture();
     DCFlushRange((u8*)gNewShadowRingTexture + sizeof(Texture), gNewShadowRingTexture->dataSize);
 
-    gNewShadowReflectionGradientTexture = (uintptr_t)textureAlloc(4, 4, 3, 0, 0, 0, 0, 1, 1);
+    gNewShadowReflectionGradientTexture = textureAlloc(4, 4, 3, 0, 0, 0, 0, 1, 1);
     for (i = 0; i < 4; i++)
     {
         f32 x = i / 3.0f;
         int hi;
-        uintptr_t t;
+        u8* t;
         u16 v;
         x -= lbl_803DED38;
-        t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
+        t = (u8*)gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         hi = ((int)(255.0f * x + 128.0f) & 0xff) << 8;
         *(u16*)(t + sizeof(Texture)) = fhSwap16((u16)(hi | ((int)lbl_803DED38 & 0xff)));
-        t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
+        t = (u8*)gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         *(u16*)(t + sizeof(Texture) + 8) = fhSwap16((u16)(hi | ((int)lbl_803DEE14 & 0xff)));
-        t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
+        t = (u8*)gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         *(u16*)(t + sizeof(Texture) + 0x10) = fhSwap16((u16)(hi | ((int)lbl_803DEE18 & 0xff)));
         v = fhSwap16((u16)(hi | ((int)lbl_803DEE1C & 0xff)));
-        t = gNewShadowReflectionGradientTexture + (i & 3) * 2;
+        t = (u8*)gNewShadowReflectionGradientTexture + (i & 3) * 2;
         t += (i >> 2) * 0x20;
         *(u16*)(t + sizeof(Texture) + 0x18) = v;
     }
-    DCFlushRange((Texture*)gNewShadowReflectionGradientTexture + 1,
-                 ((Texture*)gNewShadowReflectionGradientTexture)->dataSize);
+    DCFlushRange(gNewShadowReflectionGradientTexture + 1, gNewShadowReflectionGradientTexture->dataSize);
 
     frameTexture = textureAlloc(0x80, 0x80, 1, 0, 0, 0, 0, 1, 1);
     memset(frameTexture + 1, 0, frameTexture->dataSize);

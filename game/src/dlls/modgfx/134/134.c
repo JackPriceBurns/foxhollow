@@ -83,41 +83,41 @@ void dll_86_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commands[4].x = 999.0f;
     commands[4].y = effectWidth;
     commands[4].z = effectHeight;
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
     randomX = (f32)randomGetRange(-0x64, 0x64);
-    packet.position[0] = randomX;
-    packet.position[1] = 0.0f;
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 0;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 0;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = 5;
-    for (s32 paramIndex = 0; paramIndex < ARRAY_COUNT(packet.sequenceParams); paramIndex++) {
-        packet.sequenceParams[paramIndex] = gDll86SequenceResource.sequenceParams[paramIndex];
+    packet.context.position[0] = randomX;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 0;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 0;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = 5;
+    for (s32 paramIndex = 0; paramIndex < ARRAY_COUNT(packet.context.sequenceParams); paramIndex++) {
+        packet.context.sequenceParams[paramIndex] = gDll86SequenceResource.sequenceParams[paramIndex];
     }
-    packet.commands = packet.entries;
-    packet.flags = 0x10400;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
-        if (packet.sourceObj != NULL) {
-            packet.position[0] = randomX + packet.sourceObj->anim.worldPosX;
-            packet.position[1] += packet.sourceObj->anim.worldPosY;
-            packet.position[2] += packet.sourceObj->anim.worldPosZ;
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x10400;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
+        if (packet.context.attachedSource != NULL) {
+            packet.context.position[0] = randomX + packet.context.attachedSource->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
         } else {
-            packet.position[0] = randomX + spawnParams->posX;
-            packet.position[1] += spawnParams->posY;
-            packet.position[2] += spawnParams->posZ;
+            packet.context.position[0] = randomX + spawnParams->posX;
+            packet.context.position[1] += spawnParams->posY;
+            packet.context.position[2] += spawnParams->posZ;
         }
     }
-    (*gModgfxInterface)->spawnEffect(&packet, 0, 0, 0, 0, 0, 0, 0);
+    (*gModgfxInterface)->spawnEffect(&packet.context, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void dll_86_release(void) {
@@ -126,6 +126,10 @@ void dll_86_release(void) {
 void dll_86_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDll86ResourceDescriptorAcquire, dll_86_initialise)
+
 Dll86ResourceDescriptor gDll86ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_86_initialise, dll_86_release, NULL, dll_86_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll86ResourceDescriptorAcquire, dll_86_release },
+    NULL,
+    dll_86_spawnEffect,
 };

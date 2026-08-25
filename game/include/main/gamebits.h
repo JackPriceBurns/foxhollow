@@ -3,6 +3,12 @@
 
 #include "global.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+
+
+#include "types.h"
+
+u32 mainGetBit(int gameBit);
+void mainSetBits(int gameBit, int value);
+
 
 #endif /* MAIN_GAMEBITS_H_ */

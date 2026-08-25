@@ -7,8 +7,8 @@ typedef void (*ProjgfxOnMapSetupFn)(void);
 typedef int (*ProjgfxRetMinusOneFn)(void);
 typedef void (*ProjgfxNopFn)(void);
 typedef int (*ProjgfxGetObjectTypeIdFn)(void);
-typedef void (*ProjgfxSetZScaleUnsupportedFn)(void);
-typedef void (*ProjgfxRayHitUnsupportedFn)(void);
+typedef int (*ProjgfxSetZScaleUnsupportedFn)(void);
+typedef int (*ProjgfxRayHitUnsupportedFn)(void);
 
 typedef struct ProjgfxInterface
 {

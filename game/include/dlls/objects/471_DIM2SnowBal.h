@@ -11,13 +11,7 @@
  * consumes the shared placement head's map-id slot as a target-object id.
  */
 typedef struct Dim2SnowBallPlacement {
-    union {
-        ObjPlacement base;
-        struct {
-            u8 unknown00[0x14];
-            s32 targetObjectId;
-        };
-    };
+    ObjPlacement base;
     s8 rotationXByte;
     u8 unknown19;
     s16 unknown1A;
@@ -49,7 +43,7 @@ typedef struct Dim2SnowBallInterface {
 STATIC_ASSERT(offsetof(Dim2SnowBallInterface, init) == 0x04);
 
 STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, base) == 0x00);
-STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, targetObjectId) == 0x14);
+STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, base.ident) == 0x14);
 STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, rotationXByte) == 0x18);
 STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, unknown19) == 0x19);
 STATIC_ASSERT(offsetof(Dim2SnowBallPlacement, unknown1A) == 0x1A);

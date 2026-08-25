@@ -5,7 +5,7 @@
 #include "dlls/objects/284.h"
 #include "dlls/objects/262.h"
 #include "dlls/objects/283_Landed_Arwi.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -14,13 +14,13 @@
 #include "main/object_render.h"
 #include "main/objhits.h"
 #include "main/objseq.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_80136a40.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/objtype.h"
 
 STATIC_ASSERT(sizeof(StaffActivatedState) == sizeof(LandedArwingHitReactionState));
@@ -106,10 +106,10 @@ void staffactivated_setGameBitMirror(GameObject* obj, u8 enabled) {
     StaffActivatedPlacement* placement = (StaffActivatedPlacement*)obj->anim.placementData;
     StaffActivatedState* state = obj->extra;
     if (enabled != 0) {
-        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)), 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->secondaryGameBit)), 1);
         state->flags.gameBitMirror = 1;
     } else {
-        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)), 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->secondaryGameBit)), 0);
         state->flags.gameBitMirror = 0;
     }
 }
@@ -146,9 +146,9 @@ void staffactivated_spawnMapEventDebris(GameObject* obj) {
 
         zero = 0.0f;
         scarabIndex = 0;
-        while (scarabIndex < placement->scarabCount) {
+        while (scarabIndex < placement->spawnCount) {
             scarabPlacement = (ScarabPlacement*)Obj_AllocObjectSetup(
-                SCARAB_PLACEMENT_SIZE, gStaffActivatedScarabObjectIds[placement->scarabObjectSet]);
+                SCARAB_PLACEMENT_SIZE, gStaffActivatedScarabObjectIds[placement->variant]);
             scarabPlacement->base.posX = state->targetX;
             scarabPlacement->base.posY = obj->anim.localPosY;
             scarabPlacement->base.posZ = state->targetZ;
@@ -325,7 +325,7 @@ void staffactivated_update(GameObject* obj) {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
         }
         isActive = 0;
-        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->primaryGameBit));
         if (gameBit == STAFF_ACTIVATED_GAME_BIT_NONE || mainGetBit(gameBit) != 0) {
             isActive = 1;
         }
@@ -349,7 +349,7 @@ void staffactivated_update(GameObject* obj) {
         break;
     default:
         isActive = 0;
-        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit));
+        gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->primaryGameBit));
         if (gameBit == STAFF_ACTIVATED_GAME_BIT_NONE || mainGetBit(gameBit) != 0) {
             isActive = 1;
         }
@@ -428,15 +428,15 @@ void staffactivated_init(GameObject* obj, StaffActivatedPlacement* placement) {
     }
 
     flags = &state->flags;
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)) > 0) {
-        flags->active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activeGameBit)));
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->primaryGameBit)) > 0) {
+        flags->active = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->primaryGameBit)));
     } else {
         flags->active = 1;
     }
     flags->unk4 = 0;
 
-    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)) > 0) {
-        if ((flags->locked = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->lockGameBit)))) != 0) {
+    if (ObjAnim_ReadPlacementS16(&obj->anim, &(placement->secondaryGameBit)) > 0) {
+        if ((flags->locked = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->secondaryGameBit)))) != 0) {
             switch (placement->mode) {
             case STAFF_ACTIVATED_MODE_HIT_REACTION:
                 ObjAnim_SetMoveProgress(&obj->anim, lbl_803E3BBC);
@@ -453,19 +453,28 @@ void staffactivated_init(GameObject* obj, StaffActivatedPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gStaffActivatedObjDescriptorInitAdapter, staffactivated_init, obj, placement)
+OBJECT_FREE_ADAPTER(gStaffActivatedObjDescriptorFreeAdapter, staffactivated_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gStaffActivatedObjDescriptorTypeIdAdapter, staffactivated_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gStaffActivatedObjDescriptorExtraSizeAdapter, staffactivated_getExtraSize)
+
 ObjectDescriptor gStaffActivatedObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gStaffActivatedObjDescriptorInitAdapter,
+    staffactivated_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)staffactivated_init,
-    (ObjectDescriptorCallback)staffactivated_update,
-    0,
-    (ObjectDescriptorCallback)staffactivated_render,
-    (ObjectDescriptorCallback)staffactivated_free,
-    (ObjectDescriptorCallback)staffactivated_getObjectTypeId,
-    staffactivated_getExtraSize,
+    staffactivated_render,
+    gStaffActivatedObjDescriptorFreeAdapter,
+    gStaffActivatedObjDescriptorTypeIdAdapter,
+    gStaffActivatedObjDescriptorExtraSizeAdapter,
 };

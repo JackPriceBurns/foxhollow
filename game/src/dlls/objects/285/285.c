@@ -15,10 +15,10 @@
 #include "main/objfx.h"
 #include "main/object_render.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects.h"
-#include "main/dll/player_staff_api.h"
-#include "main/gamebits_api.h"
+#include "main/dll/player_staff.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 
 #define TREASURE_CHEST_OBJECT_TYPE_ID 0
@@ -203,19 +203,30 @@ void TreasureChest_release(void) {
 void TreasureChest_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gTreasureChestObjDescriptorInitAdapter, TreasureChest_init, obj)
+OBJECT_FREE_ADAPTER(gTreasureChestObjDescriptorFreeAdapter, TreasureChest_free)
+OBJECT_TYPE_ID_ADAPTER(gTreasureChestObjDescriptorTypeIdAdapter, TreasureChest_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTreasureChestObjDescriptorExtraSizeAdapter, TreasureChest_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTreasureChestObjDescriptorAcquire, TreasureChest_initialise)
+
 ObjectDescriptor gTreasureChestObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gTreasureChestObjDescriptorAcquire,
+        TreasureChest_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)TreasureChest_initialise,
-    (ObjectDescriptorCallback)TreasureChest_release,
-    0,
-    (ObjectDescriptorCallback)TreasureChest_init,
-    (ObjectDescriptorCallback)TreasureChest_update,
-    (ObjectDescriptorCallback)TreasureChest_hitDetect,
-    (ObjectDescriptorCallback)TreasureChest_render,
-    (ObjectDescriptorCallback)TreasureChest_free,
-    (ObjectDescriptorCallback)TreasureChest_getObjectTypeId,
-    TreasureChest_getExtraSize,
+    gTreasureChestObjDescriptorInitAdapter,
+    TreasureChest_update,
+    TreasureChest_hitDetect,
+    TreasureChest_render,
+    gTreasureChestObjDescriptorFreeAdapter,
+    gTreasureChestObjDescriptorTypeIdAdapter,
+    gTreasureChestObjDescriptorExtraSizeAdapter,
 };

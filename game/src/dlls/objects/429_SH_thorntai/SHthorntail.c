@@ -1,13 +1,11 @@
 #include "dlls/objects/429_SH_thorntai.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "dolphin/os.h"
 #include "dolphin/os/OSReport.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/audio/sfx.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
 #include "main/dll/curves_collision_state.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/dll/dll_00C9_enemy.h"
@@ -18,12 +16,12 @@
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/model.h"
-#include "main/newshadows_audio_api.h"
+#include "main/newshadows_audio.h"
 #include "main/obj_path.h"
 #include "main/obj_trigger.h"
 #include "main/objHitReact.h"
 #include "main/object_render.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/sky_interface.h"
@@ -542,8 +540,8 @@ static f32 shThorntail_xzDistanceSquared(const Vec3f* a, const Vec3f* b) {
 }
 
 static f32 shThorntail_homeDistanceSquared(const GameObject* obj, const SHthorntailPlacement* placement) {
-    f32 dx = obj->anim.worldPos.x - placement->base.posX;
-    f32 dz = obj->anim.worldPos.z - placement->base.posZ;
+    f32 dx = obj->anim.worldPosX - placement->base.posX;
+    f32 dz = obj->anim.worldPosZ - placement->base.posZ;
 
     return dx * dx + dz * dz;
 }
@@ -576,7 +574,7 @@ static int shThorntail_hasNearbyPendingEventObject(GameObject* obj) {
                 continue;
             }
             enemy_setTrackedObj(objects[i], obj);
-            if (shThorntail_xzDistanceSquared(&objects[i]->anim.worldPos, &obj->anim.worldPos) < 40000.0f &&
+            if (shThorntail_xzDistanceSquared((Vec3f*)&objects[i]->anim.worldPosX, (Vec3f*)&obj->anim.worldPosX) < 40000.0f &&
                 mainGetBit(shThorntail_getLinkedGameBit(objects[i])) == 0) {
                 linkedEventPending = 1;
             }
@@ -621,7 +619,7 @@ static u32 shThorntail_chooseNextState(GameObject* obj, SHthorntailState* state,
     if (placement->leashRadius != 0) {
         GameObject* player = Obj_GetPlayerObject();
 
-        if (shThorntail_xzDistanceSquared(&obj->anim.worldPos, &player->anim.worldPos) < 10000.0f) {
+        if (shThorntail_xzDistanceSquared((Vec3f*)&obj->anim.worldPosX, (Vec3f*)&player->anim.worldPosX) < 10000.0f) {
             if (state->behaviorState >= SH_THORNTAIL_STATE_MOVE_2 &&
                 state->behaviorState <= SH_THORNTAIL_STATE_MOVE_5) {
                 return SH_THORNTAIL_STATE_TURN_HOME;
@@ -632,14 +630,14 @@ static u32 shThorntail_chooseNextState(GameObject* obj, SHthorntailState* state,
         if (shThorntail_homeDistanceSquared(obj, placement) >
             (f32)((s32)placement->leashRadius * placement->leashRadius)) {
             s16 homeAngle =
-                (s16)getAngle(obj->anim.localPos.x - placement->base.posX, obj->anim.localPos.z - placement->base.posZ);
+                (s16)getAngle(obj->anim.localPosX - placement->base.posX, obj->anim.localPosZ - placement->base.posZ);
             s16 angleDelta = homeAngle - (u16)obj->anim.rotX;
             int absoluteAngleDelta = angleDelta >= 0 ? angleDelta : -angleDelta;
 
             if (absoluteAngleDelta > 0x20) {
                 OSReport(sSHthorntailAngleYawDebug,
-                         (u16)getAngle(obj->anim.localPos.x - placement->base.posX,
-                                       obj->anim.localPos.z - placement->base.posZ),
+                         (u16)getAngle(obj->anim.localPosX - placement->base.posX,
+                                       obj->anim.localPosZ - placement->base.posZ),
                          obj->anim.rotX);
                 if (state->behaviorState >= SH_THORNTAIL_STATE_MOVE_2 &&
                     state->behaviorState <= SH_THORNTAIL_STATE_MOVE_5) {
@@ -652,7 +650,7 @@ static u32 shThorntail_chooseNextState(GameObject* obj, SHthorntailState* state,
         return SH_THORNTAIL_STATE_CLOSE_ATTACK;
     }
 
-    if (ViewFrustum_IsSphereVisible(&obj->anim.localPos.x, obj->anim.hitboxScale * obj->anim.rootMotionScale) == 0) {
+    if (ViewFrustum_IsSphereVisible(&obj->anim.localPosX, obj->anim.hitboxScale * obj->anim.rootMotionScale) == 0) {
         return SH_THORNTAIL_STATE_CLOSE_ATTACK;
     }
     if (state->behaviorState >= SH_THORNTAIL_STATE_MOVE_2 && state->behaviorState <= SH_THORNTAIL_STATE_MOVE_5) {
@@ -852,7 +850,7 @@ static void shThorntail_updateRootControlMode2(GameObject* obj, SHthorntailState
 static void shThorntail_updateLevelControlMode1(GameObject* obj, SHthorntailState* state,
                                                 const SHthorntailPlacement* placement) {
     GameObject* player = Obj_GetPlayerObject();
-    u8 closeToPlayer = shThorntail_xzDistanceSquared(&obj->anim.worldPos, &player->anim.worldPos) < 10000.0f;
+    u8 closeToPlayer = shThorntail_xzDistanceSquared((Vec3f*)&obj->anim.worldPosX, (Vec3f*)&player->anim.worldPosX) < 10000.0f;
 
     state->impactSequence = &sSHthorntailLevelMode1Sequence;
     if (placement->impactSequenceVariant == 0) {
@@ -1103,10 +1101,10 @@ static void shThorntail_update(GameObject* obj) {
         }
         negSinFacing = -mathSinf((3.1415927f * (f32)(s32)state->storedFacingAngle) / 32768.0f);
         negCosFacing = -mathCosf((3.1415927f * (f32)(s32)state->storedFacingAngle) / 32768.0f);
-        obj->anim.localPos.x += negSinFacing * -animEvents.rootDeltaZ;
-        obj->anim.localPos.z += negCosFacing * -animEvents.rootDeltaZ;
-        obj->anim.localPos.x += negCosFacing * -animEvents.rootDeltaX;
-        obj->anim.localPos.z += negSinFacing * animEvents.rootDeltaX;
+        obj->anim.localPosX += negSinFacing * -animEvents.rootDeltaZ;
+        obj->anim.localPosZ += negCosFacing * -animEvents.rootDeltaZ;
+        obj->anim.localPosX += negCosFacing * -animEvents.rootDeltaX;
+        obj->anim.localPosZ += negSinFacing * animEvents.rootDeltaX;
         obj->anim.rotX += animEvents.rootPitch;
     }
 
@@ -1140,9 +1138,9 @@ static void shThorntail_update(GameObject* obj) {
     if (placement->leashRadius != 0 &&
         shThorntail_homeDistanceSquared(obj, placement) >
             (f32)((u32)placement->leashRadius * (u32)placement->leashRadius) &&
-        ViewFrustum_IsSphereVisible(&obj->anim.localPos.x, obj->anim.hitboxScale * obj->anim.rootMotionScale) == 0) {
+        ViewFrustum_IsSphereVisible(&obj->anim.localPosX, obj->anim.hitboxScale * obj->anim.rootMotionScale) == 0) {
         obj->anim.rotX =
-            getAngle(obj->anim.localPos.x - placement->base.posX, obj->anim.localPos.z - placement->base.posZ);
+            getAngle(obj->anim.localPosX - placement->base.posX, obj->anim.localPosZ - placement->base.posZ);
     }
 
     state->pathState.subtype = 1;
@@ -1205,11 +1203,19 @@ static void shThorntail_init(GameObject* obj, const SHthorntailPlacement* placem
     objAddObjectType(obj, SH_THORNTAIL_OBJECT_GROUP);
 }
 
+OBJECT_INIT_ADAPTER(gSH_thorntailObjDescriptorInitAdapter, shThorntail_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSH_thorntailObjDescriptorFreeAdapter, shThorntail_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gSH_thorntailObjDescriptorExtraSizeAdapter, shThorntail_getExtraSize)
+
 ObjectDescriptor gSH_thorntailObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)shThorntail_init,
-    .update = (ObjectDescriptorCallback)shThorntail_update,
-    .render = (ObjectDescriptorCallback)shThorntail_render,
-    .free = (ObjectDescriptorCallback)shThorntail_free,
-    .getExtraSize = shThorntail_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gSH_thorntailObjDescriptorInitAdapter,
+    .update = shThorntail_update,
+    .render = shThorntail_render,
+    .free = gSH_thorntailObjDescriptorFreeAdapter,
+    .getExtraSize = gSH_thorntailObjDescriptorExtraSizeAdapter,
+};;

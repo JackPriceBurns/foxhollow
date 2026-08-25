@@ -4,9 +4,7 @@
 #include "main/dll/expgfx_interface.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/VF/dll_021E_vfpblock1.h"
 
 int VFP_Block1_getExtraSize(void) {
@@ -55,19 +53,32 @@ void VFP_Block1_release(void) {
 void VFP_Block1_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_Block1ObjDescriptorInitAdapter, VFP_Block1_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_Block1ObjDescriptorHitDetectAdapter, VFP_Block1_hitDetect)
+OBJECT_RENDER_ADAPTER(gVFP_Block1ObjDescriptorRenderAdapter, VFP_Block1_render)
+OBJECT_FREE_ADAPTER(gVFP_Block1ObjDescriptorFreeAdapter, VFP_Block1_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_Block1ObjDescriptorTypeIdAdapter, VFP_Block1_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_Block1ObjDescriptorExtraSizeAdapter, VFP_Block1_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_Block1ObjDescriptorAcquire, VFP_Block1_initialise)
+
 ObjectDescriptor gVFP_Block1ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_Block1ObjDescriptorAcquire,
+        VFP_Block1_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_Block1_initialise,
-    (ObjectDescriptorCallback)VFP_Block1_release,
-    0,
-    (ObjectDescriptorCallback)VFP_Block1_init,
-    (ObjectDescriptorCallback)VFP_Block1_update,
-    (ObjectDescriptorCallback)VFP_Block1_hitDetect,
-    (ObjectDescriptorCallback)VFP_Block1_render,
-    (ObjectDescriptorCallback)VFP_Block1_free,
-    (ObjectDescriptorCallback)VFP_Block1_getObjectTypeId,
-    VFP_Block1_getExtraSize,
+    gVFP_Block1ObjDescriptorInitAdapter,
+    VFP_Block1_update,
+    gVFP_Block1ObjDescriptorHitDetectAdapter,
+    gVFP_Block1ObjDescriptorRenderAdapter,
+    gVFP_Block1ObjDescriptorFreeAdapter,
+    gVFP_Block1ObjDescriptorTypeIdAdapter,
+    gVFP_Block1ObjDescriptorExtraSizeAdapter,
 };

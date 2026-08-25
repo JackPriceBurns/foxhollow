@@ -24,9 +24,9 @@
 #include "main/objfx.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gameloop_gamebit_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/audio/sfx.h"
+#include "main/gameloop_gamebit.h"
+#include "main/maketex_timer.h"
 #include "sys/objects/lifecycle.h"
 
 /* Per-frame angular step bounds (1/65536-turn units). */
@@ -48,7 +48,7 @@ int firefly_animEventCallback(GameObject* obj)
     return 0;
 }
 
-void firefly_initFlightRec(GameObject* obj, FireFlyState* record)
+void firefly_initFlightRec(GameObject* obj, FireFlyFlightState* record)
 {
     record->splineX[0] = obj->anim.localPosX;
     record->splineY[0] = obj->anim.localPosY;
@@ -77,10 +77,10 @@ void firefly_initFlightRec(GameObject* obj, FireFlyState* record)
     record->posY = obj->anim.localPosY;
     record->posZ = obj->anim.localPosZ;
     record->firstFrame = 1;
-    record->unk78 = 1200.0f;
+    record->unk74 = 1200.0f;
 }
 
-void firefly_pickWanderTarget(GameObject* obj, FireFlyState* record)
+void firefly_pickWanderTarget(GameObject* obj, FireFlyFlightState* record)
 {
     struct
     {
@@ -126,7 +126,7 @@ void firefly_pickWanderTarget(GameObject* obj, FireFlyState* record)
     record->targetZ += record->posZ;
 }
 
-void firefly_shiftPathHistory(GameObject* obj, FireFlyState* record)
+void firefly_shiftPathHistory(GameObject* obj, FireFlyFlightState* record)
 {
     record->splineX[0] = record->splineX[1];
     record->splineY[0] = record->splineY[1];
@@ -145,7 +145,6 @@ void firefly_shiftPathHistory(GameObject* obj, FireFlyState* record)
 
 s16 gFireFlyDespawnThreshold = 0xAA;
 
-/* state->kind - trail/near particle-fx colour */
 #define FIREFLY_KIND_BLUE_MAIN       1
 #define FIREFLY_KIND_ORANGE_NEAR     3
 #define FIREFLY_KIND_BLUE_NEAR       4
@@ -181,38 +180,38 @@ void firefly_activeTick(GameObject* obj)
             newAlpha = FIREFLY_ALPHA_OPAQUE;
         objAnim->alpha = newAlpha;
     }
-    if (state->splineT > 1.0f)
+    if (state->flight.splineT > 1.0f)
     {
-        state->splineT = state->splineT - 1.0f;
-        if (state->pathAge >= 4)
+        state->flight.splineT = state->flight.splineT - 1.0f;
+        if (state->flight.pathAge >= 4)
         {
-            state->pathAge += 1;
+            state->flight.pathAge += 1;
         }
         else
         {
-            firefly_pickWanderTarget(obj, state);
+            firefly_pickWanderTarget(obj, &state->flight);
         }
-        state->splineX[0] = state->splineX[1];
-        state->splineY[0] = state->splineY[1];
-        state->splineZ[0] = state->splineZ[1];
-        state->splineX[1] = state->splineX[2];
-        state->splineY[1] = state->splineY[2];
-        state->splineZ[1] = state->splineZ[2];
-        state->splineX[2] = state->splineX[3];
-        state->splineY[2] = state->splineY[3];
-        state->splineZ[2] = state->splineZ[3];
-        state->splineSpeed = 0.00015f * (f32)randomGetRange(0xa0, 0xb4);
-        state->splineX[3] = state->targetX;
-        state->splineY[3] = state->targetY;
-        state->splineZ[3] = state->targetZ;
+        state->flight.splineX[0] = state->flight.splineX[1];
+        state->flight.splineY[0] = state->flight.splineY[1];
+        state->flight.splineZ[0] = state->flight.splineZ[1];
+        state->flight.splineX[1] = state->flight.splineX[2];
+        state->flight.splineY[1] = state->flight.splineY[2];
+        state->flight.splineZ[1] = state->flight.splineZ[2];
+        state->flight.splineX[2] = state->flight.splineX[3];
+        state->flight.splineY[2] = state->flight.splineY[3];
+        state->flight.splineZ[2] = state->flight.splineZ[3];
+        state->flight.splineSpeed = 0.00015f * (f32)randomGetRange(0xa0, 0xb4);
+        state->flight.splineX[3] = state->flight.targetX;
+        state->flight.splineY[3] = state->flight.targetY;
+        state->flight.splineZ[3] = state->flight.targetZ;
     }
-    (obj)->anim.localPosX = Curve_EvalBSpline(state->splineX, state->splineT, 0);
-    (obj)->anim.localPosY = Curve_EvalBSpline(state->splineY, state->splineT, 0);
-    (obj)->anim.localPosZ = Curve_EvalBSpline(state->splineZ, state->splineT, 0);
-    state->splineT = state->splineSpeed * timeDelta + state->splineT;
+    (obj)->anim.localPosX = Curve_EvalBSpline(state->flight.splineX, state->flight.splineT, 0);
+    (obj)->anim.localPosY = Curve_EvalBSpline(state->flight.splineY, state->flight.splineT, 0);
+    (obj)->anim.localPosZ = Curve_EvalBSpline(state->flight.splineZ, state->flight.splineT, 0);
+    state->flight.splineT = state->flight.splineSpeed * timeDelta + state->flight.splineT;
     (obj)->anim.rotX = getAngle((obj)->anim.localPosX - (obj)->anim.previousLocalPosX,
                                 (obj)->anim.localPosZ - (obj)->anim.previousLocalPosZ);
-    if (state->kind == FIREFLY_KIND_BLUE_MAIN || state->kind == FIREFLY_KIND_BLUE_NEAR)
+    if (state->flight.kind == FIREFLY_KIND_BLUE_MAIN || state->flight.kind == FIREFLY_KIND_BLUE_NEAR)
     {
         (*gPartfxInterface)
             ->spawnObject((void*)obj, FIREFLY_PARTFX_BLUE_TRAIL, NULL, FIREFLY_PARTFX_KIND,
@@ -225,34 +224,34 @@ void firefly_activeTick(GameObject* obj)
                           FIREFLY_PARTFX_INVALID_HANDLE, NULL);
     }
     /* Compare against the player's world position. */
-    if (Vec_xzDistance((f32*)(player + 0x18), &(obj)->anim.placement->posX) < state->playerRadius)
+    if (Vec_xzDistance((f32*)(player + 0x18), &(obj)->anim.placement->posX) < state->flight.playerRadius)
     {
         f32 maxAlpha;
         f32 curAlpha;
-        if (state->kind == FIREFLY_KIND_BLUE_NEAR)
+        if (state->flight.kind == FIREFLY_KIND_BLUE_NEAR)
         {
             (*gPartfxInterface)
                 ->spawnObject((void*)obj, FIREFLY_PARTFX_BLUE_NEAR, NULL, FIREFLY_PARTFX_KIND,
                               FIREFLY_PARTFX_INVALID_HANDLE, NULL);
         }
-        else if (state->kind == FIREFLY_KIND_ORANGE_NEAR)
+        else if (state->flight.kind == FIREFLY_KIND_ORANGE_NEAR)
         {
             (*gPartfxInterface)
                 ->spawnObject((void*)obj, FIREFLY_PARTFX_ORANGE_NEAR, NULL, FIREFLY_PARTFX_KIND,
                               FIREFLY_PARTFX_INVALID_HANDLE, NULL);
         }
-        else if (state->kind == FIREFLY_KIND_ORANGE_ALT_NEAR)
+        else if (state->flight.kind == FIREFLY_KIND_ORANGE_ALT_NEAR)
         {
             (*gPartfxInterface)
                 ->spawnObject((void*)obj, FIREFLY_PARTFX_ORANGE_NEAR, NULL, FIREFLY_PARTFX_KIND,
                               FIREFLY_PARTFX_INVALID_HANDLE, NULL);
         }
-        if ((curAlpha = state->proximityAlpha) < (maxAlpha = 0.003f))
+        if ((curAlpha = state->flight.proximityAlpha) < (maxAlpha = 0.003f))
         {
-            state->proximityAlpha += 0.00001f;
-            if (state->proximityAlpha > maxAlpha)
+            state->flight.proximityAlpha += 0.00001f;
+            if (state->flight.proximityAlpha > maxAlpha)
             {
-                state->proximityAlpha = maxAlpha;
+                state->flight.proximityAlpha = maxAlpha;
             }
         }
     }
@@ -261,12 +260,12 @@ void firefly_activeTick(GameObject* obj)
         f32 minAlpha;
         f32 curAlpha;
 
-        if ((curAlpha = state->proximityAlpha) > (minAlpha = 0.001f))
+        if ((curAlpha = state->flight.proximityAlpha) > (minAlpha = 0.001f))
         {
-            state->proximityAlpha = curAlpha - 0.00001f;
-            if (state->proximityAlpha < minAlpha)
+            state->flight.proximityAlpha = curAlpha - 0.00001f;
+            if (state->flight.proximityAlpha < minAlpha)
             {
-                state->proximityAlpha = minAlpha;
+                state->flight.proximityAlpha = minAlpha;
             }
         }
     }
@@ -290,7 +289,7 @@ void firefly_activeTick(GameObject* obj)
                     {
                         FireFlyState* st = (obj)->extra;
                         (obj)->anim.flags = (s16)((obj)->anim.flags | OBJANIM_FLAG_HIDDEN);
-                        st->despawnTimer = sFireFlyDespawnDelay[0];
+                        st->flight.despawnTimer = sFireFlyDespawnDelay[0];
                         gameBitIncrement(FIREFLY_COLLECT_COUNT_BIT_A);
                         gameBitIncrement(FIREFLY_COLLECT_COUNT_BIT_B);
                         Sfx_PlayFromObject(obj, SFXTRIG_lockoff22);
@@ -344,7 +343,7 @@ void firefly_update(GameObject* obj)
         {
             FireFlyState* st = obj->extra;
             obj->anim.flags = (s16)(obj->anim.flags | OBJANIM_FLAG_HIDDEN);
-            st->despawnTimer = sFireFlyDespawnDelay[0];
+            st->flight.despawnTimer = sFireFlyDespawnDelay[0];
             gameBitIncrement(FIREFLY_COLLECT_COUNT_BIT_A);
             gameBitIncrement(FIREFLY_COLLECT_COUNT_BIT_B);
             Sfx_PlayFromObject(obj, SFXTRIG_lockoff22);
@@ -353,7 +352,7 @@ void firefly_update(GameObject* obj)
         }
     }
 
-    if (state->activeFlags.active == 0)
+    if (state->flight.activeFlags.active == 0)
     {
         isActive = 0;
         if ((ObjAnim_ReadPlacementS16(&obj->anim, &(def->requiredGameBit)) == -1) ||
@@ -361,26 +360,26 @@ void firefly_update(GameObject* obj)
         {
             isActive = 1;
         }
-        state->activeFlags.active = isActive;
-        if (state->activeFlags.active != 0)
+        state->flight.activeFlags.active = isActive;
+        if (state->flight.activeFlags.active != 0)
         {
             state->light = modelLightStruct_createPointLight((void*)obj, 100, 0xFF, 100, 0);
         }
     }
     else
     {
-        if (timerCountDown(&state->lifeTimer) != 0)
+        if (timerCountDown(&state->flight.lifeTimer) != 0)
         {
-            state->despawnTimer = sFireFlyDespawnDelay[0];
+            state->flight.despawnTimer = sFireFlyDespawnDelay[0];
         }
-        if (state->despawnTimer > 0.0f)
+        if (state->flight.despawnTimer > 0.0f)
         {
-            state->despawnTimer -= timeDelta;
-            if (state->despawnTimer > gFireFlyDespawnThreshold) /* 170 */
+            state->flight.despawnTimer -= timeDelta;
+            if (state->flight.despawnTimer > gFireFlyDespawnThreshold)
             {
                 itemPickupDoParticleFx(obj, 2.0f, 4, 5);
             }
-            if (state->despawnTimer <= 0.0f)
+            if (state->flight.despawnTimer <= 0.0f)
             {
                 Obj_FreeObject(obj);
             }
@@ -397,14 +396,14 @@ void firefly_init(GameObject* obj, FireFlyMapData* mapData)
     FireFlyState* state;
 
     state = (obj)->extra;
-    firefly_initFlightRec(obj, state);
+    firefly_initFlightRec(obj, &state->flight);
     (obj)->anim.alpha = 0;
     (obj)->animEventCallback = firefly_animEventCallback;
     ObjMsg_AllocQueue(obj, 1);
-    storeZeroToFloatParam(&state->lifeTimer);
+    storeZeroToFloatParam(&state->flight.lifeTimer);
     if (ObjAnim_ReadPlacementS16(&obj->anim, &(mapData->variantParam)) == 0x7f)
     {
-        s16toFloat(&state->lifeTimer, 0xe10);
+        s16toFloat(&state->flight.lifeTimer, 0xe10);
     }
 }
 
@@ -416,19 +415,32 @@ void firefly_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gFireFlyObjDescriptorInitAdapter, firefly_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gFireFlyObjDescriptorHitDetectAdapter, firefly_hitDetect)
+OBJECT_RENDER_ADAPTER(gFireFlyObjDescriptorRenderAdapter, firefly_render)
+OBJECT_FREE_ADAPTER(gFireFlyObjDescriptorFreeAdapter, firefly_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFireFlyObjDescriptorTypeIdAdapter, firefly_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFireFlyObjDescriptorExtraSizeAdapter, firefly_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gFireFlyObjDescriptorAcquire, firefly_initialise)
+
 ObjectDescriptor gFireFlyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gFireFlyObjDescriptorAcquire,
+        firefly_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)firefly_initialise,
-    (ObjectDescriptorCallback)firefly_release,
-    0,
-    (ObjectDescriptorCallback)firefly_init,
-    (ObjectDescriptorCallback)firefly_update,
-    (ObjectDescriptorCallback)firefly_hitDetect,
-    (ObjectDescriptorCallback)firefly_render,
-    (ObjectDescriptorCallback)firefly_free,
-    (ObjectDescriptorCallback)firefly_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)firefly_getExtraSize,
+    gFireFlyObjDescriptorInitAdapter,
+    firefly_update,
+    gFireFlyObjDescriptorHitDetectAdapter,
+    gFireFlyObjDescriptorRenderAdapter,
+    gFireFlyObjDescriptorFreeAdapter,
+    gFireFlyObjDescriptorTypeIdAdapter,
+    gFireFlyObjDescriptorExtraSizeAdapter,
 };

@@ -2,9 +2,9 @@
  * DLL 81 / 0x51 - cannon camera mode.
  */
 #include "main/dll/dll_0051_cameramodecannon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/mm.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 
 CameraModeCannonState* gCameraModeCannonState;
 
@@ -49,10 +49,10 @@ void CameraModeCannon_release(void) {
 void CameraModeCannon_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeCannonDescriptorAcquire, CameraModeCannon_initialise)
+
 CameraModeCannonDescriptor gCameraModeCannonDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeCannon_initialise,
-    CameraModeCannon_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeCannonDescriptorAcquire, CameraModeCannon_release },
     NULL,
     CameraModeCannon_init,
     CameraModeCannon_update,

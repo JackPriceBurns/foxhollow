@@ -2,6 +2,7 @@
 #define MAIN_DLL_DLL_0031_MINIMAP_H_
 
 #include "global.h"
+#include "main/resource.h"
 
 typedef struct MinimapInterfaceVTable
 {
@@ -15,6 +16,8 @@ typedef struct MinimapInterface
 {
     MinimapInterfaceVTable* vtable;
 } MinimapInterface;
+
+RESOURCE_DESCRIPTOR_TYPE(MinimapResourceDescriptor, MinimapInterfaceVTable);
 
 STATIC_ASSERT(offsetof(MinimapInterfaceVTable, frameStart) == 0x04);
 STATIC_ASSERT(offsetof(MinimapInterfaceVTable, update) == 0x08);

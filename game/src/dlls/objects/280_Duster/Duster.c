@@ -1,6 +1,6 @@
 #include "dlls/objects/280_Duster.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -8,12 +8,12 @@
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objHitReact_types.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/obj_message.h"
 #include "main/objhits.h"
 
@@ -274,19 +274,26 @@ void duster_init(GameObject* obj, DusterPlacement* placement) {
     obj->animEventCallback = duster_SeqFn;
 }
 
+OBJECT_INIT_ADAPTER(gDusterObjDescriptorInitAdapter, duster_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gDusterObjDescriptorExtraSizeAdapter, duster_getExtraSize)
+
 ObjectDescriptor gDusterObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDusterObjDescriptorInitAdapter,
+    duster_update,
+    duster_hitDetect,
+    duster_render,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)duster_init,
-    (ObjectDescriptorCallback)duster_update,
-    (ObjectDescriptorCallback)duster_hitDetect,
-    (ObjectDescriptorCallback)duster_render,
-    0,
-    0,
-    duster_getExtraSize,
+    gDusterObjDescriptorExtraSizeAdapter,
 };

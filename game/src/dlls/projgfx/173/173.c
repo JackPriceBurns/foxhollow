@@ -20,10 +20,10 @@ void projmagicemmit1_release(void) {
 void projmagicemmit1_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjmagicemmit1ResourceDescriptorAcquire, projmagicemmit1_initialise)
+
 Projmagicemmit1ResourceDescriptor gProjmagicemmit1ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projmagicemmit1_initialise,
-    projmagicemmit1_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjmagicemmit1ResourceDescriptorAcquire, projmagicemmit1_release },
     NULL,
     projmagicemmit1_doUnsupported,
 };

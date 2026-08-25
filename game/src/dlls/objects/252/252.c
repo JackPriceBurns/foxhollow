@@ -6,11 +6,11 @@
  * result through game bits.
  */
 #include "dlls/objects/252.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/vecmath.h"
 
 #define DLL_FC_TARGET_INTERACT_FLAG 0x20
@@ -142,19 +142,30 @@ void dll_FC_release_nop(void) {
 void dll_FC_initialise_nop(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDllFCObjDescriptorInitAdapter, dll_FC_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDllFCObjDescriptorFreeAdapter, dll_FC_free_nop)
+OBJECT_TYPE_ID_ADAPTER(gDllFCObjDescriptorTypeIdAdapter, dll_FC_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllFCObjDescriptorExtraSizeAdapter, dll_FC_getExtraSize_ret_8)
+
+RESOURCE_ACQUIRE_ADAPTER(gDllFCObjDescriptorAcquire, dll_FC_initialise_nop)
+
 ObjectDescriptor gDllFCObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)dll_FC_initialise_nop,  /* initialise */
-    (ObjectDescriptorCallback)dll_FC_release_nop,     /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)dll_FC_init,            /* init */
-    (ObjectDescriptorCallback)dll_FC_update,          /* update */
-    (ObjectDescriptorCallback)dll_FC_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)dll_FC_render,          /* render */
-    (ObjectDescriptorCallback)dll_FC_free_nop,        /* free */
-    (ObjectDescriptorCallback)dll_FC_getObjectTypeId, /* getObjectTypeId */
-    dll_FC_getExtraSize_ret_8,                        /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDllFCObjDescriptorAcquire,
+        dll_FC_release_nop,
+    },
+    0,
+    gDllFCObjDescriptorInitAdapter,
+    dll_FC_update,
+    dll_FC_hitDetect,
+    dll_FC_render,
+    gDllFCObjDescriptorFreeAdapter,
+    gDllFCObjDescriptorTypeIdAdapter,
+    gDllFCObjDescriptorExtraSizeAdapter,
 };

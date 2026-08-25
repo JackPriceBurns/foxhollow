@@ -6,14 +6,14 @@
  */
 #include "dlls/objects/392_CClightfoot.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_00C9_enemy.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_target.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_link.h"
 #include "main/obj_trigger.h"
 #include "main/objfx.h"
@@ -212,7 +212,7 @@ void ccLightfoot_update(GameObject* obj) {
     } else {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
     }
-    targetActorAHandle = state->targetActorA;
+    targetActorAHandle = state->targetActors[0];
     if (targetActorAHandle != 0) {
         do {
             if (!(enemy_getHealthFraction((GameObject*)targetActorAHandle) > 0.0f)) {
@@ -225,7 +225,7 @@ void ccLightfoot_update(GameObject* obj) {
                                   : 1;
             }
             if (targetValid != 0) {
-                candidateTarget = state->targetActorB;
+                candidateTarget = state->targetActors[1];
                 if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                     targetValid = 0;
                 } else {
@@ -238,21 +238,21 @@ void ccLightfoot_update(GameObject* obj) {
                 if (targetValid != 0) {
                     distanceSquared =
                         getXZDistanceSquared(&state->playerObject->anim.worldPosX,
-                                      &state->targetActorB->anim.worldPosX);
+                                      &state->targetActors[1]->anim.worldPosX);
                     if (getXZDistanceSquared(&state->playerObject->anim.worldPosX,
-                                      &state->targetActorA->anim.worldPosX) <
+                                      &state->targetActors[0]->anim.worldPosX) <
                         distanceSquared) {
-                        nearTarget = state->targetActorA;
-                        farTarget = state->targetActorB;
+                        nearTarget = state->targetActors[0];
+                        farTarget = state->targetActors[1];
                     } else {
-                        nearTarget = state->targetActorB;
-                        farTarget = state->targetActorA;
+                        nearTarget = state->targetActors[1];
+                        farTarget = state->targetActors[0];
                     }
                     if ((getXZDistanceSquared(&obj->anim.worldPosX,
                                        &state->playerObject->anim.worldPosX) <
                              CC_LIGHTFOOT_ALERT_DISTANCE_SQUARED ||
-                         (void*)playerGetTargetObject((GameObject*)state->playerObject) == (void*)state->targetActorA ||
-                         (void*)playerGetTargetObject((GameObject*)state->playerObject) == (void*)state->targetActorB) &&
+                         (void*)playerGetTargetObject((GameObject*)state->playerObject) == (void*)state->targetActors[0] ||
+                         (void*)playerGetTargetObject((GameObject*)state->playerObject) == (void*)state->targetActors[1]) &&
                         playerIsDisguised((GameObject*)state->playerObject) == 0) {
                         if (playerGetTargetObject(state->playerObject) == farTarget) {
                             GameObject* tmp = farTarget;
@@ -272,17 +272,17 @@ void ccLightfoot_update(GameObject* obj) {
                             enemy_setTrackedObj(targetActor, obj);
                         }
                         if (targetDistanceSquares[0] < targetDistanceSquares[1]) {
-                            targetObject = state->targetActorA;
+                            targetObject = state->targetActors[0];
                             distanceSquared = targetDistanceSquares[0];
                         } else {
-                            targetObject = state->targetActorB;
+                            targetObject = state->targetActors[1];
                             distanceSquared = targetDistanceSquares[1];
                         }
                     }
                     break;
                 }
             }
-            candidateTarget = state->targetActorA;
+            candidateTarget = state->targetActors[0];
             if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                 targetValid = 0;
             } else {
@@ -293,9 +293,9 @@ void ccLightfoot_update(GameObject* obj) {
                                   : 1;
             }
             if (targetValid != 0) {
-                singleTarget = state->targetActorA;
+                singleTarget = state->targetActors[0];
             }
-            candidateTarget = state->targetActorB;
+            candidateTarget = state->targetActors[1];
             if (!(enemy_getHealthFraction((GameObject*)candidateTarget) > 0.0f)) {
                 targetValid = 0;
             } else {
@@ -306,7 +306,7 @@ void ccLightfoot_update(GameObject* obj) {
                                   : 1;
             }
             if (targetValid != 0) {
-                singleTarget = state->targetActorB;
+                singleTarget = state->targetActors[1];
             }
             if (singleTarget != 0) {
                 distanceSquared =
@@ -363,8 +363,8 @@ void ccLightfoot_update(GameObject* obj) {
                 ObjLink_AttachChild(obj, state->attachedWeapon, 0);
             }
             state->playerObject = Obj_GetPlayerObject();
-            state->targetActorA = ObjList_FindObjectById(CC_LIGHTFOOT_TARGET_ACTOR_A_ID);
-            state->targetActorB = ObjList_FindObjectById(CC_LIGHTFOOT_TARGET_ACTOR_B_ID);
+            state->targetActors[0] = ObjList_FindObjectById(CC_LIGHTFOOT_TARGET_ACTOR_A_ID);
+            state->targetActors[1] = ObjList_FindObjectById(CC_LIGHTFOOT_TARGET_ACTOR_B_ID);
             state->phase = CC_LIGHTFOOT_PHASE_INTRO;
             state->idleSfxTimer =
                 (f32)randomGetRange(CC_LIGHTFOOT_IDLE_SFX_DELAY_MIN, CC_LIGHTFOOT_IDLE_SFX_DELAY_MAX);
@@ -543,19 +543,26 @@ void ccLightfoot_init(GameObject* obj, const CCLightfootPlacement* placement) {
     obj->animEventCallback = ccLightfoot_animationEventCallback;
 }
 
+OBJECT_INIT_ADAPTER(gCCLightfootObjDescriptorInitAdapter, ccLightfoot_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCLightfootObjDescriptorExtraSizeAdapter, ccLightfoot_getExtraSize)
+
 ObjectDescriptor gCCLightfootObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gCCLightfootObjDescriptorInitAdapter,
+    ccLightfoot_update,
     0,
     0,
+    ccLightfoot_free,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccLightfoot_init,
-    (ObjectDescriptorCallback)ccLightfoot_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)ccLightfoot_free,
-    0,
-    ccLightfoot_getExtraSize,
+    gCCLightfootObjDescriptorExtraSizeAdapter,
 };

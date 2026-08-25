@@ -108,10 +108,13 @@ STATIC_ASSERT(sizeof(AppleOnTreeState) == 0x64);
 /* gAppleOnTreeObjDescriptor from slot02 onwards: the export table other
    objects reach through obj->anim.dll. */
 typedef struct AppleOnTreeInterface {
-    void* pad00[9];
+    OBJECT_INTERFACE_FIELDS;
+    void (*func0A)(void);
     void (*setPosition)(GameObject* obj, f32* position);
-    int (*getAnimState)(GameObject* obj);
+    u8 (*getAnimState)(GameObject* obj);
 } AppleOnTreeInterface;
+
+OBJECT_DESCRIPTOR_TYPE(AppleOnTreeDescriptor, AppleOnTreeInterface);
 
 #define APPLE_ON_TREE_INTERFACE(apple) ((AppleOnTreeInterface*)*((GameObject*)(apple))->anim.dll)
 
@@ -131,6 +134,6 @@ int appleontree_bounceWaterStep(GameObject* obj, AppleOnTreeState* state, f32 po
 void AppleOnTree_update(GameObject* obj);
 void AppleOnTree_init(GameObject* obj, AppleOnTreePlacement* placement);
 
-extern ObjectDescriptor13 gAppleOnTreeObjDescriptor;
+extern AppleOnTreeDescriptor gAppleOnTreeObjDescriptor;
 
 #endif /* DLLS_OBJECTS_279_APPLE_ON_TREE_H_ */

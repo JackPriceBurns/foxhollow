@@ -1,14 +1,14 @@
 #include "main/asset_load.h"
 #include "dolphin/mtx.h"
-#include "track/intersect_texture_api.h"
-#include "track/intersect_depth_state_api.h"
-#include "main/hud_visibility_api.h"
-#include "main/shader_api.h"
+#include "track/intersect_texture.h"
+#include "track/intersect_depth_state.h"
+#include "main/hud_visibility.h"
+#include "main/shader.h"
 #include "main/debug.h"
 #include "main/model.h"
 #include "main/objmodel.h"
 #include "main/model_engine.h"
-#include "main/model_runtime_api.h"
+#include "main/model_runtime.h"
 #include "main/mm.h"
 #include "game/objects/object.h"
 #include "main/object_transform.h"
@@ -23,8 +23,8 @@
 #include "main/frame_timing.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
-#include "main/shader_init_api.h"
-#include "main/acosf_api.h"
+#include "main/shader_init.h"
+#include "main/acosf.h"
 #include "main/render_internal.h"
 #include "string.h"
 #include "main/vecmath.h"
@@ -739,7 +739,7 @@ int modelLoad_calcSizes(void* model, int flags, int* sizes, int forceBlendChanne
         sizes[0] += ((ModelFileHeader*)hdr)->normalCount * normalStride + 0x40;
     }
     {
-        int hitSphereBytes = ((ModelFileHeader*)hdr)->hitSphereCount << 4;
+        int hitSphereBytes = ((ModelFileHeader*)hdr)->hitVolumeCount << 4;
         sizes[1] = hitSphereBytes << 1;
     }
     sizes[3] = 0;
@@ -946,12 +946,12 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
     if (szs[1] > 0)
     {
         pos = ALIGN_NEXT(pos, 4);
-        ((ObjModel*)out2)->hitSphereBuf0 = (u8*)pos;
-        o2 = ((ModelFileHeader*)p)->hitSphereCount;
+        ((ObjModel*)out2)->hitVolumeSphereBuffers[0] = (u8*)pos;
+        o2 = ((ModelFileHeader*)p)->hitVolumeCount;
         pos += o2 * 0x10;
-        ((ObjModel*)out2)->hitSphereBuf1 = (u8*)pos;
-        pos += ((ModelFileHeader*)p)->hitSphereCount * 0x10;
-        ((ObjModel*)out2)->hitSphereBufActive = ((ObjModel*)out2)->hitSphereBuf0;
+        ((ObjModel*)out2)->hitVolumeSphereBuffers[1] = (u8*)pos;
+        pos += ((ModelFileHeader*)p)->hitVolumeCount * 0x10;
+        ((ObjModel*)out2)->activeHitVolumeSpheres = ((ObjModel*)out2)->hitVolumeSphereBuffers[0];
     }
     if (((ModelFileHeader*)p)->jointData != NULL && ((ModelFileHeader*)p)->jointCount != 0 && ((
         ModelFileHeader*)p)->unk18 != NULL && ((ModelFileHeader*)p)->unk1C != NULL)
@@ -961,15 +961,15 @@ void* modelLoad_layoutBuffers(u8* p, int b, int isType1, u8* c)
         pos += sizeof(ModelJointWork);
         ((ObjModel*)out2)->jointWorkspace->unk00 = (u8*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 0xc;
-        ((ObjModel*)out2)->jointWorkspace->radii = (f32*)pos;
+        ((ObjModel*)out2)->jointWorkspace->jointRadii = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
         ((ObjModel*)out2)->jointWorkspace->radiiSq = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        ((ObjModel*)out2)->jointWorkspace->boneLengths = (f32*)pos;
+        ((ObjModel*)out2)->jointWorkspace->jointLengths = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        ((ObjModel*)out2)->jointWorkspace->maxReach = (f32*)pos;
+        ((ObjModel*)out2)->jointWorkspace->jointCullDistances = (f32*)pos;
         pos += ((ModelFileHeader*)p)->jointCount * 4;
-        ((ObjModel*)out2)->jointWorkspace->unk18 = (u8*)pos;
+        ((ObjModel*)out2)->jointWorkspace->touchedJoints = (u8*)pos;
         pos += ((ModelFileHeader*)p)->jointCount;
     }
     else
@@ -1926,15 +1926,15 @@ void objUpdateHitSpheres(u8* hitState, u8* hdrOwner, u8* prevObj, u8* boneMtx, u
 
     ((ObjModel*)hitState)->bufferFlags ^= 4;
     bufSel = (((ObjModel*)hitState)->bufferFlags >> 2) & 1;
-    ((ObjModel*)hitState)->hitSphereBufActive =
-        bufSel != 0 ? ((ObjModel*)hitState)->hitSphereBuf1 : ((ObjModel*)hitState)->hitSphereBuf0;
-    cur = ((ObjModel*)hitState)->hitSphereBufActive;
+    ((ObjModel*)hitState)->activeHitVolumeSpheres =
+        bufSel != 0 ? ((ObjModel*)hitState)->hitVolumeSphereBuffers[1] : ((ObjModel*)hitState)->hitVolumeSphereBuffers[0];
+    cur = ((ObjModel*)hitState)->activeHitVolumeSpheres;
     mtx = boneMtx;
     i = 0;
     off[0] = 0;
     off[1] = off[0];
-    prevSphere = (bufSel ^ 1) != 0 ? ((ObjModel*)hitState)->hitSphereBuf1 : ((ObjModel*)hitState)->hitSphereBuf0;
-    for (; i < ((ModelFileHeader*)hdrOwner)->hitSphereCount; i++)
+    prevSphere = (bufSel ^ 1) != 0 ? ((ObjModel*)hitState)->hitVolumeSphereBuffers[1] : ((ObjModel*)hitState)->hitVolumeSphereBuffers[0];
+    for (; i < ((ModelFileHeader*)hdrOwner)->hitVolumeCount; i++)
     {
         if (boneMtx == NULL)
         {
@@ -2711,7 +2711,7 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
     hdr->extraJointCount = gc[0xf4];
     hdr->displayListCount = gc[0xf5];
     hdr->shadowDisplayListCount = gc[0xf6];
-    hdr->hitSphereCount = gc[0xf7];
+    hdr->hitVolumeCount = gc[0xf7];
     hdr->renderOpCount = gc[0xf8];
     hdr->morphTargetCount = gc[0xf9];
     hdr->texMtxCount = gc[0xfa];
@@ -2774,7 +2774,7 @@ static void modelUnpackFileData(u8* base, u8* gc, u32 pad, u32 texTabOff, u32 mo
     if (off != 0)
     {
         hdr->hitVolumes = (u8*)(uintptr_t)(off + pad);
-        for (i = 0; i < hdr->hitSphereCount; i++)
+        for (i = 0; i < hdr->hitVolumeCount; i++)
         {
             p = gc + off + i * 0x18;
             fhSwapU16Array(p, 2);

@@ -8,7 +8,7 @@
 typedef void (*Dll64SpawnFn)(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags);
 
 typedef struct Dll64Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll64SpawnFn spawn;
 } Dll64Interface;
 
@@ -17,16 +17,14 @@ STATIC_ASSERT(offsetof(Dll64Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll64Interface) == 0x08);
 
 typedef struct Dll64ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll64SpawnFn spawn;
 } Dll64ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll64ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll64ResourceDescriptor) == 0x20);

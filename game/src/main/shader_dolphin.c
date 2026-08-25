@@ -1,17 +1,17 @@
 #include "dolphin/PPCArch.h"
 #include "dolphin/mtx.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "main/newshadows.h"
 #include "main/texture.h"
 #include "main/model.h"
 #include "dolphin/os/OSCache.h"
 #include "main/pad.h"
-#include "main/pi_data_file_api.h"
+#include "main/pi_data_file.h"
 #include "main/shader_dolphin.h"
 #include "main/dll/FRONT/n_options.h"
 #include "dolphin/gx/GXCull.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "PowerPC_EABI_Support/Msl/MSL_C/MSL_Common/printf.h"
 #include "dolphin/gx/GXLighting.h"
 #include "dolphin/gx/GXGeometry.h"
@@ -25,20 +25,19 @@
 #include "main/camera.h"
 #include "main/debug.h"
 #include "main/fileio.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "main/map_load.h"
 #include "main/map_texscroll.h"
 #include "main/rcp_dolphin.h"
-#include "main/sky_api.h"
-#include "main/textrender_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "track/intersect_api.h"
-#include "track/intersect_depth_read_api.h"
+#include "main/sky.h"
+#include "main/textrender.h"
+#include "dolphin/math.h"
+#include "track/intersect.h"
+#include "track/intersect_depth_read.h"
 #include "dolphin/gx/GXBump.h"
-#include "main/newshadows_texture_api.h"
-#include "main/rcp_dolphin_render_api.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/newshadows_texture.h"
+#include "main/rcp_dolphin_render.h"
+#include "main/pi_dolphin.h"
 #include "main/vecmath.h"
 
 
@@ -463,7 +462,7 @@ void setupCausticBaseTevStages(void* viewMtx)
     mtx40[1][3] = 0.0f;
     GXLoadTexMtxImm(mtx40, GX_TEXMTX0, GX_MTX2x4);
     GXSetTexCoordGen2(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_POS, GX_TEXMTX0, GX_FALSE, GX_PTIDENTITY);
-    getNewShadowCausticTexture((u32*)&obj7c);
+    getNewShadowCausticTexture(&obj7c);
     if (obj7c != NULL)
     {
         void* obj = obj7c->gxTexObj;
@@ -492,7 +491,7 @@ void setupCausticBaseTevStages(void* viewMtx)
     GXSetTevSwapMode(GX_TEVSTAGE1, GX_TEV_SWAP0, GX_TEV_SWAP0);
     GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_SUB, GX_TB_ADDHALF, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    getNewShadowRampTexture((u32*)&obj80);
+    getNewShadowRampTexture(&obj80);
     if (obj80 != NULL)
     {
         void* obj = obj80->gxTexObj;
@@ -544,7 +543,7 @@ void addShadowFalloffTevStages(void)
     f32 tmp;
     f32 t;
 
-    obj1 = (Texture*)getNewShadowFalloffTexture();
+    obj1 = getNewShadowFalloffTexture();
     C_MTXLightOrtho(mtx1, 25.0f, -25.0f, -25.0f, 25.0f, 0.5f, 0.5f, 0.5f, 0.5f);
     GXLoadTexMtxImm(mtx1, gRcpNextPostTexMtx, GX_MTX3x4);
     GXSetTexCoordGen2(gRcpNextTexCoord, GX_TG_MTX3x4, GX_TG_POS, GX_PNMTX0, GX_FALSE, gRcpNextPostTexMtx);
@@ -617,7 +616,7 @@ void addShadowFalloffTevStages(void)
     GXSetTevColorOp(gRcpNextTevStage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(gRcpNextTevStage, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     gRcpTevPrevColorValid = 1;
-    obj2 = (Texture*)getNewShadowInverseRampTexture();
+    obj2 = getNewShadowInverseRampTexture();
     id = gRcpNextTexMap;
     if (obj2 != NULL)
     {
@@ -687,7 +686,7 @@ void addWavyCausticTevStage(void)
     GXSetIndTexCoordScale(gRcpNextIndTexStage, GX_ITS_1, GX_ITS_1);
     GXSetIndTexMtx(GX_ITM_1, indmtx.m, -3);
     GXSetTevIndirect(gRcpNextTevStage, gRcpNextIndTexStage, GX_ITF_8, GX_ITB_ST, GX_ITM_1, GX_ITW_OFF, GX_ITW_OFF, 0, 0, GX_ITBA_OFF);
-    getNewShadowCausticTexture((u32*)&tex);
+    getNewShadowCausticTexture(&tex);
     id = gRcpNextTexMap + 1;
     if (tex != NULL)
     {
@@ -831,7 +830,7 @@ void setupHeatShimmerTevStages(char* p1)
     }
     GXLoadTexMtxImm(mtx64, GX_PTTEXMTX2, GX_MTX3x4);
     GXSetTexCoordGen2(GX_TEXCOORD0, GX_TG_MTX3x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTTEXMTX2);
-    getNewShadowCausticTexture((u32*)&tex30);
+    getNewShadowCausticTexture(&tex30);
     if (tex30 != 0)
     {
         void* obj = textureGetGXTexObj(tex30);
@@ -1056,7 +1055,7 @@ void addWarpedRingTevStages(void)
     GXSetTevSwapMode(gRcpNextTevStage + 1, GX_TEV_SWAP0, GX_TEV_SWAP0);
     GXSetTevColorOp(gRcpNextTevStage + 1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaOp(gRcpNextTevStage + 1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    getNewShadowCausticTexture((u32*)&tex18);
+    getNewShadowCausticTexture(&tex18);
     {
         int id2 = gRcpNextTexMap + 1;
         if (tex18 != 0)
@@ -1189,7 +1188,7 @@ void renderHeavyFog(void* fogColor)
         GXSetTevSwapMode(gRcpNextTevStage + 1, GX_TEV_SWAP0, GX_TEV_SWAP0);
         GXSetTevColorOp(gRcpNextTevStage + 1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
         GXSetTevAlphaOp(gRcpNextTevStage + 1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-        getNewShadowCausticTexture((u32*)&tex1c);
+        getNewShadowCausticTexture(&tex1c);
         {
             int id2 = gRcpNextTexMap + 1;
             if (tex1c != 0)
@@ -1691,7 +1690,7 @@ void addCastShadowTevStages(u8* objInst)
     GXSetTevSwapMode(gRcpNextTevStage + 3, GX_TEV_SWAP0, GX_TEV_SWAP0);
     GXSetTevColorOp(gRcpNextTevStage + 3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG2);
     GXSetTevAlphaOp(gRcpNextTevStage + 3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    getNewShadowRampTexture((u32*)&src);
+    getNewShadowRampTexture(&src);
     id = gRcpNextTexMap;
     if (src != NULL)
     {

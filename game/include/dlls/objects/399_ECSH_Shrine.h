@@ -4,18 +4,20 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_interface.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/model_light.h"
 #include "main/objseq.h"
 
 typedef struct ECSHShrineInterface {
-    ObjectInterface base;
+    OBJECT_INTERFACE_FIELDS;
     void (*getStateValue)(s16* out);
     void (*getCupPosition)(u8 cupIndex, f32* outX, f32* outZ);
     void (*getPhaseAndSpiritCup)(int* outAnimState, u8* outSpiritCup);
     void (*setCupPosition)(u8 cupIndex, f32 x, f32 z);
     void (*checkCupPick)(u8 cupIndex);
 } ECSHShrineInterface;
+
+OBJECT_DESCRIPTOR_TYPE(ECSHShrineDescriptor, ECSHShrineInterface);
 
 typedef struct ECSHShrineState {
     ModelLightStruct* light;
@@ -41,7 +43,7 @@ typedef struct ECSHShrineState {
     u8 shuffleSfxPlayed;
     u8 introTextLatch;
     u8 unknown33;
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
 } ECSHShrineState;
 
 STATIC_ASSERT(offsetof(ECSHShrineState, light) == 0x00);
@@ -70,7 +72,7 @@ STATIC_ASSERT(offsetof(ECSHShrineState, unknown33) == 0x33);
 STATIC_ASSERT(offsetof(ECSHShrineState, gameBitLatch) == 0x34);
 STATIC_ASSERT(sizeof(ECSHShrineState) == 0x38);
 
-extern ObjectDescriptor15 gECSHShrineObjDescriptor;
+extern ECSHShrineDescriptor gECSHShrineObjDescriptor;
 
 void ecshShrine_updateHoverMotion(GameObject* obj);
 int ecshShrine_processAnimEvents(GameObject* obj, int unused, ObjSeqState* animUpdate);

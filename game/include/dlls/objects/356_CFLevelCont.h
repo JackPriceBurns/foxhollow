@@ -4,7 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/objseq.h"
 #include "main/vec_types.h"
 
@@ -28,7 +28,7 @@ typedef struct CfLevelControlPlacement {
 typedef struct CfLevelControlState {
     f32 timer;
     u8 pad04[0x04];
-    GameBitLatchState gameBitLatch;
+    int gameBitLatch;
     CfLevelControlFlags flags;
     s8 previousCameraMode;
     u8 pad0E[0x02];

@@ -4,6 +4,7 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
 #include "game/objects/object_setup.h"
+#include "main/carryable_state.h"
 
 #define BREAKABLE_CARRYABLE_STATE_SIZE 0x10
 
@@ -21,7 +22,7 @@ typedef struct BreakableCarryablePlacement {
 } BreakableCarryablePlacement;
 
 typedef struct BreakableCarryableState {
-    u8 carryableState[0xA]; /* 0x00: state owned by the carryable interface */
+    CarryableState carryable;
     u8 phase;               /* 0x0A: BreakableCarryablePhase */
     u8 pad0B;               /* 0x0B */
     f32 respawnTimer;       /* 0x0C */
@@ -31,7 +32,7 @@ STATIC_ASSERT(offsetof(BreakableCarryablePlacement, base) == 0x0);
 STATIC_ASSERT(offsetof(BreakableCarryablePlacement, pad18) == 0x18);
 STATIC_ASSERT(offsetof(BreakableCarryablePlacement, rotXByte) == 0x1A);
 
-STATIC_ASSERT(offsetof(BreakableCarryableState, carryableState) == 0x0);
+STATIC_ASSERT(offsetof(BreakableCarryableState, carryable) == 0x0);
 STATIC_ASSERT(offsetof(BreakableCarryableState, phase) == 0xA);
 STATIC_ASSERT(offsetof(BreakableCarryableState, pad0B) == 0xB);
 STATIC_ASSERT(offsetof(BreakableCarryableState, respawnTimer) == 0xC);

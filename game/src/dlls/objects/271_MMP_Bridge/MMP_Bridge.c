@@ -6,7 +6,7 @@
 #include "dlls/objects/271_MMP_Bridge.h"
 #include "main/debug.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtexture.h"
 #include "main/objhits.h"
 
@@ -76,19 +76,32 @@ void MMP_Bridge_release(void) {
 void MMP_Bridge_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMP_BridgeObjDescriptorInitAdapter, MMP_Bridge_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gMMP_BridgeObjDescriptorHitDetectAdapter, MMP_Bridge_hitDetect)
+OBJECT_RENDER_ADAPTER(gMMP_BridgeObjDescriptorRenderAdapter, MMP_Bridge_render)
+OBJECT_FREE_ADAPTER(gMMP_BridgeObjDescriptorFreeAdapter, MMP_Bridge_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMP_BridgeObjDescriptorTypeIdAdapter, MMP_Bridge_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMP_BridgeObjDescriptorExtraSizeAdapter, MMP_Bridge_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMP_BridgeObjDescriptorAcquire, MMP_Bridge_initialise)
+
 ObjectDescriptor gMMP_BridgeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMP_BridgeObjDescriptorAcquire,
+        MMP_Bridge_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MMP_Bridge_initialise,
-    (ObjectDescriptorCallback)MMP_Bridge_release,
-    0,
-    (ObjectDescriptorCallback)MMP_Bridge_init,
-    (ObjectDescriptorCallback)MMP_Bridge_update,
-    (ObjectDescriptorCallback)MMP_Bridge_hitDetect,
-    (ObjectDescriptorCallback)MMP_Bridge_render,
-    (ObjectDescriptorCallback)MMP_Bridge_free,
-    (ObjectDescriptorCallback)MMP_Bridge_getObjectTypeId,
-    MMP_Bridge_getExtraSize,
+    gMMP_BridgeObjDescriptorInitAdapter,
+    MMP_Bridge_update,
+    gMMP_BridgeObjDescriptorHitDetectAdapter,
+    gMMP_BridgeObjDescriptorRenderAdapter,
+    gMMP_BridgeObjDescriptorFreeAdapter,
+    gMMP_BridgeObjDescriptorTypeIdAdapter,
+    gMMP_BridgeObjDescriptorExtraSizeAdapter,
 };

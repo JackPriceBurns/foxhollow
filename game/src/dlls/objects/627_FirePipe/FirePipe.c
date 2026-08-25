@@ -25,8 +25,8 @@
  * (changing them swings the model and the flame); `glowLight` is the
  * point-light that tracks the emitter.
  */
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/audio/sfx.h"
+#include "main/maketex_timer.h"
 #include "main/vecmath.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "game/objects/object.h"
@@ -75,8 +75,6 @@ int gFirePipeEmitTimerReset = 0x0A;
 #define FIREPIPE_EFFECT_TYPE_STEAM_HOLE_DE 0xe
 #define FIREPIPE_EFFECT_TYPE_FLAME         9
 
-typedef void (*FirePipeEffectInitFn)(GameObject* obj, void* spawnDef, int p3);
-
 /* Spawn-setup buffer seeded by firepipe_updateState for the emitted flame
  * effect (defNo 0x1b5). Reuses ObjPlacement's color/pos head and adds the
  * class-specific effectMode/scale fields; store widths per target asm. */
@@ -109,7 +107,7 @@ GameObject* firepipe_spawnEffectObject(FirePipeExtra* extra, GameObject* obj, Ob
             effectObj->anim.localPosX = spawnDef->posX;
             effectObj->anim.localPosY = spawnDef->posY;
             effectObj->anim.localPosZ = spawnDef->posZ;
-            ((FirePipeEffectInitFn)effectObj->anim.dll[0][1])(effectObj, spawnDef, 0);
+            (*effectObj->anim.dll)->init(effectObj, spawnDef, 0);
             freeDelay = mmSetFreeDelay(0);
             mm_free(spawnDef);
             mmSetFreeDelay(freeDelay);
@@ -585,19 +583,29 @@ void firepipe_init(GameObject* obj, FirePipeMapData* mapData)
     }
 }
 
+OBJECT_INIT_ADAPTER(gFirePipeObjDescriptorInitAdapter, firepipe_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gFirePipeObjDescriptorRenderAdapter, firepipe_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gFirePipeObjDescriptorFreeAdapter, firepipe_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFirePipeObjDescriptorTypeIdAdapter, firepipe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFirePipeObjDescriptorExtraSizeAdapter, firepipe_getExtraSize)
+
 ObjectDescriptor gFirePipeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gFirePipeObjDescriptorInitAdapter,
+    firepipe_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)firepipe_init,
-    (ObjectDescriptorCallback)firepipe_update,
-    0,
-    (ObjectDescriptorCallback)firepipe_render,
-    (ObjectDescriptorCallback)firepipe_free,
-    (ObjectDescriptorCallback)firepipe_getObjectTypeId,
-    firepipe_getExtraSize,
+    gFirePipeObjDescriptorRenderAdapter,
+    gFirePipeObjDescriptorFreeAdapter,
+    gFirePipeObjDescriptorTypeIdAdapter,
+    gFirePipeObjDescriptorExtraSizeAdapter,
 };

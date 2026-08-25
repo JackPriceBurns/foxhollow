@@ -148,47 +148,47 @@ void dll_A9_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     commandCursor[7].y = 0.01f;
     commandCursor[7].z = 1.0f;
 
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = originOffset;
-    packet.position[1] = originOffset;
-    packet.position[2] = originOffset;
-    packet.velocity[0] = originOffset;
-    packet.velocity[1] = originOffset;
-    packet.velocity[2] = originOffset;
-    packet.scale = 1.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 0xe;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0x1e;
-    packet.commandCount = &commandCursor[8] - commands;
-    packet.sequenceParams[0] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[0])];
-    packet.sequenceParams[1] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[1])];
-    packet.sequenceParams[2] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[2])];
-    packet.sequenceParams[3] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[3])];
-    packet.sequenceParams[4] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[4])];
-    packet.sequenceParams[5] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[5])];
-    packet.sequenceParams[6] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[6])];
-    packet.commands = (GfxCmd*)((u8*)&packet + offsetof(ModgfxSpawnPacket, entries));
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = originOffset;
+    packet.context.position[1] = originOffset;
+    packet.context.position[2] = originOffset;
+    packet.context.velocity[0] = originOffset;
+    packet.context.velocity[1] = originOffset;
+    packet.context.velocity[2] = originOffset;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 0xe;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x1e;
+    packet.context.commandCount = &commandCursor[8] - commands;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(DllA9EffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
     effectFlags = 0xc010040;
-    packet.flags = effectFlags;
+    packet.context.flags = effectFlags;
     effectFlags |= flags;
-    packet.flags = effectFlags;
+    packet.context.flags = effectFlags;
     if (effectFlags & 1) {
         if (sourceObj != NULL) {
-            packet.position[0] += sourceObj->anim.worldPosX;
-            packet.position[1] += sourceObj->anim.worldPosY;
-            packet.position[2] += sourceObj->anim.worldPosZ;
+            packet.context.position[0] += sourceObj->anim.worldPosX;
+            packet.context.position[1] += sourceObj->anim.worldPosY;
+            packet.context.position[2] += sourceObj->anim.worldPosZ;
         } else {
-            packet.position[0] += spawnParams->posX;
-            packet.position[1] += spawnParams->posY;
-            packet.position[2] += spawnParams->posZ;
+            packet.context.position[0] += spawnParams->posX;
+            packet.context.position[1] += spawnParams->posY;
+            packet.context.position[2] += spawnParams->posZ;
         }
     }
     (*gModgfxInterface)
-        ->spawnEffect(&packet, 0, 0xe, (u8*)gDllA9EffectResourceData, 0xc,
+        ->spawnEffect(&packet.context, 0, 0xe, (u8*)gDllA9EffectResourceData, 0xc,
                       &resourceData[offsetof(DllA9EffectResourceView, triangles)], 0x586, 0);
 }
 
@@ -211,6 +211,10 @@ u8 gDllA9EffectResourceData[sizeof(DllA9EffectResourceView)] = {
     0,   2,   0,   3,   0, 4,   0, 5,   0,   6,   0,   0,   0, 7,   0,   8,   0,   9,   0,   10,  0,   11,  0,   12,
     0,   13,  0,   0,   0, 0,   0, 1,   0,   2,   0,   3,   0, 4,   0,   5,   0,   6,   0,   7,   0,   8,   0,   9,
     0,   10,  0,   11,  0, 12,  0, 13,  0,   0,   0,   150, 0, 250, 0,   1,   0,   50,  0,   0,   0,   0,   0,   0};
+RESOURCE_ACQUIRE_ADAPTER(gDllA9ResourceDescriptorAcquire, dll_A9_initialise)
+
 DllA9ResourceDescriptor gDllA9ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_A9_initialise, dll_A9_release, NULL, dll_A9_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDllA9ResourceDescriptorAcquire, dll_A9_release },
+    NULL,
+    dll_A9_spawnEffect,
 };

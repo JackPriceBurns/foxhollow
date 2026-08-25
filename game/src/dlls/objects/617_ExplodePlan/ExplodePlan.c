@@ -62,19 +62,31 @@ void explodeplan_release(void) {
 void explodeplan_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gExplodePlanObjDescriptorInitAdapter, explodeplan_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gExplodePlanObjDescriptorHitDetectAdapter, explodeplan_hitDetect)
+OBJECT_FREE_ADAPTER(gExplodePlanObjDescriptorFreeAdapter, explodeplan_free)
+OBJECT_TYPE_ID_ADAPTER(gExplodePlanObjDescriptorTypeIdAdapter, explodeplan_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gExplodePlanObjDescriptorExtraSizeAdapter, explodeplan_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gExplodePlanObjDescriptorAcquire, explodeplan_initialise)
+
 ObjectDescriptor gExplodePlanObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gExplodePlanObjDescriptorAcquire,
+        explodeplan_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)explodeplan_initialise,
-    (ObjectDescriptorCallback)explodeplan_release,
-    0,
-    (ObjectDescriptorCallback)explodeplan_init,
-    (ObjectDescriptorCallback)explodeplan_update,
-    (ObjectDescriptorCallback)explodeplan_hitDetect,
-    (ObjectDescriptorCallback)explodeplan_render,
-    (ObjectDescriptorCallback)explodeplan_free,
-    (ObjectDescriptorCallback)explodeplan_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)explodeplan_getExtraSize,
+    gExplodePlanObjDescriptorInitAdapter,
+    explodeplan_update,
+    gExplodePlanObjDescriptorHitDetectAdapter,
+    explodeplan_render,
+    gExplodePlanObjDescriptorFreeAdapter,
+    gExplodePlanObjDescriptorTypeIdAdapter,
+    gExplodePlanObjDescriptorExtraSizeAdapter,
 };

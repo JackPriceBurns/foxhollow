@@ -23,7 +23,7 @@ typedef void (*StaffCollisionSpawnFn)(GameObject* sourceObj, int mode, PartFxSpa
                                       int unusedModelId, const StaffCollisionColorArgs* colorArgs);
 
 typedef struct StaffCollisionInterface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     StaffCollisionSpawnFn spawn;
 } StaffCollisionInterface;
 
@@ -32,17 +32,15 @@ STATIC_ASSERT(offsetof(StaffCollisionInterface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(StaffCollisionInterface) == 0x08);
 
 typedef struct StaffCollisionResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     StaffCollisionSpawnFn spawn;
     u32 padding;
 } StaffCollisionResourceDescriptor;
 
-STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(StaffCollisionResourceDescriptor, padding) == 0x20);

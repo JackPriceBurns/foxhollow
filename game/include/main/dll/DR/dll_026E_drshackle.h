@@ -1,6 +1,7 @@
 #ifndef MAIN_DLL_DR_DLL_026E_DRSHACKLE_H_
 #define MAIN_DLL_DR_DLL_026E_DRSHACKLE_H_
 
+#include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "global.h"
@@ -20,15 +21,7 @@ typedef struct DrshacklePlacement
 typedef struct DrshackleState
 {
     GameObject* pathSlots[2]; /* 0x00: the path-point objects this chain is bound to */
-    union {
-        struct
-        {
-            f32 savedPosX; /* 0x08 */
-            f32 savedPosY; /* 0x0C */
-            f32 savedPosZ; /* 0x10 */
-        };
-        Vec3f savedPos;
-    };
+    Vec3f savedPos;
     s32 slotCount;    /* 0x14: number of path slots (1 or 2) */
     u8 pad18[0x19 - 0x18];
     s8 unk19;              /* 0x19 */
@@ -44,7 +37,7 @@ STATIC_ASSERT(offsetof(DrshacklePlacement, attachSlot) == 0x19);
 STATIC_ASSERT(offsetof(DrshacklePlacement, pathObjGroupBase) == 0x1A);
 STATIC_ASSERT(offsetof(DrshacklePlacement, quarterTurns) == 0x1C);
 STATIC_ASSERT(offsetof(DrshacklePlacement, activeGameBit) == 0x1E);
-STATIC_ASSERT(offsetof(DrshackleState, savedPosX) == 0x08);
+STATIC_ASSERT(offsetof(DrshackleState, savedPos.x) == 0x08);
 STATIC_ASSERT(offsetof(DrshackleState, slotCount) == 0x14);
 STATIC_ASSERT(offsetof(DrshackleState, pathPointA) == 0x1B);
 STATIC_ASSERT(offsetof(DrshackleState, pathPointB) == 0x1C);
@@ -54,10 +47,12 @@ STATIC_ASSERT(sizeof(DrshackleState) == 0x20);
    reach through obj->anim.dll. */
 typedef struct DrshackleInterface
 {
-    void* pad00[8];
-    void (*renderAtPathPoint)(GameObject* shackle, void* owner, int pathPoint, int p2, int p3, int p4, int p5);
+    OBJECT_INTERFACE_FIELDS;
+    int (*renderAtPathPoint)(GameObject* shackle, GameObject* owner, int pathPoint, int p2, int p3, int p4, int p5);
     int (*getAttachSlot)(GameObject* shackle);
 } DrshackleInterface;
+
+OBJECT_DESCRIPTOR_TYPE(DrshackleDescriptor, DrshackleInterface);
 
 #define DRSHACKLE_INTERFACE(shackle) ((DrshackleInterface*)*((GameObject*)(shackle))->anim.dll)
 

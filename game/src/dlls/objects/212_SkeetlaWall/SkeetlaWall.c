@@ -65,23 +65,51 @@ void SkeetlaWall_release(void) {
 void SkeetlaWall_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gSkeetlaWallObjDescriptor = {
+OBJECT_INIT_ADAPTER(gSkeetlaWallObjDescriptorInitAdapter, SkeetlaWall_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSkeetlaWallObjDescriptorFreeAdapter, SkeetlaWall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSkeetlaWallObjDescriptorTypeIdAdapter, SkeetlaWall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSkeetlaWallObjDescriptorExtraSizeAdapter, SkeetlaWall_getExtraSize)
+
+typedef struct SkeetlaWallObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(SkeetlaWall_getBounds)* SkeetlaWall_getBounds;
+} SkeetlaWallObjDescriptorTypeInterface;
+
+typedef struct SkeetlaWallObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    SkeetlaWallObjDescriptorTypeInterface interface;
+} SkeetlaWallObjDescriptorTypeCore;
+
+struct SkeetlaWallObjDescriptorType {
+    SkeetlaWallObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gSkeetlaWallObjDescriptorAcquire, SkeetlaWall_initialise)
+
+struct SkeetlaWallObjDescriptorType gSkeetlaWallObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)SkeetlaWall_initialise,
-        (ObjectDescriptorCallback)SkeetlaWall_release,
-        0,
-        (ObjectDescriptorCallback)SkeetlaWall_init,
-        (ObjectDescriptorCallback)SkeetlaWall_update,
-        (ObjectDescriptorCallback)SkeetlaWall_hitDetect,
-        (ObjectDescriptorCallback)SkeetlaWall_render,
-        (ObjectDescriptorCallback)SkeetlaWall_free,
-        (ObjectDescriptorCallback)SkeetlaWall_getObjectTypeId,
-        SkeetlaWall_getExtraSize,
-        (ObjectDescriptorCallback)SkeetlaWall_getBounds,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gSkeetlaWallObjDescriptorAcquire,
+            SkeetlaWall_release,
+        },
+        {
+            0,
+            gSkeetlaWallObjDescriptorInitAdapter,
+            SkeetlaWall_update,
+            SkeetlaWall_hitDetect,
+            SkeetlaWall_render,
+            gSkeetlaWallObjDescriptorFreeAdapter,
+            gSkeetlaWallObjDescriptorTypeIdAdapter,
+            gSkeetlaWallObjDescriptorExtraSizeAdapter,
+            SkeetlaWall_getBounds,
+        },
     },
     0,
 };

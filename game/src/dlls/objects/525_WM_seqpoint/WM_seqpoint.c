@@ -13,14 +13,14 @@
  */
 #include "dlls/object_descriptor.h"
 #include "main/dll/WM/dll_020D_wmseqpoint.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
-#include "main/vecmath_distance_api.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 /* state->triggerMode: how the trigger sequence is armed */
@@ -86,20 +86,20 @@ void wmseqpoint_onSeqFree(GameObject* obj)
         skyOn = skyGetSlotFlag80(0) & 0xff;
         if (state->skyEnabledLatch != 0 && skyOn == 0)
         {
-            getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_NIGHT_A, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
+            getEnvfxActImmediately(0, 0, WMSEQPOINT_ENVFX_NIGHT_A, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 4, 1);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 10, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 0xb, 0);
         }
         else if (state->skyEnabledLatch == 0 && skyOn != 0)
         {
-            getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_DAY_A, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_B, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_C, 0);
-            getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_D, 0);
+            getEnvfxActImmediately(0, 0, WMSEQPOINT_ENVFX_DAY_A, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_B, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_C, 0);
+            getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_D, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 4, 0);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 10, 1);
             (*gMapEventInterface)->setObjGroupStatus((obj)->anim.mapEventSlot, 0xb, 1);
@@ -153,10 +153,10 @@ int wmseqpoint_SeqFn(GameObject* obj, int unused, ObjSeqState* actor)
             case 0xb:
                 if ((u32)(skyGetSlotFlag80(0) & 0xff) != 0)
                 {
-                    getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_DAY_A, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_B, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_C, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_DAY_D, 0);
+                    getEnvfxActImmediately(0, 0, WMSEQPOINT_ENVFX_DAY_A, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_B, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_C, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_DAY_D, 0);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 4, 0);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 10, 1);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 0xb, 1);
@@ -165,10 +165,10 @@ int wmseqpoint_SeqFn(GameObject* obj, int unused, ObjSeqState* actor)
             case 0xa:
                 if ((u32)(skyGetSlotFlag80(0) & 0xff) == 0)
                 {
-                    getEnvfxActImmediatelyVoid(0, 0, WMSEQPOINT_ENVFX_NIGHT_A, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
-                    getEnvfxActImmediatelyVoid(obj, obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
+                    getEnvfxActImmediately(0, 0, WMSEQPOINT_ENVFX_NIGHT_A, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_B, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_C, 0);
+                    getEnvfxActImmediately(obj, obj, WMSEQPOINT_ENVFX_NIGHT_D, 0);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 4, 1);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 10, 0);
                     (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 0xb, 0);
@@ -275,7 +275,7 @@ void wmseqpoint_update(GameObject* obj)
             }
             else if (state->sequenceId == WMSEQPOINT_SEQ_SKY_TOGGLE)
             {
-                state->skyEnabledLatch = skyGetSlotFlag80ByteLegacy(0);
+                state->skyEnabledLatch = skyGetSlotFlag80(0);
             }
             (*gObjectTriggerInterface)->runSequence(state->sequenceId, (void*)obj, -1);
             state->doneLatch = 1;
@@ -354,19 +354,31 @@ void wmseqpoint_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWM_seqpointObjDescriptorInitAdapter, wmseqpoint_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_seqpointObjDescriptorHitDetectAdapter, wmseqpoint_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_seqpointObjDescriptorFreeAdapter, wmseqpoint_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_seqpointObjDescriptorTypeIdAdapter, wmseqpoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_seqpointObjDescriptorExtraSizeAdapter, wmseqpoint_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_seqpointObjDescriptorAcquire, wmseqpoint_initialise)
+
 ObjectDescriptor gWM_seqpointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_seqpointObjDescriptorAcquire,
+        wmseqpoint_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    wmseqpoint_initialise,
-    wmseqpoint_release,
-    0,
-    (ObjectDescriptorCallback)wmseqpoint_init,
-    (ObjectDescriptorCallback)wmseqpoint_update,
-    wmseqpoint_hitDetect,
-    (ObjectDescriptorCallback)wmseqpoint_render,
-    wmseqpoint_free,
-    (ObjectDescriptorCallback)wmseqpoint_getObjectTypeId,
-    wmseqpoint_getExtraSize,
+    gWM_seqpointObjDescriptorInitAdapter,
+    wmseqpoint_update,
+    gWM_seqpointObjDescriptorHitDetectAdapter,
+    wmseqpoint_render,
+    gWM_seqpointObjDescriptorFreeAdapter,
+    gWM_seqpointObjDescriptorTypeIdAdapter,
+    gWM_seqpointObjDescriptorExtraSizeAdapter,
 };

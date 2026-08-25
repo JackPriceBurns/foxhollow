@@ -3,23 +3,23 @@
 
 #include "dlls/objects/common/vehicle.h"
 
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/cloudaction_interface.h"
 #include "main/dll/dll_0011_screens.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/render_lactions_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/render_lactions.h"
 #include "main/sky_interface.h"
 #include "sys/objects.h"
 
@@ -161,7 +161,7 @@ void IMIceMountain_updateEventState(GameObject* obj) {
         IMIceMountain_exitWorldMap(obj, state);
         break;
     case 5:
-        if ((state->gameBitLatch.activeMask & IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK) != 0) {
+        if ((state->gameBitLatch & IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK) != 0) {
             (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 3, 0);
             (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 4, 0);
             (*gMapEventInterface)->setObjGroupStatus(obj->anim.mapEventSlot, 6, 0);
@@ -171,7 +171,7 @@ void IMIceMountain_updateEventState(GameObject* obj) {
         }
         break;
     case 6:
-        if ((state->gameBitLatch.activeMask & IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK) != 0) {
+        if ((state->gameBitLatch & IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK) != 0) {
             state->warpCountdown = 2;
         }
         if (state->warpCountdown > 0) {
@@ -188,7 +188,7 @@ int IMIceMountain_sequenceCallback(GameObject* obj, int unused, const ObjSeqStat
     IMIceMountainState* state = obj->extra;
     int i;
 
-    state->gameBitLatch.activeMask |= IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK;
+    state->gameBitLatch |= IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK;
     for (i = 0; i < animUpdate->eventCount; i++) {
         if (animUpdate->eventIds[i] == IM_ICE_MOUNTAIN_SEQUENCE_EVENT_ID) {
             mainSetBits(GAMEBIT_IM_BikeRelated0378, 0);
@@ -243,7 +243,7 @@ void IMIceMountain_update(GameObject* obj) {
     case 4:
         break;
     }
-    state->gameBitLatch.activeMask &= ~IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK;
+    state->gameBitLatch &= ~IM_ICE_MOUNTAIN_SEQUENCE_LATCH_MASK;
     if (state->warningTextTimer > 0.0f) {
         gameTextSetColor(0xFF, 0xFF, 0xFF, 0xFF);
         gameTextShow(IM_ICE_MOUNTAIN_WARNING_TEXT_ID);
@@ -255,14 +255,14 @@ void IMIceMountain_update(GameObject* obj) {
     if ((*gSkyInterface)->getSunPosition(NULL) != 0) {
         if (state->musicTrack != -1) {
             state->musicTrack = -1;
-            if ((state->gameBitLatch.activeMask & IM_ICE_MOUNTAIN_MUSIC_LATCH_MASK) != 0) {
+            if ((state->gameBitLatch & IM_ICE_MOUNTAIN_MUSIC_LATCH_MASK) != 0) {
                 Music_Trigger(MUSICTRIG_galleon_docks, 0);
             }
         }
     } else {
         if (state->musicTrack != MUSICTRIG_galleon_docks) {
             state->musicTrack = MUSICTRIG_galleon_docks;
-            if ((state->gameBitLatch.activeMask & IM_ICE_MOUNTAIN_MUSIC_LATCH_MASK) != 0) {
+            if ((state->gameBitLatch & IM_ICE_MOUNTAIN_MUSIC_LATCH_MASK) != 0) {
                 Music_Trigger(MUSICTRIG_galleon_docks, 1);
             }
         }
@@ -336,19 +336,29 @@ void IMIceMountain_init(GameObject* obj) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gIMIceMountainObjDescriptorInitAdapter, IMIceMountain_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gIMIceMountainObjDescriptorHitDetectAdapter, IMIceMountain_hitDetect)
+OBJECT_FREE_ADAPTER(gIMIceMountainObjDescriptorFreeAdapter, IMIceMountain_free)
+OBJECT_TYPE_ID_ADAPTER(gIMIceMountainObjDescriptorTypeIdAdapter, IMIceMountain_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMIceMountainObjDescriptorExtraSizeAdapter, IMIceMountain_getExtraSize)
+
 ObjectDescriptor gIMIceMountainObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)IMIceMountain_init,
-    (ObjectDescriptorCallback)IMIceMountain_update,
-    (ObjectDescriptorCallback)IMIceMountain_hitDetect,
-    (ObjectDescriptorCallback)IMIceMountain_render,
-    (ObjectDescriptorCallback)IMIceMountain_free,
-    (ObjectDescriptorCallback)IMIceMountain_getObjectTypeId,
-    IMIceMountain_getExtraSize,
+    gIMIceMountainObjDescriptorInitAdapter,
+    IMIceMountain_update,
+    gIMIceMountainObjDescriptorHitDetectAdapter,
+    IMIceMountain_render,
+    gIMIceMountainObjDescriptorFreeAdapter,
+    gIMIceMountainObjDescriptorTypeIdAdapter,
+    gIMIceMountainObjDescriptorExtraSizeAdapter,
 };

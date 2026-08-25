@@ -1,15 +1,15 @@
 /* WCLevelCont (DLL 653) */
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/game_timer.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/mapEventTypes.h"
 #include "main/objtype.h"
 #include "main/sky_interface.h"
 #include "main/dll/WC/dll_0290_wcpushblock.h"
 #include "main/dll/WC/dll_028D_wclevelcont.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/gamebit_ids.h"
 #include "main/object_render.h"
@@ -17,13 +17,13 @@
 #include "main/frame_timing.h"
 #include "main/objseq.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/vecmath.h"
 #include "string.h"
 #include "sys/objects.h"
-#include "main/game_timer_control_api.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
+#include "main/game_timer_control.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
 
 #define WCLEVELCONT_OBJGROUP 0x9
 
@@ -974,33 +974,47 @@ WcTileGrid gWcTileGridBSolved = {{
     {0, 0, 0, 0, 0, 0, 0, 0},
 }};
 
-ObjectDescriptor24 gWCLevelContObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)wclevelcont_initialise,
-    (ObjectDescriptorCallback)wclevelcont_release,
-    0,
-    (ObjectDescriptorCallback)wclevelcont_init,
-    (ObjectDescriptorCallback)wclevelcont_update,
-    (ObjectDescriptorCallback)wclevelcont_hitDetect,
-    (ObjectDescriptorCallback)wclevelcont_render,
-    (ObjectDescriptorCallback)wclevelcont_free,
-    (ObjectDescriptorCallback)wclevelcont_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wclevelcont_getExtraSize,
-    (ObjectDescriptorCallback)wclevelcont_tileAToWorldPos,
-    (ObjectDescriptorCallback)wclevelcont_worldPosToTileA,
-    (ObjectDescriptorCallback)wclevelcont_setTileA,
-    (ObjectDescriptorCallback)wclevelcont_getTileA,
-    (ObjectDescriptorCallback)wclevelcont_getInitialTileXYA,
-    (ObjectDescriptorCallback)wclevelcont_getSolvedTileXYA,
-    (ObjectDescriptorCallback)wclevelcont_traceMoveA,
-    (ObjectDescriptorCallback)wclevelcont_tileBToWorldPos,
-    (ObjectDescriptorCallback)wclevelcont_worldPosToTileB,
-    (ObjectDescriptorCallback)wclevelcont_setTileB,
-    (ObjectDescriptorCallback)wclevelcont_getTileB,
-    (ObjectDescriptorCallback)wclevelcont_getInitialTileXYB,
-    (ObjectDescriptorCallback)wclevelcont_getSolvedTileXYB,
-    (ObjectDescriptorCallback)wclevelcont_traceMoveB,
+OBJECT_INIT_ADAPTER(gWCLevelContObjDescriptorInitAdapter, wclevelcont_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gWCLevelContObjDescriptorHitDetectAdapter, wclevelcont_hitDetect)
+OBJECT_FREE_ADAPTER(gWCLevelContObjDescriptorFreeAdapter, wclevelcont_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWCLevelContObjDescriptorTypeIdAdapter, wclevelcont_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCLevelContObjDescriptorExtraSizeAdapter, wclevelcont_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCLevelContObjDescriptorAcquire, wclevelcont_initialise)
+
+WCLevelContDescriptor gWCLevelContObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gWCLevelContObjDescriptorAcquire,
+        wclevelcont_release,
+    },
+    {
+        0,
+        gWCLevelContObjDescriptorInitAdapter,
+        wclevelcont_update,
+        gWCLevelContObjDescriptorHitDetectAdapter,
+        wclevelcont_render,
+        gWCLevelContObjDescriptorFreeAdapter,
+        gWCLevelContObjDescriptorTypeIdAdapter,
+        gWCLevelContObjDescriptorExtraSizeAdapter,
+        wclevelcont_tileAToWorldPos,
+        wclevelcont_worldPosToTileA,
+        wclevelcont_setTileA,
+        wclevelcont_getTileA,
+        wclevelcont_getInitialTileXYA,
+        wclevelcont_getSolvedTileXYA,
+        wclevelcont_traceMoveA,
+        wclevelcont_tileBToWorldPos,
+        wclevelcont_worldPosToTileB,
+        wclevelcont_setTileB,
+        wclevelcont_getTileB,
+        wclevelcont_getInitialTileXYB,
+        wclevelcont_getSolvedTileXYB,
+        wclevelcont_traceMoveB,
+    },
 };

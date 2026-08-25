@@ -18,14 +18,14 @@
  */
 #include "main/dll/dll_0272_hightop.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/vecmath.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/dll/path_control_interface.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "sys/objects/lifecycle.h"
 #include "main/object_render.h"
@@ -34,10 +34,10 @@
 #include "main/obj_trigger.h"
 #include "main/objanim.h"
 #include "main/objseq.h"
-#include "main/objprint_api.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/dll/DR/dll_026E_drshackle.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "game/objects/object.h"
@@ -46,16 +46,17 @@
 #include "main/dll/baddie_state.h"
 #include "game/objects/object_setup.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/gamebit_ids.h"
 #include "main/player_control_interface.h"
 #include "dlls/object_descriptor.h"
+#include "dlls/objects/common/vehicle.h"
 #include "dolphin/pad.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/tricky_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_timer_api.h"
-#include "main/pad_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/tricky.h"
+#include "main/maketex_random.h"
+#include "main/maketex_timer.h"
+#include "main/pad.h"
 
 void* gHighTopDefaultStateHandler;
 f32 gHighTopModelMtx[16];
@@ -895,13 +896,13 @@ int HighTop_getRacePosition(void)
     return 0x0;
 }
 
-f32 hightop_func13(int obj, f32* out)
+f32 hightop_func13(GameObject* obj, f32* out)
 {
     *out = 5.0f;
     return 0.0f;
 }
 
-void HighTop_getPlayerAnim(int obj, f32* a, int* b)
+void HighTop_getPlayerAnim(GameObject* obj, f32* a, int* b)
 {
     *a = 0.0f;
     *b = 0;
@@ -919,7 +920,7 @@ int HighTop_getMountState(void)
     return 0x0;
 }
 
-void HighTop_getCameraPosition(int obj, f32* ox, f32* oy, f32* oz)
+void HighTop_getCameraPosition(GameObject* obj, f32* ox, f32* oy, f32* oz)
 {
     GameObject* player;
     MatrixTransform pos;
@@ -1003,7 +1004,7 @@ void HighTop_render(void* obj, int p2, int p3, int p4, int p5, char visible)
             for (i = 0, list = t; i < count; i++)
             {
                 int idx = DRSHACKLE_INTERFACE(*list)->getAttachSlot(*list);
-                void (*dispatch)(GameObject*, void*, int, int, int, int, int) =
+                int (*dispatch)(GameObject*, GameObject*, int, int, int, int, int) =
                     DRSHACKLE_INTERFACE(*list)->renderAtPathPoint;
                 dispatch(*list, obj, gHighTopTuning.shacklePathPoints[idx], p2, p3, p4, p5);
                 list++;
@@ -1246,33 +1247,55 @@ void HighTop_initialise(void)
     gHighTopDefaultStateHandler = hightop_defaultStateHandler;
 }
 
-ObjectDescriptor24 gHighTopObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
-    (ObjectDescriptorCallback)HighTop_initialise,
-    (ObjectDescriptorCallback)HighTop_release,
-    0,
-    (ObjectDescriptorCallback)HighTop_init,
-    (ObjectDescriptorCallback)HighTop_update,
-    (ObjectDescriptorCallback)HighTop_hitDetect,
-    (ObjectDescriptorCallback)HighTop_render,
-    (ObjectDescriptorCallback)HighTop_free,
-    (ObjectDescriptorCallback)HighTop_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)HighTop_getExtraSize,
-    (ObjectDescriptorCallback)HighTop_canMount,
-    (ObjectDescriptorCallback)HighTop_getMountSide,
-    (ObjectDescriptorCallback)HighTop_getRiderPosition,
-    (ObjectDescriptorCallback)HighTop_canDismount,
-    (ObjectDescriptorCallback)HighTop_getDismountSide,
-    (ObjectDescriptorCallback)HighTop_getCameraPosition,
-    (ObjectDescriptorCallback)HighTop_getMountState,
-    (ObjectDescriptorCallback)HighTop_setMountState,
-    (ObjectDescriptorCallback)HighTop_getPlayerAnim,
-    (ObjectDescriptorCallback)hightop_func13,
-    (ObjectDescriptorCallback)HighTop_getRacePosition,
-    (ObjectDescriptorCallback)hightop_func15,
-    (ObjectDescriptorCallback)HighTop_handleRiderScale,
-    (ObjectDescriptorCallback)HighTop_getLookTargetYaw,
+OBJECT_INIT_ADAPTER(gHighTopObjDescriptorInitAdapter, HighTop_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gHighTopObjDescriptorRenderAdapter, HighTop_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gHighTopObjDescriptorFreeAdapter, HighTop_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gHighTopObjDescriptorTypeIdAdapter, HighTop_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gHighTopObjDescriptorExtraSizeAdapter, HighTop_getExtraSize)
+
+VEHICLE_CAN_MOUNT_ADAPTER(gHighTopObjDescriptorCanMountAdapter, HighTop_canMount)
+VEHICLE_MOUNT_SIDE_ADAPTER(gHighTopObjDescriptorMountSideAdapter, HighTop_getMountSide)
+VEHICLE_CAN_DISMOUNT_ADAPTER(gHighTopObjDescriptorCanDismountAdapter, HighTop_canDismount)
+VEHICLE_DISMOUNT_SIDE_ADAPTER(gHighTopObjDescriptorDismountSideAdapter, HighTop_getDismountSide)
+VEHICLE_MOUNT_STATE_ADAPTER(gHighTopObjDescriptorMountStateAdapter, HighTop_getMountState)
+VEHICLE_RACE_POSITION_ADAPTER(gHighTopObjDescriptorRacePositionAdapter, HighTop_getRacePosition)
+VEHICLE_RESET_POSITION_ADAPTER(gHighTopObjDescriptorResetPositionAdapter, hightop_func15)
+
+RESOURCE_ACQUIRE_ADAPTER(gHighTopObjDescriptorAcquire, HighTop_initialise)
+
+VehicleDescriptor gHighTopObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_24_SLOTS,
+        },
+        gHighTopObjDescriptorAcquire,
+        HighTop_release,
+    },
+    {
+        0,
+        gHighTopObjDescriptorInitAdapter,
+        HighTop_update,
+        HighTop_hitDetect,
+        gHighTopObjDescriptorRenderAdapter,
+        gHighTopObjDescriptorFreeAdapter,
+        gHighTopObjDescriptorTypeIdAdapter,
+        gHighTopObjDescriptorExtraSizeAdapter,
+        gHighTopObjDescriptorCanMountAdapter,
+        gHighTopObjDescriptorMountSideAdapter,
+        HighTop_getRiderPosition,
+        gHighTopObjDescriptorCanDismountAdapter,
+        gHighTopObjDescriptorDismountSideAdapter,
+        HighTop_getCameraPosition,
+        gHighTopObjDescriptorMountStateAdapter,
+        HighTop_setMountState,
+        HighTop_getPlayerAnim,
+        hightop_func13,
+        gHighTopObjDescriptorRacePositionAdapter,
+        gHighTopObjDescriptorResetPositionAdapter,
+        HighTop_handleRiderScale,
+        HighTop_getLookTargetYaw,
+    },
 };

@@ -82,19 +82,17 @@ STATIC_ASSERT(offsetof(CameraModePathState, pad66) == 0x66);
 STATIC_ASSERT(sizeof(CameraModePathState) == 0x68);
 
 typedef struct CameraModePathDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int mode, CameraModePathSettings* settings);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
 } CameraModePathDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModePathDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModePathDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModePathDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModePathDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModePathDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModePathDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModePathDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModePathDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModePathDescriptor, update) == 0x20);

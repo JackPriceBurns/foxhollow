@@ -59,22 +59,7 @@ typedef struct SnowBikeState {
     f32 unk01C;             /* 0x01c */
     f32 unk020;             /* 0x020 */
     f32 unk024;             /* 0x024 */
-    union {
-        CheckpointRouteState routeState;
-        CheckpointRankItem rankItem;
-        struct {
-            u8 pad028[0x4];
-            s16 riderYawOnFree;             /* 0x02c: rider yaw on free */
-            s16 riderPitchOnFree;           /* 0x02e: rider pitch on free */
-            u8 pad030[0x4];
-            f32 unk034;                     /* 0x034 */
-            int checkpointIndexA;           /* 0x038 */
-            int checkpointIndexB;           /* 0x03c */
-            int checkpointIndexC;           /* 0x040 */
-            int unk044;                     /* 0x044 */
-            u8 pad048[0x4];
-        };
-    };
+    CheckpointRouteState routeState;
     f32 riderPosX;             /* 0x04c: rider pos X on free */
     f32 riderPosY;             /* 0x050: rider pos Y on free */
     f32 riderPosZ;             /* 0x054: rider pos Z on free */
@@ -236,5 +221,6 @@ void SnowBike_UpdateTrails(GameObject* obj, uintptr_t state);
 void SnowBike_UpdateEngineFx(GameObject* obj, void* state, f32 distanceScale, int intensity, u8* unused,
                              u8 channelFlags);
 f32 SnowBike_GetRouteIntensity(GameObject* obj, uintptr_t state);
+void SnowBike_UpdateLiftSway(uintptr_t obj, uintptr_t state);
 
 #endif /* MAIN_DLL_DLL_0255_SNOWBIKE_H_ */

@@ -174,19 +174,32 @@ void VFPDragHead_initialise(void)
 }
 
 
+OBJECT_INIT_ADAPTER(gVFPDragHeadObjDescriptorInitAdapter, VFPDragHead_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFPDragHeadObjDescriptorHitDetectAdapter, VFPDragHead_hitDetect)
+OBJECT_RENDER_ADAPTER(gVFPDragHeadObjDescriptorRenderAdapter, VFPDragHead_render)
+OBJECT_FREE_ADAPTER(gVFPDragHeadObjDescriptorFreeAdapter, VFPDragHead_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFPDragHeadObjDescriptorTypeIdAdapter, VFPDragHead_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFPDragHeadObjDescriptorExtraSizeAdapter, VFPDragHead_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFPDragHeadObjDescriptorAcquire, VFPDragHead_initialise)
+
 ObjectDescriptor gVFPDragHeadObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFPDragHeadObjDescriptorAcquire,
+        VFPDragHead_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFPDragHead_initialise,
-    (ObjectDescriptorCallback)VFPDragHead_release,
-    0,
-    (ObjectDescriptorCallback)VFPDragHead_init,
-    (ObjectDescriptorCallback)VFPDragHead_update,
-    (ObjectDescriptorCallback)VFPDragHead_hitDetect,
-    (ObjectDescriptorCallback)VFPDragHead_render,
-    (ObjectDescriptorCallback)VFPDragHead_free,
-    (ObjectDescriptorCallback)VFPDragHead_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFPDragHead_getExtraSize,
+    gVFPDragHeadObjDescriptorInitAdapter,
+    VFPDragHead_update,
+    gVFPDragHeadObjDescriptorHitDetectAdapter,
+    gVFPDragHeadObjDescriptorRenderAdapter,
+    gVFPDragHeadObjDescriptorFreeAdapter,
+    gVFPDragHeadObjDescriptorTypeIdAdapter,
+    gVFPDragHeadObjDescriptorExtraSizeAdapter,
 };

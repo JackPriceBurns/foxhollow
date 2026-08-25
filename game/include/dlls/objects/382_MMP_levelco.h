@@ -3,10 +3,10 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/objseq.h"
 
-extern GameBitLatchState gMMPLevelControlMusicLatch;
+extern int gMMPLevelControlMusicLatch;
 extern f32 gMMPLevelControlTextCountdown;
 extern ObjectDescriptor gMMPLevelControlObjDescriptor;
 

@@ -1,12 +1,12 @@
-#include "main/gametext_api.h"
+#include "main/gametext.h"
 #include "main/gametext_shared_internal.h"
 #include "PowerPC_EABI_Support/Msl/MSL_C/MSL_Common/printf.h"
 #include "main/frame_timing.h"
 #include "main/textrender_internal.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/dll/dll_0015_save_settings.h"
 #include "main/lightmap.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 
 void* gameTextGetPhrase(int textId, int phraseIndex)
 {

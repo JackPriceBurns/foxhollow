@@ -27,7 +27,7 @@
  * hitDetect helper.
  */
 #include "main/dll/dll_0293_suntemple.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/game_timer.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
@@ -35,9 +35,9 @@
 #include "main/objseq.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
-#include "main/pad_api.h"
-#include "main/shader_api.h"
+#include "main/objprint_render.h"
+#include "main/pad.h"
+#include "main/shader.h"
 
 const Vec3f gSunTempleRestartPos = {-6318.10009765625f, -1232.0f, -5884.0f};
 
@@ -310,11 +310,30 @@ void suntemple_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gSunTempleObjDescriptorInitAdapter, suntemple_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSunTempleObjDescriptorFreeAdapter, suntemple_free)
+OBJECT_TYPE_ID_ADAPTER(gSunTempleObjDescriptorTypeIdAdapter, suntemple_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSunTempleObjDescriptorExtraSizeAdapter, suntemple_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSunTempleObjDescriptorAcquire, suntemple_initialise)
+
 ObjectDescriptor gSunTempleObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)suntemple_initialise, (ObjectDescriptorCallback)suntemple_release, 0,
-    (ObjectDescriptorCallback)suntemple_init, (ObjectDescriptorCallback)suntemple_update,
-    (ObjectDescriptorCallback)suntemple_hitDetect, (ObjectDescriptorCallback)suntemple_render,
-    (ObjectDescriptorCallback)suntemple_free, (ObjectDescriptorCallback)suntemple_getObjectTypeId,
-    suntemple_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSunTempleObjDescriptorAcquire,
+        suntemple_release,
+    },
+    0,
+    gSunTempleObjDescriptorInitAdapter,
+    suntemple_update,
+    suntemple_hitDetect,
+    suntemple_render,
+    gSunTempleObjDescriptorFreeAdapter,
+    gSunTempleObjDescriptorTypeIdAdapter,
+    gSunTempleObjDescriptorExtraSizeAdapter,
 };

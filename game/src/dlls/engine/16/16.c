@@ -26,15 +26,18 @@ void UIController_release(void) {
 void UIController_initialise(void) {
 }
 
-UIControllerDllInterface UIController_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)UIController_initialise,
-    (ObjectDescriptorCallback)UIController_release,
-    0,
-    (ObjectDescriptorCallback)UIController_frameStart,
-    (ObjectDescriptorCallback)UIController_frameEnd,
-    (ObjectDescriptorCallback)UIController_render,
+UI_RESOURCE_VOID_FRAME_ADAPTERS(gUIControllerUiResource, UIController_initialise, UIController_frameStart, UIController_render, (void*)(intptr_t)arg0, arg1, arg2)
+
+UiResourceDescriptor UIController_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gUIControllerUiResourceAcquire,
+        UIController_release,
+    },
+    {
+        NULL,
+        gUIControllerUiResourceFrameStart,
+        UIController_frameEnd,
+        gUIControllerUiResourceDraw,
+    },
 };

@@ -8,7 +8,7 @@
 #include "main/model_engine.h"
 #include "main/model_light.h"
 #include "main/objseq.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 
 #define KTREX_LIGHTNING_COUNT 5
 
@@ -36,15 +36,6 @@ typedef struct KtrexPlacement
     u8 pad0[0x38];
     f32 laneSpeeds[3];
 } KtrexPlacement;
-
-typedef struct KtrexState
-{
-    u8 pad0[0x38];
-    f32 unk38;
-    u8 pad3C[0x274 - 0x3C];
-    s16 controlMode;
-    u8 pad276[0x5A4 - 0x276];
-} KtrexState;
 
 typedef struct KTRexArenaState
 {

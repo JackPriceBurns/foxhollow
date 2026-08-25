@@ -13,6 +13,7 @@ void curve_free(void);
 void curve_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible);
 void curve_init(GameObject* obj, RomCurveDef* placement);
 
-extern ObjectDescriptor12 gCurveObjDescriptor;
+struct CurveObjDescriptorType;
+extern struct CurveObjDescriptorType gCurveObjDescriptor;
 
 #endif /* DLLS_OBJECTS_293_CURVE_H_ */

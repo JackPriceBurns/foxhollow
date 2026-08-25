@@ -9,7 +9,7 @@
 #include "main/dll_000A_expgfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/model.h"
 #include "main/model_light.h"
@@ -19,8 +19,7 @@
 #include "main/objhits.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/objtype.h"
 
 #define DIM_LOG_FIRE_HIT_VOLUME_SLOT 0x1F
@@ -108,7 +107,7 @@ void DIMLogFire_render(GameObject* obj, int renderArg2, int renderArg3, int rend
         state = obj->extra;
         subObject = (ObjAnimComponent*)state->subObject;
         if (subObject != NULL) {
-            ObjModel* model = (ObjModel*)subObject->banks[subObject->bankIndex];
+            ObjModel* model = (ObjModel*)subObject->modelBanks[subObject->bankIndex];
             model->bufferFlags = (u16)(model->bufferFlags & ~0x8);
             ((GameObject*)state->subObject)->anim.renderAlpha = obj->anim.renderAlpha;
             objRenderModelAndHitVolumes((GameObject*)state->subObject, renderArg2, renderArg3, renderArg4, renderArg5,
@@ -252,19 +251,27 @@ void DIMLogFire_init(GameObject* obj, const DimLogFirePlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gDIMLogFireObjDescriptorInitAdapter, DIMLogFire_init, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gDIMLogFireObjDescriptorTypeIdAdapter, DIMLogFire_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMLogFireObjDescriptorExtraSizeAdapter, DIMLogFire_getExtraSize)
+
 ObjectDescriptor gDIMLogFireObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gDIMLogFireObjDescriptorInitAdapter,
+    DIMLogFire_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)DIMLogFire_init,
-    (ObjectDescriptorCallback)DIMLogFire_update,
-    0,
-    (ObjectDescriptorCallback)DIMLogFire_render,
-    (ObjectDescriptorCallback)DIMLogFire_free,
-    (ObjectDescriptorCallback)DIMLogFire_getObjectTypeId,
-    DIMLogFire_getExtraSize,
+    DIMLogFire_render,
+    DIMLogFire_free,
+    gDIMLogFireObjDescriptorTypeIdAdapter,
+    gDIMLogFireObjDescriptorExtraSizeAdapter,
 };

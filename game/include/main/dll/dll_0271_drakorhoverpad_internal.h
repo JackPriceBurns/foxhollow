@@ -63,9 +63,9 @@ STATIC_ASSERT(sizeof(DrakorHoverpadState) == 0x17c);
 
 int drakorhoverpad_canMount(GameObject* obj);
 int drakorhoverpad_canDismount(GameObject* obj);
-void drakorhoverpad_getPlayerAnim(int obj, f32* outFloat, int* outFlag);
+void drakorhoverpad_getPlayerAnim(GameObject* obj, f32* outFloat, int* outFlag);
 void drakorhoverpad_getRiderPosition(GameObject* obj, f32* ox, f32* oy, f32* oz);
-f32 drakorhoverpad_func13(int obj, f32* out);
+f32 drakorhoverpad_func13(GameObject* obj, f32* out);
 void drakorhoverpad_free(GameObject* obj);
 void drakorhoverpad_func17(GameObject* obj, int sel, int* out);
 void drakorhoverpad_getCameraPosition(GameObject* obj, f32* ox, f32* oy, f32* oz);

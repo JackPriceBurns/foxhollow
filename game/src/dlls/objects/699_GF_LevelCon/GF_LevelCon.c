@@ -11,17 +11,17 @@
  */
 #include "main/dll/dll_02C0_front.h"
 #include "main/frame_timing.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/map_load.h"
 #include "main/model_engine.h"
 #include "main/obj_list.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
 #include "main/screen_transition.h"
-#include "main/sky_api.h"
-#include "main/render_envfx_api.h"
+#include "main/sky.h"
+#include "main/render_envfx.h"
 #include "main/dll/dll_02BB_gflevelcon.h"
-#include "main/gametext_show_api.h"
+#include "main/gametext_show.h"
 #include "main/dll/LGT/dll_02A9_lgtpointlight.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
@@ -256,19 +256,31 @@ void gf_levelcon_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gGF_LevelConObjDescriptorInitAdapter, gf_levelcon_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gGF_LevelConObjDescriptorHitDetectAdapter, gf_levelcon_hitDetect)
+OBJECT_FREE_ADAPTER(gGF_LevelConObjDescriptorFreeAdapter, gf_levelcon_free)
+OBJECT_TYPE_ID_ADAPTER(gGF_LevelConObjDescriptorTypeIdAdapter, gf_levelcon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGF_LevelConObjDescriptorExtraSizeAdapter, gf_levelcon_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGF_LevelConObjDescriptorAcquire, gf_levelcon_initialise)
+
 ObjectDescriptor gGF_LevelConObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gGF_LevelConObjDescriptorAcquire,
+        gf_levelcon_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)gf_levelcon_initialise,
-    (ObjectDescriptorCallback)gf_levelcon_release,
-    0,
-    (ObjectDescriptorCallback)gf_levelcon_init,
-    (ObjectDescriptorCallback)gf_levelcon_update,
-    (ObjectDescriptorCallback)gf_levelcon_hitDetect,
-    (ObjectDescriptorCallback)gf_levelcon_render,
-    (ObjectDescriptorCallback)gf_levelcon_free,
-    (ObjectDescriptorCallback)gf_levelcon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)gf_levelcon_getExtraSize,
+    gGF_LevelConObjDescriptorInitAdapter,
+    gf_levelcon_update,
+    gGF_LevelConObjDescriptorHitDetectAdapter,
+    gf_levelcon_render,
+    gGF_LevelConObjDescriptorFreeAdapter,
+    gGF_LevelConObjDescriptorTypeIdAdapter,
+    gGF_LevelConObjDescriptorExtraSizeAdapter,
 };

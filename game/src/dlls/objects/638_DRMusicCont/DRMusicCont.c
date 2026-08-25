@@ -12,16 +12,17 @@
  * two more game bits. State: a f32 countdown at 0x4 and the
  * DrMusicContFlags cache at 0x8.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/newclouds.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/audio/sfx_trigger_ids.h"
 
 #include "main/dll/DR/dll_027E_drmusiccont.h"
+#include "dlls/object_descriptor.h"
 #include "main/object_render.h"
 
 #define DRMUSICCONT_CLOUD_OVERRIDE_POS_X -15350.0f
@@ -217,19 +218,31 @@ void drmusiccont_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrMusicContObjDescriptorInitAdapter, drmusiccont_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDrMusicContObjDescriptorHitDetectAdapter, drmusiccont_hitDetect)
+OBJECT_FREE_ADAPTER(gDrMusicContObjDescriptorFreeAdapter, drmusiccont_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrMusicContObjDescriptorTypeIdAdapter, drmusiccont_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrMusicContObjDescriptorExtraSizeAdapter, drmusiccont_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrMusicContObjDescriptorAcquire, drmusiccont_initialise)
+
 ObjectDescriptor gDrMusicContObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrMusicContObjDescriptorAcquire,
+        drmusiccont_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)drmusiccont_initialise,
-    (ObjectDescriptorCallback)drmusiccont_release,
-    0,
-    (ObjectDescriptorCallback)drmusiccont_init,
-    (ObjectDescriptorCallback)drmusiccont_update,
-    (ObjectDescriptorCallback)drmusiccont_hitDetect,
-    (ObjectDescriptorCallback)drmusiccont_render,
-    (ObjectDescriptorCallback)drmusiccont_free,
-    (ObjectDescriptorCallback)drmusiccont_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drmusiccont_getExtraSize,
+    gDrMusicContObjDescriptorInitAdapter,
+    drmusiccont_update,
+    gDrMusicContObjDescriptorHitDetectAdapter,
+    drmusiccont_render,
+    gDrMusicContObjDescriptorFreeAdapter,
+    gDrMusicContObjDescriptorTypeIdAdapter,
+    gDrMusicContObjDescriptorExtraSizeAdapter,
 };

@@ -17,10 +17,10 @@
  * mcupgrade_SeqFn is part of this DOL-confirmed TU and is installed as an
  * anim-event callback by the following MCUpgrade DLL.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
-#include "main/maketex_api.h"
+#include "main/maketex.h"
 #include "main/objfx.h"
 #include "main/dll/dll_02B6_cnthitobjec.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -209,20 +209,32 @@ int mcupgrade_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
     return 0;
 }
 
+OBJECT_INIT_ADAPTER(gCNThitObjecObjDescriptorInitAdapter, cnthitobjec_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gCNThitObjecObjDescriptorRenderAdapter, cnthitobjec_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gCNThitObjecObjDescriptorFreeAdapter, cnthitobjec_free)
+OBJECT_TYPE_ID_ADAPTER(gCNThitObjecObjDescriptorTypeIdAdapter, cnthitobjec_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCNThitObjecObjDescriptorExtraSizeAdapter, cnthitobjec_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCNThitObjecObjDescriptorAcquire, cnthitobjec_initialise)
+
 ObjectDescriptor11ExtraSize gCNThitObjecObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCNThitObjecObjDescriptorAcquire,
+        cnthitobjec_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cnthitobjec_initialise,
-    (ObjectDescriptorCallback)cnthitobjec_release,
-    0,
-    (ObjectDescriptorCallback)cnthitobjec_init,
-    (ObjectDescriptorCallback)cnthitobjec_update,
-    (ObjectDescriptorCallback)cnthitobjec_hitDetect,
-    (ObjectDescriptorCallback)cnthitobjec_render,
-    (ObjectDescriptorCallback)cnthitobjec_free,
-    (ObjectDescriptorCallback)cnthitobjec_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)cnthitobjec_getExtraSize,
+    gCNThitObjecObjDescriptorInitAdapter,
+    cnthitobjec_update,
+    cnthitobjec_hitDetect,
+    gCNThitObjecObjDescriptorRenderAdapter,
+    gCNThitObjecObjDescriptorFreeAdapter,
+    gCNThitObjecObjDescriptorTypeIdAdapter,
+    gCNThitObjecObjDescriptorExtraSizeAdapter,
     0,
 };

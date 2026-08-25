@@ -90,6 +90,7 @@ void LFXEmitter_init(GameObject* obj, LFXEmitterPlacement* placement);
 void LFXEmitter_release(void);
 void LFXEmitter_initialise(void);
 
-extern ObjectDescriptor12 gLFXEmitterObjDescriptor;
+struct LFXEmitterObjDescriptorType;
+extern struct LFXEmitterObjDescriptorType gLFXEmitterObjDescriptor;
 
 #endif /* DLLS_OBJECTS_301_LFXEMITTER_H_ */

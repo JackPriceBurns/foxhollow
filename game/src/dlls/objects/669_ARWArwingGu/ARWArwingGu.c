@@ -12,7 +12,7 @@
  */
 #include "main/dll/ARW/dll_029D_arwarwinggu.h"
 #include "main/frame_timing.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "sys/objects.h"
 #include "main/model.h"
 #include "main/objtexture.h"
@@ -31,7 +31,7 @@ enum
 void arwarwinggu_setActiveVisible(GameObject* obj, u8 active, u8 visible)
 {
     ObjAnimComponent* objAnim = &(obj)->anim;
-    ArwingGuState* state = (obj)->extra;
+    ArwingGuGunState* state = (obj)->extra;
 
     if (active != 0)
     {
@@ -49,21 +49,21 @@ void arwarwinggu_setActiveVisible(GameObject* obj, u8 active, u8 visible)
 
 void arwarwinggu_setTextureFrame(GameObject* obj, int textureFrame)
 {
-    ArwingGuState* state = obj->extra;
-    state->texture.textureFrame = textureFrame;
+    ArwingGuTextureState* state = obj->extra;
+    state->textureFrame = textureFrame;
 }
 
 void arwarwinggu_applyTextureFrame(GameObject* obj)
 {
     ObjModel* model;
     ObjTextureRuntimeSlot* texture;
-    ArwingGuState* state = (obj)->extra;
+    ArwingGuTextureState* state = (obj)->extra;
     Texture* anim;
     model = Obj_GetActiveModel(obj);
     texture = objFindTexture(obj, 0, 0);
     anim = ObjModel_GetTexture(model->file, 0);
-    textureSetAnimationFrameStep(anim, (u16)state->texture.textureFrame);
-    textureUpdateAnimationFrame(anim, &state->texture.textureAnimFlags, &texture->textureId);
+    textureSetAnimationFrameStep(anim, (u16)state->textureFrame);
+    textureUpdateAnimationFrame(anim, &state->textureAnimFlags, &texture->textureId);
 }
 
 int ARWArwingGu_getExtraSize(GameObject* obj)
@@ -71,12 +71,12 @@ int ARWArwingGu_getExtraSize(GameObject* obj)
     switch (obj->anim.romDefNo)
     {
     case ARWGU_DEF_ENGINE:
-        return 8;
+        return sizeof(ArwingGuTextureState);
     case ARWGU_DEF_GUN_L:
     case ARWGU_DEF_GUN_R:
-        return 4;
+        return sizeof(ArwingGuGunState);
     case ARWGU_DEF_BOMB:
-        return 1;
+        return sizeof(ArwingGuBombState);
     default:
         return 0;
     }
@@ -109,18 +109,18 @@ void ARWArwingGu_update(GameObject* obj)
     {
     case ARWGU_DEF_ENGINE:
     {
-        ArwingGuState* state = (obj)->extra;
+        ArwingGuTextureState* state = (obj)->extra;
         ObjModel* model = Obj_GetActiveModel(obj);
         ObjTextureRuntimeSlot* texture = objFindTexture(obj, 0, 0);
         Texture* anim = ObjModel_GetTexture(model->file, 0);
-        textureSetAnimationFrameStep(anim, (u16)state->texture.textureFrame);
-        textureUpdateAnimationFrame(anim, &state->texture.textureAnimFlags, &texture->textureId);
+        textureSetAnimationFrameStep(anim, (u16)state->textureFrame);
+        textureUpdateAnimationFrame(anim, &state->textureAnimFlags, &texture->textureId);
         break;
     }
     case ARWGU_DEF_GUN_L:
     case ARWGU_DEF_GUN_R:
     {
-        ArwingGuState* state = (obj)->extra;
+        ArwingGuGunState* state = (obj)->extra;
         f32 minTimer;
         f32 vt = state->visibleTimer;
         if (vt > (minTimer = 0.0f))
@@ -136,7 +136,7 @@ void ARWArwingGu_update(GameObject* obj)
     }
     case ARWGU_DEF_BOMB:
     {
-        ArwingGuState* state = (obj)->extra;
+        ArwingGuBombState* state = (obj)->extra;
         f32 alpha;
         if (state->fadeIn != 0)
         {
@@ -178,19 +178,31 @@ void ARWArwingGu_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWArwingGuObjDescriptorInitAdapter, ARWArwingGu_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gARWArwingGuObjDescriptorHitDetectAdapter, ARWArwingGu_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWArwingGuObjDescriptorRenderAdapter, ARWArwingGu_render)
+OBJECT_FREE_ADAPTER(gARWArwingGuObjDescriptorFreeAdapter, ARWArwingGu_free)
+OBJECT_TYPE_ID_ADAPTER(gARWArwingGuObjDescriptorTypeIdAdapter, ARWArwingGu_getObjectTypeId)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWArwingGuObjDescriptorAcquire, ARWArwingGu_initialise)
+
 ObjectDescriptor gARWArwingGuObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ARWArwingGu_initialise,
-    (ObjectDescriptorCallback)ARWArwingGu_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWArwingGuObjDescriptorAcquire,
+        ARWArwingGu_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)ARWArwingGu_init,
-    (ObjectDescriptorCallback)ARWArwingGu_update,
-    (ObjectDescriptorCallback)ARWArwingGu_hitDetect,
-    (ObjectDescriptorCallback)ARWArwingGu_render,
-    (ObjectDescriptorCallback)ARWArwingGu_free,
-    (ObjectDescriptorCallback)ARWArwingGu_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)ARWArwingGu_getExtraSize,
+    gARWArwingGuObjDescriptorInitAdapter,
+    ARWArwingGu_update,
+    gARWArwingGuObjDescriptorHitDetectAdapter,
+    gARWArwingGuObjDescriptorRenderAdapter,
+    gARWArwingGuObjDescriptorFreeAdapter,
+    gARWArwingGuObjDescriptorTypeIdAdapter,
+    ARWArwingGu_getExtraSize,
 };

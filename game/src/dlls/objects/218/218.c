@@ -13,7 +13,7 @@
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/dll/dll_0282_barrelgener.h"
-#include "main/dll/dll_00DA_pollenfragment_api.h"
+#include "main/dll/dll_00DA_pollenfragment.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/obj_path.h"
 #include "main/objfx.h"
@@ -22,10 +22,9 @@
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/maketex_timer_api.h"
-#include "main/objseq_api.h"
+#include "main/audio/sfx.h"
+#include "main/maketex_timer.h"
+#include "main/objseq.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
 
@@ -266,7 +265,7 @@ void pollenfragment_update(GameObject* obj)
             pos.y = prod * quarter + nearObj->anim.worldPosY;
             pos.z = nearObj->anim.worldPosZ;
         }
-        PSVECSubtract(&pos, &obj->anim.worldPos, &dir);
+        PSVECSubtract(&pos, (Vec*)&obj->anim.worldPosX, &dir);
         PSVECMag(&dir);
         PSVECNormalize(&dir, &dir);
         PSVECSubtract(&dir, &state->direction, &sc);
@@ -300,7 +299,7 @@ void pollenfragment_update(GameObject* obj)
     }
     if ((config->flags & POLLEN_FRAGMENT_CONFIG_SMOOTH_TURN) != 0)
     {
-        Obj_SmoothTurnAnglesTowardVelocity(obj, &obj->anim.velocity, 10, 0.0f,
+        Obj_SmoothTurnAnglesTowardVelocity(obj, (Vec3f*)&obj->anim.velocityX, 10, 0.0f,
                                            1.0f);
         obj->anim.rotZ = obj->anim.rotZ + framesThisStep * 0x500;
     }
@@ -379,11 +378,31 @@ void pollenfragment_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gPollenFragmentObjDescriptorInitAdapter, pollenfragment_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gPollenFragmentObjDescriptorRenderAdapter, pollenfragment_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gPollenFragmentObjDescriptorFreeAdapter, pollenfragment_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPollenFragmentObjDescriptorTypeIdAdapter, pollenfragment_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPollenFragmentObjDescriptorExtraSizeAdapter, pollenfragment_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPollenFragmentObjDescriptorAcquire, pollenfragment_initialise)
+
 ObjectDescriptor gPollenFragmentObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)pollenfragment_initialise, (ObjectDescriptorCallback)pollenfragment_release, 0,
-    (ObjectDescriptorCallback)pollenfragment_init, (ObjectDescriptorCallback)pollenfragment_update,
-    (ObjectDescriptorCallback)pollenfragment_hitDetect, (ObjectDescriptorCallback)pollenfragment_render,
-    (ObjectDescriptorCallback)pollenfragment_free, (ObjectDescriptorCallback)pollenfragment_getObjectTypeId,
-    pollenfragment_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPollenFragmentObjDescriptorAcquire,
+        pollenfragment_release,
+    },
+    0,
+    gPollenFragmentObjDescriptorInitAdapter,
+    pollenfragment_update,
+    pollenfragment_hitDetect,
+    gPollenFragmentObjDescriptorRenderAdapter,
+    gPollenFragmentObjDescriptorFreeAdapter,
+    gPollenFragmentObjDescriptorTypeIdAdapter,
+    gPollenFragmentObjDescriptorExtraSizeAdapter,
 };

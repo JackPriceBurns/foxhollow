@@ -24,6 +24,7 @@ void DIMDismountPoint_init(GameObject* obj, const DimDismountPlacement* placemen
 void DIMDismountPoint_release(void);
 void DIMDismountPoint_initialise(void);
 
-extern ObjectDescriptor12 gDIMDismountPointObjDescriptor;
+struct DIMDismountPointObjDescriptorType;
+extern struct DIMDismountPointObjDescriptorType gDIMDismountPointObjDescriptor;
 
 #endif

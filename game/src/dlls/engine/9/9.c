@@ -1,37 +1,36 @@
 #include "main/dll/cloudaction.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/texture.h"
 #include "main/dll/ppcwgpipe_struct.h"
 #include "main/cloud_action_runtime.h"
 #include "main/cloud_layer_state.h"
 #include "main/objtexture.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/sky_interface.h"
-#include "main/shader_api.h"
-#include "main/dll/savegame_env_api.h"
+#include "main/shader.h"
+#include "main/dll/savegame_env.h"
 #include "dolphin/gx/GXCull.h"
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/mtx.h"
 #include "string.h"
-#include "track/intersect_render_setup_api.h"
-#include "track/intersect_api.h"
-#include "main/hud_visibility_api.h"
+#include "track/intersect_render_setup.h"
+#include "track/intersect.h"
+#include "main/hud_visibility.h"
 #include "sys/objects.h"
-#include "main/objprint_render_api.h"
-#include "main/objprint_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/objprint_render.h"
+#include "main/objprint.h"
+#include "main/track_dolphin.h"
 #include "main/model.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/camera.h"
 #include "dolphin/gx/GXEnum.h"
-#include "main/sky.h"
 #include "main/resource.h"
 #include "PowerPC_EABI_Support/Msl/MSL_C/MSL_Common/critical_regions.gamecube.h"
 #include "sys/objects/lifecycle.h"
-#include "main/gx_scissor_api.h"
-#include "main/pi_dolphin_api.h"
+#include "main/gx_scissor.h"
+#include "main/pi_dolphin.h"
 #include "main/newclouds.h"
 #include "main/vecmath.h"
 
@@ -99,23 +98,23 @@ void* cloudGetLayerTexture(f32* out1, f32* out2)
     return NULL;
 }
 
-void __kill_critical_regions(void)
+void __kill_critical_regions(f32 a, f32 b)
 {
 }
 
-void __begin_critical_region(void)
+void __begin_critical_region(int value)
 {
 }
 
-void __end_critical_region(void)
+void __end_critical_region(int value)
 {
 }
 
-void cloudaction_func08_nop(void)
+void cloudaction_func08_nop(f32 x, f32 y, f32 z, int intensity)
 {
 }
 
-void cloudaction_func09_nop(void)
+void cloudaction_func09_nop(int enabled)
 {
 }
 
@@ -368,7 +367,7 @@ STATIC_ASSERT(offsetof(CloudActionConfig, envfxActId) == 0x24);
 STATIC_ASSERT(offsetof(CloudActionConfig, flags) == 0x58);
 STATIC_ASSERT(offsetof(CloudActionConfig, mainCloudIndex) == 0x5D);
 
-void cloudaction_update(int p1, int p2, u8* state, int p4, int val)
+void cloudaction_update(void* p1, void* p2, void* state, int p4, u16 val)
 {
     CloudEnvTbl* tbl = &gCloudActionEnvTbl;
     CloudActionConfig* cfg = (CloudActionConfig*)state;
@@ -497,19 +496,32 @@ CloudEnvTbl gCloudActionEnvTbl = {
     {0, 1578, 2140, 2145, 2147},
 };
 
-ResourceDescriptorCallbacks14 cloudaction_funcs = {
-    {0x00000000, 0x00000000, 0x00000000, 0x000c0000},
-    {(ResourceDescriptorCallback)cloudaction_initialise,
-     (ResourceDescriptorCallback)cloudaction_release,
-     0x00000000,
-     (ResourceDescriptorCallback)cloudaction_update,
-     (ResourceDescriptorCallback)cloudaction_onMapSetup,
-     (ResourceDescriptorCallback)cloudaction_scrollTexture,
-     (ResourceDescriptorCallback)renderClouds,
-     (ResourceDescriptorCallback)cloudaction_free,
-     (ResourceDescriptorCallback)cloudaction_func08_nop,
-     (ResourceDescriptorCallback)cloudaction_func09_nop,
-     (ResourceDescriptorCallback)__end_critical_region,
-     (ResourceDescriptorCallback)__begin_critical_region,
-     (ResourceDescriptorCallback)__kill_critical_regions,
-     0x00000000}};
+typedef struct CloudActionResourceDescriptor {
+    ResourceDescriptorHeader header;
+    CloudActionInterface interface;
+    void* trailing;
+} CloudActionResourceDescriptor;
+
+RESOURCE_ACQUIRE_ADAPTER(gCloudActionResourceAcquireAdapter, cloudaction_initialise)
+
+CloudActionResourceDescriptor cloudaction_funcs = {
+    {
+        {0x00000000, 0x00000000, 0x00000000, 0x000c0000},
+        gCloudActionResourceAcquireAdapter,
+        cloudaction_release,
+    },
+    {
+        NULL,
+        cloudaction_update,
+        cloudaction_onMapSetup,
+        cloudaction_scrollTexture,
+        renderClouds,
+        cloudaction_free,
+        cloudaction_func08_nop,
+        cloudaction_func09_nop,
+        __end_critical_region,
+        __begin_critical_region,
+        __kill_critical_regions,
+    },
+    NULL,
+};

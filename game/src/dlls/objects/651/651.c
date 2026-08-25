@@ -1,18 +1,3 @@
-/*
- * DLL 651 - a player-control-interface driven NPC character.
- *
- * The object joins object group 3 and runs entirely off the shared
- * gPlayerInterface vtable: init() wires its move/state tables, and each
- * frame update() drives it through update() (using the gDll28BStateHandlers
- * main and gDll28BSubstateHandlers sub state-handler tables installed by
- * initialise(); the handler functions themselves are compiled into the
- * DLL 650's TU). Its obj+0xB8 block is also described by
- * Dll28BAiState in earthwalker_state.h (where the handlers view it).
- * Per-frame it caches its planar distance to the player, runs the shared
- * dll_2E (moveLib) look-at/turn block at state+0x35C, the eye-animation
- * block at state+0x980, and a ROM-curve walker at state+0x9B0. render()
- * draws the model and the moveLib attachment when visible.
- */
 #include "main/frame_timing.h"
 #include "sys/objects.h"
 #include "main/vecmath.h"
@@ -22,9 +7,9 @@
 #include "main/player_control_interface.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/objtype.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/dll/dll_002E_moveLib.h"
 
 #define DLL28B_OBJ_GROUP    3
@@ -138,19 +123,31 @@ void dll_28B_initialise(void)
     gDll28BSubstateHandlers[3] = dll_28B_substateHandler3;
 }
 
+OBJECT_INIT_ADAPTER(gDll28BObjDescriptorInitAdapter, dll_28B_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDll28BObjDescriptorHitDetectAdapter, dll_28B_hitDetect_nop)
+OBJECT_FREE_ADAPTER(gDll28BObjDescriptorFreeAdapter, dll_28B_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll28BObjDescriptorTypeIdAdapter, dll_28B_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll28BObjDescriptorExtraSizeAdapter, dll_28B_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll28BObjDescriptorAcquire, dll_28B_initialise)
+
 ObjectDescriptor gDll28BObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll28BObjDescriptorAcquire,
+        dll_28B_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_28B_initialise,
-    (ObjectDescriptorCallback)dll_28B_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_28B_init,
-    (ObjectDescriptorCallback)dll_28B_update,
-    (ObjectDescriptorCallback)dll_28B_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_28B_render,
-    (ObjectDescriptorCallback)dll_28B_free,
-    (ObjectDescriptorCallback)dll_28B_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)dll_28B_getExtraSize,
+    gDll28BObjDescriptorInitAdapter,
+    dll_28B_update,
+    gDll28BObjDescriptorHitDetectAdapter,
+    dll_28B_render,
+    gDll28BObjDescriptorFreeAdapter,
+    gDll28BObjDescriptorTypeIdAdapter,
+    gDll28BObjDescriptorExtraSizeAdapter,
 };

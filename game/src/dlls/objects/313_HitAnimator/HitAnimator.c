@@ -5,9 +5,9 @@
 #include "dlls/objects/313_HitAnimator.h"
 
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
-#include "main/pi_dolphin_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/lightmap.h"
+#include "main/pi_dolphin.h"
+#include "main/track_dolphin.h"
 
 void HitAnimator_applyBlockState(MapBlockData* block, GameObject* obj, HitAnimatorState* state,
                                  HitAnimatorPlacement* placement) {
@@ -130,19 +130,26 @@ void HitAnimator_init(GameObject* obj, HitAnimatorPlacement* placement) {
     obj->objectFlags |= (OBJECT_OBJFLAG_HITDETECT_DISABLED | OBJECT_OBJFLAG_HIDDEN);
 }
 
+OBJECT_INIT_ADAPTER(gHitAnimatorObjDescriptorInitAdapter, HitAnimator_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gHitAnimatorObjDescriptorExtraSizeAdapter, HitAnimator_getExtraSize)
+
 ObjectDescriptor gHitAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gHitAnimatorObjDescriptorInitAdapter,
+    HitAnimator_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)HitAnimator_init,
-    (ObjectDescriptorCallback)HitAnimator_update,
-    0,
-    0,
-    0,
-    0,
-    HitAnimator_getExtraSize,
+    gHitAnimatorObjDescriptorExtraSizeAdapter,
 };

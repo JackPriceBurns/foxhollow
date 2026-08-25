@@ -7,11 +7,11 @@
 #include "dlls/objects/258_StayPoint.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/gamebits.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_80136a40.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 #define STAYPOINT_COMMAND_KIND       1
 #define STAYPOINT_COMMAND_TYPE       3
@@ -63,16 +63,22 @@ void StayPoint_init(GameObject* obj) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gStayPointObjDescriptorInitAdapter, StayPoint_init, obj)
+
 ObjectDescriptor gStayPointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)StayPoint_init,
-    (ObjectDescriptorCallback)StayPoint_update,
+    gStayPointObjDescriptorInitAdapter,
+    StayPoint_update,
     0,
     0,
     0,

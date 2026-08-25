@@ -53,7 +53,7 @@ int WM_spiritplace_SeqFn(GameObject* obj, int unused, ObjSeqState* actor);
 int WM_spiritplace_getExtraSize(void);
 int WM_spiritplace_getObjectTypeId(void);
 void WM_spiritplace_free(void);
-void WM_spiritplace_render(int p1, int p2, int p3, int p4, int p5, s8 visible);
+void WM_spiritplace_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void WM_spiritplace_hitDetect(GameObject* obj);
 void WM_spiritplace_update(GameObject* obj);
 void WM_spiritplace_init(GameObject* obj, WmSpiritPlaceMapData* placement);

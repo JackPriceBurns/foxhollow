@@ -5,6 +5,7 @@
 #include "game/objects/object.h"
 #include "dlls/object_descriptor.h"
 #include "main/objseq.h"
+#include "main/gamebit_latch.h"
 
 #define CRCLOUDRACE_DRAG_ROCK_MAP_ID 0x0C
 
@@ -53,14 +54,14 @@ typedef struct CrCloudRaceState {
   u8 phase;
   u8 flags;
   u8 unkA[2];
-  u8 effect[4];
+  int musicLatch;
 } CrCloudRaceState;
 
 STATIC_ASSERT(sizeof(CrCloudRaceState) == 0x10);
 STATIC_ASSERT(offsetof(CrCloudRaceState, timer) == 0x04);
 STATIC_ASSERT(offsetof(CrCloudRaceState, phase) == 0x08);
 STATIC_ASSERT(offsetof(CrCloudRaceState, flags) == 0x09);
-STATIC_ASSERT(offsetof(CrCloudRaceState, effect) == 0x0C);
+STATIC_ASSERT(offsetof(CrCloudRaceState, musicLatch) == 0x0C);
 
 extern ObjectDescriptor gCrCloudRaceObjDescriptor;
 

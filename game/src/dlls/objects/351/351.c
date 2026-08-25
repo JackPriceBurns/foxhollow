@@ -75,21 +75,47 @@ void attractor_release(void) {
 void attractor_initialise(void) {
 }
 
-ObjectDescriptor12 gAttractorObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)attractor_initialise,
-    (ObjectDescriptorCallback)attractor_release,
-    0,
-    (ObjectDescriptorCallback)attractor_init,
-    (ObjectDescriptorCallback)attractor_update,
-    (ObjectDescriptorCallback)attractor_hitDetect,
-    (ObjectDescriptorCallback)attractor_render,
-    (ObjectDescriptorCallback)attractor_free,
-    (ObjectDescriptorCallback)attractor_getObjectTypeId,
-    attractor_getExtraSize,
-    (ObjectDescriptorCallback)attractor_getScale,
-    (ObjectDescriptorCallback)attractor_getTarget,
+OBJECT_INIT_ADAPTER(gAttractorObjDescriptorInitAdapter, attractor_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gAttractorObjDescriptorUpdateAdapter, attractor_update)
+OBJECT_HIT_DETECT_ADAPTER(gAttractorObjDescriptorHitDetectAdapter, attractor_hitDetect)
+OBJECT_FREE_ADAPTER(gAttractorObjDescriptorFreeAdapter, attractor_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gAttractorObjDescriptorTypeIdAdapter, attractor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAttractorObjDescriptorExtraSizeAdapter, attractor_getExtraSize)
+
+typedef struct AttractorObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(attractor_getScale)* attractor_getScale;
+    __typeof__(attractor_getTarget)* attractor_getTarget;
+} AttractorObjDescriptorTypeInterface;
+
+struct AttractorObjDescriptorType {
+    ObjectDescriptorHeader header;
+    AttractorObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gAttractorObjDescriptorAcquire, attractor_initialise)
+
+struct AttractorObjDescriptorType gAttractorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gAttractorObjDescriptorAcquire,
+        attractor_release,
+    },
+    {
+        0,
+        gAttractorObjDescriptorInitAdapter,
+        gAttractorObjDescriptorUpdateAdapter,
+        gAttractorObjDescriptorHitDetectAdapter,
+        attractor_render,
+        gAttractorObjDescriptorFreeAdapter,
+        gAttractorObjDescriptorTypeIdAdapter,
+        gAttractorObjDescriptorExtraSizeAdapter,
+        attractor_getScale,
+        attractor_getTarget,
+    },
 };

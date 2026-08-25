@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 
 #define SHIELD_SEGMENT_COUNT       4
 #define SHIELD_SEGMENT_TABLE_COUNT 16

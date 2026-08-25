@@ -4,9 +4,10 @@
 #include "global.h"
 #include "dolphin/gx/GXStruct.h"
 #include "dolphin/mtx/vec_types.h"
-#include "main/sky_api.h"
 
 typedef struct Texture Texture;
+typedef struct ModelLightStruct ModelLightStruct;
+typedef struct GameObject GameObject;
 
 typedef struct SkyRotQ
 {
@@ -163,5 +164,30 @@ void skySetLightSlot(int slot, f32 x, f32 y, f32 z, int red, int green, int blue
 void renderSunAndMoon(int a, int b, int c, int d, int visible);
 void skyRenderTimeOfDayBackdrop(void);
 void skyUpdateEnvfxAct(int a, int b, u8* cfg);
+
+
+#include "types.h"
+
+void skySetEnvFxFlags(u8 value);
+f32 lightningGetRemainingFraction(void);
+void skyGetObjectLightDirection(GameObject* obj, f32* x, f32* y, f32* z);
+void skyApplyLightSlot(int slot);
+void skyGetAmbientColor(int slot, u8* red, u8* green, u8* blue);
+void objGetSunColor(int slot, u8* red, u8* green, u8* blue);
+int skyGetSlotFlag80(int slot);
+void skySetSlotFlag80(int flags, u8 mode);
+void skySetLightIndex(int mode, f32 brightness);
+void skySetLightDirection(int flags, f32 x, f32 y, f32 z);
+void skySetAmbientColor(int flags, u8 red, u8 green, u8 blue);
+void skySetMoonColor(int flags, u8 red, u8 green, u8 blue);
+void skySetBaseColor(int flags, u8 red, u8 green, u8 blue, u8 moonScale, u8 ambientScale);
+void skySetLightsEnabled(int flags, u8 enabled, int startComplete);
+void skySetOverrideLightColor(u8 red, u8 green, u8 blue);
+void skySetOverrideLightColorEnabled(u8 enabled);
+void skySetOverrideLightDirection(f32 x, f32 y, f32 z, f32 intensity);
+void skySetOverrideLightDirectionEnabled(u8 enabled);
+ModelLightStruct* skyGetMoonLight(void);
+ModelLightStruct* skyGetSunLight(void);
+
 
 #endif /* MAIN_SKY_H_ */

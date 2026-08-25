@@ -7,20 +7,20 @@
 #include "dlls/objects/599_DR_EarthWar.h"
 
 #include "dolphin/pad.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/dll/savegame_object.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/model.h"
 #include "main/objHitReact.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 #define DIM2_PRISON_MAMMOTH_STATE_FLAG_SKIP_HIT_REACT 0x08
 #define DIM2_PRISON_MAMMOTH_VARIANT_ZERO_GAME_BIT     0x224
@@ -263,22 +263,34 @@ ObjHitReactEntry gPrisonMammothHitReactEntry[] = {
     {730, 885, 48, -1, 0, {0, 0, 0}, 0.012f, {0, 0, 0, 0}},
 };
 
+OBJECT_INIT_ADAPTER(gDIM2PrisonMammothObjDescriptorInitAdapter, dim2prisonmammoth_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2PrisonMammothObjDescriptorHitDetectAdapter, dim2prisonmammoth_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2PrisonMammothObjDescriptorFreeAdapter, dim2prisonmammoth_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM2PrisonMammothObjDescriptorTypeIdAdapter, dim2prisonmammoth_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2PrisonMammothObjDescriptorExtraSizeAdapter, dim2prisonmammoth_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2PrisonMammothObjDescriptorAcquire, dim2prisonmammoth_initialise)
+
 ObjectDescriptor10WithPadding gDIM2PrisonMammothObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gDIM2PrisonMammothObjDescriptorAcquire,
+            dim2prisonmammoth_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)dim2prisonmammoth_initialise,
-        (ObjectDescriptorCallback)dim2prisonmammoth_release,
-        0,
-        (ObjectDescriptorCallback)dim2prisonmammoth_init,
-        (ObjectDescriptorCallback)dim2prisonmammoth_update,
-        (ObjectDescriptorCallback)dim2prisonmammoth_hitDetect,
-        (ObjectDescriptorCallback)dim2prisonmammoth_render,
-        (ObjectDescriptorCallback)dim2prisonmammoth_free,
-        (ObjectDescriptorCallback)dim2prisonmammoth_getObjectTypeId,
-        dim2prisonmammoth_getExtraSize,
+        gDIM2PrisonMammothObjDescriptorInitAdapter,
+        dim2prisonmammoth_update,
+        gDIM2PrisonMammothObjDescriptorHitDetectAdapter,
+        dim2prisonmammoth_render,
+        gDIM2PrisonMammothObjDescriptorFreeAdapter,
+        gDIM2PrisonMammothObjDescriptorTypeIdAdapter,
+        gDIM2PrisonMammothObjDescriptorExtraSizeAdapter,
     },
     0,
 };

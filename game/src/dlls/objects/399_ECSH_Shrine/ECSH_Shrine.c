@@ -6,29 +6,28 @@
  */
 #include "dlls/objects/399_ECSH_Shrine.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/player_staff_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
+#include "main/dll/player_staff.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/screen_transition.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -791,7 +790,7 @@ void ecshShrine_init(GameObject* obj, const s8* placement) {
     state->animState = 0;
     state->matchFlag = -1;
     state->spiritCup = 0;
-    state->gameBitLatch.activeMask = 0;
+    state->gameBitLatch = 0;
     obj->animEventCallback = ecshShrine_processAnimEvents;
     ObjMsg_AllocQueue(obj, ECSH_SHRINE_MESSAGE_QUEUE_CAPACITY);
     mainSetBits(GAMEBIT_ECSH_Entered, 1);
@@ -819,24 +818,38 @@ void ecshShrine_release(void) {
 void ecshShrine_initialise(void) {
 }
 
-ObjectDescriptor15 gECSHShrineObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
-    (ObjectDescriptorCallback)ecshShrine_initialise,
-    (ObjectDescriptorCallback)ecshShrine_release,
-    0,
-    (ObjectDescriptorCallback)ecshShrine_init,
-    (ObjectDescriptorCallback)ecshShrine_update,
-    (ObjectDescriptorCallback)ecshShrine_hitDetect,
-    (ObjectDescriptorCallback)ecshShrine_render,
-    (ObjectDescriptorCallback)ecshShrine_free,
-    (ObjectDescriptorCallback)ecshShrine_getObjectTypeId,
-    ecshShrine_getExtraSize,
-    (ObjectDescriptorCallback)ecshShrine_func0A,
-    (ObjectDescriptorCallback)ecshShrine_getCupPosition,
-    (ObjectDescriptorCallback)ecshShrine_getPhaseAndSpiritCup,
-    (ObjectDescriptorCallback)ecshShrine_setCupPosition,
-    (ObjectDescriptorCallback)ecshShrine_checkCupPick,
+OBJECT_INIT_ADAPTER(gECSHShrineObjDescriptorInitAdapter, ecshShrine_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gECSHShrineObjDescriptorHitDetectAdapter, ecshShrine_hitDetect)
+OBJECT_FREE_ADAPTER(gECSHShrineObjDescriptorFreeAdapter, ecshShrine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gECSHShrineObjDescriptorTypeIdAdapter, ecshShrine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gECSHShrineObjDescriptorExtraSizeAdapter, ecshShrine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gECSHShrineObjDescriptorAcquire, ecshShrine_initialise)
+
+ECSHShrineDescriptor gECSHShrineObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
+        },
+        gECSHShrineObjDescriptorAcquire,
+        ecshShrine_release,
+    },
+    {
+        0,
+        gECSHShrineObjDescriptorInitAdapter,
+        ecshShrine_update,
+        gECSHShrineObjDescriptorHitDetectAdapter,
+        ecshShrine_render,
+        gECSHShrineObjDescriptorFreeAdapter,
+        gECSHShrineObjDescriptorTypeIdAdapter,
+        gECSHShrineObjDescriptorExtraSizeAdapter,
+        ecshShrine_func0A,
+        ecshShrine_getCupPosition,
+        ecshShrine_getPhaseAndSpiritCup,
+        ecshShrine_setCupPosition,
+        ecshShrine_checkCupPick,
+    },
 };

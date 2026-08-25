@@ -2,11 +2,11 @@
 
 #include "dlls/objects/438_SC_levelcon.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model_engine.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
@@ -176,15 +176,25 @@ static void sc_totempole_release(void) {
 static void sc_totempole_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSC_totempoleObjDescriptorInitAdapter, sc_totempole_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSC_totempoleObjDescriptorHitDetectAdapter, sc_totempole_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_totempoleObjDescriptorFreeAdapter, sc_totempole_free)
+OBJECT_TYPE_ID_ADAPTER(gSC_totempoleObjDescriptorTypeIdAdapter, sc_totempole_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_totempoleObjDescriptorExtraSizeAdapter, sc_totempole_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_totempoleObjDescriptorAcquire, sc_totempole_initialise)
+
 ObjectDescriptor gSC_totempoleObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_totempole_initialise,
-    .release = (ObjectDescriptorCallback)sc_totempole_release,
-    .init = (ObjectDescriptorCallback)sc_totempole_init,
-    .update = (ObjectDescriptorCallback)sc_totempole_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_totempole_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_totempole_render,
-    .free = (ObjectDescriptorCallback)sc_totempole_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_totempole_getObjectTypeId,
-    .getExtraSize = sc_totempole_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_totempoleObjDescriptorAcquire,
+        .release = sc_totempole_release,
+    },
+    .init = gSC_totempoleObjDescriptorInitAdapter,
+    .update = sc_totempole_update,
+    .hitDetect = gSC_totempoleObjDescriptorHitDetectAdapter,
+    .render = sc_totempole_render,
+    .free = gSC_totempoleObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_totempoleObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_totempoleObjDescriptorExtraSizeAdapter,
+};;

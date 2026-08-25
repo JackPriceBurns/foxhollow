@@ -1,19 +1,17 @@
-#define INTERSECT_HUD_RECT_COLOR_POINTER
-#include "track/intersect_hud_api.h"
-#undef INTERSECT_HUD_RECT_COLOR_POINTER
+#include "track/intersect_hud.h"
 #include "main/gametext_shared_internal.h"
-#include "main/gametext_api.h"
-#include "main/gametext_task_api.h"
+#include "main/gametext.h"
+#include "main/gametext_task.h"
 #include "main/texture.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/textrender_internal.h"
-#include "main/lightmap_text_color_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "track/intersect_api.h"
+#include "main/lightmap_text_color.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/rcp_dolphin.h"
+#include "track/intersect.h"
 #include "main/lightmap.h"
-#include "main/gx_scissor_api.h"
-#include "track/intersect_render_setup_api.h"
+#include "main/gx_scissor.h"
+#include "track/intersect_render_setup.h"
 
 const GXColor gGameTextBoxFillColor = {0xFF, 0x40, 0x40, 0xFF};
 
@@ -261,7 +259,7 @@ void gameTextDrawBox(struct GameTextDef* strPtr, intptr_t boxId, GameTextBox* bo
             s16 by = box->y;
             s16 bx = box->x;
             fillColor7 = gGameTextBoxFillColor;
-            hudDrawRect(bx, by, bx + bw, by + bh, &fillColor7);
+            hudDrawRect(bx, by, bx + bw, by + bh, fillColor7);
         } else {
             hudHeight = box->height;
             hudWidth = box->width;
@@ -277,7 +275,7 @@ void gameTextDrawBox(struct GameTextDef* strPtr, intptr_t boxId, GameTextBox* bo
         s16 by = box->y;
         s16 bx = box->x;
         fillColor1 = gGameTextBoxFillColor;
-        hudDrawRect(bx, by, bx + bw, by + bh, &fillColor1);
+        hudDrawRect(bx, by, bx + bw, by + bh, fillColor1);
     } break;
     case 6: {
         if (strPtr == NULL) {

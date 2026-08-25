@@ -1,35 +1,34 @@
 #include "main/texture.h"
-#include "track/intersect_hud_api.h"
-#include "main/gametext_box_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "track/intersect_hud.h"
+#include "main/gametext_box.h"
+#include "dolphin/math.h"
 #include "main/dll/ppcwgpipe_struct.h"
 #include "main/camera_interface.h"
 #include "main/game_ui_interface.h"
 #include "sys/objects.h"
 #include "main/model.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/gamebits.h"
 #include "dolphin/gx/GXCull.h"
 #include "main/pad.h"
 #include "main/camera.h"
 #include "main/objtype.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_0031_minimap.h"
 #include "main/dll/dll_0044_cameramodeviewfinder.h"
-#include "main/minimap_api.h"
-#include "main/textrender_api.h"
-#include "main/pause_menu_api.h"
-#include "main/gametext_color_api.h"
+#include "main/minimap.h"
+#include "main/textrender.h"
+#include "main/pause_menu.h"
+#include "main/gametext_color.h"
 #include "dlls/objects/291_fuelCell.h"
 #include "dlls/object_descriptor.h"
-#include "main/dll/player_api.h"
-#include "main/gametext_charset_api.h"
-#include "main/gametext_show_api.h"
+#include "main/dll/player.h"
+#include "main/gametext_charset.h"
+#include "main/gametext_show.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
 
@@ -1054,15 +1053,9 @@ void Minimap_initialise(void)
     gMinimapBoxY = 340;
 }
 
-ObjectDescriptor6 Minimap_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_5_SLOTS,
-    (ObjectDescriptorCallback)Minimap_initialise,
-    (ObjectDescriptorCallback)Minimap_release,
-    0,
-    (ObjectDescriptorCallback)Minimap_frameStart,
-    (ObjectDescriptorCallback)Minimap_update,
-    0,
+RESOURCE_ACQUIRE_ADAPTER(Minimap_acquire, Minimap_initialise)
+
+MinimapResourceDescriptor Minimap_funcs = {
+    { { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_5_SLOTS }, Minimap_acquire, Minimap_release },
+    { NULL, Minimap_frameStart, Minimap_update, NULL },
 };

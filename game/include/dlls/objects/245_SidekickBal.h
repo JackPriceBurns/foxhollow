@@ -3,6 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
+#include "main/dll/curves_collision_state.h"
 
 typedef enum SidekickBallMode {
     SIDEKICK_BALL_IDLE = 0,
@@ -13,67 +14,32 @@ typedef enum SidekickBallMode {
 } SidekickBallMode;
 
 typedef struct SidekickBallState {
-    u8 unk000[0x68];        /* 0x000 */
-    f32 collisionNormal[3]; /* 0x068 */
-    u8 pad074[0x140];       /* 0x074 */
-    f32 floorHeight;        /* 0x1B4 */
-    u8 pad1B8[4];           /* 0x1B8 */
-    f32 floorBaseY;         /* 0x1BC */
-    u8 pad1C0[0x9B];        /* 0x1C0 */
-    u8 hittableLatch;       /* 0x25B */
-    u8 pad25C[5];           /* 0x25C */
-    s8 hasCollisionNormal;  /* 0x261 */
-    u8 pad262[6];           /* 0x262 */
-    f32 primaryRadius;      /* 0x268 */
-    f32 fadeTimer;          /* 0x26C */
-    u8 pad270[4];           /* 0x270 */
-    u8 ballMode;            /* 0x274: SidekickBallMode */
-    u8 onPathPoint;         /* 0x275 */
-    u8 pad276[0x22];        /* 0x276 */
-    f32 unk298;             /* 0x298 */
-    u8 pad29C[0x14];        /* 0x29C */
-    f32 previousPosX;       /* 0x2B0 */
-    f32 previousPosY;       /* 0x2B4 */
-    f32 previousPosZ;       /* 0x2B8 */
-    u8 pad2BC[4];           /* 0x2BC */
-    f32 floorY;             /* 0x2C0 */
-    f32 floorDepth;         /* 0x2C4 */
-    u8 triggerArmed;        /* 0x2C8 */
-    u8 triggerHit;          /* 0x2C9 */
-    u8 sendHoldMessage;     /* 0x2CA */
-    u8 pad2CB;              /* 0x2CB */
+    CurvesCollisionState path;
+    f32 primaryRadius;
+    f32 fadeTimer;
+    u8 pad08[4];
+    u8 ballMode;
+    u8 onPathPoint;
+    u8 pad0E[0x3A];
+    f32 previousPosX;
+    f32 previousPosY;
+    f32 previousPosZ;
+    u8 pad54[4];
+    f32 floorY;
+    f32 floorDepth;
+    u8 triggerArmed;
+    u8 triggerHit;
+    u8 sendHoldMessage;
+    u8 pad63;
 } SidekickBallState;
 
-STATIC_ASSERT(offsetof(SidekickBallState, unk000) == 0x0);
-STATIC_ASSERT(offsetof(SidekickBallState, collisionNormal) == 0x68);
-STATIC_ASSERT(offsetof(SidekickBallState, pad074) == 0x74);
-STATIC_ASSERT(offsetof(SidekickBallState, floorHeight) == 0x1B4);
-STATIC_ASSERT(offsetof(SidekickBallState, pad1B8) == 0x1B8);
-STATIC_ASSERT(offsetof(SidekickBallState, floorBaseY) == 0x1BC);
-STATIC_ASSERT(offsetof(SidekickBallState, pad1C0) == 0x1C0);
-STATIC_ASSERT(offsetof(SidekickBallState, hittableLatch) == 0x25B);
-STATIC_ASSERT(offsetof(SidekickBallState, pad25C) == 0x25C);
-STATIC_ASSERT(offsetof(SidekickBallState, hasCollisionNormal) == 0x261);
-STATIC_ASSERT(offsetof(SidekickBallState, pad262) == 0x262);
-STATIC_ASSERT(offsetof(SidekickBallState, primaryRadius) == 0x268);
-STATIC_ASSERT(offsetof(SidekickBallState, fadeTimer) == 0x26C);
-STATIC_ASSERT(offsetof(SidekickBallState, pad270) == 0x270);
-STATIC_ASSERT(offsetof(SidekickBallState, ballMode) == 0x274);
-STATIC_ASSERT(offsetof(SidekickBallState, onPathPoint) == 0x275);
-STATIC_ASSERT(offsetof(SidekickBallState, pad276) == 0x276);
-STATIC_ASSERT(offsetof(SidekickBallState, unk298) == 0x298);
-STATIC_ASSERT(offsetof(SidekickBallState, pad29C) == 0x29C);
-STATIC_ASSERT(offsetof(SidekickBallState, previousPosX) == 0x2B0);
-STATIC_ASSERT(offsetof(SidekickBallState, previousPosY) == 0x2B4);
-STATIC_ASSERT(offsetof(SidekickBallState, previousPosZ) == 0x2B8);
-STATIC_ASSERT(offsetof(SidekickBallState, pad2BC) == 0x2BC);
-STATIC_ASSERT(offsetof(SidekickBallState, floorY) == 0x2C0);
-STATIC_ASSERT(offsetof(SidekickBallState, floorDepth) == 0x2C4);
-STATIC_ASSERT(offsetof(SidekickBallState, triggerArmed) == 0x2C8);
-STATIC_ASSERT(offsetof(SidekickBallState, triggerHit) == 0x2C9);
-STATIC_ASSERT(offsetof(SidekickBallState, sendHoldMessage) == 0x2CA);
-STATIC_ASSERT(offsetof(SidekickBallState, pad2CB) == 0x2CB);
-STATIC_ASSERT(sizeof(SidekickBallState) == 0x2CC);
+STATIC_ASSERT(offsetof(SidekickBallState, path) == 0x0);
+STATIC_ASSERT(offsetof(SidekickBallState, primaryRadius) == sizeof(CurvesCollisionState));
+STATIC_ASSERT(offsetof(SidekickBallState, ballMode) == sizeof(CurvesCollisionState) + 0xC);
+STATIC_ASSERT(offsetof(SidekickBallState, previousPosX) == sizeof(CurvesCollisionState) + 0x48);
+STATIC_ASSERT(offsetof(SidekickBallState, floorY) == sizeof(CurvesCollisionState) + 0x58);
+STATIC_ASSERT(offsetof(SidekickBallState, triggerArmed) == sizeof(CurvesCollisionState) + 0x60);
+STATIC_ASSERT(offsetof(SidekickBallState, pad63) + sizeof(u8) == sizeof(CurvesCollisionState) + 0x64);
 
 int sidekickBall_isIdle(GameObject* obj);
 void sidekickBall_handlePlayerInteraction(GameObject* obj, SidekickBallState* state);

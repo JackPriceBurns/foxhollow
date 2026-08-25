@@ -17,7 +17,7 @@
  * (gWaterFlowIdlePhase / gWaterFlowFlowPhase) that select the weed's idle vs. flowing
  * animation move via ObjAnim_SetCurrentMove.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_02AE_waterflowwe.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
@@ -263,19 +263,31 @@ void waterflowwe_initialise(void)
     gWaterFlowFlowPhase = WATERFLOWWE_ZERO;
 }
 
+OBJECT_INIT_ADAPTER(gWaterFlowWeObjDescriptorInitAdapter, waterflowwe_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWaterFlowWeObjDescriptorHitDetectAdapter, waterflowwe_hitDetect)
+OBJECT_FREE_ADAPTER(gWaterFlowWeObjDescriptorFreeAdapter, waterflowwe_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWaterFlowWeObjDescriptorTypeIdAdapter, waterflowwe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWaterFlowWeObjDescriptorExtraSizeAdapter, waterflowwe_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWaterFlowWeObjDescriptorAcquire, waterflowwe_initialise)
+
 ObjectDescriptor gWaterFlowWeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWaterFlowWeObjDescriptorAcquire,
+        waterflowwe_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)waterflowwe_initialise,
-    (ObjectDescriptorCallback)waterflowwe_release,
-    0,
-    (ObjectDescriptorCallback)waterflowwe_init,
-    (ObjectDescriptorCallback)waterflowwe_update,
-    (ObjectDescriptorCallback)waterflowwe_hitDetect,
-    (ObjectDescriptorCallback)waterflowwe_render,
-    (ObjectDescriptorCallback)waterflowwe_free,
-    (ObjectDescriptorCallback)waterflowwe_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)waterflowwe_getExtraSize,
+    gWaterFlowWeObjDescriptorInitAdapter,
+    waterflowwe_update,
+    gWaterFlowWeObjDescriptorHitDetectAdapter,
+    waterflowwe_render,
+    gWaterFlowWeObjDescriptorFreeAdapter,
+    gWaterFlowWeObjDescriptorTypeIdAdapter,
+    gWaterFlowWeObjDescriptorExtraSizeAdapter,
 };

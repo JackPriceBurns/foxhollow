@@ -44,4 +44,15 @@ STATIC_ASSERT(sizeof(LinkInterfaceVTable) == 0x38);
 
 void Link_setNavigationEnabled(u8 v);
 
+
+#include "types.h"
+
+u32 Link_update(void);
+void setLinkNotRotated(void);
+void setLinkIsRotated(void);
+u16 linkGetSelectedItemId(void);
+void Link_refreshOverlappingItemTimers(void);
+void Link_scanItemVerticalBounds(void);
+
+
 #endif /* MAIN_DLL_DLL_003C_LINK_H_ */

@@ -1,4 +1,4 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
@@ -16,17 +16,20 @@ f32 gEffect6ScrollPhase1 = 0.3f;
 f32 gEffect6ScrollPhase2 = 0.1f;
 f32 gEffect6ScrollPhase3 = 0.3f;
 
-ObjectDescriptor6 Effect6_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Effect6_initialise,
-    (ObjectDescriptorCallback)Effect6_release,
-    NULL,
-    (ObjectDescriptorCallback)Effect6_func03_nop,
-    (ObjectDescriptorCallback)Effect6_spawnObject,
-    (ObjectDescriptorCallback)Effect6_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect6Resource, Effect6_initialise, Effect6_spawnObject, Effect6_updateFrameState)
+
+EffectResourceDescriptor Effect6_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gEffect6ResourceAcquire,
+        Effect6_release,
+    },
+    {
+        NULL,
+        Effect6_func03_nop,
+        gEffect6ResourceSpawn,
+        gEffect6ResourceUpdate,
+    },
 };
 
 int Effect6_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

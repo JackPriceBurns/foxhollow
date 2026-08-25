@@ -181,7 +181,7 @@ void directionallight_free(GameObject* obj)
     }
 }
 
-void directionallight_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale)
+void directionallight_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
 }
@@ -288,31 +288,37 @@ void directionallight_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDirectionalLightObjDescriptorInitAdapter, directionallight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDirectionalLightObjDescriptorHitDetectAdapter, directionallight_hitDetect)
+OBJECT_FREE_ADAPTER(gDirectionalLightObjDescriptorFreeAdapter, directionallight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDirectionalLightObjDescriptorTypeIdAdapter, directionallight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDirectionalLightObjDescriptorExtraSizeAdapter, directionallight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDirectionalLightObjDescriptorAcquire, directionallight_initialise)
+
 struct DirectionalLightObjDescriptorLayout gDirectionalLightObjDescriptor = {
-    0,
-    0,
-    0,
-    0x90000,
-    {
-        (void (*)(void))directionallight_initialise,
-        (void (*)(void))directionallight_release,
-        0,
-        (void (*)(void))directionallight_init,
-        (void (*)(void))directionallight_update,
-        (void (*)(void))directionallight_hitDetect,
-        (void (*)(void))directionallight_render,
-        (void (*)(void))directionallight_free,
-        (void (*)(void))directionallight_getObjectTypeId,
-        (void (*)(void))directionallight_getExtraSize,
+    .header = {
+        .metadata = { 0, 0, 0, 0x90000 },
+        .acquire = gDirectionalLightObjDescriptorAcquire,
+        .release = directionallight_release,
     },
-    "Mode: YAW\n",
-    "Angle: %d\n",
-    "Mode: PITCH\n",
-    "Mode: DIFFUSE COLOUR RED\n",
-    "Colour: %d\n",
-    "Mode: DIFFUSE COLOUR GREEN\n",
-    "Mode: DIFFUSE COLOUR BLUE\n",
-    "Mode: SPECULAR COLOUR RED\n",
-    "Mode: SPECULAR COLOUR GREEN\n",
-    "Mode: SPECULAR COLOUR BLUE\n",
+    .interface = {
+        .init = gDirectionalLightObjDescriptorInitAdapter,
+        .update = directionallight_update,
+        .hitDetect = gDirectionalLightObjDescriptorHitDetectAdapter,
+        .render = directionallight_render,
+        .free = gDirectionalLightObjDescriptorFreeAdapter,
+        .getObjectTypeId = gDirectionalLightObjDescriptorTypeIdAdapter,
+        .getExtraSize = gDirectionalLightObjDescriptorExtraSizeAdapter,
+    },
+    .debugModeYaw = "Mode: YAW\n",
+    .debugAngleFormat = "Angle: %d\n",
+    .debugModePitch = "Mode: PITCH\n",
+    .debugModeDiffuseRed = "Mode: DIFFUSE COLOUR RED\n",
+    .debugColourFormat = "Colour: %d\n",
+    .debugModeDiffuseGreen = "Mode: DIFFUSE COLOUR GREEN\n",
+    .debugModeDiffuseBlue = "Mode: DIFFUSE COLOUR BLUE\n",
+    .debugModeSpecularRed = "Mode: SPECULAR COLOUR RED\n",
+    .debugModeSpecularGreen = "Mode: SPECULAR COLOUR GREEN\n",
+    .debugModeSpecularBlue = "Mode: SPECULAR COLOUR BLUE\n",
 };

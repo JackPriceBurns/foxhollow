@@ -5,7 +5,7 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_002E_moveLib.h"
 #include "main/model_engine.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 typedef struct ShopkeeperState
 {

@@ -26,7 +26,7 @@
 #include "main/obj_trigger.h"
 #include "sys/objects.h"
 #include "main/frame_timing.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/vecmath.h"
 #include "main/audio/sfx.h"
 #include "main/gamebits.h"
@@ -38,38 +38,36 @@
 #include "main/objanim.h"
 #include "main/objseq.h"
 #include "dolphin/mtx/vec.h"
-#include "main/audio/music_api.h"
-#include "main/gametext_show_api.h"
+#include "main/audio/music.h"
+#include "main/gametext_show.h"
 #include "main/rcp_dolphin.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/maketex_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex.h"
+#include "main/maketex_random.h"
+#include "main/maketex_timer.h"
 #include "main/dll/dll_0282_barrelgener.h"
 #include "main/dll/dll_0262_drakormissile.h"
 #include "main/dll/dll_0271_drakorhoverpad.h"
 #include "main/dll/dll_0243_dbholecontrol1.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "sys/objects/lifecycle.h"
 #include "main/object_update_list.h"
 #include "game/objects/object_setup.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint.h"
+#include "main/objprint_sound.h"
 #include "main/object_render.h"
 #include "game/objects/object.h"
 #include "main/model_light.h"
-#include "main/modellight_api.h"
+#include "main/modellight.h"
 #include "main/objfx.h"
-#include "main/dll/objfx_api.h"
-#include "main/sky_api.h"
+#include "main/dll/objfx.h"
+#include "main/sky.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/gamebit_ids.h"
 #include "main/dll/dll_024D_bossdrakor.h"
 #include "main/dll/dll_024E_drakordthornbush.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
 
 f32 gBossDrakorMissileTargetScatterFactor = 3.0f;
 f32 gBossDrakorMissileInitialSpeedFactor = 8.0f;
@@ -186,7 +184,7 @@ void bossdrakor_updateHeadTracking(GameObject* obj, BossDrakorState* drakorState
             neckStep = limitedNeckStep[0];
         }
         neck[0] += (s16)neckStep;
-        PSVECSubtract(&drakorState->homePos, &obj->anim.localPos, &partfxParams.pos);
+        PSVECSubtract(&drakorState->homePos, (Vec*)&obj->anim.localPosX, &partfxParams.pos);
         partfxParams.scale = 1.0f;
         if (timerIsActive(&drakorState->jawAnimTimer) != 0)
         {
@@ -240,7 +238,7 @@ int bossdrakor_chooseNextMove(GameObject* obj, f32* speedOut)
     Vec dir;
 
     drakorState = obj->extra;
-    PSVECNormalize(&obj->anim.velocity, &dir);
+    PSVECNormalize((Vec*)&obj->anim.velocityX, &dir);
     if (drakorState->moveState != 0)
     {
         *speedOut = 600.0f;
@@ -323,9 +321,9 @@ void bossdrakor_spawnAttackObjects(GameObject* obj, BossDrakorState* state, int 
                 if (Obj_IsLoadingLocked() != 0)
                 {
                     setup = Obj_AllocObjectSetup(0x20, BOSSDRAKOR_CHILD_OBJ_MISSILE);
-                    setup->posX = s->homePosX;
-                    setup->posY = s->homePosY;
-                    setup->posZ = s->homePosZ;
+                    setup->posX = s->homePos.x;
+                    setup->posY = s->homePos.y;
+                    setup->posZ = s->homePos.z;
                     setup->color[0] = 1;
                     setup->color[1] = 1;
                     setup->color[2] = 0xff;
@@ -341,21 +339,21 @@ void bossdrakor_spawnAttackObjects(GameObject* obj, BossDrakorState* state, int 
                                         (f32)(s32)randomGetRange(lo = (int)-prod, hi = (int)prod);
                             target.y = player->anim.localPosY + (f32)(s32)randomGetRange(lo, hi);
                             target.z = player->anim.localPosZ + (f32)(s32)randomGetRange(lo, hi);
-                            PSVECSubtract(&player->anim.localPos, &s->homePos,
+                            PSVECSubtract((Vec*)&player->anim.localPosX, &s->homePos,
                                           &vecA);
                             PSVECSubtract(&target, &s->homePos, &vecB);
                             PSVECNormalize(&vecA, &vecA);
                             spd = s->missileLeadFactor *
-                                      PSVECDotProduct(&player->anim.velocity, &vecA) +
+                                      PSVECDotProduct((Vec*)&player->anim.velocityX, &vecA) +
                                   s->missileBaseSpeed;
-                            PSVECScale(&vecA, &missile->anim.velocity, spd);
+                            PSVECScale(&vecA, (Vec*)&missile->anim.velocityX, spd);
                             mstate = (f32*)missile->extra;
                             PSVECScale(&vecA, &vecC, PSVECDotProduct(&vecA, &vecB));
                             PSVECSubtract(&vecB, &vecC, &vecC);
                             if (fhConfigRevision() == 0 || vecC.x != 0.0f || vecC.y != 0.0f || vecC.z != 0.0f)
                             {
                                 PSVECNormalize(&vecC, &vecC);
-                                PSVECScale(&vecC, &missile->anim.velocity,
+                                PSVECScale(&vecC, (Vec*)&missile->anim.velocityX,
                                            s->missileBaseSpeed * gBossDrakorMissileInitialSpeedFactor);
                             }
                             *mstate = spd;
@@ -379,9 +377,9 @@ void bossdrakor_spawnAttackObjects(GameObject* obj, BossDrakorState* state, int 
                     setup->color[1] = 1;
                     setup->color[2] = 0xff;
                     setup->color[3] = 0xff;
-                    setup->posX = s->homePosX;
-                    setup->posY = s->homePosY;
-                    setup->posZ = s->homePosZ;
+                    setup->posX = s->homePos.x;
+                    setup->posY = s->homePos.y;
+                    setup->posZ = s->homePos.z;
                     ((DrakordThornbushPlacement*)setup)->regrowDelay = 0x3c;
                     ((DrakordThornbushPlacement*)setup)->baseRadius = gBossDrakorThornbushBaseRadius;
                     ((DrakordThornbushPlacement*)setup)->spawnHealth = gBossDrakorThornbushSpawnHealth;
@@ -560,8 +558,8 @@ void bossdrakor_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)
     int val;
     BossDrakorState* s = inner;
     objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
-    ObjPath_GetPointWorldPosition(obj, 0, &s->homePosX, &s->homePosY,
-                                  &s->homePosZ, 0);
+    ObjPath_GetPointWorldPosition(obj, 0, &s->homePos.x, &s->homePos.y,
+                                  &s->homePos.z, 0);
     if (s->lightObj != NULL)
     {
         ObjPath_GetPointWorldPosition(obj, 5, &pos0, &pos1, &pos2, 0);
@@ -693,9 +691,9 @@ void bossdrakor_update(GameObject* obj)
         {
             (*gRomCurveInterface)->initCurve(&drakorState->curveWalker, (void*)obj, 500.0f, &curveArg, 0);
         }
-        obj->anim.localPosX = drakorState->curveWalker.posX;
-        obj->anim.localPosZ = drakorState->curveWalker.posZ;
-        obj->anim.localPosY = drakorState->curveWalker.posY;
+        obj->anim.localPosX = drakorState->curveWalker.curve.sample[0];
+        obj->anim.localPosZ = drakorState->curveWalker.curve.sample[2];
+        obj->anim.localPosY = drakorState->curveWalker.curve.sample[1];
         state->flags198.b20 = 1;
         drakorState->repeatCount = 0;
         meterState = (BossDrakorState*)obj->extra;
@@ -770,7 +768,7 @@ void bossdrakor_update(GameObject* obj)
     {
         bossdrakor_handleActionEvent(obj, drakorState, moveResult);
     }
-    t = PSVECMag(&obj->anim.velocity) / drakorState->moveSpeed;
+    t = PSVECMag((Vec*)&obj->anim.velocityX) / drakorState->moveSpeed;
     t += 0.001f;
     adv = ObjAnim_AdvanceCurrentMove(obj, t, timeDelta, (ObjAnimEventList*)buf);
     if (adv != 0)
@@ -856,9 +854,9 @@ void bossdrakor_update(GameObject* obj)
     }
     if ((obj->objectFlags & OBJECT_OBJFLAG_RENDERED) == 0)
     {
-        drakorState->homePosX = obj->anim.localPosX;
-        drakorState->homePosY = obj->anim.localPosY - 100.0f;
-        drakorState->homePosZ = obj->anim.localPosZ;
+        drakorState->homePos.x = obj->anim.localPosX;
+        drakorState->homePos.y = obj->anim.localPosY - 100.0f;
+        drakorState->homePos.z = obj->anim.localPosZ;
     }
     objMove(obj, obj->anim.velocityX, obj->anim.velocityY,
             obj->anim.velocityZ);
@@ -911,7 +909,7 @@ void bossdrakor_update(GameObject* obj)
             f32 hxsq;
             f32 hzsq;
             ObjPath_GetPointWorldPosition(obj, 4, &hx, &hy, &hz, 0);
-            PSVECSubtract(&player->anim.localPos, (Vec*)&hx, (Vec*)&hx);
+            PSVECSubtract((Vec*)&player->anim.localPosX, (Vec*)&hx, (Vec*)&hx);
             hxsq = hx * hx;
             hzsq = hz * hz;
             d = (s16)getAngle(hy, sqrtf(hxsq + hzsq)) - (u16)vec[0];
@@ -985,19 +983,29 @@ void bossdrakor_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gBossDrakorObjDescriptorInitAdapter, bossdrakor_init, obj, placement)
+OBJECT_FREE_ADAPTER(gBossDrakorObjDescriptorFreeAdapter, bossdrakor_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gBossDrakorObjDescriptorExtraSizeAdapter, bossdrakor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBossDrakorObjDescriptorAcquire, bossdrakor_initialise)
+
 ObjectDescriptor gBossDrakorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBossDrakorObjDescriptorAcquire,
+        bossdrakor_release,
+    },
     0,
+    gBossDrakorObjDescriptorInitAdapter,
+    bossdrakor_update,
+    bossdrakor_hitDetect,
+    bossdrakor_render,
+    gBossDrakorObjDescriptorFreeAdapter,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)bossdrakor_initialise,
-    (ObjectDescriptorCallback)bossdrakor_release,
-    0,
-    (ObjectDescriptorCallback)bossdrakor_init,
-    (ObjectDescriptorCallback)bossdrakor_update,
-    (ObjectDescriptorCallback)bossdrakor_hitDetect,
-    (ObjectDescriptorCallback)bossdrakor_render,
-    (ObjectDescriptorCallback)bossdrakor_free,
-    0,
-    (ObjectDescriptorExtraSizeCallback)bossdrakor_getExtraSize,
+    gBossDrakorObjDescriptorExtraSizeAdapter,
 };

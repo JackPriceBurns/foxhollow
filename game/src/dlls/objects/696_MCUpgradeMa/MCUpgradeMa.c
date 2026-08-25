@@ -13,12 +13,12 @@
  * sequence event it forces the staff glow to a fixed level, restores it to
  * the object's configured level, or clears it.
  */
-#include "main/dll/dll_00E2_staff_api.h"
+#include "main/dll/dll_00E2_staff.h"
 #include "main/dll/dll_02B8_mcupgradema.h"
 #include "main/dll/player_objects.h"
 #include "main/gamebits.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "sys/objects.h"
 #include "main/objseq.h"
 
@@ -70,16 +70,22 @@ int mcstaffeffe_SeqFn(GameObject* staffEffect, int unused, ObjSeqState* animUpda
     return 0;
 }
 
+OBJECT_INIT_ADAPTER(gMCUpgradeMaObjDescriptorInitAdapter, mcupgradema_init, obj)
+
 ObjectDescriptor gMCUpgradeMaObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)mcupgradema_init,
-    (ObjectDescriptorCallback)mcupgradema_update,
+    gMCUpgradeMaObjDescriptorInitAdapter,
+    mcupgradema_update,
     0,
     0,
     0,

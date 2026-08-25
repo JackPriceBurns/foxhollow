@@ -1,24 +1,23 @@
 #include "dolphin/os.h"
 #include "dolphin/mtx/vec.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0015_curves.h"
-#include "main/dll/dll_0017_savegame_api.h"
+#include "main/dll/dll_0017_savegame.h"
 #include "dlls/object_descriptor.h"
 #include "main/game_ui_interface.h"
-#include "main/lightmap_api.h"
-#include "main/textrender_api.h"
+#include "main/lightmap.h"
+#include "main/textrender.h"
 #include "main/objhits.h"
 #include "game/objects/object.h"
 #include "string.h"
-#define TRACK_BBOX_ARG10_TYPE int
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/gamebits.h"
 #include "main/object_transform.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "main/frame_timing.h"
-#include "main/audio/audio_control_api.h"
+#include "main/audio/audio_control.h"
 #include "main/pad.h"
 #include "main/dll/rom_curve_def.h"
 
@@ -435,7 +434,7 @@ void curves_updateSurfaceTilt(GameObject* obj, CurvesCollisionState* state)
         transform.rotX = -obj->anim.rotX;
         if (obj->anim.parent != NULL)
         {
-            transform.rotX = transform.rotX - obj->anim.parentAnim->rotX;
+            transform.rotX = transform.rotX - obj->anim.parent->anim.rotX;
         }
         transform.rotY = 0;
         transform.rotZ = 0;
@@ -712,10 +711,10 @@ void curves_preparePointCollisionFrame(GameObject* obj, CurvesCollisionState* co
     {
         if ((void*)((GameObject*)obj)->anim.parent != NULL)
         {
-            if ((((GameObject*)obj)->anim.parentAnim->hitboxTransformState != NULL) &&
+            if ((((GameObject*)obj)->anim.parent->anim.hitboxTransformState != NULL) &&
                 (ObjHits_IsObjectEnabled((ObjAnimComponent*)((GameObject*)obj)->anim.parent) != 0))
             {
-                matrixSource = ((GameObject*)obj)->anim.parentAnim->hitboxTransformState;
+                matrixSource = ((GameObject*)obj)->anim.parent->anim.hitboxTransformState;
                 matrixOffset = (matrixSource->activeMatrixIndex + 2) * 0x10;
                 Matrix_TransformPoint((f32*)matrixSource + matrixOffset, ((GameObject*)obj)->anim.localPosX,
                                       ((GameObject*)obj)->anim.localPosY, ((GameObject*)obj)->anim.localPosZ,
@@ -1013,15 +1012,15 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
                                       &collision->localPointWorld[pointIndices[1]][2]);
             }
             curves_updateLocalPointCollision(curveObj, collision);
-            if (curveObj->anim.parentAnim != NULL)
+            if (curveObj->anim.parent != NULL)
             {
-                if ((curveObj->anim.parentAnim->hitboxTransformState != NULL) &&
-                    (ObjHits_IsObjectEnabled(curveObj->anim.parentAnim) != 0))
+                if ((curveObj->anim.parent->anim.hitboxTransformState != NULL) &&
+                    (ObjHits_IsObjectEnabled(curveObj->anim.parent) != 0))
                 {
                     parentMatrixOffset =
-                        (curveObj->anim.parentAnim->hitboxTransformState->activeMatrixIndex + 2) * 0x10;
+                        (curveObj->anim.parent->anim.hitboxTransformState->activeMatrixIndex + 2) * 0x10;
                     Matrix_TransformPoint(
-                        &curveObj->anim.parentAnim->hitboxTransformState->matrices[0][0][0] + parentMatrixOffset,
+                        &curveObj->anim.parent->anim.hitboxTransformState->matrices[0][0][0] + parentMatrixOffset,
                                           curveObj->anim.localPosX, curveObj->anim.localPosY,
                                           curveObj->anim.localPosZ, &curveObj->anim.worldPosX,
                                           &curveObj->anim.worldPosY, &curveObj->anim.worldPosZ);
@@ -1031,7 +1030,7 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
                     Obj_TransformLocalPointToWorld(
                         curveObj->anim.localPosX, curveObj->anim.localPosY, curveObj->anim.localPosZ,
                         &curveObj->anim.worldPosX, &curveObj->anim.worldPosY, &curveObj->anim.worldPosZ,
-                        (GameObject*)curveObj->anim.parentAnim);
+                        (GameObject*)curveObj->anim.parent);
                 }
             }
             else
@@ -1284,15 +1283,15 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
             trackInvalidateDynamicSlotsForObject(curveObj);
         }
     }
-    if (curveObj->anim.parentAnim != NULL)
+    if (curveObj->anim.parent != NULL)
     {
-        if ((curveObj->anim.parentAnim->hitboxTransformState != NULL) &&
-            (ObjHits_IsObjectEnabled(curveObj->anim.parentAnim) != 0))
+        if ((curveObj->anim.parent->anim.hitboxTransformState != NULL) &&
+            (ObjHits_IsObjectEnabled(curveObj->anim.parent) != 0))
         {
             parentMatrixOffset =
-                (u32)curveObj->anim.parentAnim->hitboxTransformState->activeMatrixIndex * 0x10;
+                (u32)curveObj->anim.parent->anim.hitboxTransformState->activeMatrixIndex * 0x10;
             Matrix_TransformPoint(
-                &curveObj->anim.parentAnim->hitboxTransformState->matrices[0][0][0] + parentMatrixOffset,
+                &curveObj->anim.parent->anim.hitboxTransformState->matrices[0][0][0] + parentMatrixOffset,
                                   curveObj->anim.worldPosX, curveObj->anim.worldPosY, curveObj->anim.worldPosZ,
                                   &curveObj->anim.localPosX, &curveObj->anim.localPosY, &curveObj->anim.localPosZ);
         }
@@ -1301,7 +1300,7 @@ void curves_advanceCollision(GameObject* curveObj, CurvesCollisionState* state, 
             Obj_TransformWorldPointToLocal(curveObj->anim.worldPosX, curveObj->anim.worldPosY,
                                            curveObj->anim.worldPosZ, &curveObj->anim.localPosX,
                                            &curveObj->anim.localPosY, &curveObj->anim.localPosZ,
-                                           (GameObject*)curveObj->anim.parentAnim);
+                                           (GameObject*)curveObj->anim.parent);
         }
     }
     else
@@ -1368,11 +1367,11 @@ void curves_updateQueryBounds(GameObject* obj, CurvesCollisionState* state, f32 
     {
         if ((void*)obj->anim.parent != NULL)
         {
-            if ((obj->anim.parentAnim->hitboxTransformState != NULL) &&
+            if ((obj->anim.parent->anim.hitboxTransformState != NULL) &&
                 (ObjHits_IsObjectEnabled((ObjAnimComponent*)obj->anim.parent) != 0))
             {
-                mtxIdx = (obj->anim.parentAnim->hitboxTransformState->activeMatrixIndex + 2) * 0x10;
-                Matrix_TransformPoint((f32*)obj->anim.parentAnim->hitboxTransformState + mtxIdx, obj->anim.localPosX,
+                mtxIdx = (obj->anim.parent->anim.hitboxTransformState->activeMatrixIndex + 2) * 0x10;
+                Matrix_TransformPoint((f32*)obj->anim.parent->anim.hitboxTransformState + mtxIdx, obj->anim.localPosX,
                                       obj->anim.localPosY, obj->anim.localPosZ, &obj->anim.worldPosX,
                                       &obj->anim.worldPosY, &obj->anim.worldPosZ);
             }
@@ -1687,40 +1686,42 @@ int pushable_savePos(GameObject* obj)
 
 const f32 lbl_803E06C4 = 0.0f;
 
+typedef struct CurvesDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(curves_clear)* clear;
+    __typeof__(curves_setLocalPointCollision)* setLocalPointCollision;
+    __typeof__(curves_setSegmentCollision)* setSegmentCollision;
+    __typeof__(curves_updateQueryBounds)* updateQueryBounds;
+    __typeof__(curves_gatherTrackTriangles)* gatherTrackTriangles;
+    __typeof__(curves_advanceCollision)* advanceCollision;
+    __typeof__(curves_getCurves)* getCurves;
+    __typeof__(curves_reset)* reset;
+    __typeof__(curves_sampleHeight)* sampleHeight;
+} CurvesDllInterfaceCallbacks;
+
 typedef struct CurvesDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback clear;
-    ObjectDescriptorCallback setLocalPointCollision;
-    ObjectDescriptorCallback setSegmentCollision;
-    ObjectDescriptorCallback updateQueryBounds;
-    ObjectDescriptorCallback gatherTrackTriangles;
-    ObjectDescriptorCallback advanceCollision;
-    ObjectDescriptorCallback getCurves;
-    ObjectDescriptorCallback reset;
-    ObjectDescriptorCallback sampleHeight;
+    ResourceDescriptorHeader header;
+    CurvesDllInterfaceCallbacks interface;
 } CurvesDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gdll_15ResourceAcquire, dll_15_initialise_nop)
+
 CurvesDllInterface dll_15_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)dll_15_initialise_nop,
-    (ObjectDescriptorCallback)dll_15_release_nop,
-    0,
-    (ObjectDescriptorCallback)curves_clear,
-    (ObjectDescriptorCallback)curves_setLocalPointCollision,
-    (ObjectDescriptorCallback)curves_setSegmentCollision,
-    (ObjectDescriptorCallback)curves_updateQueryBounds,
-    (ObjectDescriptorCallback)curves_gatherTrackTriangles,
-    (ObjectDescriptorCallback)curves_advanceCollision,
-    (ObjectDescriptorCallback)curves_getCurves,
-    (ObjectDescriptorCallback)curves_reset,
-    (ObjectDescriptorCallback)curves_sampleHeight,
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_12_SLOTS},
+        gdll_15ResourceAcquire,
+        dll_15_release_nop,
+    },
+    {
+        NULL,
+        curves_clear,
+        curves_setLocalPointCollision,
+        curves_setSegmentCollision,
+        curves_updateQueryBounds,
+        curves_gatherTrackTriangles,
+        curves_advanceCollision,
+        curves_getCurves,
+        curves_reset,
+        curves_sampleHeight,
+    },
 };

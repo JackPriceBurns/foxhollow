@@ -12,9 +12,8 @@
 
 #include "dlls/objects/488_SB_Galleon.h"
 #include "dlls/objects/493_SB_FireBall.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -249,19 +248,28 @@ void SB_ShipHead_init(GameObject* obj) {
     state->swayA += 10.0f;
 }
 
+OBJECT_INIT_ADAPTER(gSB_ShipHeadObjDescriptorInitAdapter, SB_ShipHead_init, obj)
+OBJECT_FREE_ADAPTER(gSB_ShipHeadObjDescriptorFreeAdapter, SB_ShipHead_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_ShipHeadObjDescriptorTypeIdAdapter, SB_ShipHead_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_ShipHeadObjDescriptorExtraSizeAdapter, SB_ShipHead_getExtraSize)
+
 ObjectDescriptor gSB_ShipHeadObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gSB_ShipHeadObjDescriptorInitAdapter,
+    SB_ShipHead_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SB_ShipHead_init,
-    (ObjectDescriptorCallback)SB_ShipHead_update,
-    0,
-    (ObjectDescriptorCallback)SB_ShipHead_render,
-    (ObjectDescriptorCallback)SB_ShipHead_free,
-    (ObjectDescriptorCallback)SB_ShipHead_getObjectTypeId,
-    SB_ShipHead_getExtraSize,
+    SB_ShipHead_render,
+    gSB_ShipHeadObjDescriptorFreeAdapter,
+    gSB_ShipHeadObjDescriptorTypeIdAdapter,
+    gSB_ShipHeadObjDescriptorExtraSizeAdapter,
 };

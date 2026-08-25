@@ -4,23 +4,7 @@
 #include "main/dll/projgfx_interface.h"
 #include "dlls/object_descriptor.h"
 
-typedef struct ProjgfxDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback onMapSetup;
-    ObjectDescriptorCallback slot04;
-    ObjectDescriptorCallback slot05;
-    ObjectDescriptorCallback slot06;
-    ObjectDescriptorCallback slot07;
-    ObjectDescriptorCallback getObjectTypeId;
-    ObjectDescriptorCallback setzscale;
-    ObjectDescriptorCallback rayhit;
-} ProjgfxDllInterface;
+RESOURCE_DESCRIPTOR_TYPE(ProjgfxDllInterface, ProjgfxInterface);
 
 extern ProjgfxDllInterface projgfx_funcs;
 

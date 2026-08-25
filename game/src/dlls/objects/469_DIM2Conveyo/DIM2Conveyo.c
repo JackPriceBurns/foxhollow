@@ -5,12 +5,12 @@
  */
 #include "dlls/objects/469_DIM2Conveyo.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/music.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
 
@@ -144,23 +144,37 @@ void dim2conveyor_release(void) {
 void dim2conveyor_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gDIM2ConveyorObjDescriptor = {
+OBJECT_INIT_ADAPTER(gDIM2ConveyorObjDescriptorInitAdapter, dim2conveyor_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIM2ConveyorObjDescriptorHitDetectAdapter, dim2conveyor_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM2ConveyorObjDescriptorFreeAdapter, dim2conveyor_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIM2ConveyorObjDescriptorTypeIdAdapter, dim2conveyor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM2ConveyorObjDescriptorExtraSizeAdapter, dim2conveyor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM2ConveyorObjDescriptorAcquire, dim2conveyor_initialise)
+
+Dim2ConveyorDescriptorWithPadding gDIM2ConveyorObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)dim2conveyor_initialise,
-        (ObjectDescriptorCallback)dim2conveyor_release,
-        0,
-        (ObjectDescriptorCallback)dim2conveyor_init,
-        (ObjectDescriptorCallback)dim2conveyor_update,
-        (ObjectDescriptorCallback)dim2conveyor_hitDetect,
-        (ObjectDescriptorCallback)dim2conveyor_render,
-        (ObjectDescriptorCallback)dim2conveyor_free,
-        (ObjectDescriptorCallback)dim2conveyor_getObjectTypeId,
-        dim2conveyor_getExtraSize,
-        (ObjectDescriptorCallback)dim2conveyor_getScrollVector,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gDIM2ConveyorObjDescriptorAcquire,
+            dim2conveyor_release,
+        },
+        {
+            0,
+            gDIM2ConveyorObjDescriptorInitAdapter,
+            dim2conveyor_update,
+            gDIM2ConveyorObjDescriptorHitDetectAdapter,
+            dim2conveyor_render,
+            gDIM2ConveyorObjDescriptorFreeAdapter,
+            gDIM2ConveyorObjDescriptorTypeIdAdapter,
+            gDIM2ConveyorObjDescriptorExtraSizeAdapter,
+            dim2conveyor_getScrollVector,
+        },
     },
     0,
 };

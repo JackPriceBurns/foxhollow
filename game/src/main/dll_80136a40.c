@@ -15,10 +15,10 @@
  *     debugPrintDrawRecord (record interpreter: color/tab/newline/position tags).
  */
 #include "main/texture.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "main/frame_timing.h"
 #include "main/pi_dolphin.h"
-#include "main/lightmap_text_color_api.h"
+#include "main/lightmap_text_color.h"
 #include "main/debug.h"
 #include "dolphin/gx/GXMisc.h"
 #include "dolphin/gx/GXFifo.h"
@@ -36,7 +36,7 @@
 #include "dolphin/os/OSCache.h"
 #include "dolphin/vi.h"
 #include "dolphin/vi/vifuncs.h"
-#include "track/intersect_hud_api.h"
+#include "track/intersect_hud.h"
 
 extern u8 debugLogBuffer[];
 

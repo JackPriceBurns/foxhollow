@@ -1,10 +1,10 @@
 #include "dlls/objects/269_PortalSpell.h"
 
 #include "main/dll/dll_80136a40.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "sys/objects.h"
@@ -109,19 +109,31 @@ void PortalSpellDoor_release(void) {
 void PortalSpellDoor_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPortalSpellDoorObjDescriptorInitAdapter, PortalSpellDoor_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gPortalSpellDoorObjDescriptorHitDetectAdapter, PortalSpellDoor_hitDetect)
+OBJECT_FREE_ADAPTER(gPortalSpellDoorObjDescriptorFreeAdapter, PortalSpellDoor_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gPortalSpellDoorObjDescriptorTypeIdAdapter, PortalSpellDoor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPortalSpellDoorObjDescriptorExtraSizeAdapter, PortalSpellDoor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPortalSpellDoorObjDescriptorAcquire, PortalSpellDoor_initialise)
+
 ObjectDescriptor gPortalSpellDoorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPortalSpellDoorObjDescriptorAcquire,
+        PortalSpellDoor_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)PortalSpellDoor_initialise,
-    (ObjectDescriptorCallback)PortalSpellDoor_release,
-    0,
-    (ObjectDescriptorCallback)PortalSpellDoor_init,
-    (ObjectDescriptorCallback)PortalSpellDoor_update,
-    (ObjectDescriptorCallback)PortalSpellDoor_hitDetect,
-    (ObjectDescriptorCallback)PortalSpellDoor_render,
-    (ObjectDescriptorCallback)PortalSpellDoor_free,
-    (ObjectDescriptorCallback)PortalSpellDoor_getObjectTypeId,
-    PortalSpellDoor_getExtraSize,
+    gPortalSpellDoorObjDescriptorInitAdapter,
+    PortalSpellDoor_update,
+    gPortalSpellDoorObjDescriptorHitDetectAdapter,
+    PortalSpellDoor_render,
+    gPortalSpellDoorObjDescriptorFreeAdapter,
+    gPortalSpellDoorObjDescriptorTypeIdAdapter,
+    gPortalSpellDoorObjDescriptorExtraSizeAdapter,
 };

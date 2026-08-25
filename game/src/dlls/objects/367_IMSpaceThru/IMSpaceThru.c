@@ -22,7 +22,7 @@ s16 gIMSpaceThrusterKeyframeIndicesB[6] = {3, 4, 5, 6, 7, 0};
 static inline ObjModel* imSpaceThruster_getActiveModel(GameObject* obj) {
     ObjAnimComponent* objAnim = (ObjAnimComponent*)obj;
 
-    return (ObjModel*)objAnim->banks[objAnim->bankIndex];
+    return (ObjModel*)objAnim->modelBanks[objAnim->bankIndex];
 }
 
 int imSpaceThruster_getExtraSize(void) {
@@ -177,19 +177,31 @@ void imSpaceThruster_release(void) {
 void imSpaceThruster_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIMSpaceThrusterObjDescriptorInitAdapter, imSpaceThruster_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gIMSpaceThrusterObjDescriptorHitDetectAdapter, imSpaceThruster_hitDetect)
+OBJECT_FREE_ADAPTER(gIMSpaceThrusterObjDescriptorFreeAdapter, imSpaceThruster_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIMSpaceThrusterObjDescriptorTypeIdAdapter, imSpaceThruster_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMSpaceThrusterObjDescriptorExtraSizeAdapter, imSpaceThruster_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIMSpaceThrusterObjDescriptorAcquire, imSpaceThruster_initialise)
+
 ObjectDescriptor gIMSpaceThrusterObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIMSpaceThrusterObjDescriptorAcquire,
+        imSpaceThruster_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)imSpaceThruster_initialise,
-    (ObjectDescriptorCallback)imSpaceThruster_release,
-    0,
-    (ObjectDescriptorCallback)imSpaceThruster_init,
-    (ObjectDescriptorCallback)imSpaceThruster_update,
-    (ObjectDescriptorCallback)imSpaceThruster_hitDetect,
-    (ObjectDescriptorCallback)imSpaceThruster_render,
-    (ObjectDescriptorCallback)imSpaceThruster_free,
-    (ObjectDescriptorCallback)imSpaceThruster_getObjectTypeId,
-    imSpaceThruster_getExtraSize,
+    gIMSpaceThrusterObjDescriptorInitAdapter,
+    imSpaceThruster_update,
+    gIMSpaceThrusterObjDescriptorHitDetectAdapter,
+    imSpaceThruster_render,
+    gIMSpaceThrusterObjDescriptorFreeAdapter,
+    gIMSpaceThrusterObjDescriptorTypeIdAdapter,
+    gIMSpaceThrusterObjDescriptorExtraSizeAdapter,
 };

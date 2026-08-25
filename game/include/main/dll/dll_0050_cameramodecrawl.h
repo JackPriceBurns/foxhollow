@@ -24,20 +24,18 @@ STATIC_ASSERT(offsetof(CameraModeCrawlState, unk09) == 0x09);
 STATIC_ASSERT(sizeof(CameraModeCrawlState) == 0x0C);
 
 typedef struct CameraModeCrawlDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(void);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void* actionData, int recordSize);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeCrawlDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeCrawlDescriptor, update) == 0x20);

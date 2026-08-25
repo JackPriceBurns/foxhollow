@@ -3,10 +3,10 @@
  */
 #include "main/dll/dll_0053_cameramodecloudrunner.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/dll/DR/dll_0258_drcloudrunner.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_motion.h"
 #include "main/mm.h"
 #include "main/object_transform.h"
@@ -142,10 +142,10 @@ void CameraModeCloudRunner_release(void) {
 void CameraModeCloudRunner_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeCloudRunnerDescriptorAcquire, CameraModeCloudRunner_initialise)
+
 CameraModeCloudRunnerDescriptor gCameraModeCloudRunnerDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeCloudRunner_initialise,
-    CameraModeCloudRunner_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeCloudRunnerDescriptorAcquire, CameraModeCloudRunner_release },
     NULL,
     CameraModeCloudRunner_init,
     CameraModeCloudRunner_update,

@@ -80,19 +80,31 @@ void SB_ShipMast_release(void) {
 void SB_ShipMast_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_ShipMastObjDescriptorInitAdapter, SB_ShipMast_init)
+OBJECT_HIT_DETECT_ADAPTER(gSB_ShipMastObjDescriptorHitDetectAdapter, SB_ShipMast_hitDetect)
+OBJECT_FREE_ADAPTER(gSB_ShipMastObjDescriptorFreeAdapter, SB_ShipMast_free)
+OBJECT_TYPE_ID_ADAPTER(gSB_ShipMastObjDescriptorTypeIdAdapter, SB_ShipMast_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_ShipMastObjDescriptorExtraSizeAdapter, SB_ShipMast_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_ShipMastObjDescriptorAcquire, SB_ShipMast_initialise)
+
 ObjectDescriptor gSB_ShipMastObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_ShipMastObjDescriptorAcquire,
+        SB_ShipMast_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_ShipMast_initialise,
-    SB_ShipMast_release,
-    0,
-    SB_ShipMast_init,
-    (ObjectDescriptorCallback)SB_ShipMast_update,
-    SB_ShipMast_hitDetect,
-    (ObjectDescriptorCallback)SB_ShipMast_render,
-    SB_ShipMast_free,
-    (ObjectDescriptorCallback)SB_ShipMast_getObjectTypeId,
-    SB_ShipMast_getExtraSize,
+    gSB_ShipMastObjDescriptorInitAdapter,
+    SB_ShipMast_update,
+    gSB_ShipMastObjDescriptorHitDetectAdapter,
+    SB_ShipMast_render,
+    gSB_ShipMastObjDescriptorFreeAdapter,
+    gSB_ShipMastObjDescriptorTypeIdAdapter,
+    gSB_ShipMastObjDescriptorExtraSizeAdapter,
 };

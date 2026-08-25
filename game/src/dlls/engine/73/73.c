@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0049_cameramodecombat.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx/vec.h"
 #include "dolphin/pad.h"
 #include "main/camera.h"
@@ -11,12 +11,12 @@
 #include "main/dll/dll_0042_cameramodenormal.h"
 #include "main/dll/CAM/dll_0001_camcontrol.h"
 #include "main/dll/DR/dr_types.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/mm.h"
 #include "main/object_transform.h"
 #include "main/pad.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/vecmath.h"
 
 enum CameraModeCombatRomDefNo {
@@ -91,7 +91,7 @@ void CameraModeCombat_free(CameraObject* camera) {
 }
 
 static void CameraModeCombat_traceMove(f32* prevPos, CameraObject* camera, CamcontrolTraceWork* traceWork) {
-    camcontrol_traceMove(prevPos, &camera->anim.worldPosX, &camera->anim.worldPosX, (u8*)traceWork, 3, 1, 1, 4.0f);
+    camcontrol_traceMove(prevPos, &camera->anim.worldPosX, &camera->anim.worldPosX, traceWork, 3, 1, 1, 4.0f);
 }
 
 void CameraModeCombat_update(CameraObject* camera) {
@@ -284,7 +284,7 @@ void CameraModeCombat_update(CameraObject* camera) {
                             dy = dy + gCameraModeCombatState->heightOffset;
                             step = interpolate(camera->anim.worldPosY - dy, 0.05f, timeDelta);
                             desiredPosition.y = camera->anim.worldPosY - step;
-                            PSVECSubtract(&desiredPosition, &camera->anim.worldPos, &movement);
+                            PSVECSubtract(&desiredPosition, (Vec*)&camera->anim.worldPosX, &movement);
                             mag = PSVECMag(&movement);
                             if (mag > 0.0f) {
                                 PSVECNormalize(&movement, &movement);
@@ -304,7 +304,7 @@ void CameraModeCombat_update(CameraObject* camera) {
                                 }
                             }
                             PSVECScale(&movement, &movement, (mag < 0.0f) ? 0.0f : ((mag > 20.0f) ? 20.0f : mag));
-                            PSVECAdd(&camera->anim.worldPos, &movement, &camera->anim.worldPos);
+                            PSVECAdd((Vec*)&camera->anim.worldPosX, &movement, (Vec*)&camera->anim.worldPosX);
                             CameraModeCombat_traceMove(&prevX, camera, &traceWork);
                             t = 0.1f * dz + focus->anim.worldPosZ;
                             fb = currentView->x - (0.1f * dx + focus->anim.worldPosX);
@@ -406,10 +406,10 @@ void CameraModeCombat_release(void) {
 void CameraModeCombat_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeCombatDescriptorAcquire, CameraModeCombat_initialise)
+
 CameraModeCombatDescriptor gCameraModeCombatDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeCombat_initialise,
-    CameraModeCombat_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeCombatDescriptorAcquire, CameraModeCombat_release },
     NULL,
     CameraModeCombat_init,
     CameraModeCombat_update,

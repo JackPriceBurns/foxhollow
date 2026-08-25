@@ -2,9 +2,9 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gameloop_gamebit.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objseq.h"
 #include "main/obj_trigger.h"
 #include "sys/objects.h"
@@ -137,9 +137,16 @@ static void ccPedestal_init(GameObject* obj, const CcPedestalPlacement* placemen
     }
 }
 
+OBJECT_INIT_ADAPTER(gCCPedestalObjDescriptorInitAdapter, ccPedestal_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCPedestalObjDescriptorExtraSizeAdapter, ccPedestal_getExtraSize)
+
 ObjectDescriptor gCCPedestalObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccPedestal_init,
-    .update = (ObjectDescriptorCallback)ccPedestal_update,
-    .getExtraSize = ccPedestal_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCPedestalObjDescriptorInitAdapter,
+    .update = ccPedestal_update,
+    .getExtraSize = gCCPedestalObjDescriptorExtraSizeAdapter,
+};;

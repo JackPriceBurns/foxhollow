@@ -1,18 +1,16 @@
 #include "dlls/object_descriptor.h"
-#include "track/intersect_hud_api.h"
+#include "track/intersect_hud.h"
 #include "main/dll/dll_003D_titlemenuitem.h"
 #include "main/pad.h"
 #include "main/texture.h"
 #include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "dolphin/pad.h"
-#include "main/audio/music_api.h"
-#include "main/gametext_api.h"
-#include "main/gametext_color_api.h"
+#include "main/audio/music.h"
+#include "main/gametext.h"
+#include "main/gametext_color.h"
 #include "main/mm.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
 
 #define TITLE_MENU_FLAG_ENABLED          0x01
 #define TITLE_MENU_FLAG_WRAP             0x02
@@ -395,46 +393,48 @@ void TitleMenuItem_initialise(void)
     slots[4] = NULL;
     slots[5] = NULL;
 }
+typedef struct TitleMenuItemDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(TitleMenuItem_createWithText)* createWithText;
+    __typeof__(TitleMenuItem_create)* create;
+    __typeof__(TitleMenuItem_createWithWindow)* createWithWindow;
+    __typeof__(TitleMenuItem_free)* free;
+    __typeof__(TitleMenuItem_update)* update;
+    __typeof__(TitleMenuItem_render)* render;
+    __typeof__(TitleMenuItem_isEnabled)* isEnabled;
+    __typeof__(TitleMenuItem_setEnabled)* setEnabled;
+    __typeof__(TitleMenuItem_getVal)* getVal;
+    __typeof__(TitleMenuItem_setVal)* setVal;
+    __typeof__(TitleMenuItem_isChanged)* isChanged;
+    __typeof__(TitleMenuItem_setAButtonToggle)* setAButtonToggle;
+} TitleMenuItemDllInterfaceCallbacks;
+
 typedef struct TitleMenuItemDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback createWithText;
-    ObjectDescriptorCallback create;
-    ObjectDescriptorCallback createWithWindow;
-    ObjectDescriptorCallback free;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback render;
-    ObjectDescriptorCallback isEnabled;
-    ObjectDescriptorCallback setEnabled;
-    ObjectDescriptorCallback getVal;
-    ObjectDescriptorCallback setVal;
-    ObjectDescriptorCallback isChanged;
-    ObjectDescriptorCallback setAButtonToggle;
+    ResourceDescriptorHeader header;
+    TitleMenuItemDllInterfaceCallbacks interface;
 } TitleMenuItemDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gTitleMenuItemResourceAcquire, TitleMenuItem_initialise)
+
 TitleMenuItemDllInterface TitleMenuItem_funcs = {
-    0,
-    0,
-    0,
-    0x000e0000,
-    (ObjectDescriptorCallback)TitleMenuItem_initialise,
-    (ObjectDescriptorCallback)TitleMenuItem_release,
-    0,
-    (ObjectDescriptorCallback)TitleMenuItem_createWithText,
-    (ObjectDescriptorCallback)TitleMenuItem_create,
-    (ObjectDescriptorCallback)TitleMenuItem_createWithWindow,
-    (ObjectDescriptorCallback)TitleMenuItem_free,
-    (ObjectDescriptorCallback)TitleMenuItem_update,
-    (ObjectDescriptorCallback)TitleMenuItem_render,
-    (ObjectDescriptorCallback)TitleMenuItem_isEnabled,
-    (ObjectDescriptorCallback)TitleMenuItem_setEnabled,
-    (ObjectDescriptorCallback)TitleMenuItem_getVal,
-    (ObjectDescriptorCallback)TitleMenuItem_setVal,
-    (ObjectDescriptorCallback)TitleMenuItem_isChanged,
-    (ObjectDescriptorCallback)TitleMenuItem_setAButtonToggle,
+    {
+        {0, 0, 0, 0x000e0000},
+        gTitleMenuItemResourceAcquire,
+        TitleMenuItem_release,
+    },
+    {
+        NULL,
+        TitleMenuItem_createWithText,
+        TitleMenuItem_create,
+        TitleMenuItem_createWithWindow,
+        TitleMenuItem_free,
+        TitleMenuItem_update,
+        TitleMenuItem_render,
+        TitleMenuItem_isEnabled,
+        TitleMenuItem_setEnabled,
+        TitleMenuItem_getVal,
+        TitleMenuItem_setVal,
+        TitleMenuItem_isChanged,
+        TitleMenuItem_setAButtonToggle,
+    },
 };

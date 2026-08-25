@@ -72,17 +72,20 @@ STATIC_ASSERT(sizeof(Dim2PathGeneratorState) == 0x9A8);
 /* gDIM2PathGeneratorObjDescriptor from slot02 onwards: the export table other
    objects reach through obj->anim.dll. */
 typedef struct Dim2PathGeneratorInterface {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     int (*getCurveVals)(GameObject* generator, f32** outPathX, f32** outPathY, f32** outPathZ, u8** outPathNodeData);
 } Dim2PathGeneratorInterface;
+
+OBJECT_DESCRIPTOR_TYPE(Dim2PathGeneratorDescriptor, Dim2PathGeneratorInterface);
+OBJECT_DESCRIPTOR_WITH_PADDING_TYPE(Dim2PathGeneratorDescriptorWithPadding, Dim2PathGeneratorDescriptor);
 
 #define DIM2_PATH_GENERATOR_INTERFACE(generator) \
     ((Dim2PathGeneratorInterface*)*((GameObject*)(generator))->anim.dll)
 
 STATIC_ASSERT(offsetof(Dim2PathGeneratorInterface, getCurveVals) == 0x20);
 
-u8 DIM2PathGenerator_getCurveVals(GameObject* obj, int** outPathX, int** outPathY, int** outPathZ,
-                                  int** outPathNodeData);
+int DIM2PathGenerator_getCurveVals(GameObject* obj, f32** outPathX, f32** outPathY, f32** outPathZ,
+                                   u8** outPathNodeData);
 int DIM2PathGenerator_getExtraSize(void);
 int DIM2PathGenerator_getObjectTypeId(void);
 void DIM2PathGenerator_free(GameObject* obj);
@@ -95,6 +98,6 @@ void DIM2PathGenerator_init(GameObject* obj, int* placementData);
 void DIM2PathGenerator_release(void);
 void DIM2PathGenerator_initialise(void);
 
-extern ObjectDescriptor11WithPadding gDIM2PathGeneratorObjDescriptor;
+extern Dim2PathGeneratorDescriptorWithPadding gDIM2PathGeneratorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_472_DIM2PATHGEN_H_ */

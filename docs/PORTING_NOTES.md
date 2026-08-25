@@ -30,9 +30,8 @@ skips, see [Runtime porting and debugging](DEBUGGING.md).
 - `fastCast*` (paired-single/FPSCR conversion tricks) are plain C conversions.
 - `__cvt_fp2unsigned` saturates (negative → 0, ≥2³² → 0xffffffff), matching PPC conversion
   saturation semantics.
-- The decomp repurposes MSL header names (`dolphin/MSL_C/.../math_api.h` etc.) as game-math
-  declaration headers. The port versions in `port/include` keep the game declarations and drop
-  MWCC-specific bits.
+- Game-math declarations live in `port/include/dolphin/math.h`, alongside the standard math and
+  Dolphin compatibility declarations.
 
 ## GX
 
@@ -49,8 +48,8 @@ skips, see [Runtime porting and debugging](DEBUGGING.md).
 ## Call-site corrections
 
 - `Sfx_PlayFromObject((int)obj, ...)` casts removed (6 files) — pointer-truncating on 64-bit.
-  The real signature is `void Sfx_PlayFromObject(GameObject*, u16)`; the `(GameObject*, int)`
-  prototype in `sfx_play_legacy_api.h` is a decomp-matching artifact.
+  Every caller now sees the canonical `void Sfx_PlayFromObject(GameObject*, u16)` declaration in
+  `main/audio/sfx.h`.
 - MWCC (C89) accepted implicit function declarations; clang gnu11 makes them errors — kept as
   errors deliberately because implicit float/pointer args are a real ABI hazard on arm64.
   Fixes add the correct existing game header include, or an extern prototype matching the

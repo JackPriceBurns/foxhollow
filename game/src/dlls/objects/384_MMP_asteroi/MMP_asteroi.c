@@ -6,20 +6,19 @@
  */
 #include "dlls/objects/384_MMP_asteroi.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap_render_control.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objseq.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -278,19 +277,31 @@ void mmpAsteroidRe_release(void) {
 void mmpAsteroidRe_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMPAsteroidReObjDescriptorInitAdapter, mmpAsteroidRe_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gMMPAsteroidReObjDescriptorHitDetectAdapter, mmpAsteroidRe_hitDetect)
+OBJECT_FREE_ADAPTER(gMMPAsteroidReObjDescriptorFreeAdapter, mmpAsteroidRe_free)
+OBJECT_TYPE_ID_ADAPTER(gMMPAsteroidReObjDescriptorTypeIdAdapter, mmpAsteroidRe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMPAsteroidReObjDescriptorExtraSizeAdapter, mmpAsteroidRe_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMPAsteroidReObjDescriptorAcquire, mmpAsteroidRe_initialise)
+
 ObjectDescriptor gMMPAsteroidReObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMPAsteroidReObjDescriptorAcquire,
+        mmpAsteroidRe_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmpAsteroidRe_initialise,
-    (ObjectDescriptorCallback)mmpAsteroidRe_release,
-    0,
-    (ObjectDescriptorCallback)mmpAsteroidRe_init,
-    (ObjectDescriptorCallback)mmpAsteroidRe_update,
-    (ObjectDescriptorCallback)mmpAsteroidRe_hitDetect,
-    (ObjectDescriptorCallback)mmpAsteroidRe_render,
-    (ObjectDescriptorCallback)mmpAsteroidRe_free,
-    (ObjectDescriptorCallback)mmpAsteroidRe_getObjectTypeId,
-    mmpAsteroidRe_getExtraSize,
+    gMMPAsteroidReObjDescriptorInitAdapter,
+    mmpAsteroidRe_update,
+    gMMPAsteroidReObjDescriptorHitDetectAdapter,
+    mmpAsteroidRe_render,
+    gMMPAsteroidReObjDescriptorFreeAdapter,
+    gMMPAsteroidReObjDescriptorTypeIdAdapter,
+    gMMPAsteroidReObjDescriptorExtraSizeAdapter,
 };

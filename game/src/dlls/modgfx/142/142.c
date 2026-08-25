@@ -127,55 +127,55 @@ void dll_8E_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* s
     command[8].x = 0.1f;
     command[8].y = 4.0f;
     command[8].z = 0.05f;
-    packet.modeByte = 0;
-    packet.sourceObj = sourceObj;
-    packet.sourceMode = variant;
-    packet.position[0] = 0.0f;
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
     if (variant == 0) {
-        packet.position[1] = 0.0f;
+        packet.context.position[1] = 0.0f;
     } else if (variant == 1) {
-        packet.position[1] = 200.0f;
+        packet.context.position[1] = 200.0f;
     }
-    packet.position[2] = 0.0f;
-    packet.velocity[0] = 0.0f;
-    packet.velocity[1] = 0.0f;
-    packet.velocity[2] = 0.0f;
-    packet.scale = 4.0f;
-    packet.drawGroupCount = 1;
-    packet.drawGroupStride = 0;
-    packet.initialStateByte = 3;
-    packet.byte5A = 0;
-    packet.textureFrameTimer = 0;
-    packet.commandCount = (GfxCmd*)((u8*)command + sizeof(GfxCmd) * 9) - commands;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 4.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 3;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0;
+    packet.context.commandCount = (GfxCmd*)((u8*)command + sizeof(GfxCmd) * 9) - commands;
     sequenceParams = gDll8ESequenceResource.sequenceParams;
-    packet.sequenceParams[0] = sequenceParams[0];
-    packet.sequenceParams[1] = sequenceParams[1];
-    packet.sequenceParams[2] = sequenceParams[2];
-    packet.sequenceParams[3] = sequenceParams[3];
-    packet.sequenceParams[4] = sequenceParams[4];
-    packet.sequenceParams[5] = sequenceParams[5];
-    packet.sequenceParams[6] = sequenceParams[6];
-    packet.commands = (GfxCmd*)((u8*)&packet + offsetof(ModgfxSpawnPacket, entries));
-    packet.flags = 0x4000410;
-    packet.flags |= spawnFlags;
-    if ((packet.flags & 1) != 0) {
-        if ((u32)packet.sourceObj != 0 && (u32)spawnParams != 0) {
-            GameObject* anchorObj = packet.sourceObj;
+    packet.context.sequenceParams[0] = sequenceParams[0];
+    packet.context.sequenceParams[1] = sequenceParams[1];
+    packet.context.sequenceParams[2] = sequenceParams[2];
+    packet.context.sequenceParams[3] = sequenceParams[3];
+    packet.context.sequenceParams[4] = sequenceParams[4];
+    packet.context.sequenceParams[5] = sequenceParams[5];
+    packet.context.sequenceParams[6] = sequenceParams[6];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x4000410;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
+        if ((u32)packet.context.attachedSource != 0 && (u32)spawnParams != 0) {
+            GameObject* anchorObj = packet.context.attachedSource;
             PartFxSpawnParams* anchorParams = spawnParams;
-            packet.position[0] += anchorObj->anim.worldPosX + anchorParams->posX;
-            packet.position[1] += anchorObj->anim.worldPosY + anchorParams->posY;
-            packet.position[2] += anchorObj->anim.worldPosZ + anchorParams->posZ;
-        } else if ((u32)packet.sourceObj != 0) {
-            packet.position[0] += packet.sourceObj->anim.worldPosX;
-            packet.position[1] += packet.sourceObj->anim.worldPosY;
-            packet.position[2] += packet.sourceObj->anim.worldPosZ;
+            packet.context.position[0] += anchorObj->anim.worldPosX + anchorParams->posX;
+            packet.context.position[1] += anchorObj->anim.worldPosY + anchorParams->posY;
+            packet.context.position[2] += anchorObj->anim.worldPosZ + anchorParams->posZ;
+        } else if ((u32)packet.context.attachedSource != 0) {
+            packet.context.position[0] += packet.context.attachedSource->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
         } else if ((u32)spawnParams != 0) {
-            packet.position[0] += spawnParams->posX;
-            packet.position[1] += spawnParams->posY;
-            packet.position[2] += spawnParams->posZ;
+            packet.context.position[0] += spawnParams->posX;
+            packet.context.position[1] += spawnParams->posY;
+            packet.context.position[2] += spawnParams->posZ;
         }
     }
-    (*gModgfxInterface)->spawnEffect(&packet, 0, 3, gDll8EEffectVtxColorTable, 1, &gDll8EEffectSpawnResource, 0x26A, 0);
+    (*gModgfxInterface)->spawnEffect(&packet.context, 0, 3, gDll8EEffectVtxColorTable, 1, &gDll8EEffectSpawnResource, 0x26A, 0);
 }
 
 void dll_8E_release(void) {
@@ -190,6 +190,10 @@ u8 gDll8EEffectVtxColorTable[sizeof(Dll8EVertexResourceView)] = {
 
 Dll8ESequenceResource gDll8ESequenceResource = {{0, 140, 140, 0, 0, 0, 0}, 0};
 
+RESOURCE_ACQUIRE_ADAPTER(gDll8EResourceDescriptorAcquire, dll_8E_initialise)
+
 Dll8EResourceDescriptor gDll8EResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, dll_8E_initialise, dll_8E_release, NULL, dll_8E_spawnEffect,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll8EResourceDescriptorAcquire, dll_8E_release },
+    NULL,
+    dll_8E_spawnEffect,
 };

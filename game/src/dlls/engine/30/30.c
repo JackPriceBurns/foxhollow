@@ -1,4 +1,4 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/vecmath.h"
 #include "game/objects/object.h"
@@ -17,17 +17,20 @@ f32 gEffect5AnimProgressB = 0.3f;
 f32 gEffect5AnimProgressC = 0.1f;
 f32 gEffect5AnimProgressD = 0.3f;
 
-ObjectDescriptor6 Effect5_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect5_initialise,
-    (ObjectDescriptorCallback)Effect5_release,
-    0,
-    (ObjectDescriptorCallback)Effect5_func03_nop,
-    (ObjectDescriptorCallback)Effect5_spawnObject,
-    (ObjectDescriptorCallback)Effect5_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect5Resource, Effect5_initialise, Effect5_spawnObject, Effect5_updateFrameState)
+
+EffectResourceDescriptor Effect5_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect5ResourceAcquire,
+        Effect5_release,
+    },
+    {
+        NULL,
+        Effect5_func03_nop,
+        gEffect5ResourceSpawn,
+        gEffect5ResourceUpdate,
+    },
 };
 
 int Effect5_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

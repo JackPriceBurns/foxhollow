@@ -11,19 +11,19 @@
  * the branching exit. ringEventCallback drives the sequence's camera and
  * course-specific text; commitRingChoice picks the follow-up music.
  */
-#include "main/audio/music_api.h"
-#include "main/audio/stream_api.h"
+#include "main/audio/music.h"
+#include "main/audio/stream.h"
 #include "main/dll/headdisplay.h"
 #include "main/dll/tricky.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_render_control_api.h"
-#include "main/sky_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
+#include "main/lightmap_render_control.h"
+#include "main/sky.h"
 #include "main/dll/ARW/dll_02A1_arwlevelcon.h"
 #include "main/dll/ARW/dll_029A_arwarwing.h"
 #include "main/dll/dll_0056_cameramodearwing.h"
-#include "main/render_envfx_api.h"
-#include "main/shader_api.h"
+#include "main/render_envfx.h"
+#include "main/shader.h"
 #include "main/gamebit_ids.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/object_render.h"
@@ -199,7 +199,7 @@ void arwlevelcon_init(GameObject* obj, ARWLevelConSetup* setup)
     }
     state->sequenceParam2 = -650.0f;
     state->sequenceParam3 = -8.7f;
-    if (setup->routeSignature == 0x48f7e)
+    if (setup->base.ident == 0x48f7e)
     {
         state->alternateRoute = 1;
     }
@@ -246,19 +246,32 @@ void arwlevelcon_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gARWLevelConObjDescriptorInitAdapter, arwlevelcon_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gARWLevelConObjDescriptorHitDetectAdapter, arwlevelcon_hitDetect)
+OBJECT_RENDER_ADAPTER(gARWLevelConObjDescriptorRenderAdapter, arwlevelcon_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gARWLevelConObjDescriptorFreeAdapter, arwlevelcon_free)
+OBJECT_TYPE_ID_ADAPTER(gARWLevelConObjDescriptorTypeIdAdapter, arwlevelcon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gARWLevelConObjDescriptorExtraSizeAdapter, arwlevelcon_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gARWLevelConObjDescriptorAcquire, arwlevelcon_initialise)
+
 ObjectDescriptor gARWLevelConObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)arwlevelcon_initialise,
-    (ObjectDescriptorCallback)arwlevelcon_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gARWLevelConObjDescriptorAcquire,
+        arwlevelcon_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)arwlevelcon_init,
-    (ObjectDescriptorCallback)arwlevelcon_update,
-    (ObjectDescriptorCallback)arwlevelcon_hitDetect,
-    (ObjectDescriptorCallback)arwlevelcon_render,
-    (ObjectDescriptorCallback)arwlevelcon_free,
-    (ObjectDescriptorCallback)arwlevelcon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)arwlevelcon_getExtraSize,
+    gARWLevelConObjDescriptorInitAdapter,
+    arwlevelcon_update,
+    gARWLevelConObjDescriptorHitDetectAdapter,
+    gARWLevelConObjDescriptorRenderAdapter,
+    gARWLevelConObjDescriptorFreeAdapter,
+    gARWLevelConObjDescriptorTypeIdAdapter,
+    gARWLevelConObjDescriptorExtraSizeAdapter,
 };

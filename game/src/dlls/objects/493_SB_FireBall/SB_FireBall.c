@@ -139,19 +139,30 @@ void SB_FireBall_release(void) {
 void SB_FireBall_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_FireBallObjDescriptorInitAdapter, SB_FireBall_init, obj)
+OBJECT_FREE_ADAPTER(gSB_FireBallObjDescriptorFreeAdapter, SB_FireBall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_FireBallObjDescriptorTypeIdAdapter, SB_FireBall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_FireBallObjDescriptorExtraSizeAdapter, SB_FireBall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_FireBallObjDescriptorAcquire, SB_FireBall_initialise)
+
 ObjectDescriptor gSB_FireBallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_FireBallObjDescriptorAcquire,
+        SB_FireBall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_FireBall_initialise,
-    SB_FireBall_release,
-    0,
-    (ObjectDescriptorCallback)SB_FireBall_init,
-    (ObjectDescriptorCallback)SB_FireBall_update,
-    (ObjectDescriptorCallback)SB_FireBall_hitDetect,
-    (ObjectDescriptorCallback)SB_FireBall_render,
-    (ObjectDescriptorCallback)SB_FireBall_free,
-    (ObjectDescriptorCallback)SB_FireBall_getObjectTypeId,
-    SB_FireBall_getExtraSize,
+    gSB_FireBallObjDescriptorInitAdapter,
+    SB_FireBall_update,
+    SB_FireBall_hitDetect,
+    SB_FireBall_render,
+    gSB_FireBallObjDescriptorFreeAdapter,
+    gSB_FireBallObjDescriptorTypeIdAdapter,
+    gSB_FireBallObjDescriptorExtraSizeAdapter,
 };

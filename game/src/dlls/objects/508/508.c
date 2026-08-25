@@ -3,19 +3,18 @@
  */
 #include "dlls/objects/508.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_position_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0081_modgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_state.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/obj_message.h"
 #include "main/resource.h"
 #include "main/texture.h"
@@ -322,19 +321,32 @@ void LaserBeam_initialise(void) {
     gLaserBeamObjModgfxResource = Resource_Acquire(LASERBEAM_MODGFX_RESOURCE_ID, 1);
 }
 
+OBJECT_INIT_ADAPTER(gLaserBeamObjDescriptorInitAdapter, LaserBeam_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLaserBeamObjDescriptorHitDetectAdapter, LaserBeam_hitDetect)
+OBJECT_RENDER_ADAPTER(gLaserBeamObjDescriptorRenderAdapter, LaserBeam_render)
+OBJECT_FREE_ADAPTER(gLaserBeamObjDescriptorFreeAdapter, LaserBeam_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gLaserBeamObjDescriptorTypeIdAdapter, LaserBeam_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLaserBeamObjDescriptorExtraSizeAdapter, LaserBeam_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLaserBeamObjDescriptorAcquire, LaserBeam_initialise)
+
 ObjectDescriptor gLaserBeamObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLaserBeamObjDescriptorAcquire,
+        LaserBeam_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    LaserBeam_initialise,
-    LaserBeam_release,
-    0,
-    (ObjectDescriptorCallback)LaserBeam_init,
-    (ObjectDescriptorCallback)LaserBeam_update,
-    LaserBeam_hitDetect,
-    LaserBeam_render,
-    (ObjectDescriptorCallback)LaserBeam_free,
-    (ObjectDescriptorCallback)LaserBeam_getObjectTypeId,
-    LaserBeam_getExtraSize,
+    gLaserBeamObjDescriptorInitAdapter,
+    LaserBeam_update,
+    gLaserBeamObjDescriptorHitDetectAdapter,
+    gLaserBeamObjDescriptorRenderAdapter,
+    gLaserBeamObjDescriptorFreeAdapter,
+    gLaserBeamObjDescriptorTypeIdAdapter,
+    gLaserBeamObjDescriptorExtraSizeAdapter,
 };

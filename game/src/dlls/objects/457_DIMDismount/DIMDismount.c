@@ -1,10 +1,11 @@
 #include "dlls/objects/457_DIMDismount.h"
+#include "dlls/objects/common/vehicle.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object_setup.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/objprint_render_api.h"
+#include "main/gamebits.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/object_render.h"
@@ -25,8 +26,6 @@ typedef struct DimDismountState {
     Vec3f planeNormal;
     f32 planeConstant;
 } DimDismountState;
-
-typedef int (*DimDismountCanUsePointFn)(GameObject* mount, GameObject* dismountPoint);
 
 STATIC_ASSERT(offsetof(DimDismountPlacement, rotationX) == 0x18);
 STATIC_ASSERT(sizeof(DimDismountPlacement) == 0x24);
@@ -95,8 +94,7 @@ void DIMDismountPoint_update(GameObject* obj) {
         obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
     } else {
         obj->hitVolumeIndex = 0;
-        if (nearestNeighbor != NULL && ((DimDismountCanUsePointFn)nearestNeighbor->anim.dll[0][8])(
-                                           nearestNeighbor, obj) != 0) {
+        if (nearestNeighbor != NULL && VEHICLE_INTERFACE(nearestNeighbor)->canMount(nearestNeighbor, obj) != 0) {
             obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_PROMPT_SUPPRESSED;
         } else {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_PROMPT_SUPPRESSED;
@@ -128,21 +126,46 @@ void DIMDismountPoint_release(void) {
 void DIMDismountPoint_initialise(void) {
 }
 
-ObjectDescriptor12 gDIMDismountPointObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)DIMDismountPoint_initialise,
-    (ObjectDescriptorCallback)DIMDismountPoint_release,
-    0,
-    (ObjectDescriptorCallback)DIMDismountPoint_init,
-    (ObjectDescriptorCallback)DIMDismountPoint_update,
-    (ObjectDescriptorCallback)DIMDismountPoint_hitDetect,
-    (ObjectDescriptorCallback)DIMDismountPoint_render,
-    (ObjectDescriptorCallback)DIMDismountPoint_free,
-    (ObjectDescriptorCallback)DIMDismountPoint_getObjectTypeId,
-    DIMDismountPoint_getExtraSize,
-    (ObjectDescriptorCallback)DIMDismountPoint_getPlayerSide,
-    (ObjectDescriptorCallback)DIMDismountPoint_runOppositeSideSequence,
+OBJECT_INIT_ADAPTER(gDIMDismountPointObjDescriptorInitAdapter, DIMDismountPoint_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMDismountPointObjDescriptorHitDetectAdapter, DIMDismountPoint_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMDismountPointObjDescriptorFreeAdapter, DIMDismountPoint_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIMDismountPointObjDescriptorTypeIdAdapter, DIMDismountPoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMDismountPointObjDescriptorExtraSizeAdapter, DIMDismountPoint_getExtraSize)
+
+typedef struct DIMDismountPointObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(DIMDismountPoint_getPlayerSide)* DIMDismountPoint_getPlayerSide;
+    __typeof__(DIMDismountPoint_runOppositeSideSequence)* DIMDismountPoint_runOppositeSideSequence;
+} DIMDismountPointObjDescriptorTypeInterface;
+
+struct DIMDismountPointObjDescriptorType {
+    ObjectDescriptorHeader header;
+    DIMDismountPointObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMDismountPointObjDescriptorAcquire, DIMDismountPoint_initialise)
+
+struct DIMDismountPointObjDescriptorType gDIMDismountPointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDIMDismountPointObjDescriptorAcquire,
+        DIMDismountPoint_release,
+    },
+    {
+        0,
+        gDIMDismountPointObjDescriptorInitAdapter,
+        DIMDismountPoint_update,
+        gDIMDismountPointObjDescriptorHitDetectAdapter,
+        DIMDismountPoint_render,
+        gDIMDismountPointObjDescriptorFreeAdapter,
+        gDIMDismountPointObjDescriptorTypeIdAdapter,
+        gDIMDismountPointObjDescriptorExtraSizeAdapter,
+        DIMDismountPoint_getPlayerSide,
+        DIMDismountPoint_runOppositeSideSequence,
+    },
 };

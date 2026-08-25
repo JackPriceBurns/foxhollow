@@ -7,7 +7,7 @@
 #include "dlls/objects/261_LargeCrate.h"
 #include "dlls/objects/237.h"
 #include "dlls/objects/262.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_005B_modgfx.h"
@@ -20,15 +20,13 @@
 #include "main/objfx.h"
 #include "main/objhits.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/sky_interface.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_object_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 
 #define LARGECRATE_LINKED_ID_BASE       0x40000
 #define LARGECRATE_ROB_WAVE_DIRECT_ID   0x66
@@ -593,19 +591,30 @@ void LargeCrate_release(void) {
 void LargeCrate_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gLargeCrateObjDescriptorInitAdapter, LargeCrate_init, obj, placement)
+OBJECT_FREE_ADAPTER(gLargeCrateObjDescriptorFreeAdapter, LargeCrate_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gLargeCrateObjDescriptorTypeIdAdapter, LargeCrate_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLargeCrateObjDescriptorExtraSizeAdapter, LargeCrate_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLargeCrateObjDescriptorAcquire, LargeCrate_initialise)
+
 ObjectDescriptor gLargeCrateObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLargeCrateObjDescriptorAcquire,
+        LargeCrate_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)LargeCrate_initialise,
-    (ObjectDescriptorCallback)LargeCrate_release,
-    0,
-    (ObjectDescriptorCallback)LargeCrate_init,
-    (ObjectDescriptorCallback)LargeCrate_update,
-    (ObjectDescriptorCallback)LargeCrate_hitDetect,
-    (ObjectDescriptorCallback)LargeCrate_render,
-    (ObjectDescriptorCallback)LargeCrate_free,
-    (ObjectDescriptorCallback)LargeCrate_getObjectTypeId,
-    LargeCrate_getExtraSize,
+    gLargeCrateObjDescriptorInitAdapter,
+    LargeCrate_update,
+    LargeCrate_hitDetect,
+    LargeCrate_render,
+    gLargeCrateObjDescriptorFreeAdapter,
+    gLargeCrateObjDescriptorTypeIdAdapter,
+    gLargeCrateObjDescriptorExtraSizeAdapter,
 };

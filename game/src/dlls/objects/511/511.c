@@ -10,7 +10,7 @@
 #include "main/objhits.h"
 #include "main/object_render.h"
 #include "main/pad.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "sys/objects.h"
 
 #define DLL1FF_SPECIAL_SEQUENCE_ID     0x146
@@ -152,19 +152,30 @@ void dll_1FF_release(void) {
 void dll_1FF_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1FFObjDescriptorInitAdapter, dll_1FF_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1FFObjDescriptorHitDetectAdapter, dll_1FF_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1FFObjDescriptorFreeAdapter, dll_1FF_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1FFObjDescriptorExtraSizeAdapter, dll_1FF_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1FFObjDescriptorAcquire, dll_1FF_initialise)
+
 ObjectDescriptor gDll1FFObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1FFObjDescriptorAcquire,
+        dll_1FF_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dll_1FF_initialise,
-    dll_1FF_release,
-    0,
-    (ObjectDescriptorCallback)dll_1FF_init,
-    (ObjectDescriptorCallback)dll_1FF_update,
-    dll_1FF_hitDetect,
-    (ObjectDescriptorCallback)dll_1FF_render,
-    dll_1FF_free,
-    (ObjectDescriptorCallback)dll_1FF_getObjectTypeId,
-    dll_1FF_getExtraSize,
+    gDll1FFObjDescriptorInitAdapter,
+    dll_1FF_update,
+    gDll1FFObjDescriptorHitDetectAdapter,
+    dll_1FF_render,
+    gDll1FFObjDescriptorFreeAdapter,
+    dll_1FF_getObjectTypeId,
+    gDll1FFObjDescriptorExtraSizeAdapter,
 };

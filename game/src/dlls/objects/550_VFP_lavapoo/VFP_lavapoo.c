@@ -1,13 +1,13 @@
 /* VFP_lavapoo (DLL 0x0226) */
 #include "dlls/object_descriptor.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtexture.h"
 #include "main/vecmath.h"
 
@@ -191,19 +191,31 @@ void VFP_lavapool_initialise_nop(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_lavapoolObjDescriptorInitAdapter, VFP_lavapool_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_lavapoolObjDescriptorHitDetectAdapter, VFP_lavapool_hitDetect_nop)
+OBJECT_FREE_ADAPTER(gVFP_lavapoolObjDescriptorFreeAdapter, VFP_lavapool_free_nop)
+OBJECT_TYPE_ID_ADAPTER(gVFP_lavapoolObjDescriptorTypeIdAdapter, VFP_lavapool_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_lavapoolObjDescriptorExtraSizeAdapter, VFP_lavapool_getExtraSize_ret_24)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_lavapoolObjDescriptorAcquire, VFP_lavapool_initialise_nop)
+
 ObjectDescriptor gVFP_lavapoolObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_lavapoolObjDescriptorAcquire,
+        VFP_lavapool_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_lavapool_initialise_nop,
-    (ObjectDescriptorCallback)VFP_lavapool_release_nop,
-    0,
-    (ObjectDescriptorCallback)VFP_lavapool_init,
-    (ObjectDescriptorCallback)VFP_lavapool_update,
-    (ObjectDescriptorCallback)VFP_lavapool_hitDetect_nop,
-    (ObjectDescriptorCallback)VFP_lavapool_render,
-    (ObjectDescriptorCallback)VFP_lavapool_free_nop,
-    (ObjectDescriptorCallback)VFP_lavapool_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)VFP_lavapool_getExtraSize_ret_24,
+    gVFP_lavapoolObjDescriptorInitAdapter,
+    VFP_lavapool_update,
+    gVFP_lavapoolObjDescriptorHitDetectAdapter,
+    VFP_lavapool_render,
+    gVFP_lavapoolObjDescriptorFreeAdapter,
+    gVFP_lavapoolObjDescriptorTypeIdAdapter,
+    gVFP_lavapoolObjDescriptorExtraSizeAdapter,
 };

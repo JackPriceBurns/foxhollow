@@ -1,6 +1,6 @@
 #include "main/sky_state.h"
-#include "main/dll/savegame_env_api.h"
-#include "main/render_envfx_api.h"
+#include "main/dll/savegame_env.h"
+#include "main/render_envfx.h"
 #include "main/sky_interface.h"
 #include "string.h"
 #include "sys/objects.h"
@@ -11,18 +11,16 @@
 #include "main/model.h"
 #include "main/model_light.h"
 #include "main/texture.h"
-#include "main/textrender_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/textrender.h"
+#include "main/rcp_dolphin.h"
 #include "main/sky.h"
-#include "main/sky_api.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "dlls/object_descriptor.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "dolphin/gx/GXLighting.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
-#include "main/lightmap.h"
-#include "main/track_dolphin_shadow_api.h"
+#include "main/track_dolphin_shadow.h"
 #include "main/vecmath.h"
 
 u32 lbl_803DD18C;
@@ -1062,51 +1060,53 @@ void sky2_initialise(void)
 
 u8 gSkyConfigFieldIndices[] = {0, 0, 1, 2, 3, 4, 5, 6, 7, 0, 0, 0};
 
+typedef struct Sky2DllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(sky2_update)* update;
+    __typeof__(sky2_onMapSetup)* onMapSetup;
+    __typeof__(sky2_run)* run;
+    __typeof__(sky2ApplyFog)* applyFog;
+    __typeof__(dll_06_func07_ret_0)* slot07;
+    __typeof__(sky2ApplyTextColor)* applyTextColor;
+    __typeof__(sky2BlendTowardTargetColor)* blendTowardTargetColor;
+    __typeof__(sky2GetTargetColor)* getTargetColor;
+    __typeof__(sky2GetFogRange)* getFogRange;
+    __typeof__(dll_06_func0C_nop)* slot0C;
+    __typeof__(sky2SetDrawMode2)* setDrawMode2;
+    __typeof__(sky2SetDrawMode1)* setDrawMode1;
+    __typeof__(sky2GetFogFadeAlpha)* getFogFadeAlpha;
+} Sky2DllInterfaceCallbacks;
+
 typedef struct Sky2DllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback update;
-    ObjectDescriptorCallback onMapSetup;
-    ObjectDescriptorCallback run;
-    ObjectDescriptorCallback applyFog;
-    ObjectDescriptorCallback slot07;
-    ObjectDescriptorCallback applyTextColor;
-    ObjectDescriptorCallback blendTowardTargetColor;
-    ObjectDescriptorCallback getTargetColor;
-    ObjectDescriptorCallback getFogRange;
-    ObjectDescriptorCallback slot0C;
-    ObjectDescriptorCallback setDrawMode2;
-    ObjectDescriptorCallback setDrawMode1;
-    ObjectDescriptorCallback getFogFadeAlpha;
+    ResourceDescriptorHeader header;
+    Sky2DllInterfaceCallbacks interface;
     u32 padding;
 } Sky2DllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gsky2ResourceAcquire, sky2_initialise)
+
 Sky2DllInterface sky2_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_16_SLOTS,
-    (ObjectDescriptorCallback)sky2_initialise,
-    (ObjectDescriptorCallback)sky2_release,
-    0,
-    (ObjectDescriptorCallback)sky2_update,
-    (ObjectDescriptorCallback)sky2_onMapSetup,
-    (ObjectDescriptorCallback)sky2_run,
-    (ObjectDescriptorCallback)sky2ApplyFog,
-    (ObjectDescriptorCallback)dll_06_func07_ret_0,
-    (ObjectDescriptorCallback)sky2ApplyTextColor,
-    (ObjectDescriptorCallback)sky2BlendTowardTargetColor,
-    (ObjectDescriptorCallback)sky2GetTargetColor,
-    (ObjectDescriptorCallback)sky2GetFogRange,
-    (ObjectDescriptorCallback)dll_06_func0C_nop,
-    (ObjectDescriptorCallback)sky2SetDrawMode2,
-    (ObjectDescriptorCallback)sky2SetDrawMode1,
-    (ObjectDescriptorCallback)sky2GetFogFadeAlpha,
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_16_SLOTS},
+        gsky2ResourceAcquire,
+        sky2_release,
+    },
+    {
+        NULL,
+        sky2_update,
+        sky2_onMapSetup,
+        sky2_run,
+        sky2ApplyFog,
+        dll_06_func07_ret_0,
+        sky2ApplyTextColor,
+        sky2BlendTowardTargetColor,
+        sky2GetTargetColor,
+        sky2GetFogRange,
+        dll_06_func0C_nop,
+        sky2SetDrawMode2,
+        sky2SetDrawMode1,
+        sky2GetFogFadeAlpha,
+    },
     0,
 };
 

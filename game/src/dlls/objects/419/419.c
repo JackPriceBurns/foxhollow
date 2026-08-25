@@ -46,19 +46,31 @@ void dll419_release(void) {
 void dll419_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1A3ObjDescriptorInitAdapter, dll419_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDll1A3ObjDescriptorHitDetectAdapter, dll419_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1A3ObjDescriptorFreeAdapter, dll419_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll1A3ObjDescriptorTypeIdAdapter, dll419_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1A3ObjDescriptorExtraSizeAdapter, dll419_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1A3ObjDescriptorAcquire, dll419_initialise)
+
 ObjectDescriptor gDll1A3ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1A3ObjDescriptorAcquire,
+        dll419_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll419_initialise,
-    (ObjectDescriptorCallback)dll419_release,
-    0,
-    (ObjectDescriptorCallback)dll419_init,
-    (ObjectDescriptorCallback)dll419_update,
-    (ObjectDescriptorCallback)dll419_hitDetect,
-    (ObjectDescriptorCallback)dll419_render,
-    (ObjectDescriptorCallback)dll419_free,
-    (ObjectDescriptorCallback)dll419_getObjectTypeId,
-    dll419_getExtraSize,
+    gDll1A3ObjDescriptorInitAdapter,
+    dll419_update,
+    gDll1A3ObjDescriptorHitDetectAdapter,
+    dll419_render,
+    gDll1A3ObjDescriptorFreeAdapter,
+    gDll1A3ObjDescriptorTypeIdAdapter,
+    gDll1A3ObjDescriptorExtraSizeAdapter,
 };

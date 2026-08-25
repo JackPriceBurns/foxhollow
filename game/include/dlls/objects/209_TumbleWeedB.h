@@ -36,6 +36,16 @@ typedef struct TumbleweedBushPlacement {
     u8 variant;        /* 0x23 */
 } TumbleweedBushPlacement;
 
+typedef struct TumbleweedBushInterface {
+    OBJECT_INTERFACE_FIELDS;
+    void (*removePieceReference)(GameObject* bush, GameObject* piece);
+} TumbleweedBushInterface;
+
+OBJECT_DESCRIPTOR_TYPE(TumbleweedBushDescriptor, TumbleweedBushInterface);
+OBJECT_DESCRIPTOR_WITH_PADDING_TYPE(TumbleweedBushDescriptorWithPadding, TumbleweedBushDescriptor);
+
+#define TUMBLEWEED_BUSH_INTERFACE(bush) ((TumbleweedBushInterface*)*((GameObject*)(bush))->anim.dll)
+
 STATIC_ASSERT(offsetof(TumbleweedBushState, scale) == 0x0);
 STATIC_ASSERT(offsetof(TumbleweedBushState, triggerRadius) == 0x8);
 STATIC_ASSERT(offsetof(TumbleweedBushState, pieceObjects) == 0xC);
@@ -73,6 +83,6 @@ void TumbleWeedBush_initialise(void);
 
 extern f32 gTumbleweedBushPieceOffsetTable[2][4][3];
 extern f32 gTumbleweedBushHitCooldown;
-extern ObjectDescriptor11WithPadding gTumbleWeedBushObjDescriptor;
+extern TumbleweedBushDescriptorWithPadding gTumbleWeedBushObjDescriptor;
 
 #endif /* DLLS_OBJECTS_209_TUMBLEWEEDB_H_ */

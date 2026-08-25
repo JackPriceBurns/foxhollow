@@ -55,19 +55,32 @@ void cfPerch_release(void) {
 void cfPerch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFPerchObjDescriptorInitAdapter, cfPerch_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gCFPerchObjDescriptorHitDetectAdapter, cfPerch_hitDetect)
+OBJECT_RENDER_ADAPTER(gCFPerchObjDescriptorRenderAdapter, cfPerch_render)
+OBJECT_FREE_ADAPTER(gCFPerchObjDescriptorFreeAdapter, cfPerch_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCFPerchObjDescriptorTypeIdAdapter, cfPerch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFPerchObjDescriptorExtraSizeAdapter, cfPerch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFPerchObjDescriptorAcquire, cfPerch_initialise)
+
 ObjectDescriptor gCFPerchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFPerchObjDescriptorAcquire,
+        cfPerch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfPerch_initialise,
-    (ObjectDescriptorCallback)cfPerch_release,
-    0,
-    (ObjectDescriptorCallback)cfPerch_init,
-    (ObjectDescriptorCallback)cfPerch_update,
-    (ObjectDescriptorCallback)cfPerch_hitDetect,
-    (ObjectDescriptorCallback)cfPerch_render,
-    (ObjectDescriptorCallback)cfPerch_free,
-    (ObjectDescriptorCallback)cfPerch_getObjectTypeId,
-    cfPerch_getExtraSize,
+    gCFPerchObjDescriptorInitAdapter,
+    cfPerch_update,
+    gCFPerchObjDescriptorHitDetectAdapter,
+    gCFPerchObjDescriptorRenderAdapter,
+    gCFPerchObjDescriptorFreeAdapter,
+    gCFPerchObjDescriptorTypeIdAdapter,
+    gCFPerchObjDescriptorExtraSizeAdapter,
 };

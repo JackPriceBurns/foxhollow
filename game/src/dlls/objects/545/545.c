@@ -9,8 +9,8 @@
 #include "sys/objects.h"
 #include "game/objects/object_setup.h"
 #include "main/map_load.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/pi_dolphin_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/pi_dolphin.h"
 
 
 typedef enum SeqPointMode
@@ -229,19 +229,31 @@ void SeqPoint_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gSeqPointObjDescriptorInitAdapter, SeqPoint_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSeqPointObjDescriptorHitDetectAdapter, SeqPoint_hitDetect)
+OBJECT_FREE_ADAPTER(gSeqPointObjDescriptorFreeAdapter, SeqPoint_free)
+OBJECT_TYPE_ID_ADAPTER(gSeqPointObjDescriptorTypeIdAdapter, SeqPoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSeqPointObjDescriptorExtraSizeAdapter, SeqPoint_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSeqPointObjDescriptorAcquire, SeqPoint_initialise)
+
 ObjectDescriptor gSeqPointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSeqPointObjDescriptorAcquire,
+        SeqPoint_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)SeqPoint_initialise,
-    (ObjectDescriptorCallback)SeqPoint_release,
-    0,
-    (ObjectDescriptorCallback)SeqPoint_init,
-    (ObjectDescriptorCallback)SeqPoint_update,
-    (ObjectDescriptorCallback)SeqPoint_hitDetect,
-    (ObjectDescriptorCallback)SeqPoint_render,
-    (ObjectDescriptorCallback)SeqPoint_free,
-    (ObjectDescriptorCallback)SeqPoint_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)SeqPoint_getExtraSize,
+    gSeqPointObjDescriptorInitAdapter,
+    SeqPoint_update,
+    gSeqPointObjDescriptorHitDetectAdapter,
+    SeqPoint_render,
+    gSeqPointObjDescriptorFreeAdapter,
+    gSeqPointObjDescriptorTypeIdAdapter,
+    gSeqPointObjDescriptorExtraSizeAdapter,
 };

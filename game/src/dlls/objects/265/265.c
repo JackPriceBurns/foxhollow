@@ -21,7 +21,7 @@
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/frustum.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 #define BREAKABLE_CARRYABLE_HIT_VOLUME_SLOT 5
@@ -73,9 +73,9 @@ void breakableCarryable_update(GameObject* obj) {
     placement = (BreakableCarryablePlacement*)obj->anim.placementData;
     switch (state->phase) {
     case BREAKABLE_CARRYABLE_PHASE_INTACT:
-        (*gCarryableInterface)->updateHeld(obj, state);
+        (*gCarryableInterface)->updateHeld(obj, &state->carryable);
         if (ObjHits_GetPriorityHit(obj, NULL, NULL, &hitVolumeIndex) != 0) {
-            (*gCarryableInterface)->stopCarrying(obj, state);
+            (*gCarryableInterface)->stopCarrying(obj, &state->carryable);
             Sfx_PlayFromObject(obj, SFXTRIG_crtsmsh6);
             ObjHitbox_SetSphereRadius((ObjAnimComponent*)obj, BREAKABLE_CARRYABLE_HITBOX_RADIUS);
             ObjHits_SetHitVolumeSlot((ObjAnimComponent*)obj, BREAKABLE_CARRYABLE_HIT_VOLUME_SLOT,
@@ -120,10 +120,12 @@ void breakableCarryable_update(GameObject* obj) {
 }
 
 void breakableCarryable_init(GameObject* obj, BreakableCarryablePlacement* placement) {
+    BreakableCarryableState* state = obj->extra;
+
     obj->anim.rotX = (s16)((s32)placement->rotXByte << BREAKABLE_CARRYABLE_ROTATION_SHIFT);
     obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
-    (*gCarryableInterface)->init(obj, obj->extra, BREAKABLE_CARRYABLE_INIT_ARG);
-    (*gCarryableInterface)->setSuppressPositionSave(obj->extra, BREAKABLE_CARRYABLE_SUPPRESS_POS_SAVE);
+    (*gCarryableInterface)->init(obj, &state->carryable, BREAKABLE_CARRYABLE_INIT_ARG);
+    (*gCarryableInterface)->setSuppressPositionSave(&state->carryable, BREAKABLE_CARRYABLE_SUPPRESS_POS_SAVE);
 }
 
 void breakableCarryable_release(void) {
@@ -132,19 +134,31 @@ void breakableCarryable_release(void) {
 void breakableCarryable_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gBreakableCarryableObjDescriptorInitAdapter, breakableCarryable_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gBreakableCarryableObjDescriptorHitDetectAdapter, breakableCarryable_hitDetect)
+OBJECT_FREE_ADAPTER(gBreakableCarryableObjDescriptorFreeAdapter, breakableCarryable_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gBreakableCarryableObjDescriptorTypeIdAdapter, breakableCarryable_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBreakableCarryableObjDescriptorExtraSizeAdapter, breakableCarryable_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBreakableCarryableObjDescriptorAcquire, breakableCarryable_initialise)
+
 ObjectDescriptor gBreakableCarryableObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBreakableCarryableObjDescriptorAcquire,
+        breakableCarryable_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)breakableCarryable_initialise,
-    (ObjectDescriptorCallback)breakableCarryable_release,
-    0,
-    (ObjectDescriptorCallback)breakableCarryable_init,
-    (ObjectDescriptorCallback)breakableCarryable_update,
-    (ObjectDescriptorCallback)breakableCarryable_hitDetect,
-    (ObjectDescriptorCallback)breakableCarryable_render,
-    (ObjectDescriptorCallback)breakableCarryable_free,
-    (ObjectDescriptorCallback)breakableCarryable_getObjectTypeId,
-    breakableCarryable_getExtraSize,
+    gBreakableCarryableObjDescriptorInitAdapter,
+    breakableCarryable_update,
+    gBreakableCarryableObjDescriptorHitDetectAdapter,
+    breakableCarryable_render,
+    gBreakableCarryableObjDescriptorFreeAdapter,
+    gBreakableCarryableObjDescriptorTypeIdAdapter,
+    gBreakableCarryableObjDescriptorExtraSizeAdapter,
 };

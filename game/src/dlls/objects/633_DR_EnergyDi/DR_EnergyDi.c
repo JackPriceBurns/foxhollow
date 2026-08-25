@@ -10,7 +10,7 @@
  * placement and primes the activated/texture state from the active bit.
  */
 #include "main/dll/DR/dll_0279_drenergydisc.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/objtexture.h"
@@ -92,19 +92,32 @@ void DR_EnergyDisc_release(void) {
 void DR_EnergyDisc_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDrEnergyDiscObjDescriptorInitAdapter, DR_EnergyDisc_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDrEnergyDiscObjDescriptorHitDetectAdapter, DR_EnergyDisc_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrEnergyDiscObjDescriptorRenderAdapter, DR_EnergyDisc_render)
+OBJECT_FREE_ADAPTER(gDrEnergyDiscObjDescriptorFreeAdapter, DR_EnergyDisc_free)
+OBJECT_TYPE_ID_ADAPTER(gDrEnergyDiscObjDescriptorTypeIdAdapter, DR_EnergyDisc_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrEnergyDiscObjDescriptorExtraSizeAdapter, DR_EnergyDisc_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrEnergyDiscObjDescriptorAcquire, DR_EnergyDisc_initialise)
+
 ObjectDescriptor gDrEnergyDiscObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrEnergyDiscObjDescriptorAcquire,
+        DR_EnergyDisc_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_EnergyDisc_initialise,
-    (ObjectDescriptorCallback)DR_EnergyDisc_release,
-    0,
-    (ObjectDescriptorCallback)DR_EnergyDisc_init,
-    (ObjectDescriptorCallback)DR_EnergyDisc_update,
-    (ObjectDescriptorCallback)DR_EnergyDisc_hitDetect,
-    (ObjectDescriptorCallback)DR_EnergyDisc_render,
-    (ObjectDescriptorCallback)DR_EnergyDisc_free,
-    (ObjectDescriptorCallback)DR_EnergyDisc_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DR_EnergyDisc_getExtraSize,
+    gDrEnergyDiscObjDescriptorInitAdapter,
+    DR_EnergyDisc_update,
+    gDrEnergyDiscObjDescriptorHitDetectAdapter,
+    gDrEnergyDiscObjDescriptorRenderAdapter,
+    gDrEnergyDiscObjDescriptorFreeAdapter,
+    gDrEnergyDiscObjDescriptorTypeIdAdapter,
+    gDrEnergyDiscObjDescriptorExtraSizeAdapter,
 };

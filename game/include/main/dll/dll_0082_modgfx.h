@@ -14,7 +14,7 @@ typedef void (*Dll82SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnPara
                              int modelId, void* extraArg);
 
 typedef struct Dll82Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll82SpawnFn spawn;
 } Dll82Interface;
 
@@ -23,16 +23,14 @@ STATIC_ASSERT(offsetof(Dll82Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll82Interface) == 0x08);
 
 typedef struct Dll82ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll82SpawnFn spawn;
 } Dll82ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll82ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll82ResourceDescriptor) == 0x20);

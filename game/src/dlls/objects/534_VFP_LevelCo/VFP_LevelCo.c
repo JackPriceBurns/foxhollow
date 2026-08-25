@@ -14,17 +14,18 @@
  *    "sequence done" bit when all four are set;
  *  - two music latches driven through GameBitLatch_Update.
  */
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/lightmap_api.h"
+#include "main/lightmap.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
 #include "main/objtype.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "main/sky_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/gamebit_latch.h"
+#include "dlls/object_descriptor.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 #include "main/dll/VF/dll_0216_vfplevelcontrol.h"
 
@@ -66,22 +67,22 @@ void VFP_LevelControl_updateSpellTabletPuzzle(GameObject* obj)
     s16 bits[4];
     s16 i;
 
-    if (state->latch.fields.sequenceStep < 4)
+    if (state->latch.sequenceStep < 4)
     {
         bits[0] = mainGetBit(GAMEBIT_VFP_SEQ_STEP_0);
         bits[1] = mainGetBit(GAMEBIT_VFP_SEQ_STEP_1);
         bits[2] = mainGetBit(GAMEBIT_VFP_SEQ_STEP_2);
         bits[3] = mainGetBit(GAMEBIT_VFP_SEQ_STEP_3);
-        i = state->latch.fields.sequenceStep;
+        i = state->latch.sequenceStep;
         p = &bits[i];
         for (; i < 4; i++)
         {
-            if (i == state->latch.fields.sequenceStep)
+            if (i == state->latch.sequenceStep)
             {
                 if (*p != 0)
                 {
-                    state->latch.fields.sequenceStep++;
-                    if (state->latch.fields.sequenceStep == 4)
+                    state->latch.sequenceStep++;
+                    if (state->latch.sequenceStep == 4)
                     {
                         mainSetBits(GAMEBIT_VFP_SEQ_DONE, 1);
                     }
@@ -89,7 +90,7 @@ void VFP_LevelControl_updateSpellTabletPuzzle(GameObject* obj)
             }
             else if (*p != 0)
             {
-                state->latch.fields.sequenceStep = 0;
+                state->latch.sequenceStep = 0;
                 mainSetBits(GAMEBIT_VFP_SEQ_STEP_0, 0);
                 mainSetBits(GAMEBIT_VFP_SEQ_STEP_1, 0);
                 mainSetBits(GAMEBIT_VFP_SEQ_STEP_2, 0);
@@ -194,9 +195,9 @@ void VFP_LevelControl_update(GameObject* obj)
         break;
     }
 
-    GameBitLatch_Update((GameBitLatchState*)state->latch.raw, 1, -1, -1, GAMEBIT_VFP_MusicLatch,
+    GameBitLatch_Update(&state->latch.musicLatch, 1, -1, -1, GAMEBIT_VFP_MusicLatch,
                         VFP_MUSIC_A);
-    GameBitLatch_Update((GameBitLatchState*)state->latch.raw, 2, -1, -1, GAMEBIT_VFP_MusicLatch,
+    GameBitLatch_Update(&state->latch.musicLatch, 2, -1, -1, GAMEBIT_VFP_MusicLatch,
                         VFP_MUSIC_B);
 }
 
@@ -225,7 +226,7 @@ void VFP_LevelControl_init(GameObject* obj, VfpLevelControlSetup* setup)
     unlockLevel(0, 0, 1);
     if (mainGetBit(GAMEBIT_VFP_SEQ_DONE) != 0)
     {
-        state->latch.fields.sequenceStep = 4;
+        state->latch.sequenceStep = 4;
     }
     else
     {
@@ -245,19 +246,32 @@ void VFP_LevelControl_initialise(void)
     gVfpLevelControlTimer = VFP_TIMER_INIT;
 }
 
+OBJECT_INIT_ADAPTER(gVFP_LevelControlObjDescriptorInitAdapter, VFP_LevelControl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_LevelControlObjDescriptorHitDetectAdapter, VFP_LevelControl_hitDetect)
+OBJECT_RENDER_ADAPTER(gVFP_LevelControlObjDescriptorRenderAdapter, VFP_LevelControl_render)
+OBJECT_FREE_ADAPTER(gVFP_LevelControlObjDescriptorFreeAdapter, VFP_LevelControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_LevelControlObjDescriptorTypeIdAdapter, VFP_LevelControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_LevelControlObjDescriptorExtraSizeAdapter, VFP_LevelControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_LevelControlObjDescriptorAcquire, VFP_LevelControl_initialise)
+
 ObjectDescriptor gVFP_LevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_LevelControlObjDescriptorAcquire,
+        VFP_LevelControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_LevelControl_initialise,
-    (ObjectDescriptorCallback)VFP_LevelControl_release,
-    0,
-    (ObjectDescriptorCallback)VFP_LevelControl_init,
-    (ObjectDescriptorCallback)VFP_LevelControl_update,
-    (ObjectDescriptorCallback)VFP_LevelControl_hitDetect,
-    (ObjectDescriptorCallback)VFP_LevelControl_render,
-    (ObjectDescriptorCallback)VFP_LevelControl_free,
-    (ObjectDescriptorCallback)VFP_LevelControl_getObjectTypeId,
-    VFP_LevelControl_getExtraSize,
+    gVFP_LevelControlObjDescriptorInitAdapter,
+    VFP_LevelControl_update,
+    gVFP_LevelControlObjDescriptorHitDetectAdapter,
+    gVFP_LevelControlObjDescriptorRenderAdapter,
+    gVFP_LevelControlObjDescriptorFreeAdapter,
+    gVFP_LevelControlObjDescriptorTypeIdAdapter,
+    gVFP_LevelControlObjDescriptorExtraSizeAdapter,
 };

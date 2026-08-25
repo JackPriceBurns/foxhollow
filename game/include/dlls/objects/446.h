@@ -14,19 +14,15 @@
 typedef struct ModelLightStruct ModelLightStruct;
 
 typedef struct DimLavaProjectileInterfaceVTable {
-    void* unknown00[8];
+    OBJECT_INTERFACE_FIELDS;
     void (*relaunch)(GameObject* obj, int verticalSpeed, int horizontalSpeed);
     u32 (*isInactive)(GameObject* obj);
 } DimLavaProjectileInterfaceVTable;
 
+OBJECT_DESCRIPTOR_TYPE(DimLavaProjectileDescriptor, DimLavaProjectileInterfaceVTable);
+
 typedef struct DimLavaProjectilePlacement {
-    union {
-        ObjPlacement base;
-        struct {
-            u8 unknown00[0x14];
-            s32 targetObjectId;
-        };
-    };
+    ObjPlacement base;
     s8 launchYaw;
     u8 unknown19;
     s16 verticalSpeed;
@@ -49,7 +45,7 @@ STATIC_ASSERT(offsetof(DimLavaProjectileInterfaceVTable, isInactive) == DIM_LAVA
 STATIC_ASSERT(sizeof(DimLavaProjectileInterfaceVTable) == 0x28);
 
 STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, base) == 0x00);
-STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, targetObjectId) == 0x14);
+STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, base.ident) == 0x14);
 STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, launchYaw) == 0x18);
 STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, unknown19) == 0x19);
 STATIC_ASSERT(offsetof(DimLavaProjectilePlacement, verticalSpeed) == 0x1A);
@@ -79,6 +75,6 @@ void lavaball1be_release(void);
 void lavaball1be_initialise(void);
 
 extern const Vec3f gDimLavaDebrisBaseVec;
-extern ObjectDescriptor12 gLavaBall1BEObjDescriptor;
+extern DimLavaProjectileDescriptor gLavaBall1BEObjDescriptor;
 
 #endif /* DLLS_OBJECTS_446_H_ */

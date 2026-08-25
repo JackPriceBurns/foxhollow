@@ -2,9 +2,9 @@
 #define MAIN_DLL_SAVEGAME_H_
 
 #include "types.h"
-#include "main/dll/savegame_env_api.h"
-#include "main/dll/savegame_load_api.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/dll/savegame_env.h"
+#include "main/dll/savegame_load.h"
+#include "main/dll/savegame_object.h"
 
 void SaveGame_setCamActionNo(s16 actionNo);
 s32 SaveGame_getCamActionNo(void);

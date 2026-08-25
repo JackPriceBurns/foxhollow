@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_0046_cameramodedebug.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
 #include "game/objects/object.h"
 #include "main/camera_interface.h"
@@ -103,10 +103,10 @@ void CameraModeDebug_release_nop(void) {
 void CameraModeDebug_initialise_nop(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeDebugDescriptorAcquire, CameraModeDebug_initialise_nop)
+
 CameraModeDebugDescriptor gCameraModeDebugDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeDebug_initialise_nop,
-    CameraModeDebug_release_nop,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeDebugDescriptorAcquire, CameraModeDebug_release_nop },
     NULL,
     CameraModeDebug_init,
     CameraModeDebug_update,

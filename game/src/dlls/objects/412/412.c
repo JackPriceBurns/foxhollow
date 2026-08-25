@@ -2,12 +2,12 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0082_modgfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/resource.h"
 #include "sys/objects.h"
@@ -117,15 +117,25 @@ static void dll412_release(void) {
 static void dll412_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll19CObjDescriptorInitAdapter, dll412_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll19CObjDescriptorHitDetectAdapter, dll412_hitDetect)
+OBJECT_FREE_ADAPTER(gDll19CObjDescriptorFreeAdapter, dll412_free)
+OBJECT_TYPE_ID_ADAPTER(gDll19CObjDescriptorTypeIdAdapter, dll412_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll19CObjDescriptorExtraSizeAdapter, dll412_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll19CObjDescriptorAcquire, dll412_initialise)
+
 ObjectDescriptor gDll19CObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dll412_initialise,
-    .release = (ObjectDescriptorCallback)dll412_release,
-    .init = (ObjectDescriptorCallback)dll412_init,
-    .update = (ObjectDescriptorCallback)dll412_update,
-    .hitDetect = (ObjectDescriptorCallback)dll412_hitDetect,
-    .render = (ObjectDescriptorCallback)dll412_render,
-    .free = (ObjectDescriptorCallback)dll412_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dll412_getObjectTypeId,
-    .getExtraSize = dll412_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDll19CObjDescriptorAcquire,
+        .release = dll412_release,
+    },
+    .init = gDll19CObjDescriptorInitAdapter,
+    .update = dll412_update,
+    .hitDetect = gDll19CObjDescriptorHitDetectAdapter,
+    .render = dll412_render,
+    .free = gDll19CObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDll19CObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDll19CObjDescriptorExtraSizeAdapter,
+};;

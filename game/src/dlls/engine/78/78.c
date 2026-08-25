@@ -5,10 +5,10 @@
 
 #include "dlls/objects/466_WORLDplanet.h"
 #include "dlls/objects/467.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
-#include "main/dll/dll_0000_gameui_hud_api.h"
-#include "main/lightmap_api.h"
+#include "main/dll/dll_0000_gameui_hud.h"
+#include "main/lightmap.h"
 #include "main/mm.h"
 #include "main/object_transform.h"
 #include "main/pad.h"
@@ -334,10 +334,10 @@ void CameraModeWorldMap_release(void) {
 void CameraModeWorldMap_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeWorldMapDescriptorAcquire, CameraModeWorldMap_initialise)
+
 CameraModeWorldMapDescriptor gCameraModeWorldMapDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeWorldMap_initialise,
-    CameraModeWorldMap_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeWorldMapDescriptorAcquire, CameraModeWorldMap_release },
     NULL,
     CameraModeWorldMap_init,
     CameraModeWorldMap_update,

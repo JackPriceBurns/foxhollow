@@ -41,6 +41,7 @@ void TexScroll2_init(GameObject* obj, TexScrollPlacement* placement, int loadFla
 void TexScroll2_release(void);
 void TexScroll2_initialise(void);
 
-extern ObjectDescriptor11WithPadding gTexscroll2ObjDescriptor;
+struct Texscroll2ObjDescriptorType;
+extern struct Texscroll2ObjDescriptorType gTexscroll2ObjDescriptor;
 
 #endif /* DLLS_OBJECTS_308_TEXSCROLL2_H_ */

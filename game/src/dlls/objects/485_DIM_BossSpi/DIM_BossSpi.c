@@ -6,9 +6,9 @@
  */
 #include "dlls/objects/485_DIM_BossSpi.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
@@ -16,7 +16,7 @@
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -70,7 +70,7 @@ void DIMbossspit_updateBurst(GameObject* obj) {
     obj->anim.rotX += DIMBOSSSPIT_BURST_ROT_X_STEP;
     obj->anim.rotZ += DIMBOSSSPIT_BURST_ROT_YZ_STEP;
     obj->anim.rotY += DIMBOSSSPIT_BURST_ROT_YZ_STEP;
-    if (stateAddress->burstTimer == DIMBOSSSPIT_BURST_START_FRAME) {
+    if (stateAddress->phaseTimer == DIMBOSSSPIT_BURST_START_FRAME) {
         i = 0;
         do {
             (*gPartfxInterface)
@@ -89,8 +89,8 @@ void DIMbossspit_updateBurst(GameObject* obj) {
             modelLightStruct_setEnabled(stateAddress->light, 0, 1.0f);
         }
     }
-    stateAddress->burstTimer += framesThisStep;
-    burstTimer = stateAddress->burstTimer;
+    stateAddress->phaseTimer += framesThisStep;
+    burstTimer = stateAddress->phaseTimer;
     if (burstTimer > DIMBOSSSPIT_BURST_EFFECT_END_FRAME) {
         if (burstTimer > DIMBOSSSPIT_BURST_FREE_FRAME) {
             Obj_FreeObject(obj);
@@ -237,7 +237,7 @@ void DIMbossspit_init(GameObject* obj) {
     obj->userData1 = DIMBOSSSPIT_LIFETIME_FRAMES;
     ObjHits_SetHitVolumeSlot(&obj->anim, 0, 0, 0);
     ObjHitbox_SetSphereRadius(&obj->anim, 0);
-    state->phase = DIMBOSSSPIT_PHASE_FLIGHT;
+    state->phaseTimer = DIMBOSSSPIT_PHASE_FLIGHT;
     state->unknown02 = 0;
     ObjHits_EnableObject(obj);
     ObjModel_SetPostRenderCallback(Obj_GetActiveModel(obj), postRenderSetAlphaBlendState);
@@ -249,19 +249,31 @@ void DIMbossspit_release(void) {
 void DIMbossspit_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIM_BossSpitObjDescriptorInitAdapter, DIMbossspit_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDIM_BossSpitObjDescriptorHitDetectAdapter, DIMbossspit_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM_BossSpitObjDescriptorFreeAdapter, DIMbossspit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDIM_BossSpitObjDescriptorTypeIdAdapter, DIMbossspit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_BossSpitObjDescriptorExtraSizeAdapter, DIMbossspit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIM_BossSpitObjDescriptorAcquire, DIMbossspit_initialise)
+
 ObjectDescriptor gDIM_BossSpitObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIM_BossSpitObjDescriptorAcquire,
+        DIMbossspit_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    DIMbossspit_initialise,
-    DIMbossspit_release,
-    0,
-    (ObjectDescriptorCallback)DIMbossspit_init,
-    (ObjectDescriptorCallback)DIMbossspit_update,
-    DIMbossspit_hitDetect,
-    (ObjectDescriptorCallback)DIMbossspit_render,
-    (ObjectDescriptorCallback)DIMbossspit_free,
-    (ObjectDescriptorCallback)DIMbossspit_getObjectTypeId,
-    DIMbossspit_getExtraSize,
+    gDIM_BossSpitObjDescriptorInitAdapter,
+    DIMbossspit_update,
+    gDIM_BossSpitObjDescriptorHitDetectAdapter,
+    DIMbossspit_render,
+    gDIM_BossSpitObjDescriptorFreeAdapter,
+    gDIM_BossSpitObjDescriptorTypeIdAdapter,
+    gDIM_BossSpitObjDescriptorExtraSizeAdapter,
 };

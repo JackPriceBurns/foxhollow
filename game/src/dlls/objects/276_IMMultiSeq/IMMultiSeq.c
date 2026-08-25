@@ -1,6 +1,6 @@
 #include "dlls/objects/276_IMMultiSeq.h"
 
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
@@ -153,19 +153,31 @@ void IMMultiSeq_release(void) {
 void IMMultiSeq_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gIMMultiSeqObjDescriptorInitAdapter, IMMultiSeq_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gIMMultiSeqObjDescriptorHitDetectAdapter, IMMultiSeq_hitDetect)
+OBJECT_FREE_ADAPTER(gIMMultiSeqObjDescriptorFreeAdapter, IMMultiSeq_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIMMultiSeqObjDescriptorTypeIdAdapter, IMMultiSeq_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMMultiSeqObjDescriptorExtraSizeAdapter, IMMultiSeq_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gIMMultiSeqObjDescriptorAcquire, IMMultiSeq_initialise)
+
 ObjectDescriptor gIMMultiSeqObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gIMMultiSeqObjDescriptorAcquire,
+        IMMultiSeq_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)IMMultiSeq_initialise,
-    (ObjectDescriptorCallback)IMMultiSeq_release,
-    0,
-    (ObjectDescriptorCallback)IMMultiSeq_init,
-    (ObjectDescriptorCallback)IMMultiSeq_update,
-    (ObjectDescriptorCallback)IMMultiSeq_hitDetect,
-    (ObjectDescriptorCallback)IMMultiSeq_render,
-    (ObjectDescriptorCallback)IMMultiSeq_free,
-    (ObjectDescriptorCallback)IMMultiSeq_getObjectTypeId,
-    IMMultiSeq_getExtraSize,
+    gIMMultiSeqObjDescriptorInitAdapter,
+    IMMultiSeq_update,
+    gIMMultiSeqObjDescriptorHitDetectAdapter,
+    IMMultiSeq_render,
+    gIMMultiSeqObjDescriptorFreeAdapter,
+    gIMMultiSeqObjDescriptorTypeIdAdapter,
+    gIMMultiSeqObjDescriptorExtraSizeAdapter,
 };

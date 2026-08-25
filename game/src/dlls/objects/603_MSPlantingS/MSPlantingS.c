@@ -11,13 +11,13 @@
  * decrements it and runs object sequence 0. render tints the model per phase;
  * MoonSeedPlantingSpot_cutOrHarvest is the trigger-volume callback that cuts/harvests.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/partfx_interface.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
@@ -388,23 +388,50 @@ void MoonSeedPlantingSpot_initialise(void)
 {
 }
 
-ObjectDescriptor14 gMoonSeedPlantingSpotObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_initialise,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_release,
-    0,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_init,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_update,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_hitDetect,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_render,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_free,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_getObjectTypeId,
-    MoonSeedPlantingSpot_getExtraSize,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_cutOrHarvest,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_func0B,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_modelMtxFn,
-    (ObjectDescriptorCallback)MoonSeedPlantingSpot_render2,
+OBJECT_INIT_ADAPTER(gMoonSeedPlantingSpotObjDescriptorInitAdapter, MoonSeedPlantingSpot_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMoonSeedPlantingSpotObjDescriptorHitDetectAdapter, MoonSeedPlantingSpot_hitDetect)
+OBJECT_FREE_ADAPTER(gMoonSeedPlantingSpotObjDescriptorFreeAdapter, MoonSeedPlantingSpot_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMoonSeedPlantingSpotObjDescriptorTypeIdAdapter, MoonSeedPlantingSpot_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMoonSeedPlantingSpotObjDescriptorExtraSizeAdapter, MoonSeedPlantingSpot_getExtraSize)
+
+typedef struct MoonSeedPlantingSpotObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(MoonSeedPlantingSpot_cutOrHarvest)* MoonSeedPlantingSpot_cutOrHarvest;
+    __typeof__(MoonSeedPlantingSpot_func0B)* MoonSeedPlantingSpot_func0B;
+    __typeof__(MoonSeedPlantingSpot_modelMtxFn)* MoonSeedPlantingSpot_modelMtxFn;
+    __typeof__(MoonSeedPlantingSpot_render2)* MoonSeedPlantingSpot_render2;
+} MoonSeedPlantingSpotObjDescriptorTypeInterface;
+
+struct MoonSeedPlantingSpotObjDescriptorType {
+    ObjectDescriptorHeader header;
+    MoonSeedPlantingSpotObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gMoonSeedPlantingSpotObjDescriptorAcquire, MoonSeedPlantingSpot_initialise)
+
+struct MoonSeedPlantingSpotObjDescriptorType gMoonSeedPlantingSpotObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_14_SLOTS,
+        },
+        gMoonSeedPlantingSpotObjDescriptorAcquire,
+        MoonSeedPlantingSpot_release,
+    },
+    {
+        0,
+        gMoonSeedPlantingSpotObjDescriptorInitAdapter,
+        MoonSeedPlantingSpot_update,
+        gMoonSeedPlantingSpotObjDescriptorHitDetectAdapter,
+        MoonSeedPlantingSpot_render,
+        gMoonSeedPlantingSpotObjDescriptorFreeAdapter,
+        gMoonSeedPlantingSpotObjDescriptorTypeIdAdapter,
+        gMoonSeedPlantingSpotObjDescriptorExtraSizeAdapter,
+        MoonSeedPlantingSpot_cutOrHarvest,
+        MoonSeedPlantingSpot_func0B,
+        MoonSeedPlantingSpot_modelMtxFn,
+        MoonSeedPlantingSpot_render2,
+    },
 };

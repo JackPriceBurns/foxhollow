@@ -2,8 +2,7 @@
 #include "main/math_8029312c.h"
 #include "main/trig_float_helpers.h"
 #include "main/acosf.h"
-#include "main/acosf_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 
 
 float asinf(float value) {

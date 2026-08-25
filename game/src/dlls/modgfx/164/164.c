@@ -13,6 +13,10 @@ void DummyA4_release(void) {
 void DummyA4_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDummyA4ResourceDescriptorAcquire, DummyA4_initialise)
+
 DummyA4ResourceDescriptor gDummyA4ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, DummyA4_initialise, DummyA4_release, NULL, DummyA4_returnZero,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDummyA4ResourceDescriptorAcquire, DummyA4_release },
+    NULL,
+    DummyA4_returnZero,
 };

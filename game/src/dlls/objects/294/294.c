@@ -29,7 +29,7 @@
 #include "main/frame_timing.h"
 #include "main/texture.h"
 #include "sys/objects/lifecycle.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/dll_000D_playershadow.h"
 #include "main/camera_interface.h"
 #include "main/dll/cloudaction_interface.h"
@@ -41,30 +41,27 @@
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/sky_state.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/lightmap_render_control.h"
 #include "main/rcp_dolphin.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "dolphin/os/OSReport.h"
 #include "main/model.h"
-#include "main/sky_api.h"
-#include "main/render_envfx_api.h"
-#include "main/render_lactions_api.h"
+#include "main/sky.h"
+#include "main/render_envfx.h"
+#include "main/render_lactions.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/dll_0126_trigger.h"
 #include "main/dll/dll_02B5_timer.h"
 #include "main/dll/headdisplay.h"
-#include "main/sky.h"
-#include "main/dll/dll_0126_trigger_api.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/vecmath.h"
 #include "dolphin/mtx.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/gameloop_api.h"
-#include "track/intersect_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "dolphin/math.h"
+#include "main/gameloop.h"
+#include "track/intersect.h"
+#include "main/audio/sfx.h"
 #include "main/map_load.h"
 
 
@@ -269,15 +266,11 @@ static void triggerEvalPlaneCrossing(GameObject* obj, GameObject* seqObj) {
 void MmpGyservent_setup(GameObject* obj, MMPTriggerGeyserPlacement* placement) {
     MmpGyserventState* state;
     MatrixTransform xf;
-    union {
-        f32 m[16];
-        f64 a8;
-    } rotU;
+    _Alignas(8) f32 rotMtx[16];
     f32 outX;
     f32 outY;
     f32 outZ;
     f32 posMtx[16];
-#define rotMtx rotU.m
 
     state = obj->extra;
     obj->anim.rotX = (s16)((placement->rotX & 0x3f) << 10);
@@ -314,7 +307,6 @@ void MmpGyservent_setup(GameObject* obj, MMPTriggerGeyserPlacement* placement) {
     if (placement->base.ident == MMP_GYSERVENT_DEBUG_IDENT) {
         OSReport(sTriggerDebugTextBlock);
     }
-#undef rotMtx
 }
 
 /* Classify the target against the two vertical endpoint cylinders used by trigger type 0x230. */
@@ -773,7 +765,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
         case 0x23:
             switch (p[2]) {
             case 0:
-                (*gMapEventInterface)->restartPoint((void*)&obj->anim.localPos, (int)obj->anim.rotX, getCurMapLayer(), 0);
+                (*gMapEventInterface)->restartPoint((void*)&obj->anim.localPosX, (int)obj->anim.rotX, getCurMapLayer(), 0);
                 break;
             case 1:
                 (*gMapEventInterface)->clearRestartPoint();
@@ -782,7 +774,7 @@ void objInterpretSeq(GameObject* obj, GameObject* seqObj, s8 legCode, int range)
                 (*gMapEventInterface)->gotoRestartPoint();
                 break;
             case 3:
-                (*gMapEventInterface)->restartPoint((void*)&obj->anim.localPos, (int)obj->anim.rotX, getCurMapLayer(), 1);
+                (*gMapEventInterface)->restartPoint((void*)&obj->anim.localPosX, (int)obj->anim.rotX, getCurMapLayer(), 1);
                 break;
             }
             break;
@@ -1172,19 +1164,32 @@ void Trigger_release(void) {
 void Trigger_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gTriggerObjDescriptorInitAdapter, Trigger_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gTriggerObjDescriptorUpdateAdapter, Trigger_update)
+OBJECT_RENDER_ADAPTER(gTriggerObjDescriptorRenderAdapter, Trigger_render)
+OBJECT_FREE_ADAPTER(gTriggerObjDescriptorFreeAdapter, Trigger_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gTriggerObjDescriptorTypeIdAdapter, Trigger_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTriggerObjDescriptorExtraSizeAdapter, Trigger_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTriggerObjDescriptorAcquire, Trigger_initialise)
+
 ObjectDescriptor gTriggerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gTriggerObjDescriptorAcquire,
+        Trigger_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Trigger_initialise,
-    (ObjectDescriptorCallback)Trigger_release,
-    0,
-    (ObjectDescriptorCallback)Trigger_init,
-    (ObjectDescriptorCallback)Trigger_update,
-    (ObjectDescriptorCallback)Trigger_hitDetect,
-    (ObjectDescriptorCallback)Trigger_render,
-    (ObjectDescriptorCallback)Trigger_free,
-    (ObjectDescriptorCallback)Trigger_getObjectTypeId,
-    Trigger_getExtraSize,
+    gTriggerObjDescriptorInitAdapter,
+    gTriggerObjDescriptorUpdateAdapter,
+    Trigger_hitDetect,
+    gTriggerObjDescriptorRenderAdapter,
+    gTriggerObjDescriptorFreeAdapter,
+    gTriggerObjDescriptorTypeIdAdapter,
+    gTriggerObjDescriptorExtraSizeAdapter,
 };

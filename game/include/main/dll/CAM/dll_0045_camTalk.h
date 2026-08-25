@@ -44,20 +44,18 @@ STATIC_ASSERT(offsetof(CameraModeTalkState, pitchTarget) == 0x30);
 STATIC_ASSERT(sizeof(CameraModeTalkState) == 0x38);
 
 typedef struct CameraModeTalkDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(const CameraModeTalkInputs* inputs);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeTalkDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeTalkDescriptor, update) == 0x20);

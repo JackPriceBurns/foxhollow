@@ -1,6 +1,5 @@
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/game_timer_control_api.h"
+#include "main/audio/sfx.h"
+#include "main/game_timer_control.h"
 #include "main/objhits.h"
 #include "sys/objects.h"
 #include "main/mapEvent.h"
@@ -354,8 +353,8 @@ void DFP_RotateP_init(GameObject* obj, DFPRotatePPlacement* placement)
     obj->animEventCallback = (void*)DFP_RotateP_activateEffectHandleRing;
     state->config19 = placement->unknown19;
     state->eventId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->eventGameBit));
-    state->config20 = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationGameBit));
-    state->unk4 = 1;
+    state->activationEventId = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->activationGameBit));
+    state->variantSfxTimer = 1;
     gDFP_RotatePEffectHandles[0] = 0;
     gDFP_RotatePEffectHandles[1] = 0;
     gDFP_RotatePEffectHandles[2] = 0;
@@ -380,19 +379,31 @@ void DFP_RotateP_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDFP_RotatePObjDescriptorInitAdapter, DFP_RotateP_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFP_RotatePObjDescriptorHitDetectAdapter, DFP_RotateP_hitDetect)
+OBJECT_RENDER_ADAPTER(gDFP_RotatePObjDescriptorRenderAdapter, DFP_RotateP_render)
+OBJECT_TYPE_ID_ADAPTER(gDFP_RotatePObjDescriptorTypeIdAdapter, DFP_RotateP_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFP_RotatePObjDescriptorExtraSizeAdapter, DFP_RotateP_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFP_RotatePObjDescriptorAcquire, DFP_RotateP_initialise)
+
 ObjectDescriptor gDFP_RotatePObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFP_RotatePObjDescriptorAcquire,
+        DFP_RotateP_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DFP_RotateP_initialise,
-    (ObjectDescriptorCallback)DFP_RotateP_release,
-    0,
-    (ObjectDescriptorCallback)DFP_RotateP_init,
-    (ObjectDescriptorCallback)DFP_RotateP_update,
-    (ObjectDescriptorCallback)DFP_RotateP_hitDetect,
-    (ObjectDescriptorCallback)DFP_RotateP_render,
-    (ObjectDescriptorCallback)DFP_RotateP_free,
-    (ObjectDescriptorCallback)DFP_RotateP_getObjectTypeId,
-    DFP_RotateP_getExtraSize,
+    gDFP_RotatePObjDescriptorInitAdapter,
+    DFP_RotateP_update,
+    gDFP_RotatePObjDescriptorHitDetectAdapter,
+    gDFP_RotatePObjDescriptorRenderAdapter,
+    DFP_RotateP_free,
+    gDFP_RotatePObjDescriptorTypeIdAdapter,
+    gDFP_RotatePObjDescriptorExtraSizeAdapter,
 };

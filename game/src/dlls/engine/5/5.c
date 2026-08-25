@@ -1,17 +1,17 @@
 #include "main/sky_state.h"
-#include "main/dll/savegame_env_api.h"
-#include "main/dll/savegame_load_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/render_envfx_api.h"
+#include "main/dll/savegame_env.h"
+#include "main/dll/savegame_load.h"
+#include "dolphin/math.h"
+#include "main/render_envfx.h"
 #include "main/gamebit_ids.h"
 #include "main/gamebits.h"
 #include "main/sky_interface.h"
 #include "main/dll/cloudaction_interface.h"
 #include "game/objects/object.h"
-#include "main/gameloop_api.h"
+#include "main/gameloop.h"
 #include "string.h"
 #include "sys/objects.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "sys/objects/lifecycle.h"
 #include "main/pad.h"
 #include "main/curve_eval.h"
@@ -21,29 +21,27 @@
 #include "main/mm.h"
 #include "main/model.h"
 #include "main/model_light.h"
-#include "main/pi_data_file_api.h"
-#include "main/pi_frame_api.h"
-#include "main/pi_flush_api.h"
+#include "main/pi_data_file.h"
+#include "main/pi_frame.h"
+#include "main/pi_flush.h"
 #include "main/texture.h"
-#include "main/textrender_api.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/textrender.h"
+#include "main/rcp_dolphin.h"
 #include "main/sky.h"
-#include "main/sky_api.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/lightmap.h"
+#include "main/lightmap_render_control.h"
 #include "dlls/object_descriptor.h"
 #include "main/loaded_file_flags.h"
-#include "track/intersect_screen_api.h"
-#include "track/intersect_api.h"
+#include "track/intersect_screen.h"
+#include "track/intersect.h"
 #include "dolphin/gx/GXBump.h"
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXLighting.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/mtx.h"
-#include "main/lightmap.h"
-#include "main/track_dolphin_sky_api.h"
-#include "main/track_dolphin_shadow_api.h"
+#include "main/track_dolphin_sky.h"
+#include "main/track_dolphin_shadow.h"
 #include "dolphin/mtx/vec.h"
 #include "main/vecmath.h"
 
@@ -312,66 +310,66 @@ u8 gSkyColorBlendTable[248] = {
     85,  255, 213, 81,  30,  65,  85,  255, 12,  0,   0,   0,   0,   0,   0,   0,   0,   0,
 };
 
+typedef struct SkyDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(skyUpdateEnvfxAct)* updateEnvfxAct;
+    __typeof__(skyLoadLights)* loadLights;
+    __typeof__(skyUpdateTimeOfDay)* updateTimeOfDay;
+    __typeof__(renderSky)* render;
+    __typeof__(getTimeOfDay)* getTimeOfDay;
+    __typeof__(skyGetClockTime)* getClockTime;
+    __typeof__(skyReservedNopA)* reservedNopA;
+    __typeof__(skyGetTimer)* getTransitionTimer;
+    __typeof__(getSunPos)* getSunPosition;
+    __typeof__(pDll_Sky_setTimeOfDay_nop)* setTimeOfDay;
+    __typeof__(skyReservedReturnZeroA)* reservedReturnZeroA;
+    __typeof__(skyTimeToDayHourMinute)* timeToDayHourMinute;
+    __typeof__(skyGetVisibility)* getVisibility;
+    __typeof__(skyRenderTimeOfDayBackdrop)* renderTimeOfDayBackdrop;
+    __typeof__(skyGetCurrentTextureColor)* getCurrentTextureColor;
+    __typeof__(skyGetCurrentAmbientAndLightColors)* getCurrentAmbientAndLightColors;
+    __typeof__(skyReservedNopB)* reservedNopB;
+    __typeof__(skyReservedNopC)* reservedNopC;
+    __typeof__(skySetDayNo)* setDayNo;
+    __typeof__(skyGetDayNo)* getDayNo;
+    __typeof__(skyReservedReturnZeroB)* reservedReturnZeroB;
+} SkyDllInterfaceCallbacks;
+
 typedef struct SkyDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback updateEnvfxAct;
-    ObjectDescriptorCallback loadLights;
-    ObjectDescriptorCallback updateTimeOfDay;
-    ObjectDescriptorCallback render;
-    ObjectDescriptorCallback getTimeOfDay;
-    ObjectDescriptorCallback getClockTime;
-    ObjectDescriptorCallback reservedNopA;
-    ObjectDescriptorCallback getTransitionTimer;
-    ObjectDescriptorCallback getSunPosition;
-    ObjectDescriptorCallback setTimeOfDay;
-    ObjectDescriptorCallback reservedReturnZeroA;
-    ObjectDescriptorCallback timeToDayHourMinute;
-    ObjectDescriptorCallback getVisibility;
-    ObjectDescriptorCallback renderTimeOfDayBackdrop;
-    ObjectDescriptorCallback getCurrentTextureColor;
-    ObjectDescriptorCallback getCurrentAmbientAndLightColors;
-    ObjectDescriptorCallback reservedNopB;
-    ObjectDescriptorCallback reservedNopC;
-    ObjectDescriptorCallback setDayNo;
-    ObjectDescriptorCallback getDayNo;
-    ObjectDescriptorCallback reservedReturnZeroB;
+    ResourceDescriptorHeader header;
+    SkyDllInterfaceCallbacks interface;
 } SkyDllInterface;
 
 SkyDllInterface sky_funcs = {
-    0,
-    0,
-    0,
-    0x00033FB0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)skyUpdateEnvfxAct,
-    (ObjectDescriptorCallback)skyLoadLights,
-    (ObjectDescriptorCallback)skyUpdateTimeOfDay,
-    (ObjectDescriptorCallback)renderSky,
-    (ObjectDescriptorCallback)getTimeOfDay,
-    (ObjectDescriptorCallback)skyGetClockTime,
-    (ObjectDescriptorCallback)skyReservedNopA,
-    (ObjectDescriptorCallback)skyGetTimer,
-    (ObjectDescriptorCallback)getSunPos,
-    (ObjectDescriptorCallback)pDll_Sky_setTimeOfDay_nop,
-    (ObjectDescriptorCallback)skyReservedReturnZeroA,
-    (ObjectDescriptorCallback)skyTimeToDayHourMinute,
-    (ObjectDescriptorCallback)skyGetVisibility,
-    (ObjectDescriptorCallback)skyRenderTimeOfDayBackdrop,
-    (ObjectDescriptorCallback)skyGetCurrentTextureColor,
-    (ObjectDescriptorCallback)skyGetCurrentAmbientAndLightColors,
-    (ObjectDescriptorCallback)skyReservedNopB,
-    (ObjectDescriptorCallback)skyReservedNopC,
-    (ObjectDescriptorCallback)skySetDayNo,
-    (ObjectDescriptorCallback)skyGetDayNo,
-    (ObjectDescriptorCallback)skyReservedReturnZeroB,
+    {
+        {0, 0, 0, 0x00033FB0},
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        skyUpdateEnvfxAct,
+        skyLoadLights,
+        skyUpdateTimeOfDay,
+        renderSky,
+        getTimeOfDay,
+        skyGetClockTime,
+        skyReservedNopA,
+        skyGetTimer,
+        getSunPos,
+        pDll_Sky_setTimeOfDay_nop,
+        skyReservedReturnZeroA,
+        skyTimeToDayHourMinute,
+        skyGetVisibility,
+        skyRenderTimeOfDayBackdrop,
+        skyGetCurrentTextureColor,
+        skyGetCurrentAmbientAndLightColors,
+        skyReservedNopB,
+        skyReservedNopC,
+        skySetDayNo,
+        skyGetDayNo,
+        skyReservedReturnZeroB,
+    },
 };
 
 void skySetSlotFlag80(int flags, u8 mode)

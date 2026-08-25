@@ -16,7 +16,7 @@
  */
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/dll_021B.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 
 #define DLL_21B_ENABLE_BIT_A   0x503
 #define DLL_21B_ENABLE_BIT_B   0x504
@@ -156,19 +156,32 @@ void dll_21B_initialise_nop(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDll21BObjDescriptorInitAdapter, dll_21B_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll21BObjDescriptorHitDetectAdapter, dll_21B_hitDetect_nop)
+OBJECT_RENDER_ADAPTER(gDll21BObjDescriptorRenderAdapter, dll_21B_render_nop)
+OBJECT_FREE_ADAPTER(gDll21BObjDescriptorFreeAdapter, dll_21B_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll21BObjDescriptorTypeIdAdapter, dll_21B_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll21BObjDescriptorExtraSizeAdapter, dll_21B_getExtraSize_ret_4)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll21BObjDescriptorAcquire, dll_21B_initialise_nop)
+
 ObjectDescriptor gDll21BObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll21BObjDescriptorAcquire,
+        dll_21B_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_21B_initialise_nop,
-    (ObjectDescriptorCallback)dll_21B_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_21B_init,
-    (ObjectDescriptorCallback)dll_21B_update,
-    (ObjectDescriptorCallback)dll_21B_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_21B_render_nop,
-    (ObjectDescriptorCallback)dll_21B_free,
-    (ObjectDescriptorCallback)dll_21B_getObjectTypeId,
-    dll_21B_getExtraSize_ret_4,
+    gDll21BObjDescriptorInitAdapter,
+    dll_21B_update,
+    gDll21BObjDescriptorHitDetectAdapter,
+    gDll21BObjDescriptorRenderAdapter,
+    gDll21BObjDescriptorFreeAdapter,
+    gDll21BObjDescriptorTypeIdAdapter,
+    gDll21BObjDescriptorExtraSizeAdapter,
 };

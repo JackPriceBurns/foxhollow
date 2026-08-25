@@ -7,7 +7,7 @@
 
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mldf_fileid.h"
 #include "main/model.h"
 #include "main/mm.h"
@@ -16,7 +16,7 @@
 #include "sys/objects.h"
 #include "main/vecmath.h"
 #include "main/asset_load.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 #define DLL1D6_ACTION_SLOT_COUNT  4
@@ -238,19 +238,31 @@ void dll_1D6_release(void) {
 void dll_1D6_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1D6ObjDescriptorInitAdapter, dll_1D6_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1D6ObjDescriptorHitDetectAdapter, dll_1D6_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1D6ObjDescriptorFreeAdapter, dll_1D6_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll1D6ObjDescriptorTypeIdAdapter, dll_1D6_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1D6ObjDescriptorExtraSizeAdapter, dll_1D6_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1D6ObjDescriptorAcquire, dll_1D6_initialise)
+
 ObjectDescriptor gDll1D6ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1D6ObjDescriptorAcquire,
+        dll_1D6_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_1D6_initialise,
-    (ObjectDescriptorCallback)dll_1D6_release,
-    0,
-    (ObjectDescriptorCallback)dll_1D6_init,
-    (ObjectDescriptorCallback)dll_1D6_update,
-    (ObjectDescriptorCallback)dll_1D6_hitDetect,
-    (ObjectDescriptorCallback)dll_1D6_render,
-    (ObjectDescriptorCallback)dll_1D6_free,
-    (ObjectDescriptorCallback)dll_1D6_getObjectTypeId,
-    dll_1D6_getExtraSize,
+    gDll1D6ObjDescriptorInitAdapter,
+    dll_1D6_update,
+    gDll1D6ObjDescriptorHitDetectAdapter,
+    dll_1D6_render,
+    gDll1D6ObjDescriptorFreeAdapter,
+    gDll1D6ObjDescriptorTypeIdAdapter,
+    gDll1D6ObjDescriptorExtraSizeAdapter,
 };

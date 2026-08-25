@@ -5,19 +5,19 @@
  * bounds, reverses at edges, and transitions into target-aware attacks.
  */
 #include "dlls/objects/208_Grimble.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/boneparticleeffect_interface.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/frame_timing.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
@@ -834,19 +834,30 @@ u8 gGrimbleHitReactionDamage[32] = {
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,   0,
 };
 
+OBJECT_INIT_ADAPTER(gGrimbleObjDescriptorInitAdapter, grimble_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gGrimbleObjDescriptorFreeAdapter, grimble_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gGrimbleObjDescriptorTypeIdAdapter, grimble_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gGrimbleObjDescriptorExtraSizeAdapter, grimble_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gGrimbleObjDescriptorAcquire, grimble_initialise)
+
 ObjectDescriptor gGrimbleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gGrimbleObjDescriptorAcquire,
+        grimble_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)grimble_initialise,
-    (ObjectDescriptorCallback)grimble_release,
-    0,
-    (ObjectDescriptorCallback)grimble_init,
-    (ObjectDescriptorCallback)grimble_update,
-    (ObjectDescriptorCallback)grimble_hitDetect,
-    (ObjectDescriptorCallback)grimble_render,
-    (ObjectDescriptorCallback)grimble_free,
-    (ObjectDescriptorCallback)grimble_getObjectTypeId,
-    grimble_getExtraSize,
+    gGrimbleObjDescriptorInitAdapter,
+    grimble_update,
+    grimble_hitDetect,
+    grimble_render,
+    gGrimbleObjDescriptorFreeAdapter,
+    gGrimbleObjDescriptorTypeIdAdapter,
+    gGrimbleObjDescriptorExtraSizeAdapter,
 };

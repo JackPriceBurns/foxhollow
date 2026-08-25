@@ -1,16 +1,16 @@
 /* CRCloudRace (DLL 605): CloudRunner race controller. */
 
 #include "main/crcloudrace.h"
-#include "main/audio/music_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/audio/music.h"
+#include "main/maketex_timer.h"
 #include "main/map_load.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/dll/player_api.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/dll/player.h"
+#include "main/gamebit_latch.h"
 #include "main/mapEventTypes.h"
 #include "main/gamebits.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -190,9 +190,9 @@ void crcloudrace_update(GameObject* obj)
     }
     crcloudrace_updateRaceState(obj);
     state->flags &= ~CRCLOUDRACE_STATE_FLAG_COMPLETION_CALLBACK;
-    GameBitLatch_Update((GameBitLatchState*)state->effect, 1, -1, -1, CRCLOUDRACE_GAMEBIT_START_LATCH_A,
+    GameBitLatch_Update(&state->musicLatch, 1, -1, -1, CRCLOUDRACE_GAMEBIT_START_LATCH_A,
                           CRCLOUDRACE_GAMEBIT_START_LATCH_B);
-    GameBitLatch_Update((GameBitLatchState*)state->effect, 2, -1, -1, CRCLOUDRACE_GAMEBIT_START_LATCH_A,
+    GameBitLatch_Update(&state->musicLatch, 2, -1, -1, CRCLOUDRACE_GAMEBIT_START_LATCH_A,
                           CRCLOUDRACE_GAMEBIT_START_LATCH_C);
     return;
 }
@@ -220,19 +220,32 @@ void crcloudrace_initialise(void)
     return;
 }
 
+OBJECT_INIT_ADAPTER(gCrCloudRaceObjDescriptorInitAdapter, crcloudrace_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gCrCloudRaceObjDescriptorHitDetectAdapter, crcloudrace_hitDetect)
+OBJECT_RENDER_ADAPTER(gCrCloudRaceObjDescriptorRenderAdapter, crcloudrace_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gCrCloudRaceObjDescriptorFreeAdapter, crcloudrace_free)
+OBJECT_TYPE_ID_ADAPTER(gCrCloudRaceObjDescriptorTypeIdAdapter, crcloudrace_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCrCloudRaceObjDescriptorExtraSizeAdapter, crcloudrace_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCrCloudRaceObjDescriptorAcquire, crcloudrace_initialise)
+
 ObjectDescriptor gCrCloudRaceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCrCloudRaceObjDescriptorAcquire,
+        crcloudrace_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)crcloudrace_initialise,
-    (ObjectDescriptorCallback)crcloudrace_release,
-    0,
-    (ObjectDescriptorCallback)crcloudrace_init,
-    (ObjectDescriptorCallback)crcloudrace_update,
-    (ObjectDescriptorCallback)crcloudrace_hitDetect,
-    (ObjectDescriptorCallback)crcloudrace_render,
-    (ObjectDescriptorCallback)crcloudrace_free,
-    (ObjectDescriptorCallback)crcloudrace_getObjectTypeId,
-    crcloudrace_getExtraSize,
+    gCrCloudRaceObjDescriptorInitAdapter,
+    crcloudrace_update,
+    gCrCloudRaceObjDescriptorHitDetectAdapter,
+    gCrCloudRaceObjDescriptorRenderAdapter,
+    gCrCloudRaceObjDescriptorFreeAdapter,
+    gCrCloudRaceObjDescriptorTypeIdAdapter,
+    gCrCloudRaceObjDescriptorExtraSizeAdapter,
 };

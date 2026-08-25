@@ -13,7 +13,7 @@
 #include "dlls/objects/454_DIMCannon.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
 #include "main/resource.h"
@@ -165,19 +165,31 @@ void dll_1CE_release(void) {
 void dll_1CE_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll1CEObjDescriptorInitAdapter, dll_1CE_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll1CEObjDescriptorHitDetectAdapter, dll_1CE_hitDetect)
+OBJECT_FREE_ADAPTER(gDll1CEObjDescriptorFreeAdapter, dll_1CE_free)
+OBJECT_TYPE_ID_ADAPTER(gDll1CEObjDescriptorTypeIdAdapter, dll_1CE_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll1CEObjDescriptorExtraSizeAdapter, dll_1CE_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll1CEObjDescriptorAcquire, dll_1CE_initialise)
+
 ObjectDescriptor gDll1CEObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll1CEObjDescriptorAcquire,
+        dll_1CE_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_1CE_initialise,
-    (ObjectDescriptorCallback)dll_1CE_release,
-    0,
-    (ObjectDescriptorCallback)dll_1CE_init,
-    (ObjectDescriptorCallback)dll_1CE_update,
-    (ObjectDescriptorCallback)dll_1CE_hitDetect,
-    (ObjectDescriptorCallback)dll_1CE_render,
-    (ObjectDescriptorCallback)dll_1CE_free,
-    (ObjectDescriptorCallback)dll_1CE_getObjectTypeId,
-    dll_1CE_getExtraSize,
+    gDll1CEObjDescriptorInitAdapter,
+    dll_1CE_update,
+    gDll1CEObjDescriptorHitDetectAdapter,
+    dll_1CE_render,
+    gDll1CEObjDescriptorFreeAdapter,
+    gDll1CEObjDescriptorTypeIdAdapter,
+    gDll1CEObjDescriptorExtraSizeAdapter,
 };

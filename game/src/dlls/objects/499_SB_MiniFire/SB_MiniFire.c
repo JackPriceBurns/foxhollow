@@ -9,7 +9,7 @@
  */
 #include "dlls/objects/499_SB_MiniFire.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0075_modgfx.h"
 #include "main/dll/expgfx_interface.h"
@@ -17,7 +17,7 @@
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 #include "main/resource.h"
 #include "main/vecmath.h"
 #include "sys/objects/lifecycle.h"
@@ -133,19 +133,31 @@ void SB_MiniFire_release(void) {
 void SB_MiniFire_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_MiniFireObjDescriptorInitAdapter, SB_MiniFire_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gSB_MiniFireObjDescriptorHitDetectAdapter, SB_MiniFire_hitDetect)
+OBJECT_FREE_ADAPTER(gSB_MiniFireObjDescriptorFreeAdapter, SB_MiniFire_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_MiniFireObjDescriptorTypeIdAdapter, SB_MiniFire_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_MiniFireObjDescriptorExtraSizeAdapter, SB_MiniFire_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_MiniFireObjDescriptorAcquire, SB_MiniFire_initialise)
+
 ObjectDescriptor gSB_MiniFireObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_MiniFireObjDescriptorAcquire,
+        SB_MiniFire_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_MiniFire_initialise,
-    SB_MiniFire_release,
-    0,
-    (ObjectDescriptorCallback)SB_MiniFire_init,
-    (ObjectDescriptorCallback)SB_MiniFire_update,
-    SB_MiniFire_hitDetect,
-    (ObjectDescriptorCallback)SB_MiniFire_render,
-    (ObjectDescriptorCallback)SB_MiniFire_free,
-    (ObjectDescriptorCallback)SB_MiniFire_getObjectTypeId,
-    SB_MiniFire_getExtraSize,
+    gSB_MiniFireObjDescriptorInitAdapter,
+    SB_MiniFire_update,
+    gSB_MiniFireObjDescriptorHitDetectAdapter,
+    SB_MiniFire_render,
+    gSB_MiniFireObjDescriptorFreeAdapter,
+    gSB_MiniFireObjDescriptorTypeIdAdapter,
+    gSB_MiniFireObjDescriptorExtraSizeAdapter,
 };

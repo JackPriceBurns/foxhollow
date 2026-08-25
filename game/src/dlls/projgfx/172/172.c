@@ -20,10 +20,10 @@ void projmagicstream_release(void) {
 void projmagicstream_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjmagicstreamResourceDescriptorAcquire, projmagicstream_initialise)
+
 ProjmagicstreamResourceDescriptor gProjmagicstreamResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projmagicstream_initialise,
-    projmagicstream_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjmagicstreamResourceDescriptorAcquire, projmagicstream_release },
     NULL,
     projmagicstream_doUnsupported,
 };

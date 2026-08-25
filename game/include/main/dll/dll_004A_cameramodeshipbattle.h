@@ -34,20 +34,18 @@ STATIC_ASSERT(offsetof(CameraModeShipBattleState, targetMode) == 0x28);
 STATIC_ASSERT(sizeof(CameraModeShipBattleState) == 0x2C);
 
 typedef struct CameraModeShipBattleDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(void);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeShipBattleDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeShipBattleDescriptor, update) == 0x20);

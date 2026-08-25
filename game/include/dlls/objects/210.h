@@ -53,10 +53,7 @@ typedef struct TumbleweedState {
     u16 distToTarget; /* 0x268 */
     u16 triggerRange; /* 0x26A */
     f32 targetScale;  /* 0x26C */
-    union {
-        f32 growRate;     /* 0x270 */
-        f32 despawnTimer; /* 0x270 */
-    };
+    f32 phaseValue;
     u8 pad274[4];          /* 0x274 */
     u8 phase;              /* 0x278 */
     u8 variant;            /* 0x279 */
@@ -77,6 +74,21 @@ typedef struct TumbleweedState {
     f32 phaseTimer;        /* 0x2A0 */
 } TumbleweedState;
 
+typedef struct TumbleweedInterface {
+    OBJECT_INTERFACE_FIELDS;
+    int (*getPhase)(GameObject* obj);
+    void (*setHome)(GameObject* obj, f32 x, f32 z);
+    void (*fall)(GameObject* obj);
+    void (*gravitateToPoint)(GameObject* obj, f32* targetPos);
+    int (*isGravitating)(GameObject* obj);
+    void (*setPlayer)(GameObject* obj, GameObject* target);
+} TumbleweedInterface;
+
+OBJECT_DESCRIPTOR_TYPE(TumbleweedDescriptor, TumbleweedInterface);
+OBJECT_DESCRIPTOR_WITH_PADDING_TYPE(TumbleweedDescriptorWithPadding, TumbleweedDescriptor);
+
+#define TUMBLEWEED_INTERFACE(tumbleweed) ((TumbleweedInterface*)*((GameObject*)(tumbleweed))->anim.dll)
+
 STATIC_ASSERT(offsetof(TumbleweedPlacement, base) == 0x0);
 STATIC_ASSERT(offsetof(TumbleweedPlacement, variant) == 0x1B);
 STATIC_ASSERT(offsetof(TumbleweedPlacement, scale) == 0x1C);
@@ -85,7 +97,7 @@ STATIC_ASSERT(sizeof(TumbleweedPlacement) == 0x20);
 STATIC_ASSERT(offsetof(TumbleweedState, distToTarget) == 0x268);
 STATIC_ASSERT(offsetof(TumbleweedState, triggerRange) == 0x26A);
 STATIC_ASSERT(offsetof(TumbleweedState, targetScale) == 0x26C);
-STATIC_ASSERT(offsetof(TumbleweedState, growRate) == 0x270);
+STATIC_ASSERT(offsetof(TumbleweedState, phaseValue) == 0x270);
 STATIC_ASSERT(offsetof(TumbleweedState, phase) == 0x278);
 STATIC_ASSERT(offsetof(TumbleweedState, variant) == 0x279);
 STATIC_ASSERT(offsetof(TumbleweedState, flags) == 0x27A);
@@ -122,6 +134,6 @@ void tumbleweed_init(GameObject* obj, TumbleweedPlacement* placement);
 
 extern f32 gTumbleweedCollisionPoint[3];
 extern f32 gTumbleweedCollisionPointData[2];
-extern ObjectDescriptor16WithPadding gTumbleweedObjDescriptor;
+extern TumbleweedDescriptorWithPadding gTumbleweedObjDescriptor;
 
 #endif /* DLLS_OBJECTS_210_H_ */

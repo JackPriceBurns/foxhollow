@@ -1,10 +1,8 @@
-#define OBJHITS_SETTERS_S16
-#define OBJHITS_STATE_INDEX_S8
 #include <string.h>
 #include "main/frame_timing.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/debug.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/model.h"
 #include "main/obj_contact.h"
@@ -12,7 +10,7 @@
 #include "main/objhits.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "dolphin/os.h"
 #include "main/asset_load.h"
 #include "main/audio/sfx.h"
@@ -26,28 +24,27 @@
 #include "dolphin/mtx.h"
 #include "main/dll/objpathtransform_struct.h"
 #include "main/game_ui_interface.h"
-#include "main/lightmap_api.h"
-#include "main/dll/player_api.h"
+#include "main/lightmap.h"
+#include "main/dll/player.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/objtype.h"
 #include "main/obj_hit_region.h"
 #include "main/obj_link.h"
-#include "main/objlib_api.h"
+#include "main/objlib.h"
 #include "main/obj_message.h"
 #include "main/obj_path.h"
 #include "main/obj_query.h"
 #include "main/obj_trigger.h"
 #include "main/player_eye_anim.h"
-#include "main/pad_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/rcp_dolphin_render_api.h"
+#include "main/pad.h"
+#include "main/rcp_dolphin_render.h"
 #include "main/texture.h"
-#include "main/objprint_dolphin_api.h"
+#include "main/objprint_dolphin.h"
 #include "main/curve_eval.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/newshadows.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
@@ -58,9 +55,9 @@
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "main/objprint_internal.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 const f32 gObjHitsScalarZero[1] = {0.0f};
 const f32 gObjHitsScalarTwo[1] = {2.0f};
@@ -77,7 +74,7 @@ extern f32 gObjHitsResponseDominanceRatio;
 extern f32 gObjHitsPriorityHitTickDelta;
 static inline ObjHitsModelBank* ObjHits_GetActiveModel(GameObject* obj) {
     ObjAnimComponent* objAnim = &obj->anim;
-    return (ObjHitsModelBank*)objAnim->banks[objAnim->bankIndex];
+    return (ObjHitsModelBank*)objAnim->modelBanks[objAnim->bankIndex];
 }
 
 #define SHARPCLAW_HIT_TRACE_CAPACITY 64
@@ -187,14 +184,14 @@ static void ObjHits_TraceSharpClawAttack(GameObject* attacker, GameObject* targe
 
     attackerModel = ObjHits_GetActiveModel(attacker);
     targetModel = ObjHits_GetActiveModel(target);
-    attackerVolumes = (ObjHitsModelHitVolume*)attackerModel->modelFile->hitVolumes;
-    targetVolumes = (ObjHitsModelHitVolume*)targetModel->modelFile->hitVolumes;
+    attackerVolumes = (ObjHitsModelHitVolume*)attackerModel->file->hitVolumes;
+    targetVolumes = (ObjHitsModelHitVolume*)targetModel->file->hitVolumes;
     attackerSpheres = (ObjModelHitSphere*)attackerModel->activeHitVolumeSpheres;
     previousSpheres = (ObjModelHitSphere*)attackerModel
-                          ->hitVolumeSphereBuffers[((attackerModel->hitBufferFlags >> 2) & 1) ^ 1];
+                          ->hitVolumeSphereBuffers[((attackerModel->bufferFlags >> 2) & 1) ^ 1];
     targetSpheres = (ObjModelHitSphere*)targetModel->activeHitVolumeSpheres;
-    attackerCount = attackerModel->modelFile->hitVolumeCount;
-    targetCount = targetModel->modelFile->hitVolumeCount;
+    attackerCount = attackerModel->file->hitVolumeCount;
+    targetCount = targetModel->file->hitVolumeCount;
     bestCurrent = 1.0e30f;
     bestPrevious = 1.0e30f;
 
@@ -282,7 +279,7 @@ int ObjHits_CollectSkeletonHitsXZ(f32* point, f32 radius, ObjHitsSkeletonJointDa
     if (jointData == NULL) {
         return 0;
     }
-    modelFile = model->modelFile;
+    modelFile = model->file;
     radii = jointData->jointRadii;
     diameter = radius + radius;
     hit = hits;
@@ -419,7 +416,7 @@ int ObjHits_CollectSkeletonHits3D(f32* point, f32 radius, ObjHitsSkeletonJointDa
     if (jointData == NULL) {
         return 0;
     }
-    modelFile = model->modelFile;
+    modelFile = model->file;
     radii = jointData->jointRadii;
     diameter = radius + radius;
     hit = hits;
@@ -1197,10 +1194,10 @@ int ObjHits_CheckHitVolumes(GameObject* objA, GameObject* objB, GameObject* srcO
     if ((checkA != 0 && (stateA->secondaryShapeFlags & OBJHITS_SHAPE_MODEL_HIT_VOLUMES) != 0) ||
         (checkB != 0 && stateA->shapeFlags == OBJHITS_SHAPE_MODEL_HIT_VOLUMES)) {
         modelBank = ObjHits_GetActiveModel(objA);
-        modelFile = modelBank->modelFile;
+        modelFile = modelBank->file;
         countA = modelFile->hitVolumeCount;
         spheresA = modelBank->activeHitVolumeSpheres;
-        defA = modelBank->hitVolumeSphereBuffers[((modelBank->hitBufferFlags >> 2) & 1) ^ 1];
+        defA = modelBank->hitVolumeSphereBuffers[((modelBank->bufferFlags >> 2) & 1) ^ 1];
         volA = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
         if (srcObj != objA) {
             radiusA = stateSrc->secondaryRadiusXZ;
@@ -1234,7 +1231,7 @@ int ObjHits_CheckHitVolumes(GameObject* objA, GameObject* objB, GameObject* srcO
     if ((checkA != 0 && (stateB->secondaryShapeFlags & OBJHITS_SHAPE_MODEL_HIT_VOLUMES) != 0) ||
         (checkB != 0 && stateB->shapeFlags == OBJHITS_SHAPE_MODEL_HIT_VOLUMES)) {
         modelBank = ObjHits_GetActiveModel(objB);
-        modelFile = modelBank->modelFile;
+        modelFile = modelBank->file;
         countB = modelFile->hitVolumeCount;
         spheresB = modelBank->activeHitVolumeSpheres;
         volB = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
@@ -1544,31 +1541,31 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
     if ((stateA->objectHitMask != 0) && (stateA->suppressOutgoingHits == 0)) {
         if (objA->anim.classId == 1) {
             hitboxBuf = ObjHits_GetActiveModel(objA);
-            bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
+            bufIndex = (hitboxBuf->bufferFlags >> 2) & 1;
             if ((stateA->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
                 memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex], gObjHitsPrimaryHitboxBufferScratch0,
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
                 memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1], gObjHitsPrimaryHitboxBufferScratch1,
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
             } else {
                 memcpy(gObjHitsPrimaryHitboxBufferScratch0, hitboxBuf->hitVolumeSphereBuffers[bufIndex],
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
                 memcpy(gObjHitsPrimaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
             }
             if (attA != NULL) {
                 hitboxBuf = ObjHits_GetActiveModel(attA);
-                bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
+                bufIndex = (hitboxBuf->bufferFlags >> 2) & 1;
                 if ((stateA->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
                     memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex], gObjHitsSecondaryHitboxBufferScratch0,
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1], gObjHitsSecondaryHitboxBufferScratch1,
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                 } else {
                     memcpy(gObjHitsSecondaryHitboxBufferScratch0, hitboxBuf->hitVolumeSphereBuffers[bufIndex],
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     memcpy(gObjHitsSecondaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     stateA->flags = stateA->flags | OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED;
                 }
             }
@@ -1589,31 +1586,31 @@ void ObjHits_CheckObjectHitVolumes(GameObject* objA, GameObject* objB, GameObjec
     if (((stateB->sourceMask & 0x80) == 0) && (stateB->objectHitMask != 0) && (stateB->suppressOutgoingHits == 0)) {
         if (objB->anim.classId == 1) {
             hitboxBuf = ObjHits_GetActiveModel(objB);
-            bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
+            bufIndex = (hitboxBuf->bufferFlags >> 2) & 1;
             if ((stateB->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
                 memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex], gObjHitsPrimaryHitboxBufferScratch0,
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
                 memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1], gObjHitsPrimaryHitboxBufferScratch1,
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
             } else {
                 memcpy(gObjHitsPrimaryHitboxBufferScratch0, hitboxBuf->hitVolumeSphereBuffers[bufIndex],
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
                 memcpy(gObjHitsPrimaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
-                       hitboxBuf->modelFile->hitVolumeCount << 4);
+                       hitboxBuf->file->hitVolumeCount << 4);
             }
             if (attB != NULL) {
                 hitboxBuf = ObjHits_GetActiveModel(attB);
-                bufIndex = (hitboxBuf->hitBufferFlags >> 2) & 1;
+                bufIndex = (hitboxBuf->bufferFlags >> 2) & 1;
                 if ((stateB->flags & OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED) != 0) {
                     memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex], gObjHitsSecondaryHitboxBufferScratch0,
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     memcpy(hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1], gObjHitsSecondaryHitboxBufferScratch1,
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                 } else {
                     memcpy(gObjHitsSecondaryHitboxBufferScratch0, hitboxBuf->hitVolumeSphereBuffers[bufIndex],
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     memcpy(gObjHitsSecondaryHitboxBufferScratch1, hitboxBuf->hitVolumeSphereBuffers[bufIndex ^ 1],
-                           hitboxBuf->modelFile->hitVolumeCount << 4);
+                           hitboxBuf->file->hitVolumeCount << 4);
                     stateB->flags = stateB->flags | OBJHITS_PRIORITY_STATE_HITBOX_BUFFER_CACHED;
                 }
             }
@@ -1976,7 +1973,7 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
         point.z = objB->anim.worldPosZ - playerMapOffsetZ;
         point3D = point;
         hitCount =
-            ObjHits_CollectSkeletonHits3D(&point3D.x, objBState->primaryRadius, hitboxBuf->skeletonJointData,
+            ObjHits_CollectSkeletonHits3D(&point3D.x, objBState->primaryRadius, hitboxBuf->jointWorkspace,
                                           hitboxBuf, (ObjHitsSkeletonHit*)hits, &bestHit, &outAxial);
         if (hitCount != 0) {
             ratio = (objB->anim.hitboxScale * objB->anim.rootMotionScale) /
@@ -1987,8 +1984,8 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
                 f32 rad = objBState->primaryRadius;
                 GameObject* ob = objB;
                 ObjHitsSkeletonHit* hh = (ObjHitsSkeletonHit*)hits;
-                ObjHitsSkeletonJointData* jd = hitboxBuf->skeletonJointData;
-                ObjHitsModelFileHeader* mf = hitboxBuf->modelFile;
+                ObjHitsSkeletonJointData* jd = hitboxBuf->jointWorkspace;
+                ObjHitsModelFileHeader* mf = hitboxBuf->file;
                 ObjHitsSkeletonHit* bh = bestHit;
                 ObjHits_CalcSkeletonResponse3D(pos, rad, ob, hh, jd, mf, bh,
                                                (ratio < gObjHitsScalarZero[0])
@@ -2009,7 +2006,7 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
         point.z = objB->anim.worldPosZ - playerMapOffsetZ;
         pointXZ = point;
         hitCount = ObjHits_CollectSkeletonHitsXZ(
-            &pointXZ.x, objBState->primaryRadius, hitboxBuf->skeletonJointData, hitboxBuf,
+            &pointXZ.x, objBState->primaryRadius, hitboxBuf->jointWorkspace, hitboxBuf,
             (ObjHitsSkeletonHit*)hits, &bestHit, point.y + objBState->primaryCapsuleOffsetB,
             point.y + objBState->primaryCapsuleOffsetA, &outAxial);
         if (hitCount != 0) {
@@ -2021,8 +2018,8 @@ void ObjHits_CheckSkeletonPair(GameObject* objA, GameObject* objB, void* hits, v
                 f32 rad = objBState->primaryRadius;
                 GameObject* ob = objB;
                 ObjHitsSkeletonHit* hh = (ObjHitsSkeletonHit*)hits;
-                ObjHitsSkeletonJointData* jd = hitboxBuf->skeletonJointData;
-                ObjHitsModelFileHeader* mf = hitboxBuf->modelFile;
+                ObjHitsSkeletonJointData* jd = hitboxBuf->jointWorkspace;
+                ObjHitsModelFileHeader* mf = hitboxBuf->file;
                 ObjHitsSkeletonHit* bh = bestHit;
                 ObjHits_CalcSkeletonResponseXZ(pos, rad, ob, hh, jd, mf, bh,
                                                (ratio < gObjHitsScalarZero[0])
@@ -2068,9 +2065,9 @@ void ObjHits_CheckTrackContact(GameObject* objA, GameObject* objB) {
         stateB = (ObjHitsPriorityState*)objB->anim.hitReactState;
         if ((stateB->secondaryShapeFlags & OBJHITS_SHAPE_MODEL_HIT_VOLUMES) != 0) {
             modelBank = ObjHits_GetActiveModel(objB);
-            modelFile = modelBank->modelFile;
+            modelFile = modelBank->file;
             hitVolumes = (ObjHitsModelHitVolume*)modelFile->hitVolumes;
-            bits = modelBank->hitBufferFlags >> 2 & 1;
+            bits = modelBank->bufferFlags >> 2 & 1;
             curSpheres = modelBank->hitVolumeSphereBuffers[bits];
             prevSpheres = modelBank->hitVolumeSphereBuffers[bits ^ 1];
             pointCount = 0;
@@ -2401,14 +2398,14 @@ u32 ObjHitReact_Update(GameObject* obj, ObjHitReactEntry* reactionEntryTable, u3
     hitType = ObjHits_GetPriorityHitWithPosition((GameObject*)(obj), 0, &hitSphereIndex, 0, &effectParams.posX,
                                                  &effectParams.posY, &effectParams.posZ);
     if (hitType != 0) {
-        ObjAnimBank* bank = ObjAnim_GetActiveBank(objAnim);
+        ObjModel* model = ObjAnim_GetActiveModel(objAnim);
         effectParams.posX = effectParams.posX + playerMapOffsetX;
         effectParams.posZ = effectParams.posZ + playerMapOffsetZ;
         effectParams.scale = gObjHitsScalarOne[0];
         effectParams.rotZ = 0;
         effectParams.rotY = 0;
         effectParams.rotX = 0;
-        animDef = bank->animDef;
+        animDef = model->file;
         hitSphereIndex = ObjAnim_GetHitReactEntryIndex(animDef, hitSphereIndex);
         if (hitSphereIndex >= (int)(reactionEntryCount & OBJHITREACT_ENTRY_COUNT_MASK)) {
             OSReport(sObjHitReactSphereOverflowString, hitSphereIndex);
@@ -2501,7 +2498,7 @@ uintptr_t ObjHitbox_AllocRotatedBounds(ObjHitbox* hitbox, uintptr_t arena) {
     return (uintptr_t)transformState + sizeof(ObjHitboxTransformState);
 }
 
-void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, int objType, ObjHitReactState* hitState,
+void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjModel* model, int objType, ObjHitReactState* hitState,
                                  int moveId, int async) {
     int moveEntryWordIndex;
     s16* moveEntryTable;
@@ -2538,11 +2535,11 @@ void ObjHitReact_LoadMoveEntries(ObjAnimComponent* objAnim, ObjAnimBank* bank, i
     return;
 }
 
-uintptr_t ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState* hitState, uintptr_t entryArena,
+uintptr_t ObjHitReact_InitState(int objType, ObjModel* model, ObjHitReactState* hitState, uintptr_t entryArena,
                           ObjAnimComponent* objAnim) {
     ObjHitReactEntry* entries;
 
-    if (bank == NULL) {
+    if (model == NULL) {
         return entryArena;
     }
     ObjHitReact_SetEntryBufferByteCapacity(hitState, OBJHITREACT_ENTRY_ARENA_BYTES);
@@ -2553,7 +2550,7 @@ uintptr_t ObjHitReact_InitState(int objType, ObjAnimBank* bank, ObjHitReactState
     if ((((ObjHitsPriorityState*)hitState)->shapeFlags & OBJHITS_SHAPE_RESET_MODE_MASK) != 0) {
         ((ObjHitsPriorityState*)hitState)->resetHitboxMode = OBJHITREACT_RESET_HITBOX_MODE;
     }
-    ObjHitReact_LoadMoveEntries(objAnim, bank, objType, hitState, 0, 1);
+    ObjHitReact_LoadMoveEntries(objAnim, model, objType, hitState, 0, 1);
     return entryArena;
 }
 
@@ -2864,7 +2861,7 @@ uintptr_t ObjHits_AllocObjectState(GameObject* obj, uintptr_t arena) {
 void ObjHits_RefreshObjectState(GameObject* object) {
     ObjAnimComponent* obj;
     ObjHitsPriorityState* hitState;
-    ObjAnimBank* activeBank;
+    ObjModel* activeModel;
     short capsuleOffsetA;
     short capsuleOffsetB;
 
@@ -2874,9 +2871,9 @@ void ObjHits_RefreshObjectState(GameObject* object) {
         hitState->flags = obj->modelInstance->hitboxFlags;
         hitState->shapeFlags = obj->modelInstance->primaryHitboxShapeFlags;
         if ((hitState->shapeFlags & OBJHITS_SHAPE_SKELETON) != 0) {
-            activeBank = ObjAnim_GetActiveBank(obj);
-            if (((activeBank->animDef->flags & OBJANIM_DEF_FLAG_SKELETON_HITBOXES) == 0) ||
-                (*(void**)(((int*)activeBank) + 5) == 0)) {
+            activeModel = ObjAnim_GetActiveModel(obj);
+            if (((activeModel->file->flags & OBJANIM_DEF_FLAG_SKELETON_HITBOXES) == 0) ||
+                (*(void**)(((int*)activeModel) + 5) == 0)) {
                 hitState->shapeFlags &= ~OBJHITS_SHAPE_SKELETON;
             }
         }

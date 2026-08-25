@@ -19,7 +19,7 @@ typedef s16 (*Dll5BSpawnFn)(GameObject* sourceObj, int effectId, PartFxSpawnPara
                             int unusedModelId, const Dll5BSpawnCountRange* countRange);
 
 typedef struct Dll5BInterface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll5BSpawnFn spawn;
 } Dll5BInterface;
 
@@ -28,17 +28,15 @@ STATIC_ASSERT(offsetof(Dll5BInterface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll5BInterface) == 0x08);
 
 typedef struct Dll5BResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll5BSpawnFn spawn;
     char missingOwnerMessage[0x28];
 } Dll5BResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll5BResourceDescriptor, missingOwnerMessage) == 0x20);

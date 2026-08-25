@@ -13,6 +13,10 @@ void Dummy58_release(void) {
 void Dummy58_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDummy58DescriptorAcquire, Dummy58_initialise)
+
 Dummy58Descriptor gDummy58Descriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, Dummy58_initialise, Dummy58_release, NULL, Dummy58_init,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDummy58DescriptorAcquire, Dummy58_release },
+    NULL,
+    Dummy58_init,
 };

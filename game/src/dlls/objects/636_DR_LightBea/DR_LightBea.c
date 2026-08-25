@@ -1,6 +1,6 @@
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_002E_moveLib.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/lightningeffect.h"
 #include "main/mm.h"
 #include "main/newclouds.h"
@@ -152,19 +152,32 @@ void DR_LightBea_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrLightBeaObjDescriptorInitAdapter, DR_LightBea_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDrLightBeaObjDescriptorHitDetectAdapter, DR_LightBea_hitDetect)
+OBJECT_RENDER_ADAPTER(gDrLightBeaObjDescriptorRenderAdapter, DR_LightBea_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gDrLightBeaObjDescriptorFreeAdapter, DR_LightBea_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrLightBeaObjDescriptorTypeIdAdapter, DR_LightBea_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrLightBeaObjDescriptorExtraSizeAdapter, DR_LightBea_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrLightBeaObjDescriptorAcquire, DR_LightBea_initialise)
+
 ObjectDescriptor gDrLightBeaObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrLightBeaObjDescriptorAcquire,
+        DR_LightBea_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_LightBea_initialise,
-    (ObjectDescriptorCallback)DR_LightBea_release,
-    0,
-    (ObjectDescriptorCallback)DR_LightBea_init,
-    (ObjectDescriptorCallback)DR_LightBea_update,
-    (ObjectDescriptorCallback)DR_LightBea_hitDetect,
-    (ObjectDescriptorCallback)DR_LightBea_render,
-    (ObjectDescriptorCallback)DR_LightBea_free,
-    (ObjectDescriptorCallback)DR_LightBea_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DR_LightBea_getExtraSize,
+    gDrLightBeaObjDescriptorInitAdapter,
+    DR_LightBea_update,
+    gDrLightBeaObjDescriptorHitDetectAdapter,
+    gDrLightBeaObjDescriptorRenderAdapter,
+    gDrLightBeaObjDescriptorFreeAdapter,
+    gDrLightBeaObjDescriptorTypeIdAdapter,
+    gDrLightBeaObjDescriptorExtraSizeAdapter,
 };

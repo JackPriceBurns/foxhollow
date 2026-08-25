@@ -8,7 +8,7 @@
  */
 #include "dlls/objects/298_CFCrate.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_ids.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
@@ -20,9 +20,9 @@
 #include "main/objseq.h"
 #include "main/objtexture.h"
 #include "sys/objects.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
-#include "main/render_lactions_api.h"
+#include "main/render_lactions.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
 
@@ -480,19 +480,31 @@ void CFCrate_release(void) {
 void CFCrate_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFCrateObjDescriptorInitAdapter, CFCrate_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFCrateObjDescriptorHitDetectAdapter, CFCrate_hitDetect)
+OBJECT_FREE_ADAPTER(gCFCrateObjDescriptorFreeAdapter, CFCrate_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCFCrateObjDescriptorTypeIdAdapter, CFCrate_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFCrateObjDescriptorExtraSizeAdapter, CFCrate_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFCrateObjDescriptorAcquire, CFCrate_initialise)
+
 ObjectDescriptor gCFCrateObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFCrateObjDescriptorAcquire,
+        CFCrate_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)CFCrate_initialise,
-    (ObjectDescriptorCallback)CFCrate_release,
-    0,
-    (ObjectDescriptorCallback)CFCrate_init,
-    (ObjectDescriptorCallback)CFCrate_update,
-    (ObjectDescriptorCallback)CFCrate_hitDetect,
-    (ObjectDescriptorCallback)CFCrate_render,
-    (ObjectDescriptorCallback)CFCrate_free,
-    (ObjectDescriptorCallback)CFCrate_getObjectTypeId,
-    CFCrate_getExtraSize,
+    gCFCrateObjDescriptorInitAdapter,
+    CFCrate_update,
+    gCFCrateObjDescriptorHitDetectAdapter,
+    CFCrate_render,
+    gCFCrateObjDescriptorFreeAdapter,
+    gCFCrateObjDescriptorTypeIdAdapter,
+    gCFCrateObjDescriptorExtraSizeAdapter,
 };

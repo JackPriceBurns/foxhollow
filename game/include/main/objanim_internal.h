@@ -260,10 +260,7 @@ typedef struct ObjDefHitVolume {
   s16 posZ;
   u8 bounds[4];
   u8 flags;
-  union {
-    s8 priority;
-    u8 priorityUnsigned;
-  };
+  u8 priority;
   s8 jointIndices[2];
   u8 pad14[0x18 - 0x14];
 } ObjDefHitVolume;
@@ -402,13 +399,6 @@ typedef struct ObjAnimMoveData {
   u8 frameCommands[1];
 } ObjAnimMoveData;
 
-typedef struct ObjAnimBank {
-  ObjAnimDef *animDef;
-  u8 pad08[offsetof(ObjModel, animStateA) - sizeof(ObjAnimDef *)];
-  ObjAnimState *currentState;
-  ObjAnimState *activeState;
-} ObjAnimBank;
-
 typedef struct ObjectShadowMesh {
   Vec3s *vertices;
   u32 vertexCount;
@@ -425,14 +415,9 @@ typedef struct ObjModelState {
   f32 shadowOffsetX;
   f32 shadowOffsetY;
   f32 shadowOffsetZ;
-  union {
-    struct {
-      f32 overrideWorldPosX;
-      f32 overrideWorldPosY;
-      f32 overrideWorldPosZ;
-    };
-    Vec3f overrideWorldPos;
-  };
+  f32 overrideWorldPosX;
+  f32 overrideWorldPosY;
+  f32 overrideWorldPosZ;
   f32 shadowModelScale;
   u32 flags;
   u8 pad34[0x36 - 0x34];
@@ -448,45 +433,21 @@ typedef struct ObjModelState {
 STATIC_ASSERT(offsetof(ObjModelState, flags) == 0x30);
 
 typedef struct ObjAnimComponent {
-  union {
-    struct {
-      s16 rotX;
-      s16 rotY;
-      s16 rotZ;
-    };
-    Vec3s rotation;
-  };
+  s16 rotX;
+  s16 rotY;
+  s16 rotZ;
   s16 flags;
   f32 rootMotionScale;
-  union {
-    struct {
-      f32 localPosX;
-      f32 localPosY;
-      f32 localPosZ;
-    };
-    Vec3f localPos;
-  };
-  union {
-    struct {
-      f32 worldPosX;
-      f32 worldPosY;
-      f32 worldPosZ;
-    };
-    Vec3f worldPos;
-  };
-  union {
-    struct {
-      f32 velocityX;
-      f32 velocityY;
-      f32 velocityZ;
-    };
-    Vec3f velocity;
-  };
-  union {
-    void *parent;
-    struct ObjAnimComponent *parentAnim;
-    u32 parentAddress; /* raw address view for APIs that accept a 32-bit parent handle */
-  };
+  f32 localPosX;
+  f32 localPosY;
+  f32 localPosZ;
+  f32 worldPosX;
+  f32 worldPosY;
+  f32 worldPosZ;
+  f32 velocityX;
+  f32 velocityY;
+  f32 velocityZ;
+  GameObject *parent;
   u8 hostedMapSlot; /* 0x34: romlist page slot this object hosts - taken
                        from the extended 0x50..0x77 band by
                        mapLoadForObject when the object definition names
@@ -506,13 +467,9 @@ typedef struct ObjAnimComponent {
     s16 *placementData; /* raw view - the s16* deref width is load-bearing
                            at placementData[i] sites; keep for those */
     struct ObjPlacement *placement; /* typed view of the common head */
-    u32 placementDataAddress; /* raw address view used by ownership guards */
   };
   ObjDef *modelInstance;
-  union {
-    ObjHitReactState *hitReactState;
-    struct ObjAnimComponent *linkedAnim;
-  };
+  ObjHitReactState *hitReactState;
   ObjHitboxTransformState *hitboxTransformState;
   struct ObjWeaponDaTable *weaponDaTable;
   struct ObjAnimEventTable *eventTable;
@@ -522,10 +479,7 @@ typedef struct ObjAnimComponent {
   ObjTextureRuntimeSlot *textureSlots;
   ObjHitVolumeRuntimeTransform *hitVolumeTransforms;
   ObjHitVolumeRuntimeBounds *hitVolumeBounds;
-  union {
-    ObjAnimBank **banks;
-    struct ObjModel **modelBanks;
-  };
+  struct ObjModel **modelBanks;
   f32 previousLocalPosX;
   f32 previousLocalPosY;
   f32 previousLocalPosZ;
@@ -546,12 +500,7 @@ typedef struct ObjAnimComponent {
                       that host's hostedMapSlot */
   s8 bankIndex;
   s8 activeHitboxMode;
-  union {
-    s8 resetHitboxMode;
-    u8 resetHitboxFlags; /* unsigned view - INTERACT_FLAG_* bits; matched
-                            code reads lbz/stb here where the s8 view would
-                            emit extsb */
-  };
+  u8 resetHitboxFlags;
 } ObjAnimComponent;
 
 /*
@@ -624,7 +573,6 @@ STATIC_ASSERT(sizeof(ObjDefHitVolume) == 0x18);
 STATIC_ASSERT(offsetof(ObjDefHitVolume, bounds) == 0x0C);
 STATIC_ASSERT(offsetof(ObjDefHitVolume, flags) == 0x10);
 STATIC_ASSERT(offsetof(ObjDefHitVolume, priority) == 0x11);
-STATIC_ASSERT(offsetof(ObjDefHitVolume, priorityUnsigned) == 0x11);
 STATIC_ASSERT(offsetof(ObjDefHitVolume, jointIndices) == 0x12);
 STATIC_ASSERT(sizeof(ObjHitVolumeRuntimeTransform) == 0x18);
 STATIC_ASSERT(sizeof(ObjHitVolumeRuntimeBounds) == 0x05);
@@ -807,11 +755,6 @@ STATIC_ASSERT(offsetof(ObjAnimMoveData, frameControl) == 0x01);
 STATIC_ASSERT(offsetof(ObjAnimMoveData, rootCurveOffset) == 0x04);
 STATIC_ASSERT(offsetof(ObjAnimMoveData, frameCommands) == OBJANIM_FRAME_COMMANDS_OFFSET);
 
-STATIC_ASSERT(sizeof(ObjAnimBank) == 0x64);
-STATIC_ASSERT(offsetof(ObjAnimBank, animDef) == 0x00);
-STATIC_ASSERT(offsetof(ObjAnimBank, currentState) == 0x2C);
-STATIC_ASSERT(offsetof(ObjAnimBank, activeState) == 0x30);
-
 STATIC_ASSERT(sizeof(ObjAnimComponent) == 0xB0);
 STATIC_ASSERT(offsetof(ObjAnimComponent, textureSlots) == 0x70);
 STATIC_ASSERT(offsetof(ObjAnimComponent, hitVolumeTransforms) == 0x74);
@@ -860,7 +803,7 @@ STATIC_ASSERT(offsetof(ObjAnimComponent, activeMove) == 0xA2);
 STATIC_ASSERT(offsetof(ObjAnimComponent, hitboxScale) == 0xA8);
 STATIC_ASSERT(offsetof(ObjAnimComponent, bankIndex) == 0xAD);
 STATIC_ASSERT(offsetof(ObjAnimComponent, activeHitboxMode) == 0xAE);
-STATIC_ASSERT(offsetof(ObjAnimComponent, resetHitboxMode) == 0xAF);
+STATIC_ASSERT(offsetof(ObjAnimComponent, resetHitboxFlags) == 0xAF);
 STATIC_ASSERT(offsetof(ObjAnimComponent, resetHitboxFlags) == 0xAF);
 
 STATIC_ASSERT(sizeof(ObjAnimEventTable) == 0x08);
@@ -878,8 +821,8 @@ STATIC_ASSERT(offsetof(ObjAnimEventList, rootCurveValid) == 0x12);
 STATIC_ASSERT(offsetof(ObjAnimEventList, triggeredIds) == 0x13);
 STATIC_ASSERT(offsetof(ObjAnimEventList, triggerCount) == 0x1B);
 
-static inline ObjAnimBank *ObjAnim_GetActiveBank(ObjAnimComponent *objAnim) {
-  return objAnim->banks[objAnim->bankIndex];
+static inline ObjModel *ObjAnim_GetActiveModel(ObjAnimComponent *objAnim) {
+  return objAnim->modelBanks[objAnim->bankIndex];
 }
 
 static inline ObjHitsPriorityState *ObjAnim_GetPriorityHitState(ObjAnimComponent *objAnim) {
@@ -897,11 +840,11 @@ static inline f64 ObjAnim_S32AsDouble(s32 value) {
 
 static inline s32 ObjAnim_ResolveMoveIndex(ObjAnimDef *animDef, u32 moveId) {
   s32 moveIndex =
-      animDef->moveGroupBaseIndices[(s32)moveId >> OBJANIM_MOVE_GROUP_SHIFT] +
+      animDef->animGroupBaseIndices[(s32)moveId >> OBJANIM_MOVE_GROUP_SHIFT] +
       (moveId & OBJANIM_MOVE_INDEX_MASK);
 
-  if (moveIndex >= animDef->moveCount) {
-    moveIndex = animDef->moveCount - 1;
+  if (moveIndex >= animDef->animationCount) {
+    moveIndex = animDef->animationCount - 1;
   }
   if (moveIndex < 0) {
     moveIndex = 0;
@@ -910,19 +853,19 @@ static inline s32 ObjAnim_ResolveMoveIndex(ObjAnimDef *animDef, u32 moveId) {
 }
 
 static inline ObjAnimDef *ObjAnim_GetAnimDef(ObjAnimComponent *objAnim) {
-  return ObjAnim_GetActiveBank(objAnim)->animDef;
+  return ObjAnim_GetActiveModel(objAnim)->file;
 }
 
 static inline ObjAnimState *ObjAnim_GetActiveState(ObjAnimComponent *objAnim) {
-  return ObjAnim_GetActiveBank(objAnim)->activeState;
+  return ObjAnim_GetActiveModel(objAnim)->animStateB;
 }
 
 static inline ObjAnimState *ObjAnim_GetCurrentState(ObjAnimComponent *objAnim) {
-  return ObjAnim_GetActiveBank(objAnim)->currentState;
+  return ObjAnim_GetActiveModel(objAnim)->animStateA;
 }
 
 static inline s32 ObjAnim_GetHitReactEntryIndex(ObjAnimDef *animDef, s32 sphereIndex) {
-  return ((ObjAnimHitReactRow *)animDef->hitReactTable)[sphereIndex].entryIndex;
+  return ((ObjAnimHitReactRow *)animDef->hitVolumes)[sphereIndex].entryIndex;
 }
 
 static inline ObjAnimMoveData *ObjAnim_GetMoveData(ObjAnimDef *animDef, ObjAnimState *state,

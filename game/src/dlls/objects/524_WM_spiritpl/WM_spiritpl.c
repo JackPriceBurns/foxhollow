@@ -15,17 +15,17 @@
 #include "dlls/object_descriptor.h"
 #include "main/dll/WM/dll_020C_wmspiritplace.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
-#include "main/pi_dolphin_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/pi_dolphin.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
+#include "main/lightmap_render_control.h"
 
 /* placement ident tags of the six spirit-place instances; place N
    becomes active once the palace's map-event mode reaches N. */
@@ -198,7 +198,7 @@ void WM_spiritplace_free(void)
 {
 }
 
-void WM_spiritplace_render(int obj, int p2, int p3, int p4, int p5, s8 visible)
+void WM_spiritplace_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
 {
     if (visible == 0)
     {
@@ -541,19 +541,30 @@ void WM_spiritplace_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gWM_spiritplaceObjDescriptorInitAdapter, WM_spiritplace_init, obj, placement)
+OBJECT_FREE_ADAPTER(gWM_spiritplaceObjDescriptorFreeAdapter, WM_spiritplace_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_spiritplaceObjDescriptorTypeIdAdapter, WM_spiritplace_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_spiritplaceObjDescriptorExtraSizeAdapter, WM_spiritplace_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_spiritplaceObjDescriptorAcquire, WM_spiritplace_initialise)
+
 ObjectDescriptor gWM_spiritplaceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_spiritplaceObjDescriptorAcquire,
+        WM_spiritplace_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_spiritplace_initialise,
-    WM_spiritplace_release,
-    0,
-    (ObjectDescriptorCallback)WM_spiritplace_init,
-    (ObjectDescriptorCallback)WM_spiritplace_update,
-    (ObjectDescriptorCallback)WM_spiritplace_hitDetect,
-    (ObjectDescriptorCallback)WM_spiritplace_render,
-    WM_spiritplace_free,
-    (ObjectDescriptorCallback)WM_spiritplace_getObjectTypeId,
-    WM_spiritplace_getExtraSize,
+    gWM_spiritplaceObjDescriptorInitAdapter,
+    WM_spiritplace_update,
+    WM_spiritplace_hitDetect,
+    WM_spiritplace_render,
+    gWM_spiritplaceObjDescriptorFreeAdapter,
+    gWM_spiritplaceObjDescriptorTypeIdAdapter,
+    gWM_spiritplaceObjDescriptorExtraSizeAdapter,
 };

@@ -2,13 +2,12 @@
 #include "dlls/objects/518_LightSource.h"
 
 #include "game/objects/object.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model_light.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
@@ -258,19 +257,31 @@ void lightsource_release(void) {
 void lightsource_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gLightSourceObjDescriptorInitAdapter, lightsource_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLightSourceObjDescriptorHitDetectAdapter, lightsource_hitDetect)
+OBJECT_FREE_ADAPTER(gLightSourceObjDescriptorFreeAdapter, lightsource_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gLightSourceObjDescriptorTypeIdAdapter, lightsource_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLightSourceObjDescriptorExtraSizeAdapter, lightsource_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLightSourceObjDescriptorAcquire, lightsource_initialise)
+
 ObjectDescriptor gLightSourceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLightSourceObjDescriptorAcquire,
+        lightsource_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    lightsource_initialise,
-    lightsource_release,
-    0,
-    (ObjectDescriptorCallback)lightsource_init,
-    (ObjectDescriptorCallback)lightsource_update,
-    lightsource_hitDetect,
-    (ObjectDescriptorCallback)lightsource_render,
-    (ObjectDescriptorCallback)lightsource_free,
-    (ObjectDescriptorCallback)lightsource_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)lightsource_getExtraSize,
+    gLightSourceObjDescriptorInitAdapter,
+    lightsource_update,
+    gLightSourceObjDescriptorHitDetectAdapter,
+    lightsource_render,
+    gLightSourceObjDescriptorFreeAdapter,
+    gLightSourceObjDescriptorTypeIdAdapter,
+    gLightSourceObjDescriptorExtraSizeAdapter,
 };

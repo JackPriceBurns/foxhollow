@@ -5,9 +5,10 @@
 #include "game/objects/object_fwd.h"
 
 typedef int (*CameraGetModeFn)(void);
+typedef struct CamcontrolTriggeredAction CamcontrolTriggeredAction;
 typedef void *(*CameraGetFn)(void);
 typedef void (*CameraSetModeFn)(int mode, int arg1, int arg2, int flags, void *params,
-                                int blendFrames, int priority);
+                                int blendFrames, u8 queueMode);
 typedef void (*CameraUpdateFn)(u8 framesThisStep);
 typedef void (*CameraLoadTriggeredActionFn)(int triggerType, int actionNo, int triggerMode);
 typedef void (*CameraSetFocusFn)(void *target, int unused);
@@ -36,7 +37,7 @@ typedef struct CameraInterface {
     void *(*getActiveHandler)(void);
     void *(*getDefaultHandlerEntry)(void);
     CameraSetModeFn setMode;
-    void *(*getCamActionsBinEntry)(int actionNo);
+    CamcontrolTriggeredAction *(*getCamActionsBinEntry)(int actionNo);
     CameraLoadTriggeredActionFn loadTriggeredCamAction;
     CameraSetFocusFn setFocus;
     CameraOverridePosFn overridePos;

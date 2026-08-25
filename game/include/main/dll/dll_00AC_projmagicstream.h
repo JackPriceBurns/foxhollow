@@ -7,16 +7,14 @@
 typedef int (*ProjmagicstreamUnsupportedFn)(void);
 
 typedef struct ProjmagicstreamResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     ProjmagicstreamUnsupportedFn unsupported;
 } ProjmagicstreamResourceDescriptor;
 
-STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(ProjmagicstreamResourceDescriptor, unsupported) == 0x1C);
 STATIC_ASSERT(sizeof(ProjmagicstreamResourceDescriptor) == 0x20);

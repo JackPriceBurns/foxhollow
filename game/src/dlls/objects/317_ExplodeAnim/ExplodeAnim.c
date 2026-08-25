@@ -74,19 +74,32 @@ void ExplodeAnimator_release(void) {
 void ExplodeAnimator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gExplodeAnimatorObjDescriptorInitAdapter, ExplodeAnimator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gExplodeAnimatorObjDescriptorHitDetectAdapter, ExplodeAnimator_hitDetect)
+OBJECT_RENDER_ADAPTER(gExplodeAnimatorObjDescriptorRenderAdapter, ExplodeAnimator_render)
+OBJECT_FREE_ADAPTER(gExplodeAnimatorObjDescriptorFreeAdapter, ExplodeAnimator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gExplodeAnimatorObjDescriptorTypeIdAdapter, ExplodeAnimator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gExplodeAnimatorObjDescriptorExtraSizeAdapter, ExplodeAnimator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gExplodeAnimatorObjDescriptorAcquire, ExplodeAnimator_initialise)
+
 ObjectDescriptor gExplodeAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gExplodeAnimatorObjDescriptorAcquire,
+        ExplodeAnimator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ExplodeAnimator_initialise,
-    (ObjectDescriptorCallback)ExplodeAnimator_release,
-    0,
-    (ObjectDescriptorCallback)ExplodeAnimator_init,
-    (ObjectDescriptorCallback)ExplodeAnimator_update,
-    (ObjectDescriptorCallback)ExplodeAnimator_hitDetect,
-    (ObjectDescriptorCallback)ExplodeAnimator_render,
-    (ObjectDescriptorCallback)ExplodeAnimator_free,
-    (ObjectDescriptorCallback)ExplodeAnimator_getObjectTypeId,
-    ExplodeAnimator_getExtraSize,
+    gExplodeAnimatorObjDescriptorInitAdapter,
+    ExplodeAnimator_update,
+    gExplodeAnimatorObjDescriptorHitDetectAdapter,
+    gExplodeAnimatorObjDescriptorRenderAdapter,
+    gExplodeAnimatorObjDescriptorFreeAdapter,
+    gExplodeAnimatorObjDescriptorTypeIdAdapter,
+    gExplodeAnimatorObjDescriptorExtraSizeAdapter,
 };

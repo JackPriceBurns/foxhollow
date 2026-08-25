@@ -1,9 +1,9 @@
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/partfxspawn_struct.h"
 #include "main/dll_000A_expgfx.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
-#include "main/maketex_random_api.h"
+#include "main/maketex_random.h"
 #include "main/dll/dll_0021_effect8.h"
 #include "main/vecmath.h"
 
@@ -19,17 +19,20 @@ f32 gEffect8FramePhaseB = 0.3f;
 
 PartFxSpawnParams gEffect8DefaultSpawnParams;
 
-ObjectDescriptor6 Effect8_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)Effect8_initialise,
-    (ObjectDescriptorCallback)Effect8_release,
-    0,
-    (ObjectDescriptorCallback)Effect8_func03_nop,
-    (ObjectDescriptorCallback)Effect8_spawnObject,
-    (ObjectDescriptorCallback)Effect8_updateFrameState,
+EFFECT_RESOURCE_ADAPTERS(gEffect8Resource, Effect8_initialise, Effect8_spawnObject, Effect8_updateFrameState)
+
+EffectResourceDescriptor Effect8_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gEffect8ResourceAcquire,
+        Effect8_release,
+    },
+    {
+        NULL,
+        Effect8_func03_nop,
+        gEffect8ResourceSpawn,
+        gEffect8ResourceUpdate,
+    },
 };
 
 

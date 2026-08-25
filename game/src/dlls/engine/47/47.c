@@ -4,11 +4,11 @@
 #include "main/pad.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "dolphin/pad.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/savegame_object_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player.h"
+#include "main/dll/savegame_object.h"
 #include "main/obj_message.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
@@ -18,31 +18,9 @@
 
 #define CARRYABLE_OBJGROUP 0x10
 
-#define CARRY_STATE_RESTING 0
-#define CARRY_STATE_GRABBED 1
-#define CARRY_STATE_PUTDOWN 2
-
-#define CARRYABLE_FLAG_JUST_GRABBED      0x01
-#define CARRYABLE_FLAG_GRAVITY_DISABLED  0x02
-#define CARRYABLE_FLAG_DROP_DISABLED     0x04
-#define CARRYABLE_FLAG_SUPPRESS_POS_SAVE 0x08
-
-typedef struct CarryableUpdateHeldState
-{
-    u8 pad0[0x2 - 0x0];
-    s16 unk2;
-    u8 unk4;
-    s8 carryState;
-    u8 isHeld;
-    u8 flags;
-    u8 surfaceType;
-    u8 pad9[0x10 - 0x9];
-} CarryableUpdateHeldState;
-
-
 void Carryable_putDownAndSavePos(GameObject* obj)
 {
-    CarryableUpdateHeldState* state = obj->extra;
+    CarryableState* state = obj->extra;
     state->carryState = CARRY_STATE_RESTING;
     state->isHeld = 0;
     if ((state->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0 &&
@@ -54,11 +32,11 @@ void Carryable_putDownAndSavePos(GameObject* obj)
     }
 }
 
-void Carryable_stopCarrying(GameObject* obj, void* state)
+void Carryable_stopCarrying(GameObject* obj, CarryableState* state)
 {
     GameObject* player = Obj_GetPlayerObject();
     GameObject* held;
-    ((CarryableUpdateHeldState*)state)->carryState = CARRY_STATE_RESTING;
+    state->carryState = CARRY_STATE_RESTING;
     Player_GetHeldObject(player, &held);
     if (held == obj)
     {
@@ -66,60 +44,60 @@ void Carryable_stopCarrying(GameObject* obj, void* state)
     }
 }
 
-void Carryable_setSuppressPositionSave(void* state, u8 enable)
+void Carryable_setSuppressPositionSave(CarryableState* state, u8 enable)
 {
     if (enable != 0)
     {
-        ((CarryableUpdateHeldState*)state)->flags |= CARRYABLE_FLAG_SUPPRESS_POS_SAVE;
+        state->flags |= CARRYABLE_FLAG_SUPPRESS_POS_SAVE;
     }
     else
     {
-        ((CarryableUpdateHeldState*)state)->flags &= ~CARRYABLE_FLAG_SUPPRESS_POS_SAVE;
+        state->flags &= ~CARRYABLE_FLAG_SUPPRESS_POS_SAVE;
     }
 }
 
-s32 Carryable_getDropDisabled(void* state)
+s32 Carryable_getDropDisabled(CarryableState* state)
 {
-    return (((CarryableUpdateHeldState*)state)->flags & CARRYABLE_FLAG_DROP_DISABLED) != 0;
+    return (state->flags & CARRYABLE_FLAG_DROP_DISABLED) != 0;
 }
 
-void Carryable_setDropDisabled(void* state, u8 enable)
+void Carryable_setDropDisabled(CarryableState* state, u8 enable)
 {
     if (enable != 0)
     {
-        ((CarryableUpdateHeldState*)state)->flags |= CARRYABLE_FLAG_DROP_DISABLED;
+        state->flags |= CARRYABLE_FLAG_DROP_DISABLED;
     }
     else
     {
-        ((CarryableUpdateHeldState*)state)->flags &= ~CARRYABLE_FLAG_DROP_DISABLED;
+        state->flags &= ~CARRYABLE_FLAG_DROP_DISABLED;
     }
 }
 
-void Carryable_setGravityEnabled(void* state, u8 clear)
+void Carryable_setGravityEnabled(CarryableState* state, u8 clear)
 {
     if (clear != 0)
     {
-        ((CarryableUpdateHeldState*)state)->flags &= ~CARRYABLE_FLAG_GRAVITY_DISABLED;
+        state->flags &= ~CARRYABLE_FLAG_GRAVITY_DISABLED;
     }
     else
     {
-        ((CarryableUpdateHeldState*)state)->flags |= CARRYABLE_FLAG_GRAVITY_DISABLED;
+        state->flags |= CARRYABLE_FLAG_GRAVITY_DISABLED;
     }
 }
 
-u8 Carryable_getSurfaceType(void* state)
+u8 Carryable_getSurfaceType(CarryableState* state)
 {
-    return ((CarryableUpdateHeldState*)state)->surfaceType;
+    return state->surfaceType;
 }
 
-s32 Carryable_wasJustGrabbed(void* state)
+s32 Carryable_wasJustGrabbed(CarryableState* state)
 {
-    return ((CarryableUpdateHeldState*)state)->flags & CARRYABLE_FLAG_JUST_GRABBED;
+    return state->flags & CARRYABLE_FLAG_JUST_GRABBED;
 }
 
-s32 Carryable_getCarryState(void* state)
+s32 Carryable_getCarryState(CarryableState* state)
 {
-    return ((CarryableUpdateHeldState*)state)->carryState;
+    return state->carryState;
 }
 
 void Carryable_free(GameObject* obj)
@@ -154,11 +132,11 @@ int Carryable_updateRenderState(GameObject* obj, int flag)
     return 1;
 }
 
-int Carryable_updateHeld(GameObject* obj, void* state)
+int Carryable_updateHeld(GameObject* obj, CarryableState* state)
 {
     TrackGroundHit** list;
     GameObject* player;
-    CarryableUpdateHeldState* held;
+    CarryableState* held;
     held = obj->extra;
     held->surfaceType = 0;
     held->flags &= ~CARRYABLE_FLAG_JUST_GRABBED;
@@ -175,7 +153,7 @@ int Carryable_updateHeld(GameObject* obj, void* state)
             (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) != 0 &&
             obj->userData2 == 0)
         {
-            *(s16*)held = 0;
+            held->unk00 = 0;
             buttonDisable(0, PAD_BUTTON_A);
             newCarryState = 1;
         }
@@ -265,7 +243,7 @@ int Carryable_updateHeld(GameObject* obj, void* state)
         }
         if (held->carryState == CARRY_STATE_PUTDOWN && obj->userData2 == 0)
         {
-            CarryableUpdateHeldState* h2 = obj->extra;
+            CarryableState* h2 = obj->extra;
             h2->carryState = CARRY_STATE_RESTING;
             h2->isHeld = 0;
             if ((h2->flags & CARRYABLE_FLAG_SUPPRESS_POS_SAVE) == 0 &&
@@ -279,20 +257,19 @@ int Carryable_updateHeld(GameObject* obj, void* state)
         if (*(s8*)&held->isHeld != 0)
         {
             ObjMsg_SendToObject(player, CARRYABLE_MSG_PLAYER_GRAB, obj,
-                                (held->unk2 << 16) | (u16) * (s16*)held);
+                                (held->unk02 << 16) | (u16)held->unk00);
         }
     }
     return held->carryState;
 }
 
-void Carryable_init(GameObject* obj, void* state, int arg2)
+void Carryable_init(GameObject* obj, CarryableState* state, int arg2)
 {
-    CarryableUpdateHeldState* s = (CarryableUpdateHeldState*)state;
     objAddObjectType(obj, CARRYABLE_OBJGROUP);
-    s->unk2 = 0;
-    s->carryState = CARRY_STATE_RESTING;
-    s->unk4 = 0;
-    s->isHeld = 0;
+    state->unk02 = 0;
+    state->carryState = CARRY_STATE_RESTING;
+    state->unk04 = 0;
+    state->isHeld = 0;
     (obj)->userData2 = 0;
 }
 
@@ -303,48 +280,50 @@ void Carryable_release(void)
 void Carryable_initialise(void)
 {
 }
+typedef struct CarryableDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(Carryable_init)* init;
+    __typeof__(Carryable_updateHeld)* updateHeld;
+    __typeof__(Carryable_updateRenderState)* updateRenderState;
+    __typeof__(Carryable_free)* free;
+    __typeof__(Carryable_getCarryState)* getCarryState;
+    __typeof__(Carryable_wasJustGrabbed)* wasJustGrabbed;
+    __typeof__(Carryable_getSurfaceType)* getSurfaceType;
+    __typeof__(Carryable_setGravityEnabled)* setGravityEnabled;
+    __typeof__(Carryable_setDropDisabled)* setDropDisabled;
+    __typeof__(Carryable_getDropDisabled)* getDropDisabled;
+    __typeof__(Carryable_setSuppressPositionSave)* setSuppressPositionSave;
+    __typeof__(Carryable_stopCarrying)* stopCarrying;
+    void* slot0F;
+} CarryableDllInterfaceCallbacks;
+
 typedef struct CarryableDllInterface {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    ObjectDescriptorCallback initialise;
-    ObjectDescriptorCallback release;
-    ObjectDescriptorCallback slot02;
-    ObjectDescriptorCallback init;
-    ObjectDescriptorCallback updateHeld;
-    ObjectDescriptorCallback updateRenderState;
-    ObjectDescriptorCallback free;
-    ObjectDescriptorCallback getCarryState;
-    ObjectDescriptorCallback wasJustGrabbed;
-    ObjectDescriptorCallback getSurfaceType;
-    ObjectDescriptorCallback setGravityEnabled;
-    ObjectDescriptorCallback setDropDisabled;
-    ObjectDescriptorCallback getDropDisabled;
-    ObjectDescriptorCallback setSuppressPositionSave;
-    ObjectDescriptorCallback stopCarrying;
-    ObjectDescriptorCallback slot0F;
+    ResourceDescriptorHeader header;
+    CarryableDllInterfaceCallbacks interface;
 } CarryableDllInterface;
 
+RESOURCE_ACQUIRE_ADAPTER(gCarryableResourceAcquire, Carryable_initialise)
+
 CarryableDllInterface Carryable_funcs = {
-    0,
-    0,
-    0,
-    0x000E0000,
-    (ObjectDescriptorCallback)Carryable_initialise,
-    (ObjectDescriptorCallback)Carryable_release,
-    0,
-    (ObjectDescriptorCallback)Carryable_init,
-    (ObjectDescriptorCallback)Carryable_updateHeld,
-    (ObjectDescriptorCallback)Carryable_updateRenderState,
-    (ObjectDescriptorCallback)Carryable_free,
-    (ObjectDescriptorCallback)Carryable_getCarryState,
-    (ObjectDescriptorCallback)Carryable_wasJustGrabbed,
-    (ObjectDescriptorCallback)Carryable_getSurfaceType,
-    (ObjectDescriptorCallback)Carryable_setGravityEnabled,
-    (ObjectDescriptorCallback)Carryable_setDropDisabled,
-    (ObjectDescriptorCallback)Carryable_getDropDisabled,
-    (ObjectDescriptorCallback)Carryable_setSuppressPositionSave,
-    (ObjectDescriptorCallback)Carryable_stopCarrying,
-    0,
+    {
+        {0, 0, 0, 0x000E0000},
+        gCarryableResourceAcquire,
+        Carryable_release,
+    },
+    {
+        NULL,
+        Carryable_init,
+        Carryable_updateHeld,
+        Carryable_updateRenderState,
+        Carryable_free,
+        Carryable_getCarryState,
+        Carryable_wasJustGrabbed,
+        Carryable_getSurfaceType,
+        Carryable_setGravityEnabled,
+        Carryable_setDropDisabled,
+        Carryable_getDropDisabled,
+        Carryable_setSuppressPositionSave,
+        Carryable_stopCarrying,
+        NULL,
+    },
 };

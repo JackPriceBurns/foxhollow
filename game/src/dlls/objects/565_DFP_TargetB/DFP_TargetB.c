@@ -3,15 +3,14 @@
  * raycasts for hits, snaps to stored path points, plays impact/loop SFX,
  * and reports completion.
  */
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/objhits.h"
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/objfx.h"
 #include "main/mapEvent.h"
 #include "main/model.h"
@@ -424,22 +423,33 @@ void dfptargetblock_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDfptargetblockObjDescriptorInitAdapter, dfptargetblock_init, obj, placement)
+OBJECT_FREE_ADAPTER(gDfptargetblockObjDescriptorFreeAdapter, dfptargetblock_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDfptargetblockObjDescriptorTypeIdAdapter, dfptargetblock_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfptargetblockObjDescriptorExtraSizeAdapter, dfptargetblock_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDfptargetblockObjDescriptorAcquire, dfptargetblock_initialise)
+
 ObjectDescriptor10WithPadding gDfptargetblockObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gDfptargetblockObjDescriptorAcquire,
+            dfptargetblock_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)dfptargetblock_initialise,
-        (ObjectDescriptorCallback)dfptargetblock_release,
-        0,
-        (ObjectDescriptorCallback)dfptargetblock_init,
-        (ObjectDescriptorCallback)dfptargetblock_update,
-        (ObjectDescriptorCallback)dfptargetblock_hitDetect,
-        (ObjectDescriptorCallback)dfptargetblock_render,
-        (ObjectDescriptorCallback)dfptargetblock_free,
-        (ObjectDescriptorCallback)dfptargetblock_getObjectTypeId,
-        dfptargetblock_getExtraSize,
+        gDfptargetblockObjDescriptorInitAdapter,
+        dfptargetblock_update,
+        dfptargetblock_hitDetect,
+        dfptargetblock_render,
+        gDfptargetblockObjDescriptorFreeAdapter,
+        gDfptargetblockObjDescriptorTypeIdAdapter,
+        gDfptargetblockObjDescriptorExtraSizeAdapter,
     },
     0,
 };

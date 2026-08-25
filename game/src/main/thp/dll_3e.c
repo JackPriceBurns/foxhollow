@@ -23,11 +23,11 @@
 #include "dolphin/vi/vifuncs.h"
 #include "main/dll/FRONT/dll_3B.h"
 #include "main/dll/FRONT/n_options.h"
-#include "main/attract_movie_api.h"
+#include "main/attract_movie.h"
 #include "main/fileio.h"
 #include "main/audio_decode_thread.h"
 #include "main/dll/FRONT/picmenu.h"
-#include "main/dll/dll_3e_api.h"
+#include "main/dll/dll_3e.h"
 #include "dolphin/thp/THPDraw.h"
 #include "dolphin/thp/THPDecode.h"
 
@@ -99,7 +99,7 @@ static BOOL DecodeNextMovieFramePC(void)
         componentData += componentSize;
     }
 
-    player->curAudioTrack = sPcMovieFrame;
+    player->curVideoFrameNumber = sPcMovieFrame;
     if (decoded)
     {
         player->videoError = 0;
@@ -191,7 +191,7 @@ static void PlayControl(u32 retraceCount) {
 
         if (allowPop != 0) {
             if (gAttractMoviePlayer.audioExists != 0) {
-                frame = gAttractMoviePlayer.curAudioTrack - gAttractMoviePlayer.curVideoNumber;
+                frame = gAttractMoviePlayer.curVideoFrameNumber - gAttractMoviePlayer.curAudioFrameNumber;
                 if (frame <= 1) {
                     decodedTexture = (AttractMovieTextureSet*)PopDecodedTextureSet(0);
                     if (gAttractMoviePlayer.videoDecodeCount > frame) {
@@ -209,7 +209,7 @@ static void PlayControl(u32 retraceCount) {
         }
     } else if (ProperTimingForGettingNextFrame() != 0) {
         if (gAttractMoviePlayer.audioExists != 0) {
-            frame = gAttractMoviePlayer.curAudioTrack - gAttractMoviePlayer.curVideoNumber;
+            frame = gAttractMoviePlayer.curVideoFrameNumber - gAttractMoviePlayer.curAudioFrameNumber;
             if (frame <= 1) {
                 decodedTexture = (AttractMovieTextureSet*)PopDecodedTextureSet(0);
                 if (gAttractMoviePlayer.videoDecodeCount > frame) {
@@ -222,7 +222,7 @@ static void PlayControl(u32 retraceCount) {
     }
 
     if ((decodedTexture != NULL) && (decodedTexture != (AttractMovieTextureSet*)-1)) {
-        gAttractMoviePlayer.curAudioTrack = decodedTexture->frameNumber;
+        gAttractMoviePlayer.curVideoFrameNumber = decodedTexture->frameNumber;
         if (gAttractMoviePlayer.curTextureSet != NULL) {
             OSSendMessage(&gAttractMovieSpentTextureSetQueue, (OSMessage)gAttractMoviePlayer.curTextureSet,
                           OS_MESSAGE_NOBLOCK);
@@ -232,11 +232,11 @@ static void PlayControl(u32 retraceCount) {
 
     if ((gAttractMoviePlayer.playFlags & THP_PLAY_LOOP) == 0) {
         if (gAttractMoviePlayer.audioExists != 0) {
-            modResult = (gAttractMoviePlayer.curVideoNumber + gAttractMoviePlayer.initReadFrame) %
+            modResult = (gAttractMoviePlayer.curAudioFrameNumber + gAttractMoviePlayer.initReadFrame) %
                         gAttractMoviePlayer.header.mNumFrames;
             if ((modResult == (gAttractMoviePlayer.header.mNumFrames - 1)) &&
-                (gAttractMoviePlayer.dispTextureSet == NULL)) {
-                modResult = (gAttractMoviePlayer.curAudioTrack + gAttractMoviePlayer.initReadFrame) %
+                (gAttractMoviePlayer.curAudioBuffer == NULL)) {
+                modResult = (gAttractMoviePlayer.curVideoFrameNumber + gAttractMoviePlayer.initReadFrame) %
                             gAttractMoviePlayer.header.mNumFrames;
                 if ((modResult == (gAttractMoviePlayer.header.mNumFrames - 1)) && (decodedTexture == NULL)) {
                     gAttractMoviePlayer.internalState = 3;
@@ -245,7 +245,7 @@ static void PlayControl(u32 retraceCount) {
             }
         } else {
             u32 numFrames;
-            modResult = (gAttractMoviePlayer.curAudioTrack + gAttractMoviePlayer.initReadFrame) %
+            modResult = (gAttractMoviePlayer.curVideoFrameNumber + gAttractMoviePlayer.initReadFrame) %
                         (numFrames = gAttractMoviePlayer.header.mNumFrames);
             if ((modResult == (numFrames - 1)) && (decodedTexture == NULL)) {
                 gAttractMoviePlayer.internalState = 3;
@@ -254,7 +254,7 @@ static void PlayControl(u32 retraceCount) {
         }
     } else {
         u32 numFrames;
-        modResult = (gAttractMoviePlayer.curAudioTrack + gAttractMoviePlayer.initReadFrame) %
+        modResult = (gAttractMoviePlayer.curVideoFrameNumber + gAttractMoviePlayer.initReadFrame) %
                     (numFrames = gAttractMoviePlayer.header.mNumFrames);
         if (modResult == (numFrames - 1)) {
             gAttractMovieLoopCompleted = 1;
@@ -347,10 +347,10 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         sPcMovieTexture = 0;
         sPcMovieFrameTicks = (OSTime)((f64)OS_TIMER_CLOCK / player->header.mFrameRate);
         sPcMovieNextFrameTime = OSGetTime() + sPcMovieFrameTicks;
-        player->curAudioTrack = 0;
-        player->curVideoNumber = 0;
+        player->curVideoFrameNumber = 0;
+        player->curAudioFrameNumber = 0;
         player->curTextureSet = NULL;
-        player->dispTextureSet = NULL;
+        player->curAudioBuffer = NULL;
         if (player->audioExists != 0)
         {
             AttractMovieAudio_InitQueuesPC();
@@ -365,11 +365,11 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         return TRUE;
 
         if (player->isOnMemory != 0) {
-            if (DVDRead(&player->fileInfo, player->loopFrame, player->header.mMovieDataSize,
+            if (DVDRead(&player->fileInfo, player->movieData, player->header.mMovieDataSize,
                         player->header.mMovieDataOffsets) < 0) {
                 return FALSE;
             }
-            startOffset = ((uintptr_t)player->loopFrame + player->initOffset) - player->header.mMovieDataOffsets;
+            startOffset = ((uintptr_t)player->movieData + player->initOffset) - player->header.mMovieDataOffsets;
             CreateVideoDecodeThread(0xf, startOffset);
             if (player->audioExists != 0) {
                 CreateAudioDecodeThread(0xc, (void*)startOffset);
@@ -397,10 +397,10 @@ BOOL prepareAttractMode(u32 movieIndex, s32 playFlags) {
         }
         player->state = 1;
         player->internalState = 0;
-        player->curAudioTrack = 0;
-        player->curVideoNumber = 0;
+        player->curVideoFrameNumber = 0;
+        player->curAudioFrameNumber = 0;
         player->curTextureSet = NULL;
-        player->dispTextureSet = NULL;
+        player->curAudioBuffer = NULL;
         OldVIPostCallback = VISetPostRetraceCallback(PlayControl);
         return TRUE;
     }

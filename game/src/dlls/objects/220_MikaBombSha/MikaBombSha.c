@@ -7,7 +7,7 @@
 #include "dlls/objects/220_MikaBombShadow.h"
 #include "main/frame_timing.h"
 #include "main/objhits.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 
 int MikaBombShadow_getExtraSize(void) {
     return sizeof(MikaBombShadowState);
@@ -70,19 +70,30 @@ void MikaBombShadow_release(void) {
 void MikaBombShadow_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMikaBombShadowObjDescriptorInitAdapter, MikaBombShadow_init, obj)
+OBJECT_FREE_ADAPTER(gMikaBombShadowObjDescriptorFreeAdapter, MikaBombShadow_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMikaBombShadowObjDescriptorTypeIdAdapter, MikaBombShadow_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMikaBombShadowObjDescriptorExtraSizeAdapter, MikaBombShadow_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMikaBombShadowObjDescriptorAcquire, MikaBombShadow_initialise)
+
 ObjectDescriptor gMikaBombShadowObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMikaBombShadowObjDescriptorAcquire,
+        MikaBombShadow_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)MikaBombShadow_initialise,
-    (ObjectDescriptorCallback)MikaBombShadow_release,
-    0,
-    (ObjectDescriptorCallback)MikaBombShadow_init,
-    (ObjectDescriptorCallback)MikaBombShadow_update,
-    (ObjectDescriptorCallback)MikaBombShadow_hitDetect,
-    (ObjectDescriptorCallback)MikaBombShadow_render,
-    (ObjectDescriptorCallback)MikaBombShadow_free,
-    (ObjectDescriptorCallback)MikaBombShadow_getObjectTypeId,
-    MikaBombShadow_getExtraSize,
+    gMikaBombShadowObjDescriptorInitAdapter,
+    MikaBombShadow_update,
+    MikaBombShadow_hitDetect,
+    MikaBombShadow_render,
+    gMikaBombShadowObjDescriptorFreeAdapter,
+    gMikaBombShadowObjDescriptorTypeIdAdapter,
+    gMikaBombShadowObjDescriptorExtraSizeAdapter,
 };

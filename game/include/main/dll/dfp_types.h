@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "types.h"
+#include "main/gamebit_latch.h"
 
 typedef struct DfpFlags7 {
     u8 b80 : 1;
@@ -24,7 +25,7 @@ typedef struct DfpLevelControlState {
     u16 unused04;
     u8 previousPuzzlePadState;
     DfpLevelControlSfxState previousSfxState;
-    s32 musicLatchMask;
+    int musicLatch;
 } DfpLevelControlState;
 
 typedef struct DfpSeqPointState {

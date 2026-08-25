@@ -2,7 +2,6 @@
 #define MAIN_DLL_DLL_0000_GAMEUI_H_
 
 #include "types.h"
-#include "main/dll/dll_0000_gameui_api.h"
 #include "main/texture.h"
 
 /* Shared struct layouts for the in-game GameUI / HUD / C-menu subsystem
@@ -59,11 +58,29 @@ typedef struct
 
 STATIC_ASSERT(sizeof(PauseMenuTokenEntry) == 0x8);
 
+typedef enum HudStatusSlot
+{
+    HUD_STATUS_HEALTH,
+    HUD_STATUS_TRICKY_FOOD,
+    HUD_STATUS_MAGIC,
+    HUD_STATUS_SCARABS,
+    HUD_STATUS_BOMB_SPORES,
+    HUD_STATUS_UNKNOWN_5,
+    HUD_STATUS_UNKNOWN_6,
+    HUD_STATUS_MAX_HEALTH,
+    HUD_STATUS_MAX_MAGIC,
+    HUD_STATUS_TRICKY_ENERGY,
+    HUD_STATUS_FIREFLIES,
+    HUD_STATUS_MOON_SEEDS,
+    HUD_STATUS_FUEL_CELLS,
+    HUD_STATUS_COUNT
+} HudStatusSlot;
+
 typedef struct
 {
     u8 pad000[0x190];
     int times190[12]; /* 0x190 */
-    void* textures1C0[0x66]; /* 0x1c0 */
+    Texture* hudTextures[0x66];
     s16 texIds358[0x28]; /* 0x358 */
     void* textures3A8[0x28]; /* 0x3a8 */
     u8 itemFlags[0x40]; /* 0x448 */
@@ -75,9 +92,15 @@ typedef struct
     int usedBits[0x40]; /* 0x648 */
     int activeBits[0x40]; /* 0x748 */
     int ownedBits[0x40]; /* 0x848 */
-    s16 textureIds[0x40]; /* 0x948 */
+    s16 itemSlots[0x40];
     struct Texture* itemTextures[0x40]; /* 0x9c8 */
-    u8 padAC8[0xf0]; /* 0xac8 */
+    f32 statusAnimation[HUD_STATUS_COUNT];
+    f32 statusOpacity[HUD_STATUS_COUNT];
+    int statusPrevious[HUD_STATUS_COUNT];
+    u8 statusGameBitSet[HUD_STATUS_COUNT];
+    u8 padB71[0xB74 - 0xB71];
+    int statusValue[HUD_STATUS_COUNT];
+    u8 padBA8[0xBB8 - 0xBA8];
     int visibleItemStates[7]; /* 0xbb8 */
     void* visibleItemTextures[7]; /* 0xbd4 */
     struct GameObject* ringIcons[3]; /* 0xbf0 */
@@ -86,6 +109,12 @@ typedef struct
     struct GameObject* anims[4]; /* 0xc20 */
     struct GameObject* menuObjects[2]; /* 0xc30 */
 } CMenuHud;
+
+STATIC_ASSERT(offsetof(CMenuHud, statusAnimation) == 0xAC8);
+STATIC_ASSERT(offsetof(CMenuHud, statusOpacity) == 0xAFC);
+STATIC_ASSERT(offsetof(CMenuHud, statusPrevious) == 0xB30);
+STATIC_ASSERT(offsetof(CMenuHud, statusGameBitSet) == 0xB64);
+STATIC_ASSERT(offsetof(CMenuHud, statusValue) == 0xB74);
 
 typedef struct
 {
@@ -121,22 +150,6 @@ typedef struct
     int flags11D0[12]; /* 0x11d0 */
 } PauseTbl;
 
-typedef struct
-{
-    u8 pad000[0x1c0];
-    Texture* hudTextures[102]; /* 0x1c0 */
-    u8 pad358[offsetof(CMenuHud, itemFlags) - (0x1c0 + sizeof(Texture*) * 102)];
-    u8 itemFlags[64]; /* 0x448 */
-    u8 pad488[offsetof(CMenuHud, textureIds) - offsetof(CMenuHud, itemFlags) - 64];
-    s16 itemSlots[64]; /* 0x948 */
-    Texture* itemTextures[64]; /* 0x9c8 */
-    f32 itemFade[13]; /* 0xac8 */
-    f32 counterOpacity[13]; /* 0xafc */
-    int previousItemValues[13]; /* 0xb30 */
-    u8 itemGotFlags[13]; /* 0xb64 */
-    int displayedItemValues[13]; /* 0xb74 */
-} GameUiHud;
-
 extern u32 gGameUiHudAnimObjIds[6];
 
 /* extern-cleanup: defining-file public prototypes */
@@ -171,11 +184,28 @@ void GameUI_unselectAllItems(void);
 void GameUI_frameEnd(void);
 s32 CMenu_GetState(void);
 void CMenu_SetShouldClose(int value);
-#ifdef FEAR_TEST_METER_POSITION_INT
-void fearTestMeterSetRange(u8 start, u8 end, int position);
-#else
 void fearTestMeterSetRange(u8 start, u8 end, s16 position);
-#endif
+
+
+
+
+int cMenuGetSelectedItem(void);
+void drawHudBox(s16 x, s16 y, s16 width, s16 height, u8 alpha, u8 flags);
+u8 pauseMenuGetTokenConfirmFlag(void);
+int registerNewScore(s8 tableId, int score, u8 kind, int mode);
+void timeListPromptOpen(void);
+void GameUI_releaseMenuResources(void);
+void gameUiEndOverlayView(void);
+void CMenu_SetFadeCounter(s16 value);
+void showHelpText(s16 val);
+u8 getWorldMapVoiceoverTimer(void);
+void Pause_SetDisabled(u8 disabled);
+void Pause_ResetMenuFrameCounter(void);
+s32 isTalkingToNpc(void);
+void setShowWorldMapHud(u8 visible);
+
+void forceAButtonIcon(int icon);
+void gameUiBeginOverlayView(f32 fov, f32 x, f32 y);
 
 
 #endif /* MAIN_DLL_DLL_0000_GAMEUI_H_ */

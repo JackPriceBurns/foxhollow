@@ -3,6 +3,6 @@
 
 #include "game/objects/object.h"
 
-void playerUpdateBlinkAnimation(void* obj, void* blinkState, u16 flags);
+void playerUpdateBlinkAnimation(GameObject* obj, void* blinkState, u16 flags);
 
 #endif /* MAIN_PLAYER_EYE_ANIM_H_ */

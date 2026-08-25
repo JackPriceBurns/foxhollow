@@ -7,10 +7,10 @@
 #include "dlls/objects/289.h"
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
-#include "main/minimap_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/minimap.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "sys/objects.h"
 
 int infotext_getExtraSize(void) {
@@ -45,19 +45,26 @@ void infotext_init(GameObject* obj, InfoTextPlacement* placement) {
     objSetHintTextIdx(obj, placement->hintTextIndex);
 }
 
+OBJECT_INIT_ADAPTER(gInfoTextObjDescriptorInitAdapter, infotext_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gInfoTextObjDescriptorExtraSizeAdapter, infotext_getExtraSize)
+
 ObjectDescriptor gInfoTextObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gInfoTextObjDescriptorInitAdapter,
+    infotext_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)infotext_init,
-    (ObjectDescriptorCallback)infotext_update,
-    0,
-    0,
-    0,
-    0,
-    infotext_getExtraSize,
+    gInfoTextObjDescriptorExtraSizeAdapter,
 };

@@ -22,13 +22,7 @@ typedef struct WallAnimatorPlacement {
 /* WallAnimator_getExtraSize proves the complete 0x08-byte allocation. */
 typedef struct WallAnimatorState {
     s32 timer; /* 0x00 */
-    union {
-        u8 status; /* 0x04 */
-        struct {
-            u8 complete : 1; /* 0x80 */
-            u8 unused : 7;
-        };
-    };
+    u8 complete;
     u8 pad05[3]; /* 0x05 */
 } WallAnimatorState;
 
@@ -50,11 +44,13 @@ u8 WallAnimator_getEnergyCost(GameObject* obj);
 /* gWallAnimatorObjDescriptor from slot02 onwards: the export table other
    objects reach through obj->anim.dll. */
 typedef struct WallAnimatorInterface {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     f32 (*applyImpact)(GameObject* obj, GameObject* target);
     u8 (*isComplete)(GameObject* obj);
-    int (*getEnergyCost)(GameObject* obj);
+    u8 (*getEnergyCost)(GameObject* obj);
 } WallAnimatorInterface;
+
+OBJECT_DESCRIPTOR_TYPE(WallAnimatorDescriptor, WallAnimatorInterface);
 
 #define WALL_ANIMATOR_INTERFACE(wall) ((WallAnimatorInterface*)*((GameObject*)(wall))->anim.dll)
 
@@ -70,6 +66,6 @@ void WallAnimator_render(GameObject* obj, int renderArg2, int renderArg3, int re
 void WallAnimator_update(GameObject* obj);
 void WallAnimator_init(GameObject* objAddress, WallAnimatorPlacement* placement);
 
-extern ObjectDescriptor14 gWallAnimatorObjDescriptor;
+extern WallAnimatorDescriptor gWallAnimatorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_315_WALLANIMATO_H_ */

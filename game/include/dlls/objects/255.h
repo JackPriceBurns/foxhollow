@@ -23,21 +23,7 @@
 #define MAGICGEM_FLAG_BURST_MASK  (MAGICGEM_FLAG_BURST1 | MAGICGEM_FLAG_BURST2)
 
 typedef struct MagicGemState {
-    union {
-        CurvesCollisionState path;
-        struct {
-            u8 pad000[offsetof(CurvesCollisionState, segmentHits) + sizeof(f32)];
-            f32 contactNormalY;
-            u8 pad070[offsetof(CurvesCollisionState, subtype) -
-                      (offsetof(CurvesCollisionState, segmentHits) + sizeof(f32) * 2)];
-            u8 unk25B;
-            u8 pad25C[offsetof(CurvesCollisionState, surfaceCounter) -
-                      (offsetof(CurvesCollisionState, subtype) + sizeof(u8))];
-            s8 contacted;
-            u8 pad262[sizeof(CurvesCollisionState) -
-                      (offsetof(CurvesCollisionState, surfaceCounter) + sizeof(s8))];
-        };
-    };
+    CurvesCollisionState path;
     f32 collectRadius;
     f32 burstTimer;
     u16 burstEffectId;

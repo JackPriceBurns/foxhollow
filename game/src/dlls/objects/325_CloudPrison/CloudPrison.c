@@ -165,22 +165,37 @@ void CloudPrisonControl_initialise(void) {
     gCloudPrisonControlNeedsCurveLookup = 1;
 }
 
+OBJECT_INIT_ADAPTER(gCloudPrisonControlObjDescriptorInitAdapter, CloudPrisonControl_init, obj)
+OBJECT_UPDATE_ADAPTER(gCloudPrisonControlObjDescriptorUpdateAdapter, CloudPrisonControl_update, obj)
+OBJECT_HIT_DETECT_ADAPTER(gCloudPrisonControlObjDescriptorHitDetectAdapter, CloudPrisonControl_hitDetect)
+OBJECT_RENDER_ADAPTER(gCloudPrisonControlObjDescriptorRenderAdapter, CloudPrisonControl_render, obj, arg2, arg3,
+                      arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gCloudPrisonControlObjDescriptorFreeAdapter, CloudPrisonControl_free)
+OBJECT_TYPE_ID_ADAPTER(gCloudPrisonControlObjDescriptorTypeIdAdapter, CloudPrisonControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCloudPrisonControlObjDescriptorExtraSizeAdapter, CloudPrisonControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCloudPrisonControlObjDescriptorAcquire, CloudPrisonControl_initialise)
+
 CloudPrisonControlDescriptor gCloudPrisonControlObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gCloudPrisonControlObjDescriptorAcquire,
+            CloudPrisonControl_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        CloudPrisonControl_initialise,
-        CloudPrisonControl_release,
-        0,
-        (ObjectDescriptorCallback)CloudPrisonControl_init,
-        (ObjectDescriptorCallback)CloudPrisonControl_update,
-        CloudPrisonControl_hitDetect,
-        (ObjectDescriptorCallback)CloudPrisonControl_render,
-        CloudPrisonControl_free,
-        (ObjectDescriptorCallback)CloudPrisonControl_getObjectTypeId,
-        CloudPrisonControl_getExtraSize,
+        gCloudPrisonControlObjDescriptorInitAdapter,
+        gCloudPrisonControlObjDescriptorUpdateAdapter,
+        gCloudPrisonControlObjDescriptorHitDetectAdapter,
+        gCloudPrisonControlObjDescriptorRenderAdapter,
+        gCloudPrisonControlObjDescriptorFreeAdapter,
+        gCloudPrisonControlObjDescriptorTypeIdAdapter,
+        gCloudPrisonControlObjDescriptorExtraSizeAdapter,
     },
     {
         0x00000000,

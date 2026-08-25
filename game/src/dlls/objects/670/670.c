@@ -37,19 +37,33 @@ void Dummy29E_release(void) {
 void Dummy29E_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll29EObjDescriptorInitAdapter, Dummy29E_init)
+OBJECT_UPDATE_ADAPTER(gDll29EObjDescriptorUpdateAdapter, Dummy29E_update)
+OBJECT_HIT_DETECT_ADAPTER(gDll29EObjDescriptorHitDetectAdapter, Dummy29E_hitDetect)
+OBJECT_RENDER_ADAPTER(gDll29EObjDescriptorRenderAdapter, Dummy29E_render)
+OBJECT_FREE_ADAPTER(gDll29EObjDescriptorFreeAdapter, Dummy29E_free)
+OBJECT_TYPE_ID_ADAPTER(gDll29EObjDescriptorTypeIdAdapter, Dummy29E_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll29EObjDescriptorExtraSizeAdapter, Dummy29E_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll29EObjDescriptorAcquire, Dummy29E_initialise)
+
 ObjectDescriptor gDll29EObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Dummy29E_initialise,
-    (ObjectDescriptorCallback)Dummy29E_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll29EObjDescriptorAcquire,
+        Dummy29E_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)Dummy29E_init,
-    (ObjectDescriptorCallback)Dummy29E_update,
-    (ObjectDescriptorCallback)Dummy29E_hitDetect,
-    (ObjectDescriptorCallback)Dummy29E_render,
-    (ObjectDescriptorCallback)Dummy29E_free,
-    (ObjectDescriptorCallback)Dummy29E_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)Dummy29E_getExtraSize,
+    gDll29EObjDescriptorInitAdapter,
+    gDll29EObjDescriptorUpdateAdapter,
+    gDll29EObjDescriptorHitDetectAdapter,
+    gDll29EObjDescriptorRenderAdapter,
+    gDll29EObjDescriptorFreeAdapter,
+    gDll29EObjDescriptorTypeIdAdapter,
+    gDll29EObjDescriptorExtraSizeAdapter,
 };

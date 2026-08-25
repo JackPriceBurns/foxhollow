@@ -4,22 +4,22 @@
  */
 #include "dlls/objects/512.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
 #include "game/objects/object.h"
 #include "main/audio/sfx_ids.h"
 #include "main/debug.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_status.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "main/mapEventTypes.h"
 #include "main/objHitReact.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -437,19 +437,31 @@ void dll_200_release(void) {
 void dll_200_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll200ObjDescriptorInitAdapter, dll_200_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll200ObjDescriptorHitDetectAdapter, dll_200_hitDetect)
+OBJECT_FREE_ADAPTER(gDll200ObjDescriptorFreeAdapter, dll_200_free)
+OBJECT_TYPE_ID_ADAPTER(gDll200ObjDescriptorTypeIdAdapter, dll_200_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll200ObjDescriptorExtraSizeAdapter, dll_200_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll200ObjDescriptorAcquire, dll_200_initialise)
+
 ObjectDescriptor gDll200ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll200ObjDescriptorAcquire,
+        dll_200_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    dll_200_initialise,
-    dll_200_release,
-    0,
-    (ObjectDescriptorCallback)dll_200_init,
-    (ObjectDescriptorCallback)dll_200_update,
-    dll_200_hitDetect,
-    (ObjectDescriptorCallback)dll_200_render,
-    dll_200_free,
-    (ObjectDescriptorCallback)dll_200_getObjectTypeId,
-    dll_200_getExtraSize,
+    gDll200ObjDescriptorInitAdapter,
+    dll_200_update,
+    gDll200ObjDescriptorHitDetectAdapter,
+    dll_200_render,
+    gDll200ObjDescriptorFreeAdapter,
+    gDll200ObjDescriptorTypeIdAdapter,
+    gDll200ObjDescriptorExtraSizeAdapter,
 };

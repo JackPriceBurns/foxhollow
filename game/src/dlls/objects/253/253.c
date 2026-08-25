@@ -9,8 +9,8 @@
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/gamebits_api.h"
-#include "main/objprint_render_api.h"
+#include "main/gamebits.h"
+#include "main/objprint_render.h"
 
 #define DLL_FD_RENDER_SCALE         1.0f
 #define DLL_FD_TARGET_SEARCH_RADIUS 1e+02f
@@ -150,19 +150,30 @@ void dll_FD_release(void) {
 void dll_FD_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDllFDObjDescriptorInitAdapter, dll_FD_init, obj)
+OBJECT_FREE_ADAPTER(gDllFDObjDescriptorFreeAdapter, dll_FD_free)
+OBJECT_TYPE_ID_ADAPTER(gDllFDObjDescriptorTypeIdAdapter, dll_FD_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllFDObjDescriptorExtraSizeAdapter, dll_FD_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDllFDObjDescriptorAcquire, dll_FD_initialise)
+
 ObjectDescriptor gDllFDObjDescriptor = {
-    0,                                                /* reserved0 */
-    0,                                                /* reserved1 */
-    0,                                                /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                 /* slotCountAndFlags */
-    (ObjectDescriptorCallback)dll_FD_initialise,      /* initialise */
-    (ObjectDescriptorCallback)dll_FD_release,         /* release */
-    0,                                                /* slot02 */
-    (ObjectDescriptorCallback)dll_FD_init,            /* init */
-    (ObjectDescriptorCallback)dll_FD_update,          /* update */
-    (ObjectDescriptorCallback)dll_FD_hitDetect,       /* hitDetect */
-    (ObjectDescriptorCallback)dll_FD_render,          /* render */
-    (ObjectDescriptorCallback)dll_FD_free,            /* free */
-    (ObjectDescriptorCallback)dll_FD_getObjectTypeId, /* getObjectTypeId */
-    dll_FD_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDllFDObjDescriptorAcquire,
+        dll_FD_release,
+    },
+    0,
+    gDllFDObjDescriptorInitAdapter,
+    dll_FD_update,
+    dll_FD_hitDetect,
+    dll_FD_render,
+    gDllFDObjDescriptorFreeAdapter,
+    gDllFDObjDescriptorTypeIdAdapter,
+    gDllFDObjDescriptorExtraSizeAdapter,
 };

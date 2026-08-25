@@ -32,10 +32,10 @@
 #include "main/gamebit_ids.h"
 #include "dlls/object_descriptor.h"
 #include "main/vecmath.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/objhits.h"
 #include "main/obj_message.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 
 #define TRICKY_CURVE_GAMEBIT_HIT       0x468
 #define TRICKY_CURVE_PLAYER_ANIM_SLIDE 0x1d7
@@ -344,7 +344,7 @@ void TrickyCurve_updateCooldownTrigger(GameObject* obj)
     {
         randomX = 0.01f * randomGetRange(-0x17, 0x17);
         randomZ = 0.01f * randomGetRange(-0x17, 0x17);
-        playerApplyHorizontalVelocity_nop((int)player, randomX, randomZ);
+        playerApplyHorizontalVelocity_nop(player, randomX, randomZ);
     }
     return;
 }
@@ -574,19 +574,32 @@ void TrickyCurve_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gTrickyCurveObjDescriptorInitAdapter, TrickyCurve_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gTrickyCurveObjDescriptorHitDetectAdapter, TrickyCurve_hitDetect)
+OBJECT_RENDER_ADAPTER(gTrickyCurveObjDescriptorRenderAdapter, TrickyCurve_render)
+OBJECT_FREE_ADAPTER(gTrickyCurveObjDescriptorFreeAdapter, TrickyCurve_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gTrickyCurveObjDescriptorTypeIdAdapter, TrickyCurve_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTrickyCurveObjDescriptorExtraSizeAdapter, TrickyCurve_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTrickyCurveObjDescriptorAcquire, TrickyCurve_initialise)
+
 ObjectDescriptor gTrickyCurveObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gTrickyCurveObjDescriptorAcquire,
+        TrickyCurve_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)TrickyCurve_initialise,
-    (ObjectDescriptorCallback)TrickyCurve_release,
-    0,
-    (ObjectDescriptorCallback)TrickyCurve_init,
-    (ObjectDescriptorCallback)TrickyCurve_update,
-    (ObjectDescriptorCallback)TrickyCurve_hitDetect,
-    (ObjectDescriptorCallback)TrickyCurve_render,
-    (ObjectDescriptorCallback)TrickyCurve_free,
-    (ObjectDescriptorCallback)TrickyCurve_getObjectTypeId,
-    TrickyCurve_getExtraSize,
+    gTrickyCurveObjDescriptorInitAdapter,
+    TrickyCurve_update,
+    gTrickyCurveObjDescriptorHitDetectAdapter,
+    gTrickyCurveObjDescriptorRenderAdapter,
+    gTrickyCurveObjDescriptorFreeAdapter,
+    gTrickyCurveObjDescriptorTypeIdAdapter,
+    gTrickyCurveObjDescriptorExtraSizeAdapter,
 };

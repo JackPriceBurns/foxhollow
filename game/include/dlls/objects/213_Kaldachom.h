@@ -102,6 +102,7 @@ extern s16 gKaldachomMoves[6];
 extern f32 gKaldachomMoveSpeeds[5];
 extern KaldachomStateHandler gKaldachomStateHandlersA[8];
 extern KaldachomStateHandler gKaldachomStateHandlersB[6];
-extern ObjectDescriptor12 gKaldachomObjDescriptor;
+struct KaldachomObjDescriptorType;
+extern struct KaldachomObjDescriptorType gKaldachomObjDescriptor;
 
 #endif /* DLLS_OBJECTS_213_KALDACHOM_H_ */

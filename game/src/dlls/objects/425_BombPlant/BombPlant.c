@@ -2,19 +2,18 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_80136a40.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
 #include "main/objseq.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -138,9 +137,9 @@ static const BombPlantStateConfig sBombPlantStateConfigs[] = {
 static void bombPlant_restorePosition(GameObject* obj, const BombPlantPlacement* placement) {
     obj->anim.alpha = 0xFF;
     obj->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
-    obj->anim.localPos.x = placement->base.posX;
-    obj->anim.localPos.y = placement->base.posY;
-    obj->anim.localPos.z = placement->base.posZ;
+    obj->anim.localPosX = placement->base.posX;
+    obj->anim.localPosY = placement->base.posY;
+    obj->anim.localPosZ = placement->base.posZ;
 }
 
 static void bombPlant_beginGrowth(GameObject* obj, BombPlantState* state) {
@@ -186,7 +185,7 @@ static int bombPlant_animEventCallback(GameObject* obj) {
 static void bombPlant_tryBeginGrow(GameObject* obj, BombPlantState* state) {
     GameObject* player = Obj_GetPlayerObject();
 
-    if (vec3f_distanceSquared(&obj->anim.worldPos.x, &player->anim.worldPos.x) > 6400.0f) {
+    if (vec3f_distanceSquared(&obj->anim.worldPosX, &player->anim.worldPosX) > 6400.0f) {
         state->stateId = BOMB_PLANT_STATE_GROWING;
         state->flags |= BOMB_PLANT_JUST_ENTERED;
     }
@@ -218,9 +217,9 @@ static void bombPlant_spawnSpore(GameObject* obj) {
     transform.x = 26.0f * offset.x;
     transform.y = 26.0f * offset.y;
     transform.z = 26.0f * offset.z;
-    spore->base.posX = obj->anim.localPos.x + transform.x;
-    spore->base.posY = obj->anim.localPos.y + transform.y;
-    spore->base.posZ = obj->anim.localPos.z + transform.z;
+    spore->base.posX = obj->anim.localPosX + transform.x;
+    spore->base.posY = obj->anim.localPosY + transform.y;
+    spore->base.posZ = obj->anim.localPosZ + transform.z;
     spore->base.color[1] = 1;
     spore->base.color[0] = 2;
     spore->angleSpread = (s16)((s32)placement->sporeAngleSpreadByte * 0x100);
@@ -442,23 +441,29 @@ static void bombPlant_init(GameObject* obj, BombPlantPlacement* placement, int i
     }
 }
 
+OBJECT_INIT_ADAPTER(gBombPlantObjDescriptorInitAdapter, bombPlant_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gBombPlantObjDescriptorHitDetectAdapter, bombPlant_hitDetect)
+OBJECT_FREE_ADAPTER(gBombPlantObjDescriptorFreeAdapter, bombPlant_free)
+OBJECT_TYPE_ID_ADAPTER(gBombPlantObjDescriptorTypeIdAdapter, bombPlant_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBombPlantObjDescriptorExtraSizeAdapter, bombPlant_getExtraSize)
+
 ObjectDescriptor10WithPadding gBombPlantObjDescriptor = {
     .descriptor =
         {
-            .reserved0 = 0,
-            .reserved1 = 0,
-            .reserved2 = 0,
-            .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-            .initialise = NULL,
-            .release = NULL,
+            .header.metadata[0] = 0,
+            .header.metadata[1] = 0,
+            .header.metadata[2] = 0,
+            .header.metadata[3] = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            .header.acquire = NULL,
+            .header.release = NULL,
             .slot02 = NULL,
-            .init = (ObjectDescriptorCallback)bombPlant_init,
-            .update = (ObjectDescriptorCallback)bombPlant_update,
-            .hitDetect = bombPlant_hitDetect,
-            .render = (ObjectDescriptorCallback)bombPlant_render,
-            .free = bombPlant_free,
-            .getObjectTypeId = (ObjectDescriptorCallback)bombPlant_getObjectTypeId,
-            .getExtraSize = bombPlant_getExtraSize,
+            .init = gBombPlantObjDescriptorInitAdapter,
+            .update = bombPlant_update,
+            .hitDetect = gBombPlantObjDescriptorHitDetectAdapter,
+            .render = bombPlant_render,
+            .free = gBombPlantObjDescriptorFreeAdapter,
+            .getObjectTypeId = gBombPlantObjDescriptorTypeIdAdapter,
+            .getExtraSize = gBombPlantObjDescriptorExtraSizeAdapter,
         },
     .padding = 0,
 };

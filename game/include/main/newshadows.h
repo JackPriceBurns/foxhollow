@@ -6,7 +6,7 @@
 
 void updateReflectionTextures(void);
 void selectReflectionTexture(int id);
-void* textureAlloc512(void);
+Texture* textureAlloc512(void);
 void findSomething(void* needle);
 
 
@@ -18,20 +18,20 @@ void newShadowsBeginFrame(void);
 void freeNewShadowDistortionTexture(void);
 void createNewShadowDistortionTexture(void);
 
-uintptr_t getReflectionTexture1(void);
-void getReflectionTexture2(uintptr_t* out);
-void getNewShadowCausticTexture(uintptr_t* out);
-void getNewShadowDiskTexture(uintptr_t* out);
+Texture* getReflectionTexture1(void);
+void getReflectionTexture2(Texture** out);
+void getNewShadowCausticTexture(Texture** out);
+void getNewShadowDiskTexture(Texture** out);
 void newshadows_getReflectionScrollOffsets(f32* outScrollX, f32* outScrollY);
-uintptr_t getNewShadowReflectionGradientTexture(void);
-void getNewShadowSnowFlashTexture(uintptr_t* out);
+Texture* getNewShadowReflectionGradientTexture(void);
+void getNewShadowSnowFlashTexture(Texture** out);
 void getNewShadowHeatHazeTexture(Texture** out);
 void getNewShadowRingTexture(Texture** out);
 void getNewShadowLightningTexture(Texture** out);
 void getNewShadowHeavyFogTexture(Texture** out);
 void getNewShadowDistortionTexture(Texture** out);
 void getNewShadowRadialTexture(Texture** out);
-void getNewShadowRampTexture(uintptr_t* out);
+void getNewShadowRampTexture(Texture** out);
 void loadNewShadowBumpTexture(int texMapId);
 void selectWhirlpoolTexture(int id);
 void getNewShadowNoiseTextureFrames(Texture*** tableOut, int* frameCountOut);

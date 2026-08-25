@@ -5,19 +5,20 @@
  * its pull-up attack, mouth projectiles, hit reactions, and dust effects.
  */
 #include "dlls/objects/213_Kaldachom.h"
+#include "dlls/objects/237.h"
 #include "dlls/objects/214_KaldachomMe.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/dll_005A_staffcollision.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/mapEventTypes.h"
 #include "main/objanim.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
 #include "main/player_control_interface.h"
@@ -25,9 +26,9 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/player_state_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/dll/player_state.h"
+#include "main/gamebits.h"
 #include "main/obj_path.h"
 #include "main/objtype.h"
 
@@ -237,8 +238,7 @@ int kaldachom_stateHandlerA07(GameObject* obj, GroundBaddieState* state) {
             }
             if (linkedObj != NULL) {
                 f32 fz = 0.0f;
-                ((void (*)(GameObject*, f32, f32, f32))linkedObj->anim.dll[0][11])(
-                    linkedObj, fz, 1.0f, fz);
+                COLLECTIBLE_INTERFACE(linkedObj)->startBounceMotion(linkedObj, fz, 1.0f, fz);
             }
         }
     }
@@ -775,21 +775,45 @@ void kaldachom_initialise(void) {
     gKaldachomStateHandlersB[5] = kaldachom_stateHandlerB05;
 }
 
-ObjectDescriptor12 gKaldachomObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)kaldachom_initialise,
-    (ObjectDescriptorCallback)kaldachom_release,
-    0,
-    (ObjectDescriptorCallback)kaldachom_init,
-    (ObjectDescriptorCallback)kaldachom_update,
-    (ObjectDescriptorCallback)kaldachom_hitDetect,
-    (ObjectDescriptorCallback)kaldachom_render,
-    (ObjectDescriptorCallback)kaldachom_free,
-    (ObjectDescriptorCallback)kaldachom_getObjectTypeId,
-    kaldachom_getExtraSize,
-    (ObjectDescriptorCallback)kaldachom_getControlMode,
-    (ObjectDescriptorCallback)kaldachom_func0B,
+OBJECT_INIT_ADAPTER(gKaldachomObjDescriptorInitAdapter, kaldachom_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gKaldachomObjDescriptorFreeAdapter, kaldachom_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKaldachomObjDescriptorTypeIdAdapter, kaldachom_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKaldachomObjDescriptorExtraSizeAdapter, kaldachom_getExtraSize)
+
+typedef struct KaldachomObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(kaldachom_getControlMode)* kaldachom_getControlMode;
+    __typeof__(kaldachom_func0B)* kaldachom_func0B;
+} KaldachomObjDescriptorTypeInterface;
+
+struct KaldachomObjDescriptorType {
+    ObjectDescriptorHeader header;
+    KaldachomObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gKaldachomObjDescriptorAcquire, kaldachom_initialise)
+
+struct KaldachomObjDescriptorType gKaldachomObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gKaldachomObjDescriptorAcquire,
+        kaldachom_release,
+    },
+    {
+        0,
+        gKaldachomObjDescriptorInitAdapter,
+        kaldachom_update,
+        kaldachom_hitDetect,
+        kaldachom_render,
+        gKaldachomObjDescriptorFreeAdapter,
+        gKaldachomObjDescriptorTypeIdAdapter,
+        gKaldachomObjDescriptorExtraSizeAdapter,
+        kaldachom_getControlMode,
+        kaldachom_func0B,
+    },
 };

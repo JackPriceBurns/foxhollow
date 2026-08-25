@@ -7,11 +7,11 @@
  */
 #include "dlls/objects/387_MMP_gyserve.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/vecmath.h"
 
 #define MMP_GEYSER_VENT_PARTICLE_GEYSER     0x724
@@ -73,19 +73,32 @@ void mmpGeyserVent_release(void) {
 void mmpGeyserVent_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMPGeyserVentObjDescriptorInitAdapter, mmpGeyserVent_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gMMPGeyserVentObjDescriptorHitDetectAdapter, mmpGeyserVent_hitDetect)
+OBJECT_RENDER_ADAPTER(gMMPGeyserVentObjDescriptorRenderAdapter, mmpGeyserVent_render)
+OBJECT_FREE_ADAPTER(gMMPGeyserVentObjDescriptorFreeAdapter, mmpGeyserVent_free)
+OBJECT_TYPE_ID_ADAPTER(gMMPGeyserVentObjDescriptorTypeIdAdapter, mmpGeyserVent_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMPGeyserVentObjDescriptorExtraSizeAdapter, mmpGeyserVent_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMPGeyserVentObjDescriptorAcquire, mmpGeyserVent_initialise)
+
 ObjectDescriptor gMMPGeyserVentObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMPGeyserVentObjDescriptorAcquire,
+        mmpGeyserVent_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmpGeyserVent_initialise,
-    (ObjectDescriptorCallback)mmpGeyserVent_release,
-    0,
-    (ObjectDescriptorCallback)mmpGeyserVent_init,
-    (ObjectDescriptorCallback)mmpGeyserVent_update,
-    (ObjectDescriptorCallback)mmpGeyserVent_hitDetect,
-    (ObjectDescriptorCallback)mmpGeyserVent_render,
-    (ObjectDescriptorCallback)mmpGeyserVent_free,
-    (ObjectDescriptorCallback)mmpGeyserVent_getObjectTypeId,
-    mmpGeyserVent_getExtraSize,
+    gMMPGeyserVentObjDescriptorInitAdapter,
+    mmpGeyserVent_update,
+    gMMPGeyserVentObjDescriptorHitDetectAdapter,
+    gMMPGeyserVentObjDescriptorRenderAdapter,
+    gMMPGeyserVentObjDescriptorFreeAdapter,
+    gMMPGeyserVentObjDescriptorTypeIdAdapter,
+    gMMPGeyserVentObjDescriptorExtraSizeAdapter,
 };

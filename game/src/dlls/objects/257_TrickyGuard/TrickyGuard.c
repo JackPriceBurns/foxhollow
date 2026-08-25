@@ -8,7 +8,7 @@
 #include "dlls/objects/288_TrickyGuard.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/gamebits.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "sys/objects/lifecycle.h"
 
 void TrickyGuard_update(GameObject* obj) {
@@ -43,16 +43,22 @@ void TrickyGuard_init(GameObject* obj, TrickyGuardPlacement* placement) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gTrickyGuardObjDescriptorInitAdapter, TrickyGuard_init, obj, placement)
+
 ObjectDescriptor gTrickyGuardObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)TrickyGuard_init,
-    (ObjectDescriptorCallback)TrickyGuard_update,
+    gTrickyGuardObjDescriptorInitAdapter,
+    TrickyGuard_update,
     0,
     0,
     0,

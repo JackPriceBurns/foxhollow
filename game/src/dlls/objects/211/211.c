@@ -23,18 +23,18 @@
 #include "main/dll/baddie_control_interface.h"
 #include "string.h"
 #include "sys/objects.h"
-#include "main/shader_api.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "main/shader.h"
+#include "dolphin/math.h"
 #include "main/dll/path_control_interface.h"
 #include "main/dll/partfx_interface.h"
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/dll/landedArwing.h"
 #include "main/dll/dll_00D3_staffAction.h"
 #include "main/obj_list.h"
 #include "main/frame_timing.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/object_render.h"
 #include "main/trig.h"
 #include "main/objseq.h"
@@ -46,7 +46,7 @@
 #include "game/objects/object_setup.h"
 #include "main/obj_contact.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtype.h"
 #include "sys/objects/lifecycle.h"
 
@@ -268,7 +268,7 @@ u32 LandedArwing_UpdateFlightChase(GameObject* obj, BaddieState* state)
     ((ObjHitsPriorityState *)obj->anim.hitReactState)->objectPairHitVolume = LANDED_ARWING_OBJECT_PAIR_HIT_VOLUME;
     ObjHits_RegisterActiveHitVolumeObject(obj);
 
-    (*gPathControlInterface)->advance(obj, &state->flags4, timeDelta);
+    (*gPathControlInterface)->advance(obj, &state->curvesCollision, timeDelta);
 
     if (sub->surfaceMode != LANDED_ARWING_SCRIPT_MODE)
     {
@@ -416,7 +416,7 @@ u32 landedarwing_updateMovementState(GameObject* obj, BaddieState* baddie)
     ((ObjHitsPriorityState*)obj->anim.hitReactState)->objectPairPriority = 9;
     ((ObjHitsPriorityState*)obj->anim.hitReactState)->objectPairHitVolume = 1;
     ObjHits_RegisterActiveHitVolumeObject(obj);
-    (*gPathControlInterface)->advance(obj, &baddie->flags4, timeDelta);
+    (*gPathControlInterface)->advance(obj, &baddie->curvesCollision, timeDelta);
     if (baddie->moveJustStartedA != 0)
     {
         if (state->surfaceMode == 6)
@@ -1400,19 +1400,31 @@ void dll_D3_initialise(void)
     gLandedArwingDefaultStateHandler = LandedArwing_ReturnZero;
 }
 
+OBJECT_INIT_ADAPTER(gDllD3ObjDescriptorInitAdapter, dll_D3_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gDllD3ObjDescriptorHitDetectAdapter, dll_D3_hitDetect_nop)
+OBJECT_FREE_ADAPTER(gDllD3ObjDescriptorFreeAdapter, dll_D3_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDllD3ObjDescriptorTypeIdAdapter, dll_D3_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDllD3ObjDescriptorExtraSizeAdapter, dll_D3_getExtraSize_ret_1188)
+
+RESOURCE_ACQUIRE_ADAPTER(gDllD3ObjDescriptorAcquire, dll_D3_initialise)
+
 ObjectDescriptor gDllD3ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDllD3ObjDescriptorAcquire,
+        dll_D3_release_nop,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dll_D3_initialise,
-    (ObjectDescriptorCallback)dll_D3_release_nop,
-    0,
-    (ObjectDescriptorCallback)dll_D3_init,
-    (ObjectDescriptorCallback)dll_D3_update,
-    (ObjectDescriptorCallback)dll_D3_hitDetect_nop,
-    (ObjectDescriptorCallback)dll_D3_render,
-    (ObjectDescriptorCallback)dll_D3_free,
-    (ObjectDescriptorCallback)dll_D3_getObjectTypeId,
-    dll_D3_getExtraSize_ret_1188,
+    gDllD3ObjDescriptorInitAdapter,
+    dll_D3_update,
+    gDllD3ObjDescriptorHitDetectAdapter,
+    dll_D3_render,
+    gDllD3ObjDescriptorFreeAdapter,
+    gDllD3ObjDescriptorTypeIdAdapter,
+    gDllD3ObjDescriptorExtraSizeAdapter,
 };

@@ -13,14 +13,14 @@
  */
 #include "main/dll/dll_02B6_cnthitobjec.h"
 #include "main/dll/mcupgrade_state.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/gamebits.h"
 #include "main/game_ui_interface.h"
 #include "sys/objects.h"
 #include "main/objseq.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/dll/dll_02B7_mcupgrade.h"
 #include "main/dll/dll_02B8_mcupgradema.h"
 
@@ -64,16 +64,22 @@ int mcupgradema_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     return 0;
 }
 
+OBJECT_INIT_ADAPTER(gMCUpgradeObjDescriptorInitAdapter, mcupgrade_init, obj)
+
 ObjectDescriptor gMCUpgradeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)mcupgrade_init,
-    (ObjectDescriptorCallback)mcupgrade_update,
+    gMCUpgradeObjDescriptorInitAdapter,
+    mcupgrade_update,
     0,
     0,
     0,

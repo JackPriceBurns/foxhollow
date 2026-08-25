@@ -8,8 +8,8 @@
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
-#include "main/dll/firepipe_effect_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/dll/firepipe_effect.h"
+#include "main/maketex_timer.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -124,22 +124,47 @@ void FlameThrowerspe_release(void) {
 void FlameThrowerspe_initialise(void) {
 }
 
-ObjectDescriptor13 gFlameThrowerspeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    (ObjectDescriptorCallback)FlameThrowerspe_initialise,
-    (ObjectDescriptorCallback)FlameThrowerspe_release,
-    0,
-    (ObjectDescriptorCallback)FlameThrowerspe_init,
-    (ObjectDescriptorCallback)FlameThrowerspe_update,
-    (ObjectDescriptorCallback)FlameThrowerspe_hitDetect,
-    (ObjectDescriptorCallback)FlameThrowerspe_render,
-    (ObjectDescriptorCallback)FlameThrowerspe_free,
-    (ObjectDescriptorCallback)FlameThrowerspe_getObjectTypeId,
-    FlameThrowerspe_getExtraSize,
-    (ObjectDescriptorCallback)FlameThrowerspe_setTransform,
-    (ObjectDescriptorCallback)FlameThrowerspe_launch,
-    (ObjectDescriptorCallback)FlameThrowerspe_modelMtxFn,
+OBJECT_INIT_ADAPTER(gFlameThrowerspeObjDescriptorInitAdapter, FlameThrowerspe_init, obj, placement)
+OBJECT_FREE_ADAPTER(gFlameThrowerspeObjDescriptorFreeAdapter, FlameThrowerspe_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFlameThrowerspeObjDescriptorTypeIdAdapter, FlameThrowerspe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFlameThrowerspeObjDescriptorExtraSizeAdapter, FlameThrowerspe_getExtraSize)
+
+typedef struct FlameThrowerspeObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(FlameThrowerspe_setTransform)* FlameThrowerspe_setTransform;
+    __typeof__(FlameThrowerspe_launch)* FlameThrowerspe_launch;
+    __typeof__(FlameThrowerspe_modelMtxFn)* FlameThrowerspe_modelMtxFn;
+} FlameThrowerspeObjDescriptorTypeInterface;
+
+struct FlameThrowerspeObjDescriptorType {
+    ObjectDescriptorHeader header;
+    FlameThrowerspeObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gFlameThrowerspeObjDescriptorAcquire, FlameThrowerspe_initialise)
+
+struct FlameThrowerspeObjDescriptorType gFlameThrowerspeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        gFlameThrowerspeObjDescriptorAcquire,
+        FlameThrowerspe_release,
+    },
+    {
+        0,
+        gFlameThrowerspeObjDescriptorInitAdapter,
+        FlameThrowerspe_update,
+        FlameThrowerspe_hitDetect,
+        FlameThrowerspe_render,
+        gFlameThrowerspeObjDescriptorFreeAdapter,
+        gFlameThrowerspeObjDescriptorTypeIdAdapter,
+        gFlameThrowerspeObjDescriptorExtraSizeAdapter,
+        FlameThrowerspe_setTransform,
+        FlameThrowerspe_launch,
+        FlameThrowerspe_modelMtxFn,
+    },
 };

@@ -4,7 +4,7 @@
  * Each crawler waits at its spawn point, dives toward a nearby target,
  * and then attacks or retreats according to its variant flags.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dlls/object_descriptor.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/WM/dll_0211_wmwallcrawler.h"
@@ -14,14 +14,13 @@
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/maketex_random_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/audio/sfx.h"
+#include "main/maketex_random.h"
+#include "main/maketex_timer.h"
 #include "main/obj_message.h"
 #include "main/object_update_list.h"
 #include "main/objhits.h"
@@ -359,9 +358,9 @@ void wmwallcrawler_update(GameObject* obj)
                     {
                         if ((state->flags & WMWALLCRAWLER_FLAG_PATH_CONTROL) != 0)
                         {
-                            (*gPathControlInterface)->update((void*)ob, state, timeDelta);
-                            (*gPathControlInterface)->apply((void*)ob, state);
-                            (*gPathControlInterface)->advance((void*)ob, state, timeDelta);
+                            (*gPathControlInterface)->update((void*)ob, &state->pathState, timeDelta);
+                            (*gPathControlInterface)->apply((void*)ob, &state->pathState);
+                            (*gPathControlInterface)->advance((void*)ob, &state->pathState, timeDelta);
                         }
                         sq = ob->anim.velocityX * ob->anim.velocityX +
                              ob->anim.velocityZ * ob->anim.velocityZ;
@@ -472,9 +471,9 @@ void wmwallcrawler_update(GameObject* obj)
                                 Sfx_PlayFromObject((GameObject*)ob, SFXTRIG_id_47);
                                 if ((state->flags & WMWALLCRAWLER_FLAG_PATH_CONTROL) != 0)
                                 {
-                                    (*gPathControlInterface)->update((void*)ob, state, timeDelta);
-                                    (*gPathControlInterface)->apply((void*)ob, state);
-                                    (*gPathControlInterface)->advance((void*)ob, state, timeDelta);
+                                    (*gPathControlInterface)->update((void*)ob, &state->pathState, timeDelta);
+                                    (*gPathControlInterface)->apply((void*)ob, &state->pathState);
+                                    (*gPathControlInterface)->advance((void*)ob, &state->pathState, timeDelta);
                                 }
                                 if ((state->flags & WMWALLCRAWLER_FLAG_FLOOR_SNAP) != 0)
                                 {
@@ -713,11 +712,11 @@ void wmwallcrawler_init(GameObject* obj, WmwallcrawlerMapData* mapData)
     if ((state->flags & WMWALLCRAWLER_FLAG_PATH_CONTROL) != 0)
     {
         state->pathState.subtype = 1;
-        (*gPathControlInterface)->init((void*)state, 0, 0, 1);
+        (*gPathControlInterface)->init(&state->pathState, 0, 0, 1);
         (*gPathControlInterface)
-            ->setLocalPointCollision((void*)state, 1, gWallCrawlerPointCollision, sWallCrawlerCollisionBone, 4);
-        (*gPathControlInterface)->attachObject((void*)obj, state);
-        *(u32*)state |= 0x40008;
+            ->setLocalPointCollision(&state->pathState, 1, gWallCrawlerPointCollision, sWallCrawlerCollisionBone, 4);
+        (*gPathControlInterface)->attachObject((void*)obj, &state->pathState);
+        state->pathState.flags |= 0x40008;
     }
     (obj)->animEventCallback = wmwallcrawler_animEventCallback;
     ObjHits_EnableObject(obj);
@@ -735,22 +734,33 @@ void wmwallcrawler_initialise(void)
 u16 gWallCrawlerVariantFlags[8] = {0x0000, 0x0002, 0x0004, 0x0001, 0x000C, 0x03F7, 0x0167, 0x050C};
 f32 gWallCrawlerPointCollision[3] = {0.0f, 0.0f, 0.0f};
 
+OBJECT_INIT_ADAPTER(gWM_WallCrawlerObjDescriptorInitAdapter, wmwallcrawler_init, obj, placement)
+OBJECT_FREE_ADAPTER(gWM_WallCrawlerObjDescriptorFreeAdapter, wmwallcrawler_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_WallCrawlerObjDescriptorTypeIdAdapter, wmwallcrawler_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_WallCrawlerObjDescriptorExtraSizeAdapter, wmwallcrawler_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_WallCrawlerObjDescriptorAcquire, wmwallcrawler_initialise)
+
 ObjectDescriptor10WithPadding gWM_WallCrawlerObjDescriptor = {
     {
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+            },
+            gWM_WallCrawlerObjDescriptorAcquire,
+            wmwallcrawler_release,
+        },
         0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-        (ObjectDescriptorCallback)wmwallcrawler_initialise,
-        (ObjectDescriptorCallback)wmwallcrawler_release,
-        0,
-        (ObjectDescriptorCallback)wmwallcrawler_init,
-        (ObjectDescriptorCallback)wmwallcrawler_update,
-        (ObjectDescriptorCallback)wmwallcrawler_hitDetect,
-        (ObjectDescriptorCallback)wmwallcrawler_render,
-        (ObjectDescriptorCallback)wmwallcrawler_free,
-        (ObjectDescriptorCallback)wmwallcrawler_getObjectTypeId,
-        (ObjectDescriptorExtraSizeCallback)wmwallcrawler_getExtraSize,
+        gWM_WallCrawlerObjDescriptorInitAdapter,
+        wmwallcrawler_update,
+        wmwallcrawler_hitDetect,
+        wmwallcrawler_render,
+        gWM_WallCrawlerObjDescriptorFreeAdapter,
+        gWM_WallCrawlerObjDescriptorTypeIdAdapter,
+        gWM_WallCrawlerObjDescriptorExtraSizeAdapter,
     },
     0,
 };

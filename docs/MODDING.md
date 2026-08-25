@@ -751,7 +751,7 @@ locomotion", and short of all four it mostly falls through the world. Not a star
 
 Saves store **absolute world coordinates**:
 `SaveGameCharacterPosition{f32 x, y, z; s8 angle; s8 mapLayer; s8 mapDataFileId}`
-(`game/include/main/dll/dll_0017_savegame_api.h`), fed to the player by `objLoadPlayerFromSave`.
+(`game/include/main/dll/dll_0017_savegame.h`), fed to the player by `objLoadPlayerFromSave`.
 
 - **Under a projection mirror**, nothing needs doing. The world never moved, so saves are fully
   compatible in both directions.

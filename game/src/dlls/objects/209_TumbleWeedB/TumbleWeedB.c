@@ -8,9 +8,8 @@
  */
 #include "dlls/objects/209_TumbleWeedB.h"
 #include "dlls/objects/210.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/obj_list.h"
@@ -19,18 +18,17 @@
 #include "main/objhits.h"
 #include "main/objtype.h"
 #include "main/sky_interface.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "string.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
-#include "main/audio/sfx_looped_object_api.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/path_control_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
 #include "main/obj_message.h"
 
 #define TUMBLEWEED_BUSH_SEQUENCE_A           0x28d
@@ -46,9 +44,6 @@
 #define TUMBLEWEED_BUSH_SIBLING_SETUP_SIZE   0x20
 #define TUMBLEWEED_BUSH_SIBLING_SETUP_FLAGS  5
 #define TUMBLEWEED_BUSH_ACTIVE_PIECE_PHASE   7
-#define TUMBLEWEED_BUSH_QUERY_STATE_SLOT     8
-#define TUMBLEWEED_BUSH_SET_ORIGIN_SLOT      9
-#define TUMBLEWEED_BUSH_DETACH_SLOT          10
 #define TUMBLEWEED_BUSH_HIT_EFFECT_ID        8
 #define TUMBLEWEED_BUSH_HIT_COLOR_R          0xff
 #define TUMBLEWEED_BUSH_HIT_COLOR_G          0xff
@@ -168,8 +163,7 @@ s8 tumbleweedbush_spawnSibling(GameObject* obj) {
         {
             GameObject* spawnedPiece = state->pieceObjects[freePieceIndex];
 
-            ((void (*)(GameObject*, f32, f32))(*spawnedPiece->anim.dll)[TUMBLEWEED_BUSH_SET_ORIGIN_SLOT])(
-                spawnedPiece, obj->anim.localPosX, obj->anim.localPosZ);
+            TUMBLEWEED_INTERFACE(spawnedPiece)->setHome(spawnedPiece, obj->anim.localPosX, obj->anim.localPosZ);
         }
     }
     state->spawnedCount++;
@@ -241,7 +235,7 @@ void TumbleWeedBush_update(GameObject* obj) {
                             continue;
                         }
                     }
-                    ((void (*)(GameObject*))(*(*pieceSlot)->anim.dll)[TUMBLEWEED_BUSH_DETACH_SLOT])(*pieceSlot);
+                    TUMBLEWEED_INTERFACE(*pieceSlot)->fall(*pieceSlot);
                 }
             }
         }
@@ -257,7 +251,7 @@ void TumbleWeedBush_update(GameObject* obj) {
     for (; (u8)pieceIndex < state->pieceCount; pieceIndex++) {
         pieceSlot = &state->pieceObjects[(u8)pieceIndex];
         if (*pieceSlot != NULL) {
-            if (((int (*)(GameObject*))(*(*pieceSlot)->anim.dll)[TUMBLEWEED_BUSH_QUERY_STATE_SLOT])(*pieceSlot) > 1) {
+            if (TUMBLEWEED_INTERFACE(*pieceSlot)->getPhase(*pieceSlot) > 1) {
                 *pieceSlot = NULL;
             }
         }
@@ -406,8 +400,6 @@ f32 gTumbleweedBushPieceOffsetTable[2][4][3] = {
 #define TUMBLEWEED_MESSAGE_PICKUP         0x7000b /* player collected: award and burst */
 #define TUMBLEWEED_OBJECT_GROUP           3
 #define TUMBLEWEED_SECONDARY_OBJECT_GROUP 0x31
-#define TUMBLEWEED_BUSH_REMOVE_PIECE_SLOT 8
-
 #define TUMBLEWEED_TRICKY_COMMAND_KIND 0
 #define TUMBLEWEED_TRICKY_COMMAND_TYPE 1
 
@@ -570,7 +562,7 @@ void tumbleweed_free(GameObject* obj) {
         GameObject* bush = objects[objectIndex];
 
         if (bushSeqId == bush->anim.romDefNo) {
-            ((void (*)(GameObject*, GameObject*))(*bush->anim.dll)[TUMBLEWEED_BUSH_REMOVE_PIECE_SLOT])(bush, obj);
+            TUMBLEWEED_BUSH_INTERFACE(bush)->removePieceReference(bush, obj);
         }
         objectIndex++;
     }
@@ -599,7 +591,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
 
         if (phase == TUMBLEWEED_PHASE_GROWING) {
             if (obj->anim.rootMotionScale < state->targetScale) {
-                obj->anim.rootMotionScale += state->growRate * timeDelta;
+                obj->anim.rootMotionScale += state->phaseValue * timeDelta;
             } else {
                 state->phase = TUMBLEWEED_PHASE_ARMED;
             }
@@ -662,7 +654,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
                 }
             }
             tumbleweed_updateRollingMotion(obj, state);
-            (*gPathControlInterface)->advance(obj, state, timeDelta);
+            (*gPathControlInterface)->advance(obj, &state->pathState, timeDelta);
             state->phaseTimer -= timeDelta;
             if (state->phaseTimer < 0.0f) {
                 state->flags |= TUMBLEWEED_EFFECT_FLAGS_ALL;
@@ -672,7 +664,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
                     state->flags |= TUMBLEWEED_EFFECT_FLAGS_BURST_PUFF;
                     state->flags &= ~TUMBLEWEED_EFFECT_FLAG_HIT_PULSE;
                     state->phase = TUMBLEWEED_PHASE_PICKUP_APPROACH;
-                    state->growRate = 300.0f;
+                    state->phaseValue = 300.0f;
                     state->phaseTimer = 1200.0f;
                     Obj_SetActiveModelIndex(obj, 1);
                 } else {
@@ -690,11 +682,11 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
                 ObjMsg_SendToObject(player, TUMBLEWEED_MESSAGE_IN_RANGE, obj, (uintptr_t)&state->triggerGameBit);
                 state->phase = TUMBLEWEED_PHASE_PICKUP_WAIT;
             } else {
-                state->growRate -= timeDelta;
+                state->phaseValue -= timeDelta;
                 state->phaseTimer -= timeDelta;
                 if (state->phaseTimer < 0.0f) {
                     state->flags |= TUMBLEWEED_EFFECT_FLAGS_ALL;
-                } else if (state->growRate <= 0.0f) {
+                } else if (state->phaseValue <= 0.0f) {
                     state->flags |= TUMBLEWEED_EFFECT_FLAGS_ALL;
                 } else if (ObjHits_GetPriorityHit(obj, &hitObject, &sphereIndex, &hitVolume) != 0 &&
                            hitObject->anim.romDefNo != obj->anim.romDefNo) {
@@ -702,7 +694,7 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
                 }
             }
             tumbleweedbush_updateDetachedPiece(obj, state);
-            (*gPathControlInterface)->advance(obj, state, timeDelta);
+            (*gPathControlInterface)->advance(obj, &state->pathState, timeDelta);
         } else if (phase == TUMBLEWEED_PHASE_PICKUP_WAIT) {
             while (ObjMsg_Pop(obj, &messageId, 0, 0) != 0) {
                 if (messageId == TUMBLEWEED_MESSAGE_PICKUP) {
@@ -760,10 +752,10 @@ void tumbleweed_updateStateMachine(GameObject* obj) {
             obj->anim.localPosX = state->targetPos[0];
             obj->anim.localPosY = state->targetPos[1];
             obj->anim.localPosZ = state->targetPos[2];
-        } else if (state->growRate <= 0.0f) {
+        } else if (state->phaseValue <= 0.0f) {
             Obj_FreeObject(obj);
         } else {
-            state->growRate -= timeDelta;
+            state->phaseValue -= timeDelta;
         }
     }
 }
@@ -782,7 +774,7 @@ void tumbleweed_updateTargetedStateMachine(GameObject* obj) {
     if (phase == TUMBLEWEED_PHASE_GROWING) {
         if ((*gSkyInterface)->getSunPosition(&sunPosition) != 0) {
             if (obj->anim.rootMotionScale < state->targetScale) {
-                obj->anim.rootMotionScale += state->growRate * timeDelta;
+                obj->anim.rootMotionScale += state->phaseValue * timeDelta;
             } else {
                 state->phase = TUMBLEWEED_PHASE_ARMED;
             }
@@ -823,15 +815,15 @@ void tumbleweed_updateTargetedStateMachine(GameObject* obj) {
             obj->anim.velocityZ = -(bounceScale * obj->anim.velocityZ);
         }
         tumbleweed_updateRollingMotion(obj, state);
-        (*gPathControlInterface)->advance(obj, state, timeDelta);
+        (*gPathControlInterface)->advance(obj, &state->pathState, timeDelta);
         if (ObjHits_GetPriorityHit(obj, &hitObject, &sphereIndex, &hitVolume) != 0) {
             mainSetBits(GAMEBIT_TumbleweedRelated642, 1);
             state->flags |= TUMBLEWEED_EFFECT_FLAGS_ALL;
         }
-    } else if (state->growRate <= 0.0f) {
+    } else if (state->phaseValue <= 0.0f) {
         Obj_FreeObject(obj);
     } else {
-        state->growRate -= timeDelta;
+        state->phaseValue -= timeDelta;
     }
 }
 
@@ -887,7 +879,7 @@ void tumbleweed_updateEffects(GameObject* obj) {
     if ((state->flags & TUMBLEWEED_EFFECT_FLAG_DESPAWN) != 0) {
         obj->anim.alpha = 0;
         state->phase = TUMBLEWEED_PHASE_DESPAWNING;
-        state->despawnTimer = 120.0f;
+        state->phaseValue = 120.0f;
         ObjHits_DisableObject(obj);
         state->flags &= ~TUMBLEWEED_EFFECT_FLAG_DESPAWN;
     }
@@ -921,13 +913,13 @@ void tumbleweed_init(GameObject* obj, TumbleweedPlacement* placement) {
     state->triggerRange = (u16)(2.0f * ObjAnim_ReadPlacementF32(&obj->anim, &(placement->scale)));
     state->variant = placement->variant;
     state->targetScale = obj->anim.rootMotionScale;
-    state->growRate = state->targetScale / (f32)(s32)randomGetRange(0xc8, 0x1f4);
+    state->phaseValue = state->targetScale / (f32)(s32)randomGetRange(0xc8, 0x1f4);
     state->targetObj = NULL;
     obj->anim.rootMotionScale = 0.001f;
-    (*gPathControlInterface)->init(state, 0, 0x40000, 1);
+    (*gPathControlInterface)->init(&state->pathState, 0, 0x40000, 1);
     (*gPathControlInterface)
-        ->setLocalPointCollision(state, 1, gTumbleweedCollisionPoint, gTumbleweedCollisionPointData, 8);
-    (*gPathControlInterface)->attachObject(obj, state);
+        ->setLocalPointCollision(&state->pathState, 1, gTumbleweedCollisionPoint, gTumbleweedCollisionPointData, 8);
+    (*gPathControlInterface)->attachObject(obj, &state->pathState);
     state->phase = TUMBLEWEED_PHASE_GROWING;
     state->phaseTimer = 1200.0f + (f32)(s32)randomGetRange(-0x12c, 0x12c);
     objAddObjectType(obj, TUMBLEWEED_OBJECT_GROUP);
@@ -941,49 +933,72 @@ void tumbleweed_init(GameObject* obj, TumbleweedPlacement* placement) {
 
 f32 gTumbleweedCollisionPoint[3] = {0.0f, 0.0f, 0.0f};
 
-ObjectDescriptor11WithPadding gTumbleWeedBushObjDescriptor = {
+OBJECT_INIT_ADAPTER(gTumbleWeedBushObjDescriptorInitAdapter, TumbleWeedBush_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gTumbleWeedBushObjDescriptorFreeAdapter, TumbleWeedBush_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gTumbleWeedBushObjDescriptorTypeIdAdapter, TumbleWeedBush_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gTumbleWeedBushObjDescriptorExtraSizeAdapter, TumbleWeedBush_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gTumbleWeedBushObjDescriptorAcquire, TumbleWeedBush_initialise)
+
+TumbleweedBushDescriptorWithPadding gTumbleWeedBushObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)TumbleWeedBush_initialise,
-        (ObjectDescriptorCallback)TumbleWeedBush_release,
-        0,
-        (ObjectDescriptorCallback)TumbleWeedBush_init,
-        (ObjectDescriptorCallback)TumbleWeedBush_update,
-        (ObjectDescriptorCallback)TumbleWeedBush_hitDetect,
-        (ObjectDescriptorCallback)TumbleWeedBush_render,
-        (ObjectDescriptorCallback)TumbleWeedBush_free,
-        (ObjectDescriptorCallback)TumbleWeedBush_getObjectTypeId,
-        TumbleWeedBush_getExtraSize,
-        (ObjectDescriptorCallback)tumbleweedbush_removePieceReference,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gTumbleWeedBushObjDescriptorAcquire,
+            TumbleWeedBush_release,
+        },
+        {
+            0,
+            gTumbleWeedBushObjDescriptorInitAdapter,
+            TumbleWeedBush_update,
+            TumbleWeedBush_hitDetect,
+            TumbleWeedBush_render,
+            gTumbleWeedBushObjDescriptorFreeAdapter,
+            gTumbleWeedBushObjDescriptorTypeIdAdapter,
+            gTumbleWeedBushObjDescriptorExtraSizeAdapter,
+            tumbleweedbush_removePieceReference,
+        },
     },
     0,
 };
 
-ObjectDescriptor16WithPadding gTumbleweedObjDescriptor = {
+OBJECT_INIT_ADAPTER(gTumbleweedObjDescriptorInitAdapter, tumbleweed_init, obj, placement)
+OBJECT_FREE_ADAPTER(gTumbleweedObjDescriptorFreeAdapter, tumbleweed_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gTumbleweedObjDescriptorExtraSizeAdapter, tumbleweed_getExtraSize)
+
+TumbleweedDescriptorWithPadding gTumbleweedObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_16_SLOTS,
-        0,
-        0,
-        0,
-        (ObjectDescriptorCallback)tumbleweed_init,
-        (ObjectDescriptorCallback)tumbleweed_update,
-        0,
-        (ObjectDescriptorCallback)tumbleweed_render,
-        (ObjectDescriptorCallback)tumbleweed_free,
-        0,
-        tumbleweed_getExtraSize,
-        (ObjectDescriptorCallback)tumbleweed_getPhase,
-        (ObjectDescriptorCallback)tumbleweed_setHome,
-        (ObjectDescriptorCallback)tumbleweed_fall,
-        (ObjectDescriptorCallback)tumbleweed_gravitateToPoint,
-        (ObjectDescriptorCallback)tumbleweed_isGravitating,
-        (ObjectDescriptorCallback)tumbleweed_setPlayer,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_16_SLOTS,
+            },
+            0,
+            0,
+        },
+        {
+            0,
+            gTumbleweedObjDescriptorInitAdapter,
+            tumbleweed_update,
+            0,
+            tumbleweed_render,
+            gTumbleweedObjDescriptorFreeAdapter,
+            0,
+            gTumbleweedObjDescriptorExtraSizeAdapter,
+            tumbleweed_getPhase,
+            tumbleweed_setHome,
+            tumbleweed_fall,
+            tumbleweed_gravitateToPoint,
+            tumbleweed_isGravitating,
+            tumbleweed_setPlayer,
+        },
     },
     0,
 };

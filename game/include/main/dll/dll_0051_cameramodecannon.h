@@ -25,20 +25,18 @@ STATIC_ASSERT(offsetof(CameraModeCannonState, target) == 0x00);
 STATIC_ASSERT(sizeof(CameraModeCannonState) == 0x04);
 
 typedef struct CameraModeCannonDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int unused, CameraModeCannonInitParams* params);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeCannonDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeCannonDescriptor, update) == 0x20);

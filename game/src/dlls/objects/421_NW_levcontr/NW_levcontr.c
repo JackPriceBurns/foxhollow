@@ -1,24 +1,23 @@
 #include "dlls/objects/421_NW_levcontr.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "game/objects/object.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
-#include "main/game_timer_control_api.h"
+#include "main/game_timer_control.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_show_api.h"
+#include "main/gamebits.h"
+#include "main/gametext_show.h"
 #include "main/mapEventTypes.h"
 #include "main/model_engine.h"
 #include "main/obj_trigger.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/sky.h"
-#include "main/sky_api.h"
 #include "main/sky_interface.h"
 #include "sys/objects.h"
 
@@ -94,7 +93,7 @@ typedef struct NwLevelControlState {
     u8 mode;
     u8 timerMinutes;
     u8 unused06[2];
-    GameBitLatchState musicLatch;
+    int musicLatch;
     u8 sequenceId;
     u8 nextMode;
     u8 tableIndex;
@@ -228,13 +227,13 @@ static void nwLevelControl_updateMusic(NwLevelControlState* state) {
     if ((*gSkyInterface)->getSunPosition(0) != 0) {
         if (state->dayNightMusicId != -1) {
             state->dayNightMusicId = -1;
-            if ((state->musicLatch.activeMask & NW_LEVEL_CONTROL_DAY_NIGHT_MUSIC_ACTIVE) != 0) {
+            if ((state->musicLatch & NW_LEVEL_CONTROL_DAY_NIGHT_MUSIC_ACTIVE) != 0) {
                 Music_Trigger(MUSICTRIG_galleon_docks, 0);
             }
         }
     } else if (state->dayNightMusicId != MUSICTRIG_galleon_docks) {
         state->dayNightMusicId = MUSICTRIG_galleon_docks;
-        if ((state->musicLatch.activeMask & NW_LEVEL_CONTROL_DAY_NIGHT_MUSIC_ACTIVE) != 0) {
+        if ((state->musicLatch & NW_LEVEL_CONTROL_DAY_NIGHT_MUSIC_ACTIVE) != 0) {
             Music_Trigger(MUSICTRIG_galleon_docks, 1);
         }
     }
@@ -277,16 +276,16 @@ static void nwLevelControl_updateTimerStep(NwLevelControlState* state, GameObjec
         return;
     }
 
-    int activeMask = state->musicLatch.activeMask;
+    int activeMask = state->musicLatch;
     if ((activeMask & NW_LEVEL_CONTROL_TIMER_START_PENDING) != 0) {
-        state->musicLatch.activeMask = activeMask & ~NW_LEVEL_CONTROL_TIMER_START_PENDING;
-        state->musicLatch.activeMask |= NW_LEVEL_CONTROL_TIMER_RUNNING;
+        state->musicLatch = activeMask & ~NW_LEVEL_CONTROL_TIMER_START_PENDING;
+        state->musicLatch |= NW_LEVEL_CONTROL_TIMER_RUNNING;
         gameTimerInit(NW_LEVEL_CONTROL_TIMER, state->timerMinutes);
         timerSetToCountUp();
-        (*gMapEventInterface)->savePoint(&player->anim.localPos.x, player->anim.rotX, 0, 0);
+        (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 0, 0);
     } else if ((activeMask & NW_LEVEL_CONTROL_TIMER_COMPLETE) != 0) {
-        state->musicLatch.activeMask = activeMask & ~NW_LEVEL_CONTROL_TIMER_RUNNING;
-        state->musicLatch.activeMask &= ~NW_LEVEL_CONTROL_TIMER_COMPLETE;
+        state->musicLatch = activeMask & ~NW_LEVEL_CONTROL_TIMER_RUNNING;
+        state->musicLatch &= ~NW_LEVEL_CONTROL_TIMER_COMPLETE;
         gameTimerStop();
         Music_Trigger(NW_LEVEL_CONTROL_TIMER_END_MUSIC, 0);
         mainSetBits(GAMEBIT_SnowHornArtifact19F, 1);
@@ -320,7 +319,7 @@ static void nwLevelControl_updateState(GameObject* obj, GameObject* player, NwLe
     case NW_LEVEL_CONTROL_MODE_WALK_TABLE:
         if (nwLevelControl_advanceSequenceTable(state) != 0) {
             state->timerMinutes = 50;
-            state->musicLatch.activeMask |= NW_LEVEL_CONTROL_TIMER_START_PENDING;
+            state->musicLatch |= NW_LEVEL_CONTROL_TIMER_START_PENDING;
         }
         break;
     case NW_LEVEL_CONTROL_MODE_WALK_STAGE_3:
@@ -332,7 +331,7 @@ static void nwLevelControl_updateState(GameObject* obj, GameObject* player, NwLe
         break;
     case NW_LEVEL_CONTROL_MODE_WALK_FINAL:
         if (nwLevelControl_advanceSequenceTable(state) == 1) {
-            state->musicLatch.activeMask |= NW_LEVEL_CONTROL_TIMER_COMPLETE;
+            state->musicLatch |= NW_LEVEL_CONTROL_TIMER_COMPLETE;
         }
         break;
     case NW_LEVEL_CONTROL_MODE_WAIT_PARENT_SLACK:
@@ -366,7 +365,7 @@ static void nwLevelControl_update(GameObject* obj) {
     nwLevelControl_updateTimerMusic(state);
     nwLevelControl_updateGeyser(obj);
 
-    if ((state->musicLatch.activeMask & NW_LEVEL_CONTROL_TIMER_RUNNING) != 0 && isGameTimerDisabled() != 0) {
+    if ((state->musicLatch & NW_LEVEL_CONTROL_TIMER_RUNNING) != 0 && isGameTimerDisabled() != 0) {
         Sfx_PlayFromObject(NULL, SFXTRIG_sc_lockon22);
         (*gMapEventInterface)->gotoRestartPoint();
         return;
@@ -408,19 +407,22 @@ static void nwLevelControl_init(GameObject* obj) {
     (*gMapEventInterface)->setObjGroupStatus(NW_LEVEL_CONTROL_MAP_EVENT_SLOT, NW_LEVEL_CONTROL_ACTIVE_OBJECT_GROUP, 1);
 }
 
+OBJECT_INIT_ADAPTER(gNWLevelControlObjDescriptorInitAdapter, nwLevelControl_init, obj)
+OBJECT_FREE_ADAPTER(gNWLevelControlObjDescriptorFreeAdapter, nwLevelControl_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gNWLevelControlObjDescriptorExtraSizeAdapter, nwLevelControl_getExtraSize)
+
 ObjectDescriptor gNWLevelControlObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = NULL,
-    .release = NULL,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)nwLevelControl_init,
-    .update = (ObjectDescriptorCallback)nwLevelControl_update,
+    .init = gNWLevelControlObjDescriptorInitAdapter,
+    .update = nwLevelControl_update,
     .hitDetect = NULL,
     .render = NULL,
-    .free = (ObjectDescriptorCallback)nwLevelControl_free,
+    .free = gNWLevelControlObjDescriptorFreeAdapter,
     .getObjectTypeId = NULL,
-    .getExtraSize = nwLevelControl_getExtraSize,
-};
+    .getExtraSize = gNWLevelControlObjDescriptorExtraSizeAdapter,
+};;

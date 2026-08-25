@@ -87,19 +87,32 @@ void CF_DoorLight_release(void) {
 void CF_DoorLight_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCF_DoorLightObjDescriptorInitAdapter, CF_DoorLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCF_DoorLightObjDescriptorHitDetectAdapter, CF_DoorLight_hitDetect)
+OBJECT_RENDER_ADAPTER(gCF_DoorLightObjDescriptorRenderAdapter, CF_DoorLight_render)
+OBJECT_FREE_ADAPTER(gCF_DoorLightObjDescriptorFreeAdapter, CF_DoorLight_free)
+OBJECT_TYPE_ID_ADAPTER(gCF_DoorLightObjDescriptorTypeIdAdapter, CF_DoorLight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCF_DoorLightObjDescriptorExtraSizeAdapter, CF_DoorLight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCF_DoorLightObjDescriptorAcquire, CF_DoorLight_initialise)
+
 ObjectDescriptor gCF_DoorLightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCF_DoorLightObjDescriptorAcquire,
+        CF_DoorLight_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)CF_DoorLight_initialise,
-    (ObjectDescriptorCallback)CF_DoorLight_release,
-    0,
-    (ObjectDescriptorCallback)CF_DoorLight_init,
-    (ObjectDescriptorCallback)CF_DoorLight_update,
-    (ObjectDescriptorCallback)CF_DoorLight_hitDetect,
-    (ObjectDescriptorCallback)CF_DoorLight_render,
-    (ObjectDescriptorCallback)CF_DoorLight_free,
-    (ObjectDescriptorCallback)CF_DoorLight_getObjectTypeId,
-    CF_DoorLight_getExtraSize,
+    gCF_DoorLightObjDescriptorInitAdapter,
+    CF_DoorLight_update,
+    gCF_DoorLightObjDescriptorHitDetectAdapter,
+    gCF_DoorLightObjDescriptorRenderAdapter,
+    gCF_DoorLightObjDescriptorFreeAdapter,
+    gCF_DoorLightObjDescriptorTypeIdAdapter,
+    gCF_DoorLightObjDescriptorExtraSizeAdapter,
 };

@@ -12,12 +12,12 @@
  *
  * The 4-byte extra block holds a single f32 scratch value seeded at init.
  */
-#include "main/lightmap_render_control_api.h"
-#include "main/render_envfx_api.h"
+#include "main/lightmap_render_control.h"
+#include "main/render_envfx.h"
 #include "main/gamebits.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/gamebit_ids.h"
 
 int gKTRexPhaseCounter;
@@ -115,19 +115,32 @@ void KT_RexLevel_release(void) {
 void KT_RexLevel_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKtRexLevelObjDescriptorInitAdapter, KT_RexLevel_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gKtRexLevelObjDescriptorHitDetectAdapter, KT_RexLevel_hitDetect)
+OBJECT_RENDER_ADAPTER(gKtRexLevelObjDescriptorRenderAdapter, KT_RexLevel_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gKtRexLevelObjDescriptorFreeAdapter, KT_RexLevel_free)
+OBJECT_TYPE_ID_ADAPTER(gKtRexLevelObjDescriptorTypeIdAdapter, KT_RexLevel_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtRexLevelObjDescriptorExtraSizeAdapter, KT_RexLevel_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKtRexLevelObjDescriptorAcquire, KT_RexLevel_initialise)
+
 ObjectDescriptor gKtRexLevelObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKtRexLevelObjDescriptorAcquire,
+        KT_RexLevel_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KT_RexLevel_initialise,
-    (ObjectDescriptorCallback)KT_RexLevel_release,
-    0,
-    (ObjectDescriptorCallback)KT_RexLevel_init,
-    (ObjectDescriptorCallback)KT_RexLevel_update,
-    (ObjectDescriptorCallback)KT_RexLevel_hitDetect,
-    (ObjectDescriptorCallback)KT_RexLevel_render,
-    (ObjectDescriptorCallback)KT_RexLevel_free,
-    (ObjectDescriptorCallback)KT_RexLevel_getObjectTypeId,
-    KT_RexLevel_getExtraSize,
+    gKtRexLevelObjDescriptorInitAdapter,
+    KT_RexLevel_update,
+    gKtRexLevelObjDescriptorHitDetectAdapter,
+    gKtRexLevelObjDescriptorRenderAdapter,
+    gKtRexLevelObjDescriptorFreeAdapter,
+    gKtRexLevelObjDescriptorTypeIdAdapter,
+    gKtRexLevelObjDescriptorExtraSizeAdapter,
 };

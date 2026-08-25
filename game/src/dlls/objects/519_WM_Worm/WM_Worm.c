@@ -5,7 +5,7 @@
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 struct WmWormPlacement {
@@ -71,9 +71,11 @@ void WM_Worm_update(GameObject* obj) {
     placement = (const WmWormPlacement*)obj->anim.placementData;
     player = Obj_GetPlayerObject();
     if (player != NULL) {
-        distance = Vec_xzDistance(&player->anim.worldPos.x, &placement->base.posX);
+        distance = Vec_xzDistance(&player->anim.worldPosX, &placement->base.posX);
         if (distance > 440.0f) {
-            obj->anim.localPos = state->homePosition;
+            obj->anim.localPosX = state->homePosition.x;
+            obj->anim.localPosY = state->homePosition.y;
+            obj->anim.localPosZ = state->homePosition.z;
         } else {
             dx = player->anim.worldPosX - obj->anim.localPosX;
             dy = player->anim.worldPosY - obj->anim.localPosY;
@@ -121,7 +123,9 @@ void WM_Worm_init(GameObject* obj, const WmWormPlacement* placement) {
     state->spawnCountOrCooldown = ObjAnim_ReadPlacementS16(&obj->anim, &placement->spawnCountOrCooldown);
     state->zeroIntervalActive = 0;
     obj->userData1 = state->spawnCountOrCooldown < 1 ? state->spawnCountOrCooldown : 0;
-    state->homePosition = obj->anim.localPos;
+    state->homePosition.x = obj->anim.localPosX;
+    state->homePosition.y = obj->anim.localPosY;
+    state->homePosition.z = obj->anim.localPosZ;
 }
 
 void WM_Worm_release(void) {
@@ -130,19 +134,31 @@ void WM_Worm_release(void) {
 void WM_Worm_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_WormObjDescriptorInitAdapter, WM_Worm_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_WormObjDescriptorHitDetectAdapter, WM_Worm_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_WormObjDescriptorFreeAdapter, WM_Worm_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_WormObjDescriptorTypeIdAdapter, WM_Worm_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_WormObjDescriptorExtraSizeAdapter, WM_Worm_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_WormObjDescriptorAcquire, WM_Worm_initialise)
+
 ObjectDescriptor gWM_WormObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_WormObjDescriptorAcquire,
+        WM_Worm_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_Worm_initialise,
-    WM_Worm_release,
-    0,
-    (ObjectDescriptorCallback)WM_Worm_init,
-    (ObjectDescriptorCallback)WM_Worm_update,
-    WM_Worm_hitDetect,
-    (ObjectDescriptorCallback)WM_Worm_render,
-    (ObjectDescriptorCallback)WM_Worm_free,
-    (ObjectDescriptorCallback)WM_Worm_getObjectTypeId,
-    WM_Worm_getExtraSize,
+    gWM_WormObjDescriptorInitAdapter,
+    WM_Worm_update,
+    gWM_WormObjDescriptorHitDetectAdapter,
+    WM_Worm_render,
+    gWM_WormObjDescriptorFreeAdapter,
+    gWM_WormObjDescriptorTypeIdAdapter,
+    gWM_WormObjDescriptorExtraSizeAdapter,
 };

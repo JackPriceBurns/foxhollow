@@ -2,18 +2,18 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/minimap_api.h"
+#include "main/gamebits.h"
+#include "main/minimap.h"
 #include "main/obj_trigger.h"
 #include "main/objfx.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 enum CcSharpClawPadParticleKind {
@@ -79,7 +79,7 @@ static void ccSharpClawPad_update(GameObject* obj) {
             }
         }
         GameObject* player = Obj_GetPlayerObject();
-        if (vec3f_distanceSquared(&obj->anim.worldPos.x, &player->anim.worldPos.x) < 100.0f &&
+        if (vec3f_distanceSquared(&obj->anim.worldPosX, &player->anim.worldPosX) < 100.0f &&
             playerIsDisguised(player) != 0) {
             Sfx_PlayFromObject(obj, SFXTRIG_menuups16k);
             mainSetBits(activationGameBit, 1);
@@ -94,9 +94,16 @@ static void ccSharpClawPad_init(GameObject* obj, const CcSharpClawPadPlacement* 
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gCCSharpClawPadObjDescriptorInitAdapter, ccSharpClawPad_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gCCSharpClawPadObjDescriptorExtraSizeAdapter, ccSharpClawPad_getExtraSize)
+
 ObjectDescriptor gCCSharpClawPadObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .init = (ObjectDescriptorCallback)ccSharpClawPad_init,
-    .update = (ObjectDescriptorCallback)ccSharpClawPad_update,
-    .getExtraSize = ccSharpClawPad_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
+    .init = gCCSharpClawPadObjDescriptorInitAdapter,
+    .update = ccSharpClawPad_update,
+    .getExtraSize = gCCSharpClawPadObjDescriptorExtraSizeAdapter,
+};;

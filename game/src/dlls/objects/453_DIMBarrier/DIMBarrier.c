@@ -3,9 +3,9 @@
 #include "dlls/objects/454_DIMCannon.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 
 typedef enum DimBarrierPhase {
     DIM_BARRIER_PHASE_ARMED,
@@ -114,19 +114,31 @@ void dimbarrier_release(void) {
 void dimbarrier_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMBarrierObjDescriptorInitAdapter, dimbarrier_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMBarrierObjDescriptorHitDetectAdapter, dimbarrier_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMBarrierObjDescriptorFreeAdapter, dimbarrier_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMBarrierObjDescriptorTypeIdAdapter, dimbarrier_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMBarrierObjDescriptorExtraSizeAdapter, dimbarrier_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMBarrierObjDescriptorAcquire, dimbarrier_initialise)
+
 ObjectDescriptor gDIMBarrierObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMBarrierObjDescriptorAcquire,
+        dimbarrier_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimbarrier_initialise,
-    (ObjectDescriptorCallback)dimbarrier_release,
-    0,
-    (ObjectDescriptorCallback)dimbarrier_init,
-    (ObjectDescriptorCallback)dimbarrier_update,
-    (ObjectDescriptorCallback)dimbarrier_hitDetect,
-    (ObjectDescriptorCallback)dimbarrier_render,
-    (ObjectDescriptorCallback)dimbarrier_free,
-    (ObjectDescriptorCallback)dimbarrier_getObjectTypeId,
-    dimbarrier_getExtraSize,
+    gDIMBarrierObjDescriptorInitAdapter,
+    dimbarrier_update,
+    gDIMBarrierObjDescriptorHitDetectAdapter,
+    dimbarrier_render,
+    gDIMBarrierObjDescriptorFreeAdapter,
+    gDIMBarrierObjDescriptorTypeIdAdapter,
+    gDIMBarrierObjDescriptorExtraSizeAdapter,
 };

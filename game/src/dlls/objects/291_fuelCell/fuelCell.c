@@ -17,12 +17,11 @@
 #include "main/objfx.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
-#include "track/intersect_depth_state_api.h"
+#include "track/intersect_depth_state.h"
 #include "dolphin/gx/GXPixel.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gameloop_gamebit_api.h"
-#include "main/hud_visibility_api.h"
+#include "main/audio/sfx.h"
+#include "main/gameloop_gamebit.h"
+#include "main/hud_visibility.h"
 #include "main/objtype.h"
 
 #define FUEL_CELL_MESSAGE_IN_RANGE 0x7000A /* Sent to the player when pickup is offered. */
@@ -161,7 +160,7 @@ void FuelCell_render(GameObject* obj, int p2, int p3, int p4, int p5) {
                     endPosition.z = jitterScale * (f32)(randomGetRange(0, 2000) - 1000) + endPosition.z;
                 }
                 state->lightningEffects[i] =
-                    lightningCreate(&obj->anim.localPos, &endPosition, lightningRadiusX, 0.2f,
+                    lightningCreate((Vec*)&obj->anim.localPosX, &endPosition, lightningRadiusX, 0.2f,
                                     FUEL_CELL_LIGHTNING_LIFETIME_FRAMES, (u8)lightningWidth, 0);
                 state->lightningAges[i] = 0.0f;
                 spawnedLightning = 1;
@@ -229,19 +228,28 @@ void FuelCell_init(GameObject* obj) {
     ObjMsg_AllocQueue(obj, 2);
 }
 
+OBJECT_INIT_ADAPTER(gFuelCellObjDescriptorInitAdapter, FuelCell_init, obj)
+OBJECT_RENDER_ADAPTER(gFuelCellObjDescriptorRenderAdapter, FuelCell_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gFuelCellObjDescriptorFreeAdapter, FuelCell_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gFuelCellObjDescriptorExtraSizeAdapter, FuelCell_getExtraSize)
+
 ObjectDescriptor gFuelCellObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gFuelCellObjDescriptorInitAdapter,
+    FuelCell_update,
     0,
+    gFuelCellObjDescriptorRenderAdapter,
+    gFuelCellObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)FuelCell_init,
-    (ObjectDescriptorCallback)FuelCell_update,
-    0,
-    (ObjectDescriptorCallback)FuelCell_render,
-    (ObjectDescriptorCallback)FuelCell_free,
-    0,
-    FuelCell_getExtraSize,
+    gFuelCellObjDescriptorExtraSizeAdapter,
 };

@@ -1,15 +1,15 @@
 #include "dlls/objects/202.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
-#include "main/camera_shake_api.h"
+#include "main/camera_shake.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -17,7 +17,7 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objseq.h"
 #include "main/player_control_interface.h"
 #include "main/vecmath.h"
@@ -27,27 +27,24 @@
 #include "main/dll/baddie_state.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/wispbaddie_baddie.h"
-#include "main/audio/sfx_position_api.h"
 #include "main/audio/sfx_ids.h"
 #include "main/dll/baddie_setmove.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 #include "main/dll/seqobj11d_ext.h"
 #include "main/dll/wispbaddieseq_ext.h"
-#include "main/gameloop_api.h"
-#include "main/audio/sfx.h"
+#include "main/gameloop.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/rom_curve_interface.h"
-#include "main/gamebits.h"
 #include "main/dll/objfsa.h"
 #include "main/gamebit_ids.h"
 #include "main/dll/newseqobj_baddie.h"
 #include "main/dll/baddie_frozen.h"
 #include "main/game_ui_interface.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/model.h"
 #include "main/object_transform.h"
 #include "main/dll/player_target.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "dlls/objects/225_WispBaddie.h"
 #include "main/trig_float_helpers.h"
 #include "main/obj_link.h"
@@ -66,10 +63,9 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/dll/fall_ladders.h"
 #include "main/dll/fireflyLantern.h"
-#include "main/dll/duster_api.h"
-#include "main/track_bbox_api.h"
-#include "main/sky_interface.h"
 #include "main/dll/duster.h"
+#include "main/track_bbox.h"
+#include "main/sky_interface.h"
 #include "dlls/objects/216_PinPonSpike.h"
 #include "main/dll/duster_wb.h"
 #include "main/obj_query.h"
@@ -871,8 +867,8 @@ void crawler_updateC(GameObject* obj, u8* state)
                 }
             }
             {
-                f32 dx = base->posX - obj->anim.localPosX;
-                f32 dz = base->posZ - obj->anim.localPosZ;
+                f32 dx = base->curve.sample[0] - obj->anim.localPosX;
+                f32 dz = base->curve.sample[2] - obj->anim.localPosZ;
                 f32 dist = sqrtf(dx * dx + dz * dz);
                 if (dist > 160.0f)
                 {
@@ -888,7 +884,7 @@ void crawler_updateC(GameObject* obj, u8* state)
                 }
             }
             if ((Curve_AdvanceAlongPath(&base->curve, ((EnemyState*)state)->pathSpeed) != 0 ||
-                 base->atSegmentEnd != 0) &&
+                 base->curve.idx != 0) &&
                 (*gRomCurveInterface)->goNextPoint(base) != 0 &&
                 (*gRomCurveInterface)
                         ->initCurve(*(RomCurveWalker**)state, obj, 700.0f, (int*)&gCrawlerCurveInitData, -1) != 0)
@@ -901,7 +897,7 @@ void crawler_updateC(GameObject* obj, u8* state)
                 f32 t;
                 f32 diff;
                 f32 a;
-                diff = (f32)(int)(((getAngle(base->tangentX, base->tangentZ) & 0xffff) + 0x8000) -
+                diff = (f32)(int)(((getAngle(base->curve.tangent[0], base->curve.tangent[2]) & 0xffff) + 0x8000) -
                                   ((int)*(s16*)obj & 0xffffu));
                 if (diff > 32768.0f)
                 {
@@ -944,9 +940,9 @@ void crawler_updateC(GameObject* obj, u8* state)
                     int rel2;
                     u16 oct2;
                     u8 mv;
-                    dp2[0] = obj->anim.worldPosX - base->posX;
-                    dp2[1] = obj->anim.worldPosY - base->posY;
-                    dp2[2] = obj->anim.worldPosZ - base->posZ;
+                    dp2[0] = obj->anim.worldPosX - base->curve.sample[0];
+                    dp2[1] = obj->anim.worldPosY - base->curve.sample[1];
+                    dp2[2] = obj->anim.worldPosZ - base->curve.sample[2];
                     rel2 = (getAngle(-dp2[0], -dp2[2]) & 0xffff) - ((int)*(s16*)obj & 0xffffu);
                     if (rel2 > 0x8000)
                     {
@@ -998,7 +994,7 @@ void crawler_updateC(GameObject* obj, u8* state)
             }
             if ((((EnemyState*)state)->rootMotionFlags & 8) == 0 && (((EnemyState*)state)->familyData.crawler.flagsD & 0x10) == 0)
             {
-                baddieTurnTowardPoint(obj, state, base->posX, base->posZ, 0xf, 0);
+                baddieTurnTowardPoint(obj, state, base->curve.sample[0], base->curve.sample[2], 0xf, 0);
             }
         }
         else if ((flags & 0xc0000000) != 0)

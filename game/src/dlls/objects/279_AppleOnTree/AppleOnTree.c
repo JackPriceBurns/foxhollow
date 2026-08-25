@@ -1,10 +1,10 @@
 #include "dlls/objects/279_AppleOnTree.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/waterfx_interface.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/frame_timing.h"
@@ -16,9 +16,9 @@
 #include "main/objseq.h"
 #include "main/objtexture.h"
 #include "main/sky_interface.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -683,22 +683,32 @@ void AppleOnTree_init(GameObject* obj, AppleOnTreePlacement* placement) {
     }
 }
 
-ObjectDescriptor13 gAppleOnTreeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)AppleOnTree_init,
-    (ObjectDescriptorCallback)AppleOnTree_update,
-    0,
-    (ObjectDescriptorCallback)AppleOnTree_render,
-    (ObjectDescriptorCallback)AppleOnTree_free,
-    0,
-    AppleOnTree_getExtraSize,
-    (ObjectDescriptorCallback)AppleOnTree_func0A,
-    (ObjectDescriptorCallback)AppleOnTree_setPosition,
-    (ObjectDescriptorCallback)AppleOnTree_getAnimState,
+OBJECT_INIT_ADAPTER(gAppleOnTreeObjDescriptorInitAdapter, AppleOnTree_init, obj, placement)
+OBJECT_FREE_ADAPTER(gAppleOnTreeObjDescriptorFreeAdapter, AppleOnTree_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gAppleOnTreeObjDescriptorExtraSizeAdapter, AppleOnTree_getExtraSize)
+
+AppleOnTreeDescriptor gAppleOnTreeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        0,
+        0,
+    },
+    {
+        0,
+        gAppleOnTreeObjDescriptorInitAdapter,
+        AppleOnTree_update,
+        0,
+        AppleOnTree_render,
+        gAppleOnTreeObjDescriptorFreeAdapter,
+        0,
+        gAppleOnTreeObjDescriptorExtraSizeAdapter,
+        AppleOnTree_func0A,
+        AppleOnTree_setPosition,
+        AppleOnTree_getAnimState,
+    },
 };

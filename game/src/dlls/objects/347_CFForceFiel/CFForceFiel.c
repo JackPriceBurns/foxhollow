@@ -3,13 +3,13 @@
 #include "dlls/objects/347_CFForceFiel.h"
 #include "dolphin/mtx.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/gamebits.h"
+#include "main/maketex_timer.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -103,13 +103,13 @@ void cfforcefield_update(GameObject* obj) {
                 particleParams.posZ = localPosition[2] + obj->anim.localPosZ;
                 (*gPartfxInterface)
                     ->spawnObject(obj, emitter->spiralEffectId, &particleParams, CFFORCEFIELD_PARTFX_FLAGS,
-                                  CFFORCEFIELD_PARTFX_MODEL_NONE, &obj->anim.velocity);
+                                  CFFORCEFIELD_PARTFX_MODEL_NONE, (Vec3f*)&obj->anim.velocityX);
                 (*gPartfxInterface)
                     ->spawnObject(obj, emitter->spiralEffectId, &particleParams, CFFORCEFIELD_PARTFX_FLAGS,
-                                  CFFORCEFIELD_PARTFX_MODEL_NONE, &obj->anim.velocity);
+                                  CFFORCEFIELD_PARTFX_MODEL_NONE, (Vec3f*)&obj->anim.velocityX);
                 (*gPartfxInterface)
                     ->spawnObject(obj, emitter->spiralEffectId, &particleParams, CFFORCEFIELD_PARTFX_FLAGS,
-                                  CFFORCEFIELD_PARTFX_MODEL_NONE, &obj->anim.velocity);
+                                  CFFORCEFIELD_PARTFX_MODEL_NONE, (Vec3f*)&obj->anim.velocityX);
             }
 
             if (timerIsActive(&state->collapseTimer) != 0) {
@@ -149,19 +149,32 @@ void cfforcefield_release(void) {
 void cfforcefield_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFForceFieldObjDescriptorInitAdapter, cfforcefield_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFForceFieldObjDescriptorHitDetectAdapter, cfforcefield_hitDetect)
+OBJECT_RENDER_ADAPTER(gCFForceFieldObjDescriptorRenderAdapter, cfforcefield_render)
+OBJECT_FREE_ADAPTER(gCFForceFieldObjDescriptorFreeAdapter, cfforcefield_free)
+OBJECT_TYPE_ID_ADAPTER(gCFForceFieldObjDescriptorTypeIdAdapter, cfforcefield_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFForceFieldObjDescriptorExtraSizeAdapter, cfforcefield_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFForceFieldObjDescriptorAcquire, cfforcefield_initialise)
+
 ObjectDescriptor gCFForceFieldObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFForceFieldObjDescriptorAcquire,
+        cfforcefield_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cfforcefield_initialise,
-    (ObjectDescriptorCallback)cfforcefield_release,
-    0,
-    (ObjectDescriptorCallback)cfforcefield_init,
-    (ObjectDescriptorCallback)cfforcefield_update,
-    (ObjectDescriptorCallback)cfforcefield_hitDetect,
-    (ObjectDescriptorCallback)cfforcefield_render,
-    (ObjectDescriptorCallback)cfforcefield_free,
-    (ObjectDescriptorCallback)cfforcefield_getObjectTypeId,
-    cfforcefield_getExtraSize,
+    gCFForceFieldObjDescriptorInitAdapter,
+    cfforcefield_update,
+    gCFForceFieldObjDescriptorHitDetectAdapter,
+    gCFForceFieldObjDescriptorRenderAdapter,
+    gCFForceFieldObjDescriptorFreeAdapter,
+    gCFForceFieldObjDescriptorTypeIdAdapter,
+    gCFForceFieldObjDescriptorExtraSizeAdapter,
 };

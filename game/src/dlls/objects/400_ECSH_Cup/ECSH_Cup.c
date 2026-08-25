@@ -15,7 +15,7 @@
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
@@ -221,7 +221,9 @@ static void ecshCup_init(GameObject* obj, const ECSHCupPlacement* placement) {
     f32 searchDistance = 500.0f;
 
     gECSHCupShrineObject = NULL;
-    state->startPos = obj->anim.localPos;
+    state->startPos.x = obj->anim.localPosX;
+    state->startPos.y = obj->anim.localPosY;
+    state->startPos.z = obj->anim.localPosZ;
     state->transitionHeight = obj->anim.localPosY;
     obj->anim.localPosY -= 50.0f;
     state->velocity = (Vec3f){0.0f, 0.0f, 0.0f};
@@ -246,15 +248,25 @@ static void ecshCup_release(void) {
 static void ecshCup_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gECSHCupObjDescriptorInitAdapter, ecshCup_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gECSHCupObjDescriptorHitDetectAdapter, ecshCup_hitDetect)
+OBJECT_FREE_ADAPTER(gECSHCupObjDescriptorFreeAdapter, ecshCup_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gECSHCupObjDescriptorTypeIdAdapter, ecshCup_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gECSHCupObjDescriptorExtraSizeAdapter, ecshCup_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gECSHCupObjDescriptorAcquire, ecshCup_initialise)
+
 ObjectDescriptor gECSHCupObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)ecshCup_initialise,
-    .release = (ObjectDescriptorCallback)ecshCup_release,
-    .init = (ObjectDescriptorCallback)ecshCup_init,
-    .update = (ObjectDescriptorCallback)ecshCup_update,
-    .hitDetect = (ObjectDescriptorCallback)ecshCup_hitDetect,
-    .render = (ObjectDescriptorCallback)ecshCup_render,
-    .free = (ObjectDescriptorCallback)ecshCup_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)ecshCup_getObjectTypeId,
-    .getExtraSize = ecshCup_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gECSHCupObjDescriptorAcquire,
+        .release = ecshCup_release,
+    },
+    .init = gECSHCupObjDescriptorInitAdapter,
+    .update = ecshCup_update,
+    .hitDetect = gECSHCupObjDescriptorHitDetectAdapter,
+    .render = ecshCup_render,
+    .free = gECSHCupObjDescriptorFreeAdapter,
+    .getObjectTypeId = gECSHCupObjDescriptorTypeIdAdapter,
+    .getExtraSize = gECSHCupObjDescriptorExtraSizeAdapter,
+};;

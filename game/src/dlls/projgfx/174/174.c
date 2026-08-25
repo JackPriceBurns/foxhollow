@@ -20,10 +20,10 @@ void projroombeam_release(void) {
 void projroombeam_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjroombeamResourceDescriptorAcquire, projroombeam_initialise)
+
 ProjroombeamResourceDescriptor gProjroombeamResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projroombeam_initialise,
-    projroombeam_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjroombeamResourceDescriptorAcquire, projroombeam_release },
     NULL,
     projroombeam_doUnsupported,
 };

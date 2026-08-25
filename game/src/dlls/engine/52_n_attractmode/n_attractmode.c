@@ -1,25 +1,24 @@
-#include "main/sky_api.h"
-#include "main/attract_movie_api.h"
+#include "main/sky.h"
+#include "main/attract_movie.h"
 #include "main/screen_transition.h"
 #include "main/mm.h"
 #include "main/pad.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/dll/dll_0015_save_settings.h"
 #include "main/dll/savegame.h"
-#include "main/dll/dll_0017_savegame_api.h"
-#include "track/intersect_card_api.h"
+#include "main/dll/dll_0017_savegame.h"
+#include "track/intersect_card.h"
 #include "main/dll/dll_0057_cameramodetitle.h"
 #include "main/dll/dll_02C0_front.h"
 #include "main/dll/dll_003C_link.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/dll_003C_link_api.h"
-#include "main/dll/front_game_text_box_api.h"
-#include "main/game_timer_control_api.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/sfx.h"
+#include "main/dll/front_game_text_box.h"
+#include "main/game_timer_control.h"
+#include "main/lightmap.h"
+#include "main/lightmap_render_control.h"
 #include "main/map_load.h"
 #include "main/model_engine.h"
 #include "main/dll/FRONT/dll_3B.h"
@@ -29,7 +28,7 @@
 #include "dolphin/vi.h"
 #include "main/dll/FRONT/dll_39.h"
 #include "main/dll/FRONT/dll_44.h"
-#include "main/dll/dll_3e_api.h"
+#include "main/dll/dll_3e.h"
 #include "main/pi_dolphin.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/thp/THPDraw.h"
@@ -185,17 +184,20 @@ TitleMenuTextEntry gTitleMenuEntries[4] = {
         {0, 0, 0},
     },
 };
-ObjectDescriptor6 n_attractmode_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)TitleMenu_initialise,
-    (ObjectDescriptorCallback)TitleMenu_release,
-    0,
-    (ObjectDescriptorCallback)TitleMenu_run,
-    (ObjectDescriptorCallback)TitleMenu_frameEnd,
-    (ObjectDescriptorCallback)TitleMenu_render,
+UI_RESOURCE_ADAPTERS(gn_attractmodeUiResource, TitleMenu_initialise, TitleMenu_run, TitleMenu_render, arg0)
+
+UiResourceDescriptor n_attractmode_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gn_attractmodeUiResourceAcquire,
+        TitleMenu_release,
+    },
+    {
+        NULL,
+        gn_attractmodeUiResourceFrameStart,
+        TitleMenu_frameEnd,
+        gn_attractmodeUiResourceDraw,
+    },
 };
 
 void n_attractmode_releaseMovieBuffers(void)

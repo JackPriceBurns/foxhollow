@@ -35,21 +35,34 @@ void Dummy12_release(void) {
 void Dummy12_initialise(void) {
 }
 
+typedef struct Dummy12Callbacks {
+    void* reserved02;
+    __typeof__(dll_12_func03_nop)* func03;
+    __typeof__(dll_12_func04_nop)* func04;
+    __typeof__(dll_12_func05_nop)* func05;
+    __typeof__(dll_12_func06_ret_0)* func06;
+    __typeof__(dll_12_func07_nop)* func07;
+    __typeof__(dll_12_func08_nop)* func08;
+    __typeof__(dll_12_func09)* func09;
+    __typeof__(dll_12_func0A_nop)* func0A;
+    void* reserved0B;
+} Dummy12Callbacks;
+
+RESOURCE_DESCRIPTOR_TYPE(Dummy12DllInterface, Dummy12Callbacks);
+RESOURCE_ACQUIRE_ADAPTER(Dummy12_acquire, Dummy12_initialise)
+
 Dummy12DllInterface Dummy12_funcs = {
-    0,
-    0,
-    0,
-    0x000A0000,
-    (ObjectDescriptorCallback)Dummy12_initialise,
-    (ObjectDescriptorCallback)Dummy12_release,
-    0,
-    (ObjectDescriptorCallback)dll_12_func03_nop,
-    (ObjectDescriptorCallback)dll_12_func04_nop,
-    (ObjectDescriptorCallback)dll_12_func05_nop,
-    (ObjectDescriptorCallback)dll_12_func06_ret_0,
-    (ObjectDescriptorCallback)dll_12_func07_nop,
-    (ObjectDescriptorCallback)dll_12_func08_nop,
-    (ObjectDescriptorCallback)dll_12_func09,
-    (ObjectDescriptorCallback)dll_12_func0A_nop,
-    0,
+    { { 0, 0, 0, 0x000A0000 }, Dummy12_acquire, Dummy12_release },
+    {
+        NULL,
+        dll_12_func03_nop,
+        dll_12_func04_nop,
+        dll_12_func05_nop,
+        dll_12_func06_ret_0,
+        dll_12_func07_nop,
+        dll_12_func08_nop,
+        dll_12_func09,
+        dll_12_func0A_nop,
+        NULL,
+    },
 };

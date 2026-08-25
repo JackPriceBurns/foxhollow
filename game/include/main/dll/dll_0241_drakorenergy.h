@@ -5,7 +5,8 @@
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_setup.h"
 
-extern ObjectDescriptor12 gDrakorEnergyObjDescriptor;
+struct DrakorEnergyObjDescriptorType;
+extern struct DrakorEnergyObjDescriptorType gDrakorEnergyObjDescriptor;
 
 typedef struct DrakorenergyPlacement
 {

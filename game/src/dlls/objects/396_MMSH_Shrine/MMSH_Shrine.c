@@ -6,22 +6,22 @@
  */
 #include "dlls/objects/396_MMSH_Shrine.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "main/gamebit_latch.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/dll/dll_0000_gameui.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/map_load.h"
 #include "main/mapEventTypes.h"
 #include "main/model_light.h"
@@ -29,11 +29,11 @@
 #include "main/objanim.h"
 #include "main/objseq.h"
 #include "main/pad.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 
 enum MmshShrineStateFlag {
@@ -91,7 +91,7 @@ typedef struct MmshShrineState {
     f32 targetVelocity;
     f32 swayTarget;
     f32 idleSfxTimer;
-    GameBitLatchState latch;
+    int latch;
     s16 initialValue;
     s16 orbitPhaseA;
     s16 orbitPhaseB;
@@ -177,9 +177,9 @@ static int mmshShrine_updateFearSway(GameObject* obj) {
     int swayValue;
 
     state = obj->extra;
-    if ((state->latch.activeMask & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) == 0) {
+    if ((state->latch & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) == 0) {
         fearTestMeterSetFadeIn(1);
-        state->latch.activeMask |= MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
+        state->latch |= MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
         state->swayPhase = 0.0f;
         state->stickVelocity = 0.0f;
         state->targetVelocity = 0.0f;
@@ -247,13 +247,13 @@ static int mmshShrine_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqSt
                 }
                 break;
             case MMSH_SHRINE_ANIM_COMMAND_ENABLE_SWAY:
-                state->latch.activeMask |= MMSH_SHRINE_STATE_SWAY_ACTIVE;
+                state->latch |= MMSH_SHRINE_STATE_SWAY_ACTIVE;
                 break;
             case MMSH_SHRINE_ANIM_COMMAND_DISABLE_SWAY:
-                state->latch.activeMask &= ~MMSH_SHRINE_STATE_SWAY_ACTIVE;
-                if ((state->latch.activeMask & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) != 0) {
+                state->latch &= ~MMSH_SHRINE_STATE_SWAY_ACTIVE;
+                if ((state->latch & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) != 0) {
                     fearTestMeterSetFadeIn(0);
-                    state->latch.activeMask &= ~MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
+                    state->latch &= ~MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
                 }
                 break;
             case MMSH_SHRINE_ANIM_COMMAND_TARGET_LEFT:
@@ -277,15 +277,15 @@ static int mmshShrine_processAnimEvents(GameObject* obj, int unusedArg, ObjSeqSt
         animUpdate->eventIds[i] = 0;
     }
 
-    if (((state->latch.activeMask & MMSH_SHRINE_STATE_SWAY_ACTIVE) != 0) &&
+    if (((state->latch & MMSH_SHRINE_STATE_SWAY_ACTIVE) != 0) &&
         ((u8)mmshShrine_updateFearSway(obj) != 0)) {
         fearTestMeterSetFadeIn(0);
-        state->latch.activeMask &= ~(MMSH_SHRINE_STATE_SWAY_ACTIVE | MMSH_SHRINE_STATE_FEAR_METER_ACTIVE);
+        state->latch &= ~(MMSH_SHRINE_STATE_SWAY_ACTIVE | MMSH_SHRINE_STATE_FEAR_METER_ACTIVE);
         state->phase = MMSH_SHRINE_PHASE_SWAY_LIMIT;
         mmshShrine_clearFearTestBits();
         return 4;
     }
-    state->latch.activeMask |= MMSH_SHRINE_STATE_SEQUENCE_READY;
+    state->latch |= MMSH_SHRINE_STATE_SEQUENCE_READY;
     return 0;
 }
 
@@ -300,9 +300,9 @@ static int mmshShrine_getObjectTypeId(void) {
 static void mmshShrine_free(GameObject* obj) {
     MmshShrineState* state = obj->extra;
 
-    if ((state->latch.activeMask & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) != 0) {
+    if ((state->latch & MMSH_SHRINE_STATE_FEAR_METER_ACTIVE) != 0) {
         fearTestMeterSetFadeIn(0);
-        state->latch.activeMask &= ~MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
+        state->latch &= ~MMSH_SHRINE_STATE_FEAR_METER_ACTIVE;
     }
     if (state->light != NULL) {
         ModelLightStruct_free(state->light);
@@ -351,7 +351,9 @@ static void mmshShrine_update(GameObject* obj) {
             getEnvfxAct(obj, player, 0x20D, 0);
             getEnvfxAct(obj, player, 0x20E, 0);
             getEnvfxAct(obj, player, 0x222, 0);
-            obj->anim.worldPos = obj->anim.localPos;
+            obj->anim.worldPosX = obj->anim.localPosX;
+            obj->anim.worldPosY = obj->anim.localPosY;
+            obj->anim.worldPosZ = obj->anim.localPosZ;
         }
     }
     unlockLevel(mapGetDirIdx(0x20), 1, 0);
@@ -382,13 +384,13 @@ static void mmshShrine_update(GameObject* obj) {
         Music_Trigger(MUSICTRIG_DIM_Snow, 1);
         break;
     case MMSH_SHRINE_PHASE_WAIT_FOR_SEQUENCE:
-        if ((state->latch.activeMask & MMSH_SHRINE_STATE_SEQUENCE_READY) == 0) {
+        if ((state->latch & MMSH_SHRINE_STATE_SEQUENCE_READY) == 0) {
             break;
         }
         obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
         obj->anim.rotX = 0;
         state->phase = MMSH_SHRINE_PHASE_WAIT_FOR_PLAYER;
-        state->latch.activeMask &= ~MMSH_SHRINE_STATE_SEQUENCE_READY;
+        state->latch &= ~MMSH_SHRINE_STATE_SEQUENCE_READY;
         mainSetBits(GAMEBIT_MMSH_TestMusicActive, 1);
         (*gObjectTriggerInterface)->runSequence(MMSH_SHRINE_SEQUENCE_READY, obj, -1);
         break;
@@ -413,7 +415,7 @@ static void mmshShrine_update(GameObject* obj) {
         break;
     case MMSH_SHRINE_PHASE_RESET:
         state->phase = MMSH_SHRINE_PHASE_IDLE;
-        state->latch.activeMask &= ~MMSH_SHRINE_STATE_SEQUENCE_READY;
+        state->latch &= ~MMSH_SHRINE_STATE_SEQUENCE_READY;
         obj->anim.flags &= ~OBJANIM_FLAG_HIDDEN;
         mainSetBits(GAMEBIT_ShrineRelated012B, 0);
         mainSetBits(GAMEBIT_MMSH_ShrineRelated0AE4, 0);
@@ -452,15 +454,25 @@ static void mmshShrine_release(void) {
 static void mmshShrine_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMSHShrineObjDescriptorInitAdapter, mmshShrine_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMMSHShrineObjDescriptorHitDetectAdapter, mmshShrine_hitDetect)
+OBJECT_FREE_ADAPTER(gMMSHShrineObjDescriptorFreeAdapter, mmshShrine_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMSHShrineObjDescriptorTypeIdAdapter, mmshShrine_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMSHShrineObjDescriptorExtraSizeAdapter, mmshShrine_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMSHShrineObjDescriptorAcquire, mmshShrine_initialise)
+
 ObjectDescriptor gMMSHShrineObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)mmshShrine_initialise,
-    .release = (ObjectDescriptorCallback)mmshShrine_release,
-    .init = (ObjectDescriptorCallback)mmshShrine_init,
-    .update = (ObjectDescriptorCallback)mmshShrine_update,
-    .hitDetect = (ObjectDescriptorCallback)mmshShrine_hitDetect,
-    .render = (ObjectDescriptorCallback)mmshShrine_render,
-    .free = (ObjectDescriptorCallback)mmshShrine_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)mmshShrine_getObjectTypeId,
-    .getExtraSize = mmshShrine_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gMMSHShrineObjDescriptorAcquire,
+        .release = mmshShrine_release,
+    },
+    .init = gMMSHShrineObjDescriptorInitAdapter,
+    .update = mmshShrine_update,
+    .hitDetect = gMMSHShrineObjDescriptorHitDetectAdapter,
+    .render = mmshShrine_render,
+    .free = gMMSHShrineObjDescriptorFreeAdapter,
+    .getObjectTypeId = gMMSHShrineObjDescriptorTypeIdAdapter,
+    .getExtraSize = gMMSHShrineObjDescriptorExtraSizeAdapter,
+};;

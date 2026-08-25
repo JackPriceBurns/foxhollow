@@ -15,9 +15,11 @@ typedef enum ExplodedPhase {
 /* gExplodedObjDescriptor from slot02 onwards: the export table the spawning
    object reaches through obj->anim.dll. */
 typedef struct ExplodedInterface {
-    void* pad00[8];
-    int (*getPhase)(GameObject* obj);
+    OBJECT_INTERFACE_FIELDS;
+    u8 (*getPhase)(GameObject* obj);
 } ExplodedInterface;
+
+OBJECT_DESCRIPTOR_TYPE(ExplodedDescriptor, ExplodedInterface);
 
 #define EXPLODED_INTERFACE(fragment) ((ExplodedInterface*)*((GameObject*)(fragment))->anim.dll)
 
@@ -33,10 +35,7 @@ typedef struct ExplodedPlacement {
     Vec3s spin;
     Vec3s spinVelocity;
     u16 lifetimeFrames;
-    union {
-        s16 floorOffset;
-        u16 floorOffsetRaw;
-    };
+    s16 floorOffset;
     u8 pad3C;
     s8 scaleByte;
     u8 pad3E[0x06];
@@ -69,7 +68,6 @@ STATIC_ASSERT(offsetof(ExplodedPlacement, spin) == 0x2C);
 STATIC_ASSERT(offsetof(ExplodedPlacement, spinVelocity) == 0x32);
 STATIC_ASSERT(offsetof(ExplodedPlacement, lifetimeFrames) == 0x38);
 STATIC_ASSERT(offsetof(ExplodedPlacement, floorOffset) == 0x3A);
-STATIC_ASSERT(offsetof(ExplodedPlacement, floorOffsetRaw) == 0x3A);
 STATIC_ASSERT(offsetof(ExplodedPlacement, scaleByte) == 0x3D);
 STATIC_ASSERT(offsetof(ExplodedPlacement, pad3E) == 0x3E);
 STATIC_ASSERT(sizeof(ExplodedPlacement) == 0x44);
@@ -107,6 +105,6 @@ void exploded_init(GameObject* obj, ExplodedPlacement* placement, int usePresetC
 void exploded_release(void);
 void exploded_initialise(void);
 
-extern ObjectDescriptor16 gExplodedObjDescriptor;
+extern ExplodedDescriptor gExplodedObjDescriptor;
 
 #endif /* DLLS_OBJECTS_358_H_ */

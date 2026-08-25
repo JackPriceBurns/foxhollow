@@ -14,7 +14,7 @@
 #include "main/dll/waterfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/objhits.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
@@ -120,15 +120,25 @@ static void mmshWaterSpike_release(void) {
 static void mmshWaterSpike_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMSHWaterSpikeObjDescriptorInitAdapter, mmshWaterSpike_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMMSHWaterSpikeObjDescriptorHitDetectAdapter, mmshWaterSpike_hitDetect)
+OBJECT_FREE_ADAPTER(gMMSHWaterSpikeObjDescriptorFreeAdapter, mmshWaterSpike_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMSHWaterSpikeObjDescriptorTypeIdAdapter, mmshWaterSpike_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMSHWaterSpikeObjDescriptorExtraSizeAdapter, mmshWaterSpike_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMSHWaterSpikeObjDescriptorAcquire, mmshWaterSpike_initialise)
+
 ObjectDescriptor gMMSHWaterSpikeObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)mmshWaterSpike_initialise,
-    .release = (ObjectDescriptorCallback)mmshWaterSpike_release,
-    .init = (ObjectDescriptorCallback)mmshWaterSpike_init,
-    .update = (ObjectDescriptorCallback)mmshWaterSpike_update,
-    .hitDetect = (ObjectDescriptorCallback)mmshWaterSpike_hitDetect,
-    .render = (ObjectDescriptorCallback)mmshWaterSpike_render,
-    .free = (ObjectDescriptorCallback)mmshWaterSpike_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)mmshWaterSpike_getObjectTypeId,
-    .getExtraSize = mmshWaterSpike_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gMMSHWaterSpikeObjDescriptorAcquire,
+        .release = mmshWaterSpike_release,
+    },
+    .init = gMMSHWaterSpikeObjDescriptorInitAdapter,
+    .update = mmshWaterSpike_update,
+    .hitDetect = gMMSHWaterSpikeObjDescriptorHitDetectAdapter,
+    .render = mmshWaterSpike_render,
+    .free = gMMSHWaterSpikeObjDescriptorFreeAdapter,
+    .getObjectTypeId = gMMSHWaterSpikeObjDescriptorTypeIdAdapter,
+    .getExtraSize = gMMSHWaterSpikeObjDescriptorExtraSizeAdapter,
+};;

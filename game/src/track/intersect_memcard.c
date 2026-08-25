@@ -2,39 +2,39 @@
 #include "dolphin/card.h"
 #include "dolphin/mtx.h"
 #include "string.h"
-#include "track/intersect_card_api.h"
-#include "track/intersect_hud_color_api.h"
+#include "track/intersect_card.h"
+#include "track/intersect_hud_color.h"
 #include "main/texture.h"
 #include "main/dll/player_state.h"
 #include "main/sky_interface.h"
-#include "main/textrender_api.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_command_api.h"
-#include "main/gametext_show_str_api.h"
-#include "main/gameloop_api.h"
+#include "main/textrender.h"
+#include "main/gametext_color.h"
+#include "main/gametext_command.h"
+#include "main/gametext_show_str.h"
+#include "main/gameloop.h"
 #include "main/frame_timing.h"
 #include "main/trig.h"
 #include "main/camera.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
 #include "main/object_render.h"
 #include "main/screen_transition.h"
 #include "dolphin/gx/GXPixel.h"
 #include "main/mm.h"
 #include "main/newshadows.h"
-#include "main/maketex_api.h"
+#include "main/maketex.h"
 #include "main/pad.h"
 #include "main/pi_dolphin.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "dolphin/gx/GXTransform.h"
 #include "main/gametext_internal.h"
 #include "main/model_engine.h"
-#include "main/pi_flush_api.h"
-#include "track/intersect_api.h"
+#include "main/pi_flush.h"
+#include "track/intersect.h"
 #include "dolphin/os.h"
 #include "dolphin/os/OSRtc.h"
 #include "foxhollow_config.h"
-#include "main/gametext_api.h"
+#include "main/gametext.h"
 
 typedef void (*GXSetAlphaCompareIntFn)(int comp0, int ref0, int op, int comp1, int ref1);
 
@@ -580,7 +580,7 @@ void showMemCardError(u8 err)
         timer += 0x3e8;
         waitNextFrame();
         saved = gSaveCardBackdropColor;
-        hudDrawColored((Texture*)(uintptr_t)getReflectionTexture1(), 0, 0, &saved, 0x200, 0);
+        hudDrawColored(getReflectionTexture1(), 0, 0, &saved, 0x200, 0);
         if (submenu != 0)
         {
             opts[0] = 6;
@@ -749,7 +749,7 @@ void cardShowLoadingMsg(u8 kind)
         else
         {
             saved = gSaveCardBackdropColor;
-            hudDrawColored((Texture*)(uintptr_t)getReflectionTexture1(), 0, 0, &saved, 0x200, 0);
+            hudDrawColored(getReflectionTexture1(), 0, 0, &saved, 0x200, 0);
         }
     gameTextSetColor(0xFF, 0xFF, 0xFF, 0xFF);
         if (mode == 1)

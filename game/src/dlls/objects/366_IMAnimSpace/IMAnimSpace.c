@@ -4,7 +4,7 @@
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtexture.h"
@@ -147,22 +147,48 @@ void imAnimSpace_release(void) {
 void imAnimSpace_initialise(void) {
 }
 
-ObjectDescriptor13 gIMAnimSpaceObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
-    (ObjectDescriptorCallback)imAnimSpace_initialise,
-    (ObjectDescriptorCallback)imAnimSpace_release,
-    0,
-    (ObjectDescriptorCallback)imAnimSpace_init,
-    (ObjectDescriptorCallback)imAnimSpace_update,
-    (ObjectDescriptorCallback)imAnimSpace_hitDetect,
-    (ObjectDescriptorCallback)imAnimSpace_render,
-    (ObjectDescriptorCallback)imAnimSpace_free,
-    (ObjectDescriptorCallback)imAnimSpace_getObjectTypeId,
-    imAnimSpace_getExtraSize,
-    (ObjectDescriptorCallback)imAnimSpace_isSubmodelEnabled,
-    (ObjectDescriptorCallback)imAnimSpace_getEventFlag,
-    (ObjectDescriptorCallback)imAnimSpace_modelMtxCallback,
+OBJECT_INIT_ADAPTER(gIMAnimSpaceObjDescriptorInitAdapter, imAnimSpace_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gIMAnimSpaceObjDescriptorHitDetectAdapter, imAnimSpace_hitDetect)
+OBJECT_FREE_ADAPTER(gIMAnimSpaceObjDescriptorFreeAdapter, imAnimSpace_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gIMAnimSpaceObjDescriptorTypeIdAdapter, imAnimSpace_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gIMAnimSpaceObjDescriptorExtraSizeAdapter, imAnimSpace_getExtraSize)
+
+typedef struct IMAnimSpaceObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(imAnimSpace_isSubmodelEnabled)* imAnimSpace_isSubmodelEnabled;
+    __typeof__(imAnimSpace_getEventFlag)* imAnimSpace_getEventFlag;
+    __typeof__(imAnimSpace_modelMtxCallback)* imAnimSpace_modelMtxCallback;
+} IMAnimSpaceObjDescriptorTypeInterface;
+
+struct IMAnimSpaceObjDescriptorType {
+    ObjectDescriptorHeader header;
+    IMAnimSpaceObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gIMAnimSpaceObjDescriptorAcquire, imAnimSpace_initialise)
+
+struct IMAnimSpaceObjDescriptorType gIMAnimSpaceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_13_SLOTS,
+        },
+        gIMAnimSpaceObjDescriptorAcquire,
+        imAnimSpace_release,
+    },
+    {
+        0,
+        gIMAnimSpaceObjDescriptorInitAdapter,
+        imAnimSpace_update,
+        gIMAnimSpaceObjDescriptorHitDetectAdapter,
+        imAnimSpace_render,
+        gIMAnimSpaceObjDescriptorFreeAdapter,
+        gIMAnimSpaceObjDescriptorTypeIdAdapter,
+        gIMAnimSpaceObjDescriptorExtraSizeAdapter,
+        imAnimSpace_isSubmodelEnabled,
+        imAnimSpace_getEventFlag,
+        imAnimSpace_modelMtxCallback,
+    },
 };

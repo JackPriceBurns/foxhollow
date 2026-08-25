@@ -13,7 +13,8 @@ typedef struct DREarthCalSetup {
 
 STATIC_ASSERT(offsetof(DREarthCalSetup, yaw) == 0x18);
 
-extern ObjectDescriptor12 gDrEarthCalObjDescriptor;
+struct DrEarthCalObjDescriptorType;
+extern struct DrEarthCalObjDescriptorType gDrEarthCalObjDescriptor;
 
 int drearthcal_func0A(void);
 int drearthcal_getExtraSize(void);

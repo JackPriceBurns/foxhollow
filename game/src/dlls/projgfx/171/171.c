@@ -20,10 +20,10 @@ void projdummy_release(void) {
 void projdummy_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjdummyResourceDescriptorAcquire, projdummy_initialise)
+
 ProjdummyResourceDescriptor gProjdummyResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projdummy_initialise,
-    projdummy_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjdummyResourceDescriptorAcquire, projdummy_release },
     NULL,
     projdummy_doUnsupported,
 };

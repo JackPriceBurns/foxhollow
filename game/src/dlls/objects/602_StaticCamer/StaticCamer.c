@@ -40,9 +40,9 @@ void StaticCamera_update(void) {
 }
 
 void StaticCamera_init(GameObject* obj, StaticCameraPlacement* params, int deferAdd) {
-    obj->anim.rotX = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotX);
-    obj->anim.rotY = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotY);
-    obj->anim.rotZ = -ObjAnim_ReadPlacementS16(&obj->anim, &params->objectRotation.rotZ);
+    obj->anim.rotX = -ObjAnim_ReadPlacementS16(&obj->anim, &params->rotX);
+    obj->anim.rotY = -ObjAnim_ReadPlacementS16(&obj->anim, &params->rotY);
+    obj->anim.rotZ = -ObjAnim_ReadPlacementS16(&obj->anim, &params->rotZ);
     StaticCameraState* state = obj->extra;
     state->setupParam = params->setupParam;
     state->fov = params->fov;
@@ -58,19 +58,32 @@ void StaticCamera_release(void) {
 void StaticCamera_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gStaticCameraObjDescriptorInitAdapter, StaticCamera_init, obj, placement, flags)
+OBJECT_UPDATE_ADAPTER(gStaticCameraObjDescriptorUpdateAdapter, StaticCamera_update)
+OBJECT_HIT_DETECT_ADAPTER(gStaticCameraObjDescriptorHitDetectAdapter, StaticCamera_hitDetect)
+OBJECT_FREE_ADAPTER(gStaticCameraObjDescriptorFreeAdapter, StaticCamera_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gStaticCameraObjDescriptorTypeIdAdapter, StaticCamera_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gStaticCameraObjDescriptorExtraSizeAdapter, StaticCamera_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gStaticCameraObjDescriptorAcquire, StaticCamera_initialise)
+
 ObjectDescriptor gStaticCameraObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gStaticCameraObjDescriptorAcquire,
+        StaticCamera_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)StaticCamera_initialise,
-    (ObjectDescriptorCallback)StaticCamera_release,
-    0,
-    (ObjectDescriptorCallback)StaticCamera_init,
-    (ObjectDescriptorCallback)StaticCamera_update,
-    (ObjectDescriptorCallback)StaticCamera_hitDetect,
-    (ObjectDescriptorCallback)StaticCamera_render,
-    (ObjectDescriptorCallback)StaticCamera_free,
-    (ObjectDescriptorCallback)StaticCamera_getObjectTypeId,
-    StaticCamera_getExtraSize,
+    gStaticCameraObjDescriptorInitAdapter,
+    gStaticCameraObjDescriptorUpdateAdapter,
+    gStaticCameraObjDescriptorHitDetectAdapter,
+    StaticCamera_render,
+    gStaticCameraObjDescriptorFreeAdapter,
+    gStaticCameraObjDescriptorTypeIdAdapter,
+    gStaticCameraObjDescriptorExtraSizeAdapter,
 };

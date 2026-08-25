@@ -6,17 +6,17 @@
  * the object, records its game bit, and starts a steam effect.
  */
 #include "dlls/objects/204_ChukChuk.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objtexture.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 #define CHUKCHUK_CHILD_OBJ_ICEBALL      1307
@@ -226,23 +226,51 @@ void ChukChuk_release(void) {
 void ChukChuk_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gChukChukObjDescriptor = {
+OBJECT_INIT_ADAPTER(gChukChukObjDescriptorInitAdapter, ChukChuk_init, obj, placement)
+OBJECT_FREE_ADAPTER(gChukChukObjDescriptorFreeAdapter, ChukChuk_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gChukChukObjDescriptorTypeIdAdapter, ChukChuk_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gChukChukObjDescriptorExtraSizeAdapter, ChukChuk_getExtraSize)
+
+typedef struct ChukChukObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(ChukChuk_handleMessage)* ChukChuk_handleMessage;
+} ChukChukObjDescriptorTypeInterface;
+
+typedef struct ChukChukObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    ChukChukObjDescriptorTypeInterface interface;
+} ChukChukObjDescriptorTypeCore;
+
+struct ChukChukObjDescriptorType {
+    ChukChukObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gChukChukObjDescriptorAcquire, ChukChuk_initialise)
+
+struct ChukChukObjDescriptorType gChukChukObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)ChukChuk_initialise,
-        (ObjectDescriptorCallback)ChukChuk_release,
-        0,
-        (ObjectDescriptorCallback)ChukChuk_init,
-        (ObjectDescriptorCallback)ChukChuk_update,
-        (ObjectDescriptorCallback)ChukChuk_hitDetect,
-        (ObjectDescriptorCallback)ChukChuk_render,
-        (ObjectDescriptorCallback)ChukChuk_free,
-        (ObjectDescriptorCallback)ChukChuk_getObjectTypeId,
-        ChukChuk_getExtraSize,
-        (ObjectDescriptorCallback)ChukChuk_handleMessage,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gChukChukObjDescriptorAcquire,
+            ChukChuk_release,
+        },
+        {
+            0,
+            gChukChukObjDescriptorInitAdapter,
+            ChukChuk_update,
+            ChukChuk_hitDetect,
+            ChukChuk_render,
+            gChukChukObjDescriptorFreeAdapter,
+            gChukChukObjDescriptorTypeIdAdapter,
+            gChukChukObjDescriptorExtraSizeAdapter,
+            ChukChuk_handleMessage,
+        },
     },
     0,
 };

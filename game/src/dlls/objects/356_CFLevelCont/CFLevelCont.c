@@ -3,22 +3,22 @@
 #include "dlls/objects/274.h"
 #include "dlls/objects/356_CFLevelCont.h"
 
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
-#include "main/dll/player_api.h"
-#include "main/dll/player_staff_api.h"
+#include "main/dll/player.h"
+#include "main/dll/player_staff.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/gamebits.h"
+#include "main/maketex_timer.h"
 #include "main/mapEvent.h"
 #include "main/mapEventTypes.h"
 #include "main/map_load.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/shader_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/shader.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 
 #define CFLEVELCONTROL_EXIT_EVENT_ID    1
@@ -213,7 +213,7 @@ void cflevelcontrol_init(GameObject* obj, CfLevelControlPlacement* unusedPlaceme
     int gameBitIndex;
 
     state = obj->extra;
-    state->gameBitLatch.activeMask = 0;
+    state->gameBitLatch = 0;
     state->previousCameraMode = -1;
     storeZeroToFloatParam(&state->timer);
     s16toFloat(&state->timer, 0x1E0);
@@ -242,19 +242,31 @@ void cflevelcontrol_release(void) {
 void cflevelcontrol_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCFLevelControlObjDescriptorInitAdapter, cflevelcontrol_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gCFLevelControlObjDescriptorHitDetectAdapter, cflevelcontrol_hitDetect)
+OBJECT_FREE_ADAPTER(gCFLevelControlObjDescriptorFreeAdapter, cflevelcontrol_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCFLevelControlObjDescriptorTypeIdAdapter, cflevelcontrol_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCFLevelControlObjDescriptorExtraSizeAdapter, cflevelcontrol_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCFLevelControlObjDescriptorAcquire, cflevelcontrol_initialise)
+
 ObjectDescriptor gCFLevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCFLevelControlObjDescriptorAcquire,
+        cflevelcontrol_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cflevelcontrol_initialise,
-    (ObjectDescriptorCallback)cflevelcontrol_release,
-    0,
-    (ObjectDescriptorCallback)cflevelcontrol_init,
-    (ObjectDescriptorCallback)cflevelcontrol_update,
-    (ObjectDescriptorCallback)cflevelcontrol_hitDetect,
-    (ObjectDescriptorCallback)cflevelcontrol_render,
-    (ObjectDescriptorCallback)cflevelcontrol_free,
-    (ObjectDescriptorCallback)cflevelcontrol_getObjectTypeId,
-    cflevelcontrol_getExtraSize,
+    gCFLevelControlObjDescriptorInitAdapter,
+    cflevelcontrol_update,
+    gCFLevelControlObjDescriptorHitDetectAdapter,
+    cflevelcontrol_render,
+    gCFLevelControlObjDescriptorFreeAdapter,
+    gCFLevelControlObjDescriptorTypeIdAdapter,
+    gCFLevelControlObjDescriptorExtraSizeAdapter,
 };

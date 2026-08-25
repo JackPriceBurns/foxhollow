@@ -6,40 +6,38 @@
 #include "dlls/objects/467.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/audio_control_api.h"
-#include "main/audio/music_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/audio_control.h"
+#include "main/audio/music.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/stream_api.h"
+#include "main/audio/stream.h"
 #include "main/camera_interface.h"
-#include "main/dll/dll_0000_gameui_api.h"
+#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_004E_cameramodeworldmap.h"
-#include "main/dll/hint_text_api.h"
+#include "main/dll/hint_text.h"
 #include "main/dll/partfx_interface.h"
-#include "main/fcos16_approx_api.h"
+#include "main/fcos16_approx.h"
 #include "main/frame_timing.h"
-#include "main/fsin16_approx_api.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/fsin16_approx.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
+#include "main/lightmap_render_control.h"
 #include "main/loaded_file_flags.h"
 #include "main/map_load.h"
 #include "main/mapEvent.h"
 #include "main/model.h"
 #include "main/object_render.h"
 #include "main/pad.h"
-#include "main/pause_menu_api.h"
+#include "main/pause_menu.h"
 #include "main/rcp_dolphin.h"
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/screen_transition.h"
-#include "main/shader_api.h"
-#include "main/sky_api.h"
+#include "main/shader.h"
+#include "main/sky.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "main/mapEventTypes.h"
-#include "main/rcp_dolphin_api.h"
 
 #define WORLDPLANET_MAIN_MAP_ID       0x2D
 #define WORLDPLANET_MAP_PRELOAD_FLAG  0x10000000
@@ -681,19 +679,32 @@ void worldplanet_release(void) {
 void worldplanet_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWorldPlanetObjDescriptorInitAdapter, worldplanet_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gWorldPlanetObjDescriptorHitDetectAdapter, worldplanet_hitDetect)
+OBJECT_RENDER_ADAPTER(gWorldPlanetObjDescriptorRenderAdapter, worldplanet_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gWorldPlanetObjDescriptorFreeAdapter, worldplanet_free)
+OBJECT_TYPE_ID_ADAPTER(gWorldPlanetObjDescriptorTypeIdAdapter, worldplanet_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWorldPlanetObjDescriptorExtraSizeAdapter, worldplanet_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWorldPlanetObjDescriptorAcquire, worldplanet_initialise)
+
 ObjectDescriptor gWorldPlanetObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWorldPlanetObjDescriptorAcquire,
+        worldplanet_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)worldplanet_initialise,
-    (ObjectDescriptorCallback)worldplanet_release,
-    0,
-    (ObjectDescriptorCallback)worldplanet_init,
-    (ObjectDescriptorCallback)worldplanet_update,
-    (ObjectDescriptorCallback)worldplanet_hitDetect,
-    (ObjectDescriptorCallback)worldplanet_render,
-    (ObjectDescriptorCallback)worldplanet_free,
-    (ObjectDescriptorCallback)worldplanet_getObjectTypeId,
-    worldplanet_getExtraSize,
+    gWorldPlanetObjDescriptorInitAdapter,
+    worldplanet_update,
+    gWorldPlanetObjDescriptorHitDetectAdapter,
+    gWorldPlanetObjDescriptorRenderAdapter,
+    gWorldPlanetObjDescriptorFreeAdapter,
+    gWorldPlanetObjDescriptorTypeIdAdapter,
+    gWorldPlanetObjDescriptorExtraSizeAdapter,
 };

@@ -31,6 +31,7 @@ void FlameThrowerspe_init(GameObject* obj, FlameThrowerspePlacement* placement);
 void FlameThrowerspe_release(void);
 void FlameThrowerspe_initialise(void);
 
-extern ObjectDescriptor13 gFlameThrowerspeObjDescriptor;
+struct FlameThrowerspeObjDescriptorType;
+extern struct FlameThrowerspeObjDescriptorType gFlameThrowerspeObjDescriptor;
 
 #endif /* DLLS_OBJECTS_228_FLAMETHROWERSPE_H_ */

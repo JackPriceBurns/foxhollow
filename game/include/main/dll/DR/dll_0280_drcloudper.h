@@ -3,6 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 
-extern ObjectDescriptor12 gDrCloudPerObjDescriptor;
+struct DrCloudPerObjDescriptorType;
+extern struct DrCloudPerObjDescriptorType gDrCloudPerObjDescriptor;
 
 #endif

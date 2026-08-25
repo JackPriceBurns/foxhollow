@@ -19,10 +19,10 @@ void projsquirt1_release(void) {
 void projsquirt1_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjsquirt1ResourceDescriptorAcquire, projsquirt1_initialise)
+
 Projsquirt1ResourceDescriptor gProjsquirt1ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projsquirt1_initialise,
-    projsquirt1_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjsquirt1ResourceDescriptorAcquire, projsquirt1_release },
     NULL,
     projsquirt1_doUnsupported,
 };

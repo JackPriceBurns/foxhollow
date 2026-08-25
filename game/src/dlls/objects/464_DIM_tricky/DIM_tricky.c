@@ -73,19 +73,29 @@ void dim_tricky_init(GameObject* obj) {
     state->phase = DIMTRICKY_STATE_WAIT_TRIGGER;
 }
 
+OBJECT_INIT_ADAPTER(gDIM_trickyObjDescriptorInitAdapter, dim_tricky_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDIM_trickyObjDescriptorHitDetectAdapter, dim_tricky_hitDetect)
+OBJECT_FREE_ADAPTER(gDIM_trickyObjDescriptorFreeAdapter, dim_tricky_free)
+OBJECT_TYPE_ID_ADAPTER(gDIM_trickyObjDescriptorTypeIdAdapter, dim_tricky_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIM_trickyObjDescriptorExtraSizeAdapter, dim_tricky_getExtraSize)
+
 ObjectDescriptor gDIM_trickyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)dim_tricky_init,
-    (ObjectDescriptorCallback)dim_tricky_update,
-    (ObjectDescriptorCallback)dim_tricky_hitDetect,
-    (ObjectDescriptorCallback)dim_tricky_render,
-    (ObjectDescriptorCallback)dim_tricky_free,
-    (ObjectDescriptorCallback)dim_tricky_getObjectTypeId,
-    dim_tricky_getExtraSize,
+    gDIM_trickyObjDescriptorInitAdapter,
+    dim_tricky_update,
+    gDIM_trickyObjDescriptorHitDetectAdapter,
+    dim_tricky_render,
+    gDIM_trickyObjDescriptorFreeAdapter,
+    gDIM_trickyObjDescriptorTypeIdAdapter,
+    gDIM_trickyObjDescriptorExtraSizeAdapter,
 };

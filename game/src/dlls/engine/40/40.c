@@ -7,17 +7,20 @@
 
 WaterfxCfg gEffect15DefaultSpawnParams;
 
-ObjectDescriptor6 Effect15_funcs = {
-    0,
-    0,
-    0,
-    0x00050000,
-    (ObjectDescriptorCallback)Effect15_initialise,
-    (ObjectDescriptorCallback)Effect15_release,
-    0,
-    (ObjectDescriptorCallback)Effect15_func03_nop,
-    (ObjectDescriptorCallback)Effect15_spawnObject,
-    (ObjectDescriptorCallback)Effect15_func05_nop,
+EFFECT_RESOURCE_ADAPTERS(gEffect15Resource, Effect15_initialise, Effect15_spawnObject, Effect15_func05_nop)
+
+EffectResourceDescriptor Effect15_funcs = {
+    {
+        {0, 0, 0, 0x00050000},
+        gEffect15ResourceAcquire,
+        Effect15_release,
+    },
+    {
+        NULL,
+        Effect15_func03_nop,
+        gEffect15ResourceSpawn,
+        gEffect15ResourceUpdate,
+    },
 };
 
 int Effect15_spawnObject(void* sourceObj, int effectId, PartFxSpawnParams* spawnParams, u32 spawnFlags, u8 modelId,

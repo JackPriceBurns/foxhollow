@@ -4,7 +4,7 @@
  */
 #include "dlls/objects/304_AreaFXEmit.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/dll_000E_partfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll_000A_expgfx.h"
@@ -48,6 +48,16 @@ typedef void (*AreaFXEmitModelSpawnFn)(GameObject* obj, int unused1, PartFxSpawn
                                        int modelId, void* unused3);
 typedef void (*AreaFXEmitProjectileSpawnFn)(GameObject* obj, int unused1, PartFxSpawnParams* unused2, u32 spawnFlags,
                                             int modelId, int effectId, void* unused3);
+
+typedef struct AreaFXEmitModelInterface {
+    void (*reserved)(void);
+    AreaFXEmitModelSpawnFn spawn;
+} AreaFXEmitModelInterface;
+
+typedef struct AreaFXEmitProjectileInterface {
+    void (*reserved)(void);
+    AreaFXEmitProjectileSpawnFn spawn;
+} AreaFXEmitProjectileInterface;
 
 #define AREAFXEMIT_RANDOMIZE_OFFSET(state, position)                                                                   \
     do {                                                                                                               \
@@ -123,7 +133,6 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
     s16 i;
     s16 rotation[3];
     u8 type;
-    ObjectInterfaceHandle resource;
     PartFxSpawnParams args;
 
     state = obj->extra;
@@ -148,23 +157,25 @@ void AreaFXEmit_emitEffect(GameObject* obj) {
                 ->spawnObject(obj, state->effectId, &args, AREAFXEMIT_WORLD_SPAWN_MODE, AREAFXEMIT_MODEL_NONE, NULL);
         }
     } else if (type == AREAFXEMIT_SPAWN_OBJECT_RESOURCE) {
-        resource = Resource_Acquire((state->effectId + AREAFXEMIT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
+        AreaFXEmitModelInterface** resource =
+            Resource_Acquire((state->effectId + AREAFXEMIT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                ((AreaFXEmitModelSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
+                (*resource)->spawn(obj, 0, NULL, 1, -1, NULL);
             }
         } else {
-            ((AreaFXEmitModelSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, NULL);
+            (*resource)->spawn(obj, 0, NULL, 1, -1, NULL);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_OBJECT_RESOURCE_ALT) {
-        resource = Resource_Acquire((state->effectId + AREAFXEMIT_ALT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
+        AreaFXEmitProjectileInterface** resource =
+            Resource_Acquire((state->effectId + AREAFXEMIT_ALT_RESOURCE_OFFSET), AREAFXEMIT_RESOURCE_GROUP);
         if (state->emitCount > 0) {
             for (i = 0; i < state->emitCount; i++) {
-                ((AreaFXEmitProjectileSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
+                (*resource)->spawn(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
             }
         } else {
-            ((AreaFXEmitProjectileSpawnFn)resource[0][1])(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
+            (*resource)->spawn(obj, 0, NULL, 1, -1, state->effectId & 0xFF, NULL);
         }
         Resource_Release(resource);
     } else if (type == AREAFXEMIT_SPAWN_LOCAL_OBJECT) {
@@ -339,19 +350,31 @@ void AreaFXEmit_release(void) {
 void AreaFXEmit_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gAreaFXEmitObjDescriptorInitAdapter, AreaFXEmit_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gAreaFXEmitObjDescriptorHitDetectAdapter, AreaFXEmit_hitDetect)
+OBJECT_FREE_ADAPTER(gAreaFXEmitObjDescriptorFreeAdapter, AreaFXEmit_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gAreaFXEmitObjDescriptorTypeIdAdapter, AreaFXEmit_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAreaFXEmitObjDescriptorExtraSizeAdapter, AreaFXEmit_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gAreaFXEmitObjDescriptorAcquire, AreaFXEmit_initialise)
+
 ObjectDescriptor gAreaFXEmitObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gAreaFXEmitObjDescriptorAcquire,
+        AreaFXEmit_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)AreaFXEmit_initialise,
-    (ObjectDescriptorCallback)AreaFXEmit_release,
-    0,
-    (ObjectDescriptorCallback)AreaFXEmit_init,
-    (ObjectDescriptorCallback)AreaFXEmit_update,
-    (ObjectDescriptorCallback)AreaFXEmit_hitDetect,
-    (ObjectDescriptorCallback)AreaFXEmit_render,
-    (ObjectDescriptorCallback)AreaFXEmit_free,
-    (ObjectDescriptorCallback)AreaFXEmit_getObjectTypeId,
-    AreaFXEmit_getExtraSize,
+    gAreaFXEmitObjDescriptorInitAdapter,
+    AreaFXEmit_update,
+    gAreaFXEmitObjDescriptorHitDetectAdapter,
+    AreaFXEmit_render,
+    gAreaFXEmitObjDescriptorFreeAdapter,
+    gAreaFXEmitObjDescriptorTypeIdAdapter,
+    gAreaFXEmitObjDescriptorExtraSizeAdapter,
 };

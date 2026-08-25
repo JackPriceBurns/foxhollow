@@ -5,6 +5,7 @@
 #include "main/objtype.h"
 #include "PowerPC_EABI_Support/Msl/MSL_C/MSL_Common/printf.h"
 #include "main/dll/dll_003F_dll3f.h"
+#include "main/dll/SP/dll_0285_spshop.h"
 
 #define DLL3F_TEXTURE_ID 0x47A
 
@@ -23,7 +24,7 @@ void dll_3F_updateTimerReadout(void* obj) {
     GameObject* player = Obj_GetPlayerObject();
     GameObject* nearest = objGetNearestTypeTo(9, player, &maxDist);
     if (nearest != NULL) {
-        ((void (*)(void*, int*, int*, int*))(*(void***)nearest->anim.dll)[21])(nearest, &start, &elapsed, &total);
+        SHOP_INTERFACE(nearest)->func17(nearest, &start, &elapsed, &total);
     }
     elapsed = total - (elapsed - start);
     if (elapsed < 0) {
@@ -47,15 +48,18 @@ void dll_3F_initialise(void) {
     gDll3FTexture = textureLoadAsset(DLL3F_TEXTURE_ID);
 }
 
-ObjectDescriptor6 dll_3F_funcs = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_6_SLOTS,
-    (ObjectDescriptorCallback)dll_3F_initialise,
-    (ObjectDescriptorCallback)dll_3F_release,
-    0,
-    (ObjectDescriptorCallback)dll_3F_frameStart_ret_0,
-    (ObjectDescriptorCallback)dll_3F_frameEnd_nop,
-    (ObjectDescriptorCallback)dll_3F_updateTimerReadout,
+UI_RESOURCE_ADAPTERS(gdll_3FUiResource, dll_3F_initialise, dll_3F_frameStart_ret_0, dll_3F_updateTimerReadout, (void*)(intptr_t)arg0)
+
+UiResourceDescriptor dll_3F_funcs = {
+    {
+        {0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_6_SLOTS},
+        gdll_3FUiResourceAcquire,
+        dll_3F_release,
+    },
+    {
+        NULL,
+        gdll_3FUiResourceFrameStart,
+        dll_3F_frameEnd_nop,
+        gdll_3FUiResourceDraw,
+    },
 };

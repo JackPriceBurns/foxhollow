@@ -11,11 +11,11 @@
 
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
 #include "main/objtexture.h"
-#include "main/audio/sfx_looped_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 #define NW_GEYSER_DISABLE_GAMEBIT    0xA
@@ -69,19 +69,26 @@ void nwGeyser_init(GameObject* obj) {
     obj->animEventCallback = nwGeyser_processAnimEvents;
 }
 
+OBJECT_INIT_ADAPTER(gNWGeyserObjDescriptorInitAdapter, nwGeyser_init, obj)
+OBJECT_FREE_ADAPTER(gNWGeyserObjDescriptorFreeAdapter, nwGeyser_free, obj)
+
 ObjectDescriptor gNWGeyserObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gNWGeyserObjDescriptorInitAdapter,
+    nwGeyser_update,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)nwGeyser_init,
-    (ObjectDescriptorCallback)nwGeyser_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)nwGeyser_free,
+    gNWGeyserObjDescriptorFreeAdapter,
     0,
     0,
 };

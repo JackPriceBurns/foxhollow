@@ -18,17 +18,17 @@
  */
 #include "main/dll/partfx_interface.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
 #include "sys/objects.h"
 #include "main/dll/ARW/dll_029A_arwarwing.h"
 #include "main/dll/dll_02A0_ring.h"
 #include "main/object_render.h"
-#include "main/audio/sfx_play_legacy_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/headdisplay.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
 #include "main/objhits.h"
 #include "main/model_light.h"
 
@@ -541,19 +541,32 @@ void ring_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gRingObjDescriptorInitAdapter, ring_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gRingObjDescriptorHitDetectAdapter, ring_hitDetect)
+OBJECT_RENDER_ADAPTER(gRingObjDescriptorRenderAdapter, ring_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gRingObjDescriptorFreeAdapter, ring_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gRingObjDescriptorTypeIdAdapter, ring_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gRingObjDescriptorExtraSizeAdapter, ring_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gRingObjDescriptorAcquire, ring_initialise)
+
 ObjectDescriptor gRingObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ring_initialise,
-    (ObjectDescriptorCallback)ring_release,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gRingObjDescriptorAcquire,
+        ring_release,
+    },
     NULL,
-    (ObjectDescriptorCallback)ring_init,
-    (ObjectDescriptorCallback)ring_update,
-    (ObjectDescriptorCallback)ring_hitDetect,
-    (ObjectDescriptorCallback)ring_render,
-    (ObjectDescriptorCallback)ring_free,
-    (ObjectDescriptorCallback)ring_getObjectTypeId,
-    ring_getExtraSize,
+    gRingObjDescriptorInitAdapter,
+    ring_update,
+    gRingObjDescriptorHitDetectAdapter,
+    gRingObjDescriptorRenderAdapter,
+    gRingObjDescriptorFreeAdapter,
+    gRingObjDescriptorTypeIdAdapter,
+    gRingObjDescriptorExtraSizeAdapter,
 };

@@ -1,9 +1,7 @@
-#define OBJHITS_SETTERS_S16
-#define OBJHITS_STATE_INDEX_S8
 #include "main/frame_timing.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/debug.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "main/model.h"
 #include "main/obj_contact.h"
@@ -11,7 +9,7 @@
 #include "main/objhits.h"
 #include "main/object_transform.h"
 #include "main/vecmath.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "dolphin/os.h"
 #include "main/asset_load.h"
 #include "main/audio/sfx.h"
@@ -20,33 +18,32 @@
 #include "main/objfx.h"
 #include "main/objHitReact_types.h"
 #include "main/dll/dll_005A_staffcollision.h"
-#include "main/dll/dll_00E2_staff_api.h"
+#include "main/dll/dll_00E2_staff.h"
 #include "main/resource.h"
 #include "dolphin/mtx.h"
 #include "main/dll/objpathtransform_struct.h"
 #include "main/game_ui_interface.h"
-#include "main/lightmap_api.h"
-#include "main/dll/player_api.h"
+#include "main/lightmap.h"
+#include "main/dll/player.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/objtype.h"
 #include "main/obj_hit_region.h"
 #include "main/obj_link.h"
-#include "main/objlib_api.h"
+#include "main/objlib.h"
 #include "main/obj_message.h"
 #include "main/obj_path.h"
 #include "main/obj_query.h"
 #include "main/obj_trigger.h"
 #include "main/player_eye_anim.h"
-#include "main/pad_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/rcp_dolphin_render_api.h"
+#include "main/pad.h"
+#include "main/rcp_dolphin_render.h"
 #include "main/texture.h"
-#include "main/objprint_dolphin_api.h"
+#include "main/objprint_dolphin.h"
 #include "main/curve_eval.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
+#include "main/objprint_sound.h"
 #include "main/newshadows.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
@@ -57,11 +54,9 @@
 #include "dolphin/gx/GXGeometry.h"
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
-#include "track/intersect_api.h"
+#include "track/intersect.h"
 #include "main/objprint_internal.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 #define OBJLIB_BLINK_LEFT_JOINT_TAG  5
 #define OBJLIB_BLINK_RIGHT_JOINT_TAG 4
@@ -109,7 +104,7 @@ static inline ObjJointPose18* playerEyeAnim_FindJoint(ObjAnimComponent* objAnim,
     return joint;
 }
 
-void playerUpdateBlinkAnimation(void* obj, void* blinkState, u16 flags) {
+void playerUpdateBlinkAnimation(GameObject* obj, void* blinkState, u16 flags) {
 
     PlayerBlinkState* bs = (PlayerBlinkState*)blinkState;
     f32 leftScale;
@@ -120,7 +115,7 @@ void playerUpdateBlinkAnimation(void* obj, void* blinkState, u16 flags) {
     f32 rightScale;
     f32 wave;
 
-    objAnim = (ObjAnimComponent*)obj;
+    objAnim = &obj->anim;
     step = 3.0f * timeDelta;
     rightScale = (leftScale = 1.0f);
     switch (bs->mode) {
@@ -316,13 +311,13 @@ void objKfAnimStop(ObjKfAnimState* state) {
     state->frame = -1;
 }
 
-void objSoundStart(GameObject* obj, void* state, u16 sfxId) {
+void objSoundStart(GameObject* obj, ObjSoundState* state, u16 sfxId) {
     if (Sfx_IsPlayingFromObjectChannel(obj, 0x10) == 0) {
         Sfx_PlayFromObjectChannel(obj, 0x10, sfxId);
-        ((ObjSoundState*)state)->timer = -1.0f;
-        ((ObjSoundState*)state)->pitch = -0x500;
-        ((ObjSoundState*)state)->active = 1;
-        ((ObjSoundState*)state)->blendWeight = 1.0f;
+        state->timer = -1.0f;
+        state->pitch = -0x500;
+        state->active = 1;
+        state->blendWeight = 1.0f;
     }
 }
 
@@ -750,7 +745,7 @@ static void characterHeadLookIdle(GameObject* obj, CharacterEyeAnimState* curve,
     }
 }
 
-void characterHeadLookRelax(GameObject* obj, void* state) {
+void characterHeadLookRelax(GameObject* obj, CharacterEyeAnimState* state) {
     s16* found;
 
     found = objFindJointVecByKey(obj, 0);
@@ -763,7 +758,7 @@ void characterHeadLookRelax(GameObject* obj, void* state) {
     if (found[1] != 0) {
         found[1] = (s16)((s32)found[1] * 3 / 4);
     }
-    ((CharacterEyeAnimState*)state)->headTrackMode = 0;
+    state->headTrackMode = 0;
 }
 
 void characterUpdateHeadLook(GameObject* obj, CharacterEyeAnimState* state, f32 scale) {
@@ -1043,7 +1038,7 @@ void objJointTracksCaptureCurrentAngles(GameObject* obj, int* keys, int count, u
     }
 }
 
-void characterAimHeadAtTarget(GameObject* obj, void* tgt, void* state, int limit, u8 inv, int mode) {
+void characterAimHeadAtTarget(GameObject* obj, GameObject* tgt, void* state, int limit, u8 inv, int mode) {
     s16 ang[2];
     s16* found[1];
     void* m[1];
@@ -1072,9 +1067,9 @@ void characterAimHeadAtTarget(GameObject* obj, void* tgt, void* state, int limit
             found[0][1] = found[0][1] >> 1;
             found[0][0] = found[0][0] >> 1;
         } else {
-            f32 dx = (obj)->anim.localPosX - ((GameObject*)tgt)->anim.localPosX;
-            f32 dz = (obj)->anim.localPosZ - ((GameObject*)tgt)->anim.localPosZ;
-            f32 dy = (obj)->anim.localPosY - ((GameObject*)tgt)->anim.localPosY;
+            f32 dx = (obj)->anim.localPosX - tgt->anim.localPosX;
+            f32 dz = (obj)->anim.localPosZ - tgt->anim.localPosZ;
+            f32 dy = (obj)->anim.localPosY - tgt->anim.localPosY;
             f32 dist = sqrtf(dx * dx + dz * dz);
             ObjJointTrackChannel* channel;
             s16* ap;
@@ -1162,7 +1157,7 @@ void characterSetHeadYawToTarget(GameObject* obj, GameObject* target, CharacterE
     }
 }
 
-void characterCloseEyes(GameObject* obj, void* state) {
+void characterCloseEyes(GameObject* obj, CharacterEyeAnimState* state) {
     ObjTextureRuntimeSlot* foundA;
     ObjTextureRuntimeSlot* foundB;
     int val;
@@ -1179,13 +1174,12 @@ void characterCloseEyes(GameObject* obj, void* state) {
     }
     foundA->textureId = val;
     foundB->textureId = val;
-    ((CharacterEyeAnimState*)state)->blinkState = 1;
+    state->blinkState = 1;
 }
 
 void characterDoEyeMovements(GameObject* obj, CharacterEyeAnimState* state, f32 unused);
 
-void characterDoEyeAnims(GameObject* obj, void* stateData) {
-    CharacterEyeAnimState* state = stateData;
+void characterDoEyeAnims(GameObject* obj, CharacterEyeAnimState* state) {
     ObjTextureRuntimeSlot* a;
     ObjTextureRuntimeSlot* b;
 
@@ -1354,7 +1348,7 @@ void staffUpdateSegmentTransforms(GameObject* staffArg, GameObject* objArg, ObjM
 }
 
 void objRenderShadowIfVisible(GameObject* obj, int wpad0, int wpad1, int wpad2, int wpad3, int wpad4) {
-    void** arr = (void*)(obj)->anim.banks;
+    void** arr = (void*)(obj)->anim.modelBanks;
     s8 idx = (obj)->anim.bankIndex;
     if (arr[idx] != NULL) {
         objRenderShadow(obj);
@@ -1379,7 +1373,6 @@ void objSetModelMatrixOverride(f32* matrix) {
 void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
     void* sub;
     int i;
-    void (*vfn)(GameObject*, int, int, int, int, int);
 
     if ((obj->objectFlags & OBJECT_OBJFLAG_FREED) != 0 || obj->ownerObj != NULL) {
         return;
@@ -1397,9 +1390,9 @@ void objRender(int a, int b, int c, int d, GameObject* obj, int flag) {
     sub = (void*)obj->anim.dll;
     if (sub != NULL) {
         if ((obj->objectFlags & OBJECT_OBJFLAG_HIDDEN) == 0) {
-            vfn = (void (*)(GameObject*, int, int, int, int, int))((ObjectInterface*)*(ObjectInterfaceHandle)sub)->render;
-            if (vfn != NULL) {
-                vfn(obj, a, b, c, d, flag);
+            ObjectInterface* interface = *obj->anim.dll;
+            if (interface->render != NULL) {
+                interface->render(obj, a, b, c, d, (s8)flag);
             }
         } else if ((s8)flag != 0 && OBJPRINT_ACTIVE_BANK(obj) != NULL) {
             objRenderModel(obj);

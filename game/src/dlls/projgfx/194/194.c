@@ -19,10 +19,10 @@ void projdfp1r_release(void) {
 void projdfp1r_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjdfp1rResourceDescriptorAcquire, projdfp1r_initialise)
+
 Projdfp1rResourceDescriptor gProjdfp1rResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projdfp1r_initialise,
-    projdfp1r_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjdfp1rResourceDescriptorAcquire, projdfp1r_release },
     NULL,
     projdfp1r_doUnsupported,
 };

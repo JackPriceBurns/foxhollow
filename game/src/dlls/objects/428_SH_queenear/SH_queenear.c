@@ -2,19 +2,18 @@
 
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/dll/player_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/dll/player.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEvent.h"
 #include "main/mapEventTypes.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_anim_api.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_anim.h"
+#include "main/objprint_character.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
 #include "main/vecmath.h"
@@ -159,9 +158,9 @@ static void queenEarthWalker_lookAtPlayer(GameObject* obj, QueenEarthWalkerState
     GameObject* player = Obj_GetPlayerObject();
 
     state->eyeAnimState.lookAtActive = 1;
-    state->eyeAnimState.lookAtPosX = player->anim.localPos.x;
-    state->eyeAnimState.lookAtPosY = player->anim.localPos.y;
-    state->eyeAnimState.lookAtPosZ = player->anim.localPos.z;
+    state->eyeAnimState.lookAtPosX = player->anim.localPosX;
+    state->eyeAnimState.lookAtPosY = player->anim.localPosY;
+    state->eyeAnimState.lookAtPosZ = player->anim.localPosZ;
     characterHeadLookCalm(obj, (s16*)&state->eyeAnimState, 0.0f);
 }
 
@@ -226,7 +225,7 @@ static void queenEarthWalker_updatePortal(GameObject* obj, QueenEarthWalkerState
     } else if (mainGetBit(GAMEBIT_STAFF_ABILITY_OPEN_PORTAL) != 0) {
         obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
         if (playerHasSpell(player, QUEEN_EARTH_WALKER_OPEN_PORTAL_SPELL) != 0 &&
-            queenEarthWalker_xzDistanceSquared(&player->anim.worldPos, &obj->anim.worldPos) < 10000.0f) {
+            queenEarthWalker_xzDistanceSquared((Vec3f*)&player->anim.worldPosX, (Vec3f*)&obj->anim.worldPosX) < 10000.0f) {
             mainSetBits(GAMEBIT_SH_OpenPortalRequested, 1);
         }
     } else if (mainGetBit(GAMEBIT_SH_RescuedEggs) != 0) {
@@ -256,7 +255,7 @@ static void queenEarthWalker_updateFeeding(GameObject* obj, QueenEarthWalkerStat
             GameObject* tricky = getTrickyObject();
 
             if (tricky != NULL &&
-                queenEarthWalker_xzDistanceSquared(&tricky->anim.worldPos, &obj->anim.worldPos) < 22500.0f) {
+                queenEarthWalker_xzDistanceSquared((Vec3f*)&tricky->anim.worldPosX, (Vec3f*)&obj->anim.worldPosX) < 22500.0f) {
                 Obj_SetActiveHitVolumeBounds(obj, 0, 0, 0, 0, QUEEN_EARTH_WALKER_HIT_VOLUME_NEAR_TRICKY);
             } else {
                 obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
@@ -434,19 +433,21 @@ static void queenEarthWalker_init(GameObject* obj, QueenEarthWalkerPlacement* pl
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gSH_queenearthwalkerObjDescriptorInitAdapter, queenEarthWalker_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gSH_queenearthwalkerObjDescriptorExtraSizeAdapter, queenEarthWalker_getExtraSize)
+
 ObjectDescriptor gSH_queenearthwalkerObjDescriptor = {
-    .reserved0 = 0,
-    .reserved1 = 0,
-    .reserved2 = 0,
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = NULL,
-    .release = NULL,
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = NULL,
+        .release = NULL,
+    },
     .slot02 = NULL,
-    .init = (ObjectDescriptorCallback)queenEarthWalker_init,
-    .update = (ObjectDescriptorCallback)queenEarthWalker_update,
+    .init = gSH_queenearthwalkerObjDescriptorInitAdapter,
+    .update = queenEarthWalker_update,
     .hitDetect = NULL,
     .render = NULL,
     .free = NULL,
     .getObjectTypeId = NULL,
-    .getExtraSize = queenEarthWalker_getExtraSize,
-};
+    .getExtraSize = gSH_queenearthwalkerObjDescriptorExtraSizeAdapter,
+};;

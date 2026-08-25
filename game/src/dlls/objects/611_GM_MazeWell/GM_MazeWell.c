@@ -15,21 +15,21 @@
  * event is currently ready.
  */
 #include "dlls/object_descriptor.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/dll/DR/dll_0250_ktrex.h"
 #include "main/dll/dll_0015_save_settings.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
-#include "main/objprint_render_api.h"
-#include "main/pad_api.h"
+#include "main/objprint_render.h"
+#include "main/pad.h"
 #include "sys/objects.h"
 #include "main/objseq.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/dll/dll_0263_gmmazewell.h"
 #include "main/object_render.h"
 #include "dolphin/pad.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 
 /* Quest-bit table layout (gQuestBitTable, 44 s16 entries):
  *   [0..8]   watched quest/event bits
@@ -216,19 +216,28 @@ s16 gGmMazeWellQuestBits[44] = {0x0ddc, 0x0de2, 0x0dde, 0x0ddd, 0x0de0, 0x0de3, 
                         0x0deb, 0x0de7, 0x0de6, 0x0de9, 0x0dec, 0x0de8, 0x0dea, 0x0ded, 0x0000, 0x0f34, 0x0f3a,
                         0x0f36, 0x0f35, 0x0f38, 0x0f3b, 0x0f37, 0x0f39, 0x0000, 0x0524, 0x0000, 0x0524, 0x0000,
                         0x0524, 0x0000, 0x0571, 0x0000, 0x056e, 0x0000, 0x056f, 0x0000, 0x0570, 0x0000, 0x0572};
+OBJECT_INIT_ADAPTER(gGmMazeWellObjDescriptorInitAdapter, GM_MazeWell_init, obj)
+OBJECT_RENDER_ADAPTER(gGmMazeWellObjDescriptorRenderAdapter, GM_MazeWell_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gGmMazeWellObjDescriptorFreeAdapter, GM_MazeWell_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gGmMazeWellObjDescriptorExtraSizeAdapter, GM_MazeWell_getExtraSize)
+
 ObjectDescriptor gGmMazeWellObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gGmMazeWellObjDescriptorInitAdapter,
+    GM_MazeWell_update,
     0,
+    gGmMazeWellObjDescriptorRenderAdapter,
+    gGmMazeWellObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)GM_MazeWell_init,
-    (ObjectDescriptorCallback)GM_MazeWell_update,
-    0,
-    (ObjectDescriptorCallback)GM_MazeWell_render,
-    (ObjectDescriptorCallback)GM_MazeWell_free,
-    0,
-    GM_MazeWell_getExtraSize,
+    gGmMazeWellObjDescriptorExtraSizeAdapter,
 };

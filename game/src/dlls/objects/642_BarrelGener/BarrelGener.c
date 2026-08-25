@@ -13,10 +13,10 @@
 #include "dlls/objects/344.h"
 
 #include "dolphin/mtx.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/maketex_timer_api.h"
+#include "main/maketex_timer.h"
 #include "main/obj_query.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
@@ -156,19 +156,31 @@ void barrelgener_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gBarrelGenerObjDescriptorInitAdapter, barrelgener_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gBarrelGenerObjDescriptorHitDetectAdapter, barrelgener_hitDetect)
+OBJECT_FREE_ADAPTER(gBarrelGenerObjDescriptorFreeAdapter, barrelgener_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gBarrelGenerObjDescriptorTypeIdAdapter, barrelgener_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBarrelGenerObjDescriptorExtraSizeAdapter, barrelgener_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBarrelGenerObjDescriptorAcquire, barrelgener_initialise)
+
 ObjectDescriptor gBarrelGenerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBarrelGenerObjDescriptorAcquire,
+        barrelgener_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)barrelgener_initialise,
-    (ObjectDescriptorCallback)barrelgener_release,
-    0,
-    (ObjectDescriptorCallback)barrelgener_init,
-    (ObjectDescriptorCallback)barrelgener_update,
-    (ObjectDescriptorCallback)barrelgener_hitDetect,
-    (ObjectDescriptorCallback)barrelgener_render,
-    (ObjectDescriptorCallback)barrelgener_free,
-    (ObjectDescriptorCallback)barrelgener_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)barrelgener_getExtraSize,
+    gBarrelGenerObjDescriptorInitAdapter,
+    barrelgener_update,
+    gBarrelGenerObjDescriptorHitDetectAdapter,
+    barrelgener_render,
+    gBarrelGenerObjDescriptorFreeAdapter,
+    gBarrelGenerObjDescriptorTypeIdAdapter,
+    gBarrelGenerObjDescriptorExtraSizeAdapter,
 };

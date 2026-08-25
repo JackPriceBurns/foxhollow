@@ -3,11 +3,11 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "game/objects/object_setup.h"
 #include "main/dll/curve_walker.h"
 #include "main/objseq.h"
-#include "main/objprint_sound_api.h"
+#include "main/objprint_sound.h"
 #include "main/vec_types.h"
 
 typedef enum BabyCloudRunnerStateId {
@@ -119,15 +119,18 @@ void babyCloudRunner_turnTowardTarget(GameObject* obj, GameObject* target, BabyC
 /* gBabyCloudRunnerObjDescriptor from slot02 onwards: the export table other
    objects reach through obj->anim.dll. */
 typedef struct BabyCloudRunnerInterface {
-    void* pad00[9];
-    void (*tryCapture)(void* object);
+    OBJECT_INTERFACE_FIELDS;
+    int (*func0A)(GameObject* object);
+    int (*tryCapture)(GameObject* object);
 } BabyCloudRunnerInterface;
+
+OBJECT_DESCRIPTOR_TYPE(BabyCloudRunnerDescriptor, BabyCloudRunnerInterface);
 
 #define BABY_CLOUD_RUNNER_INTERFACE(baby) ((BabyCloudRunnerInterface*)*((GameObject*)(baby))->anim.dll)
 
 STATIC_ASSERT(offsetof(BabyCloudRunnerInterface, tryCapture) == 0x24);
 
-int babyCloudRunner_tryCapture(void* object);
+int babyCloudRunner_tryCapture(GameObject* object);
 int babyCloudRunner_func0A(GameObject* obj);
 int babyCloudRunner_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate);
 int babyCloudRunner_getExtraSize(void);
@@ -141,6 +144,6 @@ void babyCloudRunner_init(GameObject* obj, BabyCloudRunnerPlacement* placement);
 void babyCloudRunner_release(void);
 void babyCloudRunner_initialise(void);
 
-extern ObjectDescriptor12 gBabyCloudRunnerObjDescriptor;
+extern BabyCloudRunnerDescriptor gBabyCloudRunnerObjDescriptor;
 
 #endif /* DLLS_OBJECTS_332_H_ */

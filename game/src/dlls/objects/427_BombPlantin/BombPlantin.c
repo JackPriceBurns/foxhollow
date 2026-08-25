@@ -5,10 +5,10 @@
 #include "dlls/objects/427_BombPlantin.h"
 #include "game/objects/object.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gameloop_gamebit_api.h"
+#include "main/gamebits.h"
+#include "main/gameloop_gamebit.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
 
 void BombPlantingSpot_update(GameObject* obj) {
@@ -50,16 +50,22 @@ void BombPlantingSpot_init(GameObject* obj, const BombPlantingSpotPlacement* pla
     obj->anim.rotX = placement->rotXByte << 8;
 }
 
+OBJECT_INIT_ADAPTER(gBombPlantingSpotObjDescriptorInitAdapter, BombPlantingSpot_init, obj, placement)
+
 ObjectDescriptor gBombPlantingSpotObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)BombPlantingSpot_init,
-    (ObjectDescriptorCallback)BombPlantingSpot_update,
+    gBombPlantingSpotObjDescriptorInitAdapter,
+    BombPlantingSpot_update,
     0,
     0,
     0,

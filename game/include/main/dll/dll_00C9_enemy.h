@@ -4,9 +4,9 @@
 #include "game/objects/object.h"
 #include "types.h"
 #include "global.h"
-#include "main/dll/duster_api.h"
+#include "main/dll/wall_plane_state.h"
 #include "main/dll/curves_collision_state.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "main/objseq.h"
 
 struct ModelLightStruct;
@@ -20,27 +20,7 @@ struct ObjModelChain;
  */
 typedef struct EnemyState {
     void* pathWalker;
-    union {
-        CurvesCollisionState pathControl;
-        struct {
-            u32 flags;
-            u8 unkToSpawnRotY[offsetof(CurvesCollisionState, tiltPitch) - sizeof(u32)];
-            s16 spawnRotY;
-            s16 spawnRotZ;
-            u8 unkToNearestSpecialDeltaY[offsetof(CurvesCollisionState, resultWaterDepth) -
-                                         (offsetof(CurvesCollisionState, tiltPitch) + 4)];
-            f32 nearestSpecialDeltaY;
-            u8 unkToPhysicsActive[offsetof(CurvesCollisionState, subtype) -
-                                  (offsetof(CurvesCollisionState, resultWaterDepth) + sizeof(f32))];
-            s8 physicsActive;
-            u8 unk260;
-            u8 bboxTraceFlags;
-            u8 unk262[2];
-            s8 surfaceFlags;
-            u8 unkToPathControlEnd[sizeof(CurvesCollisionState) -
-                                   (offsetof(CurvesCollisionState, surfaceFlags) + sizeof(u8))];
-        };
-    };
+    CurvesCollisionState pathControl;
     CharacterEyeAnimState eyeAnimState;
     u8 unk294[0x29C - 0x294];
     GameObject* trackedObj; /* current engagement target */
@@ -209,17 +189,12 @@ typedef struct EnemyState {
 } EnemyState;
 
 STATIC_ASSERT(sizeof(EnemyState) == 0x370);
-STATIC_ASSERT(offsetof(EnemyState, flags) == 0x004);
 STATIC_ASSERT(offsetof(EnemyState, prevLookDirX) == 0x2C4);
-STATIC_ASSERT(offsetof(EnemyState, spawnRotY) == 0x19C);
-STATIC_ASSERT(offsetof(EnemyState, nearestSpecialDeltaY) == 0x1B8);
 STATIC_ASSERT(offsetof(EnemyState, pathStep) == 0x2FC);
 STATIC_ASSERT(offsetof(EnemyState, unk324) == 0x324);
 STATIC_ASSERT(offsetof(EnemyState, userData1) == 0x33A);
 STATIC_ASSERT(offsetof(EnemyState, familyData) == 0x33C);
 STATIC_ASSERT(offsetof(EnemyState, lastHitObject) == 0x340);
-STATIC_ASSERT(offsetof(EnemyState, physicsActive) == 0x25F);
-STATIC_ASSERT(offsetof(EnemyState, surfaceFlags) == 0x264);
 STATIC_ASSERT(offsetof(EnemyState, eyeAnimState) == 0x26C);
 STATIC_ASSERT(offsetof(EnemyState, trackedObj) == 0x29C);
 STATIC_ASSERT(offsetof(EnemyState, aggroRange) == 0x2A8);

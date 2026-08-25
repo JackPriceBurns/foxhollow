@@ -7,7 +7,7 @@
  * collision with a flash + cooldown, and on reaching zero health flips to
  * the defeated state, signalling andross and the lightning object.
  */
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/dll_02BC_andross.h"
 #include "main/dll/dll_02BE_androssbrain.h"
 #include "main/dll/dll_02BF_androssligh.h"
@@ -180,19 +180,30 @@ void AndrossBrain_init(GameObject* obj)
     ObjHits_SetTargetMask(obj, 4);
 }
 
+OBJECT_INIT_ADAPTER(gAndrossBrainObjDescriptorInitAdapter, AndrossBrain_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gAndrossBrainObjDescriptorHitDetectAdapter, AndrossBrain_hitDetect)
+OBJECT_RENDER_ADAPTER(gAndrossBrainObjDescriptorRenderAdapter, AndrossBrain_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gAndrossBrainObjDescriptorFreeAdapter, AndrossBrain_free)
+OBJECT_TYPE_ID_ADAPTER(gAndrossBrainObjDescriptorTypeIdAdapter, AndrossBrain_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAndrossBrainObjDescriptorExtraSizeAdapter, AndrossBrain_getExtraSize)
+
 ObjectDescriptor gAndrossBrainObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)AndrossBrain_init,
-    (ObjectDescriptorCallback)AndrossBrain_update,
-    (ObjectDescriptorCallback)AndrossBrain_hitDetect,
-    (ObjectDescriptorCallback)AndrossBrain_render,
-    (ObjectDescriptorCallback)AndrossBrain_free,
-    (ObjectDescriptorCallback)AndrossBrain_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)AndrossBrain_getExtraSize,
+    gAndrossBrainObjDescriptorInitAdapter,
+    AndrossBrain_update,
+    gAndrossBrainObjDescriptorHitDetectAdapter,
+    gAndrossBrainObjDescriptorRenderAdapter,
+    gAndrossBrainObjDescriptorFreeAdapter,
+    gAndrossBrainObjDescriptorTypeIdAdapter,
+    gAndrossBrainObjDescriptorExtraSizeAdapter,
 };

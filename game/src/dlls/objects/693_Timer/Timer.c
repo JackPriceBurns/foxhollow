@@ -18,10 +18,10 @@
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/game_timer_control_api.h"
-#include "main/gamebits_api.h"
-#include "main/maketex_timer_api.h"
+#include "main/audio/sfx.h"
+#include "main/game_timer_control.h"
+#include "main/gamebits.h"
+#include "main/maketex_timer.h"
 #include "main/objtype.h"
 
 f32 gTimerGlowScale = 7.0f;
@@ -253,19 +253,28 @@ void timer_init(GameObject* obj, TimerSetup* setup)
     state->flags.flag20 = 0;
 }
 
+OBJECT_INIT_ADAPTER(gTimerObjDescriptorInitAdapter, timer_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gTimerObjDescriptorRenderAdapter, timer_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gTimerObjDescriptorFreeAdapter, timer_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gTimerObjDescriptorExtraSizeAdapter, timer_getExtraSize)
+
 ObjectDescriptor gTimerObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gTimerObjDescriptorInitAdapter,
+    timer_update,
     0,
+    gTimerObjDescriptorRenderAdapter,
+    gTimerObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)timer_init,
-    (ObjectDescriptorCallback)timer_update,
-    0,
-    (ObjectDescriptorCallback)timer_render,
-    (ObjectDescriptorCallback)timer_free,
-    0,
-    (ObjectDescriptorExtraSizeCallback)timer_getExtraSize,
+    gTimerObjDescriptorExtraSizeAdapter,
 };

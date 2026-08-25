@@ -4,7 +4,7 @@
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/vecmath.h"
 
 typedef enum MMPTrenchFxParticleId {
@@ -108,19 +108,31 @@ void mmpTrenchFx_release(void) {
 void mmpTrenchFx_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMPTrenchFxObjDescriptorInitAdapter, mmpTrenchFx_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMMPTrenchFxObjDescriptorHitDetectAdapter, mmpTrenchFx_hitDetect)
+OBJECT_FREE_ADAPTER(gMMPTrenchFxObjDescriptorFreeAdapter, mmpTrenchFx_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMPTrenchFxObjDescriptorTypeIdAdapter, mmpTrenchFx_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMPTrenchFxObjDescriptorExtraSizeAdapter, mmpTrenchFx_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMPTrenchFxObjDescriptorAcquire, mmpTrenchFx_initialise)
+
 ObjectDescriptor gMMPTrenchFxObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMPTrenchFxObjDescriptorAcquire,
+        mmpTrenchFx_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmpTrenchFx_initialise,
-    (ObjectDescriptorCallback)mmpTrenchFx_release,
-    0,
-    (ObjectDescriptorCallback)mmpTrenchFx_init,
-    (ObjectDescriptorCallback)mmpTrenchFx_update,
-    (ObjectDescriptorCallback)mmpTrenchFx_hitDetect,
-    (ObjectDescriptorCallback)mmpTrenchFx_render,
-    (ObjectDescriptorCallback)mmpTrenchFx_free,
-    (ObjectDescriptorCallback)mmpTrenchFx_getObjectTypeId,
-    mmpTrenchFx_getExtraSize,
+    gMMPTrenchFxObjDescriptorInitAdapter,
+    mmpTrenchFx_update,
+    gMMPTrenchFxObjDescriptorHitDetectAdapter,
+    mmpTrenchFx_render,
+    gMMPTrenchFxObjDescriptorFreeAdapter,
+    gMMPTrenchFxObjDescriptorTypeIdAdapter,
+    gMMPTrenchFxObjDescriptorExtraSizeAdapter,
 };

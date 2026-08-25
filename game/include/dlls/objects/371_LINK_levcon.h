@@ -3,7 +3,7 @@
 
 #include "dlls/object_descriptor.h"
 #include "game/objects/object_fwd.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/sky.h"
 
 typedef struct LINKLevelControlState {
@@ -11,7 +11,7 @@ typedef struct LINKLevelControlState {
     u8 pad01[0x03];
     int unknown04;
     int musicTriggerId;
-    GameBitLatchState musicLatch;
+    int musicLatch;
 } LINKLevelControlState;
 
 STATIC_ASSERT(offsetof(LINKLevelControlState, previousPlayerAreaCell) == 0x00);

@@ -6,7 +6,7 @@
 
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mldf_fileid.h"
 #include "main/mm.h"
 #include "sys/objects.h"
@@ -157,12 +157,12 @@ void LFXEmitter_update(GameObject* obj) {
     obj->anim.rotY += state->spinPitch;
 
     if ((state->flags & LFXEMITTER_FLAG_FOLLOW_CURVE) != 0) {
-        if ((Curve_AdvanceAlongPath(&state->curve.curve, state->curveSpeed) != 0) || (state->curve.atSegmentEnd != 0)) {
+        if ((Curve_AdvanceAlongPath(&state->curve.curve, state->curveSpeed) != 0) || (state->curve.curve.idx != 0)) {
             (*gRomCurveInterface)->goNextPoint(&state->curve);
         }
-        obj->anim.localPosX = state->curve.posX;
-        obj->anim.localPosY = state->curve.posY;
-        obj->anim.localPosZ = state->curve.posZ;
+        obj->anim.localPosX = state->curve.curve.sample[0];
+        obj->anim.localPosY = state->curve.curve.sample[1];
+        obj->anim.localPosZ = state->curve.curve.sample[2];
     } else {
         obj->anim.localPosX = obj->anim.velocityX * timeDelta + obj->anim.localPosX;
         obj->anim.localPosY = obj->anim.velocityY * timeDelta + obj->anim.localPosY;
@@ -243,21 +243,47 @@ void LFXEmitter_initialise(void) {
     gLFXEmitterLightActionCache.oneBasedIndex = LFXEMITTER_CACHE_INDEX_INVALID;
 }
 
-ObjectDescriptor12 gLFXEmitterObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)LFXEmitter_initialise,
-    (ObjectDescriptorCallback)LFXEmitter_release,
-    0,
-    (ObjectDescriptorCallback)LFXEmitter_init,
-    (ObjectDescriptorCallback)LFXEmitter_update,
-    (ObjectDescriptorCallback)LFXEmitter_hitDetect,
-    (ObjectDescriptorCallback)LFXEmitter_render,
-    (ObjectDescriptorCallback)LFXEmitter_free,
-    (ObjectDescriptorCallback)LFXEmitter_getObjectTypeId,
-    LFXEmitter_getExtraSize,
-    (ObjectDescriptorCallback)LFXEmitter_func0A,
-    (ObjectDescriptorCallback)LFXEmitter_isLightActionLoaded,
+OBJECT_INIT_ADAPTER(gLFXEmitterObjDescriptorInitAdapter, LFXEmitter_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLFXEmitterObjDescriptorHitDetectAdapter, LFXEmitter_hitDetect)
+OBJECT_RENDER_ADAPTER(gLFXEmitterObjDescriptorRenderAdapter, LFXEmitter_render)
+OBJECT_FREE_ADAPTER(gLFXEmitterObjDescriptorFreeAdapter, LFXEmitter_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gLFXEmitterObjDescriptorTypeIdAdapter, LFXEmitter_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLFXEmitterObjDescriptorExtraSizeAdapter, LFXEmitter_getExtraSize)
+
+typedef struct LFXEmitterObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(LFXEmitter_func0A)* LFXEmitter_func0A;
+    __typeof__(LFXEmitter_isLightActionLoaded)* LFXEmitter_isLightActionLoaded;
+} LFXEmitterObjDescriptorTypeInterface;
+
+struct LFXEmitterObjDescriptorType {
+    ObjectDescriptorHeader header;
+    LFXEmitterObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gLFXEmitterObjDescriptorAcquire, LFXEmitter_initialise)
+
+struct LFXEmitterObjDescriptorType gLFXEmitterObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gLFXEmitterObjDescriptorAcquire,
+        LFXEmitter_release,
+    },
+    {
+        0,
+        gLFXEmitterObjDescriptorInitAdapter,
+        LFXEmitter_update,
+        gLFXEmitterObjDescriptorHitDetectAdapter,
+        gLFXEmitterObjDescriptorRenderAdapter,
+        gLFXEmitterObjDescriptorFreeAdapter,
+        gLFXEmitterObjDescriptorTypeIdAdapter,
+        gLFXEmitterObjDescriptorExtraSizeAdapter,
+        LFXEmitter_func0A,
+        LFXEmitter_isLightActionLoaded,
+    },
 };

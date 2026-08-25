@@ -12,13 +12,12 @@
  * The placement variant (0..2) selects both the displayed model and the
  * particle-burst model.
  */
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/objhits.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "main/objfx.h"
 #include "main/audio/sfx_trigger_ids.h"
@@ -180,19 +179,32 @@ void VFP_statueball_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFP_statueballObjDescriptorInitAdapter, VFP_statueball_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_statueballObjDescriptorHitDetectAdapter, VFP_statueball_hitDetect)
+OBJECT_RENDER_ADAPTER(gVFP_statueballObjDescriptorRenderAdapter, VFP_statueball_render)
+OBJECT_FREE_ADAPTER(gVFP_statueballObjDescriptorFreeAdapter, VFP_statueball_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_statueballObjDescriptorTypeIdAdapter, VFP_statueball_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_statueballObjDescriptorExtraSizeAdapter, VFP_statueball_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_statueballObjDescriptorAcquire, VFP_statueball_initialise)
+
 ObjectDescriptor gVFP_statueballObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_statueballObjDescriptorAcquire,
+        VFP_statueball_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFP_statueball_initialise,
-    (ObjectDescriptorCallback)VFP_statueball_release,
-    0,
-    (ObjectDescriptorCallback)VFP_statueball_init,
-    (ObjectDescriptorCallback)VFP_statueball_update,
-    (ObjectDescriptorCallback)VFP_statueball_hitDetect,
-    (ObjectDescriptorCallback)VFP_statueball_render,
-    (ObjectDescriptorCallback)VFP_statueball_free,
-    (ObjectDescriptorCallback)VFP_statueball_getObjectTypeId,
-    VFP_statueball_getExtraSize,
+    gVFP_statueballObjDescriptorInitAdapter,
+    VFP_statueball_update,
+    gVFP_statueballObjDescriptorHitDetectAdapter,
+    gVFP_statueballObjDescriptorRenderAdapter,
+    gVFP_statueballObjDescriptorFreeAdapter,
+    gVFP_statueballObjDescriptorTypeIdAdapter,
+    gVFP_statueballObjDescriptorExtraSizeAdapter,
 };

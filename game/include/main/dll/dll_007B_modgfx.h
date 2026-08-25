@@ -9,7 +9,7 @@
 typedef void (*Dll7BSpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams, u32 spawnFlags);
 
 typedef struct Dll7BInterface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll7BSpawnFn spawn;
 } Dll7BInterface;
 
@@ -18,17 +18,15 @@ STATIC_ASSERT(offsetof(Dll7BInterface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll7BInterface) == 0x08);
 
 typedef struct Dll7BResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll7BSpawnFn spawn;
     u32 opaqueTail;
 } Dll7BResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(offsetof(Dll7BResourceDescriptor, opaqueTail) == 0x20);

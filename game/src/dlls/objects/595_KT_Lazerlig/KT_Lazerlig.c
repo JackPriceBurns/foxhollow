@@ -76,19 +76,32 @@ void ktlazerlight_release(void) {
 void ktlazerlight_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKtLazerlightObjDescriptorInitAdapter, ktlazerlight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gKtLazerlightObjDescriptorHitDetectAdapter, ktlazerlight_hitDetect)
+OBJECT_RENDER_ADAPTER(gKtLazerlightObjDescriptorRenderAdapter, ktlazerlight_render)
+OBJECT_FREE_ADAPTER(gKtLazerlightObjDescriptorFreeAdapter, ktlazerlight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKtLazerlightObjDescriptorTypeIdAdapter, ktlazerlight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtLazerlightObjDescriptorExtraSizeAdapter, ktlazerlight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKtLazerlightObjDescriptorAcquire, ktlazerlight_initialise)
+
 ObjectDescriptor gKtLazerlightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKtLazerlightObjDescriptorAcquire,
+        ktlazerlight_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)ktlazerlight_initialise,
-    (ObjectDescriptorCallback)ktlazerlight_release,
-    0,
-    (ObjectDescriptorCallback)ktlazerlight_init,
-    (ObjectDescriptorCallback)ktlazerlight_update,
-    (ObjectDescriptorCallback)ktlazerlight_hitDetect,
-    (ObjectDescriptorCallback)ktlazerlight_render,
-    (ObjectDescriptorCallback)ktlazerlight_free,
-    (ObjectDescriptorCallback)ktlazerlight_getObjectTypeId,
-    ktlazerlight_getExtraSize,
+    gKtLazerlightObjDescriptorInitAdapter,
+    ktlazerlight_update,
+    gKtLazerlightObjDescriptorHitDetectAdapter,
+    gKtLazerlightObjDescriptorRenderAdapter,
+    gKtLazerlightObjDescriptorFreeAdapter,
+    gKtLazerlightObjDescriptorTypeIdAdapter,
+    gKtLazerlightObjDescriptorExtraSizeAdapter,
 };

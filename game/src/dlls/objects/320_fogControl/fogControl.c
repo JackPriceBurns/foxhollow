@@ -3,8 +3,8 @@
 
 #include "game/objects/object.h"
 #include "main/frame_timing.h"
-#include "main/pi_dolphin_api.h"
-#include "main/gamebits_api.h"
+#include "main/pi_dolphin.h"
+#include "main/gamebits.h"
 
 #define FOG_CONTROL_BLEND_STEP_FAST   0.02f
 #define FOG_CONTROL_BLEND_STEP_SLOW   0.005f
@@ -129,19 +129,29 @@ void FogControl_init(GameObject* obj, FogControlPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gFogControlObjDescriptorInitAdapter, FogControl_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gFogControlObjDescriptorHitDetectAdapter, FogControl_hitDetect)
+OBJECT_FREE_ADAPTER(gFogControlObjDescriptorFreeAdapter, FogControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gFogControlObjDescriptorTypeIdAdapter, FogControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gFogControlObjDescriptorExtraSizeAdapter, FogControl_getExtraSize)
+
 ObjectDescriptor gFogControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gFogControlObjDescriptorInitAdapter,
+    FogControl_update,
+    gFogControlObjDescriptorHitDetectAdapter,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)FogControl_init,
-    (ObjectDescriptorCallback)FogControl_update,
-    (ObjectDescriptorCallback)FogControl_hitDetect,
-    0,
-    (ObjectDescriptorCallback)FogControl_free,
-    (ObjectDescriptorCallback)FogControl_getObjectTypeId,
-    FogControl_getExtraSize,
+    gFogControlObjDescriptorFreeAdapter,
+    gFogControlObjDescriptorTypeIdAdapter,
+    gFogControlObjDescriptorExtraSizeAdapter,
 };

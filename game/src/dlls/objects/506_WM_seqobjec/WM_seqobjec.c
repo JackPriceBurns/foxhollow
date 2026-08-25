@@ -114,19 +114,31 @@ void WM_seqobject_release(void) {
 void WM_seqobject_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_seqobjectObjDescriptorInitAdapter, WM_seqobject_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_seqobjectObjDescriptorHitDetectAdapter, WM_seqobject_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_seqobjectObjDescriptorFreeAdapter, WM_seqobject_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_seqobjectObjDescriptorTypeIdAdapter, WM_seqobject_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_seqobjectObjDescriptorExtraSizeAdapter, WM_seqobject_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_seqobjectObjDescriptorAcquire, WM_seqobject_initialise)
+
 ObjectDescriptor gWM_seqobjectObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_seqobjectObjDescriptorAcquire,
+        WM_seqobject_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_seqobject_initialise,
-    WM_seqobject_release,
-    0,
-    (ObjectDescriptorCallback)WM_seqobject_init,
-    (ObjectDescriptorCallback)WM_seqobject_update,
-    WM_seqobject_hitDetect,
-    (ObjectDescriptorCallback)WM_seqobject_render,
-    WM_seqobject_free,
-    (ObjectDescriptorCallback)WM_seqobject_getObjectTypeId,
-    WM_seqobject_getExtraSize,
+    gWM_seqobjectObjDescriptorInitAdapter,
+    WM_seqobject_update,
+    gWM_seqobjectObjDescriptorHitDetectAdapter,
+    WM_seqobject_render,
+    gWM_seqobjectObjDescriptorFreeAdapter,
+    gWM_seqobjectObjDescriptorTypeIdAdapter,
+    gWM_seqobjectObjDescriptorExtraSizeAdapter,
 };

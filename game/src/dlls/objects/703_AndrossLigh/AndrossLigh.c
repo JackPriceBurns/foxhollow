@@ -4,7 +4,7 @@
 #include "main/mm.h"
 #include "sys/objects.h"
 #include "main/newclouds.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/dll/dll_02BF_androssligh.h"
 #include "dolphin/mtx/vec.h"
 #include "main/camera.h"
@@ -125,7 +125,9 @@ void androssligh_update(GameObject* obj)
     }
     if (state->anchor != NULL)
     {
-        obj->anim.localPos = state->anchor->anim.localPos;
+        obj->anim.localPosX = state->anchor->anim.localPosX;
+        obj->anim.localPosY = state->anchor->anim.localPosY;
+        obj->anim.localPosZ = state->anchor->anim.localPosZ;
     }
     state->previousMode = state->mode;
     switch (state->mode)
@@ -144,19 +146,30 @@ void androssligh_init(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gAndrossLighObjDescriptorInitAdapter, androssligh_init)
+OBJECT_HIT_DETECT_ADAPTER(gAndrossLighObjDescriptorHitDetectAdapter, androssligh_hitDetect)
+OBJECT_RENDER_ADAPTER(gAndrossLighObjDescriptorRenderAdapter, androssligh_render, obj)
+OBJECT_FREE_ADAPTER(gAndrossLighObjDescriptorFreeAdapter, androssligh_free)
+OBJECT_TYPE_ID_ADAPTER(gAndrossLighObjDescriptorTypeIdAdapter, androssligh_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gAndrossLighObjDescriptorExtraSizeAdapter, androssligh_getExtraSize)
+
 ObjectDescriptor gAndrossLighObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)androssligh_init,
-    (ObjectDescriptorCallback)androssligh_update,
-    (ObjectDescriptorCallback)androssligh_hitDetect,
-    (ObjectDescriptorCallback)androssligh_render,
-    (ObjectDescriptorCallback)androssligh_free,
-    (ObjectDescriptorCallback)androssligh_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)androssligh_getExtraSize,
+    gAndrossLighObjDescriptorInitAdapter,
+    androssligh_update,
+    gAndrossLighObjDescriptorHitDetectAdapter,
+    gAndrossLighObjDescriptorRenderAdapter,
+    gAndrossLighObjDescriptorFreeAdapter,
+    gAndrossLighObjDescriptorTypeIdAdapter,
+    gAndrossLighObjDescriptorExtraSizeAdapter,
 };

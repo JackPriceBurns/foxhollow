@@ -4,13 +4,11 @@
 #include "dlls/objects/272.h"
 
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtexture.h"
-#include "main/audio/sfx_object_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 
 #define DOOR_PHASE_OPEN    0
@@ -230,19 +228,26 @@ void Door_init(GameObject* obj, DoorPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gDoorObjDescriptorInitAdapter, Door_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gDoorObjDescriptorExtraSizeAdapter, Door_getExtraSize)
+
 ObjectDescriptor gDoorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDoorObjDescriptorInitAdapter,
+    Door_update,
+    0,
+    Door_render,
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)Door_init,
-    (ObjectDescriptorCallback)Door_update,
-    0,
-    (ObjectDescriptorCallback)Door_render,
-    0,
-    0,
-    Door_getExtraSize,
+    gDoorObjDescriptorExtraSizeAdapter,
 };

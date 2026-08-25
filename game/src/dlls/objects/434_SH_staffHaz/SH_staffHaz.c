@@ -24,18 +24,24 @@ void SH_StaffHaze_update(GameObject* obj) {
     }
 }
 
+OBJECT_RENDER_ADAPTER(gSH_staffHazeObjDescriptorRenderAdapter, SH_StaffHaze_render, obj, arg2, arg3, arg4, arg5)
+
 ObjectDescriptor gSH_staffHazeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
     0,
+    SH_StaffHaze_update,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SH_StaffHaze_update,
-    0,
-    (ObjectDescriptorCallback)SH_StaffHaze_render,
+    gSH_staffHazeObjDescriptorRenderAdapter,
     0,
     0,
     0,

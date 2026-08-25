@@ -2,9 +2,10 @@
 
 #include "main/dll/DR/dll_0261_drlasercannon.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/maketex_timer_api.h"
+#include "dolphin/math.h"
+#include "main/maketex_timer.h"
 #include "main/dll/dll_00C4_tricky.h"
+#include "main/dll/dll_0262_drakormissile.h"
 #include "main/dll/dll_0273_firepipe.h"
 #include "main/dll/DR/dr_types.h"
 #include "main/vecmath.h"
@@ -14,9 +15,9 @@
 #include "main/dll/rom_curve_interface.h"
 #include "dlls/objects/229_Shield.h"
 #include "main/dll/player_objects.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "game/objects/object.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
@@ -24,14 +25,13 @@
 #include "main/obj_path.h"
 #include "main/objanim.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objfx.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/object_update_list.h"
 #include "main/audio/sfx.h"
 #include "main/audio/sfx_ids.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/audio/sfx_play_api.h"
 
 int lbl_803DDD6C;
 f32 lbl_803DDD68;
@@ -508,8 +508,8 @@ void DR_LaserCannon_update(GameObject* obj)
                             inv[3] = hitPos[0];
                             inv[4] = hitPos[1];
                             inv[5] = hitPos[2];
-                            ((void (*)(GameObject*, f32*, f32*, f32))spawned->anim.dll[0][9])(
-                                spawned, outv, inv,
+                            DRAKOR_MISSILE_INTERFACE(spawned)->startStraightLaunch(
+                                spawned, (GameObject*)outv, (GameObject*)inv,
                                 ObjAnim_ReadPlacementS16(&obj->anim, &(setup->beamSpeed)) / 10.0f);
                             state->beamObject = spawned;
                             ObjAnim_SetCurrentMove(obj, 1, 0.0f, 0);
@@ -559,9 +559,9 @@ void DR_LaserCannon_update(GameObject* obj)
         if ((*gRomCurveInterface)->initCurve(&state->curveFollow, (void*)obj, 100.0f, &spawnFlag, 0) == 0)
         {
             state->flags.b5 = 1;
-            obj->anim.localPosX = state->curveFollow.posX;
-            obj->anim.localPosZ = state->curveFollow.posZ;
-            obj->anim.localPosY = state->curveFollow.posY;
+            obj->anim.localPosX = state->curveFollow.curve.sample[0];
+            obj->anim.localPosZ = state->curveFollow.curve.sample[2];
+            obj->anim.localPosY = state->curveFollow.curve.sample[1];
         }
     }
     {
@@ -651,19 +651,31 @@ void DR_LaserCannon_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDrLaserCannonObjDescriptorInitAdapter, DR_LaserCannon_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrLaserCannonObjDescriptorRenderAdapter, DR_LaserCannon_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrLaserCannonObjDescriptorFreeAdapter, DR_LaserCannon_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrLaserCannonObjDescriptorTypeIdAdapter, DR_LaserCannon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrLaserCannonObjDescriptorExtraSizeAdapter, DR_LaserCannon_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrLaserCannonObjDescriptorAcquire, DR_LaserCannon_initialise)
+
 ObjectDescriptor gDrLaserCannonObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrLaserCannonObjDescriptorAcquire,
+        DR_LaserCannon_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DR_LaserCannon_initialise,
-    (ObjectDescriptorCallback)DR_LaserCannon_release,
-    0,
-    (ObjectDescriptorCallback)DR_LaserCannon_init,
-    (ObjectDescriptorCallback)DR_LaserCannon_update,
-    (ObjectDescriptorCallback)DR_LaserCannon_hitDetect,
-    (ObjectDescriptorCallback)DR_LaserCannon_render,
-    (ObjectDescriptorCallback)DR_LaserCannon_free,
-    (ObjectDescriptorCallback)DR_LaserCannon_getObjectTypeId,
-    DR_LaserCannon_getExtraSize,
+    gDrLaserCannonObjDescriptorInitAdapter,
+    DR_LaserCannon_update,
+    DR_LaserCannon_hitDetect,
+    gDrLaserCannonObjDescriptorRenderAdapter,
+    gDrLaserCannonObjDescriptorFreeAdapter,
+    gDrLaserCannonObjDescriptorTypeIdAdapter,
+    gDrLaserCannonObjDescriptorExtraSizeAdapter,
 };

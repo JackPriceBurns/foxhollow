@@ -6,9 +6,9 @@
 #include "main/objhits_types.h"
 
 typedef struct ObjHitReactEntry ObjHitReactEntry;
-typedef struct ObjAnimBank ObjAnimBank;
 typedef struct ObjAnimComponent ObjAnimComponent;
 typedef struct ObjHitbox ObjHitbox;
+typedef struct ObjModel ObjModel;
 
 typedef struct ObjHitReactMoveEntry {
   s16 moveId;
@@ -154,9 +154,9 @@ STATIC_ASSERT(offsetof(ObjHitReactEntry, reactionStepScale) == 0x0C);
 
 void ObjHitReact_ResetActiveObjects(int objectCount);
 uintptr_t ObjHitbox_AllocRotatedBounds(ObjHitbox *hitbox,uintptr_t arena);
-void ObjHitReact_LoadMoveEntries(ObjAnimComponent *objAnim,ObjAnimBank *bank,int objType,
+void ObjHitReact_LoadMoveEntries(ObjAnimComponent *objAnim,ObjModel *model,int objType,
                                  ObjHitReactState *hitState,int moveId,int async);
-uintptr_t ObjHitReact_InitState(int objType,ObjAnimBank *bank,ObjHitReactState *hitState,
+uintptr_t ObjHitReact_InitState(int objType,ObjModel *model,ObjHitReactState *hitState,
                           uintptr_t entryArena,ObjAnimComponent *objAnim);
 void ObjHitReact_UpdateResetObjects(void);
 ObjAnimComponent **ObjHitReact_GetResetObjects(int *outObjectCount);

@@ -4,7 +4,7 @@
  */
 
 #include "dlls/objects/451_DIMGate.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objhits.h"
 
@@ -98,19 +98,31 @@ void dimgate_release(void) {
 void dimgate_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMGateObjDescriptorInitAdapter, dimgate_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMGateObjDescriptorHitDetectAdapter, dimgate_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMGateObjDescriptorFreeAdapter, dimgate_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMGateObjDescriptorTypeIdAdapter, dimgate_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMGateObjDescriptorExtraSizeAdapter, dimgate_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMGateObjDescriptorAcquire, dimgate_initialise)
+
 ObjectDescriptor gDIMGateObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMGateObjDescriptorAcquire,
+        dimgate_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimgate_initialise,
-    (ObjectDescriptorCallback)dimgate_release,
-    0,
-    (ObjectDescriptorCallback)dimgate_init,
-    (ObjectDescriptorCallback)dimgate_update,
-    (ObjectDescriptorCallback)dimgate_hitDetect,
-    (ObjectDescriptorCallback)dimgate_render,
-    (ObjectDescriptorCallback)dimgate_free,
-    (ObjectDescriptorCallback)dimgate_getObjectTypeId,
-    dimgate_getExtraSize,
+    gDIMGateObjDescriptorInitAdapter,
+    dimgate_update,
+    gDIMGateObjDescriptorHitDetectAdapter,
+    dimgate_render,
+    gDIMGateObjDescriptorFreeAdapter,
+    gDIMGateObjDescriptorTypeIdAdapter,
+    gDIMGateObjDescriptorExtraSizeAdapter,
 };

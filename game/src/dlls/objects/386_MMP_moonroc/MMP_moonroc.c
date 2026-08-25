@@ -8,30 +8,29 @@
 #include "dlls/objects/386_MMP_moonroc.h"
 #include "dlls/objects/387_MMP_gyserve.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
-#include "main/audio/sfx_channel_volume_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "dolphin/math.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/carryable_interface.h"
-#include "main/dll/objfx_api.h"
-#include "main/dll/player_api.h"
+#include "main/dll/objfx.h"
+#include "main/dll/player.h"
 #include "main/dll/player_state.h"
-#include "main/dll/savegame_object_api.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/savegame_object.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
 #include "main/mapEventTypes.h"
 #include "main/objtype.h"
 #include "main/obj_list.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
 #include "main/object_render.h"
-#include "main/track_bbox_api.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_bbox.h"
+#include "main/track_dolphin.h"
 #include "main/vecmath.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "main/dll/partfx_interface.h"
 
@@ -237,7 +236,7 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
             pedestalCount = mainGetBit(MMP_MOON_ROCK_PEDESTAL_COUNT_GAMEBIT);
             inventoryCount = mainGetBit(MMP_MOON_ROCK_INVENTORY_COUNT_GAMEBIT);
             if (place == 0) {
-                (*gCarryableInterface)->setGravityEnabled(state, 1);
+                (*gCarryableInterface)->setGravityEnabled(&state->carryable, 1);
                 if (disableGameBit != -1) {
                     mainSetBits(disableGameBit, 0);
                 }
@@ -261,7 +260,7 @@ void mmpMoonRock_reconcilePlacement(GameObject* obj, u8 place, u8 mode) {
                 obj->anim.localPosZ = state->homeZ;
                 saveGame_saveObjectPos(obj);
             } else {
-                (*gCarryableInterface)->setGravityEnabled(state, 0);
+                (*gCarryableInterface)->setGravityEnabled(&state->carryable, 0);
                 if (disableGameBit != -1) {
                     mainSetBits(disableGameBit, 1);
                 }
@@ -368,7 +367,7 @@ static inline u8 mmpMoonRock_spacingIsClear(GameObject* obj, MMPMoonRockState* s
         GameObject* otherRock = *list;
         if (otherRock != obj && otherRock->anim.romDefNo == MMP_MOON_ROCK_SEQUENCE_ID &&
             Vec_xzDistance(&obj->anim.worldPosX, &otherRock->anim.worldPosX) < minimumSpacing) {
-            (*gCarryableInterface)->setDropDisabled(state, 1);
+            (*gCarryableInterface)->setDropDisabled(&state->carryable, 1);
             return 0;
         }
         list++;
@@ -421,7 +420,7 @@ void mmpMoonRock_update(GameObject* obj) {
             &obj->anim, &placementOrObjects->pickupGateGameBit);
         if (pickupGateGameBit != -1 && mainGetBit(pickupGateGameBit) == 0) {
             obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
-        } else if ((*gCarryableInterface)->updateHeld(obj, obj->extra) != 0) {
+        } else if ((*gCarryableInterface)->updateHeld(obj, &state->carryable) != 0) {
             isHeld = 1;
         }
     } else {
@@ -439,7 +438,7 @@ void mmpMoonRock_update(GameObject* obj) {
             state->flags |= MMP_MOON_ROCK_FLAG_HELD_LAST_UPDATE | MMP_MOON_ROCK_FLAG_ICON_THROW;
             state->flags &= ~MMP_MOON_ROCK_FLAG_ICON_PLACE;
         }
-        (*gCarryableInterface)->setDropDisabled(state, 0);
+        (*gCarryableInterface)->setDropDisabled(&state->carryable, 0);
         spacingClear = mmpMoonRock_spacingIsClear(obj, state);
         if (spacingClear != 0) {
             state->flags |= MMP_MOON_ROCK_FLAG_ACTION_PENDING;
@@ -514,17 +513,17 @@ void mmpMoonRock_init(GameObject* obj, const MMPMoonRockPlacement* placement) {
         if ((u8)(kind - 3) <= 1 || kind == 6) {
             state->flags = state->flags | MMP_MOON_ROCK_FLAG_PLACED;
         }
-        (*gCarryableInterface)->setGravityEnabled(state, 0);
+        (*gCarryableInterface)->setGravityEnabled(&state->carryable, 0);
     } else {
-        (*gCarryableInterface)->setGravityEnabled(state, 1);
+        (*gCarryableInterface)->setGravityEnabled(&state->carryable, 1);
     }
     {
         f32 y = obj->anim.localPosY;
         state->baseY = y;
         state->unknown10 = y;
     }
-    (*gCarryableInterface)->init(obj, obj->extra, 0x32);
-    (*gCarryableInterface)->setSuppressPositionSave(state, 1);
+    (*gCarryableInterface)->init(obj, &state->carryable, 0x32);
+    (*gCarryableInterface)->setSuppressPositionSave(&state->carryable, 1);
     objAddObjectType(obj, MMP_MOON_ROCK_OBJECT_GROUP);
     state->homeX = obj->anim.localPosX;
     state->homeY = obj->anim.localPosY;
@@ -541,19 +540,31 @@ PartFxSpawnParams gMMPMoonRockSpawnParams;
 void mmpMoonRock_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMPMoonRockObjDescriptorInitAdapter, mmpMoonRock_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gMMPMoonRockObjDescriptorHitDetectAdapter, mmpMoonRock_hitDetect)
+OBJECT_FREE_ADAPTER(gMMPMoonRockObjDescriptorFreeAdapter, mmpMoonRock_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMPMoonRockObjDescriptorTypeIdAdapter, mmpMoonRock_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMPMoonRockObjDescriptorExtraSizeAdapter, mmpMoonRock_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMPMoonRockObjDescriptorAcquire, mmpMoonRock_initialise)
+
 ObjectDescriptor gMMPMoonRockObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMPMoonRockObjDescriptorAcquire,
+        mmpMoonRock_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmpMoonRock_initialise,
-    (ObjectDescriptorCallback)mmpMoonRock_release,
-    0,
-    (ObjectDescriptorCallback)mmpMoonRock_init,
-    (ObjectDescriptorCallback)mmpMoonRock_update,
-    (ObjectDescriptorCallback)mmpMoonRock_hitDetect,
-    (ObjectDescriptorCallback)mmpMoonRock_render,
-    (ObjectDescriptorCallback)mmpMoonRock_free,
-    (ObjectDescriptorCallback)mmpMoonRock_getObjectTypeId,
-    mmpMoonRock_getExtraSize,
+    gMMPMoonRockObjDescriptorInitAdapter,
+    mmpMoonRock_update,
+    gMMPMoonRockObjDescriptorHitDetectAdapter,
+    mmpMoonRock_render,
+    gMMPMoonRockObjDescriptorFreeAdapter,
+    gMMPMoonRockObjDescriptorTypeIdAdapter,
+    gMMPMoonRockObjDescriptorExtraSizeAdapter,
 };

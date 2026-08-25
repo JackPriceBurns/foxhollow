@@ -6,20 +6,20 @@
  */
 #include "dlls/objects/382_MMP_levelco.h"
 
-#include "dlls/objects/430_SH_LevelCon.h"
-#include "main/audio/music_api.h"
+#include "main/gamebit_latch.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_show_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/gametext_show.h"
+#include "main/lightmap.h"
 #include "main/map_load.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/pi_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 
 #define MMP_LEVEL_CONTROL_ENVFX_ANIM_EVENT_1 0x13B
@@ -40,7 +40,7 @@
 #define MMP_LEVEL_CONTROL_TEXT_ID       0x34F
 #define MMP_LEVEL_CONTROL_TEXT_DURATION 300.0f
 
-GameBitLatchState gMMPLevelControlMusicLatch;
+int gMMPLevelControlMusicLatch;
 f32 gMMPLevelControlTextCountdown;
 
 int mmpLevelControl_processAnimEvents(GameObject* obj, int unusedArg2, ObjSeqState* animUpdate) {
@@ -75,7 +75,7 @@ int mmpLevelControl_getObjectTypeId(void) {
 
 void mmpLevelControl_free(GameObject* obj) {
     gMMPLevelControlTextCountdown = 0.0f;
-    gMMPLevelControlMusicLatch.activeMask = 0;
+    gMMPLevelControlMusicLatch = 0;
     Music_Trigger(MUSICTRIG_WLC_Puzzle, 0);
 }
 
@@ -184,7 +184,7 @@ void mmpLevelControl_init(GameObject* obj) {
     obj->animEventCallback = mmpLevelControl_processAnimEvents;
     unlockLevel(mapGetDirIdx(MMP_LEVEL_CONTROL_MAP_ID), 0, 0);
     gMMPLevelControlTextCountdown = MMP_LEVEL_CONTROL_TEXT_DURATION;
-    gMMPLevelControlMusicLatch.activeMask = 0;
+    gMMPLevelControlMusicLatch = 0;
     Music_Trigger(MUSICTRIG_wind_ambi, 0);
     Music_Trigger(MUSICTRIG_mammoth_walk_db, 0);
     Music_Trigger(MUSICTRIG_LVF_Tracking_f2, 0);
@@ -199,19 +199,31 @@ void mmpLevelControl_release(void) {
 void mmpLevelControl_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gMMPLevelControlObjDescriptorInitAdapter, mmpLevelControl_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gMMPLevelControlObjDescriptorHitDetectAdapter, mmpLevelControl_hitDetect)
+OBJECT_FREE_ADAPTER(gMMPLevelControlObjDescriptorFreeAdapter, mmpLevelControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gMMPLevelControlObjDescriptorTypeIdAdapter, mmpLevelControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gMMPLevelControlObjDescriptorExtraSizeAdapter, mmpLevelControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gMMPLevelControlObjDescriptorAcquire, mmpLevelControl_initialise)
+
 ObjectDescriptor gMMPLevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gMMPLevelControlObjDescriptorAcquire,
+        mmpLevelControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)mmpLevelControl_initialise,
-    (ObjectDescriptorCallback)mmpLevelControl_release,
-    0,
-    (ObjectDescriptorCallback)mmpLevelControl_init,
-    (ObjectDescriptorCallback)mmpLevelControl_update,
-    (ObjectDescriptorCallback)mmpLevelControl_hitDetect,
-    (ObjectDescriptorCallback)mmpLevelControl_render,
-    (ObjectDescriptorCallback)mmpLevelControl_free,
-    (ObjectDescriptorCallback)mmpLevelControl_getObjectTypeId,
-    mmpLevelControl_getExtraSize,
+    gMMPLevelControlObjDescriptorInitAdapter,
+    mmpLevelControl_update,
+    gMMPLevelControlObjDescriptorHitDetectAdapter,
+    mmpLevelControl_render,
+    gMMPLevelControlObjDescriptorFreeAdapter,
+    gMMPLevelControlObjDescriptorTypeIdAdapter,
+    gMMPLevelControlObjDescriptorExtraSizeAdapter,
 };

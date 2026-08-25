@@ -1,10 +1,10 @@
 #include "dlls/objects/274.h"
 
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
 #include "main/objtype.h"
-#include "main/rcp_dolphin_api.h"
+#include "main/rcp_dolphin.h"
 
 #define SEQ_OBJECT_GROUP                           0xF
 #define SEQ_OBJECT_SEQUENCE_INDEX_NONE             -1
@@ -36,16 +36,6 @@
 #define SEQ_OBJECT_CAMERA_MODE                     1
 #define SEQ_OBJECT_CAMERA_ARG_DEFAULT              0
 
-typedef void (*ObjectInitCallback)(GameObject* obj, ObjPlacement* placement, int flags);
-
-/* Only the init slot used here is recovered. */
-typedef struct ObjectInitInterface {
-    void* slot0;
-    ObjectInitCallback init;
-} ObjectInitInterface;
-
-STATIC_ASSERT(offsetof(ObjectInitInterface, init) == 0x4);
-
 typedef enum SeqObjectAnimEvent {
     SEQ_OBJECT_ANIM_EVENT_SET_OPEN_BIT = 1,
     SEQ_OBJECT_ANIM_EVENT_WARP = 2,
@@ -54,7 +44,7 @@ typedef enum SeqObjectAnimEvent {
 
 void objCallOnLoadCallback(GameObject* obj) {
     if (obj != NULL) {
-        ((ObjectInitInterface*)*obj->anim.dll)->init(obj, obj->anim.placement, SEQ_OBJECT_INIT_FLAGS_DEFAULT);
+        (*obj->anim.dll)->init(obj, obj->anim.placement, SEQ_OBJECT_INIT_FLAGS_DEFAULT);
     }
 }
 
@@ -223,19 +213,28 @@ void SeqObject_init(GameObject* obj, SeqObjectPlacement* placement) {
     obj->objectFlags = (u16)(obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED);
 }
 
+OBJECT_INIT_ADAPTER(gSeqObjectObjDescriptorInitAdapter, SeqObject_init, obj, placement)
+OBJECT_FREE_ADAPTER(gSeqObjectObjDescriptorFreeAdapter, SeqObject_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gSeqObjectObjDescriptorTypeIdAdapter, SeqObject_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSeqObjectObjDescriptorExtraSizeAdapter, SeqObject_getExtraSize)
+
 ObjectDescriptor gSeqObjectObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gSeqObjectObjDescriptorInitAdapter,
+    SeqObject_update,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)SeqObject_init,
-    (ObjectDescriptorCallback)SeqObject_update,
-    0,
-    (ObjectDescriptorCallback)SeqObject_render,
-    (ObjectDescriptorCallback)SeqObject_free,
-    (ObjectDescriptorCallback)SeqObject_getObjectTypeId,
-    SeqObject_getExtraSize,
+    SeqObject_render,
+    gSeqObjectObjDescriptorFreeAdapter,
+    gSeqObjectObjDescriptorTypeIdAdapter,
+    gSeqObjectObjDescriptorExtraSizeAdapter,
 };

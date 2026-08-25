@@ -11,21 +11,21 @@
 #include "dolphin/gx/GXTev.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dolphin/mtx.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/sky_interface.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/frame_timing.h"
 #include "main/mm.h"
 #include "main/vecmath.h"
 #include "main/debug.h"
-#include "main/lightmap_api.h"
-#include "main/rcp_dolphin_api.h"
-#include "track/intersect_api.h"
+#include "main/lightmap.h"
+#include "main/rcp_dolphin.h"
+#include "track/intersect.h"
 #include "main/texture.h"
 #include "main/camera.h"
 #include "main/resource.h"
 #include "dolphin/os/OSCache.h"
-#include "track/intersect_depth_state_api.h"
+#include "track/intersect_depth_state.h"
 
 u8* gWaterfxRippleVtx;
 u8* gWaterfxRippleVtxDesc;
@@ -875,18 +875,30 @@ void waterfx_initialise(void)
     waterfx_buildSplashDisplayList();
 }
 
-ResourceDescriptorCallbacks11 waterfx_funcs = {
-    {0x00000000, 0x00000000, 0x00000000, 0x000a0000},
-    {(ResourceDescriptorCallback)waterfx_initialise,
-     (ResourceDescriptorCallback)waterfx_release,
-     0x00000000,
-     (ResourceDescriptorCallback)waterfx_run,
-     (ResourceDescriptorCallback)waterfx_spawnImpactSurface,
-     (ResourceDescriptorCallback)waterfx_render,
-     (ResourceDescriptorCallback)waterfx_spawnSplashBurst,
-     (ResourceDescriptorCallback)waterfx_spawnRipple,
-     (ResourceDescriptorCallback)waterfx_spawnSimpleRipple,
-     (ResourceDescriptorCallback)waterfx_onMapSetup,
-     (ResourceDescriptorCallback)waterfx_setRippleScale}};
+typedef struct WaterfxResourceDescriptor {
+    ResourceDescriptorHeader header;
+    WaterfxInterface interface;
+} WaterfxResourceDescriptor;
+
+RESOURCE_ACQUIRE_ADAPTER(gWaterfxResourceAcquireAdapter, waterfx_initialise)
+
+WaterfxResourceDescriptor waterfx_funcs = {
+    {
+        {0x00000000, 0x00000000, 0x00000000, 0x000a0000},
+        gWaterfxResourceAcquireAdapter,
+        waterfx_release,
+    },
+    {
+        NULL,
+        waterfx_run,
+        waterfx_spawnImpactSurface,
+        waterfx_render,
+        waterfx_spawnSplashBurst,
+        waterfx_spawnRipple,
+        waterfx_spawnSimpleRipple,
+        waterfx_onMapSetup,
+        waterfx_setRippleScale,
+    },
+};
 
 char sWaterfxDllAllocFailed[] = "Could not allocate memory for waterfx dll\n";

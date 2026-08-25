@@ -13,17 +13,17 @@
  */
 #include "dlls/objects/460_DIMMagicBri.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_trig_api.h"
+#include "dolphin/math.h"
 #include "dolphin/os/OSCache.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/ppcwgpipe_struct.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/model.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
 #include "main/objtexture.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "sys/objects.h"
 
 #define DIM_MAGIC_BRIDGE_GAMEBIT_IGNITED 0x1e9
@@ -237,19 +237,31 @@ void dimmagicbridge_release(void) {
 void dimmagicbridge_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMMagicBridgeObjDescriptorInitAdapter, dimmagicbridge_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMMagicBridgeObjDescriptorHitDetectAdapter, dimmagicbridge_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMMagicBridgeObjDescriptorFreeAdapter, dimmagicbridge_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMMagicBridgeObjDescriptorTypeIdAdapter, dimmagicbridge_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMMagicBridgeObjDescriptorExtraSizeAdapter, dimmagicbridge_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMMagicBridgeObjDescriptorAcquire, dimmagicbridge_initialise)
+
 ObjectDescriptor gDIMMagicBridgeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMMagicBridgeObjDescriptorAcquire,
+        dimmagicbridge_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimmagicbridge_initialise,
-    (ObjectDescriptorCallback)dimmagicbridge_release,
-    0,
-    (ObjectDescriptorCallback)dimmagicbridge_init,
-    (ObjectDescriptorCallback)dimmagicbridge_update,
-    (ObjectDescriptorCallback)dimmagicbridge_hitDetect,
-    (ObjectDescriptorCallback)dimmagicbridge_render,
-    (ObjectDescriptorCallback)dimmagicbridge_free,
-    (ObjectDescriptorCallback)dimmagicbridge_getObjectTypeId,
-    dimmagicbridge_getExtraSize,
+    gDIMMagicBridgeObjDescriptorInitAdapter,
+    dimmagicbridge_update,
+    gDIMMagicBridgeObjDescriptorHitDetectAdapter,
+    dimmagicbridge_render,
+    gDIMMagicBridgeObjDescriptorFreeAdapter,
+    gDIMMagicBridgeObjDescriptorTypeIdAdapter,
+    gDIMMagicBridgeObjDescriptorExtraSizeAdapter,
 };

@@ -1,6 +1,7 @@
 #ifndef MAIN_DLL_DLL_00C4_TRICKY_H_
 #define MAIN_DLL_DLL_00C4_TRICKY_H_
 
+#include "dlls/object_descriptor.h"
 #include "game/objects/object.h"
 
 #define TRICKY_ITEM_ID_COUNT 5
@@ -16,14 +17,11 @@ extern const TrickyItemIdList gTrickyFoodItemIds;
 #include "types.h"
 #include "main/dll/tricky_state.h"
 #include "main/objseq.h"
-#include "dlls/object_descriptor.h"
-
-extern ObjectDescriptor21 gTrickyObjDescriptor;
 
 /* gTrickyObjDescriptor from slot02 onwards: the export table other objects reach through
    obj->anim.dll. */
 typedef struct TrickyCompanionInterface {
-    void* pad00[8];
+    OBJECT_INTERFACE_FIELDS;
     int (*getAvailableCommands)(GameObject* tricky);
     int (*updateSideCommandPrompts)(GameObject* tricky);
     void (*sideCommandEnable)(GameObject* tricky, GameObject* target, int commandKind, int commandType);
@@ -32,10 +30,14 @@ typedef struct TrickyCompanionInterface {
     void (*commandPlayBall)(GameObject* tricky, int enabled, GameObject* target);
     int (*requestMoveToObject)(GameObject* tricky, GameObject* target);
     void (*requestRecall)(GameObject* tricky);
-    u8 (*isPlayingBall)(GameObject* tricky);
-    u8 (*isGuarding)(GameObject* tricky);
+    int (*isPlayingBall)(GameObject* tricky);
+    int (*isGuarding)(GameObject* tricky);
     int (*getCurrentCommandType)(GameObject* tricky, int* commandType);
 } TrickyCompanionInterface;
+
+OBJECT_DESCRIPTOR_TYPE(TrickyDescriptor, TrickyCompanionInterface);
+
+extern TrickyDescriptor gTrickyObjDescriptor;
 
 STATIC_ASSERT(offsetof(TrickyCompanionInterface, getAvailableCommands) == 0x20);
 STATIC_ASSERT(offsetof(TrickyCompanionInterface, updateSideCommandPrompts) == 0x24);
@@ -57,7 +59,7 @@ u8* Tricky_findNearestGroup4BObject(GameObject* obj, TrickyState* state);
 void tricky_attachToWalkGroup(GameObject* obj, TrickyState* state);
 void tricky_stateIdleWander(GameObject* obj, TrickyState* state);
 int Tricky_requestMoveToObject(GameObject* obj, GameObject* targetObj);
-void Tricky_commandPlayBall(int* obj, int commandEnabled, GameObject* targetObj);
+void Tricky_commandPlayBall(GameObject* obj, int commandEnabled, GameObject* targetObj);
 void sideCommandEnable(GameObject* obj, GameObject* targetObj, int commandKind, int commandType);
 int Tricky_updateSideCommandPrompts(GameObject* obj);
 void Tricky_free(GameObject* obj, int shouldKeepFlameChildren);
@@ -67,12 +69,12 @@ void Tricky_update(GameObject* obj);
 void Tricky_render(GameObject* obj, int p2, int p3, int p4, int p5, char doRender);
 void Tricky_hitDetect(GameObject* obj);
 int Tricky_getExtraSize(void);
-u8 Tricky_getEnergyMax(int* obj);
-u8 Tricky_getEnergy(int* obj);
-int Tricky_getCurrentCommandType(int* obj, int* out);
-void Tricky_requestRecall(int* obj);
-int Tricky_isGuarding(int* obj);
-int Tricky_isPlayingBall(int* obj);
-int Tricky_getAvailableCommands(void);
+u8 Tricky_getEnergyMax(GameObject* obj);
+u8 Tricky_getEnergy(GameObject* obj);
+int Tricky_getCurrentCommandType(GameObject* obj, int* out);
+void Tricky_requestRecall(GameObject* obj);
+int Tricky_isGuarding(GameObject* obj);
+int Tricky_isPlayingBall(GameObject* obj);
+int Tricky_getAvailableCommands(GameObject* obj);
 
 #endif /* MAIN_DLL_DLL_00C4_TRICKY_H_ */

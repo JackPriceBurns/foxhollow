@@ -11,7 +11,8 @@ typedef enum SpellStoneStateId {
     SPELLSTONE_STATE_ACTIVE
 } SpellStoneStateId;
 
-extern ObjectDescriptor12 gSpellStoneObjDescriptor;
+struct SpellStoneObjDescriptorType;
+extern struct SpellStoneObjDescriptorType gSpellStoneObjDescriptor;
 
 int spellstone_getState(GameObject* obj);
 int spellstone_setState(GameObject* obj, int state);

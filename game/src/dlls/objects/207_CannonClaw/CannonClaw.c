@@ -6,7 +6,7 @@
  */
 #include "dlls/objects/207_CannonClaw.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "sys/objects.h"
 #include "main/objhits.h"
@@ -90,19 +90,30 @@ void cannonclaw_release(void) {
 void cannonclaw_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCannonClawObjDescriptorInitAdapter, cannonclaw_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCannonClawObjDescriptorFreeAdapter, cannonclaw_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCannonClawObjDescriptorTypeIdAdapter, cannonclaw_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCannonClawObjDescriptorExtraSizeAdapter, cannonclaw_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCannonClawObjDescriptorAcquire, cannonclaw_initialise)
+
 ObjectDescriptor gCannonClawObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCannonClawObjDescriptorAcquire,
+        cannonclaw_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)cannonclaw_initialise,
-    (ObjectDescriptorCallback)cannonclaw_release,
-    0,
-    (ObjectDescriptorCallback)cannonclaw_init,
-    (ObjectDescriptorCallback)cannonclaw_update,
-    (ObjectDescriptorCallback)cannonclaw_hitDetect,
-    (ObjectDescriptorCallback)cannonclaw_render,
-    (ObjectDescriptorCallback)cannonclaw_free,
-    (ObjectDescriptorCallback)cannonclaw_getObjectTypeId,
-    cannonclaw_getExtraSize,
+    gCannonClawObjDescriptorInitAdapter,
+    cannonclaw_update,
+    cannonclaw_hitDetect,
+    cannonclaw_render,
+    gCannonClawObjDescriptorFreeAdapter,
+    gCannonClawObjDescriptorTypeIdAdapter,
+    gCannonClawObjDescriptorExtraSizeAdapter,
 };

@@ -16,7 +16,7 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/sky_interface.h"
-#include "main/audio/sfx_looped_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
@@ -196,9 +196,28 @@ void CampFire_init(GameObject* obj, CampFirePlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gCampFireObjDescriptorInitAdapter, CampFire_init, obj, placement)
+OBJECT_FREE_ADAPTER(gCampFireObjDescriptorFreeAdapter, CampFire_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCampFireObjDescriptorTypeIdAdapter, CampFire_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCampFireObjDescriptorExtraSizeAdapter, CampFire_getExtraSize)
+
 ObjectDescriptor gCampFireObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS, 0, 0, 0,
-    (ObjectDescriptorCallback)CampFire_init, (ObjectDescriptorCallback)CampFire_update, 0,
-    (ObjectDescriptorCallback)CampFire_render, (ObjectDescriptorCallback)CampFire_free,
-    (ObjectDescriptorCallback)CampFire_getObjectTypeId, CampFire_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gCampFireObjDescriptorInitAdapter,
+    CampFire_update,
+    0,
+    CampFire_render,
+    gCampFireObjDescriptorFreeAdapter,
+    gCampFireObjDescriptorTypeIdAdapter,
+    gCampFireObjDescriptorExtraSizeAdapter,
 };

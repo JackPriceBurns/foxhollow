@@ -8,7 +8,7 @@
 #include "dlls/objects/450_DIMSnowBall.h"
 
 #include "dlls/objects/449_DIMSnowBall.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/frame_timing.h"
 #include "main/object_render.h"
 #include "main/vecmath.h"
@@ -102,19 +102,31 @@ void dimsnowball1c2_release(void) {
 void dimsnowball1c2_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMSnowBall1C2ObjDescriptorInitAdapter, dimsnowball1c2_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMSnowBall1C2ObjDescriptorHitDetectAdapter, dimsnowball1c2_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMSnowBall1C2ObjDescriptorFreeAdapter, dimsnowball1c2_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMSnowBall1C2ObjDescriptorTypeIdAdapter, dimsnowball1c2_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMSnowBall1C2ObjDescriptorExtraSizeAdapter, dimsnowball1c2_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMSnowBall1C2ObjDescriptorAcquire, dimsnowball1c2_initialise)
+
 ObjectDescriptor gDIMSnowBall1C2ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMSnowBall1C2ObjDescriptorAcquire,
+        dimsnowball1c2_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimsnowball1c2_initialise,
-    (ObjectDescriptorCallback)dimsnowball1c2_release,
-    0,
-    (ObjectDescriptorCallback)dimsnowball1c2_init,
-    (ObjectDescriptorCallback)dimsnowball1c2_update,
-    (ObjectDescriptorCallback)dimsnowball1c2_hitDetect,
-    (ObjectDescriptorCallback)dimsnowball1c2_render,
-    (ObjectDescriptorCallback)dimsnowball1c2_free,
-    (ObjectDescriptorCallback)dimsnowball1c2_getObjectTypeId,
-    dimsnowball1c2_getExtraSize,
+    gDIMSnowBall1C2ObjDescriptorInitAdapter,
+    dimsnowball1c2_update,
+    gDIMSnowBall1C2ObjDescriptorHitDetectAdapter,
+    dimsnowball1c2_render,
+    gDIMSnowBall1C2ObjDescriptorFreeAdapter,
+    gDIMSnowBall1C2ObjDescriptorTypeIdAdapter,
+    gDIMSnowBall1C2ObjDescriptorExtraSizeAdapter,
 };

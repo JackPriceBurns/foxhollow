@@ -20,10 +20,10 @@ void projlightning4_release(void) {
 void projlightning4_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjlightning4ResourceDescriptorAcquire, projlightning4_initialise)
+
 Projlightning4ResourceDescriptor gProjlightning4ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning4_initialise,
-    projlightning4_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjlightning4ResourceDescriptorAcquire, projlightning4_release },
     NULL,
     projlightning4_doUnsupported,
 };

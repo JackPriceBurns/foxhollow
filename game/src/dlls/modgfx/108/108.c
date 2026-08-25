@@ -13,6 +13,10 @@ void Dummy6C_release(void) {
 void Dummy6C_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gDummy6CDescriptorAcquire, Dummy6C_initialise)
+
 Dummy6CDescriptor gDummy6CDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000}, Dummy6C_initialise, Dummy6C_release, NULL, Dummy6C_init,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDummy6CDescriptorAcquire, Dummy6C_release },
+    NULL,
+    Dummy6C_init,
 };

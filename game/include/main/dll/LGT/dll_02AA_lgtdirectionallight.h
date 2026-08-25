@@ -2,6 +2,7 @@
 #define MAIN_DLL_LGT_DLL_02AA_LGTDIRECTIONALLIGHT_H_
 
 #include "game/objects/object.h"
+#include "dlls/object_descriptor.h"
 #include "main/dll/LGT/lgt_types.h"
 #include "main/vec_types.h"
 #include "game/objects/object_setup.h"
@@ -69,11 +70,8 @@ STATIC_ASSERT(sizeof(DirectionalLightSetup) == 0x38);
 
 struct DirectionalLightObjDescriptorLayout
 {
-    u32 reserved0;
-    u32 reserved1;
-    u32 reserved2;
-    u32 slotCountAndFlags;
-    void (*callbacks[10])(void);
+    ObjectDescriptorHeader header;
+    ObjectInterface interface;
     char debugModeYaw[12];
     char debugAngleFormat[12];
     char debugModePitch[16];
@@ -93,7 +91,7 @@ void directionallight_debugEdit(GameObject* obj, DirectionalLightState* state);
 int directionallight_getExtraSize(void);
 int directionallight_getObjectTypeId(void);
 void directionallight_free(GameObject* obj);
-void directionallight_render(GameObject* obj, int p2, int p3, int p4, int p5, f32 scale);
+void directionallight_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
 void directionallight_hitDetect(void);
 void directionallight_update(GameObject* obj);
 void directionallight_init(GameObject* obj, DirectionalLightSetup* setup);

@@ -2,27 +2,13 @@
 #define MAIN_DLL_WC_DLL_028A_WCEARTHWALKER_H
 
 #include "global.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/objHitReact.h"
 #include "main/objseq.h"
 #include "main/dll/curve_walker.h"
-
-/* Extra block used by the DLL 0x28B state handlers compiled into this TU.
- * This is distinct from the EarthWalker's own EarthWalkerState below. */
-typedef struct Dll28BAiState {
-    u8 unk0[0x9B0 - 0x0];
-    RomCurveWalker route;
-    f32 playerDistance;
-    f32 randomTimer;
-    u8 flagsAC0;
-    u8 unkAC1[0xAC8 - 0xAC1];
-} Dll28BAiState;
-
-STATIC_ASSERT(offsetof(Dll28BAiState, route) == 0x9B0);
-STATIC_ASSERT(offsetof(Dll28BAiState, route.posX) == 0xA18);
-STATIC_ASSERT(offsetof(Dll28BAiState, playerDistance) == 0xAB8);
+#include "main/dll/dll_002E_moveLib.h"
 
 typedef struct EarthWalkerPlacement
 {
@@ -35,12 +21,7 @@ STATIC_ASSERT(offsetof(EarthWalkerPlacement, spawnRot) == 0x18);
 
 typedef struct EarthWalkerState
 {
-    u8 pad000[0x600];
-    u8 animPhase;
-    u8 pad601[0x610 - 0x601];
-    u8 hitTriggerId;
-    u8 moveLibFlags611;
-    u8 pad612[0x624 - 0x612];
+    MoveLibState moveLib;
     CharacterEyeAnimState eyeAnimState;
     u8 pad64C[0x8];
     f32 hitReactStepScale;
@@ -53,8 +34,9 @@ typedef struct EarthWalkerState
 } EarthWalkerState;
 
 STATIC_ASSERT(sizeof(EarthWalkerState) == 0x660);
-STATIC_ASSERT(offsetof(EarthWalkerState, animPhase) == 0x600);
-STATIC_ASSERT(offsetof(EarthWalkerState, hitTriggerId) == 0x610);
+STATIC_ASSERT(offsetof(EarthWalkerState, moveLib.phase) == 0x600);
+STATIC_ASSERT(offsetof(EarthWalkerState, moveLib.pointCount) == 0x610);
+STATIC_ASSERT(offsetof(EarthWalkerState, moveLib.modeBits) == 0x611);
 STATIC_ASSERT(offsetof(EarthWalkerState, eyeAnimState) == 0x624);
 STATIC_ASSERT(offsetof(EarthWalkerState, hitReactStepScale) == 0x654);
 STATIC_ASSERT(offsetof(EarthWalkerState, interactionState) == 0x658);

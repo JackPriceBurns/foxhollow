@@ -22,9 +22,8 @@
 #include "main/object_render.h"
 #include "main/dll/expgfx_interface.h"
 #include "main/dll/VF/dll_021D_vfplift.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/pad_api.h"
+#include "main/audio/sfx.h"
+#include "main/pad.h"
 
 #define VFPLIFT1_OBJTYPE             0x3b7
 #define VFPLIFT2_OBJTYPE             0x3bf
@@ -347,19 +346,30 @@ void VFPLift_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gVFPLiftObjDescriptorInitAdapter, VFPLift_init, obj, placement)
+OBJECT_FREE_ADAPTER(gVFPLiftObjDescriptorFreeAdapter, VFPLift_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFPLiftObjDescriptorTypeIdAdapter, VFPLift_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFPLiftObjDescriptorExtraSizeAdapter, VFPLift_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFPLiftObjDescriptorAcquire, VFPLift_initialise)
+
 ObjectDescriptor gVFPLiftObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFPLiftObjDescriptorAcquire,
+        VFPLift_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VFPLift_initialise,
-    (ObjectDescriptorCallback)VFPLift_release,
-    0,
-    (ObjectDescriptorCallback)VFPLift_init,
-    (ObjectDescriptorCallback)VFPLift_update,
-    (ObjectDescriptorCallback)VFPLift_hitDetect,
-    (ObjectDescriptorCallback)VFPLift_render,
-    (ObjectDescriptorCallback)VFPLift_free,
-    (ObjectDescriptorCallback)VFPLift_getObjectTypeId,
-    VFPLift_getExtraSize,
+    gVFPLiftObjDescriptorInitAdapter,
+    VFPLift_update,
+    VFPLift_hitDetect,
+    VFPLift_render,
+    gVFPLiftObjDescriptorFreeAdapter,
+    gVFPLiftObjDescriptorTypeIdAdapter,
+    gVFPLiftObjDescriptorExtraSizeAdapter,
 };

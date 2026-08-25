@@ -9,9 +9,9 @@
  * placement record at offset 0x1E.
  */
 #include "dlls/objects/503_SB_ShipGunB.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 
 int SB_ShipGunBroke_getExtraSize(void) {
@@ -51,19 +51,32 @@ void SB_ShipGunBroke_release(void) {
 void SB_ShipGunBroke_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSB_ShipGunBrokeObjDescriptorInitAdapter, SB_ShipGunBroke_init)
+OBJECT_HIT_DETECT_ADAPTER(gSB_ShipGunBrokeObjDescriptorHitDetectAdapter, SB_ShipGunBroke_hitDetect)
+OBJECT_RENDER_ADAPTER(gSB_ShipGunBrokeObjDescriptorRenderAdapter, SB_ShipGunBroke_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gSB_ShipGunBrokeObjDescriptorFreeAdapter, SB_ShipGunBroke_free)
+OBJECT_TYPE_ID_ADAPTER(gSB_ShipGunBrokeObjDescriptorTypeIdAdapter, SB_ShipGunBroke_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_ShipGunBrokeObjDescriptorExtraSizeAdapter, SB_ShipGunBroke_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_ShipGunBrokeObjDescriptorAcquire, SB_ShipGunBroke_initialise)
+
 ObjectDescriptor gSB_ShipGunBrokeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSB_ShipGunBrokeObjDescriptorAcquire,
+        SB_ShipGunBroke_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    SB_ShipGunBroke_initialise,
-    SB_ShipGunBroke_release,
-    0,
-    SB_ShipGunBroke_init,
-    (ObjectDescriptorCallback)SB_ShipGunBroke_update,
-    SB_ShipGunBroke_hitDetect,
-    (ObjectDescriptorCallback)SB_ShipGunBroke_render,
-    SB_ShipGunBroke_free,
-    (ObjectDescriptorCallback)SB_ShipGunBroke_getObjectTypeId,
-    SB_ShipGunBroke_getExtraSize,
+    gSB_ShipGunBrokeObjDescriptorInitAdapter,
+    SB_ShipGunBroke_update,
+    gSB_ShipGunBrokeObjDescriptorHitDetectAdapter,
+    gSB_ShipGunBrokeObjDescriptorRenderAdapter,
+    gSB_ShipGunBrokeObjDescriptorFreeAdapter,
+    gSB_ShipGunBrokeObjDescriptorTypeIdAdapter,
+    gSB_ShipGunBrokeObjDescriptorExtraSizeAdapter,
 };

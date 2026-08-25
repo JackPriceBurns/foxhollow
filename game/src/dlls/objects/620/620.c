@@ -11,13 +11,13 @@
 #include "main/vecmath.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
 #include "sys/objects.h"
 #include "main/object_render.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/objtype.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "dlls/object_descriptor.h"
 #include "main/obj_path.h"
 #include "main/objhits.h"
@@ -218,23 +218,52 @@ void DR_CageWith_release(void) {
 void DR_CageWith_initialise(void) {
 }
 
-ObjectDescriptor11WithPadding gDrCageWithObjDescriptor = {
+OBJECT_INIT_ADAPTER(gDrCageWithObjDescriptorInitAdapter, DR_CageWith_init, obj, placement)
+OBJECT_UPDATE_ADAPTER(gDrCageWithObjDescriptorUpdateAdapter, DR_CageWith_update)
+OBJECT_RENDER_ADAPTER(gDrCageWithObjDescriptorRenderAdapter, DR_CageWith_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_TYPE_ID_ADAPTER(gDrCageWithObjDescriptorTypeIdAdapter, DR_CageWith_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrCageWithObjDescriptorExtraSizeAdapter, DR_CageWith_getExtraSize)
+
+typedef struct DrCageWithObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(DR_CageWith_func0A)* DR_CageWith_func0A;
+} DrCageWithObjDescriptorTypeInterface;
+
+typedef struct DrCageWithObjDescriptorTypeCore {
+    ObjectDescriptorHeader header;
+    DrCageWithObjDescriptorTypeInterface interface;
+} DrCageWithObjDescriptorTypeCore;
+
+struct DrCageWithObjDescriptorType {
+    DrCageWithObjDescriptorTypeCore descriptor;
+    u32 padding;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDrCageWithObjDescriptorAcquire, DR_CageWith_initialise)
+
+struct DrCageWithObjDescriptorType gDrCageWithObjDescriptor = {
     {
-        0,
-        0,
-        0,
-        OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
-        (ObjectDescriptorCallback)DR_CageWith_initialise,
-        (ObjectDescriptorCallback)DR_CageWith_release,
-        0,
-        (ObjectDescriptorCallback)DR_CageWith_init,
-        (ObjectDescriptorCallback)DR_CageWith_update,
-        (ObjectDescriptorCallback)DR_CageWith_hitDetect,
-        (ObjectDescriptorCallback)DR_CageWith_render,
-        (ObjectDescriptorCallback)DR_CageWith_free,
-        (ObjectDescriptorCallback)DR_CageWith_getObjectTypeId,
-        (ObjectDescriptorExtraSizeCallback)DR_CageWith_getExtraSize,
-        (ObjectDescriptorCallback)DR_CageWith_func0A,
+        {
+            {
+                0,
+                0,
+                0,
+                OBJECT_DESCRIPTOR_FLAGS_11_SLOTS,
+            },
+            gDrCageWithObjDescriptorAcquire,
+            DR_CageWith_release,
+        },
+        {
+            0,
+            gDrCageWithObjDescriptorInitAdapter,
+            gDrCageWithObjDescriptorUpdateAdapter,
+            DR_CageWith_hitDetect,
+            gDrCageWithObjDescriptorRenderAdapter,
+            DR_CageWith_free,
+            gDrCageWithObjDescriptorTypeIdAdapter,
+            gDrCageWithObjDescriptorExtraSizeAdapter,
+            DR_CageWith_func0A,
+        },
     },
     0,
 };

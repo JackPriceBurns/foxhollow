@@ -70,19 +70,31 @@ void wctemple_release(void) {
 void wctemple_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWCTempleObjDescriptorInitAdapter, wctemple_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCTempleObjDescriptorHitDetectAdapter, wctemple_hitDetect)
+OBJECT_FREE_ADAPTER(gWCTempleObjDescriptorFreeAdapter, wctemple_free)
+OBJECT_TYPE_ID_ADAPTER(gWCTempleObjDescriptorTypeIdAdapter, wctemple_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTempleObjDescriptorExtraSizeAdapter, wctemple_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTempleObjDescriptorAcquire, wctemple_initialise)
+
 ObjectDescriptor gWCTempleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTempleObjDescriptorAcquire,
+        wctemple_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wctemple_initialise,
-    (ObjectDescriptorCallback)wctemple_release,
-    0,
-    (ObjectDescriptorCallback)wctemple_init,
-    (ObjectDescriptorCallback)wctemple_update,
-    (ObjectDescriptorCallback)wctemple_hitDetect,
-    (ObjectDescriptorCallback)wctemple_render,
-    (ObjectDescriptorCallback)wctemple_free,
-    (ObjectDescriptorCallback)wctemple_getObjectTypeId,
-    wctemple_getExtraSize,
+    gWCTempleObjDescriptorInitAdapter,
+    wctemple_update,
+    gWCTempleObjDescriptorHitDetectAdapter,
+    wctemple_render,
+    gWCTempleObjDescriptorFreeAdapter,
+    gWCTempleObjDescriptorTypeIdAdapter,
+    gWCTempleObjDescriptorExtraSizeAdapter,
 };

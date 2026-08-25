@@ -10,7 +10,7 @@ typedef s16 (*Dll75SpawnFn)(GameObject* sourceObj, int variant, PartFxSpawnParam
                             int unusedArg4, void* unusedArg5);
 
 typedef struct Dll75Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll75SpawnFn spawn;
 } Dll75Interface;
 
@@ -19,16 +19,14 @@ STATIC_ASSERT(offsetof(Dll75Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll75Interface) == 0x08);
 
 typedef struct Dll75ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll75SpawnFn spawn;
 } Dll75ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll75ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll75ResourceDescriptor) == 0x20);

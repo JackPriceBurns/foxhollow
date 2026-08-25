@@ -16,7 +16,7 @@
  * distinct from ktrexfloorswitch's flags byte at the same offset).
  */
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
@@ -212,19 +212,32 @@ void KT_Lazerwall_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gKtLazerwallObjDescriptorInitAdapter, KT_Lazerwall_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gKtLazerwallObjDescriptorHitDetectAdapter, KT_Lazerwall_hitDetect)
+OBJECT_RENDER_ADAPTER(gKtLazerwallObjDescriptorRenderAdapter, KT_Lazerwall_render, obj)
+OBJECT_FREE_ADAPTER(gKtLazerwallObjDescriptorFreeAdapter, KT_Lazerwall_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKtLazerwallObjDescriptorTypeIdAdapter, KT_Lazerwall_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKtLazerwallObjDescriptorExtraSizeAdapter, KT_Lazerwall_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKtLazerwallObjDescriptorAcquire, KT_Lazerwall_initialise)
+
 ObjectDescriptor gKtLazerwallObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKtLazerwallObjDescriptorAcquire,
+        KT_Lazerwall_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KT_Lazerwall_initialise,
-    (ObjectDescriptorCallback)KT_Lazerwall_release,
-    0,
-    (ObjectDescriptorCallback)KT_Lazerwall_init,
-    (ObjectDescriptorCallback)KT_Lazerwall_update,
-    (ObjectDescriptorCallback)KT_Lazerwall_hitDetect,
-    (ObjectDescriptorCallback)KT_Lazerwall_render,
-    (ObjectDescriptorCallback)KT_Lazerwall_free,
-    (ObjectDescriptorCallback)KT_Lazerwall_getObjectTypeId,
-    KT_Lazerwall_getExtraSize,
+    gKtLazerwallObjDescriptorInitAdapter,
+    KT_Lazerwall_update,
+    gKtLazerwallObjDescriptorHitDetectAdapter,
+    gKtLazerwallObjDescriptorRenderAdapter,
+    gKtLazerwallObjDescriptorFreeAdapter,
+    gKtLazerwallObjDescriptorTypeIdAdapter,
+    gKtLazerwallObjDescriptorExtraSizeAdapter,
 };

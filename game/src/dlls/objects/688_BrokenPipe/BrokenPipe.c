@@ -39,19 +39,26 @@ void brokenpipe_init(GameObject* obj, BrokenPipeSetup* setup) {
     obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
 }
 
+OBJECT_INIT_ADAPTER(gBrokenPipeObjDescriptorInitAdapter, brokenpipe_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gBrokenPipeObjDescriptorExtraSizeAdapter, brokenpipe_getExtraSize)
+
 ObjectDescriptor gBrokenPipeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        NULL,
+        NULL,
+    },
+    NULL,
+    gBrokenPipeObjDescriptorInitAdapter,
+    brokenpipe_update,
     NULL,
     NULL,
     NULL,
-    (ObjectDescriptorCallback)brokenpipe_init,
-    (ObjectDescriptorCallback)brokenpipe_update,
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    brokenpipe_getExtraSize,
+    gBrokenPipeObjDescriptorExtraSizeAdapter,
 };

@@ -8,7 +8,7 @@
 
 #include "dlls/objects/446.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 #include "main/vecmath.h"
 #include "sys/objects.h"
@@ -113,7 +113,7 @@ void lavaball1bf_update(GameObject* obj) {
         projectilePlacement->launchYaw = placement->rotXByte;
         projectilePlacement->verticalSpeed = placement->verticalSpeed;
         projectilePlacement->horizontalSpeed = placement->horizontalSpeed;
-        projectilePlacement->targetObjectId = placement->projectileTargetObjectId;
+        projectilePlacement->base.ident = placement->base.ident;
         state->projectile = objSetupObject(&projectilePlacement->base, DIM_LAVA_BALL_PROJECTILE_SETUP_FLAGS,
                                             obj->anim.mapEventSlot, -1, NULL);
     }
@@ -160,21 +160,45 @@ void lavaball1bf_release(void) {
 void lavaball1bf_initialise(void) {
 }
 
-ObjectDescriptor12 gLavaBall1BFObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)lavaball1bf_initialise,
-    (ObjectDescriptorCallback)lavaball1bf_release,
-    0,
-    (ObjectDescriptorCallback)lavaball1bf_init,
-    (ObjectDescriptorCallback)lavaball1bf_update,
-    (ObjectDescriptorCallback)lavaball1bf_hitDetect,
-    (ObjectDescriptorCallback)lavaball1bf_render,
-    (ObjectDescriptorCallback)lavaball1bf_free,
-    (ObjectDescriptorCallback)lavaball1bf_getObjectTypeId,
-    lavaball1bf_getExtraSize,
-    (ObjectDescriptorCallback)lavaball1bf_trySetPending,
-    (ObjectDescriptorCallback)lavaball1bf_clearPending,
+OBJECT_INIT_ADAPTER(gLavaBall1BFObjDescriptorInitAdapter, lavaball1bf_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gLavaBall1BFObjDescriptorHitDetectAdapter, lavaball1bf_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gLavaBall1BFObjDescriptorTypeIdAdapter, lavaball1bf_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLavaBall1BFObjDescriptorExtraSizeAdapter, lavaball1bf_getExtraSize)
+
+typedef struct LavaBall1BFObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(lavaball1bf_trySetPending)* lavaball1bf_trySetPending;
+    __typeof__(lavaball1bf_clearPending)* lavaball1bf_clearPending;
+} LavaBall1BFObjDescriptorTypeInterface;
+
+struct LavaBall1BFObjDescriptorType {
+    ObjectDescriptorHeader header;
+    LavaBall1BFObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gLavaBall1BFObjDescriptorAcquire, lavaball1bf_initialise)
+
+struct LavaBall1BFObjDescriptorType gLavaBall1BFObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gLavaBall1BFObjDescriptorAcquire,
+        lavaball1bf_release,
+    },
+    {
+        0,
+        gLavaBall1BFObjDescriptorInitAdapter,
+        lavaball1bf_update,
+        gLavaBall1BFObjDescriptorHitDetectAdapter,
+        lavaball1bf_render,
+        lavaball1bf_free,
+        gLavaBall1BFObjDescriptorTypeIdAdapter,
+        gLavaBall1BFObjDescriptorExtraSizeAdapter,
+        lavaball1bf_trySetPending,
+        lavaball1bf_clearPending,
+    },
 };

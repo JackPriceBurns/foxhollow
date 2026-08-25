@@ -19,10 +19,10 @@ void projtesla_release(void) {
 void projtesla_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjteslaResourceDescriptorAcquire, projtesla_initialise)
+
 ProjteslaResourceDescriptor gProjteslaResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projtesla_initialise,
-    projtesla_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjteslaResourceDescriptorAcquire, projtesla_release },
     NULL,
     projtesla_doUnsupported,
 };

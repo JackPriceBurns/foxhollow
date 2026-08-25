@@ -7,10 +7,10 @@
 #include "dlls/objects/288_TrickyGuard.h"
 #include "main/dll/dll_00C4_tricky.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
-#include "main/objprint_render_api.h"
+#include "main/gamebits.h"
+#include "main/objprint_render.h"
 #include "main/objtype.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects/lifecycle.h"
 
 #define TRICKY_GUARD_SPOT_GROUP 0x1E
@@ -72,19 +72,28 @@ void TrickyGuardSpot_init(GameObject* obj, TrickyGuardSpotPlacement* placement) 
     obj->anim.rotX = placement->rotationX;
 }
 
+OBJECT_INIT_ADAPTER(gTrickyGuardSpotObjDescriptorInitAdapter, TrickyGuardSpot_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gTrickyGuardSpotObjDescriptorRenderAdapter, TrickyGuardSpot_render)
+OBJECT_FREE_ADAPTER(gTrickyGuardSpotObjDescriptorFreeAdapter, TrickyGuardSpot_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gTrickyGuardSpotObjDescriptorExtraSizeAdapter, TrickyGuardSpot_getExtraSize)
+
 ObjectDescriptor gTrickyGuardSpotObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gTrickyGuardSpotObjDescriptorInitAdapter,
+    TrickyGuardSpot_update,
     0,
+    gTrickyGuardSpotObjDescriptorRenderAdapter,
+    gTrickyGuardSpotObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)TrickyGuardSpot_init,
-    (ObjectDescriptorCallback)TrickyGuardSpot_update,
-    0,
-    (ObjectDescriptorCallback)TrickyGuardSpot_render,
-    (ObjectDescriptorCallback)TrickyGuardSpot_free,
-    0,
-    TrickyGuardSpot_getExtraSize,
+    gTrickyGuardSpotObjDescriptorExtraSizeAdapter,
 };

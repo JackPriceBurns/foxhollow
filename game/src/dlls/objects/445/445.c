@@ -2,11 +2,11 @@
 
 #include "dolphin/pad.h"
 #include "game/objects/object_setup.h"
-#include "main/dll/player_api.h"
-#include "main/gamebits_api.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
-#include "main/objprint_render_api.h"
+#include "main/dll/player.h"
+#include "main/gamebits.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
 #include "main/pad.h"
 #include "sys/objects.h"
@@ -213,15 +213,25 @@ static void paymentkiosk_release(void) {
 static void paymentkiosk_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPaymentKioskObjDescriptorInitAdapter, paymentkiosk_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gPaymentKioskObjDescriptorHitDetectAdapter, paymentkiosk_hitDetect)
+OBJECT_FREE_ADAPTER(gPaymentKioskObjDescriptorFreeAdapter, paymentkiosk_free)
+OBJECT_TYPE_ID_ADAPTER(gPaymentKioskObjDescriptorTypeIdAdapter, paymentkiosk_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPaymentKioskObjDescriptorExtraSizeAdapter, paymentkiosk_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPaymentKioskObjDescriptorAcquire, paymentkiosk_initialise)
+
 ObjectDescriptor gPaymentKioskObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)paymentkiosk_initialise,
-    .release = (ObjectDescriptorCallback)paymentkiosk_release,
-    .init = (ObjectDescriptorCallback)paymentkiosk_init,
-    .update = (ObjectDescriptorCallback)paymentkiosk_update,
-    .hitDetect = (ObjectDescriptorCallback)paymentkiosk_hitDetect,
-    .render = (ObjectDescriptorCallback)paymentkiosk_render,
-    .free = (ObjectDescriptorCallback)paymentkiosk_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)paymentkiosk_getObjectTypeId,
-    .getExtraSize = paymentkiosk_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gPaymentKioskObjDescriptorAcquire,
+        .release = paymentkiosk_release,
+    },
+    .init = gPaymentKioskObjDescriptorInitAdapter,
+    .update = paymentkiosk_update,
+    .hitDetect = gPaymentKioskObjDescriptorHitDetectAdapter,
+    .render = paymentkiosk_render,
+    .free = gPaymentKioskObjDescriptorFreeAdapter,
+    .getObjectTypeId = gPaymentKioskObjDescriptorTypeIdAdapter,
+    .getExtraSize = gPaymentKioskObjDescriptorExtraSizeAdapter,
+};;

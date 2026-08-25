@@ -21,10 +21,10 @@ void projlightning5_release(void) {
 void projlightning5_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gProjlightning5ResourceDescriptorAcquire, projlightning5_initialise)
+
 Projlightning5ResourceDescriptor gProjlightning5ResourceDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00030000},
-    projlightning5_initialise,
-    projlightning5_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gProjlightning5ResourceDescriptorAcquire, projlightning5_release },
     NULL,
     projlightning5_doUnsupported,
 };

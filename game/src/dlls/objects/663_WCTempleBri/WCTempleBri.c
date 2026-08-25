@@ -11,7 +11,7 @@
  * id. Some init bookkeeping (the sortedOffsets sort, partFlags/partAlpha
  * arrays) appears only partly wired; behavior is inferred.
  */
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
@@ -293,19 +293,30 @@ void wctemplebri_initialise(void)
 }
 
 
+OBJECT_INIT_ADAPTER(gWCTempleBriObjDescriptorInitAdapter, wctemplebri_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCTempleBriObjDescriptorHitDetectAdapter, wctemplebri_hitDetect)
+OBJECT_FREE_ADAPTER(gWCTempleBriObjDescriptorFreeAdapter, wctemplebri_free)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTempleBriObjDescriptorExtraSizeAdapter, wctemplebri_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTempleBriObjDescriptorAcquire, wctemplebri_initialise)
+
 ObjectDescriptor gWCTempleBriObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTempleBriObjDescriptorAcquire,
+        wctemplebri_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)wctemplebri_initialise,
-    (ObjectDescriptorCallback)wctemplebri_release,
-    0,
-    (ObjectDescriptorCallback)wctemplebri_init,
-    (ObjectDescriptorCallback)wctemplebri_update,
-    (ObjectDescriptorCallback)wctemplebri_hitDetect,
-    (ObjectDescriptorCallback)wctemplebri_render,
-    (ObjectDescriptorCallback)wctemplebri_free,
-    (ObjectDescriptorCallback)wctemplebri_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)wctemplebri_getExtraSize,
+    gWCTempleBriObjDescriptorInitAdapter,
+    wctemplebri_update,
+    gWCTempleBriObjDescriptorHitDetectAdapter,
+    wctemplebri_render,
+    gWCTempleBriObjDescriptorFreeAdapter,
+    wctemplebri_getObjectTypeId,
+    gWCTempleBriObjDescriptorExtraSizeAdapter,
 };

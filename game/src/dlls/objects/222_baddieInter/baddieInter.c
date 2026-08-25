@@ -176,19 +176,30 @@ void BaddieInterestP_release(void) {
 void BaddieInterestP_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gBaddieInterestPObjDescriptorInitAdapter, BaddieInterestP_init, obj)
+OBJECT_FREE_ADAPTER(gBaddieInterestPObjDescriptorFreeAdapter, BaddieInterestP_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gBaddieInterestPObjDescriptorTypeIdAdapter, BaddieInterestP_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gBaddieInterestPObjDescriptorExtraSizeAdapter, BaddieInterestP_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gBaddieInterestPObjDescriptorAcquire, BaddieInterestP_initialise)
+
 ObjectDescriptor gBaddieInterestPObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gBaddieInterestPObjDescriptorAcquire,
+        BaddieInterestP_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)BaddieInterestP_initialise,
-    (ObjectDescriptorCallback)BaddieInterestP_release,
-    0,
-    (ObjectDescriptorCallback)BaddieInterestP_init,
-    (ObjectDescriptorCallback)BaddieInterestP_update,
-    (ObjectDescriptorCallback)BaddieInterestP_hitDetect,
-    (ObjectDescriptorCallback)BaddieInterestP_render,
-    (ObjectDescriptorCallback)BaddieInterestP_free,
-    (ObjectDescriptorCallback)BaddieInterestP_getObjectTypeId,
-    BaddieInterestP_getExtraSize,
+    gBaddieInterestPObjDescriptorInitAdapter,
+    BaddieInterestP_update,
+    BaddieInterestP_hitDetect,
+    BaddieInterestP_render,
+    gBaddieInterestPObjDescriptorFreeAdapter,
+    gBaddieInterestPObjDescriptorTypeIdAdapter,
+    gBaddieInterestPObjDescriptorExtraSizeAdapter,
 };

@@ -3,7 +3,7 @@
  */
 #include "main/dll/dll_004A_cameramodeshipbattle.h"
 
-#include "main/dll/ship_battle_api.h"
+#include "main/dll/ship_battle.h"
 #include "main/frame_timing.h"
 #include "main/mm.h"
 #include "main/object_transform.h"
@@ -145,10 +145,10 @@ void CameraModeShipBattle_release(void) {
 void CameraModeShipBattle_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeShipBattleDescriptorAcquire, CameraModeShipBattle_initialise)
+
 CameraModeShipBattleDescriptor gCameraModeShipBattleDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeShipBattle_initialise,
-    CameraModeShipBattle_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeShipBattleDescriptorAcquire, CameraModeShipBattle_release },
     NULL,
     CameraModeShipBattle_init,
     CameraModeShipBattle_update,

@@ -7,7 +7,7 @@
 #include "main/dll/curves_collision_state.h"
 #include "main/dll/curve_walker.h"
 #include "main/objseq.h"
-#include "main/objprint_character_api.h"
+#include "main/objprint_character.h"
 
 #define NW_MAMMOTH_PLACEMENT_SIZE   0x24
 #define NW_MAMMOTH_PATH_POINT_COUNT 4
@@ -20,12 +20,6 @@ typedef struct NwMammothPlacement {
     s8 behaviorMode;
     u8 unknown1E[NW_MAMMOTH_PLACEMENT_SIZE - 0x1E];
 } NwMammothPlacement;
-
-typedef union NwMammothCurveState {
-    Curve curve;
-    RomCurveWalker walker;
-    u8 retailStorage[0x110];
-} NwMammothCurveState;
 
 typedef struct NwMammothState {
     f32 sfxTimer;
@@ -45,7 +39,7 @@ typedef struct NwMammothState {
     f32 hitReactStepScale;
     f32 pathSpeed;
     u8 unknown58[0x5C - 0x58];
-    NwMammothCurveState curveState;
+    RomCurveWalker curveState;
     CurvesCollisionState pathState;
     u8 hitReactState;
     u8 unknown3D5[0x408 - 0x3D5];
@@ -66,8 +60,7 @@ STATIC_ASSERT(offsetof(NwMammothPlacement, triggerDistance) == 0x18);
 STATIC_ASSERT(offsetof(NwMammothPlacement, modelIndex) == 0x1C);
 STATIC_ASSERT(offsetof(NwMammothPlacement, behaviorMode) == 0x1D);
 
-STATIC_ASSERT(sizeof(NwMammothCurveState) >= 0x110);
-STATIC_ASSERT(offsetof(NwMammothCurveState, curve.sample) == 0x68);
+STATIC_ASSERT(offsetof(RomCurveWalker, curve.sample) == 0x68);
 
 STATIC_ASSERT(sizeof(NwMammothState) == 0x48C);
 STATIC_ASSERT(offsetof(NwMammothState, spawnPosX) == 0x0C);

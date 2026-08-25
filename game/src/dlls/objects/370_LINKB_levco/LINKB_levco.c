@@ -1,17 +1,17 @@
 #include "dlls/objects/370_LINKB_levco.h"
 
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/dll/dll_80136a40.h"
-#include "main/dll/savegame_load_api.h"
+#include "main/dll/savegame_load.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEvent.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 #include "main/sky_interface.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
@@ -75,13 +75,13 @@ void linkbLevelControl_update(GameObject* obj) {
     if ((*gSkyInterface)->getSunPosition(NULL) != 0) {
         if (state->musicTriggerId != -1) {
             state->musicTriggerId = -1;
-            if ((state->gameBitLatch.activeMask & LINKB_LEVEL_CONTROL_FLAG_MUSIC) != 0) {
+            if ((state->gameBitLatch & LINKB_LEVEL_CONTROL_FLAG_MUSIC) != 0) {
                 Music_Trigger(MUSICTRIG_galleon_docks, 0);
             }
         }
     } else if (state->musicTriggerId != MUSICTRIG_galleon_docks) {
         state->musicTriggerId = MUSICTRIG_galleon_docks;
-        if ((state->gameBitLatch.activeMask & LINKB_LEVEL_CONTROL_FLAG_MUSIC) != 0) {
+        if ((state->gameBitLatch & LINKB_LEVEL_CONTROL_FLAG_MUSIC) != 0) {
             Music_Trigger(MUSICTRIG_galleon_docks, 1);
         }
     }
@@ -91,14 +91,14 @@ void linkbLevelControl_update(GameObject* obj) {
     GameBitLatch_Update(&state->gameBitLatch, LINKB_LEVEL_CONTROL_FLAG_MUSIC, -1, -1, GAMEBIT_IM_Done,
                           state->musicTriggerId);
 
-    if ((state->gameBitLatch.activeMask & LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE) != 0) {
+    if ((state->gameBitLatch & LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE) != 0) {
         if (mainGetBit(LINKB_GAMEBIT_TRICKY_STATE_A) == 0 && mainGetBit(LINKB_GAMEBIT_TRICKY_STATE_B) == 0) {
             mainSetBits(LINKB_GAMEBIT_TRICKY_STATE_LATCH, 0);
-            state->gameBitLatch.activeMask &= ~LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
+            state->gameBitLatch &= ~LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
         }
     } else if (mainGetBit(LINKB_GAMEBIT_TRICKY_STATE_B) != 0 || mainGetBit(LINKB_GAMEBIT_TRICKY_STATE_A) != 0) {
         mainSetBits(LINKB_GAMEBIT_TRICKY_STATE_LATCH, 1);
-        state->gameBitLatch.activeMask |= LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
+        state->gameBitLatch |= LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
     }
 
     if (tricky != NULL) {
@@ -189,7 +189,7 @@ void linkbLevelControl_init(GameObject* obj) {
 
     obj->objectFlags = (u16)(obj->objectFlags | (OBJECT_OBJFLAG_HIDDEN | OBJECT_OBJFLAG_HITDETECT_DISABLED));
     if (mainGetBit(LINKB_GAMEBIT_TRICKY_STATE_LATCH) != 0) {
-        state->gameBitLatch.activeMask &= LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
+        state->gameBitLatch &= LINKB_LEVEL_CONTROL_FLAG_TRICKY_STATE;
     }
 
     if (mainGetBit(LINKB_GAMEBIT_STAGE_5) != 0) {
@@ -221,19 +221,26 @@ void linkbLevelControl_init(GameObject* obj) {
     state->musicTriggerId = 0;
 }
 
+OBJECT_INIT_ADAPTER(gLINKBLevelControlObjDescriptorInitAdapter, linkbLevelControl_init, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gLINKBLevelControlObjDescriptorExtraSizeAdapter, linkbLevelControl_getExtraSize)
+
 ObjectDescriptor gLINKBLevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gLINKBLevelControlObjDescriptorInitAdapter,
+    linkbLevelControl_update,
     0,
     0,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
     0,
-    0,
-    0,
-    (ObjectDescriptorCallback)linkbLevelControl_init,
-    (ObjectDescriptorCallback)linkbLevelControl_update,
-    0,
-    0,
-    0,
-    0,
-    linkbLevelControl_getExtraSize,
+    gLINKBLevelControlObjDescriptorExtraSizeAdapter,
 };

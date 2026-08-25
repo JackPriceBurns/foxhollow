@@ -10,10 +10,10 @@
 #include "dlls/objects/459_DIMWoodDoor.h"
 
 #include "dlls/objects/454_DIMCannon.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/object_render.h"
 
 #define DIM_WOOD_DOOR_FADE_OBJECT_ID          0x338
@@ -126,19 +126,31 @@ void dimwooddoor2_release(void) {
 void dimwooddoor2_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMWoodDoor2ObjDescriptorInitAdapter, dimwooddoor2_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMWoodDoor2ObjDescriptorHitDetectAdapter, dimwooddoor2_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMWoodDoor2ObjDescriptorFreeAdapter, dimwooddoor2_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMWoodDoor2ObjDescriptorTypeIdAdapter, dimwooddoor2_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMWoodDoor2ObjDescriptorExtraSizeAdapter, dimwooddoor2_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMWoodDoor2ObjDescriptorAcquire, dimwooddoor2_initialise)
+
 ObjectDescriptor gDIMWoodDoor2ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMWoodDoor2ObjDescriptorAcquire,
+        dimwooddoor2_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimwooddoor2_initialise,
-    (ObjectDescriptorCallback)dimwooddoor2_release,
-    0,
-    (ObjectDescriptorCallback)dimwooddoor2_init,
-    (ObjectDescriptorCallback)dimwooddoor2_update,
-    (ObjectDescriptorCallback)dimwooddoor2_hitDetect,
-    (ObjectDescriptorCallback)dimwooddoor2_render,
-    (ObjectDescriptorCallback)dimwooddoor2_free,
-    (ObjectDescriptorCallback)dimwooddoor2_getObjectTypeId,
-    dimwooddoor2_getExtraSize,
+    gDIMWoodDoor2ObjDescriptorInitAdapter,
+    dimwooddoor2_update,
+    gDIMWoodDoor2ObjDescriptorHitDetectAdapter,
+    dimwooddoor2_render,
+    gDIMWoodDoor2ObjDescriptorFreeAdapter,
+    gDIMWoodDoor2ObjDescriptorTypeIdAdapter,
+    gDIMWoodDoor2ObjDescriptorExtraSizeAdapter,
 };

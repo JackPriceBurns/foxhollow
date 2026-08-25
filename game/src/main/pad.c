@@ -3,8 +3,7 @@
 #include "global.h"
 #include "main/fileio.h"
 #include "main/frame_timing.h"
-#include "main/gameloop_api.h"
-#include <stdlib.h>
+#include "main/gameloop.h"
 #include "main/pad.h"
 
 #include "dolphin/pad.h"

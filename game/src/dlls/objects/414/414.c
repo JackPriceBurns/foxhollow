@@ -1,11 +1,10 @@
 #include "dlls/objects/414.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "game/objects/object.h"
 #include "game/objects/object_setup.h"
 #include "main/audio/sfx_ids.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera.h"
 #include "main/dll/dll_0069_modgfx.h"
 #include "main/dll/expgfx_interface.h"
@@ -13,10 +12,10 @@
 #include "main/dll/partfx_interface.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objhits.h"
 #include "main/resource.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "main/voxmaps.h"
 
@@ -128,9 +127,9 @@ static void dll414_render(GameObject* obj, int renderArg2, int renderArg3, int r
     state->lineOfSightVisible = 1;
     Camera* camera = Camera_GetCurrent();
     Vec3f cameraDelta = {
-        .x = camera->position.x - obj->anim.localPos.x,
-        .y = camera->position.y - obj->anim.localPos.y,
-        .z = camera->position.z - obj->anim.localPos.z,
+        .x = camera->x - obj->anim.localPosX,
+        .y = camera->y - obj->anim.localPosY,
+        .z = camera->z - obj->anim.localPosZ,
     };
     f32 distance =
         sqrtf(cameraDelta.z * cameraDelta.z + (cameraDelta.x * cameraDelta.x + cameraDelta.y * cameraDelta.y));
@@ -143,14 +142,14 @@ static void dll414_render(GameObject* obj, int renderArg2, int renderArg3, int r
         cameraDelta.z *= inverseDistance;
 
         Vec3f objectTraceStart = {
-            .x = 32.0f * cameraDelta.x + obj->anim.localPos.x,
-            .y = 32.0f * cameraDelta.y + obj->anim.localPos.y,
-            .z = 32.0f * cameraDelta.z + obj->anim.localPos.z,
+            .x = 32.0f * cameraDelta.x + obj->anim.localPosX,
+            .y = 32.0f * cameraDelta.y + obj->anim.localPosY,
+            .z = 32.0f * cameraDelta.z + obj->anim.localPosZ,
         };
         Vec3f cameraTraceEnd = {
-            .x = -20.0f * cameraDelta.x + camera->position.x,
-            .y = -20.0f * cameraDelta.y + camera->position.y,
-            .z = -20.0f * cameraDelta.z + camera->position.z,
+            .x = -20.0f * cameraDelta.x + camera->x,
+            .y = -20.0f * cameraDelta.y + camera->y,
+            .z = -20.0f * cameraDelta.z + camera->z,
         };
         VoxPos startGrid;
         VoxPos endGrid;
@@ -325,15 +324,25 @@ static void dll414_release(void) {
 static void dll414_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDll19EObjDescriptorInitAdapter, dll414_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll19EObjDescriptorHitDetectAdapter, dll414_hitDetect)
+OBJECT_FREE_ADAPTER(gDll19EObjDescriptorFreeAdapter, dll414_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll19EObjDescriptorTypeIdAdapter, dll414_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll19EObjDescriptorExtraSizeAdapter, dll414_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll19EObjDescriptorAcquire, dll414_initialise)
+
 ObjectDescriptor gDll19EObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dll414_initialise,
-    .release = (ObjectDescriptorCallback)dll414_release,
-    .init = (ObjectDescriptorCallback)dll414_init,
-    .update = (ObjectDescriptorCallback)dll414_update,
-    .hitDetect = (ObjectDescriptorCallback)dll414_hitDetect,
-    .render = (ObjectDescriptorCallback)dll414_render,
-    .free = (ObjectDescriptorCallback)dll414_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dll414_getObjectTypeId,
-    .getExtraSize = dll414_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDll19EObjDescriptorAcquire,
+        .release = dll414_release,
+    },
+    .init = gDll19EObjDescriptorInitAdapter,
+    .update = dll414_update,
+    .hitDetect = gDll19EObjDescriptorHitDetectAdapter,
+    .render = dll414_render,
+    .free = gDll19EObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDll19EObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDll19EObjDescriptorExtraSizeAdapter,
+};;

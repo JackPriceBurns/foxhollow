@@ -77,19 +77,32 @@ void CntCounter_release(void) {
 void CntCounter_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gCNTcounterObjDescriptorInitAdapter, CntCounter_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gCNTcounterObjDescriptorHitDetectAdapter, CntCounter_hitDetect)
+OBJECT_RENDER_ADAPTER(gCNTcounterObjDescriptorRenderAdapter, CntCounter_render)
+OBJECT_FREE_ADAPTER(gCNTcounterObjDescriptorFreeAdapter, CntCounter_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gCNTcounterObjDescriptorTypeIdAdapter, CntCounter_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gCNTcounterObjDescriptorExtraSizeAdapter, CntCounter_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gCNTcounterObjDescriptorAcquire, CntCounter_initialise)
+
 ObjectDescriptor gCNTcounterObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gCNTcounterObjDescriptorAcquire,
+        CntCounter_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)CntCounter_initialise,
-    (ObjectDescriptorCallback)CntCounter_release,
-    0,
-    (ObjectDescriptorCallback)CntCounter_init,
-    (ObjectDescriptorCallback)CntCounter_update,
-    (ObjectDescriptorCallback)CntCounter_hitDetect,
-    (ObjectDescriptorCallback)CntCounter_render,
-    (ObjectDescriptorCallback)CntCounter_free,
-    (ObjectDescriptorCallback)CntCounter_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)CntCounter_getExtraSize,
+    gCNTcounterObjDescriptorInitAdapter,
+    CntCounter_update,
+    gCNTcounterObjDescriptorHitDetectAdapter,
+    gCNTcounterObjDescriptorRenderAdapter,
+    gCNTcounterObjDescriptorFreeAdapter,
+    gCNTcounterObjDescriptorTypeIdAdapter,
+    gCNTcounterObjDescriptorExtraSizeAdapter,
 };

@@ -3,20 +3,22 @@
 
 #include "global.h"
 
+typedef struct ModgfxSpawnContext ModgfxSpawnContext;
+
 typedef void (*ModgfxDetachSourceFn)(void* sourceObject);
 typedef void (*ModgfxOnMapSetupFn)(void);
-typedef void (*ModgfxUpdateActiveEffectsFn)(int unused0, int unused1, int unused2);
+typedef void (*ModgfxUpdateActiveEffectsFn)(void);
 typedef void (*ModgfxReleaseAllFn)(void);
 typedef void (*ModgfxFreeSourceEffectsFn)(void* sourceObject);
 typedef int (*ModgfxRenderEffectsFn)(void* drawContext, int arg1, int arg2,
                                      u8 sourceOnly, void* sourceObject);
-typedef void (*ModgfxMarkSourceFrameUpdatedFn)(void* unused);
-typedef s16 (*ModgfxSpawnEffectFn)(void* spawnContext, int flags, int vertexCount,
-                                   void* vertices, int colorCount, void* colors,
+typedef void (*ModgfxMarkSourceFrameUpdatedFn)(void);
+typedef s16 (*ModgfxSpawnEffectFn)(ModgfxSpawnContext* spawnContext, int flags, int vertexCount,
+                                   const void* vertices, int colorCount, const void* colors,
                                    int textureAssetId, void* textureResource);
 typedef void (*ModgfxReleaseHandleFn)(s16* handle);
-typedef void (*ModgfxBeginSequenceFn)(void* sourceObject, int sourceMode,
-                                      int effectType, int word40, int word3C);
+typedef void (*ModgfxBeginSequenceFn)(void* sourceObject, u8 sourceMode,
+                                      u8 effectType, int word40, int word3C);
 typedef void (*ModgfxResetSequenceSpawnsFn)(void);
 typedef void (*ModgfxAddSequenceSpawnFn)(int modelOrResource, f32 posX, f32 posY,
                                          f32 posZ, s16 param14, void* param10);
@@ -24,15 +26,15 @@ typedef void (*ModgfxNextSequenceParamFn)(void);
 typedef void (*ModgfxSetSequenceParamIndexFn)(s16 index);
 typedef void (*ModgfxSetSequenceParamValueFn)(s16 value);
 typedef void (*ModgfxSetSequenceParamsFn)(void* params);
-typedef void (*ModgfxSpawnSequenceFn)(void* sourceObject, void* vertices,
-                                      int vertexCount, void* colors, int colorCount,
+typedef void (*ModgfxSpawnSequenceFn)(void* sourceObject, const void* vertices,
+                                      int vertexCount, const void* colors, int colorCount,
                                       int textureAssetId, void* textureResource);
 typedef void (*ModgfxAddSequenceFlagsFn)(u32 flags);
 typedef s16 (*ModgfxGetLastSpawnHandleFn)(void);
 
 typedef struct ModgfxInterface
 {
-    void (*pad00_slots[1])(void);
+    void* reserved00;
     ModgfxOnMapSetupFn onMapSetup;
     ModgfxSpawnEffectFn spawnEffect;
     ModgfxUpdateActiveEffectsFn updateActiveEffects;
@@ -41,7 +43,9 @@ typedef struct ModgfxInterface
     ModgfxDetachSourceFn detachSource;
     ModgfxRenderEffectsFn renderEffects;
     ModgfxReleaseHandleFn releaseHandle;
-    void (*pad24_slots[3])(void);
+    void* reserved24;
+    void (*setSourceValue)(void* source, char value);
+    void (*clearSource)(void* source);
     ModgfxMarkSourceFrameUpdatedFn markSourceFrameUpdated;
     ModgfxBeginSequenceFn beginSequence;
     ModgfxResetSequenceSpawnsFn resetSequenceSpawns;

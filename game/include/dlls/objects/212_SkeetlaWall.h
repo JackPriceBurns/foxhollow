@@ -57,6 +57,7 @@ void SkeetlaWall_init(GameObject* obj, SkeetlaWallPlacement* placement);
 void SkeetlaWall_release(void);
 void SkeetlaWall_initialise(void);
 
-extern ObjectDescriptor11WithPadding gSkeetlaWallObjDescriptor;
+struct SkeetlaWallObjDescriptorType;
+extern struct SkeetlaWallObjDescriptorType gSkeetlaWallObjDescriptor;
 
 #endif /* DLLS_OBJECTS_212_SKEETLAWALL_H_ */

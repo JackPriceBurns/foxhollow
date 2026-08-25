@@ -2,9 +2,9 @@
 
 #include "game/objects/object.h"
 #include "main/game_ui_interface.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 typedef enum DfpSpellPlaceUiEvent {
     DFP_SPELL_PLACE_EVENT_SEQUENCE_A = 0x2E8,
@@ -90,15 +90,26 @@ static void dfpSpellPlace_release(void) {
 static void dfpSpellPlace_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDfpSpellPlaceObjDescriptorInitAdapter, dfpSpellPlace_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDfpSpellPlaceObjDescriptorHitDetectAdapter, dfpSpellPlace_hitDetect)
+OBJECT_RENDER_ADAPTER(gDfpSpellPlaceObjDescriptorRenderAdapter, dfpSpellPlace_render)
+OBJECT_FREE_ADAPTER(gDfpSpellPlaceObjDescriptorFreeAdapter, dfpSpellPlace_free)
+OBJECT_TYPE_ID_ADAPTER(gDfpSpellPlaceObjDescriptorTypeIdAdapter, dfpSpellPlace_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfpSpellPlaceObjDescriptorExtraSizeAdapter, dfpSpellPlace_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDfpSpellPlaceObjDescriptorAcquire, dfpSpellPlace_initialise)
+
 ObjectDescriptor gDfpSpellPlaceObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)dfpSpellPlace_initialise,
-    .release = (ObjectDescriptorCallback)dfpSpellPlace_release,
-    .init = (ObjectDescriptorCallback)dfpSpellPlace_init,
-    .update = (ObjectDescriptorCallback)dfpSpellPlace_update,
-    .hitDetect = (ObjectDescriptorCallback)dfpSpellPlace_hitDetect,
-    .render = (ObjectDescriptorCallback)dfpSpellPlace_render,
-    .free = (ObjectDescriptorCallback)dfpSpellPlace_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)dfpSpellPlace_getObjectTypeId,
-    .getExtraSize = dfpSpellPlace_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gDfpSpellPlaceObjDescriptorAcquire,
+        .release = dfpSpellPlace_release,
+    },
+    .init = gDfpSpellPlaceObjDescriptorInitAdapter,
+    .update = dfpSpellPlace_update,
+    .hitDetect = gDfpSpellPlaceObjDescriptorHitDetectAdapter,
+    .render = gDfpSpellPlaceObjDescriptorRenderAdapter,
+    .free = gDfpSpellPlaceObjDescriptorFreeAdapter,
+    .getObjectTypeId = gDfpSpellPlaceObjDescriptorTypeIdAdapter,
+    .getExtraSize = gDfpSpellPlaceObjDescriptorExtraSizeAdapter,
+};;

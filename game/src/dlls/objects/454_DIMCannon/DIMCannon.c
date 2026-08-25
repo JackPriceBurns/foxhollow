@@ -6,23 +6,20 @@
  */
 #include "dlls/objects/454_DIMCannon.h"
 
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/pad.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0051_cameramodecannon.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/dll/player_status.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/frame_timing.h"
 #include "main/game_ui_interface.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/objtype.h"
 #include "main/obj_message.h"
 #include "main/obj_path.h"
@@ -30,7 +27,7 @@
 #include "main/objseq.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/objprint_api.h"
+#include "main/objprint.h"
 #include "main/object_render.h"
 #include "main/pad.h"
 #include "main/resource.h"
@@ -665,19 +662,29 @@ void DIMCannon_release(void) {
 void DIMCannon_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMCannonObjDescriptorInitAdapter, DIMCannon_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMCannonObjDescriptorHitDetectAdapter, DIMCannon_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMCannonObjDescriptorFreeAdapter, DIMCannon_free, obj)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMCannonObjDescriptorAcquire, DIMCannon_initialise)
+
 ObjectDescriptor gDIMCannonObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMCannonObjDescriptorAcquire,
+        DIMCannon_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DIMCannon_initialise,
-    (ObjectDescriptorCallback)DIMCannon_release,
-    0,
-    (ObjectDescriptorCallback)DIMCannon_init,
-    (ObjectDescriptorCallback)DIMCannon_update,
-    (ObjectDescriptorCallback)DIMCannon_hitDetect,
-    (ObjectDescriptorCallback)DIMCannon_render,
-    (ObjectDescriptorCallback)DIMCannon_free,
-    (ObjectDescriptorCallback)DIMCannon_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)DIMCannon_getExtraSize,
+    gDIMCannonObjDescriptorInitAdapter,
+    DIMCannon_update,
+    gDIMCannonObjDescriptorHitDetectAdapter,
+    DIMCannon_render,
+    gDIMCannonObjDescriptorFreeAdapter,
+    DIMCannon_getObjectTypeId,
+    DIMCannon_getExtraSize,
 };

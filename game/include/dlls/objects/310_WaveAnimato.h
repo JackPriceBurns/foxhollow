@@ -97,6 +97,7 @@ void WaveAnimator_init(GameObject* obj, WaveAnimatorPlacement* placement);
 void WaveAnimator_release(void);
 void WaveAnimator_initialise(void);
 
-extern ObjectDescriptor14 gWaveAnimatorObjDescriptor;
+struct WaveAnimatorObjDescriptorType;
+extern struct WaveAnimatorObjDescriptorType gWaveAnimatorObjDescriptor;
 
 #endif /* DLLS_OBJECTS_310_WAVEANIMATO_H_ */

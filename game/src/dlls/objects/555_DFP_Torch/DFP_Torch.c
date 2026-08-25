@@ -6,7 +6,7 @@
 #include "main/dll/partfx_interface.h"
 #include "main/dll/DF/dll_022B_dfptorch.h"
 #include "main/dll/dll_0069_modgfx.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll_000A_expgfx.h"
 #include "main/dll/modgfx_interface.h"
 #include "main/resource.h"
@@ -14,12 +14,11 @@
 #include "main/camera.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/voxmaps.h"
 #include "main/object_render.h"
 #include "dlls/object_descriptor.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
 
@@ -291,11 +290,31 @@ void DFP_Torch_initialise(void)
 {
 }
 
+OBJECT_INIT_ADAPTER(gDFP_TorchObjDescriptorInitAdapter, DFP_Torch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFP_TorchObjDescriptorHitDetectAdapter, DFP_Torch_hitDetect)
+OBJECT_FREE_ADAPTER(gDFP_TorchObjDescriptorFreeAdapter, DFP_Torch_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDFP_TorchObjDescriptorTypeIdAdapter, DFP_Torch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFP_TorchObjDescriptorExtraSizeAdapter, DFP_Torch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFP_TorchObjDescriptorAcquire, DFP_Torch_initialise)
+
 ObjectDescriptor gDFP_TorchObjDescriptor = {
-    0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)DFP_Torch_initialise, (ObjectDescriptorCallback)DFP_Torch_release, 0,
-    (ObjectDescriptorCallback)DFP_Torch_init, (ObjectDescriptorCallback)DFP_Torch_update,
-    (ObjectDescriptorCallback)DFP_Torch_hitDetect, (ObjectDescriptorCallback)DFP_Torch_render,
-    (ObjectDescriptorCallback)DFP_Torch_free, (ObjectDescriptorCallback)DFP_Torch_getObjectTypeId,
-    DFP_Torch_getExtraSize,
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDFP_TorchObjDescriptorAcquire,
+        DFP_Torch_release,
+    },
+    0,
+    gDFP_TorchObjDescriptorInitAdapter,
+    DFP_Torch_update,
+    gDFP_TorchObjDescriptorHitDetectAdapter,
+    DFP_Torch_render,
+    gDFP_TorchObjDescriptorFreeAdapter,
+    gDFP_TorchObjDescriptorTypeIdAdapter,
+    gDFP_TorchObjDescriptorExtraSizeAdapter,
 };

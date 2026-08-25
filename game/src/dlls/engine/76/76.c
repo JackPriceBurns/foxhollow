@@ -24,9 +24,9 @@ void CameraModeFixed_init(CameraObject* camera, int unused, const CameraModeFixe
     Obj_TransformWorldPointToLocal(pose->worldPosition.x, pose->worldPosition.y, pose->worldPosition.z,
                                    &camera->anim.localPosX, &camera->anim.localPosY, &camera->anim.localPosZ,
                                    camera->anim.parent);
-    camera->anim.rotX = pose->cameraRotation.rotX;
-    camera->anim.rotY = pose->cameraRotation.rotY;
-    camera->anim.rotZ = pose->cameraRotation.rotZ;
+    camera->anim.rotX = pose->rotX;
+    camera->anim.rotY = pose->rotY;
+    camera->anim.rotZ = pose->rotZ;
     camera->fov = pose->fov;
 }
 
@@ -36,10 +36,10 @@ void CameraModeFixed_release(void) {
 void CameraModeFixed_initialise(void) {
 }
 
+RESOURCE_ACQUIRE_ADAPTER(gCameraModeFixedDescriptorAcquire, CameraModeFixed_initialise)
+
 CameraModeFixedDescriptor gCameraModeFixedDescriptor = {
-    {0x00000000, 0x00000000, 0x00000000, 0x00060000},
-    CameraModeFixed_initialise,
-    CameraModeFixed_release,
+    { {0x00000000, 0x00000000, 0x00000000, 0x00060000}, gCameraModeFixedDescriptorAcquire, CameraModeFixed_release },
     NULL,
     CameraModeFixed_init,
     CameraModeFixed_update,

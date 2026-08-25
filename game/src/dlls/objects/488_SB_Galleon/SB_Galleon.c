@@ -4,7 +4,7 @@
  */
 #include "dlls/objects/488_SB_Galleon.h"
 
-#include "main/render_envfx_api.h"
+#include "main/render_envfx.h"
 #include "main/camera_interface.h"
 #include "main/dll/cloudaction_interface.h"
 #include "game/objects/object_setup.h"
@@ -19,30 +19,26 @@
 #include "main/gamebit_ids.h"
 #include "main/objhits.h"
 #include "main/vecmath.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/ship_battle_api.h"
+#include "main/dll/ship_battle.h"
 #include "main/dll/partfx_interface.h"
-#include "main/gametext_show_api.h"
-#include "main/textrender_api.h"
-#include "main/lightmap_render_control_api.h"
-#include "main/audio/music_api.h"
+#include "main/gametext_show.h"
+#include "main/textrender.h"
+#include "main/lightmap_render_control.h"
+#include "main/audio/music.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
+#include "main/pi_dolphin.h"
 #include "main/map_load.h"
 #include "main/sky.h"
 #include "main/model.h"
-#include "main/render_lactions_api.h"
+#include "main/render_lactions.h"
 #include "main/objtype.h"
-#include "dlls/objects/430_SH_LevelCon.h"
+#include "main/gamebit_latch.h"
 #include "main/texture.h"
-#include "main/gametext_color_api.h"
+#include "main/gametext_color.h"
 #include "dlls/objects/489_SB_Propelle.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/sky_api.h"
+#include "main/audio/sfx.h"
 
 #define DBPROTECTION_GAMEBIT_CYCLE_A_PENDING  0xa3c
 #define DBPROTECTION_GAMEBIT_CYCLE_B_PENDING  0xa3d
@@ -1227,7 +1223,7 @@ void SB_Galleon_update(GameObject* obj) {
             state->cameraState = SBGALLEON_CAM_DONE;
             break;
         }
-        GameBitLatch_Update((GameBitLatchState*)state->gameBitLatch, 1, -1, -1, 0xa71, 0xa4);
+        GameBitLatch_Update(&state->gameBitLatch, 1, -1, -1, 0xa71, 0xa4);
     }
 }
 
@@ -1277,24 +1273,50 @@ void SB_Galleon_release(void) {
 void SB_Galleon_initialise(void) {
 }
 
-ObjectDescriptor15 gSB_GalleonObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
-    (ObjectDescriptorCallback)SB_Galleon_initialise,
-    (ObjectDescriptorCallback)SB_Galleon_release,
-    0,
-    (ObjectDescriptorCallback)SB_Galleon_init,
-    (ObjectDescriptorCallback)SB_Galleon_update,
-    (ObjectDescriptorCallback)SB_Galleon_hitDetect,
-    (ObjectDescriptorCallback)SB_Galleon_render,
-    (ObjectDescriptorCallback)SB_Galleon_free,
-    (ObjectDescriptorCallback)SB_Galleon_getObjectTypeId,
-    SB_Galleon_getExtraSize,
-    (ObjectDescriptorCallback)SB_Galleon_onPartDestroyed,
-    (ObjectDescriptorCallback)SB_Galleon_getStage,
-    (ObjectDescriptorCallback)SB_Galleon_getPhase,
-    (ObjectDescriptorCallback)SB_Galleon_getDamagePhase,
-    (ObjectDescriptorCallback)SB_Galleon_func0E,
+OBJECT_INIT_ADAPTER(gSB_GalleonObjDescriptorInitAdapter, SB_Galleon_init, obj)
+OBJECT_TYPE_ID_ADAPTER(gSB_GalleonObjDescriptorTypeIdAdapter, SB_Galleon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSB_GalleonObjDescriptorExtraSizeAdapter, SB_Galleon_getExtraSize)
+
+typedef struct SB_GalleonObjDescriptorTypeInterface {
+    OBJECT_INTERFACE_FIELDS;
+    __typeof__(SB_Galleon_onPartDestroyed)* SB_Galleon_onPartDestroyed;
+    __typeof__(SB_Galleon_getStage)* SB_Galleon_getStage;
+    __typeof__(SB_Galleon_getPhase)* SB_Galleon_getPhase;
+    __typeof__(SB_Galleon_getDamagePhase)* SB_Galleon_getDamagePhase;
+    __typeof__(SB_Galleon_func0E)* SB_Galleon_func0E;
+} SB_GalleonObjDescriptorTypeInterface;
+
+struct SB_GalleonObjDescriptorType {
+    ObjectDescriptorHeader header;
+    SB_GalleonObjDescriptorTypeInterface interface;
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gSB_GalleonObjDescriptorAcquire, SB_Galleon_initialise)
+
+struct SB_GalleonObjDescriptorType gSB_GalleonObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_15_SLOTS,
+        },
+        gSB_GalleonObjDescriptorAcquire,
+        SB_Galleon_release,
+    },
+    {
+        0,
+        gSB_GalleonObjDescriptorInitAdapter,
+        SB_Galleon_update,
+        SB_Galleon_hitDetect,
+        SB_Galleon_render,
+        SB_Galleon_free,
+        gSB_GalleonObjDescriptorTypeIdAdapter,
+        gSB_GalleonObjDescriptorExtraSizeAdapter,
+        SB_Galleon_onPartDestroyed,
+        SB_Galleon_getStage,
+        SB_Galleon_getPhase,
+        SB_Galleon_getDamagePhase,
+        SB_Galleon_func0E,
+    },
 };

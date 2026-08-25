@@ -2,14 +2,14 @@
 #define MAIN_DLL_CURVES_H_
 
 #include "game/objects/object.h"
-#include "main/track_dolphin_api.h"
+#include "main/track_dolphin.h"
 #include "global.h"
 #include "types.h"
 #include "main/dll/curve_walker.h"
 #include "main/dll/dll_0015_save_settings.h"
 #include "main/dll/rom_curve_def.h"
-#include "main/dll/savegame_object_api.h"
-#include "main/dll/player_spirit_api.h"
+#include "main/dll/savegame_object.h"
+#include "main/dll/player_spirit.h"
 #include "main/dll/curves_collision_state.h"
 
 typedef struct GameObject GameObject;

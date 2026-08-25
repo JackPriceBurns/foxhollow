@@ -1,32 +1,29 @@
-#include "main/render_envfx_api.h"
-#include "main/objprint_character_api.h"
+#include "main/render_envfx.h"
+#include "main/objprint_character.h"
 #include "dlls/objects/229_Shield.h"
 #include "dlls/objects/284.h"
 #include "dlls/objects/315_WallAnimato.h"
 #include "dlls/objects/437.h"
 #include "main/dll/dll_000D_playershadow.h"
-#include "main/sky_api.h"
+#include "main/sky.h"
 #include "main/object_render.h"
 #include "main/dll/dll_0015_curves.h"
-#include "track/intersect_api.h"
-#include "main/track_dolphin_api.h"
-#include "main/vecmath_distance_api.h"
+#include "track/intersect.h"
+#include "main/track_dolphin.h"
+#include "main/vecmath_distance.h"
 
 #include "sys/objects.h"
 #include "main/curve_eval.h"
 #include "main/objhits.h"
-#include "main/audio/sfx_keep_alive_api.h"
-#include "main/audio/sfx_object_query_api.h"
-#include "main/audio/sfx_position_api.h"
-#include "main/audio/sfx_stop_object_api.h"
-#include "main/gameloop_api.h"
-#include "main/dll/dll_0000_gameui_api.h"
-#include "main/lightmap_api.h"
+#include "main/audio/sfx.h"
+#include "main/gameloop.h"
+#include "main/dll/dll_0000_gameui.h"
+#include "main/lightmap.h"
 #include "main/objfx.h"
 #include "main/screen_transition.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
-#include "main/shader_api.h"
-#include "main/pi_dolphin_api.h"
+#include "dolphin/math.h"
+#include "main/shader.h"
+#include "main/pi_dolphin.h"
 #include "main/dll/player_state.h"
 #include "main/dll/baddie_control_interface.h"
 #include "main/dll/boneparticleeffect_interface.h"
@@ -50,23 +47,20 @@
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTransform.h"
 #include "dlls/objects/260_SmallBasket.h"
-#include "main/dll/dll_0000_gameui.h"
 #include "main/dll/dll_000F_unk.h"
 #include "main/dll/dll_00C9_enemy.h"
 #include "main/dll/partfx_interface.h"
 #include "main/objtype.h"
 #include "main/obj_link.h"
 #include "main/dll/dll_029B_arwingandrossstuff.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/gamebit_ids.h"
 #include "main/player_control_interface.h"
-#include "main/sky.h"
 
 #include "game/objects/object.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/dll/player_api.h"
-#include "main/gamebits_api.h"
+#include "main/dll/player.h"
+#include "main/gamebits.h"
 #include "sys/objects/lifecycle.h"
 
 enum LightfootStateId {
@@ -1079,19 +1073,30 @@ static void Lightfoot_initialise(void) {
     sLightfootSubstateHandlers[LIGHTFOOT_SUBSTATE_PROXIMITY] = Lightfoot_UpdateProximityInteractionState;
 }
 
+OBJECT_INIT_ADAPTER(gLightfootObjDescriptorInitAdapter, Lightfoot_init, obj, placement, flags)
+OBJECT_HIT_DETECT_ADAPTER(gLightfootObjDescriptorHitDetectAdapter, Lightfoot_hitDetect)
+OBJECT_TYPE_ID_ADAPTER(gLightfootObjDescriptorTypeIdAdapter, Lightfoot_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gLightfootObjDescriptorExtraSizeAdapter, Lightfoot_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gLightfootObjDescriptorAcquire, Lightfoot_initialise)
+
 ObjectDescriptor gLightfootObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gLightfootObjDescriptorAcquire,
+        Lightfoot_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Lightfoot_initialise,
-    (ObjectDescriptorCallback)Lightfoot_release,
-    0,
-    (ObjectDescriptorCallback)Lightfoot_init,
-    (ObjectDescriptorCallback)Lightfoot_update,
-    (ObjectDescriptorCallback)Lightfoot_hitDetect,
-    (ObjectDescriptorCallback)Lightfoot_render,
-    (ObjectDescriptorCallback)Lightfoot_free,
-    (ObjectDescriptorCallback)Lightfoot_getObjectTypeId,
-    Lightfoot_getExtraSize,
+    gLightfootObjDescriptorInitAdapter,
+    Lightfoot_update,
+    gLightfootObjDescriptorHitDetectAdapter,
+    Lightfoot_render,
+    Lightfoot_free,
+    gLightfootObjDescriptorTypeIdAdapter,
+    gLightfootObjDescriptorExtraSizeAdapter,
 };

@@ -17,15 +17,15 @@
  * save point the first time their own arrivalWarpId matches that index.
  */
 #include "dlls/objects/240_WarpPoint.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/objseq.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/shader_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/shader.h"
 
 /* placement idents that arm the one-shot save-point recording at init */
 #define WARPPOINT_MAP_SAVE_A 0x4B675
@@ -230,19 +230,27 @@ void WarpPoint_init(GameObject* obj, WarpPointPlacement* placement) {
     }
 }
 
+OBJECT_INIT_ADAPTER(gWarpPointObjDescriptorInitAdapter, WarpPoint_init, obj, placement)
+OBJECT_TYPE_ID_ADAPTER(gWarpPointObjDescriptorTypeIdAdapter, WarpPoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWarpPointObjDescriptorExtraSizeAdapter, WarpPoint_getExtraSize)
+
 ObjectDescriptor gWarpPointObjDescriptor = {
-    0,                                                   /* reserved0 */
-    0,                                                   /* reserved1 */
-    0,                                                   /* reserved2 */
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,                    /* slotCountAndFlags */
-    0,                                                   /* initialise */
-    0,                                                   /* release */
-    0,                                                   /* slot02 */
-    (ObjectDescriptorCallback)WarpPoint_init,            /* init */
-    (ObjectDescriptorCallback)WarpPoint_update,          /* update */
-    0,                                                   /* hitDetect */
-    (ObjectDescriptorCallback)WarpPoint_render,          /* render */
-    0,                                                   /* free */
-    (ObjectDescriptorCallback)WarpPoint_getObjectTypeId, /* getObjectTypeId */
-    WarpPoint_getExtraSize,                              /* getExtraSize */
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gWarpPointObjDescriptorInitAdapter,
+    WarpPoint_update,
+    0,
+    WarpPoint_render,
+    0,
+    gWarpPointObjDescriptorTypeIdAdapter,
+    gWarpPointObjDescriptorExtraSizeAdapter,
 };

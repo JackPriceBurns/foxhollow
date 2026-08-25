@@ -32,19 +32,33 @@ void EndObject_release(void) {
 void EndObject_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gEndObjectObjDescriptorInitAdapter, EndObject_init)
+OBJECT_UPDATE_ADAPTER(gEndObjectObjDescriptorUpdateAdapter, EndObject_update)
+OBJECT_HIT_DETECT_ADAPTER(gEndObjectObjDescriptorHitDetectAdapter, EndObject_hitDetect)
+OBJECT_RENDER_ADAPTER(gEndObjectObjDescriptorRenderAdapter, EndObject_render)
+OBJECT_FREE_ADAPTER(gEndObjectObjDescriptorFreeAdapter, EndObject_free)
+OBJECT_TYPE_ID_ADAPTER(gEndObjectObjDescriptorTypeIdAdapter, EndObject_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gEndObjectObjDescriptorExtraSizeAdapter, EndObject_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gEndObjectObjDescriptorAcquire, EndObject_initialise)
+
 ObjectDescriptor gEndObjectObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gEndObjectObjDescriptorAcquire,
+        EndObject_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)EndObject_initialise,
-    (ObjectDescriptorCallback)EndObject_release,
-    0,
-    (ObjectDescriptorCallback)EndObject_init,
-    (ObjectDescriptorCallback)EndObject_update,
-    (ObjectDescriptorCallback)EndObject_hitDetect,
-    (ObjectDescriptorCallback)EndObject_render,
-    (ObjectDescriptorCallback)EndObject_free,
-    (ObjectDescriptorCallback)EndObject_getObjectTypeId,
-    EndObject_getExtraSize,
+    gEndObjectObjDescriptorInitAdapter,
+    gEndObjectObjDescriptorUpdateAdapter,
+    gEndObjectObjDescriptorHitDetectAdapter,
+    gEndObjectObjDescriptorRenderAdapter,
+    gEndObjectObjDescriptorFreeAdapter,
+    gEndObjectObjDescriptorTypeIdAdapter,
+    gEndObjectObjDescriptorExtraSizeAdapter,
 };

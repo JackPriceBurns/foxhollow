@@ -2,16 +2,15 @@
 #include "dlls/objects/510.h"
 
 #include "game/objects/object.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objseq.h"
-#include "main/vecmath_distance_api.h"
+#include "main/vecmath_distance.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -229,19 +228,31 @@ void PressureSwitch_release(void) {
 void PressureSwitch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gPressureSwitchObjDescriptorInitAdapter, PressureSwitch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gPressureSwitchObjDescriptorHitDetectAdapter, PressureSwitch_hitDetect)
+OBJECT_FREE_ADAPTER(gPressureSwitchObjDescriptorFreeAdapter, PressureSwitch_free)
+OBJECT_TYPE_ID_ADAPTER(gPressureSwitchObjDescriptorTypeIdAdapter, PressureSwitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gPressureSwitchObjDescriptorExtraSizeAdapter, PressureSwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gPressureSwitchObjDescriptorAcquire, PressureSwitch_initialise)
+
 ObjectDescriptor gPressureSwitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gPressureSwitchObjDescriptorAcquire,
+        PressureSwitch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    PressureSwitch_initialise,
-    PressureSwitch_release,
-    0,
-    (ObjectDescriptorCallback)PressureSwitch_init,
-    (ObjectDescriptorCallback)PressureSwitch_update,
-    PressureSwitch_hitDetect,
-    (ObjectDescriptorCallback)PressureSwitch_render,
-    PressureSwitch_free,
-    (ObjectDescriptorCallback)PressureSwitch_getObjectTypeId,
-    PressureSwitch_getExtraSize,
+    gPressureSwitchObjDescriptorInitAdapter,
+    PressureSwitch_update,
+    gPressureSwitchObjDescriptorHitDetectAdapter,
+    PressureSwitch_render,
+    gPressureSwitchObjDescriptorFreeAdapter,
+    gPressureSwitchObjDescriptorTypeIdAdapter,
+    gPressureSwitchObjDescriptorExtraSizeAdapter,
 };

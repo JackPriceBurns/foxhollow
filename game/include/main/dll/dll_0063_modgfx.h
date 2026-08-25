@@ -9,7 +9,7 @@ typedef s16 (*Dll63SpawnFn)(GameObject* sourceObj, int variant, void* spawnParam
                             void* unusedParams);
 
 typedef struct Dll63Interface {
-    ResourceDescriptorCallback reserved;
+    void* reserved;
     Dll63SpawnFn spawn;
 } Dll63Interface;
 
@@ -18,16 +18,14 @@ STATIC_ASSERT(offsetof(Dll63Interface, spawn) == 0x04);
 STATIC_ASSERT(sizeof(Dll63Interface) == 0x08);
 
 typedef struct Dll63ResourceDescriptor {
-    u32 metadata[4];
-    ResourceDescriptorCallback initialise;
-    ResourceDescriptorCallback release;
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     Dll63SpawnFn spawn;
 } Dll63ResourceDescriptor;
 
-STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(Dll63ResourceDescriptor, spawn) == 0x1C);
 STATIC_ASSERT(sizeof(Dll63ResourceDescriptor) == 0x20);

@@ -7,16 +7,16 @@
  */
 #include "dlls/objects/286_MagicCaveBo.h"
 #include "game/objects/object.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
-#include "main/dll/tricky_api.h"
+#include "main/dll/tricky.h"
 #include "main/gamebits.h"
 #include "main/obj_trigger.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
-#include "main/rcp_dolphin_api.h"
-#include "main/render_envfx_api.h"
-#include "main/sky_api.h"
+#include "main/rcp_dolphin.h"
+#include "main/render_envfx.h"
+#include "main/sky.h"
 
 #define MAGIC_CAVE_BOTTOM_ENVFX_FIRST   0x2C
 #define MAGIC_CAVE_BOTTOM_ENVFX_SECOND  0x2D
@@ -78,19 +78,26 @@ void MagicCaveBottom_update(GameObject* obj) {
     }
 }
 
+OBJECT_FREE_ADAPTER(gMagicCaveBottomObjDescriptorFreeAdapter, MagicCaveBottom_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gMagicCaveBottomObjDescriptorExtraSizeAdapter, MagicCaveBottom_getExtraSize)
+
 ObjectDescriptor gMagicCaveBottomObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
     0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
+    MagicCaveBottom_update,
     0,
     0,
+    gMagicCaveBottomObjDescriptorFreeAdapter,
     0,
-    (ObjectDescriptorCallback)MagicCaveBottom_update,
-    0,
-    0,
-    (ObjectDescriptorCallback)MagicCaveBottom_free,
-    0,
-    MagicCaveBottom_getExtraSize,
+    gMagicCaveBottomObjDescriptorExtraSizeAdapter,
 };

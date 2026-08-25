@@ -3,9 +3,9 @@
 #include "main/gametext_internal.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/textrender_api.h"
+#include "main/textrender.h"
 #include "main/texture.h"
-#include "main/pad_api.h"
+#include "main/pad.h"
 
 typedef enum InfoPointResourceId {
     INFOPOINT_FONT_TEXTURE_ASSET_ID = 616
@@ -123,19 +123,30 @@ void InfoPoint_release(void) {
 void InfoPoint_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gInfoPointObjDescriptorInitAdapter, InfoPoint_init, obj, placement)
+OBJECT_FREE_ADAPTER(gInfoPointObjDescriptorFreeAdapter, InfoPoint_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gInfoPointObjDescriptorTypeIdAdapter, InfoPoint_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gInfoPointObjDescriptorExtraSizeAdapter, InfoPoint_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gInfoPointObjDescriptorAcquire, InfoPoint_initialise)
+
 ObjectDescriptor gInfoPointObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gInfoPointObjDescriptorAcquire,
+        InfoPoint_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)InfoPoint_initialise,
-    (ObjectDescriptorCallback)InfoPoint_release,
-    0,
-    (ObjectDescriptorCallback)InfoPoint_init,
-    (ObjectDescriptorCallback)InfoPoint_update,
-    (ObjectDescriptorCallback)InfoPoint_hitDetect,
-    (ObjectDescriptorCallback)InfoPoint_render,
-    (ObjectDescriptorCallback)InfoPoint_free,
-    (ObjectDescriptorCallback)InfoPoint_getObjectTypeId,
-    InfoPoint_getExtraSize,
+    gInfoPointObjDescriptorInitAdapter,
+    InfoPoint_update,
+    InfoPoint_hitDetect,
+    InfoPoint_render,
+    gInfoPointObjDescriptorFreeAdapter,
+    gInfoPointObjDescriptorTypeIdAdapter,
+    gInfoPointObjDescriptorExtraSizeAdapter,
 };

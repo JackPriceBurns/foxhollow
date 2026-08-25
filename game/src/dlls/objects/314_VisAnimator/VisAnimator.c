@@ -1,8 +1,8 @@
 /* Tracks a game-bit-controlled visibility state for the containing map block. */
 #include "dlls/objects/314_VisAnimator.h"
 #include "game/objects/object.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
 
 int VisAnimator_getExtraSize(void) {
     return sizeof(VisAnimatorState);
@@ -68,19 +68,32 @@ void VisAnimator_release(void) {
 void VisAnimator_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gVisAnimatorObjDescriptorInitAdapter, VisAnimator_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVisAnimatorObjDescriptorHitDetectAdapter, VisAnimator_hitDetect)
+OBJECT_RENDER_ADAPTER(gVisAnimatorObjDescriptorRenderAdapter, VisAnimator_render)
+OBJECT_FREE_ADAPTER(gVisAnimatorObjDescriptorFreeAdapter, VisAnimator_free)
+OBJECT_TYPE_ID_ADAPTER(gVisAnimatorObjDescriptorTypeIdAdapter, VisAnimator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVisAnimatorObjDescriptorExtraSizeAdapter, VisAnimator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVisAnimatorObjDescriptorAcquire, VisAnimator_initialise)
+
 ObjectDescriptor gVisAnimatorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVisAnimatorObjDescriptorAcquire,
+        VisAnimator_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)VisAnimator_initialise,
-    (ObjectDescriptorCallback)VisAnimator_release,
-    0,
-    (ObjectDescriptorCallback)VisAnimator_init,
-    (ObjectDescriptorCallback)VisAnimator_update,
-    (ObjectDescriptorCallback)VisAnimator_hitDetect,
-    (ObjectDescriptorCallback)VisAnimator_render,
-    (ObjectDescriptorCallback)VisAnimator_free,
-    (ObjectDescriptorCallback)VisAnimator_getObjectTypeId,
-    VisAnimator_getExtraSize,
+    gVisAnimatorObjDescriptorInitAdapter,
+    VisAnimator_update,
+    gVisAnimatorObjDescriptorHitDetectAdapter,
+    gVisAnimatorObjDescriptorRenderAdapter,
+    gVisAnimatorObjDescriptorFreeAdapter,
+    gVisAnimatorObjDescriptorTypeIdAdapter,
+    gVisAnimatorObjDescriptorExtraSizeAdapter,
 };

@@ -26,20 +26,18 @@ STATIC_ASSERT(offsetof(CameraModeStaticState, missingAnchor) == 0xF5);
 STATIC_ASSERT(sizeof(CameraModeStaticState) == 0xF8);
 
 typedef struct CameraModeStaticDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int unused, const int* anchorId);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
-    ResourceDescriptorCallback reserved2C;
+    void* reserved2C;
 } CameraModeStaticDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeStaticDescriptor, update) == 0x20);

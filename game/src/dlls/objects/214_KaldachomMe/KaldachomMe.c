@@ -136,19 +136,30 @@ void KaldachomMe_release(void) {
 void KaldachomMe_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gKaldachomMeObjDescriptorInitAdapter, KaldachomMe_init, obj, placement)
+OBJECT_FREE_ADAPTER(gKaldachomMeObjDescriptorFreeAdapter, KaldachomMe_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gKaldachomMeObjDescriptorTypeIdAdapter, KaldachomMe_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gKaldachomMeObjDescriptorExtraSizeAdapter, KaldachomMe_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gKaldachomMeObjDescriptorAcquire, KaldachomMe_initialise)
+
 ObjectDescriptor gKaldachomMeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gKaldachomMeObjDescriptorAcquire,
+        KaldachomMe_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)KaldachomMe_initialise,
-    (ObjectDescriptorCallback)KaldachomMe_release,
-    0,
-    (ObjectDescriptorCallback)KaldachomMe_init,
-    (ObjectDescriptorCallback)KaldachomMe_update,
-    (ObjectDescriptorCallback)KaldachomMe_hitDetect,
-    (ObjectDescriptorCallback)KaldachomMe_render,
-    (ObjectDescriptorCallback)KaldachomMe_free,
-    (ObjectDescriptorCallback)KaldachomMe_getObjectTypeId,
-    KaldachomMe_getExtraSize,
+    gKaldachomMeObjDescriptorInitAdapter,
+    KaldachomMe_update,
+    KaldachomMe_hitDetect,
+    KaldachomMe_render,
+    gKaldachomMeObjDescriptorFreeAdapter,
+    gKaldachomMeObjDescriptorTypeIdAdapter,
+    gKaldachomMeObjDescriptorExtraSizeAdapter,
 };

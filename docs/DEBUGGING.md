@@ -303,6 +303,49 @@ muted together. The terminal logs `[foxhollow] audio muted` or `unmuted` on each
 toggle.
 
 
+### Object gallery
+
+`FOXHOLLOW_GALLERY=1` adds an ImGui panel that spawns every object definition the current level can
+load, in a grid around the player, each labelled with its name, definition id, sequence id and DLL
+number. It is built for surveying object load and render behaviour across the whole `OBJECTS.bin`
+catalogue in one session.
+
+```sh
+FOXHOLLOW_GALLERY=1 FOXHOLLOW_DISC="<disc>" ./build/foxhollow
+```
+
+Reach gameplay first; the panel reports that it is waiting until a player object exists. `Open area`
+warps to a wide outdoor map (`FOXHOLLOW_GALLERY_WARP_INDEX`, default warp 3 = ThornTail Hollow),
+`Spawn page` loads the current page, and clicking a row in the spawned list teleports the player to
+that object.
+
+Facts that shape what the gallery can show:
+
+- Models and textures are per level. Each map directory carries its own `MODELS.bin`/`TEX0.bin`, so
+  a level backs roughly 530-720 of the 1477 definitions and 1073 are reachable across all 52. The
+  gallery resolves each definition's model ids through the level `MODELIND.bin` and the merged
+  `MODELS.tab`, and only offers the ones that resolve.
+- Objects are spawned by *sequence* id through `OBJINDEX.bin`, not by raw definition id, because
+  `loadCharacter` copies the first `s16` of the placement into `anim.romDefNo` and the engine
+  switches on that field to identify the player. Sequence ids 0 and 0x1f are the player and are
+  excluded. 1476 of 1477 definitions have a sequence id.
+- Objects only draw where the map has loaded geometry around them. In a corridor or a small shrine
+  room most of the grid lands inside rock and nothing appears even though `renderAlpha` is 255. Use
+  an open map, or reduce `Spacing`.
+- An object whose DLL sets `anim.alpha = 0` on init is deliberately invisible until triggered;
+  `FOXHOLLOW_GALLERY_DIAG=1` logs `hitboxScale`, `rootMotionScale`, `alpha` and `renderAlpha` per
+  slot every two seconds, which separates that case from a real render failure.
+- `Freeze object logic` sets `OBJECT_OBJFLAG_UPDATE_DISABLED` and `OBJECT_OBJFLAG_HITDETECT_DISABLED`
+  a few frames after the spawn, so the DLL `init` still runs but nothing else does. Objects still
+  render while frozen.
+
+Spawning an unknown object can crash. The gallery writes the definition id to
+`foxhollow_gallery_inflight.txt` before each spawn and clears it after; the next launch promotes any
+leftover id into `foxhollow_gallery_skip.txt` and skips it from then on, so the skip file accumulates
+a list of definitions that fault on load. `FOXHOLLOW_GALLERY_SKIP` takes a comma-separated list of
+extra ids, and `FOXHOLLOW_GALLERY_DIR` moves both files.
+
+
 ## Crash investigation checklist
 
 1. Capture the first faulting access and full backtrace under LLDB.

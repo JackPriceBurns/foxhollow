@@ -1,14 +1,12 @@
-#define OBJFSA_PATCH_EXIT_U16
-#define TRACK_BBOX_FLAGS_S8
 #include "dolphin/os/OSReport.h"
 #include "main/dll/rom_curve_def.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/dll/objfsa.h"
-#include "main/dll/Hcurves_api.h"
+#include "main/dll/Hcurves.h"
 #include "main/dll/rom_curve_interface.h"
 #include "game/objects/object.h"
 #include "main/curve.h"
-#include "main/track_bbox_api.h"
+#include "main/track_bbox.h"
 #include "main/curve_eval.h"
 #include "main/voxmaps.h"
 #include "main/dll/dll_0015_curves.h"
@@ -16,8 +14,8 @@
 #include "main/gamebits.h"
 #include "main/dll/modgfx.h"
 #include "main/dll/dll_0014_unk.h"
-#include "main/vecmath_distance_api.h"
-#include "main/shader_api.h"
+#include "main/vecmath_distance.h"
+#include "main/shader.h"
 #include "string.h"
 #include "main/dll/objfsa_internal.h"
 
@@ -151,9 +149,9 @@ void RomCurve_swapEndpointNodes(RomCurveWalker* p)
     *a ^= *b;
     *b ^= *a;
     *a ^= *b;
-    if (p->phase >= OBJFSA_PHASE_LIMIT)
+    if (p->curve.t >= OBJFSA_PHASE_LIMIT)
     {
-        p->phase = 0.99f;
+        p->curve.t = 0.99f;
     }
 }
 
@@ -334,7 +332,7 @@ int RomCurve_setSegmentEndNode(RomCurveWalker* walker, void* curve)
     if (walker->nodeA0 == NULL || walker->nodeA4 == NULL || curve == 0)
         return 1;
     walker->nodeA4 = curve;
-    if (walker->reverse != 0)
+    if (walker->curve.dir != 0)
     {
         walker->hermX[0] = B->x;
         walker->hermX[2] = 2.0f * ((float)(u32)B->tangentMag *
@@ -389,7 +387,7 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
         return 1;
     }
 
-    if (state->reverse != 0)
+    if (state->curve.dir != 0)
     {
         state->node9C = state->nodeA0;
         state->nodeA0 = state->nodeA4;
@@ -414,12 +412,12 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
         state->hermZ[2] = RomCurveNode_GetHermiteTangent(&state->nodeA4, 0x2c, 1);
         state->hermZ[3] = RomCurveNode_GetHermiteTangent(&state->nodeA0, 0x2c, 1);
 
-        if (state->moveNetwork != 0)
+        if (state->curve.count != 0)
         {
             curvesSetupMoveNetworkCurve(&state->curve);
-            if (state->phase <= 0.0f)
+            if (state->curve.t <= 0.0f)
             {
-                state->phase = 0.01f;
+                state->curve.t = 0.01f;
             }
         }
     }
@@ -448,12 +446,12 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
         state->hermZ2[2] = RomCurveNode_GetHermiteTangent(&state->nodeA0, 0x2c, 1);
         state->hermZ2[3] = RomCurveNode_GetHermiteTangent(&state->nodeA4, 0x2c, 1);
 
-        if (state->moveNetwork != 0)
+        if (state->curve.count != 0)
         {
             curvesSetupMoveNetworkCurve(&state->curve);
-            if (state->phase >= OBJFSA_PHASE_LIMIT)
+            if (state->curve.t >= OBJFSA_PHASE_LIMIT)
             {
-                state->phase = 0.99f;
+                state->curve.t = 0.99f;
             }
         }
     }
@@ -462,20 +460,20 @@ int RomCurve_advanceToNextSegment(RomCurveWalker* state, void* targetCurve)
 }
 void RomCurve_stepClamped(RomCurveWalker* state, f32 dt)
 {
-    if (state->phase <= 0.0f)
+    if (state->curve.t <= 0.0f)
     {
-        state->phase = 0.01f;
+        state->curve.t = 0.01f;
     }
-    else if (state->phase >= OBJFSA_PHASE_LIMIT)
+    else if (state->curve.t >= OBJFSA_PHASE_LIMIT)
     {
-        state->phase = 0.99f;
+        state->curve.t = 0.99f;
     }
     Curve_AdvanceAlongPath(&state->curve, dt);
 }
 
 int RomCurve_setupHermiteSegment(RomCurveWalker* state, void* fromCurve, void* toCurve, void* targetCurve)
 {
-    if (state->reverse != 0)
+    if (state->curve.dir != 0)
     {
         state->nodeA0 = fromCurve;
         state->nodeA4 = toCurve;
@@ -521,12 +519,12 @@ int RomCurve_setupHermiteSegment(RomCurveWalker* state, void* fromCurve, void* t
         return 1;
     }
 
-    state->node94 = Curve_EvalHermite;
-    state->node98 = Curve_BuildHermiteCoeffs;
-    state->coeffX = state->hermX;
-    state->coeffY = state->hermY;
-    state->coeffZ = state->hermZ;
-    state->moveNetwork = 8;
+    state->curve.eval = Curve_EvalHermite;
+    state->curve.coeffFn = Curve_BuildHermiteCoeffs;
+    state->curve.px = state->hermX;
+    state->curve.py = state->hermY;
+    state->curve.pz = state->hermZ;
+    state->curve.count = 8;
     curvesMove(&state->curve);
     return 0;
 }

@@ -4,25 +4,24 @@
  * object callbacks, and rendering code.
  */
 #include "dlls/objects/373_DFropenode.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "dolphin/mtx/vec.h"
 #include "game/objects/object.h"
-#include "main/audio/sfx_keep_alive_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/camera.h"
 #include "main/frame_timing.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
 #include "main/mm.h"
 #include "main/obj_list.h"
 #include "main/objtype.h"
 #include "main/sky.h"
 #include "main/texture.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_play_api.h"
 #include "string.h"
-#include "track/intersect_api.h"
-#include "track/intersect_render_setup_api.h"
+#include "track/intersect.h"
+#include "track/intersect_render_setup.h"
 
 #define DFROPENODE_SEGMENT_VERTEX_COUNT   6
 #define DFROPENODE_SEGMENT_TRIANGLE_COUNT 6
@@ -866,29 +865,44 @@ void DFropenode_initialise(void) {
     }
 }
 
-ObjectDescriptor20 gDFropenodeObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_20_SLOTS,
-    (ObjectDescriptorCallback)DFropenode_initialise,
-    (ObjectDescriptorCallback)DFropenode_release,
-    0,
-    (ObjectDescriptorCallback)DFropenode_init,
-    (ObjectDescriptorCallback)DFropenode_update,
-    (ObjectDescriptorCallback)DFropenode_hitDetect,
-    (ObjectDescriptorCallback)DFropenode_render,
-    (ObjectDescriptorCallback)DFropenode_free,
-    (ObjectDescriptorCallback)DFropenode_getObjectTypeId,
-    DFropenode_getExtraSize,
-    (ObjectDescriptorCallback)DFropenode_getPlaneEquation,
-    (ObjectDescriptorCallback)DFropenode_getWorldPosAtPhase,
-    (ObjectDescriptorCallback)DFropenode_advancePhaseByDistance,
-    (ObjectDescriptorCallback)DFropenode_applyForceAtPhase,
-    (ObjectDescriptorCallback)DFropenode_findNearestRopePoint,
-    (ObjectDescriptorCallback)DFropenode_getAngle,
-    (ObjectDescriptorCallback)DFropenode_setVisible,
-    (ObjectDescriptorCallback)DFropenode_isVisible,
-    (ObjectDescriptorCallback)DFropenode_setMinY,
-    (ObjectDescriptorCallback)DFropenode_clearLinkedObj,
+OBJECT_INIT_ADAPTER(gDFropenodeObjDescriptorInitAdapter, DFropenode_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDFropenodeObjDescriptorHitDetectAdapter, DFropenode_hitDetect)
+OBJECT_RENDER_ADAPTER(gDFropenodeObjDescriptorRenderAdapter, DFropenode_render, obj, arg2, arg3)
+OBJECT_FREE_ADAPTER(gDFropenodeObjDescriptorFreeAdapter, DFropenode_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDFropenodeObjDescriptorTypeIdAdapter, DFropenode_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDFropenodeObjDescriptorExtraSizeAdapter, DFropenode_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDFropenodeObjDescriptorAcquire, DFropenode_initialise)
+
+DFropenodeDescriptor gDFropenodeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_20_SLOTS,
+        },
+        gDFropenodeObjDescriptorAcquire,
+        DFropenode_release,
+    },
+    {
+        0,
+        gDFropenodeObjDescriptorInitAdapter,
+        DFropenode_update,
+        gDFropenodeObjDescriptorHitDetectAdapter,
+        gDFropenodeObjDescriptorRenderAdapter,
+        gDFropenodeObjDescriptorFreeAdapter,
+        gDFropenodeObjDescriptorTypeIdAdapter,
+        gDFropenodeObjDescriptorExtraSizeAdapter,
+        DFropenode_getPlaneEquation,
+        DFropenode_getWorldPosAtPhase,
+        DFropenode_advancePhaseByDistance,
+        DFropenode_applyForceAtPhase,
+        DFropenode_findNearestRopePoint,
+        DFropenode_getAngle,
+        DFropenode_setVisible,
+        DFropenode_isVisible,
+        DFropenode_setMinY,
+        DFropenode_clearLinkedObj,
+    },
 };

@@ -5,9 +5,9 @@
  * hit reactions.
  */
 #include "dlls/objects/223_Hagabon.h"
-#include "dolphin/MSL_C/PPCEABI/bare/H/math_api.h"
+#include "dolphin/math.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/dll/objfx_api.h"
+#include "main/dll/objfx.h"
 #include "main/dll/partfx_interface.h"
 #include "main/dll/rom_curve_interface.h"
 #include "main/frame_timing.h"
@@ -18,14 +18,12 @@
 #include "main/object_render.h"
 #include "main/objfx.h"
 #include "main/objhits.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "string.h"
 #include "sys/objects.h"
 #include "main/curve.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
-#include "main/audio/sfx_stop_object_api.h"
+#include "main/audio/sfx.h"
 #include "main/objtype.h"
 #include "main/mapEventTypes.h"
 
@@ -55,13 +53,6 @@
 #define HAGABON_CHASE_RADIUS_SCALE     4.0f
 #define HAGABON_CURVE_ALLOCATOR_TAG    0x1a
 
-typedef union HagabonAnimEventBuffer {
-    ObjAnimEventList events;
-    u8 storage[0x20];
-} HagabonAnimEventBuffer;
-
-STATIC_ASSERT(sizeof(HagabonAnimEventBuffer) == 0x20);
-
 int gHagabonCurveInitData[2] = {2, 3};
 int gHagabonLastCurvePoint;
 
@@ -72,7 +63,7 @@ void Hagabon_updateMovement(GameObject* obj, HagabonState* state) {
     GameObject* player;
     int angleDelta;
     int angle;
-    HagabonAnimEventBuffer animEvents;
+    ObjAnimEventList animEvents;
     f32 waveA;
     f32 waveB;
     f32 damp;
@@ -80,13 +71,13 @@ void Hagabon_updateMovement(GameObject* obj, HagabonState* state) {
     curve = state->curve;
 
     if (((Curve_AdvanceAlongPath(&curve->curve, state->curveStep) != 0) ||
-         (curve->atSegmentEnd != gHagabonLastCurvePoint)) &&
+         (curve->curve.idx != gHagabonLastCurvePoint)) &&
         ((*gRomCurveInterface)->goNextPoint((void*)curve) != 0) &&
         ((*gRomCurveInterface)->initCurve((void*)state->curve, (void*)obj, (400.0f), gHagabonCurveInitData, -1) != 0)) {
         state->flags &= ~HAGABON_FLAG_PATH_NEEDS_LINK;
     }
 
-    gHagabonLastCurvePoint = curve->atSegmentEnd;
+    gHagabonLastCurvePoint = curve->curve.idx;
 
     state->wavePhaseA += (u16)(128.0f * timeDelta);
     state->wavePhaseB += (u16)(256.0f * timeDelta);
@@ -103,17 +94,17 @@ void Hagabon_updateMovement(GameObject* obj, HagabonState* state) {
         obj->anim.velocityY += (0.001f) * ((60.0f + state->player->anim.localPosY) - obj->anim.localPosY);
         obj->anim.velocityZ += (0.001f) * (state->player->anim.localPosZ - obj->anim.localPosZ);
     } else if ((state->flags & HAGABON_FLAG_PATH_RETURN) != 0) {
-        obj->anim.velocityX += (0.001f) * (curve->posX - obj->anim.localPosX);
-        obj->anim.velocityY += (0.001f) * (curve->posY - obj->anim.localPosY);
-        obj->anim.velocityZ += (0.001f) * (curve->posZ - obj->anim.localPosZ);
+        obj->anim.velocityX += (0.001f) * (curve->curve.sample[0] - obj->anim.localPosX);
+        obj->anim.velocityY += (0.001f) * (curve->curve.sample[1] - obj->anim.localPosY);
+        obj->anim.velocityZ += (0.001f) * (curve->curve.sample[2] - obj->anim.localPosZ);
     } else {
-        obj->anim.velocityX += (0.001f) * (curve->posX - obj->anim.localPosX);
+        obj->anim.velocityX += (0.001f) * (curve->curve.sample[0] - obj->anim.localPosX);
         waveA = mathSinf(((3.1415927f) * (f32)(u32)state->wavePhaseB) / (32768.0f));
         waveB = mathSinf(((3.1415927f) * (f32)(u32)state->wavePhaseA) / (32768.0f));
         waveA = waveB + waveA;
-        waveA = ((10.0f * waveA) + curve->posY) - obj->anim.localPosY;
+        waveA = ((10.0f * waveA) + curve->curve.sample[1]) - obj->anim.localPosY;
         obj->anim.velocityY += (0.001f) * waveA;
-        obj->anim.velocityZ += (0.001f) * (curve->posZ - obj->anim.localPosZ);
+        obj->anim.velocityZ += (0.001f) * (curve->curve.sample[2] - obj->anim.localPosZ);
     }
 
     obj->anim.velocityX *= (damp = 0.9f);
@@ -142,7 +133,7 @@ void Hagabon_updateMovement(GameObject* obj, HagabonState* state) {
 
     (void)objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta,
                   obj->anim.velocityZ * timeDelta);
-    (void)ObjAnim_AdvanceCurrentMove(obj, state->animSpeed, timeDelta, &animEvents.events);
+    (void)ObjAnim_AdvanceCurrentMove(obj, state->animSpeed, timeDelta, &animEvents);
 
     player = state->player;
     angle = (u16)getAngle(obj->anim.worldPosX - player->anim.worldPosX, obj->anim.worldPosZ - player->anim.worldPosZ);
@@ -294,9 +285,9 @@ void Hagabon_update(GameObject* obj) {
     }
     if (oldCurve != NULL) {
         f32* delta = distanceDelta;
-        delta[0] = oldCurve->posX - obj->anim.worldPosX;
-        delta[1] = oldCurve->posY - obj->anim.worldPosY;
-        delta[2] = oldCurve->posZ - obj->anim.worldPosZ;
+        delta[0] = oldCurve->curve.sample[0] - obj->anim.worldPosX;
+        delta[1] = oldCurve->curve.sample[1] - obj->anim.worldPosY;
+        delta[2] = oldCurve->curve.sample[2] - obj->anim.worldPosZ;
         state->pathDistance = sqrtf(delta[2] * delta[2] + (delta[0] * delta[0] + delta[1] * delta[1]));
     }
     if (((state->flags & HAGABON_FLAG_CHASE) != 0) && (state->pathDistance > HAGABON_PATH_RETURN_DISTANCE)) {
@@ -341,19 +332,30 @@ void Hagabon_release(void) {
 void Hagabon_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gHagabonObjDescriptorInitAdapter, Hagabon_init, obj, placement, flags)
+OBJECT_FREE_ADAPTER(gHagabonObjDescriptorFreeAdapter, Hagabon_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gHagabonObjDescriptorTypeIdAdapter, Hagabon_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gHagabonObjDescriptorExtraSizeAdapter, Hagabon_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gHagabonObjDescriptorAcquire, Hagabon_initialise)
+
 ObjectDescriptor gHagabonObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gHagabonObjDescriptorAcquire,
+        Hagabon_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)Hagabon_initialise,
-    (ObjectDescriptorCallback)Hagabon_release,
-    0,
-    (ObjectDescriptorCallback)Hagabon_init,
-    (ObjectDescriptorCallback)Hagabon_update,
-    (ObjectDescriptorCallback)Hagabon_hitDetect,
-    (ObjectDescriptorCallback)Hagabon_render,
-    (ObjectDescriptorCallback)Hagabon_free,
-    (ObjectDescriptorCallback)Hagabon_getObjectTypeId,
-    Hagabon_getExtraSize,
+    gHagabonObjDescriptorInitAdapter,
+    Hagabon_update,
+    Hagabon_hitDetect,
+    Hagabon_render,
+    gHagabonObjDescriptorFreeAdapter,
+    gHagabonObjDescriptorTypeIdAdapter,
+    gHagabonObjDescriptorExtraSizeAdapter,
 };

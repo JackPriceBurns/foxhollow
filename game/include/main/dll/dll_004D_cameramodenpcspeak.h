@@ -67,19 +67,17 @@ STATIC_ASSERT(offsetof(CameraModeNpcSpeakState, lookAtXZScale) == 0x48);
 STATIC_ASSERT(sizeof(CameraModeNpcSpeakState) == 0x4C);
 
 typedef struct CameraModeNpcSpeakDescriptor {
-    u32 metadata[4];
-    void (*initialise)(void);
-    void (*release)(void);
-    ResourceDescriptorCallback reserved18;
+    ResourceDescriptorHeader header;
+    void* reserved18;
     void (*init)(CameraObject* camera, int unused, CameraModeNpcSpeakInitParams* params);
     void (*update)(CameraObject* camera);
     void (*free)(void);
     void (*copyToCurrent)(void);
 } CameraModeNpcSpeakDescriptor;
 
-STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, metadata) == 0x00);
-STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, initialise) == 0x10);
-STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, release) == 0x14);
+STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, header.metadata) == 0x00);
+STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, header.acquire) == 0x10);
+STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, header.release) == 0x14);
 STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, reserved18) == 0x18);
 STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, init) == 0x1C);
 STATIC_ASSERT(offsetof(CameraModeNpcSpeakDescriptor, update) == 0x20);

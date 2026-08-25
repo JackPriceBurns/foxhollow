@@ -4,7 +4,7 @@
 #include "main/game_ui_interface.h"
 #include "main/gamebits.h"
 #include "main/mapEventTypes.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 
 typedef enum VfpSpellPlaceUiEvent {
     VFP_SPELL_PLACE_EVENT_SEQUENCE_A = 0x123,
@@ -83,15 +83,26 @@ static void vfpSpellPlace_release(void) {
 static void vfpSpellPlace_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gVfpSpellPlaceObjDescriptorInitAdapter, vfpSpellPlace_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVfpSpellPlaceObjDescriptorHitDetectAdapter, vfpSpellPlace_hitDetect)
+OBJECT_RENDER_ADAPTER(gVfpSpellPlaceObjDescriptorRenderAdapter, vfpSpellPlace_render)
+OBJECT_FREE_ADAPTER(gVfpSpellPlaceObjDescriptorFreeAdapter, vfpSpellPlace_free)
+OBJECT_TYPE_ID_ADAPTER(gVfpSpellPlaceObjDescriptorTypeIdAdapter, vfpSpellPlace_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVfpSpellPlaceObjDescriptorExtraSizeAdapter, vfpSpellPlace_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVfpSpellPlaceObjDescriptorAcquire, vfpSpellPlace_initialise)
+
 ObjectDescriptor gVfpSpellPlaceObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)vfpSpellPlace_initialise,
-    .release = (ObjectDescriptorCallback)vfpSpellPlace_release,
-    .init = (ObjectDescriptorCallback)vfpSpellPlace_init,
-    .update = (ObjectDescriptorCallback)vfpSpellPlace_update,
-    .hitDetect = (ObjectDescriptorCallback)vfpSpellPlace_hitDetect,
-    .render = (ObjectDescriptorCallback)vfpSpellPlace_render,
-    .free = (ObjectDescriptorCallback)vfpSpellPlace_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)vfpSpellPlace_getObjectTypeId,
-    .getExtraSize = vfpSpellPlace_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gVfpSpellPlaceObjDescriptorAcquire,
+        .release = vfpSpellPlace_release,
+    },
+    .init = gVfpSpellPlaceObjDescriptorInitAdapter,
+    .update = vfpSpellPlace_update,
+    .hitDetect = gVfpSpellPlaceObjDescriptorHitDetectAdapter,
+    .render = gVfpSpellPlaceObjDescriptorRenderAdapter,
+    .free = gVfpSpellPlaceObjDescriptorFreeAdapter,
+    .getObjectTypeId = gVfpSpellPlaceObjDescriptorTypeIdAdapter,
+    .getExtraSize = gVfpSpellPlaceObjDescriptorExtraSizeAdapter,
+};;

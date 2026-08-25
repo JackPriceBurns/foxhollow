@@ -34,19 +34,33 @@ void dfperchwitch_release(void) {
 void dfperchwitch_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDfperchwitchObjDescriptorInitAdapter, dfperchwitch_init)
+OBJECT_UPDATE_ADAPTER(gDfperchwitchObjDescriptorUpdateAdapter, dfperchwitch_update)
+OBJECT_HIT_DETECT_ADAPTER(gDfperchwitchObjDescriptorHitDetectAdapter, dfperchwitch_hitDetect)
+OBJECT_RENDER_ADAPTER(gDfperchwitchObjDescriptorRenderAdapter, dfperchwitch_render)
+OBJECT_FREE_ADAPTER(gDfperchwitchObjDescriptorFreeAdapter, dfperchwitch_free)
+OBJECT_TYPE_ID_ADAPTER(gDfperchwitchObjDescriptorTypeIdAdapter, dfperchwitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDfperchwitchObjDescriptorExtraSizeAdapter, dfperchwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDfperchwitchObjDescriptorAcquire, dfperchwitch_initialise)
+
 ObjectDescriptor gDfperchwitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDfperchwitchObjDescriptorAcquire,
+        dfperchwitch_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dfperchwitch_initialise,
-    (ObjectDescriptorCallback)dfperchwitch_release,
-    0,
-    (ObjectDescriptorCallback)dfperchwitch_init,
-    (ObjectDescriptorCallback)dfperchwitch_update,
-    (ObjectDescriptorCallback)dfperchwitch_hitDetect,
-    (ObjectDescriptorCallback)dfperchwitch_render,
-    (ObjectDescriptorCallback)dfperchwitch_free,
-    (ObjectDescriptorCallback)dfperchwitch_getObjectTypeId,
-    dfperchwitch_getExtraSize,
+    gDfperchwitchObjDescriptorInitAdapter,
+    gDfperchwitchObjDescriptorUpdateAdapter,
+    gDfperchwitchObjDescriptorHitDetectAdapter,
+    gDfperchwitchObjDescriptorRenderAdapter,
+    gDfperchwitchObjDescriptorFreeAdapter,
+    gDfperchwitchObjDescriptorTypeIdAdapter,
+    gDfperchwitchObjDescriptorExtraSizeAdapter,
 };

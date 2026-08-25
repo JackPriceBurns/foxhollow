@@ -8,15 +8,15 @@
 #include "dlls/objects/455_DIMLavaSmas.h"
 
 #include "dlls/objects/446.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
-#include "main/gamebits_api.h"
-#include "main/lightmap_api.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
 #include "main/objhits.h"
 #include "main/objseq.h"
 #include "main/object_render.h"
-#include "main/pi_dolphin_api.h"
-#include "main/track_dolphin_map_api.h"
+#include "main/pi_dolphin.h"
+#include "main/track_dolphin_map.h"
 #include "main/model.h"
 
 enum DimLavaSmashPhase {
@@ -163,19 +163,31 @@ void dimlavasmash_release(void) {
 void dimlavasmash_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gDIMLavaSmashObjDescriptorInitAdapter, dimlavasmash_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDIMLavaSmashObjDescriptorHitDetectAdapter, dimlavasmash_hitDetect)
+OBJECT_FREE_ADAPTER(gDIMLavaSmashObjDescriptorFreeAdapter, dimlavasmash_free)
+OBJECT_TYPE_ID_ADAPTER(gDIMLavaSmashObjDescriptorTypeIdAdapter, dimlavasmash_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDIMLavaSmashObjDescriptorExtraSizeAdapter, dimlavasmash_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDIMLavaSmashObjDescriptorAcquire, dimlavasmash_initialise)
+
 ObjectDescriptor gDIMLavaSmashObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDIMLavaSmashObjDescriptorAcquire,
+        dimlavasmash_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    (ObjectDescriptorCallback)dimlavasmash_initialise,
-    (ObjectDescriptorCallback)dimlavasmash_release,
-    0,
-    (ObjectDescriptorCallback)dimlavasmash_init,
-    (ObjectDescriptorCallback)dimlavasmash_update,
-    (ObjectDescriptorCallback)dimlavasmash_hitDetect,
-    (ObjectDescriptorCallback)dimlavasmash_render,
-    (ObjectDescriptorCallback)dimlavasmash_free,
-    (ObjectDescriptorCallback)dimlavasmash_getObjectTypeId,
-    dimlavasmash_getExtraSize,
+    gDIMLavaSmashObjDescriptorInitAdapter,
+    dimlavasmash_update,
+    gDIMLavaSmashObjDescriptorHitDetectAdapter,
+    dimlavasmash_render,
+    gDIMLavaSmashObjDescriptorFreeAdapter,
+    gDIMLavaSmashObjDescriptorTypeIdAdapter,
+    gDIMLavaSmashObjDescriptorExtraSizeAdapter,
 };

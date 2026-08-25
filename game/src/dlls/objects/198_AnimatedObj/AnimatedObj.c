@@ -8,18 +8,17 @@
  */
 #include "dlls/objects/198_AnimatedObj.h"
 #include "dolphin/mtx.h"
-#include "main/audio/sfx_looped_object_api.h"
-#include "main/audio/sfx_stop_channel_api.h"
+#include "main/audio/sfx.h"
 #include "main/camera_interface.h"
 #include "main/dll/dll_0004_dummy04.h"
 #include "main/frame_timing.h"
-#include "main/maketex_sequence_api.h"
+#include "main/maketex_sequence.h"
 #include "main/obj_link.h"
 #include "main/obj_list.h"
 #include "main/object_render.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "main/objseq.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 
@@ -214,19 +213,26 @@ void animatedobj_init(GameObject* obj, AnimatedObjPlacement* placement) {
     Obj_SetModelRenderOpAlpha(obj, 0xff);
 }
 
+OBJECT_INIT_ADAPTER(gAnimatedObjDescriptorInitAdapter, animatedobj_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gAnimatedObjDescriptorExtraSizeAdapter, animatedobj_getExtraSize)
+
 ObjectDescriptor gAnimatedObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gAnimatedObjDescriptorInitAdapter,
+    animatedobj_update,
     0,
+    animatedobj_render,
+    animatedobj_free,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)animatedobj_init,
-    (ObjectDescriptorCallback)animatedobj_update,
-    0,
-    (ObjectDescriptorCallback)animatedobj_render,
-    (ObjectDescriptorCallback)animatedobj_free,
-    0,
-    animatedobj_getExtraSize,
+    gAnimatedObjDescriptorExtraSizeAdapter,
 };

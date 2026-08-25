@@ -1,12 +1,11 @@
 #include "dlls/objects/442_SC_totempuz.h"
 
 #include "game/objects/object_setup.h"
-#include "main/audio/sfx_limited_object_api.h"
-#include "main/audio/sfx_play_api.h"
+#include "main/audio/sfx.h"
 #include "main/audio/sfx_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebit_ids.h"
-#include "main/gamebits_api.h"
+#include "main/gamebits.h"
 #include "main/dll/partfx_interface.h"
 #include "main/obj_list.h"
 #include "main/objHitReact_types.h"
@@ -14,7 +13,7 @@
 #include "main/objhits.h"
 #include "main/objtexture.h"
 #include "main/object_render.h"
-#include "main/shader_api.h"
+#include "main/shader.h"
 #include "main/vecmath.h"
 #include "main/objseq.h"
 
@@ -288,15 +287,25 @@ static void sc_totempuzzle_release(void) {
 static void sc_totempuzzle_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gSC_totempuzzleObjDescriptorInitAdapter, sc_totempuzzle_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSC_totempuzzleObjDescriptorHitDetectAdapter, sc_totempuzzle_hitDetect)
+OBJECT_FREE_ADAPTER(gSC_totempuzzleObjDescriptorFreeAdapter, sc_totempuzzle_free)
+OBJECT_TYPE_ID_ADAPTER(gSC_totempuzzleObjDescriptorTypeIdAdapter, sc_totempuzzle_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSC_totempuzzleObjDescriptorExtraSizeAdapter, sc_totempuzzle_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSC_totempuzzleObjDescriptorAcquire, sc_totempuzzle_initialise)
+
 ObjectDescriptor gSC_totempuzzleObjDescriptor = {
-    .slotCountAndFlags = OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    .initialise = (ObjectDescriptorCallback)sc_totempuzzle_initialise,
-    .release = (ObjectDescriptorCallback)sc_totempuzzle_release,
-    .init = (ObjectDescriptorCallback)sc_totempuzzle_init,
-    .update = (ObjectDescriptorCallback)sc_totempuzzle_update,
-    .hitDetect = (ObjectDescriptorCallback)sc_totempuzzle_hitDetect,
-    .render = (ObjectDescriptorCallback)sc_totempuzzle_render,
-    .free = (ObjectDescriptorCallback)sc_totempuzzle_free,
-    .getObjectTypeId = (ObjectDescriptorCallback)sc_totempuzzle_getObjectTypeId,
-    .getExtraSize = sc_totempuzzle_getExtraSize,
-};
+    .header = {
+        .metadata = { 0, 0, 0, OBJECT_DESCRIPTOR_FLAGS_10_SLOTS },
+        .acquire = gSC_totempuzzleObjDescriptorAcquire,
+        .release = sc_totempuzzle_release,
+    },
+    .init = gSC_totempuzzleObjDescriptorInitAdapter,
+    .update = sc_totempuzzle_update,
+    .hitDetect = gSC_totempuzzleObjDescriptorHitDetectAdapter,
+    .render = sc_totempuzzle_render,
+    .free = gSC_totempuzzleObjDescriptorFreeAdapter,
+    .getObjectTypeId = gSC_totempuzzleObjDescriptorTypeIdAdapter,
+    .getExtraSize = gSC_totempuzzleObjDescriptorExtraSizeAdapter,
+};;

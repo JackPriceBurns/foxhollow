@@ -13,20 +13,20 @@
 #include "dlls/objects/521_WM_LevelCon.h"
 
 #include "game/objects/object.h"
-#include "main/audio/music_api.h"
+#include "main/audio/music.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/frame_timing.h"
 #include "main/gamebits.h"
-#include "main/gametext_color_api.h"
-#include "main/gametext_show_api.h"
-#include "main/lightmap_render_control_api.h"
+#include "main/gametext_color.h"
+#include "main/gametext_show.h"
+#include "main/lightmap_render_control.h"
 #include "main/map_load.h"
 #include "main/mapEventTypes.h"
 #include "main/object_render.h"
 #include "main/objtype.h"
-#include "main/objseq_api.h"
-#include "main/pi_dolphin_api.h"
-#include "main/sky_api.h"
+#include "main/objseq.h"
+#include "main/pi_dolphin.h"
+#include "main/sky.h"
 #include "sys/objects.h"
 
 u8 gWmLevelControlSkyColorFrom[4] = {0x14, 0x20, 0x28, 0};
@@ -229,7 +229,7 @@ void WM_LevelControl_init(GameObject* obj) {
     state->unknown0B = 0;
     state->unknown06 = 0x1E;
     state->messageTimer = gWmLevelControlIntroMessageDuration;
-    state->musicLatch.activeMask = 0;
+    state->musicLatch = 0;
     lockLevel(0xF, 0);
     /* The 0xD1B..0xD1F chain tracks returned Krazoa spirits. */
     mode = (*gMapEventInterface)->getMapAct((int)obj->anim.mapEventSlot);
@@ -295,19 +295,31 @@ void WM_LevelControl_release(void) {
 void WM_LevelControl_initialise(void) {
 }
 
+OBJECT_INIT_ADAPTER(gWM_LevelControlObjDescriptorInitAdapter, WM_LevelControl_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gWM_LevelControlObjDescriptorHitDetectAdapter, WM_LevelControl_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_LevelControlObjDescriptorFreeAdapter, WM_LevelControl_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gWM_LevelControlObjDescriptorTypeIdAdapter, WM_LevelControl_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_LevelControlObjDescriptorExtraSizeAdapter, WM_LevelControl_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_LevelControlObjDescriptorAcquire, WM_LevelControl_initialise)
+
 ObjectDescriptor gWM_LevelControlObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_LevelControlObjDescriptorAcquire,
+        WM_LevelControl_release,
+    },
     0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    WM_LevelControl_initialise,
-    WM_LevelControl_release,
-    0,
-    (ObjectDescriptorCallback)WM_LevelControl_init,
-    (ObjectDescriptorCallback)WM_LevelControl_update,
-    WM_LevelControl_hitDetect,
-    (ObjectDescriptorCallback)WM_LevelControl_render,
-    (ObjectDescriptorCallback)WM_LevelControl_free,
-    (ObjectDescriptorCallback)WM_LevelControl_getObjectTypeId,
-    WM_LevelControl_getExtraSize,
+    gWM_LevelControlObjDescriptorInitAdapter,
+    WM_LevelControl_update,
+    gWM_LevelControlObjDescriptorHitDetectAdapter,
+    WM_LevelControl_render,
+    gWM_LevelControlObjDescriptorFreeAdapter,
+    gWM_LevelControlObjDescriptorTypeIdAdapter,
+    gWM_LevelControlObjDescriptorExtraSizeAdapter,
 };

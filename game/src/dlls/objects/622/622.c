@@ -20,12 +20,11 @@
 #include "main/dll/DR/dll_026E_drshackle.h"
 #include "main/dll/DR/dr_types.h"
 #include "main/vecmath.h"
-#include "main/audio/sfx_channel_query_api.h"
-#include "main/audio/sfx_play_api.h"
-#include "main/gamebits_api.h"
+#include "main/audio/sfx.h"
+#include "main/gamebits.h"
 #include "main/model.h"
 #include "main/obj_path.h"
-#include "main/objprint_render_api.h"
+#include "main/objprint_render.h"
 #include "sys/objects.h"
 #include "dolphin/mtx.h"
 
@@ -89,9 +88,9 @@ int drshackle_renderAtPathPoint(GameObject* obj, GameObject* owner, int b, int c
     {
         return 1;
     }
-    ((DrshackleState*)p)->savedPosX = obj->anim.localPosX;
-    ((DrshackleState*)p)->savedPosY = obj->anim.localPosY;
-    ((DrshackleState*)p)->savedPosZ = obj->anim.localPosZ;
+    ((DrshackleState*)p)->savedPos.x = obj->anim.localPosX;
+    ((DrshackleState*)p)->savedPos.y = obj->anim.localPosY;
+    ((DrshackleState*)p)->savedPos.z = obj->anim.localPosZ;
 
     attachPoint = &owner->anim.modelInstance->attachPoints[b];
     joint1 = attachPoint->joints[objAnim->bankIndex];
@@ -180,7 +179,7 @@ void drshackle_hitDetect(GameObject* obj)
     {
         Vec vec;
         int n;
-        PSVECSubtract(&obj->anim.localPos, &state->savedPos, &vec);
+        PSVECSubtract((Vec*)&obj->anim.localPosX, &state->savedPos, &vec);
         n = 0xc8 - (int)(30.0f * PSVECMag(&vec));
         if (randomGetRange(0, (n < 1) ? 1 : ((n > 0xc8) ? 0xc8 : n)) == 0)
         {
@@ -254,21 +253,35 @@ void drshackle_initialise(void)
 {
 }
 
-ObjectDescriptor12 gDrShackleObjDescriptor = {
-    0,
-    0,
-    0,
-    OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
-    (ObjectDescriptorCallback)drshackle_initialise,
-    (ObjectDescriptorCallback)drshackle_release,
-    0,
-    (ObjectDescriptorCallback)drshackle_init,
-    (ObjectDescriptorCallback)drshackle_update,
-    (ObjectDescriptorCallback)drshackle_hitDetect,
-    (ObjectDescriptorCallback)drshackle_render,
-    (ObjectDescriptorCallback)drshackle_free,
-    (ObjectDescriptorCallback)drshackle_getObjectTypeId,
-    (ObjectDescriptorExtraSizeCallback)drshackle_getExtraSize,
-    (ObjectDescriptorCallback)drshackle_renderAtPathPoint,
-    (ObjectDescriptorCallback)drshackle_getAttachSlot,
+OBJECT_INIT_ADAPTER(gDrShackleObjDescriptorInitAdapter, drshackle_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrShackleObjDescriptorRenderAdapter, drshackle_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrShackleObjDescriptorFreeAdapter, drshackle_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrShackleObjDescriptorTypeIdAdapter, drshackle_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrShackleObjDescriptorExtraSizeAdapter, drshackle_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrShackleObjDescriptorAcquire, drshackle_initialise)
+
+DrshackleDescriptor gDrShackleObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_12_SLOTS,
+        },
+        gDrShackleObjDescriptorAcquire,
+        drshackle_release,
+    },
+    {
+        0,
+        gDrShackleObjDescriptorInitAdapter,
+        drshackle_update,
+        drshackle_hitDetect,
+        gDrShackleObjDescriptorRenderAdapter,
+        gDrShackleObjDescriptorFreeAdapter,
+        gDrShackleObjDescriptorTypeIdAdapter,
+        gDrShackleObjDescriptorExtraSizeAdapter,
+        drshackle_renderAtPathPoint,
+        drshackle_getAttachSlot,
+    },
 };

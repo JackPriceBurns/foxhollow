@@ -9,7 +9,7 @@
 
 #include "dlls/objects/419.h"
 #include "sys/objects.h"
-#include "main/dll/player_api.h"
+#include "main/dll/player.h"
 #include "main/objhits.h"
 #include "main/objtype.h"
 
@@ -72,19 +72,28 @@ void NW_ice_init(GameObject* obj) {
     objAddObjectType(obj, NW_ICE_OBJECT_GROUP_ID);
 }
 
+OBJECT_INIT_ADAPTER(gNW_iceObjDescriptorInitAdapter, NW_ice_init, obj)
+OBJECT_RENDER_ADAPTER(gNW_iceObjDescriptorRenderAdapter, NW_ice_render)
+OBJECT_FREE_ADAPTER(gNW_iceObjDescriptorFreeAdapter, NW_ice_free, obj)
+OBJECT_EXTRA_SIZE_ADAPTER(gNW_iceObjDescriptorExtraSizeAdapter, NW_ice_getExtraSize)
+
 ObjectDescriptor gNW_iceObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
     0,
+    gNW_iceObjDescriptorInitAdapter,
+    NW_ice_update,
     0,
+    gNW_iceObjDescriptorRenderAdapter,
+    gNW_iceObjDescriptorFreeAdapter,
     0,
-    OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
-    0,
-    0,
-    0,
-    (ObjectDescriptorCallback)NW_ice_init,
-    (ObjectDescriptorCallback)NW_ice_update,
-    0,
-    (ObjectDescriptorCallback)NW_ice_render,
-    (ObjectDescriptorCallback)NW_ice_free,
-    0,
-    NW_ice_getExtraSize,
+    gNW_iceObjDescriptorExtraSizeAdapter,
 };

@@ -67,6 +67,18 @@ typedef struct PushableState {
     u8 pad147;                     /* 0x147 */
 } PushableState;
 
+typedef struct PushableInterface {
+    OBJECT_INTERFACE_FIELDS;
+    int (*push)(GameObject* obj, GameObject* target, int active, f32 pushX, f32 pushZ);
+    int (*isWithinCullDistance)(GameObject* obj, GameObject* other);
+    void (*setModelFlag)(GameObject* obj, int modelNo);
+    int (*isRestored)(GameObject* obj);
+} PushableInterface;
+
+OBJECT_DESCRIPTOR_TYPE(PushableDescriptor, PushableInterface);
+
+#define PUSHABLE_INTERFACE(pushable) ((PushableInterface*)*((GameObject*)(pushable))->anim.dll)
+
 typedef struct PushableObjectDef {
     ObjPlacement base; /* 0x00 */
     s16 gameBit;       /* 0x18 */
@@ -172,6 +184,6 @@ extern int gPushableSavedIdentCount;
 extern int gPushableSavedIdents[0x28];
 extern char sPushPullObjectHitpointOverflow[];
 extern const PushableRadii gPushableDefaultBox;
-extern ObjectDescriptor14 gPushableObjDescriptor;
+extern PushableDescriptor gPushableObjDescriptor;
 
 #endif /* DLLS_OBJECTS_239_H_ */

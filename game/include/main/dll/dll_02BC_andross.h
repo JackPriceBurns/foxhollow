@@ -57,14 +57,7 @@ typedef struct AndrossState {
     f32 targetPosX; /* tracked target: K*sin(t) + homePos + clamped arwing delta */
     f32 targetPosY;
     f32 targetPosZ;
-    union {
-        struct {
-            f32 velX; /* horizontal velocity = clampedDist * sin(yaw), minus damped arwing vel */
-            f32 velY; /* horizontal velocity = clampedDist * cos(yaw), minus damped arwing vel */
-            f32 velZ;
-        };
-        Vec3f velocity;
-    };
+    Vec3f velocity;
     f32 soundTimer; /* += timeDelta; on threshold plays sfx 0x46f and latches a flag */
     u8 laughPlayed : 1;
     u8 ringPlayed : 1;
