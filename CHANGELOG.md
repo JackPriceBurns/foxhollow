@@ -4,6 +4,16 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.2 — 2026-09-01
+
+### Added
+- Unsaved progress can be recovered after a crash. When the launcher asks for it, the game writes a
+  hidden snapshot of the active save file every 30 seconds, and the launcher offers to restore that
+  snapshot if the game closes without saving. Saving itself is untouched: the snapshot is composed
+  without changing the restart point, the work buffer, the memory card or the saving screen, and a
+  clean quit removes it.
+- `FOXHOLLOW_AUTOSAVE` names the snapshot file. Without it nothing is written.
+
 ## v0.5.1 — 2026-09-01
 
 ### Fixed

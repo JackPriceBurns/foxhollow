@@ -5,7 +5,7 @@ if (NOT CMAKE_BUILD_TYPE)
             "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif ()
 
-project(foxhollow LANGUAGES C CXX VERSION 0.5.1)
+project(foxhollow LANGUAGES C CXX VERSION 0.5.2)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
