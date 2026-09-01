@@ -4,6 +4,14 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.1 — 2026-09-01
+
+### Fixed
+- Entering the shop no longer crashes when the price readout appears. The HUD reached the shop's
+  interface through a descriptor pointer truncated to 32 bits.
+- Collecting the scarabs the shopkeeper pays out no longer crashes. The shop pointer handed to each
+  scarab was carried in a 32-bit placement slot and now travels in a native-width field.
+
 ## v0.5.0 — 2026-08-25
 
 ### Added
