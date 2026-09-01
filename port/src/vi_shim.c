@@ -5,6 +5,7 @@
 #include <aurora/event.h>
 #include <SDL3/SDL_timer.h>
 #include <stdlib.h>
+#include "foxhollow_autosave.h"
 #include "foxhollow_compat.h"
 #include "foxhollow_config.h"
 #include "foxhollow_mods.h"
@@ -58,6 +59,7 @@ static void wait_for_retrace_deadline(void) {
 }
 
 static void shutdown_and_exit(void) {
+  fhAutosaveShutdown();
   fhModsShutdown();
   aurora_dvd_close();
   aurora_shutdown();
@@ -96,6 +98,7 @@ void VIWaitForRetrace(void) {
   }
   fhModsUpdate();
   fhGalleryUpdate();
+  fhAutosaveUpdate();
   pump_events();
   wait_for_retrace_deadline();
   while (!aurora_begin_frame()) {

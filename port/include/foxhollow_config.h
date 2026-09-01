@@ -22,6 +22,7 @@ int fhConfigVsync(void);
 int fhConfigFrameLimit(void);
 int fhConfigRevision(void);
 const char* fhConfigMemoryCardPath(void);
+const char* fhConfigAutosavePath(void);
 
 #ifdef __cplusplus
 }

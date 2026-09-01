@@ -15,6 +15,8 @@ static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
 static int sRevision;
 static char sMemoryCardPath[1024];
 static int sHasMemoryCardPath;
+static char sAutosavePath[1024];
+static int sHasAutosavePath;
 
 static int read_flag(const char* name, int fallback) {
   const char* value = getenv(name);
@@ -24,6 +26,21 @@ static int read_flag(const char* name, int fallback) {
   if (strcmp(value, "0") == 0 || strcmp(value, "false") == 0 || strcmp(value, "off") == 0) {
     return 0;
   }
+  return 1;
+}
+
+static int read_path(const char* name, char* out, size_t capacity) {
+  const char* value = getenv(name);
+  size_t length;
+  if (value == NULL || value[0] == '\0') {
+    return 0;
+  }
+  length = strlen(value);
+  if (length + 1 >= capacity) {
+    return 0;
+  }
+  memcpy(out, value, length);
+  out[length] = '\0';
   return 1;
 }
 
@@ -60,19 +77,8 @@ static void load(void) {
     }
   }
 
-  {
-    const char* cardPath = getenv("FOXHOLLOW_MEMORY_CARD");
-    if (cardPath != NULL && cardPath[0] != '\0')
-    {
-      size_t length = strlen(cardPath);
-      if (length + 1 < sizeof(sMemoryCardPath))
-      {
-        memcpy(sMemoryCardPath, cardPath, length);
-        sMemoryCardPath[length] = '\0';
-        sHasMemoryCardPath = 1;
-      }
-    }
-  }
+  sHasMemoryCardPath = read_path("FOXHOLLOW_MEMORY_CARD", sMemoryCardPath, sizeof(sMemoryCardPath));
+  sHasAutosavePath = read_path("FOXHOLLOW_AUTOSAVE", sAutosavePath, sizeof(sAutosavePath));
 
   frameLimit = getenv("FOXHOLLOW_FRAME_LIMIT");
   if (frameLimit != NULL && frameLimit[0] != '\0') {
@@ -126,4 +132,9 @@ int fhConfigRevision(void) {
 const char* fhConfigMemoryCardPath(void) {
   load();
   return sHasMemoryCardPath ? sMemoryCardPath : NULL;
+}
+
+const char* fhConfigAutosavePath(void) {
+  load();
+  return sHasAutosavePath ? sAutosavePath : NULL;
 }

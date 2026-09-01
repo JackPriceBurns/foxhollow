@@ -79,6 +79,12 @@ default the GCI folder for the disc's region, e.g. `<Dolphin user dir>/GC/USA/Ca
 is an ordinary `.gci` file, which is the on-card format, so files copy in and out of a real
 memory card with any GCI-capable tool and are shared with Dolphin as-is.
 
+When `FOXHOLLOW_AUTOSAVE` names a file, the game also writes a hidden snapshot of the active save
+slot there every 30 seconds: the exact slot image the pause-menu save would write, composed without
+touching the restart point, the work buffer, the card or the memory-card UI. The launcher uses it to
+offer a restore after a crash, and a clean quit removes the file. The file is a 32-byte big-endian header (`FHAUTOSV`, version, slot,
+Unix time, payload size) followed by the 0x6EC-byte slot in on-card byte order.
+
 ### Development and testing tools
 
 | Variable                 | Effect                                                 |
@@ -88,6 +94,7 @@ memory card with any GCI-capable tool and are shared with Dolphin as-is.
 | `FOXHOLLOW_INPUT_RECORD` | Record every frame's `PADStatus` to a trace file.      |
 | `FOXHOLLOW_INPUT_REPLAY` | Replay a recorded trace instead of reading live input. |
 | `FOXHOLLOW_DUMP_NEAR`    | Dump the objects near the player each frame.           |
+| `FOXHOLLOW_AUTOSAVE`     | Write a hidden slot snapshot to this path every 30 s.  |
 
 Record/replay is deterministic frame-for-frame and is the basis for the automated regression
 testing described below. `docs/DEBUGGING.md` covers the rest of the toolkit: LLDB attach recipes,
