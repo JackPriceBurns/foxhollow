@@ -28,14 +28,15 @@ const u8 gSpScarabPaletteBytes[3] = {0x02, 0x13, 0x16};
 typedef struct SpscarabPlacement
 {
     u8 pad0[0x14 - 0x0];
-    s32 vendorObj; /* 0x14: owning shop object; consumed (set -1) by init */
+    s32 ident;     /* 0x14: owning shop object; consumed (set -1) by init */
     s8 rotXByte;   /* 0x18: initial facing angle byte */
     s8 kind;       /* 0x19: scarab variant (0 / 1) */
     s16 groundY;   /* 0x1A: rest height */
-    u8 pad1C[0x20 - 0x1C];
+    u8 pad1C[0x28 - 0x1C];
+    GameObject* vendorObj;
 } SpscarabPlacement;
 
-STATIC_ASSERT(offsetof(SpscarabPlacement, vendorObj) == 0x14);
+STATIC_ASSERT(offsetof(SpscarabPlacement, ident) == 0x14);
 STATIC_ASSERT(offsetof(SpscarabPlacement, kind) == 0x19);
 STATIC_ASSERT(sizeof(SpscarabPlacement) == 0x20);
 
@@ -43,7 +44,7 @@ typedef struct SpscarabState
 {
     f32 groundY;    /* 0x00: rest height; gravity above it, bounce below */
     f32 speedScale; /* 0x04: randomized horizontal velocity scale */
-    s32 vendorObj;  /* 0x08: owning shop object (notified on pickup) */
+    GameObject* vendorObj; /* 0x08: owning shop object (notified on pickup) */
     s16 sfxId;      /* 0x0C: pickup sfx */
     s16 mode;       /* 0x0E: itemPickupDoParticleFx mode */
     s16 burstCount; /* 0x10: trailing dust-burst count (0 = none) */
@@ -54,7 +55,7 @@ STATIC_ASSERT(sizeof(SpscarabState) == 0x14);
 
 int SPScarab_getExtraSize(void)
 {
-    return 0x14;
+    return sizeof(SpscarabState);
 }
 int SPScarab_getObjectTypeId(void)
 {
@@ -129,9 +130,9 @@ void SPScarab_update(GameObject* obj)
 
         {
             int notifyArgB = (placement->kind == 0) ? 1 : 0;
-            int vendorObj = state->vendorObj;
+            GameObject* vendorObj = state->vendorObj;
             int notifyArgA = (placement->kind == 0) ? 0 : 1;
-            SHOP_INTERFACE(vendorObj)->func16((GameObject*)vendorObj, notifyArgA, notifyArgB);
+            SHOP_INTERFACE(vendorObj)->func16(vendorObj, notifyArgA, notifyArgB);
         }
     }
 
@@ -164,7 +165,8 @@ void SPScarab_init(GameObject* obj, SpscarabPlacement* def)
     state->groundY = (f32)(s32)ObjAnim_ReadPlacementS16(&obj->anim, &(def->groundY));
     state->speedScale = 0.4f + randomGetRange(0, 0x64) / 100.0f;
     state->vendorObj = def->vendorObj;
-    def->vendorObj = -1;
+    def->vendorObj = NULL;
+    def->ident = -1;
 
     Sfx_AddLoopedObjectSound(obj, SFXTRIG_scarab_runloop);
     model = Obj_GetActiveModel(obj);

@@ -686,7 +686,8 @@ typedef struct ShopkeeperSpawnSetup
     s8 rotXByte;       /* 0x18: scarab spawn rotX (1/256 turns) */
     u8 kind;           /* 0x19: scarab variant (see SpscarabPlacement.kind) */
     s16 groundY;       /* 0x1A: scarab ground-height delta (see SpscarabState.groundY) */
-    u8 pad1C[0x24 - 0x1C];
+    u8 pad1C[0x28 - 0x1C];
+    GameObject* vendorObj;
 } ShopkeeperSpawnSetup;
 
 STATIC_ASSERT(offsetof(ShopkeeperSpawnSetup, rotXByte) == 0x18);
@@ -922,7 +923,7 @@ void ShopKeeper_spawnScarabs(GameObject* obj, ShopkeeperState* state, int count)
 
     for (i = 0; i < count; i++)
     {
-        setup = (ShopkeeperSpawnSetup*)Obj_AllocObjectSetup(0x24, OBJTYPE_SPSCARAB);
+        setup = (ShopkeeperSpawnSetup*)Obj_AllocObjectSetup(sizeof(ShopkeeperSpawnSetup), OBJTYPE_SPSCARAB);
         setup->base.posX = (obj)->anim.localPosX;
         setup->base.posY = (obj)->anim.localPosY;
         setup->base.posZ = (obj)->anim.localPosZ;
@@ -932,13 +933,13 @@ void ShopKeeper_spawnScarabs(GameObject* obj, ShopkeeperState* state, int count)
         setup->base.color[3] = 255;
         setup->base.color[0] = 16;
         setup->base.color[2] = 6;
-        setup->base.ident = (int)state->vendorObj;
+        setup->vendorObj = state->vendorObj;
         objSetupObject((ObjPlacement*)setup, 5, (obj)->anim.mapEventSlot, -1, (obj)->anim.parent);
     }
 
     for (i = 0; i < count; i++)
     {
-        setup = (ShopkeeperSpawnSetup*)Obj_AllocObjectSetup(0x24, OBJTYPE_SPSCARAB);
+        setup = (ShopkeeperSpawnSetup*)Obj_AllocObjectSetup(sizeof(ShopkeeperSpawnSetup), OBJTYPE_SPSCARAB);
         setup->base.posX = (obj)->anim.localPosX;
         setup->base.posY = (obj)->anim.localPosY;
         setup->base.posZ = (obj)->anim.localPosZ;
@@ -949,7 +950,7 @@ void ShopKeeper_spawnScarabs(GameObject* obj, ShopkeeperState* state, int count)
         setup->base.color[0] = 16;
         setup->base.color[2] = 6;
         setup->kind = 1;
-        setup->base.ident = (int)state->vendorObj;
+        setup->vendorObj = state->vendorObj;
         objSetupObject((ObjPlacement*)setup, 5, (obj)->anim.mapEventSlot, -1, (obj)->anim.parent);
     }
 }

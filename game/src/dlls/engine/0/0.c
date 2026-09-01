@@ -19,6 +19,7 @@
 #include "main/mm.h"
 #include "main/newshadows.h"
 #include "main/dll/tricky.h"
+#include "main/dll/SP/dll_0285_spshop.h"
 #include "main/dll/cmenu.h"
 #include "main/dll/maybeTemplate.h"
 #include "main/dll/dll_0000_gameui.h"
@@ -2026,8 +2027,7 @@ void hudDrawStatusBarsAndCounters(int unused1, int unused2, int unused3)
         near = objGetNearestTypeTo(9, Obj_GetPlayerObject(), &radius);
         if (near != NULL && pauseMenuState == 0)
         {
-            (*(void (*)(int*, int*, int*, int*)) *
-             (int*)((char*)*(int*)((int)near->anim.dll) + 0x54))((int*)near, &c2, &c1, &c0);
+            SHOP_INTERFACE(near)->func17(near, &c2, &c1, &c0);
             hcArg = 0x118;
             hudDrawCounter(0x1e, (s16)(c1 - c2), (s16)c0, 0xff, 0, &hcArg, 1);
         }
