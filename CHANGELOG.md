@@ -4,6 +4,14 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.3 — 2026-09-02
+
+### Fixed
+- Characters and other lit objects are no longer too dark outdoors. The time-of-day curves that set
+  the ambient level and the fill light from the opposite side of the sun were read one entry late,
+  so the shaded side of a model went darker than retail through the day and the moon's direction was
+  wrong at night. It was most visible stepping away from a flame into daylight.
+
 ## v0.5.2 — 2026-09-01
 
 ### Added
