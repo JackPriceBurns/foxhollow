@@ -287,13 +287,25 @@ void loadSunAndMoon(void)
     }
 }
 
-f32 gSkySunDirection[] = {0.0f, 1.0f, 0.0f};
+typedef struct SkyTimeOfDayLighting {
+    f32 sunDirection[3];
+    f32 moonDirection[3];
+    f32 moonIntensityCurve[5];
+    f32 ambientIntensityCurve[5];
+    f32 blendAlphaCurve[5];
+} SkyTimeOfDayLighting;
 
-f32 gSkyMoonDirection[] = {0.0f, 1.0f, 0.0f};
+STATIC_ASSERT(offsetof(SkyTimeOfDayLighting, moonDirection) == 0xC);
+STATIC_ASSERT(offsetof(SkyTimeOfDayLighting, moonIntensityCurve) == 0x18);
+STATIC_ASSERT(offsetof(SkyTimeOfDayLighting, ambientIntensityCurve) == 0x2C);
+STATIC_ASSERT(offsetof(SkyTimeOfDayLighting, blendAlphaCurve) == 0x40);
 
-f32 sSkyUnusedColors[] = {
-    80.0f,  120.0f, 165.0f, 120.0f, 80.0f,  80.0f, 100.0f, 125.0f,
-    100.0f, 80.0f,  255.0f, 220.0f, 190.0f, 220.0f, 255.0f,
+SkyTimeOfDayLighting gSkyTimeOfDayLighting = {
+    {0.0f, 1.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {80.0f, 120.0f, 165.0f, 120.0f, 80.0f},
+    {80.0f, 100.0f, 125.0f, 100.0f, 80.0f},
+    {255.0f, 220.0f, 190.0f, 220.0f, 255.0f},
 };
 
 u8 gSkyColorBlendTable[248] = {
@@ -1119,7 +1131,7 @@ void skyUpdateLightingFromTimeOfDay(void)
     int blueCurveOffset;
     int slotIndex;
     int lightSlotOffset;
-    f32* lightingData;
+    SkyTimeOfDayLighting* lightingData;
     int rawR;
     int blue;
     int rawG;
@@ -1134,13 +1146,13 @@ void skyUpdateLightingFromTimeOfDay(void)
     f32 segmentFraction;
     f32 dayStart;
 
-    lightingData = gSkySunDirection;
+    lightingData = &gSkyTimeOfDayLighting;
     if (gSkyState == NULL)
     {
         for (slotIndex = 0; slotIndex < 3; slotIndex++)
         {
-            skySetLightSlot(slotIndex, lightingData[0], lightingData[1], lightingData[2], 0xff, 0xff, 0xff, 0xff,
-                            0xff, 0xff);
+            skySetLightSlot(slotIndex, lightingData->sunDirection[0], lightingData->sunDirection[1],
+                            lightingData->sunDirection[2], 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
         }
     }
     else
@@ -1172,9 +1184,9 @@ void skyUpdateLightingFromTimeOfDay(void)
         }
         for (slotIndex = 0; slotIndex < 2; slotIndex++)
         {
-            blendAlphaCurve = &((f32*)((u8*)lightingData + 0x40))[curveSegment];
-            moonIntensityCurve = &((f32*)((u8*)lightingData + 0x18))[curveSegment];
-            ambientIntensityCurve = &((f32*)((u8*)lightingData + 0x2c))[curveSegment];
+            blendAlphaCurve = &lightingData->blendAlphaCurve[curveSegment];
+            moonIntensityCurve = &lightingData->moonIntensityCurve[curveSegment];
+            ambientIntensityCurve = &lightingData->ambientIntensityCurve[curveSegment];
             greenCurveOffset = (curveSegment + 7) * 4;
             blueCurveOffset = (curveSegment + 0xe) * 4;
             zero = 0.0f;
@@ -1245,13 +1257,15 @@ void skyUpdateLightingFromTimeOfDay(void)
             timeOfDay = ((SkyState*)gSkyState)->timeOfDay;
             if (timeOfDay >= dayStart && timeOfDay <= 75600.0f)
             {
-                skySetLightSlot(slotIndex, lightingData[0], lightingData[1], lightingData[2], red, green, blue,
-                                moonIntensity, ambientIntensity, blendAlpha);
+                skySetLightSlot(slotIndex, lightingData->sunDirection[0], lightingData->sunDirection[1],
+                                lightingData->sunDirection[2], red, green, blue, moonIntensity, ambientIntensity,
+                                blendAlpha);
             }
             else
             {
-                skySetLightSlot(slotIndex, -lightingData[3], lightingData[4], -lightingData[5], red, green, blue,
-                                moonIntensity, ambientIntensity, blendAlpha);
+                skySetLightSlot(slotIndex, -lightingData->moonDirection[0], lightingData->moonDirection[1],
+                                -lightingData->moonDirection[2], red, green, blue, moonIntensity, ambientIntensity,
+                                blendAlpha);
             }
         }
         skySetLightSlot(2, 0.0f, 0.0f, 0.0f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
@@ -1266,8 +1280,9 @@ void skyUpdateShadowLightDirection(void)
 
     if (gSkyState != NULL)
     {
-        dot = gSkySunDirection[2] * gSkySunDirection[2] +
-              (gSkySunDirection[0] * gSkySunDirection[0] + gSkySunDirection[1] * gSkySunDirection[1]);
+        dot = gSkyTimeOfDayLighting.sunDirection[2] * gSkyTimeOfDayLighting.sunDirection[2] +
+              (gSkyTimeOfDayLighting.sunDirection[0] * gSkyTimeOfDayLighting.sunDirection[0] +
+               gSkyTimeOfDayLighting.sunDirection[1] * gSkyTimeOfDayLighting.sunDirection[1]);
         if (dot != 0.0f)
         {
             len = sqrtf(dot);
@@ -1276,11 +1291,12 @@ void skyUpdateShadowLightDirection(void)
         {
             len = 1.0f;
         }
-        *gSkySunDirection = *gSkySunDirection / len;
-        gSkySunDirection[1] = gSkySunDirection[1] / len;
-        gSkySunDirection[2] = gSkySunDirection[2] / len;
-        dot = gSkyMoonDirection[2] * gSkyMoonDirection[2] +
-              (gSkyMoonDirection[0] * gSkyMoonDirection[0] + gSkyMoonDirection[1] * gSkyMoonDirection[1]);
+        *gSkyTimeOfDayLighting.sunDirection = *gSkyTimeOfDayLighting.sunDirection / len;
+        gSkyTimeOfDayLighting.sunDirection[1] = gSkyTimeOfDayLighting.sunDirection[1] / len;
+        gSkyTimeOfDayLighting.sunDirection[2] = gSkyTimeOfDayLighting.sunDirection[2] / len;
+        dot = gSkyTimeOfDayLighting.moonDirection[2] * gSkyTimeOfDayLighting.moonDirection[2] +
+              (gSkyTimeOfDayLighting.moonDirection[0] * gSkyTimeOfDayLighting.moonDirection[0] +
+               gSkyTimeOfDayLighting.moonDirection[1] * gSkyTimeOfDayLighting.moonDirection[1]);
         if (dot != 0.0f)
         {
             len = sqrtf(dot);
@@ -1289,9 +1305,9 @@ void skyUpdateShadowLightDirection(void)
         {
             len = 1.0f;
         }
-        *gSkyMoonDirection = *gSkyMoonDirection / len;
-        gSkyMoonDirection[1] = gSkyMoonDirection[1] / len;
-        gSkyMoonDirection[2] = gSkyMoonDirection[2] / len;
+        *gSkyTimeOfDayLighting.moonDirection = *gSkyTimeOfDayLighting.moonDirection / len;
+        gSkyTimeOfDayLighting.moonDirection[1] = gSkyTimeOfDayLighting.moonDirection[1] / len;
+        gSkyTimeOfDayLighting.moonDirection[2] = gSkyTimeOfDayLighting.moonDirection[2] / len;
         time = ((SkyState*)gSkyState)->timeOfDay;
         if (time >= 18000.0f && time <= 75600.0f)
         {
@@ -1302,9 +1318,12 @@ void skyUpdateShadowLightDirection(void)
             }
             else
             {
-                shadowSetLightDirection(*gSkySunDirection, gSkySunDirection[1], gSkySunDirection[2], 100);
+                shadowSetLightDirection(*gSkyTimeOfDayLighting.sunDirection, gSkyTimeOfDayLighting.sunDirection[1],
+                                        gSkyTimeOfDayLighting.sunDirection[2], 100);
             }
-            (*gCloudActionInterface)->func08Nop(*gSkySunDirection, gSkySunDirection[1], gSkySunDirection[2], 1);
+            (*gCloudActionInterface)
+                ->func08Nop(*gSkyTimeOfDayLighting.sunDirection, gSkyTimeOfDayLighting.sunDirection[1],
+                            gSkyTimeOfDayLighting.sunDirection[2], 1);
         }
         else
         {
@@ -1315,9 +1334,12 @@ void skyUpdateShadowLightDirection(void)
             }
             else
             {
-                shadowSetLightDirection(-(*gSkyMoonDirection), gSkyMoonDirection[1], -gSkyMoonDirection[2], 100);
+                shadowSetLightDirection(-(*gSkyTimeOfDayLighting.moonDirection), gSkyTimeOfDayLighting.moonDirection[1],
+                                        -gSkyTimeOfDayLighting.moonDirection[2], 100);
             }
-            (*gCloudActionInterface)->func08Nop(-(*gSkyMoonDirection), gSkyMoonDirection[1], -gSkyMoonDirection[2], 0);
+            (*gCloudActionInterface)
+                ->func08Nop(-(*gSkyTimeOfDayLighting.moonDirection), gSkyTimeOfDayLighting.moonDirection[1],
+                            -gSkyTimeOfDayLighting.moonDirection[2], 0);
         }
     }
 }
@@ -1427,9 +1449,9 @@ void renderSunAndMoon(int a, int b, int c, int d, int visible)
         q1.ry = 0;
         q1.rx = 0;
         vecRotateZXY(&q1.rx, vec);
-        gSkySunDirection[0] = vec[0];
-        gSkySunDirection[1] = vec[1];
-        gSkySunDirection[2] = vec[2];
+        gSkyTimeOfDayLighting.sunDirection[0] = vec[0];
+        gSkyTimeOfDayLighting.sunDirection[1] = vec[1];
+        gSkyTimeOfDayLighting.sunDirection[2] = vec[2];
         gSkySunObject->anim.localPosX = cam->worldX + (f32)(s16)(int)vec[0];
         gSkySunObject->anim.localPosY = cam->worldY + (f32)(s16)(int)vec[1];
         gSkySunObject->anim.localPosZ = cam->worldZ + (f32)(s16)(int)vec[2];
@@ -1507,9 +1529,9 @@ void renderSunAndMoon(int a, int b, int c, int d, int visible)
         q2.ry = 0;
         q2.rx = 0;
         vecRotateZXY(&q2.rx, vec);
-        gSkyMoonDirection[0] = vec[0];
-        gSkyMoonDirection[1] = vec[1];
-        gSkyMoonDirection[2] = vec[2];
+        gSkyTimeOfDayLighting.moonDirection[0] = vec[0];
+        gSkyTimeOfDayLighting.moonDirection[1] = vec[1];
+        gSkyTimeOfDayLighting.moonDirection[2] = vec[2];
         gSkyMoonObject->anim.localPosX = cam->worldX + (f32)(s16)(int)vec[0];
         gSkyMoonObject->anim.localPosY = cam->worldY + (f32)(s16)(int)vec[1];
         gSkyMoonObject->anim.localPosZ = cam->worldZ + (f32)(s16)(int)vec[2];
@@ -1992,12 +2014,12 @@ void skyLoadLights(void)
     skySetLightIndex(0, 0.0f);
     skyUpdateShadowLightDirection();
     skyUpdateLightingFromTimeOfDay();
-    gSkySunDirection[0] = 0.0f;
-    gSkySunDirection[1] = (-1.0f);
-    gSkySunDirection[2] = 0.0f;
-    gSkyMoonDirection[0] = 0.0f;
-    gSkyMoonDirection[1] = (-1.0f);
-    gSkyMoonDirection[2] = 0.0f;
+    gSkyTimeOfDayLighting.sunDirection[0] = 0.0f;
+    gSkyTimeOfDayLighting.sunDirection[1] = (-1.0f);
+    gSkyTimeOfDayLighting.sunDirection[2] = 0.0f;
+    gSkyTimeOfDayLighting.moonDirection[0] = 0.0f;
+    gSkyTimeOfDayLighting.moonDirection[1] = (-1.0f);
+    gSkyTimeOfDayLighting.moonDirection[2] = 0.0f;
     gSkySkyTexture = textureLoadAsset(SKY_TEXTURE_SKY);
 }
 
