@@ -4,6 +4,15 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.4 — 2026-09-03
+
+### Fixed
+- Riding the HighTop no longer runs on garbage path and collision points. Its setup read them
+  from a byte table well past the table's end, which retail's memory layout happened to satisfy
+  and the native layout did not.
+- Two MusyX tables that drive voice budgeting and stereo pan delay were read with their entries
+  pairwise swapped, because the generated retail data typed them as 32-bit words.
+
 ## v0.5.3 — 2026-09-02
 
 ### Fixed
