@@ -1174,7 +1174,6 @@ void HighTop_update(GameObject* obj)
 
 void HighTop_init(GameObject* obj, HighTopPlacement* placement)
 {
-    u8* base = gHighTopConfigTable;
     HighTopRuntime* runtime = (obj)->extra;
     CurvesCollisionState* pathState;
     ObjModelState* node;
@@ -1200,8 +1199,8 @@ void HighTop_init(GameObject* obj, HighTopPlacement* placement)
     pathState = &runtime->baddie.curvesCollision;
     pathState->subtype = 1;
     (*gPathControlInterface)->init(pathState, 3, 1024, 0);
-    (*gPathControlInterface)->setLocalPointCollision(pathState, 2, &base[0xe8], gHighTopPathPointRadii, 8);
-    (*gPathControlInterface)->setup(pathState, 4, &base[0xa8], &base[0xd8], pathParam.values);
+    (*gPathControlInterface)->setLocalPointCollision(pathState, 2, &gHighTopTuning.unk10[16], gHighTopPathPointRadii, 8);
+    (*gPathControlInterface)->setup(pathState, 4, &gHighTopTuning.unk10[0], &gHighTopTuning.unk10[12], pathParam.values);
     (*gPathControlInterface)->attachObject(obj, pathState);
     dll_2E_initState(obj, &runtime->lookController, -4551, 23665, 6);
     dll_2E_setReattackDelay(&runtime->lookController, 300, 120);
