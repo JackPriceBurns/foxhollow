@@ -11,6 +11,7 @@ DOL = os.path.join(SFA, "orig", "GSAE01", "sys", "main.dol")
 OUT = os.path.join(ROOT, "port", "src", "game_data_gen.c")
 
 MANUAL = {"gWallAnimatorObjDescriptor", "waterfx_funcs"}
+HALF_WORD_TABLES = {"dspMixerCycles", "gItdPanDelayTable", "pbOffsets"}
 ASSET_PLACEHOLDER = {"gLoadingScreenTextures"}
 ZERO_SECTIONS = {".bss", ".sbss", ".sbss2"}
 PTR_LO, PTR_HI = 0x80000000, 0x81800000
@@ -90,7 +91,7 @@ def emit_zero(name, size):
 
 def emit_init(name, raw):
     size = len(raw)
-    if size % 4 == 0:
+    if size % 4 == 0 and name not in HALF_WORD_TABLES:
         words = struct.unpack(f">{size // 4}I", raw)
         if size == 4:
             return f"u32 {name} = {words[0]:#010x};\n"
