@@ -383,6 +383,7 @@ than split-screen — `newshadows.c` and `engine/0` are the only users — but t
 | RetroAchievements | Tractable; process is the risk | Medium | RA's position on source ports |
 | Live networked racing | Possible, not lockstep | High | Data-plane design |
 | Amethyst as a mod | Needs the ABI to exist first | ABI is the work | Scoping with Rena |
+| LightFoot timing-bar lag compensation | One static-function hook; retail already tracks the needed state | Low | Nothing |
 
 ## 1. Frame pacing — fixed in the port
 
@@ -557,6 +558,47 @@ I have not examined Amethyst and should not guess at its internals; Rena is the 
 what it actually needs. The useful thing to bring to that conversation is a concrete ABI proposal
 plus the honest constraint about binary patches. Given Rena would likely want to write it,
 **the deliverable here is the ABI and its documentation, not the mod.**
+
+## 7. LightFoot timing-bar lag compensation
+
+**A small mod, and a good first real one.** The LightFoot Village bone-totem test (DLL 443
+`SC_totembon` spawning DLL 437 LightFoots in a ring) shows a meter with a sweeping marker and asks
+for A inside the green zone. Players consistently report having to press early. Measured with the
+debug overlay's LightFoot Timing panel, every press registered two frames after the frame that was
+on screen at the keypress, and that is before any display latency.
+
+**Where the two frames come from.** One was the port's: `VIWaitForRetrace` pumped SDL events
+*before* the frame-limit sleep, so a tap during the sleep waited for the next pump. That is fixed;
+the pump now runs after the sleep, immediately before the game polls the pad, which is also where
+retail's SI poll sits relative to the game loop. The other frame is the game's design and is the
+same on retail: `Lightfoot_UpdateButtonTimingChallenge` (`game/src/dlls/objects/437/437.c`)
+advances `meterPhase` by 1200 per frame, recomputes the marker as `90·sin(π·phase/32768)`, and
+compares the press against *that* marker — the one about to be drawn, never the one the player
+saw. Near the centre the marker moves about 8.6 px per frame, and the success zone shrinks with
+each orb already collected (`meterScales`: ±63 px on the first orb down to ±14 px on the eighth, or
+roughly three frames wide), so a single frame of lag is most of the zone by the end.
+
+**Retail already keeps the state a fix needs and never reads it.** `LightfootControlState` carries
+`meterPhase`, `previousMeterPhase` and `meterPhaseTwoFramesAgo`. The challenge writes all three
+every frame; `previousMeterPhase` is read only for the zero-crossing tick sound, and
+`meterPhaseTwoFramesAgo` is never read at all. Whether that is a cut feature or a leftover, the
+phase from two frames back is sitting in the object, up to date, on every frame.
+
+**The mod is one hook.** `Lightfoot_UpdateButtonTimingChallenge` is `static`, but it is dispatched
+through `sLightfootStateHandlers`, so the call goes through the symbol and `symbolAddress` +
+`hookInstall` intercept it by name. Replace it with a copy of the function whose hit test uses the
+marker derived from `meterPhaseTwoFramesAgo` instead of `meterPhase` — or, more forgivingly, that
+hits if any of the last three marker positions was inside the zone. The statics it touches
+(`Lightfoot_GetControl`, `sLightfootChallengeData`, `sLightfootAnimationData`) resolve through
+`symbolAddress` the same way. Freeze the drawn marker at the compensated position too, via
+`fearTestMeterSetRange`, so the meter stops where the player saw it and the hit/miss sound agrees
+with what is on screen.
+
+**Why a mod and not the port.** The comparison against the current frame is retail behaviour, and
+the port preserves retail. The port-side pump reorder was legitimate because it removed latency
+retail never had; changing which frame the game judges is a gameplay change and belongs behind a
+mod toggle. Effort: an afternoon, in the shape of `mods/example-code-mod`. Verify with the overlay:
+"shown → stopped" should read 0 px on a press made while the marker is visibly in the zone.
 
 ## Networking: what the latency budget allows
 
