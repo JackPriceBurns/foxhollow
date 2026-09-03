@@ -99,8 +99,8 @@ void VIWaitForRetrace(void) {
   fhModsUpdate();
   fhGalleryUpdate();
   fhAutosaveUpdate();
-  pump_events();
   wait_for_retrace_deadline();
+  pump_events();
   while (!aurora_begin_frame()) {
     pump_events();
   }
