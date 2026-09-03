@@ -8,6 +8,7 @@ endif ()
 project(foxhollow LANGUAGES C CXX VERSION 0.5.4)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
+option(FOXHOLLOW_DEBUG_INPUT_TIMING "Build the input timing overlay into the performance overlay" OFF)
 option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
 
 if (APPLE)
@@ -129,6 +130,9 @@ target_compile_definitions(port_shims PRIVATE FOXHOLLOW_VERSION="${FOXHOLLOW_VER
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     target_compile_definitions(port_shims PRIVATE FOXHOLLOW_DEBUG_SHORTCUTS=1)
+    if (FOXHOLLOW_DEBUG_INPUT_TIMING)
+        target_compile_definitions(port_shims PRIVATE FOXHOLLOW_DEBUG_INPUT_TIMING=1)
+    endif ()
 endif ()
 target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>

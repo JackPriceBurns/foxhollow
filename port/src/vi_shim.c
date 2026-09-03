@@ -18,6 +18,10 @@ typedef void (*VIRetraceCallback)(u32 retraceCount);
 void fhDebugOverlayDraw(void);
 void fhGalleryDrawOverlay(void);
 #endif
+#if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
+void fhDebugOverlayFrameBegin(void);
+void fhDebugOverlayFramePresented(void);
+#endif
 void fhGalleryUpdate(void);
 
 static VIRetraceCallback sPreRetraceCallback;
@@ -94,6 +98,9 @@ void VIWaitForRetrace(void) {
 #endif
     fhGXCompleteFrame();
     aurora_end_frame();
+#if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
+    fhDebugOverlayFramePresented();
+#endif
     sFrameOpen = 0;
   }
   fhModsUpdate();
@@ -105,6 +112,9 @@ void VIWaitForRetrace(void) {
     pump_events();
   }
   sFrameOpen = 1;
+#if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
+  fhDebugOverlayFrameBegin();
+#endif
   fhAIPump();
 
   sRetraceCount++;

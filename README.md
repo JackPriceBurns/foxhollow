@@ -55,9 +55,10 @@ The first configure fetches and builds Dawn (WebGPU); expect it to take a while.
 
 CMake options:
 
-| Option                      | Default | Effect                                  |
-|-----------------------------|---------|-----------------------------------------|
-| `FOXHOLLOW_DEBUG_SHORTCUTS` | `ON`    | Builds the in-game performance overlay. |
+| Option                         | Default | Effect                                                                                                   |
+|--------------------------------|---------|----------------------------------------------------------------------------------------------------------|
+| `FOXHOLLOW_DEBUG_SHORTCUTS`    | `ON`    | Builds the in-game performance overlay.                                                                  |
+| `FOXHOLLOW_DEBUG_INPUT_TIMING` | `OFF`   | Adds an input timing panel to that overlay: A/Space press to pad poll to meter stop, per frame. Needs `FOXHOLLOW_DEBUG_SHORTCUTS`. |
 
 ## Running
 
