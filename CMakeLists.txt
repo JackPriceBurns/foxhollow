@@ -5,7 +5,7 @@ if (NOT CMAKE_BUILD_TYPE)
             "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif ()
 
-project(foxhollow LANGUAGES C CXX VERSION 0.5.4)
+project(foxhollow LANGUAGES C CXX VERSION 0.5.5)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_DEBUG_INPUT_TIMING "Build the input timing overlay into the performance overlay" OFF)

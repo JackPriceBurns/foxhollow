@@ -4,6 +4,15 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.5 — 2026-09-03
+
+### Fixed
+- Button presses reach the game a frame sooner. Keyboard and controller events were collected
+  before the frame limiter's sleep, so anything pressed during that sleep waited a whole frame before
+  the pad saw it. They are now collected right before the game reads the pad, which is where retail's
+  hardware poll sits. Timed inputs such as the LightFoot Village bone-totem test now land close to
+  where the marker was on screen instead of two frames past it.
+
 ## v0.5.4 — 2026-09-03
 
 ### Fixed
