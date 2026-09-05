@@ -1,4 +1,5 @@
 #include "foxhollow_hook.h"
+#include "foxhollow_render_capture.h"
 
 #include <cstdint>
 #include <cstring>
@@ -279,7 +280,8 @@ void* resolve_in_image(const std::string& name) {
       const size_t count = static_cast<size_t>(sections[i].sh_size / sections[i].sh_entsize);
       for (size_t index = 0; index < count; ++index) {
         const ElfW(Sym)& symbol = symbols[index];
-        if (symbol.st_value == 0 || ELF32_ST_TYPE(symbol.st_info) != STT_FUNC) {
+        if (symbol.st_value == 0 ||
+            (ELF32_ST_TYPE(symbol.st_info) != STT_FUNC && ELF32_ST_TYPE(symbol.st_info) != STT_OBJECT)) {
           continue;
         }
         if (name == (strings + symbol.st_name)) {
@@ -374,4 +376,29 @@ extern "C" void* fhHookResolveSymbol(const char* name) {
 #else
   return resolve_in_image(std::string(name));
 #endif
+}
+
+
+namespace aurora::gx::fifo::detail {
+extern uint8_t* sBufferData;
+extern uint32_t sBufferSize;
+}
+
+struct __GXData_struct;
+extern __GXData_struct* __gx;
+
+const uint8_t* fhGXGetFifoData(void) {
+    return aurora::gx::fifo::detail::sBufferData;
+}
+
+uint32_t fhGXGetFifoSize(void) {
+    return aurora::gx::fifo::detail::sBufferSize;
+}
+
+uint32_t* fhGXGetFifoSizeAddress(void) {
+    return &aurora::gx::fifo::detail::sBufferSize;
+}
+
+void* fhGXGetShadowAddress(void) {
+    return &__gx;
 }

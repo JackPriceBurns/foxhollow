@@ -1282,7 +1282,7 @@ static void renderOpMatrix(ModelFileHeader* hdr, int* model, MtxBitStream* bs, f
 
 
 static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p4);
-static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 passMask);
+void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 passMask);
 static void objRenderChild(GameObject* child, GameObject* parent, u8 isShadow);
 
 
@@ -2543,7 +2543,7 @@ static void objRenderShadowModel(GameObject* obj, GameObject* obj2, u8* m, int p
 }
 extern u8 gObjGxTexMtxIdTable[12];
 
-static void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 passMask)
+void modelDoRenderInstrs(GameObject* obj, GameObject* obj2, u8* m, u8 passMask)
 {
     int joff;
     f32 fm[16];
