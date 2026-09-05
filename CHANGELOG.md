@@ -4,6 +4,12 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.6 — 2026-09-05
+
+### Fixed
+- Throwing Tricky's ball no longer crashes when collision is re-enabled. Both launch paths now
+  preserve the ball's full object pointer instead of truncating it to 32 bits.
+
 ## v0.5.5 — 2026-09-03
 
 ### Fixed

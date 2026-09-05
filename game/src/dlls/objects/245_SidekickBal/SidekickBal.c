@@ -74,14 +74,13 @@ int sidekickBall_isIdle(GameObject* obj) {
 
 static inline void sidekickBall_throw(GameObject* obj, f32 velocityX, f32 velocityY, f32 velocityZ) {
     SidekickBallState* state = obj->extra;
-    int objectId;
     state->ballMode = SIDEKICK_BALL_THROWN;
     state->fadeTimer = 0.0f;
     obj->anim.velocityX = velocityX;
     obj->anim.velocityY = velocityY;
     obj->anim.velocityZ = velocityZ;
-    ObjHits_EnableObject((GameObject*)(objectId = (int)obj));
-    ObjHits_SyncObjectPositionIfDirty((GameObject*)objectId);
+    ObjHits_EnableObject(obj);
+    ObjHits_SyncObjectPositionIfDirty(obj);
     state->path.subtype = 1;
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
@@ -200,14 +199,13 @@ void sidekickBall_setIdle(GameObject* obj, GameObject* source) {
 
 void sidekickBall_launch(GameObject* obj, GameObject* source, f32 velocityX, f32 velocityY, f32 velocityZ) {
     SidekickBallState* state = obj->extra;
-    int objectId;
     state->ballMode = SIDEKICK_BALL_THROWN;
     state->fadeTimer = 0.0f;
     obj->anim.velocityX = velocityX;
     obj->anim.velocityY = velocityY;
     obj->anim.velocityZ = velocityZ;
-    ObjHits_EnableObject((GameObject*)(objectId = (int)obj));
-    ObjHits_SyncObjectPositionIfDirty((GameObject*)objectId);
+    ObjHits_EnableObject(obj);
+    ObjHits_SyncObjectPositionIfDirty(obj);
     state->path.subtype = 1;
     state->previousPosX = obj->anim.localPosX;
     state->previousPosY = obj->anim.localPosY;
