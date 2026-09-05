@@ -90,7 +90,7 @@ u32 DIMBossIceSmash_getObjectTypeId(GameObject* obj) {
 }
 
 void DIMBossIceSmash_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource((u32)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
 }
 
 void DIMBossIceSmash_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,

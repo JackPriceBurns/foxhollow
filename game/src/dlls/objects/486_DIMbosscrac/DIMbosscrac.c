@@ -39,7 +39,7 @@ int DIMbosscrackpar_getObjectTypeId(void) {
 }
 
 void DIMbosscrackpar_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void DIMbosscrackpar_render(GameObject*, int, int, int, int, s8 visible) {

@@ -121,7 +121,7 @@ void SB_ShipHead_update(GameObject* obj) {
     int objectStart;
     int objectEnd;
     int message;
-    int messageSender[2];
+    uintptr_t messageSender;
     GameObject* object;
     GameObject* spawnedObject;
 
@@ -151,7 +151,7 @@ void SB_ShipHead_update(GameObject* obj) {
             }
         }
     }
-    if ((int)ObjMsg_Pop(obj, (u32*)&message, (u32*)messageSender, (u32*)&messageParam) != 0) {
+    if ((int)ObjMsg_Pop(obj, (u32*)&message, &messageSender, (u32*)&messageParam) != 0) {
         switch (message) {
         case 0x130001:
             break;

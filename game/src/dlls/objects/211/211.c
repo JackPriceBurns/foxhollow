@@ -161,7 +161,7 @@ int LandedArwing_UpdateRetreatChase(GameObject* obj, BaddieState* baddie)
     f32 z;
 
     state = (LandedArwingState*)((GroundBaddieState*)obj->extra)->control;
-    player = (GameObject*)((int)Obj_GetPlayerObject());
+    player = Obj_GetPlayerObject();
     playerObj = player;
     baddie->stateTag = 1;
     if (baddie->moveJustStartedA != 0)
@@ -171,7 +171,7 @@ int LandedArwing_UpdateRetreatChase(GameObject* obj, BaddieState* baddie)
         ObjHits_DisableObject(obj);
     }
     if (state->surfaceMode != LANDED_ARWING_SCRIPT_MODE &&
-        ((u32)player == 0 || playerObj->anim.worldPosX < state->boundsMinX ||
+        (player == NULL || playerObj->anim.worldPosX < state->boundsMinX ||
          (playerObj->anim.worldPosX > state->boundsMaxX && playerObj->anim.worldPosY < state->boundsMinY) ||
          (playerObj->anim.worldPosY > state->boundsMaxY && playerObj->anim.worldPosZ < state->boundsMinZ) ||
          playerObj->anim.worldPosZ > state->boundsMaxZ))
@@ -1241,21 +1241,21 @@ void dll_D3_update(GameObject* obj)
 
     if (state->targetState != 1)
     {
-        rc = (int)(*gBaddieControlInterface)
+        GameObject* target = (*gBaddieControlInterface)
                  ->findAggroTarget(obj, state,
                                    (f32)(u32)state->aggroRange, 0x8000);
-        if (rc != 0u)
+        if (target != NULL)
         {
             (*gBaddieControlInterface)
                 ->startHitReaction(obj, state, &state->routeNav,
                                    state->gameBitB, NULL, 0, 1, 0, -1);
-            state->baddie.targetObj = (void*)rc;
+            state->baddie.targetObj = target;
             state->baddie.hasTarget = 0;
             state->targetState = 1;
             state->subMode = 2;
         }
 
-        if ((u32)state->baddie.targetObj != 0 && state->targetState == 2)
+        if (state->baddie.targetObj != NULL && state->targetState == 2)
         {
             if (state->baddie.targetDistance <= (f32)(u32)state->aggroRange)
             {
@@ -1283,7 +1283,7 @@ void dll_D3_update(GameObject* obj)
     if (hits > 0)
     {
         (*gBaddieControlInterface)
-            ->updateHitReaction(obj, state, (void*)((int)state + 0x35c),
+            ->updateHitReaction(obj, state, &state->routeNav,
                                 state->gameBitB, gStaffActionHitReactionMoves,
                                 gStaffActionHitReactionDamage, 0,
                                 &gStaffActionHitLightParams);

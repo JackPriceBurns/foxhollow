@@ -861,7 +861,7 @@ void staff_free(GameObject* obj) {
         mm_free(slot->vertexData);
         slot++;
     }
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void staff_render(void) {

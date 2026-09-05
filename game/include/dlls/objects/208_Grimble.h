@@ -19,8 +19,8 @@ typedef struct GrimbleControl {
     f32 pathPosY;             /* 0x20 */
     f32 pathPosZ;             /* 0x24 */
     u8 pad28[0x34 - 0x28];    /* 0x28 */
-    int candidatePathObj;     /* 0x34 */
-    int pathObj;              /* 0x38 */
+    GameObject* candidatePathObj;     /* 0x34 */
+    GameObject* pathObj;              /* 0x38 */
     f32 nearestDist;          /* 0x3C */
     f32 candidateProgress;    /* 0x40 */
     u8 unk44;                 /* 0x44 */

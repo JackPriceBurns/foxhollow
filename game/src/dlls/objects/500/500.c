@@ -45,7 +45,7 @@ int dll500_getExtraSize(void) {
 
 void dll500_free(GameObject* obj) {
     Sfx_StopObjectChannel(obj, DLL1F4_OBJECT_SFX_CHANNEL);
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void dll500_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {

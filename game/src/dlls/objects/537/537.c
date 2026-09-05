@@ -26,7 +26,7 @@ int dll_219_getObjectTypeId(void) {
 }
 
 void dll_219_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void dll_219_render_nop(void) {

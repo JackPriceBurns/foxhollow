@@ -92,7 +92,7 @@ int dll_22C_getObjectTypeId(void)
 
 void dll_22C_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     getLActions((void*)obj, (void*)obj, 0, 0, 0, 0);
 }
 

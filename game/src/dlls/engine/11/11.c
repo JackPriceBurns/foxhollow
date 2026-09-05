@@ -1227,7 +1227,7 @@ void dll_0B_updateActiveEffects(void)
                         ((ObjPlacement*)o)->posX = tmpl.posX;
                         ((ObjPlacement*)o)->posY = tmpl.posY;
                         ((ObjPlacement*)o)->posZ = tmpl.posZ;
-                        *eff = (int)objSetupObject((ObjPlacement*)o, 5, -1, -1, NULL);
+                        ((PartfxEffectState*)eff)->instanceObject = objSetupObject((ObjPlacement*)o, 5, -1, -1, NULL);
                         ((PartfxEffectState*)eff)->instanceObject->userData2 = 1;
                     }
                     else if (*(void**)eff != NULL)
@@ -1250,14 +1250,14 @@ void dll_0B_updateActiveEffects(void)
                     }
                     if (*(void**)eff != NULL)
                     {
-                        int* o = *(int**)eff;
-                        int* list = *(int**)((char*)(int*)((GameObject*)o)->anim.hitReactState + 0x50);
+                        GameObject* o = ((PartfxEffectState*)eff)->instanceObject;
+                        GameObject* list = (GameObject*)((ObjHitsPriorityState*)o->anim.hitReactState)->lastHitObject;
                         if (list != NULL)
                         {
-                            if (*(s16*)((char*)list + 0x44) == (int)((GfxCmd*)(PENDING_SPAWNS + emOff))->x)
+                            if (list->anim.classId == (int)((GfxCmd*)(PENDING_SPAWNS + emOff))->x)
                             {
-                                Obj_FreeObject((GameObject*)o);
-                                *eff = 0;
+                                Obj_FreeObject(o);
+                                ((PartfxEffectState*)eff)->instanceObject = NULL;
                                 ((GfxCmd*)(PENDING_SPAWNS + emIdx * sizeof(GfxCmd)))->mode ^= 0x10000000;
                                 if (((GfxCmd*)(PENDING_SPAWNS + emIdx * sizeof(GfxCmd)))->z >= MODGFX_ZERO &&
                                     (int*)((PartfxEffectState*)eff)->sourceObject != NULL)

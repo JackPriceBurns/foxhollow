@@ -46,17 +46,17 @@ static inline void FEseqobject_spawnEffect(GameObject* obj, PartFxSpawnParams* p
 int FEseqobject_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     PartFxSpawnParams effect;
     register GameObject* self = obj;
-    int receiver;
+    GameObject* receiver;
     int i;
-    u32 sender;
+    uintptr_t sender;
     int message;
     u32 param;
     int receiverCount;
-    int* receivers;
+    GameObject** receivers;
     f32 effectScale;
     f32 effectOrigin;
 
-    receiver = 0;
+    receiver = NULL;
     i = 0;
     effectOrigin = 0.0f;
     effectScale = 1.0f;
@@ -100,39 +100,39 @@ int FEseqobject_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
         if ((animUpdate->sequenceControlFlags & OBJSEQ_CONTROL_SUPPRESS_MESSAGES) == 0) {
             switch (message) {
             case FESEQOBJECT_MESSAGE_IN_1:
-                receivers = (int*)objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
+                receivers = objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
                 for (i = 0; i < receiverCount; i++) {
-                    if (((GameObject*)receivers[i])->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
+                    if (receivers[i]->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
                         receiver = receivers[i];
                         i = receiverCount;
                     }
                 }
-                if ((GameObject*)receiver != NULL) {
-                    ObjMsg_SendToObject((GameObject*)receiver, FESEQOBJECT_MESSAGE_OUT_1, self, 0);
+                if (receiver != NULL) {
+                    ObjMsg_SendToObject(receiver, FESEQOBJECT_MESSAGE_OUT_1, self, 0);
                 }
                 break;
             case FESEQOBJECT_MESSAGE_IN_2:
-                receivers = (int*)objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
+                receivers = objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
                 for (i = 0; i < receiverCount; i++) {
-                    if (((GameObject*)receivers[i])->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
+                    if (receivers[i]->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
                         receiver = receivers[i];
                         i = receiverCount;
                     }
                 }
-                if ((GameObject*)receiver != NULL) {
-                    ObjMsg_SendToObject((GameObject*)receiver, FESEQOBJECT_MESSAGE_OUT_2, self, 0);
+                if (receiver != NULL) {
+                    ObjMsg_SendToObject(receiver, FESEQOBJECT_MESSAGE_OUT_2, self, 0);
                 }
                 break;
             case FESEQOBJECT_MESSAGE_IN_3:
-                receivers = (int*)objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
+                receivers = objGetAllOfType(FESEQOBJECT_RECEIVER_OBJECT_GROUP, &receiverCount);
                 for (i = 0; i < receiverCount; i++) {
-                    if (((GameObject*)receivers[i])->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
+                    if (receivers[i]->anim.romDefNo == FESEQOBJECT_RECEIVER_SEQ_ID) {
                         receiver = receivers[i];
                         i = receiverCount;
                     }
                 }
-                if ((GameObject*)receiver != NULL) {
-                    ObjMsg_SendToObject((GameObject*)receiver, FESEQOBJECT_MESSAGE_OUT_3, self, 0);
+                if (receiver != NULL) {
+                    ObjMsg_SendToObject(receiver, FESEQOBJECT_MESSAGE_OUT_3, self, 0);
                 }
                 break;
             }

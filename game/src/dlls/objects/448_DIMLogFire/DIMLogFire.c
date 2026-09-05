@@ -89,9 +89,9 @@ int DIMLogFire_getObjectTypeId(void) {
 void DIMLogFire_free(GameObject* obj, int freeMode) {
     DimLogFireState* state = obj->extra;
 
-    (*gExpgfxInterface)->freeSource2((u32)obj);
-    if ((void*)state->subObject != NULL && freeMode == 0) {
-        Obj_FreeObject((GameObject*)state->subObject);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
+    if (state->subObject != NULL && freeMode == 0) {
+        Obj_FreeObject(state->subObject);
     }
     objFreeObjectType(obj, DIM_LOG_FIRE_OBJECT_GROUP);
     if (state->light != NULL) {
@@ -109,8 +109,8 @@ void DIMLogFire_render(GameObject* obj, int renderArg2, int renderArg3, int rend
         if (subObject != NULL) {
             ObjModel* model = (ObjModel*)subObject->modelBanks[subObject->bankIndex];
             model->bufferFlags = (u16)(model->bufferFlags & ~0x8);
-            ((GameObject*)state->subObject)->anim.renderAlpha = obj->anim.renderAlpha;
-            objRenderModelAndHitVolumes((GameObject*)state->subObject, renderArg2, renderArg3, renderArg4, renderArg5,
+            (state->subObject)->anim.renderAlpha = obj->anim.renderAlpha;
+            objRenderModelAndHitVolumes(state->subObject, renderArg2, renderArg3, renderArg4, renderArg5,
                                         1.0f);
         }
         objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);

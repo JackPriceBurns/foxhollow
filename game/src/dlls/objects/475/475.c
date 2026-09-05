@@ -46,27 +46,26 @@ void dll_1DB_update(GameObject* obj) {
     const Dll1DBPlacementView* placement;
     int playerContacted;
     GameObject* player;
-    int contactOffset;
+    int contactIndex;
     int remainingContacts;
-    int hitboxStateAddress;
+    ObjHitboxTransformState* hitboxState;
 
     state = obj->extra;
     player = Obj_GetPlayerObject();
     placement = (const Dll1DBPlacementView*)obj->anim.placementData;
     playerContacted = 0;
-    contactOffset = 0;
-    hitboxStateAddress = (int)obj->anim.hitboxTransformState;
-    for (remainingContacts = ((ObjHitboxTransformState*)hitboxStateAddress)->contactObjectCount; remainingContacts > 0;
+    contactIndex = 0;
+    hitboxState = obj->anim.hitboxTransformState;
+    for (remainingContacts = hitboxState->contactObjectCount; remainingContacts > 0;
          remainingContacts--) {
-        GameObject* contactObject =
-            *(GameObject**)(hitboxStateAddress + contactOffset + offsetof(ObjHitboxTransformState, contactObjects));
+        GameObject* contactObject = hitboxState->contactObjects[contactIndex];
 
         if (contactObject == player) {
             playerContacted = 1;
             break;
         }
 
-        contactOffset += sizeof(((ObjHitboxTransformState*)hitboxStateAddress)->contactObjects[0]);
+        contactIndex++;
     }
 
     switch (state->motionState) {

@@ -371,7 +371,7 @@ void drakormissile_update(GameObject* o)
             state->timer = 0;
             if ((((ObjHitsPriorityState*)o->anim.hitReactState)->flags & 8) != 0)
             {
-                Sfx_PlayFromObject((GameObject*)(u32)o, SFXTRIG_wp_blaserrecoil16);
+                Sfx_PlayFromObject(o, SFXTRIG_wp_blaserrecoil16);
             }
             if (o->anim.mapEventSlot == 2)
             {

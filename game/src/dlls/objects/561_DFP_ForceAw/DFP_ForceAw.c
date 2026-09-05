@@ -513,7 +513,7 @@ int TrickyCurve_getObjectTypeId(void)
 
 void TrickyCurve_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void TrickyCurve_render(void)

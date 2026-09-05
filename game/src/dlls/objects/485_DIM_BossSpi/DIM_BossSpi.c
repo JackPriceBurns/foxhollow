@@ -140,7 +140,7 @@ void DIMbossspit_free(GameObject* objArg) {
     if (light != NULL) {
         ModelLightStruct_free(light);
     }
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     return;
 }
 

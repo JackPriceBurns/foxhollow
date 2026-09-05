@@ -23,7 +23,7 @@ typedef struct DrakordThornbushState
 {
     s32 health; /* 0x00: hit points; 0 = dormant */
     u8 pad4[0x8 - 0x4];
-    s32 lastHitObj;                   /* 0x08: most recent attacker, debounces re-hits */
+    GameObject* lastHitObj;                   /* 0x08: most recent attacker, debounces re-hits */
     f32 growth;                       /* 0x0C: regrow timer / scale driver */
     f32 regrowTimer;                  /* 0x10: hit/regrow countdown */
     LightningEffect* lightningEntries[3];

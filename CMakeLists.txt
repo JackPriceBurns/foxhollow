@@ -5,11 +5,17 @@ if (NOT CMAKE_BUILD_TYPE)
             "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif ()
 
-project(foxhollow LANGUAGES C CXX VERSION 0.5.6)
+project(foxhollow LANGUAGES C CXX VERSION 0.5.7)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_DEBUG_INPUT_TIMING "Build the input timing overlay into the performance overlay" OFF)
 option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
+option(FOXHOLLOW_BUILD_TESTS "Build the game regression tests" OFF)
+
+if (FOXHOLLOW_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif ()
 
 if (APPLE)
     enable_language(OBJC OBJCXX)

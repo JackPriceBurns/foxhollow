@@ -45,7 +45,7 @@ void CampFire_free(GameObject* obj) {
     ModelLightStruct* light;
 
     state = obj->extra;
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     light = state->light;
     if (light != NULL) {
         ModelLightStruct_free(light);

@@ -64,7 +64,7 @@ void InvHit_free(GameObject* obj) {
 
     switch (state->mode) {
     case INVHIT_MODE_HOMING_PROJECTILE:
-        (*gExpgfxInterface)->freeSource2((u32)obj);
+        (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
         break;
     }
 }

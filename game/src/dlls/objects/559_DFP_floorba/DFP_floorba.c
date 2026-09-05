@@ -53,7 +53,7 @@ void DFP_Floorbar_free(GameObject* obj)
     DfpFloorbarState* state;
 
     state = (DfpFloorbarState*)obj->extra;
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
     state->levelController = NULL;
     return;
 }

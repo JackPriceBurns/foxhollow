@@ -53,6 +53,17 @@ cmake --build build --target foxhollow
 
 The first configure fetches and builds Dawn (WebGPU); expect it to take a while.
 
+The game regression tests have a separate build that does not fetch Dawn or require game assets:
+
+```sh
+cmake -S tests -B build-tests -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+```
+
+See [tests/README.md](tests/README.md) for the Given/When/Then convention and how to add a regression.
+Retail behavior, including confirmed retail bugs, defines the expected results.
+
 CMake options:
 
 | Option                         | Default | Effect                                                                                                   |

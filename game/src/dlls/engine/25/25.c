@@ -181,10 +181,10 @@ void dll_19_releaseState(GameObject* obj, GroundBaddieState* state, u8 flag)
         }
     }
     voxmaps_freeRouteWork(&state->routeState);
-    if (*(u32*)&state->path != 0)
+    if (state->path != NULL)
     {
-        mm_free((void*)*(u32*)&state->path);
-        state->path = 0;
+        mm_free(state->path);
+        state->path = NULL;
     }
 }
 
@@ -340,7 +340,7 @@ void dll_19_pollCameraTarget(GameObject* obj, void* state, u16* flags, int modeA
 int dll_19_processMessages(GameObject* obj, void* state, void* hitbox, s16 gameBit, u8* flagOut, s16 substateIdle,
                   s16 substateActive, s16 moveMode)
 {
-    u32 msgData;
+    uintptr_t msgData;
     int msgType;
     int extra;
 
@@ -353,7 +353,7 @@ int dll_19_processMessages(GameObject* obj, void* state, void* hitbox, s16 gameB
             ObjMsg_SendToObject((void*)msgData, 5, obj, 0);
             break;
         case 0xE0000:
-            if (msgData == (int)((BaddieState*)state)->targetObj)
+            if (msgData == (uintptr_t)((BaddieState*)state)->targetObj)
             {
                 ((BaddieState*)state)->substate = substateIdle;
                 ((BaddieState*)state)->targetObj = 0;

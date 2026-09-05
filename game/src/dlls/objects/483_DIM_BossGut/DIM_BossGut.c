@@ -215,7 +215,7 @@ void DIM_BossGut2_update(GameObject* obj) {
     f32 heightDiff;
     f32 xyScale;
     ModelLightStruct* light;
-    u32 msgB;
+    uintptr_t msgB;
     u32 msgA;
     u32 msgC;
     PartFxSpawnParams effectParams;
@@ -227,7 +227,7 @@ void DIM_BossGut2_update(GameObject* obj) {
            result >= 0)))) {
         msgC = 0;
         do {
-            result = ObjMsg_Pop(obj, (u32*)&msgA, (u32*)&msgB, (u32*)&msgC);
+            result = ObjMsg_Pop(obj, (u32*)&msgA, &msgB, (u32*)&msgC);
         } while (result != 0);
         control = state->groundBaddie.control;
         dimbossgut2_spawnBreathSplash(obj, control, &effectParams);

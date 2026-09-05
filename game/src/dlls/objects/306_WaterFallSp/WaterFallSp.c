@@ -44,7 +44,7 @@ int WaterFallSpray_sequenceCallback(GameObject* obj) {
 }
 
 void WaterFallSpray_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void WaterFallSpray_render(void) {

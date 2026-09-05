@@ -191,7 +191,7 @@ void LanternFireFly_free(GameObject* obj, int flag) {
         sLanternFireFlyLightActive = 0;
     }
     objFreeObjectType(obj, LANTERN_FIREFLY_OBJECT_GROUP);
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void LanternFireFly_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,

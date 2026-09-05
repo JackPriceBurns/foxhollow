@@ -1,0 +1,45 @@
+name: Game tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / ${{ matrix.configuration }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Linux test tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build
+
+      - name: Install macOS test tools
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Configure tests
+        run: >-
+          cmake -S tests -B build-tests -G Ninja
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+
+      - name: Build tests
+        run: cmake --build build-tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-tests --output-on-failure

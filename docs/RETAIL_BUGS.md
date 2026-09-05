@@ -131,6 +131,14 @@ Relevant decompiled paths are:
 - `game/src/main/model.c`: `animLoadFromTable`, `loadAnimation`
 - `game/src/main/pi_dolphin.c`: `mergeTableFiles`, map resource loading and unloading
 
+### Automated coverage
+
+[`retail_animation_fallback_test.c`](../tests/retail_animation_fallback_test.c) checks the real
+table merger with synthetic entries: a lone unmarked placeholder remains eligible, a resident
+full animation takes priority, and unloading the full bank restores placeholder selection.
+It does not replay map streaming or assert the rendered pose. Assembly addresses and the fixture's
+scope are recorded in [the test evidence](../tests/RETAIL_EVIDENCE.md#animation-placeholders-remain-eligible).
+
 ### Conclusion
 
 The banking system is intentional: it is how the game fits a large animation library into the
@@ -143,3 +151,17 @@ otherwise reasonable content decisions:
    player can enter it while disguised.
 
 The port reproduces the result because it is reading and applying the retail tables correctly.
+
+## Pressure switch reset leaves X unchanged
+
+Confirmed in GSAE01 retail assembly. Intentionally preserved.
+
+`PressureSwitchFB_animEventCallback` handles its reset animation command by writing placement X
+to the object's Z coordinate, restoring saved Y, then writing placement Z to Z again. It never
+restores X. Thus a switch displaced horizontally retains its current X after reset.
+
+The two Z stores are at `0x8017AD14` and `0x8017AD24` in
+`dlls/objects/251/251.s`. Changing the first destination to X would change retail behavior.
+[`retail_pressure_reset_test.c`](../tests/retail_pressure_reset_test.c) deliberately asserts that
+X stays displaced while Y and Z reset. See [the test evidence](../tests/RETAIL_EVIDENCE.md#pressure-switch-reset-leaves-x-unchanged)
+for the exact synthetic scenario.

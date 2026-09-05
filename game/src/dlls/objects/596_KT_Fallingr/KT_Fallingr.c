@@ -27,7 +27,7 @@ int ktfallingrocks_getObjectTypeId(void) {
 }
 
 void ktfallingrocks_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void ktfallingrocks_render(void* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible) {

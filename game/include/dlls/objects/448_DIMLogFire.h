@@ -20,7 +20,7 @@ typedef struct DimLogFirePlacement {
 
 typedef struct DimLogFireState {
     ModelLightStruct* light;
-    int subObject;
+    GameObject* subObject;
     u8 unknown08[0x10 - 0x08];
     f32 flickerTimerA;
     f32 flickerTimerB;

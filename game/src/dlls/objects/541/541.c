@@ -257,7 +257,7 @@ int VFPLift_getObjectTypeId(void)
 
 void VFPLift_free(GameObject* obj)
 {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void VFPLift_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 vis)

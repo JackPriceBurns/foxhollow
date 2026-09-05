@@ -76,12 +76,12 @@ int rollingBarrel_getObjectTypeId(void) {
 void rollingBarrel_free(GameObject* obj) {
     RollingBarrelState* state = obj->extra;
     int count;
-    u32* groupObjects = (u32*)objGetAllOfType(ROLLING_BARREL_OBJECT_GROUP_ID, &count);
+    GameObject** groupObjects = objGetAllOfType(ROLLING_BARREL_OBJECT_GROUP_ID, &count);
     int i;
-    u32 groupObject;
+    GameObject* groupObject;
     for (i = 0; i < count; i++) {
         groupObject = groupObjects[i];
-        if (groupObject == (u32)obj) {
+        if (groupObject == obj) {
             objFreeObjectType(obj, ROLLING_BARREL_OBJECT_GROUP_ID);
             break;
         }

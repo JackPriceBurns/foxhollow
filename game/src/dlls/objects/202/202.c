@@ -156,7 +156,7 @@ void iceBaddie_tryAcquireTarget(GameObject* obj, GroundBaddieState* objectState,
 
 void iceBaddie_updateTargetMotion(GameObject* obj, GroundBaddieState* objectState, GroundBaddieState* state);
 
-void iceBaddie_updateTargetCollision(GameObject* obj, int stateAddress, GroundBaddieState* state);
+void iceBaddie_updateTargetCollision(GameObject* obj, GroundBaddieState* objectState, GroundBaddieState* state);
 
 u8 gIceBaddieA06MoveVariant;
 
@@ -1004,8 +1004,8 @@ void iceBaddie_updateTargetMotion(GameObject* obj, GroundBaddieState* objectStat
     obj->pendingParentObj = objectState->savedPendingParentObj;
 }
 
-void iceBaddie_updateTargetCollision(GameObject* obj, int stateAddress, GroundBaddieState* state) {
-    IceBaddieControl* controlAddress = ((GroundBaddieState*)stateAddress)->control;
+void iceBaddie_updateTargetCollision(GameObject* obj, GroundBaddieState* objectState, GroundBaddieState* state) {
+    IceBaddieControl* controlAddress = objectState->control;
     GameObject* target;
     int hitInfo[7];
     f32 targetDelta[3];
@@ -1019,20 +1019,19 @@ void iceBaddie_updateTargetCollision(GameObject* obj, int stateAddress, GroundBa
         delta[2] = target->anim.worldPosZ - obj->anim.worldPosZ;
         state->baddie.targetDistance = sqrtf(delta[2] * delta[2] + (delta[0] * delta[0] + delta[1] * delta[1]));
     }
-    if ((((GroundBaddieState*)stateAddress)->configFlags & 0x20) == 0) {
+    if ((objectState->configFlags & 0x20) == 0) {
         (*gBaddieControlInterface)
-            ->pollCameraTarget(obj, state, &((GroundBaddieState*)stateAddress)->flags400, 2, 3,
-                               ((GroundBaddieState*)stateAddress)->soundIdB,
-                               ((GroundBaddieState*)stateAddress)->soundIdA);
+            ->pollCameraTarget(obj, state, &objectState->flags400, 2, 3,
+                               objectState->soundIdB, objectState->soundIdA);
     }
     (*gBaddieControlInterface)
-        ->processMessages(obj, state, (void*)(stateAddress + 0x35c), ((GroundBaddieState*)stateAddress)->gameBitB, NULL,
+        ->processMessages(obj, state, &objectState->routeNav, objectState->gameBitB, NULL,
                           0, 0, 8);
     controlAddress->hitTimer += timeDelta;
     if (state->baddie.controlMode != 3 &&
         (*gBaddieControlInterface)
-                ->updateHitReaction(obj, state, &((GroundBaddieState*)stateAddress)->routeNav,
-                                    ((GroundBaddieState*)stateAddress)->gameBitB, gIceBaddieHitReactionMoves,
+                ->updateHitReaction(obj, state, &objectState->routeNav,
+                                    objectState->gameBitB, gIceBaddieHitReactionMoves,
                                     gIceBaddieHitReactionDamage, 1, hitInfo) != 0) {
         if (controlAddress->hitTimer < 240.0f) {
             controlAddress->consecutiveHitCount += 1;
@@ -1137,7 +1136,7 @@ void iceBaddie_update(GameObject* obj, int unusedA, int unusedB) {
         if ((*gBaddieControlInterface)->isObjectValid(obj, objectState, 0) == 0) {
             objectState->targetState = 0;
         } else {
-            iceBaddie_updateTargetCollision(obj, (int)objectState, objectState);
+            iceBaddie_updateTargetCollision(obj, objectState, objectState);
             iceBaddie_updateControlEffects(obj, objectState);
             if (objectState->targetState == 0) {
                 iceBaddie_tryAcquireTarget(obj, objectState, objectState);

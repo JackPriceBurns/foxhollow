@@ -4,6 +4,23 @@ Entries are keyed by git tag. Tagging a commit publishes the matching section he
 GitHub release body and as the release notes shown in the launcher, so the heading must match
 the tag exactly.
 
+## v0.5.7 — 2026-09-05
+
+### Fixed
+- Prevent crashes and corrupted state from truncated native pointers in enemy path handling,
+  projectile owner callbacks, object spawning, hit detection, and effect cleanup.
+- Correct object-list traversal and message storage for pressure switches, moving platforms,
+  rolling barrels, camera targets, and sequence controllers. Native pointers and deferred message
+  records now retain their full width instead of using the GameCube's four-byte layout.
+
+### Added
+- 19 automated regression suites covering game objects, placement decoding, pointer handling,
+  cleanup, and animation-bank selection. Tests use synthetic fixtures and run without game assets
+  or a renderer, with Debug and Release jobs on macOS and Linux.
+- Given/When/Then test conventions and documented retail assembly evidence. Confirmed retail
+  quirks remain expected behavior, including the pressure switch's unchanged X coordinate after
+  reset and the animation placeholder selection behind the SharpClaw disguise T-pose.
+
 ## v0.5.6 — 2026-09-05
 
 ### Fixed

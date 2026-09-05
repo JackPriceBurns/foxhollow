@@ -152,7 +152,7 @@ void dll_F7_update(GameObject* obj) {
             hitEffect.spawn.rotY = 0;
             hitEffect.spawn.rotX = 0;
             (*gDllF7Resource5A)
-                ->spawn(NULL, 1, (PartFxSpawnParams*)((int)&hitEffect + 16), DLLF7_HIT_PARTICLE_FLAGS, -1,
+                ->spawn(NULL, 1, &hitEffect.spawn, DLLF7_HIT_PARTICLE_FLAGS, -1,
                         &hitEffect.color);
         }
     }

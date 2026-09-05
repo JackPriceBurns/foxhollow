@@ -59,7 +59,7 @@ typedef struct ShopSparkleSpawn
     f32 x;
     f32 y;
     f32 z;
-    int owner;
+    GameObject* owner;
     u8 pad[0x28]; /* opaque scratch passed by address to lightningCreate */
 } ShopSparkleSpawn;
 
@@ -157,11 +157,11 @@ void shopitem_renderSparkle(GameObject* obj, int p2, int p3, int p4, int p5)
         {
             if (spawned == 0 && getHudHiddenFrameCount() == 0)
             {
-                v.owner = (int)obj;
+                v.owner = obj;
                 v.x = obj->anim.localPosX;
                 v.y = obj->anim.localPosY;
                 v.z = obj->anim.localPosZ;
-                if ((u32)v.owner == (u32)obj)
+                if (v.owner == obj)
                 {
                     if (state->flagsE8.flag_40)
                     {
@@ -286,7 +286,7 @@ void shopitem_free(GameObject* obj)
             }
         }
     }
-    (*gExpgfxInterface)->freeSource((int)obj);
+    (*gExpgfxInterface)->freeSource((uintptr_t)obj);
     switch ((obj)->anim.romDefNo)
     {
     case SHOPITEM_SEQ_SPARKLE:

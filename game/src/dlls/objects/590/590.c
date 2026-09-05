@@ -101,10 +101,10 @@ void drakord_thornbush_hitDetect(GameObject* obj)
         if (hit != 0)
         {
             if (hitObj->anim.romDefNo != 0x35f &&
-                (void*)inner->lastHitObj != (void*)hitObj &&
+                inner->lastHitObj != hitObj &&
                 arrayIndexOf(inner->hitTable, 2, hit) != -1)
             {
-                inner->lastHitObj = (int)hitObj;
+                inner->lastHitObj = hitObj;
                 Obj_SpawnHitLightAndFade(obj, (const Vec3f*)&hitPosX, 50.0f);
                 inner->health -= damage;
                 if (inner->health <= 0)
@@ -119,7 +119,7 @@ void drakord_thornbush_hitDetect(GameObject* obj)
         }
         else
         {
-            inner->lastHitObj = 0;
+            inner->lastHitObj = NULL;
         }
         if (destroyed != 0)
         {
@@ -249,7 +249,7 @@ void drakord_thornbush_init(GameObject* obj, u8* init)
     }
     storeZeroToFloatParam(&inner->growth);
     storeZeroToFloatParam(&inner->regrowTimer);
-    inner->lastHitObj = 0;
+    inner->lastHitObj = NULL;
     switch ((obj)->anim.romDefNo)
     {
     case THORNBUSH_SEQ_THORN:

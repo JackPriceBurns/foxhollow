@@ -430,7 +430,7 @@ void ecshShrine_update(GameObject* obj) {
     f32 cupPositionSwap[2];
     int messageArgC;
     int messageArgA;
-    int messageArgB;
+    uintptr_t messageArgB;
     ECSHShrinePuzzleScratch* puzzle;
     ECSHShrineState* state;
     GameObject* player;
@@ -468,7 +468,7 @@ void ecshShrine_update(GameObject* obj) {
         staffToggle(player, ECSH_SHRINE_STAFF_DISABLED);
     }
     messageArgC = 0;
-    while (ObjMsg_Pop(obj, (u32*)&messageArgA, (u32*)&messageArgB, (u32*)&messageArgC) != 0) {
+    while (ObjMsg_Pop(obj, (u32*)&messageArgA, &messageArgB, (u32*)&messageArgC) != 0) {
     }
     GameBitLatch_Update(&state->gameBitLatch, ECSH_SHRINE_STATE_FLAG_TEST_RUNNING, ECSH_SHRINE_NO_GAMEBIT,
                           ECSH_SHRINE_NO_GAMEBIT, GAMEBIT_ECSH_TestObservRunning, MUSICTRIG_krazoa_doors_open);

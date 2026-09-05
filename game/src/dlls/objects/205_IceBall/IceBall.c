@@ -28,8 +28,8 @@
 #define ICEBALL_HIT_RADIUS      5
 
 #define ICEBALL_MSG_NOTIFY_OWNER            0x80 /* callback message sent to the active owner on impact */
-#define ICEBALL_OWNER_CALLBACK_2CB_OFFSET   0x20
-#define ICEBALL_OWNER_CALLBACK_OTHER_OFFSET 0x24
+#define ICEBALL_OWNER_CALLBACK_2CB_SLOT     8
+#define ICEBALL_OWNER_CALLBACK_OTHER_SLOT   9
 
 typedef void (*IceBallOwnerCallback)(GameObject* owner, int message);
 typedef void (*IceBallOwnerCallbackWithArg)(GameObject* owner, int message, int arg);
@@ -77,9 +77,8 @@ void iceBall_handleCharacterImpact(GameObject* obj) {
     if (sequenceId == 0x2cb) {
         if (obj->ownerObj != NULL) {
             if (iceBall_isOwnerActive(obj->ownerObj)) {
-                (*(IceBallOwnerCallback*)((u8*)*((GameObject*)obj->ownerObj)->anim.dll +
-                                          ICEBALL_OWNER_CALLBACK_2CB_OFFSET))((GameObject*)obj->ownerObj,
-                                                                              ICEBALL_MSG_NOTIFY_OWNER);
+                ((IceBallOwnerCallback)((void**)*obj->ownerObj->anim.dll)[ICEBALL_OWNER_CALLBACK_2CB_SLOT])(
+                    (GameObject*)obj->ownerObj, ICEBALL_MSG_NOTIFY_OWNER);
             }
         }
         for (particleIndex = 0; particleIndex < ICEBALL_PARTICLE_COUNT; particleIndex++) {
@@ -88,9 +87,8 @@ void iceBall_handleCharacterImpact(GameObject* obj) {
     } else if (sequenceId == 100) {
         if (obj->ownerObj != NULL) {
             if (iceBall_isOwnerActive(obj->ownerObj)) {
-                (*(IceBallOwnerCallback*)((u8*)*((GameObject*)obj->ownerObj)->anim.dll +
-                                          ICEBALL_OWNER_CALLBACK_OTHER_OFFSET))((GameObject*)obj->ownerObj,
-                                                                                ICEBALL_MSG_NOTIFY_OWNER);
+                ((IceBallOwnerCallback)((void**)*obj->ownerObj->anim.dll)[ICEBALL_OWNER_CALLBACK_OTHER_SLOT])(
+                    (GameObject*)obj->ownerObj, ICEBALL_MSG_NOTIFY_OWNER);
             }
         }
         for (particleIndex = 0; particleIndex < ICEBALL_PARTICLE_COUNT; particleIndex++) {
@@ -99,9 +97,8 @@ void iceBall_handleCharacterImpact(GameObject* obj) {
     } else if (sequenceId == 0x30a) {
         if (obj->ownerObj != NULL) {
             if (iceBall_isOwnerActive(obj->ownerObj)) {
-                (*(IceBallOwnerCallbackWithArg*)((u8*)*((GameObject*)obj->ownerObj)->anim.dll +
-                                                 ICEBALL_OWNER_CALLBACK_OTHER_OFFSET))((GameObject*)obj->ownerObj,
-                                                                                       ICEBALL_MSG_NOTIFY_OWNER, 0);
+                ((IceBallOwnerCallbackWithArg)((void**)*obj->ownerObj->anim.dll)[ICEBALL_OWNER_CALLBACK_OTHER_SLOT])(
+                    (GameObject*)obj->ownerObj, ICEBALL_MSG_NOTIFY_OWNER, 0);
             }
         }
         for (particleIndex = 0; particleIndex < ICEBALL_PARTICLE_COUNT; particleIndex++) {
@@ -160,10 +157,8 @@ void IceBall_update(GameObject* obj) {
     ObjHitbox_SetSphereRadius((ObjAnimComponent*)objAddress, ICEBALL_HIT_RADIUS);
     ObjHits_EnableObject((GameObject*)objAddress);
     if (((ObjHitsPriorityState*)objAddress->anim.hitReactState)->lastHitObject != 0 &&
-        (((ObjHitsPriorityState*)objAddress->anim.hitReactState)->lastHitObject ==
-             (u32)Obj_GetPlayerObject() ||
-         ((ObjHitsPriorityState*)objAddress->anim.hitReactState)->lastHitObject ==
-             (u32)getTrickyObject())) {
+        (((ObjHitsPriorityState*)objAddress->anim.hitReactState)->lastHitObject == (uintptr_t)Obj_GetPlayerObject() ||
+         ((ObjHitsPriorityState*)objAddress->anim.hitReactState)->lastHitObject == (uintptr_t)getTrickyObject())) {
         iceBall_handleCharacterImpact((GameObject*)objAddress);
         objAddress->anim.alpha = 0;
         objAddress->userData1 = ICEBALL_IMPACT_FRAMES;

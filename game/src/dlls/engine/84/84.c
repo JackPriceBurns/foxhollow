@@ -46,9 +46,9 @@ void CameraMode54_update(CameraObject* camera) {
         (*gCameraInterface)->setMode(CAMCONTROL_ACTION_DEFAULT, 0, 1, 0, NULL, 0, 0xff);
     } else {
         if (gCameraMode54State->lookAtObj == NULL) {
-            int* objects = (int*)ObjList_GetObjects(&objectIndex, &objectCount);
+            GameObject** objects = ObjList_GetObjects(&objectIndex, &objectCount);
             for (; objectIndex < objectCount; objectIndex++) {
-                GameObject* object = (GameObject*)objects[objectIndex];
+                GameObject* object = objects[objectIndex];
                 if (object->anim.romDefNo == CAMERA_MODE_54_LOOK_AT_OBJECT_ID) {
                     gCameraMode54State->lookAtObj = object;
                 } else if (object->anim.romDefNo == CAMERA_MODE_54_ORIGIN_OBJECT_ID) {

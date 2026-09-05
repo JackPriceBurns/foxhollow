@@ -59,7 +59,7 @@ void dimbossfire_free(GameObject* obj) {
         ModelLightStruct_free(light);
         state->light = NULL;
     }
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void dimbossfire_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {

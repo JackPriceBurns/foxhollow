@@ -56,7 +56,7 @@ int Fall_Ladders_getObjectTypeId(void) {
 }
 
 void Fall_Ladders_free(GameObject* obj) {
-    (*gExpgfxInterface)->freeSource2((u32)obj);
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
 }
 
 void Fall_Ladders_render(void) {
