@@ -1,0 +1,992 @@
+#ifndef MAIN_OBJANIM_INTERNAL_H_
+#define MAIN_OBJANIM_INTERNAL_H_
+
+#include "game/objects/object_interface.h"
+#include "global.h"
+#include "main/vec_types.h"
+#include "types.h"
+#include "main/objanim.h"
+#include "main/objhits_types.h"
+#include "main/model.h"
+
+typedef struct ObjHitReactState ObjHitReactState;
+typedef struct ObjHitReactMoveEntry ObjHitReactMoveEntry;
+typedef struct ProjectedShadowTexture ProjectedShadowTexture;
+typedef struct Texture Texture;
+
+typedef struct ObjAnimHitReactRow {
+    u8 pad00[0x16];
+    s8 entryIndex;
+    u8 pad17;
+} ObjAnimHitReactRow;
+
+typedef struct ObjAnimFrameCommand {
+    u8 opcode;
+    u8 frameLength;
+} ObjAnimFrameCommand;
+
+typedef s16 ObjAnimPackedEvent;
+
+#define OBJANIM_DEF_FLAG_CACHED_MOVES      0x40
+#define OBJANIM_DEF_FLAG_SKELETON_HITBOXES 0x1000
+/* Object allocated & owns its own placementData copy (must free it). Set after
+   mmAlloc+memcpy into placementData; gates the placementData mm_free in Obj_FreeObject. */
+#define OBJANIM_FLAG_OWNS_PLACEMENT_DATA 0x2000
+#define OBJANIM_FLAG_HIDDEN              0x4000
+/* Bits copied from set-move flags into ObjAnimState during move advancement. */
+#define OBJANIM_MOVE_CONTROL_HOLD_EVENT_COUNTDOWN 0x02
+#define OBJANIM_MOVE_CONTROL_REFRESH_SAVED_STEP   0x08
+#define OBJANIM_MOVE_CONTROL_SKIP_EVENT_COUNTDOWN 0x10
+#define OBJANIM_MOVE_CACHE_SLOT_COUNT             2
+#define OBJANIM_MISSING_MOVE_ID                   -1
+#define OBJANIM_BLEND_MOVE_INDEX_INVALID          -1
+#define OBJANIM_CACHED_MOVE_DATA_OFFSET           0x80
+#define OBJANIM_MOVE_ROOT_CURVE_OFFSET            4
+#define OBJANIM_FRAME_COMMANDS_OFFSET             6
+#define OBJANIM_FRAME_TYPE_CLAMPED                0
+#define OBJANIM_FRAME_TYPE_MASK                   0xF0
+#define OBJANIM_FRAME_STEP_MASK                   0x0F
+#define OBJANIM_EVENT_COUNTDOWN_RESET             0x4000
+#define OBJANIM_EVENT_FRAME_MASK                  0x1FF
+#define OBJANIM_EVENT_ID_SHIFT                    9
+#define OBJANIM_EVENT_ID_MASK                     0x7F
+#define OBJANIM_EVENT_ID_NONE                     0x7F
+#define OBJANIM_EVENT_TRIGGER_CAPACITY            8
+/* Event-scan flags: wrapped progress and reverse playback combine as a bitfield. */
+#define OBJANIM_EVENT_SCAN_FORWARD                0
+#define OBJANIM_EVENT_SCAN_WRAPPED                0x01
+#define OBJANIM_EVENT_SCAN_REVERSE                0x02
+#define OBJANIM_EVENT_SCAN_REVERSE_WRAPPED        (OBJANIM_EVENT_SCAN_WRAPPED | OBJANIM_EVENT_SCAN_REVERSE)
+#define OBJANIM_MOVE_GROUP_SHIFT                  8
+#define OBJANIM_MOVE_INDEX_MASK                   0xFF
+#define OBJANIM_MOVE_GROUP_BASE_COUNT             0x3E
+#define OBJANIM_ROOT_CURVE_AXIS_DATA_OFFSET       6
+#define OBJANIM_ROOT_CURVE_Z_AXIS_OFFSET          10
+#define OBJANIM_ROOT_CURVE_AXIS_COUNT             6
+#define OBJANIM_ROOT_CURVE_TRANSLATION_AXIS_COUNT 3
+#define OBJANIM_ROOT_CURVE_AXIS_X                 0
+#define OBJANIM_ROOT_CURVE_AXIS_Y                 1
+#define OBJANIM_ROOT_CURVE_AXIS_Z                 2
+#define OBJANIM_ROOT_CURVE_AXIS_YAW               3
+#define OBJANIM_ROOT_CURVE_AXIS_PITCH             4
+#define OBJANIM_ROOT_CURVE_AXIS_ROLL              5
+#define OBJANIM_DOUBLE_CONVERSION_HIGH_WORD       0x43300000
+#define OBJANIM_S32_DOUBLE_BIAS_XOR               0x80000000
+#define OBJANIM_U32_DOUBLE(value)                                                                                      \
+    ((double)((u64)(((u64)(u32)(OBJANIM_DOUBLE_CONVERSION_HIGH_WORD) << 32) | (u32)((value)))))
+
+/*
+ * ObjModelState.flags -- per-object shadow state, retail offset 0x30.
+ *
+ * Only six of these bits are ever tested, and that is measured rather than
+ * inferred: every load of modelState+0x30 across all 2064 objects in the retail
+ * build was disassembled and every mask applied to the loaded word decoded.
+ * The complete set of readers is
+ *
+ *   0x00004  getVisibleObjects, renderObjects        lightmap.c
+ *   0x00020  objDrawShadowCasterMesh, renderShadows  shadow_dolphin.c, newshadows.c
+ *   0x01000  objShadowUpdateAlpha                    shadow_dolphin.c
+ *   0x02000  objDrawShadowCasterMesh                 shadow_dolphin.c
+ *   0x10000  objShadowUpdateAlpha                    shadow_dolphin.c
+ *   0x40000  objShadowRender                         shadow_dolphin.c
+ *
+ * Every other bit is written by object init code and read by nothing, on either
+ * target -- most likely leftovers of the shadow system that newshadows.c
+ * replaced. They are preserved exactly because they are retail behaviour, and
+ * named OBJ_MODEL_STATE_UNREAD_* so that no call site can imply an effect that
+ * does not exist.
+ */
+typedef enum ObjModelStateFlag {
+    /* Shadow is eligible to draw. objShadowAlloc seeds flags with exactly this
+   * bit, and lightmap.c drops the object from the shadow queues without it. */
+    OBJ_MODEL_STATE_SHADOW_VISIBLE = 0x00004,
+
+    /* Set once by Obj_RunInitCallback after an object's init callback returns.
+   * Nothing tests it. */
+    OBJ_MODEL_STATE_SHADOW_INIT_CALLBACK_RAN = 0x00008,
+
+    /* Draw the shadow at modelState->overrideWorldPos rather than the object's
+   * own position: both renderers swap the override into anim.localPos/worldPos,
+   * draw, then swap the real position back. Cleared together with
+   * OBJ_MODEL_STATE_SHADOW_KEEP_ROT_Z by playerShadowClearPositionOverride. */
+    OBJ_MODEL_STATE_SHADOW_POS_OVERRIDE = 0x00020,
+
+    /* objShadowUpdateAlpha ramps shadowAlphaStep down instead of up, and releases
+   * shadowCastSlot once it reaches 0. */
+    OBJ_MODEL_STATE_SHADOW_FADE_OUT = 0x01000,
+
+    /* Keep anim.rotZ when building the shadow's world matrix. rotX and rotY are
+   * always zeroed; without this bit rotZ is zeroed too, flattening the shadow
+   * to the ground plane. */
+    OBJ_MODEL_STATE_SHADOW_KEEP_ROT_Z = 0x02000,
+
+    /* Freeze shadowAlphaStep where it is: objShadowUpdateAlpha neither ramps up
+   * nor down. FADE_OUT wins if both are set. */
+    OBJ_MODEL_STATE_SHADOW_ALPHA_HOLD = 0x10000,
+
+    /* Passed by objShadowRender as collectShadowTrackTriangles' kindSelector: set
+   * gathers track triangles whose flags carry 0x4, clear gathers 0x8. No object
+   * in the retail build sets this, so the 0x4 path never runs. */
+    OBJ_MODEL_STATE_SHADOW_ALT_TRACK_SURFACE = 0x40000,
+
+    /* Written at init, read by nothing -- see the header comment above. Writers:
+   *   0x0010  the ten init sites that set 0x810/0xa10/0xc10, plus CRrockfall
+   *   0x0080  CRrockfall_init
+   *   0x0200  the six init sites that set 0xa10
+   *   0x0400  DIMCannon_init (0xc10), CRrockfall_init (0xc00)
+   *   0x0800  every 0x810/0xa10/0xc10/0xc00 init site
+   *   0x4000  snowclaw/imSnowClaw/dll_16C init, DB_egg, DBstealerworm, player
+   *   0x8000  DIMCannon_init, 263_init, DIM2PrisonMammoth_init */
+    OBJ_MODEL_STATE_UNREAD_0010 = 0x00010,
+    OBJ_MODEL_STATE_UNREAD_0080 = 0x00080,
+    OBJ_MODEL_STATE_UNREAD_0200 = 0x00200,
+    OBJ_MODEL_STATE_UNREAD_0400 = 0x00400,
+    OBJ_MODEL_STATE_UNREAD_0800 = 0x00800,
+    OBJ_MODEL_STATE_UNREAD_4000 = 0x04000,
+    OBJ_MODEL_STATE_UNREAD_8000 = 0x08000
+} ObjModelStateFlag;
+
+/*
+ * Shared state used by the object-animation helpers around main/objanim.c.
+ * These names are still partially provisional, but the layouts are stable
+ * enough to carry meaning across the nearby animation and hit-reaction code.
+ */
+typedef struct ObjAnimState {
+    u8 pad00[4];
+    union {
+        struct {
+            f32 framePhase;
+            f32 prevFramePhase;
+        };
+        f32 framePhases[2];
+    };
+    f32 frameStep;
+    f32 savedFrameStep;
+    union {
+        struct {
+            f32 frameLength;
+            f32 prevFrameLength;
+        };
+        f32 frameLengths[2];
+    };
+    union {
+        struct {
+            u8* moveCache[OBJANIM_MOVE_CACHE_SLOT_COUNT];
+            u8* blendMoveCache[OBJANIM_MOVE_CACHE_SLOT_COUNT];
+        };
+        u8* cachedMoves[OBJANIM_MOVE_CACHE_SLOT_COUNT * 2];
+    };
+    /* 0x2c: cursor into the current frame's packed bitstream, written by
+     ObjModel_SampleJointTransform and consumed by modelRenderInterpolateRootTransform. */
+    union {
+        struct {
+            u8* frameStreamCursor;
+            u8* prevFrameStreamCursor;
+        };
+        u8* frameStreamCursors[2];
+    };
+    union {
+        struct {
+            ObjAnimFrameCommand* moveFrameData;
+            ObjAnimFrameCommand* prevMoveFrameData;
+            ObjAnimFrameCommand* blendFrameData;
+            ObjAnimFrameCommand* prevBlendFrameData;
+        };
+        ObjAnimFrameCommand* frameData[4];
+    };
+    union {
+        struct {
+            u16 moveCacheSlot;
+            u16 prevMoveCacheSlot;
+            u16 blendCacheSlot;
+            u16 prevBlendCacheSlot;
+        };
+        u16 cacheSlots[4];
+    };
+    /* Byte distance between adjacent packed frame streams while sampling. */
+    union {
+        struct {
+            u16 frameStreamStride;
+            u16 prevFrameStreamStride;
+        };
+        s16 frameStreamStrides[2];
+    };
+    u8 pad50[0x58 - 0x50];
+    u16 eventCountdown;
+    union {
+        struct {
+            u16 eventState;
+            u16 prevEventState;
+        };
+        u16 eventStates[2];
+    };
+    u16 eventStep;
+    union {
+        struct {
+            s8 frameType;
+            s8 prevFrameType;
+        };
+        s8 frameTypes[2];
+    };
+    s8 blendToggle;
+    s8 moveControlFlags;
+    s16 lastBlendMoveIndex;
+} ObjAnimState;
+
+typedef struct ObjAnimRootCurveAxis {
+    s16 firstSample;
+    s16 samples[1];
+} ObjAnimRootCurveAxis;
+
+/*
+ * Root curves are packed by axis after the scale/sample-count header.  An axis
+ * with firstSample == 0 occupies only that first s16; otherwise it is followed
+ * by sampleCount additional s16 samples. Translation axes emit scaled floats,
+ * while rotation axes emit raw s16 deltas into ObjAnimEventList.
+ */
+typedef struct ObjAnimRootCurve {
+    f32 scale;
+    s16 sampleCount;
+    ObjAnimRootCurveAxis axes[1];
+} ObjAnimRootCurve;
+
+typedef struct ObjDefHitVolume {
+    s16 jointOffsetX;
+    s16 jointOffsetY;
+    s16 jointOffsetZ;
+    s16 posX;
+    s16 posY;
+    s16 posZ;
+    u8 bounds[4];
+    u8 flags;
+    u8 priority;
+    s8 jointIndices[2];
+    u8 pad14[0x18 - 0x14];
+} ObjDefHitVolume;
+
+typedef struct ObjHitVolumeRuntimeTransform {
+    f32 jointX;
+    f32 jointY;
+    f32 jointZ;
+    f32 centerX;
+    f32 centerY;
+    f32 centerZ;
+} ObjHitVolumeRuntimeTransform;
+
+typedef struct ObjHitVolumeRuntimeBounds {
+    u8 bounds[4];
+    u8 flags;
+} ObjHitVolumeRuntimeBounds;
+
+typedef struct ObjTextureSlotDef {
+    u8 tag;
+    u8 materialIndex;
+} ObjTextureSlotDef;
+
+/* One entry of ObjDef.attachPoints (@0x2C): the local offset and rotation a
+ * child object is mounted at, plus the joint it is bound to in each of the
+ * object's models. */
+typedef struct ObjAttachPoint {
+    f32 pos[3];
+    s16 rot[3];
+    s8 joints[6];
+} ObjAttachPoint;
+
+typedef struct ObjTextureRuntimeSlot {
+    s32 textureId;
+    u8 pad04[4];
+    s16 offsetS;
+    s16 offsetT;
+    u8 colorR;
+    u8 colorG;
+    u8 colorB;
+    u8 pad0F;
+} ObjTextureRuntimeSlot;
+
+/* ObjDef.shadowType (@0x48) selector. */
+enum ObjShadowType {
+    OBJ_SHADOW_TYPE_NONE = 0,
+    OBJ_SHADOW_TYPE_BIG_BOX = 1,
+    OBJ_SHADOW_TYPE_MODEL_GEOMETRIC = 2,
+    OBJ_SHADOW_TYPE_CRASH = 3,
+    OBJ_SHADOW_TYPE_BLUE_GLOW_RECT = 4
+};
+
+/*
+ * Minimal recovered shape of the model pointer carried by ObjAnimComponent.
+ * The named fields below are shared by root-motion sampling and hit-reaction
+ * table loading; the rest of the object/model layout is still being mapped.
+ */
+typedef struct ObjDef {
+    f32 shadowScaleBase;
+    f32 rootMotionScaleBase;
+    s32* modelFileIds; /* 0x08: table of per-model file ids (negated -> ObjModel_Load), modelCount entries */
+    ObjTextureSlotDef* textureSlotDefs;
+    s8* jointData;
+    u8 pad14[0x18 - 0x14];
+    u8* extraSetupData;
+    s16* sequenceMap;
+    s16* eventMoveTable;
+    ObjHitReactMoveEntry* hitReactMoveTable;
+    s16* weaponDaTable;
+    ObjAttachPoint* attachPoints;
+    struct MapHitLine* modLines;
+    void* intersectionLines;
+    u8* intersectionSegmentRanges;
+    f32* intersectionPoints;
+    ObjDefHitVolume* hitVolumes;
+    u32 flags;
+    s16 shadowType;
+    s16 shadowTextureId;
+    u8 pad4C[0x4E - 0x4C];
+    s16 hitboxFlags;
+    s16 dllId;
+    s16 category;
+    u8 pad54;
+    s8 modelCount;
+    s8 group8RegistrationCount;
+    u8 unk57;
+    u8 attachPointCount;
+    u8 textureSlotCount;
+    u8 jointCount;
+    u8 pad5B;
+    u8 modLineCount;
+    s8 modLineIndex;
+    u8 sequenceCount;
+    u8 renderFlags;
+    u8 hitboxStateIndex;
+    u8 hitboxStateCount;
+    u8 primaryHitboxRadius;
+    u8 lateralResponseWeight;
+    u8 axialResponseWeight;
+    u8 primaryHitboxShapeFlags;
+    u8 hitReactStateCount;
+    u8 targetHitMask;
+    s16 primaryCapsuleOffsetA;
+    s16 primaryCapsuleOffsetB;
+    s16 secondaryCapsuleOffsetA;
+    s16 secondaryCapsuleOffsetB;
+    u8 sourceHitMask;
+    u8 runtimeSourceHitMask;
+    u8 hitVolumeCount;
+    u8 cullDistScale; /* 0x73: object.c scales cull distance by this (max *= k*cullDistScale/k2) */
+    u8 fixedSortDepth;
+    u8 pad75;
+    u8 effectFlags;
+    u8 secondaryHitboxRadius;
+    s16 mapLoadObjectId;
+    s16 npcDialogueTextId;
+    s16 helpTextIds[4];
+    u16 avoidRadiusX; /* 0x84: lateral extent of the side-step avoidance ellipse (scaled by 0.1); 0 disables avoidance for the object */
+    u16 avoidRadiusZ; /* 0x86: axial extent of the same ellipse */
+    f32 shadowModelScaleBase;
+    u8 maxLights;
+    u8 modelLightMaskIndex;
+    u8 defaultModelVariant;
+    u8 fallbackHitSphereRadius;
+    u8 secondaryHitboxShapeFlags;
+    char name[0x9C - 0x91];
+} ObjDef;
+
+typedef ObjDef ObjModelInstance;
+
+typedef struct ObjAnimMoveData {
+    u8 pad00;
+    s8 frameControl;
+    u8 pad02[OBJANIM_MOVE_ROOT_CURVE_OFFSET - 2];
+    s16 rootCurveOffset;
+    u8 frameCommands[1];
+} ObjAnimMoveData;
+
+typedef struct ObjectShadowMesh {
+    Vec3s* vertices;
+    u32 vertexCount;
+} ObjectShadowMesh;
+
+#define OBJECT_SHADOW_MESH_UNCACHED ((ObjectShadowMesh*)-1)
+
+typedef struct ObjModelState {
+    f32 shadowScale;
+    Texture* shadowTexture;
+    void* shadowWorkBuffer;
+    ProjectedShadowTexture* shadowCastSlot;
+    ObjectShadowMesh* shadowRenderResource;
+    f32 shadowOffsetX;
+    f32 shadowOffsetY;
+    f32 shadowOffsetZ;
+    f32 overrideWorldPosX;
+    f32 overrideWorldPosY;
+    f32 overrideWorldPosZ;
+    f32 shadowModelScale;
+    u32 flags;
+    u8 pad34[0x36 - 0x34];
+    s16 shadowAlphaStep;
+    u8 pad38[0x3A - 0x38];
+    u8 shadowTintA;
+    u8 shadowTintB;
+    void* lastSelectedLight;
+    u8 shadowAlpha;
+    u8 pad41[0x44 - 0x41];
+} ObjModelState;
+
+STATIC_ASSERT(offsetof(ObjModelState, flags) == 0x30);
+
+typedef struct ObjAnimComponent {
+    s16 rotX;
+    s16 rotY;
+    s16 rotZ;
+    s16 flags;
+    f32 rootMotionScale;
+    f32 localPosX;
+    f32 localPosY;
+    f32 localPosZ;
+    f32 worldPosX;
+    f32 worldPosY;
+    f32 worldPosZ;
+    f32 velocityX;
+    f32 velocityY;
+    f32 velocityZ;
+    GameObject* parent;
+    u8 hostedMapSlot; /* 0x34: romlist page slot this object hosts - taken
+                       from the extended 0x50..0x77 band by
+                       mapLoadForObject when the object definition names
+                       a map to load, registered with setMapActLut and
+                       released through mapUnloadRomListPage */
+    s8 transformMatrixIndex;
+    u8 alpha;
+    u8 renderAlpha;
+    void* next;        /* 0x38: intrusive object-list link (wiki ObjInstance.next); list not ordered */
+    f32 loadDistance;  /* 0x3C: wiki ObjInstance.loadDistance (same value as cullDistance2) */
+    f32 cullDistance2; /* 0x40: wiki ObjInstance.cullDistance2 - camera-distance opacity term */
+    s16 classId;
+    s16 romDefNo;
+    s16 defId;
+    u8 pad4A[0x4C - 0x4A];
+    union {
+        s16* placementData;             /* raw view - the s16* deref width is load-bearing
+                           at placementData[i] sites; keep for those */
+        struct ObjPlacement* placement; /* typed view of the common head */
+    };
+    ObjDef* modelInstance;
+    ObjHitReactState* hitReactState;
+    ObjHitboxTransformState* hitboxTransformState;
+    struct ObjWeaponDaTable* weaponDaTable;
+    struct ObjAnimEventTable* eventTable;
+    ObjModelState* modelState;
+    ObjectInterfaceHandle dll;
+    u8* jointPoseData;
+    ObjTextureRuntimeSlot* textureSlots;
+    ObjHitVolumeRuntimeTransform* hitVolumeTransforms;
+    ObjHitVolumeRuntimeBounds* hitVolumeBounds;
+    struct ObjModel** modelBanks;
+    f32 previousLocalPosX;
+    f32 previousLocalPosY;
+    f32 previousLocalPosZ;
+    f32 previousWorldPosX;
+    f32 previousWorldPosY;
+    f32 previousWorldPosZ;
+    f32 currentMoveProgress;
+    f32 activeMoveProgress;
+    s16 currentMove;
+    s16 activeMove;
+    void* targetObj; /* attention/track target (GameObject*): camera focus/track
+                     sites across CAM TUs + baddieControl.c 0xA4-as-pointer
+                     census - general object field, not camera-specific */
+    f32 hitboxScale;
+    s8 mapEventSlot; /* 0xAC: map-event slot the object belongs to - the
+                      mapLayer argument of loadCharacter; for objects
+                      instantiated inside an object-hosted map this is
+                      that host's hostedMapSlot */
+    s8 bankIndex;
+    s8 activeHitboxMode;
+    u8 resetHitboxFlags;
+} ObjAnimComponent;
+
+/*
+ * anim.resetHitboxFlags bits - the engine<->DLL interact-prompt handshake.
+ * ACTIVATED and IN_RANGE are engine-written (DLL code only reads
+ * them); DISABLED and PROMPT_SUPPRESSED are DLL-written. The
+ * objhits system separately stores small mode VALUES in this same byte
+ * via the s8 view (OBJHITS_RESET_HITBOX_MODE).
+ */
+#define INTERACT_FLAG_ACTIVATED         0x01 /* player triggered the prompt this frame */
+#define INTERACT_FLAG_IN_RANGE          0x04 /* player close enough; DLLs show the A icon */
+#define INTERACT_FLAG_DISABLED          0x08 /* interaction off (DLLs default-set, clear to enable) */
+#define INTERACT_FLAG_PROMPT_SUPPRESSED 0x10 /* precondition unmet, hide the prompt */
+
+typedef struct ObjAnimEventTable {
+    s32 byteCount;
+    ObjAnimPackedEvent* entries;
+} ObjAnimEventTable;
+
+typedef struct ObjWeaponDaTable {
+    s32 byteCount;
+    s16* entries;
+} ObjWeaponDaTable;
+
+typedef struct ObjAnimEventList {
+    f32 rootDeltaX;
+    f32 rootDeltaY;
+    f32 rootDeltaZ;
+    s16 rootYaw;
+    s16 rootPitch;
+    s16 rootRoll;
+    u8 rootCurveValid;
+    s8 triggeredIds[OBJANIM_EVENT_TRIGGER_CAPACITY];
+    s8 triggerCount;
+} ObjAnimEventList;
+
+STATIC_ASSERT(sizeof(ObjAnimHitReactRow) == 0x18);
+STATIC_ASSERT(offsetof(ObjAnimHitReactRow, entryIndex) == 0x16);
+STATIC_ASSERT(offsetof(ObjAnimFrameCommand, frameLength) == 0x01);
+
+STATIC_ASSERT(sizeof(ObjAnimState) == 0x68);
+STATIC_ASSERT(offsetof(ObjAnimState, framePhase) == 0x04);
+STATIC_ASSERT(offsetof(ObjAnimState, prevFramePhase) == 0x08);
+STATIC_ASSERT(offsetof(ObjAnimState, frameStep) == 0x0C);
+STATIC_ASSERT(offsetof(ObjAnimState, savedFrameStep) == 0x10);
+STATIC_ASSERT(offsetof(ObjAnimState, frameLength) == 0x14);
+STATIC_ASSERT(offsetof(ObjAnimState, prevFrameLength) == 0x18);
+STATIC_ASSERT(offsetof(ObjAnimState, moveCache) == 0x1C);
+STATIC_ASSERT(offsetof(ObjAnimState, blendMoveCache) == 0x24);
+STATIC_ASSERT(offsetof(ObjAnimState, frameStreamCursor) == 0x2C);
+STATIC_ASSERT(offsetof(ObjAnimState, moveFrameData) == 0x34);
+STATIC_ASSERT(offsetof(ObjAnimState, prevMoveFrameData) == 0x38);
+STATIC_ASSERT(offsetof(ObjAnimState, blendFrameData) == 0x3C);
+STATIC_ASSERT(offsetof(ObjAnimState, prevBlendFrameData) == 0x40);
+STATIC_ASSERT(offsetof(ObjAnimState, moveCacheSlot) == 0x44);
+STATIC_ASSERT(offsetof(ObjAnimState, prevMoveCacheSlot) == 0x46);
+STATIC_ASSERT(offsetof(ObjAnimState, blendCacheSlot) == 0x48);
+STATIC_ASSERT(offsetof(ObjAnimState, prevBlendCacheSlot) == 0x4A);
+STATIC_ASSERT(offsetof(ObjAnimState, eventCountdown) == 0x58);
+STATIC_ASSERT(offsetof(ObjAnimState, eventState) == 0x5A);
+STATIC_ASSERT(offsetof(ObjAnimState, prevEventState) == 0x5C);
+STATIC_ASSERT(offsetof(ObjAnimState, eventStep) == 0x5E);
+STATIC_ASSERT(offsetof(ObjAnimState, frameType) == 0x60);
+STATIC_ASSERT(offsetof(ObjAnimState, prevFrameType) == 0x61);
+STATIC_ASSERT(offsetof(ObjAnimState, blendToggle) == 0x62);
+STATIC_ASSERT(offsetof(ObjAnimState, moveControlFlags) == 0x63);
+STATIC_ASSERT(offsetof(ObjAnimState, lastBlendMoveIndex) == 0x64);
+
+STATIC_ASSERT(sizeof(ObjDefHitVolume) == 0x18);
+STATIC_ASSERT(offsetof(ObjDefHitVolume, bounds) == 0x0C);
+STATIC_ASSERT(offsetof(ObjDefHitVolume, flags) == 0x10);
+STATIC_ASSERT(offsetof(ObjDefHitVolume, priority) == 0x11);
+STATIC_ASSERT(offsetof(ObjDefHitVolume, jointIndices) == 0x12);
+STATIC_ASSERT(sizeof(ObjHitVolumeRuntimeTransform) == 0x18);
+STATIC_ASSERT(sizeof(ObjHitVolumeRuntimeBounds) == 0x05);
+STATIC_ASSERT(sizeof(ObjTextureSlotDef) == 0x02);
+STATIC_ASSERT(sizeof(ObjTextureRuntimeSlot) == 0x10);
+
+STATIC_ASSERT(sizeof(ObjDef) == 0x9C);
+STATIC_ASSERT(offsetof(ObjDef, avoidRadiusX) == 0x84);
+STATIC_ASSERT(offsetof(ObjDef, avoidRadiusZ) == 0x86);
+STATIC_ASSERT(offsetof(ObjDef, name) == 0x91);
+STATIC_ASSERT(offsetof(ObjDef, shadowScaleBase) == 0x00);
+STATIC_ASSERT(offsetof(ObjDef, rootMotionScaleBase) == 0x04);
+STATIC_ASSERT(offsetof(ObjDef, modelFileIds) == 0x08);
+STATIC_ASSERT(offsetof(ObjDef, textureSlotDefs) == 0x0C);
+STATIC_ASSERT(offsetof(ObjDef, jointData) == 0x10);
+STATIC_ASSERT(offsetof(ObjDef, extraSetupData) == 0x18);
+STATIC_ASSERT(offsetof(ObjDef, sequenceMap) == 0x1C);
+STATIC_ASSERT(offsetof(ObjDef, eventMoveTable) == 0x20);
+STATIC_ASSERT(offsetof(ObjDef, hitReactMoveTable) == 0x24);
+STATIC_ASSERT(offsetof(ObjDef, weaponDaTable) == 0x28);
+STATIC_ASSERT(offsetof(ObjDef, attachPoints) == 0x2C);
+STATIC_ASSERT(offsetof(ObjDef, attachPointCount) == 0x58);
+STATIC_ASSERT(offsetof(ObjDef, modLines) == 0x30);
+STATIC_ASSERT(offsetof(ObjDef, modLineCount) == 0x5C);
+STATIC_ASSERT(offsetof(ObjDef, modLineIndex) == 0x5D);
+STATIC_ASSERT(sizeof(ObjAttachPoint) == 0x18);
+STATIC_ASSERT(offsetof(ObjDef, hitVolumes) == 0x40);
+STATIC_ASSERT(offsetof(ObjDef, flags) == 0x44);
+STATIC_ASSERT(offsetof(ObjDef, shadowType) == 0x48);
+STATIC_ASSERT(offsetof(ObjDef, shadowTextureId) == 0x4A);
+STATIC_ASSERT(offsetof(ObjDef, hitboxFlags) == 0x4E);
+STATIC_ASSERT(offsetof(ObjDef, dllId) == 0x50);
+STATIC_ASSERT(offsetof(ObjDef, category) == 0x52);
+STATIC_ASSERT(offsetof(ObjDef, modelCount) == 0x55);
+STATIC_ASSERT(offsetof(ObjDef, group8RegistrationCount) == 0x56);
+STATIC_ASSERT(offsetof(ObjDef, textureSlotCount) == 0x59);
+STATIC_ASSERT(offsetof(ObjDef, jointCount) == 0x5A);
+STATIC_ASSERT(offsetof(ObjDef, sequenceCount) == 0x5E);
+STATIC_ASSERT(offsetof(ObjDef, renderFlags) == 0x5F);
+
+/*
+ * ObjDef.renderFlags (ObjDef+0x5F, u8) bit names. These are baked into the
+ * loaded model-def data and read (never set in code) across the render/shadow
+ * paths; the roles are the cross-file consensus from how each bit gates
+ * behavior. Field is u8, so a bare int constant folds identically for & tests.
+ *  - 0x4 PROJECTED_SHADOW: the model's shadow is a dynamically rendered
+ *    projected shadow (own 512 render target, textureAlloc512 in
+ *    track_dolphin; freed via mm_free not textureFree in object.c; forces the
+ *    front-cull z-write shadow pass in objprint_dolphin; shadow-slot mode 2 in
+ *    newshadows). Consensus across object.c/newshadows.c/track_dolphin.c/
+ *    objprint_dolphin.c (5+ read sites).
+ *  - 0x10 DEFERRED_RENDER: routes the object through the deferred render queue
+ *    and the extended (0x1f) shadow render mode; also triggers the special
+ *    render setup in objprint_dolphin. Consensus across objprint_dolphin.c and
+ *    lightmap.c (paired with modelInstance->flags 0x800 to the same path).
+ */
+#define OBJDEF_RENDERFLAG_PROJECTED_SHADOW 0x4
+#define OBJDEF_RENDERFLAG_DEFERRED_RENDER  0x10
+
+/*
+ * ObjDef.flags -- retail offset 0x44 (object.c reads it out of the file blob at
+ * that offset and byte-swaps it, so it is native-endian in memory).
+ *
+ * Which bits matter was measured, not guessed: every load of ObjDef+0x44 in the
+ * retail build was disassembled and every mask applied to the loaded word
+ * decoded, then cross-checked against this repo's own reader sites. Bits with no
+ * reader on either target are deliberately left unnamed -- unlike
+ * ObjModelStateFlag, nothing here writes a dead bit, the values just arrive in
+ * the data file.
+ *
+ * Names marked (wiki) came from the Rena SFA wiki and are kept only where no
+ * reader contradicts them.
+ */
+typedef enum ObjDefFlag {
+    /* Loads as a single-model object (OBJLOAD_FLAG_SINGLE_MODEL), pins
+   * gObjPartitionPivot, and partitions gObjList in Obj_UpdateAllObjects. Object
+   * DLLs also use it as the "this object has hit volumes worth transforming"
+   * guard, always paired with anim.hitVolumeTransforms != NULL. (wiki) */
+    OBJDEF_FLAG_HAS_MODELS = 0x00000001,
+
+    /* modellight.c skips modelLightStruct_loadDiffuseGXLight's usual diffuse
+   * setup for these objects. (wiki) */
+    OBJDEF_FLAG_DIFFERENT_LIGHT_COLOR = 0x00000010,
+
+    /* loadCharacter clears bit 0 of the model-load config word instead of setting
+   * it. (wiki) */
+    OBJDEF_FLAG_RELATED_TO_MODELS = 0x00000020,
+
+    /* The object lives in OBJECT_OBJGROUP_HITBOX: Obj_RegisterObject adds it to
+   * that group and forces activeHitboxMode to 0x5a, objFreeObjDef removes it,
+   * objSetSlot refuses mode 0x5a without it, and ObjHitReact_UpdateResetObjects
+   * skips it in the per-frame reset pass. Several DLLs use
+   * "HITBOX_GROUP set and CAN_HOLD_PLAYER clear" as the test for an object the
+   * player can be parented to.
+   *
+   * This bit previously had two contradictory names -- OBJMODEL_FLAG_SKIP_RESET_UPDATE
+   * and the wiki's OBJDEF_FLAG_HAS_CHILDREN. Every reader is about the hitbox
+   * group, so both are gone. */
+    OBJDEF_FLAG_HITBOX_GROUP = 0x00000040,
+
+    /* loadCharacter seeds ObjAnimComponent.flags 0x80 from this, which lightmap.c
+   * then tests to exclude the object from the opaque fast-sort path. */
+    OBJDEF_FLAG_TRANSLUCENT = 0x00000080,
+
+    /* Read by modelDoRenderInstrs and objprint_dolphin's render setup. (wiki) */
+    OBJDEF_FLAG_ENABLE_CULLING = 0x00000400,
+
+    /* Routes the object down the same deferred-render path as renderFlags
+   * OBJDEF_RENDERFLAG_DEFERRED_RENDER (0x10); every read site ORs the two
+   * together. object.c installs objCausticReflectionRenderCb as the render
+   * callback; lightmap.c queues the object into the deferred object list and
+   * picks the extended (0x1f) shadow render mode. */
+    OBJDEF_FLAG_DEFERRED_RENDER = 0x00000800,
+
+    /* (wiki) Note the polarity: all four readers -- two player wall/ledge probes,
+   * playerDoHitDetection, and the parenting test above -- act when this bit is
+   * CLEAR. Worth confirming against retail before relying on the name. */
+    OBJDEF_FLAG_CAN_HOLD_PLAYER = 0x00008000,
+
+    /* Only collectible_init and collectible_render read this, on either target:
+   * it gates the per-instance color tint. Was COLLECTIBLE_MODEL_FLAG_COLOR,
+   * defined locally in 237.c. */
+    OBJDEF_FLAG_COLLECTIBLE_TINTED = 0x00010000,
+
+    /* Excluded from lightmap.c's opaque fast-sort path, and loadCharacter seeds
+   * GameObject.objectFlags 0x80 from it. */
+    OBJDEF_FLAG_FORCE_ALPHA_SORT = 0x00040000,
+
+    /* lightmap.c sorts the object by ObjDef.fixedSortDepth * 100 rather than by
+   * projected camera depth. Was the wiki's DIFFERENT_CULLING, which no reader
+   * supports. */
+    OBJDEF_FLAG_FIXED_SORT_DEPTH = 0x00080000,
+
+    /* lightmap.c still queues the object for render when objUpdateOpacity returns
+   * 0. DR_CloudRun sets and clears it at runtime around its fade. Was the
+   * wiki's KEEP_HITBOX_INVISIBLE. */
+    OBJDEF_FLAG_RENDER_WHEN_INVISIBLE = 0x00200000,
+
+    /* objGetTotalDataSize allocates the anim move-event table for these, and
+   * loadCharacter ORs it into the model-load config word. (wiki, confirmed) */
+    OBJDEF_FLAG_HAS_EVENT = 0x00400000,
+
+    /* Not a file bit: loadCharacter sets it while loading an object and clears it
+   * again if any of the object's models lacks ObjModel file flag 0x8000 (or
+   * 0x4000 for the multi-model path). lightmap.c then groups such objects by
+   * romDefNo in the sort key and skips their per-object renderEffects call.
+   * Was the wiki's LOADED_MODELS, which describes the set but not the clear. */
+    OBJDEF_FLAG_RUNTIME_BATCHABLE = 0x00800000,
+
+    /* trackIntersectBroadphase. (wiki) */
+    OBJDEF_FLAG_RELATED_TO_HIT_DETECT = 0x01000000
+} ObjDefFlag;
+STATIC_ASSERT(offsetof(ObjDef, hitboxStateIndex) == 0x60);
+STATIC_ASSERT(offsetof(ObjDef, primaryHitboxRadius) == 0x62);
+STATIC_ASSERT(offsetof(ObjDef, lateralResponseWeight) == 0x63);
+STATIC_ASSERT(offsetof(ObjDef, axialResponseWeight) == 0x64);
+STATIC_ASSERT(offsetof(ObjDef, primaryHitboxShapeFlags) == 0x65);
+STATIC_ASSERT(offsetof(ObjDef, targetHitMask) == 0x67);
+STATIC_ASSERT(offsetof(ObjDef, primaryCapsuleOffsetA) == 0x68);
+STATIC_ASSERT(offsetof(ObjDef, primaryCapsuleOffsetB) == 0x6A);
+STATIC_ASSERT(offsetof(ObjDef, secondaryCapsuleOffsetA) == 0x6C);
+STATIC_ASSERT(offsetof(ObjDef, secondaryCapsuleOffsetB) == 0x6E);
+STATIC_ASSERT(offsetof(ObjDef, sourceHitMask) == 0x70);
+STATIC_ASSERT(offsetof(ObjDef, runtimeSourceHitMask) == 0x71);
+STATIC_ASSERT(offsetof(ObjDef, hitVolumeCount) == 0x72);
+STATIC_ASSERT(offsetof(ObjDef, fixedSortDepth) == 0x74);
+STATIC_ASSERT(offsetof(ObjDef, effectFlags) == 0x76);
+STATIC_ASSERT(offsetof(ObjDef, secondaryHitboxRadius) == 0x77);
+STATIC_ASSERT(offsetof(ObjDef, mapLoadObjectId) == 0x78);
+STATIC_ASSERT(offsetof(ObjDef, npcDialogueTextId) == 0x7A);
+STATIC_ASSERT(offsetof(ObjDef, helpTextIds) == 0x7C);
+STATIC_ASSERT(offsetof(ObjDef, shadowModelScaleBase) == 0x88);
+STATIC_ASSERT(offsetof(ObjDef, maxLights) == 0x8C);
+STATIC_ASSERT(offsetof(ObjDef, modelLightMaskIndex) == 0x8D);
+STATIC_ASSERT(offsetof(ObjDef, fallbackHitSphereRadius) == 0x8F);
+STATIC_ASSERT(offsetof(ObjDef, secondaryHitboxShapeFlags) == 0x90);
+
+STATIC_ASSERT(sizeof(ObjAnimMoveData) == 0x08);
+STATIC_ASSERT(offsetof(ObjAnimMoveData, frameControl) == 0x01);
+STATIC_ASSERT(offsetof(ObjAnimMoveData, rootCurveOffset) == 0x04);
+STATIC_ASSERT(offsetof(ObjAnimMoveData, frameCommands) == OBJANIM_FRAME_COMMANDS_OFFSET);
+
+STATIC_ASSERT(sizeof(ObjAnimComponent) == 0xB0);
+STATIC_ASSERT(offsetof(ObjAnimComponent, textureSlots) == 0x70);
+STATIC_ASSERT(offsetof(ObjAnimComponent, hitVolumeTransforms) == 0x74);
+STATIC_ASSERT(offsetof(ObjAnimComponent, hitVolumeBounds) == 0x78);
+STATIC_ASSERT(offsetof(ObjAnimComponent, targetObj) == 0xA4);
+STATIC_ASSERT(offsetof(ObjAnimComponent, mapEventSlot) == 0xAC);
+STATIC_ASSERT(offsetof(ObjAnimComponent, rotX) == 0x00);
+STATIC_ASSERT(offsetof(ObjAnimComponent, rotY) == 0x02);
+STATIC_ASSERT(offsetof(ObjAnimComponent, rotZ) == 0x04);
+STATIC_ASSERT(offsetof(ObjAnimComponent, flags) == 0x06);
+STATIC_ASSERT(offsetof(ObjAnimComponent, rootMotionScale) == 0x08);
+STATIC_ASSERT(offsetof(ObjAnimComponent, localPosX) == 0x0C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, localPosY) == 0x10);
+STATIC_ASSERT(offsetof(ObjAnimComponent, localPosZ) == 0x14);
+STATIC_ASSERT(offsetof(ObjAnimComponent, worldPosX) == 0x18);
+STATIC_ASSERT(offsetof(ObjAnimComponent, worldPosY) == 0x1C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, worldPosZ) == 0x20);
+STATIC_ASSERT(offsetof(ObjAnimComponent, velocityX) == 0x24);
+STATIC_ASSERT(offsetof(ObjAnimComponent, velocityY) == 0x28);
+STATIC_ASSERT(offsetof(ObjAnimComponent, velocityZ) == 0x2C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, parent) == 0x30);
+STATIC_ASSERT(offsetof(ObjAnimComponent, hostedMapSlot) == 0x34);
+STATIC_ASSERT(offsetof(ObjAnimComponent, alpha) == 0x36);
+STATIC_ASSERT(offsetof(ObjAnimComponent, next) == 0x38);
+STATIC_ASSERT(offsetof(ObjAnimComponent, loadDistance) == 0x3C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, cullDistance2) == 0x40);
+STATIC_ASSERT(offsetof(ObjAnimComponent, classId) == 0x44);
+STATIC_ASSERT(offsetof(ObjAnimComponent, romDefNo) == 0x46);
+STATIC_ASSERT(offsetof(ObjAnimComponent, defId) == 0x48);
+STATIC_ASSERT(offsetof(ObjAnimComponent, placementData) == 0x4C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, placement) == 0x4C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, modelInstance) == 0x50);
+STATIC_ASSERT(offsetof(ObjAnimComponent, hitReactState) == 0x54);
+STATIC_ASSERT(offsetof(ObjAnimComponent, weaponDaTable) == 0x5C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, eventTable) == 0x60);
+STATIC_ASSERT(offsetof(ObjAnimComponent, modelState) == 0x64);
+STATIC_ASSERT(offsetof(ObjAnimComponent, dll) == 0x68);
+STATIC_ASSERT(offsetof(ObjAnimComponent, jointPoseData) == 0x6C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, banks) == 0x7C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, previousLocalPosX) == 0x80);
+STATIC_ASSERT(offsetof(ObjAnimComponent, previousWorldPosX) == 0x8C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, currentMoveProgress) == 0x98);
+STATIC_ASSERT(offsetof(ObjAnimComponent, activeMoveProgress) == 0x9C);
+STATIC_ASSERT(offsetof(ObjAnimComponent, currentMove) == 0xA0);
+STATIC_ASSERT(offsetof(ObjAnimComponent, activeMove) == 0xA2);
+STATIC_ASSERT(offsetof(ObjAnimComponent, hitboxScale) == 0xA8);
+STATIC_ASSERT(offsetof(ObjAnimComponent, bankIndex) == 0xAD);
+STATIC_ASSERT(offsetof(ObjAnimComponent, activeHitboxMode) == 0xAE);
+STATIC_ASSERT(offsetof(ObjAnimComponent, resetHitboxFlags) == 0xAF);
+STATIC_ASSERT(offsetof(ObjAnimComponent, resetHitboxFlags) == 0xAF);
+
+STATIC_ASSERT(sizeof(ObjAnimEventTable) == 0x08);
+STATIC_ASSERT(offsetof(ObjAnimEventTable, byteCount) == 0x00);
+STATIC_ASSERT(offsetof(ObjAnimEventTable, entries) == 0x04);
+
+STATIC_ASSERT(sizeof(ObjWeaponDaTable) == 0x08);
+STATIC_ASSERT(offsetof(ObjWeaponDaTable, byteCount) == 0x00);
+STATIC_ASSERT(offsetof(ObjWeaponDaTable, entries) == 0x04);
+
+STATIC_ASSERT(sizeof(ObjAnimEventList) == 0x1C);
+STATIC_ASSERT(offsetof(ObjAnimEventList, rootDeltaX) == 0x00);
+STATIC_ASSERT(offsetof(ObjAnimEventList, rootYaw) == 0x0C);
+STATIC_ASSERT(offsetof(ObjAnimEventList, rootCurveValid) == 0x12);
+STATIC_ASSERT(offsetof(ObjAnimEventList, triggeredIds) == 0x13);
+STATIC_ASSERT(offsetof(ObjAnimEventList, triggerCount) == 0x1B);
+
+static inline ObjModel* ObjAnim_GetActiveModel(ObjAnimComponent* objAnim) {
+    return objAnim->modelBanks[objAnim->bankIndex];
+}
+
+static inline ObjHitsPriorityState* ObjAnim_GetPriorityHitState(ObjAnimComponent* objAnim) {
+    return (ObjHitsPriorityState*)objAnim->hitReactState;
+}
+
+static inline f64 ObjAnim_U32AsDouble(u32 value) {
+    u64 bits = (u64)(((u64)(u32)(OBJANIM_DOUBLE_CONVERSION_HIGH_WORD) << 32) | (u32)(value));
+    return *(f64*)&bits;
+}
+
+static inline f64 ObjAnim_S32AsDouble(s32 value) {
+    return ObjAnim_U32AsDouble((u32)(value ^ (s32)OBJANIM_S32_DOUBLE_BIAS_XOR));
+}
+
+static inline s32 ObjAnim_ResolveMoveIndex(ObjAnimDef* animDef, u32 moveId) {
+    s32 moveIndex =
+        animDef->animGroupBaseIndices[(s32)moveId >> OBJANIM_MOVE_GROUP_SHIFT] + (moveId & OBJANIM_MOVE_INDEX_MASK);
+
+    if (moveIndex >= animDef->animationCount) {
+        moveIndex = animDef->animationCount - 1;
+    }
+    if (moveIndex < 0) {
+        moveIndex = 0;
+    }
+    return moveIndex;
+}
+
+static inline ObjAnimDef* ObjAnim_GetAnimDef(ObjAnimComponent* objAnim) {
+    return ObjAnim_GetActiveModel(objAnim)->file;
+}
+
+static inline ObjAnimState* ObjAnim_GetActiveState(ObjAnimComponent* objAnim) {
+    return ObjAnim_GetActiveModel(objAnim)->animStateB;
+}
+
+static inline ObjAnimState* ObjAnim_GetCurrentState(ObjAnimComponent* objAnim) {
+    return ObjAnim_GetActiveModel(objAnim)->animStateA;
+}
+
+static inline s32 ObjAnim_GetHitReactEntryIndex(ObjAnimDef* animDef, s32 sphereIndex) {
+    return ((ObjAnimHitReactRow*)animDef->hitVolumes)[sphereIndex].entryIndex;
+}
+
+static inline ObjAnimMoveData* ObjAnim_GetMoveData(ObjAnimDef* animDef, ObjAnimState* state, u16 slot) {
+    if ((animDef->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0) {
+        return (ObjAnimMoveData*)(state->moveCache[slot] + OBJANIM_CACHED_MOVE_DATA_OFFSET);
+    }
+    return (ObjAnimMoveData*)animDef->moveData[slot];
+}
+
+static inline ObjAnimMoveData* ObjAnim_GetCurrentMoveData(ObjAnimDef* animDef, ObjAnimState* state) {
+    return ObjAnim_GetMoveData(animDef, state, state->moveCacheSlot);
+}
+
+static inline ObjAnimMoveData* ObjAnim_GetBlendMoveData(ObjAnimDef* animDef, ObjAnimState* state, u16 slot) {
+    if ((animDef->flags & OBJANIM_DEF_FLAG_CACHED_MOVES) != 0) {
+        return (ObjAnimMoveData*)(state->blendMoveCache[slot] + OBJANIM_CACHED_MOVE_DATA_OFFSET);
+    }
+    return (ObjAnimMoveData*)animDef->moveData[slot];
+}
+
+static inline ObjAnimMoveData* ObjAnim_GetCurrentBlendMoveData(ObjAnimDef* animDef, ObjAnimState* state) {
+    return ObjAnim_GetBlendMoveData(animDef, state, state->blendCacheSlot);
+}
+
+static inline s16 ObjAnim_ReadPackedS16(const void* value) {
+    return fhReadBES16(value);
+}
+
+static inline u16 ObjAnim_ReadPlacementU16(const ObjAnimComponent* objAnim, const void* value) {
+    if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+        u16 nativeValue;
+        memcpy(&nativeValue, value, sizeof(nativeValue));
+        return nativeValue;
+    }
+    return fhReadBE16(value);
+}
+
+static inline s16 ObjAnim_ReadPlacementS16(const ObjAnimComponent* objAnim, const void* value) {
+    if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+        s16 nativeValue;
+        memcpy(&nativeValue, value, sizeof(nativeValue));
+        return nativeValue;
+    }
+    return fhReadBES16(value);
+}
+
+static inline s32 ObjAnim_ReadPlacementS32(const ObjAnimComponent* objAnim, const void* value) {
+    if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+        s32 nativeValue;
+        memcpy(&nativeValue, value, sizeof(nativeValue));
+        return nativeValue;
+    }
+    return (s32)fhReadBE32(value);
+}
+
+static inline u32 ObjAnim_ReadPlacementU32(const ObjAnimComponent* objAnim, const void* value) {
+    if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+        u32 nativeValue;
+        memcpy(&nativeValue, value, sizeof(nativeValue));
+        return nativeValue;
+    }
+    return fhReadBE32(value);
+}
+
+static inline f32 ObjAnim_ReadPlacementF32(const ObjAnimComponent* objAnim, const void* value) {
+    if ((objAnim->flags & OBJANIM_FLAG_OWNS_PLACEMENT_DATA) != 0) {
+        f32 nativeValue;
+        memcpy(&nativeValue, value, sizeof(nativeValue));
+        return nativeValue;
+    }
+    return fhReadBEF32(value);
+}
+
+static inline f32 ObjAnim_ReadPackedF32(const void* value) {
+    return fhReadBEF32(value);
+}
+
+static inline s16 ObjAnim_GetMoveDataRootCurveOffset(ObjAnimMoveData* moveData) {
+    return ObjAnim_ReadPackedS16(&moveData->rootCurveOffset);
+}
+
+static inline ObjAnimRootCurve* ObjAnim_GetMoveDataRootCurve(ObjAnimMoveData* moveData) {
+    return (ObjAnimRootCurve*)((u8*)moveData + ObjAnim_GetMoveDataRootCurveOffset(moveData));
+}
+
+static inline s16* ObjAnim_GetRootCurveAxisData(ObjAnimRootCurve* curve) {
+    return &curve->axes[0].firstSample;
+}
+
+static inline f32 ObjAnim_GetRootCurveScale(ObjAnimRootCurve* curve) {
+    return ObjAnim_ReadPackedF32(&curve->scale);
+}
+
+static inline s16 ObjAnim_GetRootCurveSampleCount(ObjAnimRootCurve* curve) {
+    return ObjAnim_ReadPackedS16(&curve->sampleCount);
+}
+
+static inline ObjAnimRootCurve* ObjAnim_GetMoveRootCurve(ObjAnimDef* animDef, ObjAnimState* state) {
+    ObjAnimMoveData* moveData;
+
+    moveData = ObjAnim_GetCurrentMoveData(animDef, state);
+    if (ObjAnim_GetMoveDataRootCurveOffset(moveData) == 0) {
+        return NULL;
+    }
+    return ObjAnim_GetMoveDataRootCurve(moveData);
+}
+
+static inline ObjAnimRootCurve* ObjAnim_GetBlendMoveRootCurve(ObjAnimDef* animDef, ObjAnimState* state) {
+    ObjAnimMoveData* moveData;
+
+    moveData = ObjAnim_GetCurrentBlendMoveData(animDef, state);
+    if (ObjAnim_GetMoveDataRootCurveOffset(moveData) == 0) {
+        return NULL;
+    }
+    return ObjAnim_GetMoveDataRootCurve(moveData);
+}
+
+static inline s32 ObjAnim_GetPackedEventFrame(ObjAnimPackedEvent eventEntry) {
+    return eventEntry & OBJANIM_EVENT_FRAME_MASK;
+}
+
+static inline s32 ObjAnim_GetPackedEventId(ObjAnimPackedEvent eventEntry) {
+    return (eventEntry >> OBJANIM_EVENT_ID_SHIFT) & OBJANIM_EVENT_ID_MASK;
+}
+
+#endif /* MAIN_OBJANIM_INTERNAL_H_ */

@@ -1,0 +1,39 @@
+#ifndef MAIN_DLL_DLL_02C0_FRONT_H_
+#define MAIN_DLL_DLL_02C0_FRONT_H_
+
+#include "main/texture.h"
+#include "main/camera_interface.h"
+#include "main/dll/tricky_state.h"
+#include "game/objects/object.h"
+#include "main/dll/FRONT/dll_39.h"
+#include "main/objseq.h"
+#include "main/dll/FRONT/dll_0034_n_attractmode.h"
+
+int TitleScreen_getObjectTypeId(GameObject* obj);
+int TitleScreen_getExtraSize(void);
+void TitleScreen_hitDetect(void);
+void TitleScreen_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
+void TitleScreen_release(void);
+void TitleScreen_initialise(void);
+void TitleScreen_free(GameObject* obj);
+void TitleScreen_update(GameObject* obj);
+void TitleScreen_init(GameObject* obj, u8* def);
+
+void creditsStart(void);
+void titleScreenSetMenuSelection(s8 selection);
+
+#include "types.h"
+
+void titleScreenPositionElements(f32 x, f32 y);
+void titleScreenShowCopyright(u8 enabled);
+void titleScreenDisableActors(void);
+void titleScreenTextDrawFunc(int x0, int y0, int x1, int y1, f32 u0, f32 v0, f32 u1, f32 v1);
+void nameEntryTextDrawFunc(int x0, int y0, int x1, int y1, f32 u0, f32 v0, f32 u1, f32 v1);
+void creditsStart_(void);
+int isFrontEndUiActive(void);
+u8 shouldShowCredits(void);
+
+void titleScreenSetMenuActive(s8 arg);
+void nameEntrySetScroll(u32 a, u32 b);
+
+#endif

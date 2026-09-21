@@ -1,0 +1,246 @@
+/*
+ * DLL 623 - a destructible generator/power node. It
+ * takes hits until its hit count (hitsRemaining) reaches zero, then
+ * explodes, sets its completion game bit (placement completionGameBit)
+ * and either extends a nearby timer object or disables itself. It can
+ * also be enabled or disabled at runtime from the placement's watch
+ * game bit (watchGameBit).
+ */
+#include "main/dll/partfx_interface.h"
+#include "main/dll/DR/dll_026F_drgenerator.h"
+#include "main/objfx.h"
+#include "main/dll/objfx.h"
+#include "main/dll/dll_0282_barrelgener.h"
+#include "main/dll/dll_02B5_timer.h"
+#include "main/gamebits.h"
+#include "main/objseq.h"
+#include "main/objtexture.h"
+#include "main/objtype.h"
+#include "main/object_render.h"
+#include "main/object_update_list.h"
+#include "main/objhits.h"
+
+#define DRGENERATOR_OBJGROUP 0x3
+#define DRGENERATOR_OBJ      0x716
+#define DRGENERATOR_WALL_OBJ 0x72e
+#define DRGENERATOR_PARTFX   0x690
+
+int drgenerator_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate)
+{
+    int i;
+    for (i = 0; i < animUpdate->eventCount; i++)
+    {
+        if (animUpdate->eventIds[i] == 1)
+        {
+            ObjTextureRuntimeSlot* t = objFindTexture(obj, 0, 0);
+            if (t != 0)
+            {
+                t->textureId = 0;
+            }
+        }
+    }
+    return 0;
+}
+
+int drgenerator_getExtraSize(void)
+{
+    return 0x19c;
+}
+
+int drgenerator_getObjectTypeId(void)
+{
+    return 0x0;
+}
+
+void drgenerator_free(GameObject* obj)
+{
+    objFreeObjectType(obj, DRGENERATOR_OBJGROUP);
+}
+
+void drgenerator_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible)
+{
+    if (visible != 0)
+    {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void drgenerator_hitDetect(GameObject* obj)
+{
+    DrgeneratorState* state = (obj)->extra;
+    DrgeneratorPlacement* placement = (DrgeneratorPlacement*)obj->anim.placementData;
+    f32 hitPosZ;
+    f32 hitPosY;
+    f32 hitPosX;
+    u32 hitVolume;
+    GameObject* hitObject;
+    void* found;
+    if (state->flags.b0 || state->flags.b3)
+    {
+        return;
+    }
+    if (ObjHits_GetPriorityHitWithPosition(obj, &hitObject, 0, &hitVolume, &hitPosX, &hitPosY, &hitPosZ) != 5)
+    {
+        return;
+    }
+    ((char*)state)[0x19a] = state->hitsRemaining - hitVolume;
+    Obj_SpawnHitLightAndFade(obj, (const Vec3f*)&hitPosX, 6.0f);
+    objfx_shakeCameraByDistance(obj, 300.0f);
+    if (((char*)state)[0x19a] > 0)
+    {
+        return;
+    }
+    {
+        ObjTextureRuntimeSlot* tex = objFindTexture(obj, 0, 0);
+        spawnExplosion(obj, 50.0f, 1, 1, 1, 1, 0, 1, 0);
+        if (tex != 0)
+        {
+            tex->textureId = 0x100;
+        }
+    }
+    state->flags.b0 = 1;
+    mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit)), 1);
+    if ((obj)->anim.romDefNo == DRGENERATOR_OBJ &&
+        (found = (void*)objGetNearestTypeTo(TIMER_OBJECT_GROUP, obj, NULL)) != NULL)
+    {
+        timer_addDuration((GameObject*)found, state->timerDuration);
+    }
+    else
+    {
+        ObjHits_DisableObject(obj);
+    }
+}
+
+void drgenerator_update(GameObject* obj)
+{
+    DrgeneratorState* state = (obj)->extra;
+    DrgeneratorPlacement* placement = (DrgeneratorPlacement*)obj->anim.placementData;
+    int n;
+    if (state->flags.b4 == 0 && mainGetBit(0x9b9) != 0)
+    {
+        state->flags.b4 = 1;
+    }
+    if (state->flags.b4 == 0)
+    {
+        if (state->flags.b3 == 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) == 0)
+        {
+            if ((obj)->anim.romDefNo != DRGENERATOR_WALL_OBJ)
+            {
+                (*gObjectTriggerInterface)->runSequence(4, (void*)obj, -1);
+            }
+            state->flags.b3 = 1;
+            state->flags.b0 = 0;
+            ObjHits_DisableObject(obj);
+            return;
+        }
+        if (state->flags.b3 != 0 && mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->watchGameBit))) != 0)
+        {
+            if ((obj)->anim.romDefNo != DRGENERATOR_WALL_OBJ)
+            {
+                (*gObjectTriggerInterface)->runSequence(3, (void*)obj, -1);
+            }
+            state->flags.b3 = 0;
+            ObjHits_EnableObject(obj);
+            return;
+        }
+    }
+    if (state->flags.b0 == 0)
+    {
+        return;
+    }
+    n = 1;
+    do
+    {
+        (*gPartfxInterface)->spawnObject((void*)obj, DRGENERATOR_PARTFX, NULL, 1, -1, NULL);
+    } while (n-- != 0);
+}
+
+void drgenerator_init(GameObject* obj, DrgeneratorPlacement* placement)
+{
+    DrgeneratorState* state = (obj)->extra;
+    f32 fv;
+    if ((obj)->anim.romDefNo == DRGENERATOR_WALL_OBJ)
+    {
+        ObjTextureRuntimeSlot* t;
+        (obj)->animEventCallback = drgenerator_SeqFn;
+        t = objFindTexture(obj, 0, 0);
+        if (t != 0)
+        {
+            t->textureId = 0x100;
+        }
+    }
+    state->hitsRemaining = 2;
+    ObjHits_EnableObject(obj);
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->completionGameBit))) != 0)
+    {
+        (obj)->anim.flags |= OBJANIM_FLAG_HIDDEN;
+        Obj_RemoveFromUpdateList(obj);
+        ObjHits_DisableObject(obj);
+    }
+    objAddObjectType(obj, DRGENERATOR_OBJGROUP);
+    *(int*)state = 0;
+    state->flags.b3 = 1;
+    (obj)->anim.rotX = (s16)(placement->initialYaw << 8);
+    {
+        int duration = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->timerMinutes));
+        switch (duration)
+        {
+        case 0:
+            duration = 0x14;
+            break;
+        }
+        state->timerDuration = duration;
+    }
+    state->timerDuration = state->timerDuration * 0x3c;
+    state->unk124 = 0.018f;
+    if (mainGetBit(0x9b9) != 0)
+    {
+        state->flags.b0 = 1;
+        state->flags.b4 = 1;
+    }
+    else
+    {
+        state->flags.b4 = 0;
+    }
+    fv = 0.0f;
+    (obj)->anim.velocityZ = fv;
+    (obj)->anim.velocityY = fv;
+    (obj)->anim.velocityX = fv;
+}
+
+void drgenerator_release(void)
+{
+}
+
+void drgenerator_initialise(void)
+{
+}
+
+OBJECT_INIT_ADAPTER(gDrGeneratorObjDescriptorInitAdapter, drgenerator_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrGeneratorObjDescriptorRenderAdapter, drgenerator_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_FREE_ADAPTER(gDrGeneratorObjDescriptorFreeAdapter, drgenerator_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrGeneratorObjDescriptorTypeIdAdapter, drgenerator_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrGeneratorObjDescriptorExtraSizeAdapter, drgenerator_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrGeneratorObjDescriptorAcquire, drgenerator_initialise)
+
+ObjectDescriptor gDrGeneratorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrGeneratorObjDescriptorAcquire,
+        drgenerator_release,
+    },
+    0,
+    gDrGeneratorObjDescriptorInitAdapter,
+    drgenerator_update,
+    drgenerator_hitDetect,
+    gDrGeneratorObjDescriptorRenderAdapter,
+    gDrGeneratorObjDescriptorFreeAdapter,
+    gDrGeneratorObjDescriptorTypeIdAdapter,
+    gDrGeneratorObjDescriptorExtraSizeAdapter,
+};

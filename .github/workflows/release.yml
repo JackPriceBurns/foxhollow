@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release notes
+        run: |
+          python3 .github/scripts/changelog.py \
+            --version "${GITHUB_REF_NAME}" \
+            --format markdown > "${RUNNER_TEMP}/notes.md"
+          echo "Release notes for ${GITHUB_REF_NAME}:"
+          cat "${RUNNER_TEMP}/notes.md"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file "${RUNNER_TEMP}/notes.md" \
+            --verify-tag
+
+      - name: Start the publish workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run publish.yml \
+            --ref "${GITHUB_REF_NAME}" \
+            -f tag="${GITHUB_REF_NAME}"

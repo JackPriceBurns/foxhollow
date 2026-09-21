@@ -1,0 +1,9 @@
+#ifndef MAIN_DLL_HINT_TEXT_H_
+#define MAIN_DLL_HINT_TEXT_H_
+
+#include "types.h"
+
+void hintTextGetAvailableMaps(u8* outFlags);
+u16 getNextTaskHintText(void);
+
+#endif /* MAIN_DLL_HINT_TEXT_H_ */

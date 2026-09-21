@@ -1,0 +1,933 @@
+#include "dlls/object_descriptor.h"
+#include "main/checkpoint_interface.h"
+#include "main/checkpoint_route.h"
+#include "dolphin/math.h"
+#include "main/curve.h"
+#include "main/vecmath.h"
+#include "game/objects/object.h"
+
+CheckpointSlot gCheckpointRouteTable[0x640 / 8];
+
+CheckpointRankItem** gCheckpointRankItemsPending;
+CheckpointRankItem** gCheckpointRankItems;
+s16 gCheckpointRankItemPendingCount;
+s16 gCheckpointRankItemCount;
+s32 gCheckpointRouteCount;
+
+s32 Checkpoint_buildControlPoints(CheckpointRouteEntry* checkpoint, s32 linkIndex, f32* outX, f32* outY, f32* outZ, u8 mode,
+                 f32 lateralOffset, f32 verticalOffset);
+void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte);
+int Checkpoint_func09_ret_1(void);
+void Checkpoint_onGameLoop(void);
+CheckpointRankItem** Checkpoint_getRouteRankItems(s32* p);
+void Checkpoint_rewindRoute(CheckpointRouteState* o);
+void Checkpoint_queueRouteRankItem(CheckpointRankItem* v);
+void Checkpoint_Remove(CheckpointRouteEntry* obj);
+void Checkpoint_Add(CheckpointRouteEntry* entry);
+void Checkpoint_reset(void);
+void Checkpoint_release(void);
+void Checkpoint_initialise(void);
+
+static s32 Checkpoint_ReadLink(const s32* link)
+{
+    return (s32)fhReadBE32(link);
+}
+
+
+CheckpointRouteEntry* Checkpoint_find(s32 key, s32* idx_out)
+{
+    s32 high;
+    s32 low;
+    s32 mid;
+    *idx_out = -1;
+    if (key < 0)
+        return NULL;
+    high = gCheckpointRouteCount - 1;
+    low = 0;
+    while (high >= low)
+    {
+        mid = (high + low) >> 1;
+        if ((u32)key > gCheckpointRouteTable[mid].key)
+        {
+            low = mid + 1;
+        }
+        else if ((u32)key < gCheckpointRouteTable[mid].key)
+        {
+            high = mid - 1;
+        }
+        else
+        {
+            *idx_out = mid;
+            return gCheckpointRouteTable[mid].entry;
+        }
+    }
+    *idx_out = -1;
+    return NULL;
+}
+typedef struct CheckpointCursor
+{
+    s16 headingAngle; /* 0x00 */
+    s16 pitchAngle;   /* 0x02 */
+    u8 pad04[0x08];
+    f32 posX; /* 0x0C */
+    f32 posY; /* 0x10 */
+    f32 posZ; /* 0x14 */
+} CheckpointCursor;
+typedef struct CheckpointNavState
+{
+    CheckpointRouteState route; /* 0x00 */
+    u8 pad24[0x0C];
+    u8 branchFlag; /* 0x30 */
+} CheckpointNavState;
+
+s32 Checkpoint_advanceRoute(CheckpointCursor* out, CheckpointNavState* o, f32 dist, s32 p3, u8 flag, int unused);
+
+s32 Checkpoint_buildControlPoints(CheckpointRouteEntry* checkpoint, s32 linkIndex, f32* outX, f32* outY, f32* outZ, u8 mode,
+                 f32 lateralOffset, f32 verticalOffset)
+{
+    f32 prodA;
+    f32 prodB;
+    f32 prodC;
+    f32 sinB;
+    f32 prodD;
+    s32 routeIndex;
+    f32* zPoints;
+    f32 sinA;
+    f32 cosA;
+    CheckpointRouteEntry* nextCheckpoint;
+    f32 cosB;
+    f32 sclA;
+    f32 sclB;
+    s32 pointIndex;
+    s32 result;
+    s32 outputCount;
+
+    result = 1;
+    if (checkpoint == NULL)
+    {
+        return 0;
+    }
+    nextCheckpoint = Checkpoint_find(Checkpoint_ReadLink(&checkpoint->forwardLinkIds[linkIndex]), &routeIndex);
+    if (nextCheckpoint == NULL)
+    {
+        nextCheckpoint = Checkpoint_find(Checkpoint_ReadLink(&checkpoint->forwardLinkIds[1 - linkIndex]), &routeIndex);
+        result = 2;
+    }
+    if (nextCheckpoint == NULL)
+    {
+        return 0;
+    }
+
+    sinA = -mathSinf(3.1415927f * (checkpoint->heading << 8) / 32768.0f);
+    cosA = -mathCosf(3.1415927f * (checkpoint->heading << 8) / 32768.0f);
+    sinB = -mathSinf(3.1415927f * (nextCheckpoint->heading << 8) / 32768.0f);
+    cosB = -mathCosf(3.1415927f * (nextCheckpoint->heading << 8) / 32768.0f);
+    sclA = 0.011111111f * checkpoint->width;
+    sclB = 0.011111111f * nextCheckpoint->width;
+
+    if (mode == 1)
+    {
+        outputCount = 0;
+        pointIndex = 0;
+        zPoints = outZ;
+        prodA = sclA * cosA;
+        prodB = sclB * cosB;
+        prodC = sclA * -sinA;
+        prodD = sclB * -sinB;
+        do
+        {
+            outX[0] = checkpoint->sideOffsets[pointIndex] * prodA + checkpoint->posX;
+            outX[1] = nextCheckpoint->sideOffsets[pointIndex] * prodB + nextCheckpoint->posX;
+            outX[2] = 2.0f * (checkpoint->waveAmplitude *
+                              mathSinf(3.1415927f * (checkpoint->wavePhase << 8) / 32768.0f));
+            outX[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                              mathSinf(3.1415927f * (nextCheckpoint->wavePhase << 8) / 32768.0f));
+            outY[0] = sclA * checkpoint->heightOffsets[pointIndex] + checkpoint->posY;
+            outY[1] = sclB * nextCheckpoint->heightOffsets[pointIndex] + nextCheckpoint->posY;
+            outY[2] = 0.0f;
+            outY[3] = 0.0f;
+            zPoints[0] = checkpoint->sideOffsets[pointIndex] * prodC + checkpoint->posZ;
+            zPoints[1] = nextCheckpoint->sideOffsets[pointIndex] * prodD + nextCheckpoint->posZ;
+            zPoints[2] = 2.0f * (checkpoint->waveAmplitude *
+                                 mathCosf(3.1415927f * (checkpoint->wavePhase << 8) / 32768.0f));
+            zPoints[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                                 mathCosf(3.1415927f * (nextCheckpoint->wavePhase << 8) / 32768.0f));
+            pointIndex += 1;
+            outX += 4;
+            outY += 4;
+            zPoints += 4;
+            outputCount += 4;
+        } while (outputCount < 0x10);
+    }
+    else if (mode == 0)
+    {
+        outX[0] = lateralOffset * (sclA * cosA) + checkpoint->posX;
+        outX[1] = lateralOffset * (sclB * cosB) + nextCheckpoint->posX;
+        outX[2] = 2.0f * (checkpoint->waveAmplitude *
+                                  mathSinf(3.1415927f * (checkpoint->wavePhase << 8) /
+                                           32768.0f));
+        outX[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                                  mathSinf(3.1415927f * (nextCheckpoint->wavePhase << 8) /
+                                           32768.0f));
+        outY[0] = sclA * verticalOffset + checkpoint->posY;
+        outY[1] = sclB * verticalOffset + nextCheckpoint->posY;
+        {
+            f32 zero = 0.0f;
+            outY[2] = zero;
+            outY[3] = zero;
+        }
+        outZ[0] = lateralOffset * (sclA * -sinA) + checkpoint->posZ;
+        outZ[1] = lateralOffset * (sclB * -sinB) + nextCheckpoint->posZ;
+        outZ[2] = 2.0f * (checkpoint->waveAmplitude *
+                                  mathCosf(3.1415927f * (checkpoint->wavePhase << 8) /
+                                           32768.0f));
+        outZ[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                                  mathCosf(3.1415927f * (nextCheckpoint->wavePhase << 8) /
+                                           32768.0f));
+    }
+    else
+    {
+        pointIndex = mode - 2;
+        outX[0] = checkpoint->sideOffsets[pointIndex] * (sclA * cosA) + checkpoint->posX;
+        outX[1] = nextCheckpoint->sideOffsets[pointIndex] * (sclB * cosB) + nextCheckpoint->posX;
+        outX[2] = 2.0f * (checkpoint->waveAmplitude *
+                                  mathSinf(3.1415927f * (checkpoint->wavePhase << 8) /
+                                           32768.0f));
+        outX[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                                  mathSinf(3.1415927f * (nextCheckpoint->wavePhase << 8) /
+                                           32768.0f));
+        outY[0] = sclA * checkpoint->heightOffsets[pointIndex] + checkpoint->posY;
+        outY[1] = sclB * nextCheckpoint->heightOffsets[pointIndex] + nextCheckpoint->posY;
+        {
+            f32 zero = 0.0f;
+            outY[2] = zero;
+            outY[3] = zero;
+        }
+        outZ[0] = checkpoint->sideOffsets[pointIndex] * (sclA * -sinA) + checkpoint->posZ;
+        outZ[1] = nextCheckpoint->sideOffsets[pointIndex] * (sclB * -sinB) + nextCheckpoint->posZ;
+        outZ[2] = 2.0f * (checkpoint->waveAmplitude *
+                                  mathCosf(3.1415927f * (checkpoint->wavePhase << 8) /
+                                           32768.0f));
+        outZ[3] = 2.0f * (nextCheckpoint->waveAmplitude *
+                                  mathCosf(3.1415927f * (nextCheckpoint->wavePhase << 8) /
+                                           32768.0f));
+    }
+    return result;
+}
+
+/* Look up a checkpoint by key and emit a random local offset, then pick the
+ * forward or back link to advance along depending on the flag byte. */
+void Checkpoint_getRandomLinkedVector(s32 key, f32* out_vec, u8* flag_byte)
+{
+    s32 local_idx;
+    CheckpointRouteEntry* n;
+    s32 alt_found;
+    n = Checkpoint_find(key, &local_idx);
+    if (n == 0)
+        return;
+    out_vec[0] = (f32)(s32)randomGetRange(-0x63, 0x63) / 100.0f;
+    out_vec[1] = (f32)(s32)randomGetRange(-0x63, 0x63) / 100.0f;
+    out_vec[2] = (f32)(s32)randomGetRange(0, 0x63) / 100.0f;
+    alt_found = 0;
+    {
+        s32 forwardLink = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
+        if (forwardLink != 0)
+        {
+            CheckpointRouteEntry* m = Checkpoint_find(forwardLink, &local_idx);
+            if (m != NULL && Checkpoint_ReadLink(&m->forwardLinkIds[0]) > -1)
+            {
+                alt_found = 1;
+            }
+        }
+    }
+    if ((s8)*flag_byte == 0)
+    {
+        if (alt_found != 0)
+        {
+            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
+        }
+        else
+        {
+            s32 backLink = Checkpoint_ReadLink(&n->backLinkIds[0]);
+            if (backLink > -1)
+            {
+                *(s32*)(out_vec + 4) = backLink;
+                *flag_byte = 1;
+            }
+        }
+    }
+    else
+    {
+        s32 backLink = Checkpoint_ReadLink(&n->backLinkIds[0]);
+        if (backLink != 0)
+        {
+            *(s32*)(out_vec + 4) = backLink;
+        }
+        else if (alt_found != 0)
+        {
+            *(s32*)(out_vec + 4) = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
+            *flag_byte = 0;
+        }
+    }
+}
+
+s32 Checkpoint_getRouteRank(CheckpointRankItem* p);
+CheckpointRankItem* Checkpoint_getRouteRankItem(s32 target_rank);
+
+int Checkpoint_func09_ret_1(void)
+{
+    return 0x1;
+}
+
+/* Advance along the route by arc-length `dist`, sampling the Hermite curve and
+ * clamping t to [0,1]; crossing a segment end hands off to the next checkpoint. */
+s32 Checkpoint_advanceRoute(CheckpointCursor* out, CheckpointNavState* o, f32 dist, s32 p3, u8 flag, int unused)
+{
+    f32 v1[4];
+    f32 v2[4];
+    f32 v3[4];
+    f32 outX;
+    f32 outY;
+    f32 outZ;
+    s32 local_idx;
+    s32 mode;
+    s32 alt;
+    CheckpointRouteEntry* n;
+    s32 i;
+    s8 clamp;
+    s32 ang1;
+    s32 ang2; /* only written and read under `flag != 0`; never read uninitialized */
+    f32 kMax;
+    f32 kMin;
+    f32 t;
+    f32 seg;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 len;
+
+    i = 0;
+    mode = p3 + 2;
+    kMin = 0.0f;
+    kMax = 1.0f;
+    do
+    {
+        if (o->route.startCheckpointId < 0)
+        {
+            return 1;
+        }
+        n = Checkpoint_find(o->route.startCheckpointId, &local_idx);
+        if (n == NULL)
+        {
+            return 1;
+        }
+        if (Checkpoint_ReadLink(&n->forwardLinkIds[0]) < 0)
+        {
+            o->route.startCheckpointId = -1;
+            return 1;
+        }
+        alt = 0;
+        if (Checkpoint_ReadLink(&n->forwardLinkIds[1]) > -1 && o->branchFlag != 0)
+        {
+            alt = 1;
+        }
+        if (Checkpoint_buildControlPoints(n, alt, v1, v2, v3, mode, 0.0f, 0.0f) == 0)
+        {
+            return 1;
+        }
+        len = sqrtf((v3[0] - v3[1]) * (v3[0] - v3[1]) +
+                    ((v1[0] - v1[1]) * (v1[0] - v1[1]) + (v2[0] - v2[1]) * (v2[0] - v2[1])));
+        t = o->route.pathT + dist / len;
+        clamp = 0;
+        if (t < kMin)
+        {
+            t = kMin;
+            clamp = -1;
+        }
+        if (t > kMax)
+        {
+            t = kMax;
+            clamp = 1;
+        }
+        x = Curve_EvalHermite(v1, t, &outX);
+        y = Curve_EvalHermite(v2, t, &outY);
+        z = Curve_EvalHermite(v3, t, &outZ);
+        ang1 = (u16)getAngle(outX, outZ) + 0x8000;
+        if (flag != 0)
+        {
+            f32 xd;
+            f32 zd;
+            ang2 = (u16)getAngle(sqrtf(outX * outX + outZ * outZ), outY) - 0x4000;
+            xd = x - out->posX;
+            zd = z - out->posZ;
+            seg = sqrtf(xd * xd + zd * zd);
+        }
+        else
+        {
+            f32 xd;
+            f32 zd;
+            xd = x - out->posX;
+            zd = z - out->posZ;
+            seg = sqrtf(xd * xd + zd * zd);
+        }
+        if (dist < kMin)
+        {
+            seg = -seg;
+        }
+        if (clamp == -1 && seg < dist)
+        {
+            o->route.startCheckpointId = Checkpoint_ReadLink(&n->backLinkIds[alt]);
+            o->route.pathT = 0.9999f;
+            if (alt != 0 && o->route.startCheckpointId < 0)
+            {
+                o->route.startCheckpointId = Checkpoint_ReadLink(&n->backLinkIds[0]);
+            }
+        }
+        else if (clamp == 1 && seg < dist)
+        {
+            o->route.startCheckpointId = Checkpoint_ReadLink(&n->forwardLinkIds[alt]);
+            o->route.pathT = 0.0f;
+            if (alt != 0 && o->route.startCheckpointId < 0)
+            {
+                o->route.startCheckpointId = Checkpoint_ReadLink(&n->forwardLinkIds[0]);
+            }
+        }
+        else
+        {
+            o->route.pathT = t;
+        }
+        dist -= seg;
+        out->posX = x;
+        if (flag != 0)
+        {
+            out->posY = y;
+        }
+        out->posZ = z;
+        i += 1;
+    } while (i < 3);
+    out->headingAngle = ang1;
+    if (flag != 0)
+    {
+        out->pitchAngle = ang2;
+    }
+    return 0;
+}
+
+s32 Checkpoint_getRouteRank(CheckpointRankItem* p)
+{
+    CheckpointRankItem* q;
+    s32 rank = 1;
+    CheckpointRankItem** arr = gCheckpointRankItems;
+    s32 i;
+    for (i = 0; i < gCheckpointRankItemCount; i++)
+    {
+        q = arr[i];
+        if (q != p)
+        {
+            if (q->linkDepth > p->linkDepth)
+            {
+                rank++;
+            }
+            else if (q->linkDepth == p->linkDepth)
+            {
+                if (q->routeProgress > p->routeProgress)
+                {
+                    rank++;
+                }
+            }
+        }
+    }
+    return rank;
+}
+
+CheckpointRankItem* Checkpoint_getRouteRankItem(s32 target_rank)
+{
+    s32 i;
+    for (i = 0; i < gCheckpointRankItemCount; i++)
+    {
+        s32 j;
+        s32 rank;
+        CheckpointRankItem* cur;
+        CheckpointRankItem* q;
+        CheckpointRankItem** arr;
+        cur = gCheckpointRankItems[i];
+        rank = 1;
+        arr = gCheckpointRankItems;
+        for (j = 0; j < gCheckpointRankItemCount; j++)
+        {
+            q = arr[j];
+            if (q != cur)
+            {
+                if (q->linkDepth > cur->linkDepth)
+                {
+                    rank++;
+                }
+                else if (q->linkDepth == cur->linkDepth)
+                {
+                    if (q->routeProgress > cur->routeProgress)
+                    {
+                        rank++;
+                    }
+                }
+            }
+        }
+        if (rank == target_rank)
+        {
+            return cur;
+        }
+    }
+    return NULL;
+}
+
+void Checkpoint_onGameLoop(void)
+{
+    CheckpointRankItem** tmp = gCheckpointRankItems;
+    gCheckpointRankItems = gCheckpointRankItemsPending;
+    gCheckpointRankItemsPending = tmp;
+    gCheckpointRankItemCount = gCheckpointRankItemPendingCount;
+    gCheckpointRankItemPendingCount = 0;
+}
+
+CheckpointRankItem** Checkpoint_getRouteRankItems(s32* p)
+{
+    *p = gCheckpointRankItemCount;
+    return gCheckpointRankItems;
+}
+
+/* Object cursor written back by Checkpoint_advanceRoute: the sampled heading/pitch
+ * angles at the front and the interpolated world position (x/y/z) mid-block. */
+STATIC_ASSERT(offsetof(CheckpointCursor, posX) == 0x0C);
+STATIC_ASSERT(offsetof(CheckpointCursor, posZ) == 0x14);
+
+/* Route navigation state passed as `o`: embeds CheckpointRouteState at the
+ * front, with a route-branch flag byte further into the object. */
+STATIC_ASSERT(offsetof(CheckpointNavState, branchFlag) == 0x30);
+
+void Checkpoint_rewindRoute(CheckpointRouteState* o)
+{
+    s32 local_idx;
+    CheckpointRouteEntry* ret;
+    s32 nxt;
+    ret = Checkpoint_find(o->startCheckpointId, &local_idx);
+    if (ret == 0)
+    {
+        o->currentCheckpointId = 0;
+        o->routeProgress = 0.0f;
+    }
+    else
+    {
+        while ((nxt = Checkpoint_ReadLink(&ret->backLinkIds[0])) > -1)
+        {
+            ret = Checkpoint_find(nxt, &local_idx);
+            o->linkDepth = o->linkDepth + 1;
+        }
+        o->currentCheckpointId = o->startCheckpointId;
+        o->routeProgress = 0.0f;
+    }
+}
+
+void Checkpoint_queueRouteRankItem(CheckpointRankItem* v)
+{
+    if (gCheckpointRankItemPendingCount >= 10)
+        return;
+    gCheckpointRankItemsPending[gCheckpointRankItemPendingCount++] = v;
+}
+
+
+int Checkpoint_getRouteHeading(GameObject* obj, CheckpointRouteState* state);
+void Checkpoint_findRouteForObject(GameObject* obj, CheckpointRouteState* state, int filter);
+
+/* Project the object onto the current checkpoint segment, stepping the route
+ * cursor forward or back and returning the segment heading. */
+int Checkpoint_getRouteHeading(GameObject* obj, CheckpointRouteState* state)
+{
+    s32 slotC;
+    s32 slot8;
+    CheckpointRouteEntry* cp;
+    CheckpointRouteEntry* cp2;
+    short ang;
+    f32 zero, cpX, sin2, cos2;
+    f32 dist, dist2, nx, nz, offs, dx;
+    f32 cpZ, distA, distB, dz, dy, len, q, proj, offs2, t0, sum, frac;
+    f32 cosv, sinv, proj2, cp2X, cp2Z;
+
+    if (state->currentCheckpointId < 0)
+    {
+        state->linkDepth = 0;
+        state->routeProgress = 0.0f;
+        if (state->startCheckpointId < 0)
+        {
+            return 0;
+        }
+        state->currentCheckpointId = state->startCheckpointId;
+    }
+    cp = Checkpoint_find(state->currentCheckpointId, &slot8);
+    if (cp == NULL)
+    {
+        state->currentCheckpointId = -1;
+        return 0;
+    }
+    cosv = mathSinf((3.1415927f * (f32)(cp->heading << 8)) / 32768.0f);
+    sinv = mathCosf((3.1415927f * (f32)(cp->heading << 8)) / 32768.0f);
+    offs = -(cp->posX * cosv + cp->posZ * sinv);
+    dist = offs + (cosv * obj->anim.localPosX + sinv * obj->anim.localPosZ);
+    if (Checkpoint_ReadLink(&cp->backLinkIds[0]) > -1 && dist >= 0.0f)
+    {
+        state->currentCheckpointId = Checkpoint_ReadLink(&cp->backLinkIds[0]);
+        state->routeProgress = 0.99f;
+        state->linkDepth = state->linkDepth - 1;
+        return cp->heading;
+    }
+    if (Checkpoint_ReadLink(&cp->forwardLinkIds[0]) < 0)
+    {
+        return cp->heading;
+    }
+    cp2 = Checkpoint_find(Checkpoint_ReadLink(&cp->forwardLinkIds[0]), &slotC);
+    ang = getAngle(cp2->posX - cp->posX, cp2->posZ - cp->posZ);
+    sin2 = mathSinf((3.1415927f * (f32)(cp2->heading << 8)) / 32768.0f);
+    cos2 = mathCosf((3.1415927f * (f32)(cp2->heading << 8)) / 32768.0f);
+    offs2 = -(cp2->posX * sin2 + cp2->posZ * cos2);
+    dist2 = offs2 + (sin2 * obj->anim.localPosX + cos2 * obj->anim.localPosZ);
+    zero = 0.0f;
+    if (dist2 < zero)
+    {
+        state->currentCheckpointId = Checkpoint_ReadLink(&cp->forwardLinkIds[0]);
+        state->routeProgress = zero;
+        state->linkDepth = state->linkDepth + 1;
+        return ang;
+    }
+    cp2Z = cp2->posZ;
+    cp2X = cp2->posX;
+    distA = offs + (cosv * cp2X + sinv * cp2Z);
+    cpX = cp->posX;
+    cpZ = cp->posZ;
+    distB = offs2 + (sin2 * cpX + cos2 * cpZ);
+    if (((distA < zero && dist < zero) || (distA >= 0.0f && dist >= 0.0f)) &&
+        ((distB <= 0.0f && dist2 <= 0.0f) || (distB > 0.0f && dist2 > 0.0f)))
+    {
+        dx = cpX - cp2X;
+        dy = cp->posY - cp2->posY;
+        dz = cpZ - cp2Z;
+        len = sqrtf(dz * dz + (dx * dx + dy * dy));
+        if (len > 0.0f)
+        {
+            q = 1.0f / len;
+            nx = dx * q;
+            nz = dz * q;
+        }
+        proj = cosv * nx + sinv * nz;
+        if (proj > -0.01f && proj < 0.01f)
+        {
+            return ang;
+        }
+        t0 = -dist / proj;
+        proj2 = sin2 * nx + cos2 * nz;
+        if (proj2 > -0.01f && proj2 < 0.01f)
+        {
+            return ang;
+        }
+        sum = dist2 / proj2;
+        frac = 0.0f;
+        sum = t0 + sum;
+        if (sum != 0.0f)
+        {
+            frac = t0 / sum;
+        }
+        state->routeProgress = frac;
+        if (state->routeProgress < 0.0f)
+        {
+            state->routeProgress = 0.0f;
+        }
+        if (state->routeProgress >= 0.999f)
+        {
+            state->routeProgress = 0.999f;
+        }
+    }
+    return ang;
+}
+
+
+/* Flood-search the route graph (filtered by group) for the segment the object
+ * lies within, recording the matched checkpoint and local coordinates. */
+void Checkpoint_findRouteForObject(GameObject* obj, CheckpointRouteState* state, int filter)
+{
+    int stack[64];
+    char visited[200];
+    s32 cur;
+    s32 slot;
+    CheckpointRouteEntry* cp;
+    int count, k, i, j;
+    CheckpointRouteEntry* n;
+    CheckpointRouteEntry* e;
+    f32 distA, cos1, sin2, cos2;
+    f32 dist1, dist2, nx, nz, outX, sum;
+    f32 offs2, sin1, distB, dx, dy, len, q, t0, dz, offs1, b1;
+    f32 px, py, pz, width, frac, outY;
+    f32 ddy;
+
+    count = 0;
+    for (i = 0; i < (int)gCheckpointRouteCount; i++)
+    {
+        visited[i] = 0;
+    }
+    cp = Checkpoint_find(state->startCheckpointId, &cur);
+    if (cp != NULL)
+    {
+        stack[count++] = cur;
+    }
+    else
+    {
+        for (i = 0; i < gCheckpointRouteCount; i++)
+        {
+            e = gCheckpointRouteTable[i].entry;
+            if (visited[i] == 0 && (filter == -1 || e->group == filter))
+            {
+                nx = e->posX - obj->anim.localPosX;
+                ddy = e->posY - obj->anim.localPosY;
+                nz = e->posZ - obj->anim.localPosZ;
+                if (nz * nz + (nx * nx + ddy * ddy) < 409600.0f)
+                {
+                    stack[count++] = i;
+                    for (j = i; j < gCheckpointRouteCount; j++)
+                    {
+                        if (filter == gCheckpointRouteTable[j].entry->group)
+                        {
+                            visited[j] = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for (i = 0; i < (int)gCheckpointRouteCount; i++)
+    {
+        visited[i] = 0;
+    }
+    for (;;)
+    {
+        if (count > 0)
+        {
+            count--;
+            cur = stack[count];
+            cp = gCheckpointRouteTable[cur].entry;
+        }
+        else
+        {
+            state->startCheckpointId = -1;
+            return;
+        }
+        if (cp == NULL)
+        {
+            return;
+        }
+        for (k = 0; k < 2; k++)
+        {
+            n = Checkpoint_find(Checkpoint_ReadLink(&cp->forwardLinkIds[k]), &slot);
+            if (n != NULL)
+            {
+                sin1 = mathSinf((3.1415927f * (f32)(cp->heading << 8)) / 32768.0f);
+                cos1 = mathCosf((3.1415927f * (f32)(cp->heading << 8)) / 32768.0f);
+                offs1 = -(cp->posX * sin1 + cp->posZ * cos1);
+                sin2 = mathSinf((3.1415927f * (f32)(n->heading << 8)) / 32768.0f);
+                cos2 = mathCosf((3.1415927f * (f32)(n->heading << 8)) / 32768.0f);
+                offs2 = -(n->posX * sin2 + n->posZ * cos2);
+                dist1 = offs1 + (sin1 * obj->anim.localPosX + cos1 * obj->anim.localPosZ);
+                dist2 = offs2 + (sin2 * obj->anim.localPosX + cos2 * obj->anim.localPosZ);
+                distA = offs1 + (sin1 * n->posX + cos1 * n->posZ);
+                distB = offs2 + (sin2 * cp->posX + cos2 * cp->posZ);
+                if (((distA <= 0.0f && dist1 <= 0.0f) || (distA > 0.0f && dist1 > 0.0f)) &&
+                    ((distB <= 0.0f && dist2 <= 0.0f) || (distB > 0.0f && dist2 > 0.0f)))
+                {
+                    dx = cp->posX - n->posX;
+                    dy = cp->posY - n->posY;
+                    dz = cp->posZ - n->posZ;
+                    len = sqrtf(dz * dz + (dx * dx + dy * dy));
+                    if (len > 0.0)
+                    {
+                        q = 1.0f / len;
+                        nx = dx * q;
+                        nz = dz * q;
+                    }
+                    q = sin1 * nx + cos1 * nz;
+                    sin1 = sin2 * nx + cos2 * nz;
+                    t0 = -dist1 / q;
+                    sum = t0 + dist2 / sin1;
+                    if (sum > 0.1f || sum < -0.1f)
+                    {
+                        frac = t0 / sum;
+                    }
+                    else
+                    {
+                        frac = 0.0f;
+                    }
+                    if (frac < 0.0f)
+                    {
+                        frac = 0.0f;
+                    }
+                    if (frac >= 0.999f)
+                    {
+                        frac = 0.999f;
+                    }
+                    b1 = cp->width;
+                    width = frac * ((f32)n->width - b1) + b1;
+                    px = -(dx * frac - cp->posX);
+                    py = -(dy * frac - cp->posY);
+                    pz = -(dz * frac - cp->posZ);
+                    dy = obj->anim.localPosY;
+                    outY = (dy - py) / width;
+                    dx = obj->anim.localPosX;
+                    dz = obj->anim.localPosZ;
+                    b1 = -(px * nz - pz * nx);
+                    b1 += dx * nz - dz * nx;
+                    outX = b1 / width;
+                    if (outX < -8.0f || outX > 8.0f || outY < -4.0f || outY > 8.0f)
+                    {
+                    }
+                    else
+                    {
+                        state->startCheckpointId = cp->checkpointId;
+                        state->matchedCheckpointId = cp->checkpointId;
+                        state->localX = outX;
+                        state->localY = outY;
+                        state->pathT = frac;
+                        state->group = cp->group;
+                        return;
+                    }
+                }
+            }
+        }
+        if (visited[cur] == 0)
+        {
+            for (j = 1; j >= 0; j--)
+            {
+                n = Checkpoint_find(Checkpoint_ReadLink(&cp->backLinkIds[j]), &slot);
+                if (n != NULL && visited[slot] == 0 && count < 0x3c)
+                {
+                    stack[count++] = slot;
+                }
+                n = Checkpoint_find(Checkpoint_ReadLink(&cp->forwardLinkIds[j]), &slot);
+                if (n != NULL && visited[slot] == 0 && count < 0x3c)
+                {
+                    stack[count++] = slot;
+                }
+            }
+            visited[cur] = 1;
+        }
+    }
+}
+void Checkpoint_Remove(CheckpointRouteEntry* obj)
+{
+    int count;
+    int i = 0;
+    CheckpointSlot* p = gCheckpointRouteTable;
+    CheckpointSlot* e;
+
+    while (i < (count = gCheckpointRouteCount) && obj->checkpointId != p[i].key)
+    {
+        i++;
+    }
+    if (i >= count)
+        return;
+    gCheckpointRouteCount = gCheckpointRouteCount - 1;
+    count = gCheckpointRouteCount;
+    e = &gCheckpointRouteTable[i];
+    while (i < count)
+    {
+        e->entry = (e + 1)->entry;
+        e->key = (e + 1)->key;
+        e++;
+        i++;
+    }
+}
+
+CheckpointRankItem* gCheckpointPartFxListBuffer[0x14];
+
+void Checkpoint_Add(CheckpointRouteEntry* entry)
+{
+    int i = 0;
+    CheckpointSlot* p = gCheckpointRouteTable;
+    int count;
+    while (i < (count = gCheckpointRouteCount) && entry->checkpointId > p[i].key)
+    {
+        i++;
+    }
+    {
+        CheckpointSlot* end = &gCheckpointRouteTable[count];
+        while (count > i)
+        {
+            end->entry = (end - 1)->entry;
+            end->key = (end - 1)->key;
+            end--;
+            count--;
+        }
+    }
+    gCheckpointRouteCount = gCheckpointRouteCount + 1;
+    gCheckpointRouteTable[i].entry = entry;
+    gCheckpointRouteTable[i].key = entry->checkpointId;
+}
+
+void Checkpoint_reset(void)
+{
+    gCheckpointRouteCount = 0x0;
+}
+
+void Checkpoint_release(void)
+{
+}
+void Checkpoint_initialise(void)
+{
+    gCheckpointRouteCount = 0;
+    gCheckpointRankItemsPending = gCheckpointPartFxListBuffer;
+    gCheckpointRankItems = gCheckpointPartFxListBuffer + 10;
+}
+typedef struct CheckpointDllInterfaceCallbacks {
+    void* slot02;
+    __typeof__(Checkpoint_reset)* reset;
+    __typeof__(Checkpoint_Add)* add;
+    __typeof__(Checkpoint_Remove)* remove;
+    __typeof__(Checkpoint_findRouteForObject)* findRouteForObject;
+    __typeof__(Checkpoint_getRouteHeading)* getRouteHeading;
+    __typeof__(Checkpoint_advanceRoute)* advanceRoute;
+    __typeof__(Checkpoint_func09_ret_1)* slot09;
+    __typeof__(Checkpoint_getRandomLinkedVector)* getRandomLinkedVector;
+    __typeof__(Checkpoint_find)* find;
+    __typeof__(Checkpoint_rewindRoute)* rewindRoute;
+    __typeof__(Checkpoint_queueRouteRankItem)* queueRouteRankItem;
+    __typeof__(Checkpoint_getRouteRankItems)* getRouteRankItems;
+    __typeof__(Checkpoint_getRouteRank)* getRouteRank;
+    __typeof__(Checkpoint_getRouteRankItem)* getRouteRankItem;
+    __typeof__(Checkpoint_onGameLoop)* onGameLoop;
+} CheckpointDllInterfaceCallbacks;
+
+typedef struct CheckpointDllInterface {
+    ResourceDescriptorHeader header;
+    CheckpointDllInterfaceCallbacks interface;
+} CheckpointDllInterface;
+
+RESOURCE_ACQUIRE_ADAPTER(gCheckpointResourceAcquire, Checkpoint_initialise)
+
+CheckpointDllInterface Checkpoint_funcs = {
+    {
+        {0, 0, 0, 0x00110000},
+        gCheckpointResourceAcquire,
+        Checkpoint_release,
+    },
+    {
+        NULL,
+        Checkpoint_reset,
+        Checkpoint_Add,
+        Checkpoint_Remove,
+        Checkpoint_findRouteForObject,
+        Checkpoint_getRouteHeading,
+        Checkpoint_advanceRoute,
+        Checkpoint_func09_ret_1,
+        Checkpoint_getRandomLinkedVector,
+        Checkpoint_find,
+        Checkpoint_rewindRoute,
+        Checkpoint_queueRouteRankItem,
+        Checkpoint_getRouteRankItems,
+        Checkpoint_getRouteRank,
+        Checkpoint_getRouteRankItem,
+        Checkpoint_onGameLoop,
+    },
+};

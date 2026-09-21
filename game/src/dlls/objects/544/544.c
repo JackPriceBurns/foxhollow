@@ -1,0 +1,187 @@
+/* DLL 0x0220 */
+#include "dlls/object_descriptor.h"
+#include "dolphin/mtx/vec.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/camera.h"
+#include "main/dll/expgfx_interface.h"
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/objanim_internal.h"
+#include "main/object_render.h"
+#include "main/objfx.h"
+#include "game/objects/object_setup.h"
+#include "main/audio/sfx.h"
+#include "sys/objects.h"
+#include "main/light_internal.h"
+
+#define VFP_DOORSWITCH_LIFTIND_OBJ 0x3e7
+
+
+typedef struct VfpDoorSwitchState
+{
+    s16 gameBitId;
+    u8 activated : 1;
+    u8 exploded : 1;
+    u8 _state2_lo : 6;
+} VfpDoorSwitchState;
+
+typedef struct VfpDoorSwitchPlacement
+{
+    ObjPlacement base;
+    s8 rotXByte;
+    s8 rotZByte;
+    u8 pad1A[2];
+    s16 rotY;
+    s16 gameBitId;
+} VfpDoorSwitchPlacement;
+
+void vfpdoorswitch_updateExplodingVariant(GameObject* obj)
+{
+    VfpDoorSwitchState* state = obj->extra;
+    Camera* camView = Camera_GetCurrent();
+
+    if (state->activated == 0)
+    {
+        if (mainGetBit(state->gameBitId) != 0)
+        {
+            Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
+            Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_10d);
+            Sfx_PlayFromObject(obj, SFXTRIG_gate_stops);
+            state->activated = 1;
+        }
+    }
+    if (state->activated != 0)
+    {
+        ObjAnim_AdvanceCurrentMove(obj, 0.025f, timeDelta, NULL);
+        if (state->exploded == 0)
+        {
+            if (obj->anim.currentMoveProgress >= 1.0f)
+            {
+                Vec vec;
+                PSVECSubtract((Vec*)&camView->x, (Vec*)&obj->anim.localPosX, &vec);
+                PSVECNormalize(&vec, &vec);
+                PSVECScale(&vec, &vec, 100.0f);
+                PSVECAdd((Vec*)&obj->anim.localPosX, &vec, (Vec*)&obj->anim.localPosX);
+                obj->anim.worldPosX = obj->anim.localPosX;
+                obj->anim.worldPosY = obj->anim.localPosY;
+                obj->anim.worldPosZ = obj->anim.localPosZ;
+                spawnExplosion(obj, 80.0f, 1, 1, 0, 0, 0, 0, 0);
+                state->exploded = 1;
+                obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
+            }
+        }
+    }
+}
+
+int VFP_DoorSwitch_getExtraSize(void);
+int VFP_DoorSwitch_getObjectTypeId(void);
+void VFP_DoorSwitch_free(GameObject* obj);
+void VFP_DoorSwitch_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 visible);
+void VFP_DoorSwitch_hitDetect(void);
+void VFP_DoorSwitch_update(GameObject* obj);
+void VFP_DoorSwitch_init(GameObject* obj, VfpDoorSwitchPlacement* data);
+void VFP_DoorSwitch_release(void);
+void VFP_DoorSwitch_initialise(void);
+
+int VFP_DoorSwitch_getExtraSize(void)
+{
+    return 0x4;
+}
+
+int VFP_DoorSwitch_getObjectTypeId(void)
+{
+    return 0x0;
+}
+
+void VFP_DoorSwitch_free(GameObject* obj)
+{
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
+}
+
+void VFP_DoorSwitch_render(GameObject* p1, int p2, int p3, int p4, int p5, s8 visible)
+{
+    objRenderModelAndHitVolumes(p1, p2, p3, p4, p5, 1.0f);
+}
+
+void VFP_DoorSwitch_hitDetect(void)
+{
+}
+
+void VFP_DoorSwitch_update(GameObject* obj)
+{
+    VfpDoorSwitchState* state;
+    if ((obj)->anim.romDefNo != VFP_DOORSWITCH_LIFTIND_OBJ)
+    {
+        vfpdoorswitch_updateExplodingVariant(obj);
+        return;
+    }
+    state = (obj)->extra;
+    if (state->activated != 0)
+        return;
+    if (mainGetBit(state->gameBitId) == 0)
+        return;
+    Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
+    Sfx_PlayFromObject(obj, SFXTRIG_dn_boar1_c_10d);
+    Sfx_PlayFromObject(obj, SFXTRIG_gate_stops);
+    Obj_SetActiveModelIndex(obj, 1);
+    state->activated = 1;
+}
+
+void VFP_DoorSwitch_init(GameObject* obj, VfpDoorSwitchPlacement* data)
+{
+    VfpDoorSwitchPlacement* def = data;
+    VfpDoorSwitchState* state = obj->extra;
+    obj->anim.rotX = (((s32)def->rotXByte) << 8);
+    obj->anim.rotZ = (((s32)def->rotZByte) << 8);
+    obj->anim.rotY = ObjAnim_ReadPlacementS16(&obj->anim, &(def->rotY));
+    state->gameBitId = ObjAnim_ReadPlacementS16(&obj->anim, &(def->gameBitId));
+    if (mainGetBit(state->gameBitId) != 0)
+    {
+        ObjAnim_SetMoveProgress((ObjAnimComponent*)obj, 1.0f);
+        state->activated = 1;
+        state->exploded = 1;
+        obj->anim.flags |= OBJANIM_FLAG_HIDDEN;
+    }
+    if (obj->anim.romDefNo == VFP_DOORSWITCH_LIFTIND_OBJ && state->activated != 0)
+    {
+        *&obj->anim.bankIndex = 1;
+    }
+    obj->objectFlags |= OBJECT_OBJFLAG_HITDETECT_DISABLED;
+}
+
+void VFP_DoorSwitch_release(void)
+{
+}
+
+void VFP_DoorSwitch_initialise(void)
+{
+}
+
+OBJECT_INIT_ADAPTER(gVFP_DoorSwitchObjDescriptorInitAdapter, VFP_DoorSwitch_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gVFP_DoorSwitchObjDescriptorHitDetectAdapter, VFP_DoorSwitch_hitDetect)
+OBJECT_FREE_ADAPTER(gVFP_DoorSwitchObjDescriptorFreeAdapter, VFP_DoorSwitch_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gVFP_DoorSwitchObjDescriptorTypeIdAdapter, VFP_DoorSwitch_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gVFP_DoorSwitchObjDescriptorExtraSizeAdapter, VFP_DoorSwitch_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gVFP_DoorSwitchObjDescriptorAcquire, VFP_DoorSwitch_initialise)
+
+ObjectDescriptor gVFP_DoorSwitchObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gVFP_DoorSwitchObjDescriptorAcquire,
+        VFP_DoorSwitch_release,
+    },
+    0,
+    gVFP_DoorSwitchObjDescriptorInitAdapter,
+    VFP_DoorSwitch_update,
+    gVFP_DoorSwitchObjDescriptorHitDetectAdapter,
+    VFP_DoorSwitch_render,
+    gVFP_DoorSwitchObjDescriptorFreeAdapter,
+    gVFP_DoorSwitchObjDescriptorTypeIdAdapter,
+    gVFP_DoorSwitchObjDescriptorExtraSizeAdapter,
+};

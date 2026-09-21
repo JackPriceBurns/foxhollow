@@ -1,0 +1,199 @@
+/*
+ * LGTProjecte (DLL 683) - a placeable projected (gobo/spot) light.
+ *
+ * init creates a ModelLight of kind PROJECTED, points it from the placement
+ * record and loads its projection texture (falling back to
+ * PROJECTEDLIGHT_DEFAULT_TEXTURE_ASSET when none is given). It then sets up
+ * either an orthographic frustum (PROJECTEDLIGHT_PROJECTION_ORTHO, with the
+ * half-extents derived from projectionWidth/Height and the near/far depth from
+ * the two nibbles of orthoDepthNibbles) or a perspective frustum (fovY plus the
+ * height/width ratio), configures the projection TEV modes, near/far Z, colour
+ * fade and target colour. update just spins the light by its per-axis rotation
+ * speeds.
+ */
+#include "main/frame_timing.h"
+#include "main/texture.h"
+#include "main/dll/LGT/dll_02AB_lgtprojectedlight.h"
+#include "dlls/object_descriptor.h"
+#include "main/model_light.h"
+
+const f32 gProjectedLightInitialDirection[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+
+
+#define PROJECTEDLIGHT_DEFAULT_TEXTURE_ASSET 0x5dc
+#define PROJECTEDLIGHT_PROJECTION_ORTHO      0
+
+int ProjectedLight_getExtraSize(void)
+{
+    return sizeof(ProjectedLightState);
+}
+
+int ProjectedLight_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void ProjectedLight_free(GameObject* obj)
+{
+    ProjectedLightState* state = obj->extra;
+    if (state->light != NULL)
+    {
+        ModelLightStruct_free(state->light);
+    }
+    if (state->texture != NULL)
+    {
+        textureFree((Texture*)((u8*)state->texture));
+    }
+}
+
+void ProjectedLight_render(void)
+{
+}
+
+void ProjectedLight_hitDetect(void)
+{
+}
+
+const f32 gProjectedLightOne[1] = {1.0f};
+
+void ProjectedLight_update(GameObject* obj)
+{
+    ProjectedLightSetup* setup = (ProjectedLightSetup*)obj->anim.placementData;
+
+    obj->anim.rotX = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotXSpeed)) * timeDelta + (f32)obj->anim.rotX);
+    obj->anim.rotY = (s16)((f32)ObjAnim_ReadPlacementS16(&obj->anim, &(setup->rotYSpeed)) * timeDelta + (f32)obj->anim.rotY);
+    obj->anim.rotZ = (s16)((f32)(setup->rotZSpeed << 4) * timeDelta + (f32)obj->anim.rotZ);
+}
+
+void ProjectedLight_init(GameObject* obj, ProjectedLightSetup* setup)
+{
+    Vec3f vec;
+    ProjectedLightSetup* setupData = setup;
+    ProjectedLightState* state = (obj)->extra;
+
+    vec = *(Vec3f*)gProjectedLightInitialDirection;
+
+    (obj)->anim.rotX = (s16)(setupData->rotXByte << 8);
+    (obj)->anim.rotY = (s16)(setupData->rotYByte << 8);
+    (obj)->anim.rotZ = (s16)(setupData->rotZByte << 8);
+
+    if (state->light == NULL)
+    {
+        state->light = objCreateLight(obj, 1);
+    }
+
+    if (state->light != NULL)
+    {
+        modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_PROJECTED);
+        modelLightStruct_setPosition(state->light, 0.0f, 0.0f, 0.0f);
+        modelLightStruct_setDirection(state->light, vec.x, vec.y, vec.z);
+        modelLightStruct_setDiffuseColor(state->light, setupData->diffuseR, setupData->diffuseG, setupData->diffuseB,
+                                         setupData->alpha);
+        modelLightStruct_setDistanceAttenuation(state->light, (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->distanceNear)),
+                                                (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->distanceFar)));
+        modelLightStruct_setProjectedLightChannelPreference(state->light, setupData->channelPreference);
+        modelLightStruct_setEnabled(state->light, setupData->enabled, 0.0f);
+
+        if (state->texture == NULL)
+        {
+            if (ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->textureAsset)) != 0)
+            {
+                state->texture = textureLoadAsset(ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->textureAsset)));
+            }
+            else
+            {
+                state->texture = textureLoadAsset(PROJECTEDLIGHT_DEFAULT_TEXTURE_ASSET);
+            }
+            modelLightStruct_setProjectionTexture(state->light, state->texture);
+        }
+
+        if (setupData->projectionMode == PROJECTEDLIGHT_PROJECTION_ORTHO)
+        {
+            f32 halfHeight = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionHeight)) / 10.0f;
+            f32 halfWidth;
+            f32 nearDepth, farDepth;
+            if (halfHeight < gProjectedLightOne[0])
+            {
+                halfHeight = gProjectedLightOne[0];
+            }
+            halfWidth = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionWidth)) / 10.0f;
+            if (halfWidth < gProjectedLightOne[0])
+            {
+                halfWidth = gProjectedLightOne[0];
+            }
+            if (setupData->orthoDepthNibbles != 0)
+            {
+                u8 depth = setupData->orthoDepthNibbles;
+                nearDepth = (f32)(depth & 0xf);
+                farDepth = (f32)((depth >> 4) & 0xf);
+            }
+            else
+            {
+                nearDepth = gProjectedLightOne[0];
+                farDepth = nearDepth;
+            }
+            modelLightStruct_setupOrthoProjection(state->light, halfWidth, -halfWidth, -halfHeight, halfHeight,
+                                                  nearDepth, farDepth);
+        }
+        else
+        {
+            f32 height = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionHeight)) / 10.0f;
+            f32 width;
+            if (height < gProjectedLightOne[0])
+            {
+                height = gProjectedLightOne[0];
+            }
+            width = (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->projectionWidth)) / 10.0f;
+            if (width < gProjectedLightOne[0])
+            {
+                width = gProjectedLightOne[0];
+            }
+            modelLightStruct_setupPerspectiveProjection(state->light, (f32)(u32)setupData->fovY, height / width);
+        }
+
+        modelLightStruct_setProjectionTevModes(state->light, setupData->tevModeA, setupData->tevModeB);
+        modelLightStruct_setProjectionNearZ(state->light, (f32)(u32)setupData->nearZ);
+        modelLightStruct_setProjectionFarZ(state->light, (f32)(u32)ObjAnim_ReadPlacementU16(&obj->anim, &(setupData->farZ)));
+        modelLightStruct_startColorFade(state->light, setupData->colorFadeSpeed, ObjAnim_ReadPlacementS16(&obj->anim, &(setupData->colorFadeFrames)));
+        modelLightStruct_setDiffuseTargetColor(state->light, setupData->targetR, setupData->targetG, setupData->targetB,
+                                               setupData->targetAlpha);
+    }
+}
+
+void ProjectedLight_release(void)
+{
+}
+
+void ProjectedLight_initialise(void)
+{
+}
+
+OBJECT_INIT_ADAPTER(gProjectedLightObjDescriptorInitAdapter, ProjectedLight_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gProjectedLightObjDescriptorHitDetectAdapter, ProjectedLight_hitDetect)
+OBJECT_RENDER_ADAPTER(gProjectedLightObjDescriptorRenderAdapter, ProjectedLight_render)
+OBJECT_FREE_ADAPTER(gProjectedLightObjDescriptorFreeAdapter, ProjectedLight_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gProjectedLightObjDescriptorTypeIdAdapter, ProjectedLight_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gProjectedLightObjDescriptorExtraSizeAdapter, ProjectedLight_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gProjectedLightObjDescriptorAcquire, ProjectedLight_initialise)
+
+ObjectDescriptor gProjectedLightObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gProjectedLightObjDescriptorAcquire,
+        ProjectedLight_release,
+    },
+    0,
+    gProjectedLightObjDescriptorInitAdapter,
+    ProjectedLight_update,
+    gProjectedLightObjDescriptorHitDetectAdapter,
+    gProjectedLightObjDescriptorRenderAdapter,
+    gProjectedLightObjDescriptorFreeAdapter,
+    gProjectedLightObjDescriptorTypeIdAdapter,
+    gProjectedLightObjDescriptorExtraSizeAdapter,
+};

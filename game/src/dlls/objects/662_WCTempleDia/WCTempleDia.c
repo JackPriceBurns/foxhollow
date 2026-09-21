@@ -1,0 +1,219 @@
+#include "main/audio/sfx.h"
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/lightmap.h"
+#include "main/dll/WC/dll_0296_wctempledia.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/object_render.h"
+#include "main/shader.h"
+#include "main/model.h"
+#include "main/objseq.h"
+
+s16 gWcTempleDiaGameBitsA[4] = {0x2F8, 0x2D1, 0x2D2, 0};
+s16 gWcTempleDiaGameBitsB[4] = {0x203, 0x2EC, 0x2EF, 0};
+
+#define WCTEMPLE_DIA_EXTRA_SIZE       0x14
+#define WCTEMPLE_DIA_STAGE_COUNT      3
+#define WCTEMPLE_DIA_ALL_STAGES_MASK  7
+#define WCTEMPLE_DIA_VISIBLE_OVERRIDE 0x100
+
+#define WCTEMPLE_DIA_FLAG_SOLVED 1
+
+#define WCTEMPLE_DIA_PAYLOAD_BLOCK_FLAG 2
+
+#define WCTEMPLE_DIA_RESET_SFX 0x487
+#define WCTEMPLE_DIA_STAGE_SFX 0x409
+
+void wctempledia_syncPartVisibility(GameObject* obj, u8 mask) {
+    int bit;
+    int part;
+    MapBlockData* block;
+    int slot;
+
+    block = mapGetBlock(objPosToMapBlockIdx(obj->anim.localPosX, obj->anim.localPosY, obj->anim.localPosZ));
+    if (block != NULL) {
+        for (part = 1; part < WCTEMPLE_DIA_STAGE_COUNT + 1; part++) {
+            for (slot = 0, bit = mask & (1 << (part - 1)); slot < block->shaderCount; slot++) {
+                Shader* entry = mapBlockGetShader(block, slot);
+                if (entry->layers[0].materialId == part) {
+                    bit = mask & (1 << (part - 1));
+                    if (bit != 0) {
+                        mapTextureOverrideSetValue(part, entry->layers[0].texture, WCTEMPLE_DIA_VISIBLE_OVERRIDE);
+                    } else {
+                        mapTextureOverrideSetValue(part, entry->layers[0].texture, 0);
+                    }
+                }
+            }
+        }
+    }
+}
+
+int wctempledia_interactCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+    WCTempleDiaState* state = obj->extra;
+
+    {
+        f32 scaled = 0.01f;
+        f32 cs = state->currentSpeed;
+        scaled = scaled * -cs;
+        state->currentSpeed = scaled * timeDelta + cs;
+    }
+    obj->anim.rotZ = (s16)(timeDelta * state->currentSpeed + (f32)obj->anim.rotZ);
+    animUpdate->movementState = 0;
+    animUpdate->savedFlags &= ~WCTEMPLE_DIA_PAYLOAD_BLOCK_FLAG;
+    animUpdate->flags &= ~WCTEMPLE_DIA_PAYLOAD_BLOCK_FLAG;
+    return 0;
+}
+
+int wctempledia_getExtraSize(void) {
+    return sizeof(WCTempleDiaState);
+}
+
+int wctempledia_getObjectTypeId(void) {
+    return 0;
+}
+
+void wctempledia_free(void) {
+}
+
+void wctempledia_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible != 0) {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void wctempledia_hitDetect(void) {
+}
+
+void wctempledia_update(GameObject* obj) {
+    int i;
+    WCTempleDiaState* state;
+    WCTempleDiaSetup* setup;
+    GameObject* go = (GameObject*)obj;
+    int j;
+    int k;
+
+    state = go->extra;
+    setup = (WCTempleDiaSetup*)go->anim.placementData;
+
+    if (state->flags & WCTEMPLE_DIA_FLAG_SOLVED) {
+        wctempledia_syncPartVisibility(go, state->stageMask);
+        return;
+    }
+    state->currentSpeed += timeDelta * (0.01f * (state->targetSpeed - state->currentSpeed));
+    go->anim.rotZ = (s16)(timeDelta * state->currentSpeed + (f32)go->anim.rotZ);
+    Sfx_KeepAliveLoopedObjectSound(obj, SFXTRIG_en_treedrum16);
+    {
+        f32 ratio = state->currentSpeed / state->targetTable[2];
+        Sfx_SetObjectSfxVolume(go, SFXTRIG_en_treedrum16, (u8)(18.0f * ratio + 109.0f), 0.75f * ratio + 0.25f);
+    }
+    for (i = 0; i < WCTEMPLE_DIA_STAGE_COUNT; i++) {
+        if ((state->stageMask & (1 << i)) == 0 && mainGetBit(state->gamebits[i]) != 0) {
+            int found = 0;
+            for (j = 0; j < i; j++) {
+                if ((state->stageMask & (1 << j)) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (found) {
+                for (k = 0; k < WCTEMPLE_DIA_STAGE_COUNT; k++) {
+                    mainSetBits(state->gamebits[k], 0);
+                }
+                Sfx_PlayFromObject(0, WCTEMPLE_DIA_RESET_SFX);
+                state->stageMask = 0;
+                state->targetSpeed = state->targetTable[0];
+                break;
+            }
+            state->stageMask |= (1 << i);
+            if (i == 0) {
+                state->targetSpeed = state->targetTable[1];
+                Sfx_PlayFromObject(0, WCTEMPLE_DIA_STAGE_SFX);
+            } else if (i == 1) {
+                state->targetSpeed = state->targetTable[2];
+                Sfx_PlayFromObject(0, WCTEMPLE_DIA_STAGE_SFX);
+            }
+        }
+    }
+    wctempledia_syncPartVisibility(go, state->stageMask);
+    if (state->stageMask == WCTEMPLE_DIA_ALL_STAGES_MASK) {
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit)), 1);
+        Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
+        state->flags |= WCTEMPLE_DIA_FLAG_SOLVED;
+    }
+}
+
+void wctempledia_init(GameObject* obj, WCTempleDiaSetup* setup) {
+    ObjAnimComponent* objAnim = &obj->anim;
+    WCTempleDiaState* state = obj->extra;
+    int i;
+
+    obj->anim.rotX = (s16)(setup->type << 8);
+    *(u8*)&objAnim->bankIndex = setup->modelIndex;
+    if (objAnim->bankIndex >= objAnim->modelInstance->modelCount) {
+        objAnim->bankIndex = 0;
+    }
+    if (objAnim->bankIndex == 0) {
+        state->gamebits = gWcTempleDiaGameBitsA;
+        state->targetTable = gWcTempleDiaTargetSpeedTableA;
+    } else {
+        state->gamebits = gWcTempleDiaGameBitsB;
+        state->targetTable = gWcTempleDiaTargetSpeedTableB;
+    }
+    for (i = 0; i < WCTEMPLE_DIA_STAGE_COUNT; i++) {
+        if (mainGetBit(state->gamebits[i]) != 0) {
+            state->stageMask |= (1 << i);
+        }
+    }
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &(setup->solvedBit))) != 0) {
+        state->stageMask = WCTEMPLE_DIA_ALL_STAGES_MASK;
+        state->flags |= WCTEMPLE_DIA_FLAG_SOLVED;
+    }
+    if (state->stageMask & 2) {
+        state->currentSpeed = state->targetTable[2];
+    } else if (state->stageMask & 1) {
+        state->currentSpeed = state->targetTable[1];
+    } else {
+        state->currentSpeed = state->targetTable[0];
+    }
+    state->targetSpeed = state->currentSpeed;
+    obj->animEventCallback = wctempledia_interactCallback;
+    wctempledia_syncPartVisibility(obj, state->stageMask);
+}
+
+void wctempledia_release(void) {
+}
+
+void wctempledia_initialise(void) {
+}
+
+f32 gWcTempleDiaTargetSpeedTableA[] = {64.0f, 128.0f, 256.0f};
+f32 gWcTempleDiaTargetSpeedTableB[] = {-64.0f, -128.0f, -256.0f};
+
+OBJECT_INIT_ADAPTER(gWCTempleDiaObjDescriptorInitAdapter, wctempledia_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWCTempleDiaObjDescriptorHitDetectAdapter, wctempledia_hitDetect)
+OBJECT_FREE_ADAPTER(gWCTempleDiaObjDescriptorFreeAdapter, wctempledia_free)
+OBJECT_TYPE_ID_ADAPTER(gWCTempleDiaObjDescriptorTypeIdAdapter, wctempledia_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWCTempleDiaObjDescriptorExtraSizeAdapter, wctempledia_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWCTempleDiaObjDescriptorAcquire, wctempledia_initialise)
+
+ObjectDescriptor gWCTempleDiaObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWCTempleDiaObjDescriptorAcquire,
+        wctempledia_release,
+    },
+    0,
+    gWCTempleDiaObjDescriptorInitAdapter,
+    wctempledia_update,
+    gWCTempleDiaObjDescriptorHitDetectAdapter,
+    wctempledia_render,
+    gWCTempleDiaObjDescriptorFreeAdapter,
+    gWCTempleDiaObjDescriptorTypeIdAdapter,
+    gWCTempleDiaObjDescriptorExtraSizeAdapter,
+};

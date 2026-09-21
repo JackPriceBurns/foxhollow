@@ -1,0 +1,370 @@
+/*
+ * DLL 667 - the Arwing's lasers and the Andross-fight
+ * projectiles (rings, asteroids). The deployed bomb is the separate DLL 0x29C.
+ *
+ * Each instance is one in-flight projectile whose behaviour is keyed off
+ * its anim.romDefNo: the Andross asteroid (0x80d, given random tumble), the
+ * invincible shot and Andross ring (0x6ae/0x7e4), and the basic and
+ * rapid-fire lasers (0x604/0x655).
+ * init() sets the hit-target mask, particle kind and hit-
+ * volume mode per romDefNo; update() flies the projectile (objMove by
+ * velocity*timeDelta), counts down its lifetime/despawn timers, plays the
+ * impact sfx + particle fx, and frees it. hitDetect() handles deflection:
+ * an Arwing barrel-roll reflects the shot (half-angle of incoming
+ * velocity) and rescales its speed by deflectSpeedScale.
+ * arwprojectile_createLinkedEffect() attaches a coloured point light to the shot.
+ *
+ * arwprojectile_setLifetime + arwprojectile_placeForward configure a new
+ * projectile's lifetime and launch velocity (callers: arwarwing, arwsquadron,
+ * andross, androsshand, player); the bomb-drop variants
+ * arwprojectile_launchForward + arwprojectile_setParamScalar live in the
+ * arwarwingbo translation unit (dll_029C).
+ */
+#include "dolphin/math.h"
+#include "dolphin/mtx.h"
+#include "main/frame_timing.h"
+#include "main/pad.h"
+#include "main/vecmath.h"
+#include "main/dll/dll_029B_arwingandrossstuff.h"
+#include "main/dll/ARW/dll_029A_arwarwing.h"
+#include "main/objfx.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/object_render.h"
+#include "dolphin/mtx/vec.h"
+#include "sys/objects.h"
+#include "main/audio/sfx.h"
+#include "main/objhits.h"
+#include "main/objtype.h"
+#include "sys/objects/lifecycle.h"
+#include "main/model_light.h"
+
+f32 gArwingAndrossRingScaleStep = 0.1f;
+f32 gArwingAndrossRingSpinStep = 500.0f;
+f32 gArwingAndrossRingRadiusScale = 10.0f;
+
+#define ARWINGANDROSSSTUFF_OBJGROUP 0x2
+
+#define ARWINGANDROSSSTUFF_HIT_VOLUME_SLOT      0xf
+
+
+
+void arwprojectile_createLinkedEffect(GameObject* obj, u8 enable)
+{
+    ArwProjectileState* state = (obj)->extra;
+    if (enable == 0)
+        return;
+    if (state->light != NULL)
+        return;
+    state->light = objCreateLight(obj, 1);
+    if (state->light == NULL)
+        return;
+    modelLightStruct_setLightKind(state->light, MODEL_LIGHT_KIND_POINT);
+    modelLightStruct_setPosition(state->light, 0.0f, 0.0f, 0.0f);
+    modelLightStruct_setFieldBC(state->light, 1);
+    if ((obj)->anim.romDefNo == ARW_SEQID_INVINCIBLE)
+    {
+        modelLightStruct_setDiffuseColor(state->light, 0xff, 0x14, 0x50, 0);
+    }
+    else if ((&obj->anim)->bankIndex == 0)
+    {
+        modelLightStruct_setDiffuseColor(state->light, 0x3c, 0xff, 0x5a, 0);
+    }
+    else
+    {
+        modelLightStruct_setDiffuseColor(state->light, 0x3c, 0x5a, 0xff, 0);
+    }
+    if ((obj)->anim.romDefNo == ARW_SEQID_RAPIDFIRE_LASER)
+    {
+        modelLightStruct_setDistanceAttenuation(state->light, 60.0f, 80.0f);
+    }
+    else
+    {
+        modelLightStruct_setDistanceAttenuation(state->light, 100.0f, 120.0f);
+    }
+    modelLightStruct_setAffectsAabbLightSelection(state->light, 1);
+}
+
+void arwprojectile_placeForward(GameObject* obj, f32 dist)
+{
+    ArwProjectileState* state = obj->extra;
+    f32 mtx[16];
+    MatrixTransform src;
+
+    state->deflectSpeedScale = dist;
+    src.x = 0.0f;
+    src.y = 0.0f;
+    src.z = 0.0f;
+    src.rotX = obj->anim.rotX;
+    src.rotY = obj->anim.rotY;
+    src.rotZ = 0;
+    src.scale = 1.0f;
+    setMatrixFromObjectPos(mtx, &src);
+    Matrix_TransformPoint(mtx, 0.0f, 0.0f, state->deflectSpeedScale, &obj->anim.velocityX,
+                          &obj->anim.velocityY, &obj->anim.velocityZ);
+    obj->anim.rotX += 0x8000;
+    obj->anim.rotY = -obj->anim.rotY;
+}
+
+void arwprojectile_setLifetime(GameObject* obj, int lifetime)
+{
+    ArwProjectileState* state = obj->extra;
+
+    state->lifetime = lifetime;
+}
+
+int arwingandrossstuff_getExtraSize(void)
+{
+    return sizeof(ArwProjectileState);
+}
+
+int arwingandrossstuff_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void arwingandrossstuff_free(GameObject* obj)
+{
+    ArwProjectileState* state = (obj)->extra;
+
+    objFreeObjectType(obj, ARWINGANDROSSSTUFF_OBJGROUP);
+    if (state->light != NULL)
+    {
+        ModelLightStruct_free(state->light);
+    }
+}
+
+void arwingandrossstuff_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
+{
+    if (visible != 0)
+    {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void arwingandrossstuff_hitDetect(GameObject* obj)
+{
+    Vec3f d, v, w;
+    ObjAnimComponent* objAnim = &(obj)->anim;
+    ArwProjectileState* state = (obj)->extra;
+    GameObject* arwing = getArwing();
+    ObjAnimComponent* arwingAnim = &arwing->anim;
+
+    if (objAnim->romDefNo == ARW_SEQID_ANDROSS_ASTEROID)
+    {
+        GameObject* hit;
+        u32 vol;
+
+        if (ObjHits_GetPriorityHit(obj, &hit, 0, &vol) != 0)
+        {
+            spawnExplosion((GameObject*)obj, 100.0f, 1, 0, 0, 1, 0, 0, 3);
+            objAnim->flags |= OBJANIM_FLAG_HIDDEN;
+            ObjHits_DisableObject(obj);
+            state->despawnTimer = 40.0f;
+        }
+    }
+    if (((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject != 0 && state->param0.deflected == 0)
+    {
+        if (objAnim->romDefNo != ARW_SEQID_INVINCIBLE)
+        {
+            Sfx_PlayFromObjectLimited(obj, SFXTRIG_ar_laser116, 4);
+        }
+        if (objAnim->romDefNo == ARW_SEQID_ANDROSS_RING)
+        {
+            s16 angle =
+                (s16)-getAngle(objAnim->localPosX - arwingAnim->localPosX, objAnim->localPosY - arwingAnim->localPosY);
+            f32 ang;
+
+            v.x = 10.0f * mathSinf(ang = 3.1415927f * angle / 32768.0f);
+            v.y = -10.0f * mathCosf(ang);
+            v.z = 0.0f;
+            w = v;
+            arwarwing_setVelocity(arwing, &w);
+            doRumble(5.0f);
+        }
+        if (((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject == (uintptr_t)arwing)
+        {
+            if (arwarwing_isBarrelRolling(arwing) != 0)
+            {
+                PSVECNormalize((const Vec*)&objAnim->velocityX, (Vec*)&objAnim->velocityX);
+                d.x = objAnim->localPosX - arwingAnim->localPosX;
+                d.y = objAnim->localPosY - arwingAnim->localPosY;
+                d.z = objAnim->localPosZ - arwingAnim->localPosZ;
+                PSVECNormalize((const Vec*)&d, (Vec*)&d);
+                C_VECHalfAngle((const Vec*)&objAnim->velocityX, (const Vec*)&d, (Vec*)&objAnim->velocityX);
+                objAnim->velocityX *= state->deflectSpeedScale;
+                objAnim->velocityY *= state->deflectSpeedScale;
+                objAnim->velocityZ *= state->deflectSpeedScale;
+                state->param0.deflected = 1;
+            }
+        }
+        state->despawnTimer = 40.0f;
+        objAnim->alpha = 0;
+        projectileDoParticleFx(obj, 1.0f, state->param0.particleKind);
+        if (state->light != NULL)
+        {
+            ModelLightStruct_free(state->light);
+            state->light = NULL;
+        }
+    }
+}
+
+void arwingandrossstuff_update(GameObject* obj)
+{
+    GameObject* object = obj;
+    ArwProjectileState* state = object->extra;
+    GameObject* arwing = getArwing();
+
+    if (arwing != NULL && (arwing->objectFlags & OBJECT_OBJFLAG_PARENT_SLACK) != 0)
+    {
+        Obj_FreeObject(object);
+        return;
+    }
+    {
+        f32 dt = state->despawnTimer;
+        f32 zero = 0.0f;
+        if (dt > zero)
+        {
+            state->despawnTimer = dt - timeDelta;
+            if (state->despawnTimer <= zero)
+            {
+                Obj_FreeObject(object);
+            }
+            return;
+        }
+    }
+    ObjHits_SetHitVolumeSlot(&object->anim, ARWINGANDROSSSTUFF_HIT_VOLUME_SLOT, state->hitVolumeMode, 0);
+    object->anim.alpha = 0xff;
+    {
+        f32 lt = state->lifetime;
+        f32 zero = 0.0f;
+        if (lt > zero)
+        {
+            state->lifetime = lt - timeDelta;
+            if (state->lifetime <= zero)
+            {
+                state->lifetime = zero;
+                Obj_FreeObject(object);
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
+        if (((ObjHitsPriorityState*)object->anim.hitReactState)->contactFlags != 0)
+        {
+            if (object->anim.romDefNo != ARW_SEQID_INVINCIBLE)
+            {
+                Sfx_PlayFromObjectLimited(object, SFXTRIG_ar_laser116, 4);
+            }
+            state->despawnTimer = 40.0f;
+            object->anim.alpha = 0;
+            projectileDoParticleFx(object, 1.0f, state->param0.particleKind);
+            if (state->light != NULL)
+            {
+                ModelLightStruct_free(state->light);
+                state->light = NULL;
+            }
+        }
+        objMove(object, object->anim.velocityX * timeDelta, object->anim.velocityY * timeDelta,
+                object->anim.velocityZ * timeDelta);
+        if (object->anim.romDefNo == ARW_SEQID_ANDROSS_ASTEROID)
+        {
+            object->anim.rotZ += state->rotZSpeed;
+            object->anim.rotY += state->rotYSpeed;
+        }
+        if (object->anim.romDefNo == ARW_SEQID_ANDROSS_RING)
+        {
+            object->anim.rootMotionScale += gArwingAndrossRingScaleStep;
+            ObjHitbox_SetSphereRadius(&object->anim,
+                                      (int)(object->anim.rootMotionScale * gArwingAndrossRingRadiusScale));
+            object->anim.rotZ = (f32)object->anim.rotZ + gArwingAndrossRingSpinStep;
+        }
+    }
+}
+
+void arwingandrossstuff_init(GameObject* obj, ArwProjectileSetup* setup)
+{
+    ArwProjectileState* state = (obj)->extra;
+    ObjHitsPriorityState* hitState;
+
+    (obj)->anim.rotX = (s16)(setup->rotXByte << 8);
+    (obj)->anim.rotY = (s16)(setup->rotYByte << 8);
+    (obj)->anim.alpha = 1;
+    switch ((obj)->anim.romDefNo)
+    {
+    case ARW_SEQID_ANDROSS_ASTEROID:
+        state->rotZSpeed = randomGetRange(-0x1f4, 0x1f4);
+        state->rotYSpeed = randomGetRange(-0x1f4, 0x1f4);
+    case ARW_SEQID_INVINCIBLE:
+    case ARW_SEQID_ANDROSS_RING:
+        ObjHits_SetTargetMask(obj, 4);
+        state->param0.particleKind = 4;
+        state->hitVolumeMode = 2;
+        break;
+    case ARW_SEQID_RAPIDFIRE_LASER:
+        ObjHits_SetTargetMask(obj, 1);
+        state->param0.particleKind = 0;
+        state->hitVolumeMode = 1;
+        break;
+    case ARW_SEQID_LASER_BASIC:
+        ObjHits_SetTargetMask(obj, 1);
+        if ((&obj->anim)->bankIndex != 0)
+        {
+            state->param0.particleKind = 2;
+            state->hitVolumeMode = 2;
+        }
+        else
+        {
+            state->param0.particleKind = 1;
+            state->hitVolumeMode = 2;
+        }
+        break;
+    default:
+        ObjHits_SetTargetMask(obj, 1);
+        state->param0.particleKind = 2;
+        break;
+    }
+    hitState = (ObjHitsPriorityState*)(obj)->anim.hitReactState;
+    if (hitState != NULL)
+    {
+        hitState->trackContactMask = 1;
+    }
+    objAddObjectType(obj, ARWINGANDROSSSTUFF_OBJGROUP);
+}
+
+void arwingandrossstuff_release(void)
+{
+}
+
+void arwingandrossstuff_initialise(void)
+{
+}
+
+OBJECT_INIT_ADAPTER(gArwingAndrossStuffObjDescriptorInitAdapter, arwingandrossstuff_init, obj, placement)
+OBJECT_FREE_ADAPTER(gArwingAndrossStuffObjDescriptorFreeAdapter, arwingandrossstuff_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gArwingAndrossStuffObjDescriptorTypeIdAdapter, arwingandrossstuff_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gArwingAndrossStuffObjDescriptorExtraSizeAdapter, arwingandrossstuff_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gArwingAndrossStuffObjDescriptorAcquire, arwingandrossstuff_initialise)
+
+ObjectDescriptor gArwingAndrossStuffObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gArwingAndrossStuffObjDescriptorAcquire,
+        arwingandrossstuff_release,
+    },
+    NULL,
+    gArwingAndrossStuffObjDescriptorInitAdapter,
+    arwingandrossstuff_update,
+    arwingandrossstuff_hitDetect,
+    arwingandrossstuff_render,
+    gArwingAndrossStuffObjDescriptorFreeAdapter,
+    gArwingAndrossStuffObjDescriptorTypeIdAdapter,
+    gArwingAndrossStuffObjDescriptorExtraSizeAdapter,
+};

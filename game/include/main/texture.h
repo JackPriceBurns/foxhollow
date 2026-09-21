@@ -1,0 +1,88 @@
+#ifndef MAIN_TEXTURE_H_
+#define MAIN_TEXTURE_H_
+
+#include "global.h"
+#include "dolphin/gx/GXStruct.h"
+
+/*
+ * Texture - the in-memory texture record managed by rcp_dolphin.c
+ * (LoadedTextureEntry.texture points at one; textureLoad/textureFree
+ * hand them out engine-wide). Field evidence (rcp_dolphin.c):
+ *  - width/height/refCount @0xA/0xC/0xE: GXInitTexObj dims; refCount
+ *    decremented on release, <=1 makes a cached texture evictable
+ *  - wrapS/wrapT @0x17/0x18, minFilter/magFilter @0x19/0x1A,
+ *    minLod/maxLod @0x1C/0x1D: textureInitSecondaryGXTexObj's GXInitTexObj /
+ *    GXInitTexObjLOD argument loads (mipmap = maxLod > minLod)
+ *  - tmemAddr @0x40 + preloaded @0x48: GXLoadTexObjPreLoaded path,
+ *    TMEM region released through tmemAddr when preloaded is set
+ *  - cached @0x49: nonzero blocks mm_free on release and instead arms
+ *    evictTimer @0x4B (10-frame countdown)
+ *  - imageOffset @0x50: image data lives at (u8 *)tex + 0x60 +
+ *    imageOffset (read as *(int *) for indexing and *(void **) for
+ *    null tests - keep the null-test width via launder)
+ * Record is variable-length (image data follows the 0x60 header) -
+ * do not take sizeof or index arrays of it.
+ */
+typedef struct Texture {
+    struct Texture* nextAnimationFrame;
+    u8 unk04[0x06];
+    u16 width;
+    u16 height;
+    u16 refCount;
+    u16 animationFrameCount;
+    u8 unk12[2];
+    union {
+        u16 animationFrameStep;
+        u16 expgfxLinkGroup;
+    };
+    u8 format;
+    u8 wrapS;
+    u8 wrapT;
+    u8 minFilter;
+    u8 magFilter;
+    u8 unk1B;
+    u8 minLod;
+    u8 maxLod;
+    u8 unk1E[2];
+    u32 gxTexObj[sizeof(GXTexObj) / sizeof(u32)];
+    u32* tmemAddr;
+    u32 dataSize;
+    u8 preloaded;
+    u8 cached;
+    u8 unk4A;
+    u8 evictTimer;
+    u32 loadedSize;
+    s32 imageOffset;
+    u8 unk54[0xC];
+} Texture;
+
+STATIC_ASSERT(offsetof(Texture, nextAnimationFrame) == 0x00);
+STATIC_ASSERT(offsetof(Texture, width) == 0xA);
+STATIC_ASSERT(offsetof(Texture, animationFrameCount) == 0x10);
+STATIC_ASSERT(offsetof(Texture, animationFrameStep) == 0x14);
+STATIC_ASSERT(offsetof(Texture, gxTexObj) == 0x20);
+STATIC_ASSERT(offsetof(Texture, tmemAddr) == 0x40);
+STATIC_ASSERT(offsetof(Texture, dataSize) == 0x44);
+STATIC_ASSERT(offsetof(Texture, preloaded) == 0x48);
+STATIC_ASSERT(offsetof(Texture, loadedSize) == 0x4C);
+STATIC_ASSERT(offsetof(Texture, imageOffset) == 0x50);
+STATIC_ASSERT(sizeof(Texture) == 0x60);
+
+static inline GXTexObj* textureGetGXTexObj(Texture* texture) {
+    return (GXTexObj*)texture->gxTexObj;
+}
+
+static inline void* textureGetImageData(Texture* texture) {
+    return (u8*)texture + sizeof(Texture);
+}
+
+static inline GXTexRegion* textureGetGXTexRegion(Texture* texture) {
+    return (GXTexRegion*)texture->tmemAddr;
+}
+
+void* textureLoadAsset(int asset);
+void textureFree(Texture* texture);
+void selectTextureWithSecondary(Texture* texture, int mapId);
+void selectTexture(Texture* texture, int mapId);
+
+#endif

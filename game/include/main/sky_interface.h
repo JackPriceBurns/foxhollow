@@ -1,0 +1,101 @@
+#ifndef MAIN_SKY_INTERFACE_H_
+#define MAIN_SKY_INTERFACE_H_
+
+#include "global.h"
+
+struct GameObject;
+
+typedef void (*SkyUpdateEnvfxActFn)(void* sourceObj, void* targetObj, void* entry, int flags);
+typedef void (*SkyLoadLightsFn)(void);
+typedef void (*SkyUpdateTimeOfDayFn)(void);
+typedef void (*SkyRenderFn)(int a, int b, int c, int d, int e);
+typedef void (*SkyGetTimeOfDayFn)(f32* outTime);
+typedef void (*SkyGetClockTimeFn)(f32* outTime);
+typedef void (*SkyGetTransitionTimerFn)(int* outTimer);
+typedef int (*SkyGetSunPositionFn)(f32* outTime);
+typedef void (*SkySetTimeOfDayFn)(f32 time);
+typedef void (*SkyTimeToDayHourMinuteFn)(f32 time, s16* days, s16* hours, s16* minutes);
+typedef int (*SkyGetVisibilityFn)(int slot);
+typedef void (*SkyRenderTimeOfDayBackdropFn)(int unused0, int unused1);
+typedef void (*SkyGetCurrentTextureColorFn)(u8* red, u8* green, u8* blue);
+typedef void (*SkyGetCurrentAmbientAndLightColorsFn)(u8* ambientRed, u8* ambientGreen, u8* ambientBlue, u8* lightRed,
+                                                     u8* lightGreen, u8* lightBlue);
+typedef void (*SkySetDayNoFn)(int value);
+typedef int (*SkyGetDayNoFn)(void);
+
+typedef struct SkyInterface {
+    void* unused00;
+    SkyUpdateEnvfxActFn updateEnvfxAct;
+    SkyLoadLightsFn loadLights;
+    SkyUpdateTimeOfDayFn updateTimeOfDay;
+    SkyRenderFn render;
+    SkyGetTimeOfDayFn getTimeOfDay;
+    SkyGetClockTimeFn getClockTime;
+    void (*reservedNopA)(void);
+    SkyGetTransitionTimerFn getTransitionTimer;
+    SkyGetSunPositionFn getSunPosition;
+    SkySetTimeOfDayFn setTimeOfDay;
+    int (*reservedReturnZeroA)(void);
+    SkyTimeToDayHourMinuteFn timeToDayHourMinute;
+    SkyGetVisibilityFn getVisibility;
+    SkyRenderTimeOfDayBackdropFn renderTimeOfDayBackdrop;
+    SkyGetCurrentTextureColorFn getCurrentTextureColor;
+    SkyGetCurrentAmbientAndLightColorsFn getCurrentAmbientAndLightColors;
+    void (*reservedNopB)(void);
+    void (*reservedNopC)(void);
+    SkySetDayNoFn setDayNo;
+    SkyGetDayNoFn getDayNo;
+    int (*reservedReturnZeroB)(void);
+} SkyInterface;
+
+STATIC_ASSERT(offsetof(SkyInterface, updateEnvfxAct) == 0x04);
+STATIC_ASSERT(offsetof(SkyInterface, loadLights) == 0x08);
+STATIC_ASSERT(offsetof(SkyInterface, updateTimeOfDay) == 0x0C);
+STATIC_ASSERT(offsetof(SkyInterface, render) == 0x10);
+STATIC_ASSERT(offsetof(SkyInterface, getTimeOfDay) == 0x14);
+STATIC_ASSERT(offsetof(SkyInterface, getClockTime) == 0x18);
+STATIC_ASSERT(offsetof(SkyInterface, reservedNopA) == 0x1C);
+STATIC_ASSERT(offsetof(SkyInterface, getTransitionTimer) == 0x20);
+STATIC_ASSERT(offsetof(SkyInterface, getSunPosition) == 0x24);
+STATIC_ASSERT(offsetof(SkyInterface, setTimeOfDay) == 0x28);
+STATIC_ASSERT(offsetof(SkyInterface, reservedReturnZeroA) == 0x2C);
+STATIC_ASSERT(offsetof(SkyInterface, timeToDayHourMinute) == 0x30);
+STATIC_ASSERT(offsetof(SkyInterface, getVisibility) == 0x34);
+STATIC_ASSERT(offsetof(SkyInterface, renderTimeOfDayBackdrop) == 0x38);
+STATIC_ASSERT(offsetof(SkyInterface, getCurrentTextureColor) == 0x3C);
+STATIC_ASSERT(offsetof(SkyInterface, getCurrentAmbientAndLightColors) == 0x40);
+STATIC_ASSERT(offsetof(SkyInterface, reservedNopB) == 0x44);
+STATIC_ASSERT(offsetof(SkyInterface, reservedNopC) == 0x48);
+STATIC_ASSERT(offsetof(SkyInterface, setDayNo) == 0x4C);
+STATIC_ASSERT(offsetof(SkyInterface, getDayNo) == 0x50);
+STATIC_ASSERT(offsetof(SkyInterface, reservedReturnZeroB) == 0x54);
+
+extern SkyInterface** gSkyInterface;
+
+typedef void (*Sky2UpdateEnvfxActFn)(void* source, void* target, void* entry, int flags, u16 idx);
+typedef void (*Sky2OnMapSetupFn)(void);
+typedef void (*Sky2RunFn)(void);
+typedef void (*Sky2ApplyFogColorFn)(int slot);
+typedef int (*Sky2Ret0Fn)(void);
+typedef void (*Sky2ApplyTextColorFn)(int slot);
+
+typedef struct Sky2Interface {
+    void (*pad00_slots[1])(void);
+    Sky2UpdateEnvfxActFn updateEnvfxAct;
+    Sky2OnMapSetupFn onMapSetup;
+    Sky2RunFn run;
+    Sky2ApplyFogColorFn applyFogColor;
+    Sky2Ret0Fn ret0;
+    Sky2ApplyTextColorFn applyTextColor;
+} Sky2Interface;
+
+STATIC_ASSERT(offsetof(Sky2Interface, updateEnvfxAct) == 0x04);
+STATIC_ASSERT(offsetof(Sky2Interface, onMapSetup) == 0x08);
+STATIC_ASSERT(offsetof(Sky2Interface, run) == 0x0C);
+STATIC_ASSERT(offsetof(Sky2Interface, applyFogColor) == 0x10);
+STATIC_ASSERT(offsetof(Sky2Interface, ret0) == 0x14);
+STATIC_ASSERT(offsetof(Sky2Interface, applyTextColor) == 0x18);
+
+extern Sky2Interface** gSky2Interface;
+
+#endif /* MAIN_SKY_INTERFACE_H_ */

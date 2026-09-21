@@ -1,0 +1,218 @@
+/*
+ * DLL 105 / 0x69 - a modgfx effect spawner.
+ */
+#include <stdio.h>
+#include "main/dll/dll_0069_modgfx.h"
+#include "main/dll/modgfx_interface.h"
+#include "main/dll/modgfx_types.h"
+#include "main/dll/partfx_interface.h"
+
+typedef struct Dll69EffectResourceView {
+    ModgfxEffectVertex vertices[8];
+    s16 colors[4][3];
+    s16 allVertexIndices[8];
+    s16 sequenceParams[7];
+    u8 pad86[2];
+} Dll69EffectResourceView;
+
+STATIC_ASSERT(offsetof(Dll69EffectResourceView, vertices) == 0x00);
+STATIC_ASSERT(offsetof(Dll69EffectResourceView, colors) == 0x50);
+STATIC_ASSERT(offsetof(Dll69EffectResourceView, allVertexIndices) == 0x68);
+STATIC_ASSERT(offsetof(Dll69EffectResourceView, sequenceParams) == 0x78);
+STATIC_ASSERT(sizeof(Dll69EffectResourceView) == 0x88);
+
+u16 gDll69EffectResourceData[sizeof(Dll69EffectResourceView) / sizeof(u16)] = {
+    0xfc18, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xfc18, 0x0000,
+    0x0000, 0x03e8, 0x0000, 0x0000, 0x0040, 0x0000, 0x0000, 0x0000, 0x03e8,
+    0x0040, 0x0000, 0xfc18, 0x0fa0, 0x0000, 0x0000, 0x0040, 0x0000, 0x0fa0,
+    0xfc18, 0x0000, 0x0040, 0x03e8, 0x0fa0, 0x0000, 0x0040, 0x0040, 0x0000,
+    0x0fa0, 0x03e8, 0x0040, 0x0040, 0x0000, 0x0002, 0x0006, 0x0000, 0x0006,
+    0x0004, 0x0001, 0x0003, 0x0007, 0x0001, 0x0007, 0x0005, 0x0000, 0x0001,
+    0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0000, 0x0104, 0x001e,
+    0x0001, 0x0104, 0x0000, 0x0000, 0x0000,
+};
+
+s16 dll_69_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags, int unusedArg4,
+                       Dll69EffectParams* overrideParams) {
+    ModgfxSpawnPacket packet;
+    GfxCmd* command;
+    GfxCmd* entries;
+    u8* resourceData = (u8*)gDll69EffectResourceData;
+    if (spawnParams != NULL) {
+        f32* fp = (f32*)spawnParams;
+        fprintf(stderr, "[DLL69] spawn variant=%d params=(%g,%g,%g,%g,%g) flags=0x%x\n",
+                variant, fp[0], fp[1], fp[2], fp[3], fp[4], spawnFlags);
+    } else {
+        fprintf(stderr, "[DLL69] spawn variant=%d params=NULL flags=0x%x\n", variant, spawnFlags);
+    }
+    int param1 = 0x30;
+    int param2 = 0x31;
+    int param0 = 1;
+    int param3 = 0x50;
+
+    entries = packet.entries;
+    if (overrideParams != NULL) {
+        param0 = overrideParams->param0;
+        param1 = overrideParams->param1;
+        param2 = overrideParams->param2;
+        param3 = overrideParams->param3;
+    }
+    entries[0].layer = 0;
+    entries[0].flags = 8;
+    entries[0].tex = &resourceData[offsetof(Dll69EffectResourceView, allVertexIndices)];
+    entries[0].mode = 4;
+    entries[0].x = 0.0f;
+    entries[0].y = 0.0f;
+    entries[0].z = 0.0f;
+    entries[1].layer = 0;
+    entries[1].flags = 8;
+    entries[1].tex = &resourceData[offsetof(Dll69EffectResourceView, allVertexIndices)];
+    entries[1].mode = 2;
+    if (sourceObj != NULL) {
+        entries[1].x = 7.0f * sourceObj->anim.rootMotionScale;
+        entries[1].y = 6.0f * sourceObj->anim.rootMotionScale;
+        entries[1].z = 7.0f * sourceObj->anim.rootMotionScale;
+    } else {
+        entries[1].x = 7.0f;
+        entries[1].y = 6.0f;
+        entries[1].z = 7.0f;
+    }
+    entries[2].layer = 0;
+    entries[2].flags = 0;
+    entries[2].tex = NULL;
+    entries[2].mode = 0x80;
+    entries[2].x = 0.0f;
+    entries[2].y = 0.0f;
+    if (sourceObj != NULL) {
+        entries[2].z = (f32) * (s16*)sourceObj;
+    } else {
+        entries[2].z = 0.0f;
+    }
+    entries[3].layer = 1;
+    entries[3].flags = 8;
+    entries[3].tex = &resourceData[offsetof(Dll69EffectResourceView, allVertexIndices)];
+    entries[3].mode = 4;
+    entries[3].x = 255.0f;
+    entries[3].y = 0.0f;
+    entries[3].z = 0.0f;
+    entries[4].layer = 1;
+    entries[4].flags = param3;
+    entries[4].tex = NULL;
+    entries[4].mode = 0x20000000;
+    entries[4].x = param0;
+    entries[4].y = param1;
+    entries[4].z = param2;
+    command = &entries[5];
+    if (variant == 0) {
+        command->layer = 2;
+        command->flags = 0x3b;
+        command->tex = NULL;
+        command->mode = 0x1800000;
+        command->x = 1.0f;
+        command->y = 0.0f;
+        command->z = 10.0f;
+        command++;
+    }
+    command[0].layer = 2;
+    command[0].flags = 0;
+    command[0].tex = NULL;
+    command[0].mode = 0x100;
+    command[0].x = 0.0f;
+    command[0].y = 0.0f;
+    command[0].z = 50.0f;
+    command[1].layer = 3;
+    command[1].flags = 1;
+    command[1].tex = NULL;
+    command[1].mode = 0x2000;
+    command[1].x = 0.0f;
+    command[1].y = 0.0f;
+    command[1].z = 0.0f;
+    command[2].layer = 4;
+    command[2].flags = 8;
+    command[2].tex = &resourceData[offsetof(Dll69EffectResourceView, allVertexIndices)];
+    command[2].mode = 4;
+    command[2].x = 0.0f;
+    command[2].y = 0.0f;
+    command[2].z = 0.0f;
+    command[3].layer = 4;
+    command[3].flags = 0;
+    command[3].tex = NULL;
+    command[3].mode = 0x20000000;
+    command[3].x = param0;
+    command[3].y = param1;
+    command[3].z = param2;
+    packet.context.modeByte = variant;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    if (spawnParams != NULL) {
+        packet.context.position[1] = ((PartFxSpawnParams*)spawnParams)->posY;
+    } else {
+        packet.context.position[1] = 0.0f;
+    }
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 1.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 8;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x1e;
+    packet.context.commandCount = (command + 4) - entries;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(Dll69EffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
+    {
+        u32 packetFlags = 0x4000000;
+
+        packet.context.flags = packetFlags;
+        packetFlags |= spawnFlags | 0x80;
+        packet.context.flags = packetFlags;
+        if (variant == 2) {
+            u32 mask = 0x40000;
+
+            packet.context.flags = packetFlags ^ mask;
+        } else {
+            u32 mask = 0x40000;
+
+            packet.context.flags = packetFlags | mask;
+        }
+    }
+    if ((packet.context.flags & 1) != 0) {
+        if (packet.context.attachedSource != NULL) {
+            packet.context.position[0] += packet.context.attachedSource->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
+        } else {
+            PartFxSpawnParams* params = (PartFxSpawnParams*)spawnParams;
+
+            packet.context.position[0] += params->posX;
+            packet.context.position[1] += params->posY;
+            packet.context.position[2] += params->posZ;
+        }
+    }
+    return (*gModgfxInterface)
+        ->spawnEffect(&packet.context, 0, 8, (u8*)gDll69EffectResourceData, 4,
+                      &resourceData[offsetof(Dll69EffectResourceView, colors)], variant == 2 ? 0xc11 : 0x5e0, 0);
+}
+
+void dll_69_release(void) {
+}
+
+void dll_69_initialise(void) {
+}
+
+RESOURCE_ACQUIRE_ADAPTER(gDll69ResourceDescriptorAcquire, dll_69_initialise)
+
+Dll69ResourceDescriptor gDll69ResourceDescriptor = {
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll69ResourceDescriptorAcquire, dll_69_release },
+    NULL,
+    dll_69_spawnEffect,
+};

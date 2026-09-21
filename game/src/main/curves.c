@@ -1,0 +1,527 @@
+#include "main/curve.h"
+#include "main/debug.h"
+#include "main/frame_timing.h"
+#include "dolphin/math.h"
+
+int gCurveCachedSampleCount = -1;
+
+f32 gCurveForwardDiffStep;
+
+static f32 curveSpeedAt(f32* poly, f32 t) {
+    return sqrtf(poly[5] + (poly[4] + (poly[3] + (poly[2] + poly[1] * t) * t) * t) * t);
+}
+
+static f32 curveIntegrateSpeed(f32* poly, f32 t0, f32 step) {
+    f32 sum;
+    f32 t;
+    int i;
+
+    sum = 0.0f;
+    t = t0 + step;
+    for (i = 2; i < 26; i++) {
+        if ((i & 1) == 0) {
+            sum += 4.0f * curveSpeedAt(poly, t);
+        } else {
+            sum += 2.0f * curveSpeedAt(poly, t);
+        }
+        t += step;
+    }
+    return ((curveSpeedAt(poly, t) + (curveSpeedAt(poly, t0) + sum)) * step) / 3.0f;
+}
+
+static void curveBuildArcSegments(f32* values, int count, f32* out) {
+    int i;
+
+    for (i = 0; i < count - 3; i++) {
+        out[0] = values[i + 3] + (-3.0f * values[i + 2] + (-values[i] + 3.0f * values[i + 1]));
+        out[1] = 3.0f * values[i + 2] + (3.0f * values[i] + -6.0f * values[i + 1]);
+        out[2] = -3.0f * values[i] + 3.0f * values[i + 2];
+        out[3] = values[i + 2] + (values[i] + 4.0f * values[i + 1]);
+        out[0] *= 0.16666667f;
+        out[1] *= 0.16666667f;
+        out[2] *= 0.16666667f;
+        out[3] *= 0.16666667f;
+        out[4] = 1.0f;
+        out += 5;
+    }
+}
+
+static f32 curveSolveArcParam(f32* poly, f32 distance, f32 step) {
+    f32 lo;
+    f32 hi;
+    f32 mid;
+    int i;
+
+    lo = 0.0f;
+    hi = 1.0f;
+    mid = hi;
+    for (i = 0; i < 16; i++) {
+        mid = (lo + hi) * 0.5f;
+        if (curveIntegrateSpeed(poly, lo, (mid - lo) * step) < distance) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    return mid;
+}
+
+static void Curve_BuildSegmentLengthTable(Curve* curve, int count) {
+    f32 outX[21];
+    f32 outY[21];
+    f32 outZ[21];
+    int i;
+    f32* px = NULL;
+    f32* py = NULL;
+    f32* pz = NULL;
+    f32 dx, dy, dz, sq;
+    f32 zero;
+
+    if (curve->px != NULL) {
+        px = curve->px + curve->idx;
+    }
+    if (curve->py != NULL) {
+        py = curve->py + curve->idx;
+    }
+    if (curve->pz != NULL) {
+        pz = curve->pz + curve->idx;
+    }
+    if (curve->coeffFn != 0) {
+        Curve_SampleSegmentPoints(px, py, pz, outX, outY, outZ, count, curve->coeffFn);
+    }
+
+    zero = 0.0f;
+    curve->totalLen = zero;
+    for (i = 0; i < count; i++) {
+        dx = px != NULL ? outX[i + 1] - outX[i] : 0.0f;
+        dy = py != NULL ? outY[i + 1] - outY[i] : 0.0f;
+        dz = pz != NULL ? outZ[i + 1] - outZ[i] : 0.0f;
+        sq = dx * dx + dy * dy + dz * dz;
+        if (sq > zero) {
+            curve->segLen[i] = sqrtf(sq);
+        } else {
+            curve->segLen[i] = 0.1f;
+        }
+        curve->totalLen += curve->segLen[i];
+    }
+}
+
+void Curve_SampleSegmentPoints(f32* px, f32* py, f32* pz, f32* outX, f32* outY, f32* outZ, int count,
+                               CurveCoeffFn coeffFn) {
+    f32 bufX[4];
+    f32 bufY[4];
+    f32 bufZ[4];
+    f32 vx, d1x, d2x, d3x;
+    f32 vy, d1y, d2y, d3y;
+    f32 vz, d1z, d2z, d3z;
+    f32 step;
+    int i;
+
+    if (count != gCurveCachedSampleCount) {
+        step = 1.0f / count;
+        gCurveForwardDiffStep = step;
+        gCurveForwardDiffCoeffs[0] = step * step;
+        gCurveForwardDiffCoeffs[1] = 2.0f * gCurveForwardDiffCoeffs[0];
+        gCurveForwardDiffCoeffs[2] = step * gCurveForwardDiffCoeffs[0];
+        gCurveForwardDiffCoeffs[3] = 6.0f * gCurveForwardDiffCoeffs[2];
+        gCurveCachedSampleCount = count;
+    }
+
+    if (px != NULL) {
+        coeffFn(px, bufX);
+        vx = bufX[3];
+        d1x = gCurveForwardDiffStep * bufX[2] +
+              (gCurveForwardDiffCoeffs[2] * bufX[0] + gCurveForwardDiffCoeffs[0] * bufX[1]);
+        d2x = gCurveForwardDiffCoeffs[3] * bufX[0] + gCurveForwardDiffCoeffs[1] * bufX[1];
+        d3x = gCurveForwardDiffCoeffs[3] * bufX[0];
+    }
+    if (py != NULL) {
+        coeffFn(py, bufY);
+        vy = bufY[3];
+        d1y = gCurveForwardDiffStep * bufY[2] +
+              (gCurveForwardDiffCoeffs[2] * bufY[0] + gCurveForwardDiffCoeffs[0] * bufY[1]);
+        d2y = gCurveForwardDiffCoeffs[3] * bufY[0] + gCurveForwardDiffCoeffs[1] * bufY[1];
+        d3y = gCurveForwardDiffCoeffs[3] * bufY[0];
+    }
+    if (pz != NULL) {
+        coeffFn(pz, bufZ);
+        vz = bufZ[3];
+        d1z = gCurveForwardDiffStep * bufZ[2] +
+              (gCurveForwardDiffCoeffs[2] * bufZ[0] + gCurveForwardDiffCoeffs[0] * bufZ[1]);
+        d2z = gCurveForwardDiffCoeffs[3] * bufZ[0] + gCurveForwardDiffCoeffs[1] * bufZ[1];
+        d3z = gCurveForwardDiffCoeffs[3] * bufZ[0];
+    }
+
+    for (i = 0; i <= count; i++) {
+        if (px != NULL) {
+            outX[i] = vx;
+            vx += d1x;
+            d1x += d2x;
+            d2x += d3x;
+        }
+        if (py != NULL) {
+            outY[i] = vy;
+            vy += d1y;
+            d1y += d2y;
+            d2y += d3y;
+        }
+        if (pz != NULL) {
+            outZ[i] = vz;
+            vz += d1z;
+            d1z += d2z;
+            d2z += d3z;
+        }
+    }
+}
+
+int Curve_AdvanceAlongPath(Curve* curve, f32 dt) {
+    int seg, savedIdx;
+    f32* lengths = &curve->totalLen;
+    f32 step = dt * timeDelta;
+    f32 zero;
+
+    if (step > 0.0f) {
+        f32 base, frac, t;
+
+        seg = (int)(20.0f * curve->t);
+        if (seg == 20) {
+            seg--;
+        }
+        if (curve->dir != 0) {
+            f32 segLen = lengths[seg + 1];
+            curve->segmentDistance = segLen + curve->segmentDistance;
+        } else if (curve->t >= 1.0f) {
+            return 1;
+        }
+        curve->pathDistance += step;
+        step += curve->segmentDistance;
+        zero = 0.0f;
+        while (step > zero) {
+            step -= lengths[seg + 1];
+            if (step > zero && ++seg >= 20) {
+                savedIdx = curve->idx;
+                if (curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) {
+                    curve->idx += 3;
+                }
+                if (++curve->idx > curve->count - 4) {
+                    if (curve->px != NULL) {
+                        curve->sample[0] = curve->eval(curve->px + savedIdx, 1.0f, &curve->tangent[0]);
+                    }
+                    if (curve->py != NULL) {
+                        curve->sample[1] = curve->eval(curve->py + savedIdx, 1.0f, &curve->tangent[1]);
+                    }
+                    if (curve->pz != NULL) {
+                        curve->sample[2] = curve->eval(curve->pz + savedIdx, 1.0f, &curve->tangent[2]);
+                    }
+                    curve->t = 1.0f;
+                    curve->segmentDistance = 0.0f;
+                    curve->pathDistance = curve->pathLength;
+                    curve->idx = curve->count - 4;
+                    return 1;
+                }
+                Curve_BuildSegmentLengthTable(curve, 20);
+                seg = 0;
+            }
+        }
+        step += lengths[seg + 1];
+        base = seg / 20.0f;
+        frac = step / lengths[seg + 1];
+        t = frac * ((f32)(seg + 1) / 20.0f - base) + base;
+        if (curve->px != NULL) {
+            curve->sample[0] = curve->eval(curve->px + curve->idx, t, &curve->tangent[0]);
+        }
+        if (curve->py != NULL) {
+            curve->sample[1] = curve->eval(curve->py + curve->idx, t, &curve->tangent[1]);
+        }
+        if (curve->pz != NULL) {
+            curve->sample[2] = curve->eval(curve->pz + curve->idx, t, &curve->tangent[2]);
+        }
+        curve->t = t;
+        curve->segmentDistance = step;
+        curve->dir = 0;
+    } else if (step < 0.0f) {
+        f32 base, frac, t;
+
+        seg = (int)(20.0f * curve->t);
+        if (seg == 20) {
+            seg--;
+        }
+        if (curve->dir == 0) {
+            curve->segmentDistance = lengths[seg + 1] - curve->segmentDistance;
+        } else if (curve->t <= 0.0f) {
+            return 1;
+        }
+        curve->pathDistance += step;
+        step += curve->segmentDistance;
+        zero = 0.0f;
+        while (step < zero) {
+            step += lengths[seg + 1];
+            if (step < zero && --seg < 0) {
+                savedIdx = curve->idx;
+                if (curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) {
+                    curve->idx -= 3;
+                }
+                if (--curve->idx < 0) {
+                    if (curve->px != NULL) {
+                        curve->sample[0] = curve->eval(curve->px + savedIdx, 0.0f, &curve->tangent[0]);
+                    }
+                    if (curve->py != NULL) {
+                        curve->sample[1] = curve->eval(curve->py + savedIdx, 0.0f, &curve->tangent[1]);
+                    }
+                    if (curve->pz != NULL) {
+                        curve->sample[2] = curve->eval(curve->pz + savedIdx, 0.0f, &curve->tangent[2]);
+                    }
+                    curve->t = 0.0f;
+                    curve->segmentDistance = -lengths[1];
+                    curve->pathDistance = 0.0f;
+                    curve->idx = 0;
+                    return 1;
+                }
+                Curve_BuildSegmentLengthTable(curve, 20);
+                seg = 19;
+            }
+        }
+        base = seg / 20.0f;
+        frac = step / lengths[seg + 1];
+        t = frac * ((f32)(seg + 1) / 20.0f - base) + base;
+        if (curve->px != NULL) {
+            curve->sample[0] = curve->eval(curve->px + curve->idx, t, &curve->tangent[0]);
+        }
+        if (curve->py != NULL) {
+            curve->sample[1] = curve->eval(curve->py + curve->idx, t, &curve->tangent[1]);
+        }
+        if (curve->pz != NULL) {
+            curve->sample[2] = curve->eval(curve->pz + curve->idx, t, &curve->tangent[2]);
+        }
+        curve->t = t;
+        curve->segmentDistance = step - lengths[seg + 1];
+        curve->dir = 1;
+    }
+    return 0;
+}
+
+void curvesSetupMoveNetworkCurve(Curve* curve) {
+    if (curve->count < 4) {
+        debugPrintf(sCurvesSetupMoveNetworkCurveTooFewControlPoints);
+    }
+    if ((curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) && (curve->count & 3) != 0) {
+        debugPrintf(sCurvesSetupMoveNetworkCurveBadControlPointCount);
+    }
+
+    curve->pathLength = 0.0f;
+    curve->idx = 0;
+    while (curve->idx < curve->count - 3) {
+        Curve_BuildSegmentLengthTable(curve, 5);
+        curve->pathLength += curve->totalLen;
+        if (curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) {
+            curve->idx += 4;
+        } else {
+            curve->idx += 1;
+        }
+    }
+
+    if (curve->dir != 0) {
+        curve->idx = curve->count - 4;
+    } else {
+        curve->idx = 0;
+    }
+    Curve_BuildSegmentLengthTable(curve, 20);
+    if (curve->dir != 0) {
+        curve->pathDistance = curve->pathLength - curve->segmentDistance;
+    } else {
+        curve->pathDistance = curve->segmentDistance;
+    }
+}
+
+void curvesMove(Curve* curve) {
+    if (curve->count < 4) {
+        debugPrintf(sCurvesMoveTooFewControlPoints);
+    }
+    if ((curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) && (curve->count & 3) != 0) {
+        debugPrintf(sCurvesMoveBadControlPointCount);
+    }
+
+    curve->pathLength = 0.0f;
+    curve->idx = 0;
+    while (curve->idx < curve->count - 3) {
+        Curve_BuildSegmentLengthTable(curve, 5);
+        curve->pathLength += curve->totalLen;
+        if (curve->eval == Curve_EvalBezier || curve->eval == Curve_EvalHermite) {
+            curve->idx += 4;
+        } else {
+            curve->idx += 1;
+        }
+    }
+
+    if (curve->dir != 0) {
+        curve->idx = curve->count - 4;
+    } else {
+        curve->idx = 0;
+    }
+    Curve_BuildSegmentLengthTable(curve, 20);
+
+    if (curve->dir != 0) {
+        curve->t = 1.0f;
+        curve->segmentDistance = curve->segLen[19];
+        curve->pathDistance = curve->pathLength;
+    } else {
+        f32 z = 0.0f;
+        curve->t = z;
+        curve->segmentDistance = z;
+        curve->pathDistance = z;
+    }
+
+    if (curve->px != NULL) {
+        curve->sample[0] = curve->eval(curve->px, curve->t, &curve->tangent[0]);
+    }
+    if (curve->py != NULL) {
+        curve->sample[1] = curve->eval(curve->py, curve->t, &curve->tangent[1]);
+    }
+    if (curve->pz != NULL) {
+        curve->sample[2] = curve->eval(curve->pz, curve->t, &curve->tangent[2]);
+    }
+}
+
+f32 Curve_EvalLinear(f32* values, f32 t, f32* unused) {
+    return t * (values[1] - values[0]) + values[0];
+}
+
+f32 Curve_EvalCatmullRom(void* valuesArg, f32 t, f32* outTangent) {
+    f32* values = valuesArg;
+    f32 cubic;
+    f32 p0;
+    f32 p1;
+    f32 p2;
+    f32 p3;
+    f32 negP0;
+    f32 quadratic;
+    f32 linear;
+    f32 constant;
+
+    p3 = values[3];
+    cubic = p3 + (-3.0f * (p2 = values[2]) + (3.0f * (p1 = values[1]) + (negP0 = -(p0 = values[0]))));
+    quadratic = (4.0f * p2 + (2.0f * p0 + -5.0f * p1)) - p3;
+    linear = negP0 + p2;
+    constant = 2.0f * p1;
+
+    if (outTangent != NULL) {
+        f32 cubic3 = 3.0f * cubic;
+        *outTangent = t * (2.0f * quadratic + cubic3 * t) + linear;
+    }
+    return 0.5f * (t * (t * (cubic * t + quadratic) + linear) + constant);
+}
+
+f32 Curve_EvalBezier(f32* values, f32 t, f32* outTangent) {
+    f32 cubic;
+    f32 p1;
+    f32 p2;
+    f32 p0;
+    f32 mid;
+    f32 quadratic;
+    f32 linear;
+
+    cubic = values[3] + (-3.0f * (p2 = values[2]) + (-(p0 = values[0]) + (mid = 3.0f * (p1 = values[1]))));
+    quadratic = 3.0f * p2 + (3.0f * p0 + -6.0f * p1);
+    linear = -3.0f * p0 + mid;
+
+    if (outTangent != NULL) {
+        f32 cubic3 = 3.0f * cubic;
+        *outTangent = t * (2.0f * quadratic + cubic3 * t) + linear;
+    }
+    return t * (t * (cubic * t + quadratic) + linear) + p0;
+}
+
+void Curve_BuildHermiteCoeffs(f32* values, f32* coefficients) {
+    coefficients[0] = values[3] + (values[2] + (2.0f * values[0] + -2.0f * values[1]));
+    coefficients[1] = (-3.0f * values[0] + 3.0f * values[1] + -2.0f * values[2]) - values[3];
+    coefficients[2] = values[2];
+    coefficients[3] = values[0];
+}
+
+f32 Curve_EvalHermite(f32* values, f32 t, f32* outTangent) {
+    f32 cubic;
+    f32 p1;
+    f32 p0;
+    f32 tangent1;
+    f32 p3;
+    f32 quadratic;
+
+    p3 = values[3];
+    cubic = p3 + ((tangent1 = values[2]) + (2.0f * (p0 = values[0]) + -2.0f * (p1 = values[1])));
+    quadratic = ((-3.0f * p0 + 3.0f * p1) + -2.0f * tangent1) - p3;
+
+    if (outTangent != NULL) {
+        f32 cubic3 = 3.0f * cubic;
+        *outTangent = t * (2.0f * quadratic + cubic3 * t) + tangent1;
+    }
+    return t * (t * (cubic * t + quadratic) + tangent1) + p0;
+}
+
+void Curve_BuildBSplineCoeffs(f32* values, f32* coefficients) {
+    coefficients[0] = values[3] + (-3.0f * values[2] + (-values[0] + 3.0f * values[1]));
+    coefficients[1] = 3.0f * values[2] + (3.0f * values[0] + -6.0f * values[1]);
+    coefficients[2] = -3.0f * values[0] + 3.0f * values[2];
+    coefficients[3] = values[2] + (values[0] + 4.0f * values[1]);
+
+    coefficients[0] *= 0.16666667f;
+    coefficients[1] *= 0.16666667f;
+    coefficients[2] *= 0.16666667f;
+    coefficients[3] *= 0.16666667f;
+}
+
+f32 Curve_EvalBSpline(f32* values, f32 t, f32* outTangent) {
+    f32 cubic;
+    f32 quadratic;
+    f32 linear;
+    f32 p1;
+    f32 p0;
+    f32 p2;
+    f32 mid;
+    f32 constant;
+
+    cubic = values[3] + (-3.0f * (p2 = values[2]) + (-(p0 = values[0]) + 3.0f * (p1 = values[1])));
+    mid = 3.0f * p2;
+    quadratic = mid + (3.0f * p0 + -6.0f * p1);
+    linear = -3.0f * p0 + mid;
+    constant = p2 + (p0 + 4.0f * p1);
+
+    if (outTangent != NULL) {
+        f32 cubic3 = 3.0f * cubic;
+        *outTangent = 0.16666667f * (t * (2.0f * quadratic + cubic3 * t) + linear);
+    }
+    return 0.16666667f * (t * (t * (cubic * t + quadratic) + linear) + constant);
+}
+
+void CurveHeap_SiftDown(CurveHeapNode* heap, s32 count, s32 index) {
+    u16 priority = heap[index].priority;
+    u16 value = heap[index].value;
+
+    while (index <= count >> 1) {
+        s32 child = index + index;
+
+        if ((child < count) && (heap[child].priority < heap[child + 1].priority)) {
+            child++;
+        }
+
+        if (priority >= heap[child].priority) {
+            break;
+        }
+
+        heap[index].priority = heap[child].priority;
+        heap[index].value = heap[child].value;
+        index = child;
+    }
+
+    heap[index].priority = priority;
+    heap[index].value = value;
+}
+
+char sCurvesSetupMoveNetworkCurveTooFewControlPoints[] =
+    "curvesSetupMoveNetworkCurve: There must be at least four control points\n";
+char sCurvesSetupMoveNetworkCurveBadControlPointCount[] =
+    "curvesSetupMoveNetworkCurve: There must be a multiple of four control points for bezier or hermite curves\n";
+char sCurvesMoveTooFewControlPoints[] = "curvesMove: There must be at least four control points\n";
+char sCurvesMoveBadControlPointCount[] =
+    "curvesMove: There must be a multiple of four control points for bezier or hermite curves\n";
+
+f32 gCurveForwardDiffCoeffs[4];

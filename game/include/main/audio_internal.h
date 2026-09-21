@@ -1,0 +1,305 @@
+#ifndef MAIN_AUDIO_INTERNAL_H_
+#define MAIN_AUDIO_INTERNAL_H_
+
+#include "global.h"
+#include "dolphin/ar.h"
+#include "dolphin/dvd.h"
+#include "musyx/snd_reverb.h"
+#include "musyx/synth_queue.h"
+#include "dolphin/mtx/vec.h"
+#include "game/objects/object.h"
+
+#define AUDIO_ARQ_REQUEST_COUNT            16
+#define MUSIC_CHANNEL_COUNT                16
+#define SFX_OBJECT_CHANNEL_COUNT           56
+#define SFX_LOOPED_OBJECT_SOUND_FLAG_ALIVE 1
+#define SFX_LOOPED_OBJECT_SOUND_FLAG_SEEN  2
+#define SFX_LOOPED_OBJECT_STOP_FLAG        0x40
+
+#define STREAM_FADEBITS_FLAGA_SHIFT   6
+#define STREAM_FADEBITS_FLAGB_SHIFT   4
+#define STREAM_FADEBITS_STOPSFX_SHIFT 2
+#define STREAM_VOLBITS_CHANMASK_BIT   7
+#define STREAM_VOLBITS_VOLUME_MASK    0x7F
+
+STATIC_ASSERT(sizeof(ReverbState) == 0x154);
+
+struct MusicTrackSlot;
+struct MusicChannel;
+struct MusicTrigger;
+
+typedef void (*AudioArqRequestCallback)(struct MusicTrackSlot* slot, struct MusicChannel* channel,
+                                        struct MusicTrigger* trigger);
+
+typedef struct AudioArqRequestEntry {
+    ARQRequest request;
+    AudioArqRequestCallback callback;
+    struct MusicTrackSlot* callbackArg1;
+    struct MusicChannel* callbackArg2;
+    struct MusicTrigger* callbackArg3;
+} AudioArqRequestEntry;
+
+STATIC_ASSERT(sizeof(AudioArqRequestEntry) == 0x30);
+
+typedef struct AudioDvdStreamContext {
+    DVDCommandBlock preparedCommand;
+    DVDCommandBlock stopAtEndCommand;
+    DVDFileInfo fileInfo;
+    u8 pad9C[4];
+} AudioDvdStreamContext;
+
+STATIC_ASSERT(sizeof(AudioDvdStreamContext) == 0xA0);
+STATIC_ASSERT(offsetof(AudioDvdStreamContext, preparedCommand) == 0x00);
+STATIC_ASSERT(offsetof(AudioDvdStreamContext, stopAtEndCommand) == 0x30);
+STATIC_ASSERT(offsetof(AudioDvdStreamContext, fileInfo) == 0x60);
+
+typedef struct AudioDvdStreamStorage {
+    DVDCommandBlock currentCommand;
+    AudioDvdStreamContext prepared;
+} AudioDvdStreamStorage;
+
+STATIC_ASSERT(sizeof(AudioDvdStreamStorage) == 0xD0);
+STATIC_ASSERT(offsetof(AudioDvdStreamStorage, prepared) == 0x30);
+
+typedef struct MusicTrackSlot {
+    s16 id;
+    u8 groupId;
+    u8 unk3;
+    char* name;
+    int offset;
+    int size;
+} MusicTrackSlot;
+
+typedef struct StreamEntry {
+    u16 id;
+    u8 fadeModeA : 2;
+    u8 fadeModeB : 2;
+    u8 stopObjectSounds : 2;
+    u8 unusedFade : 2;
+    u8 fullVolume : 1;
+    u8 volume : 7;
+    u16 lengthRaw;
+    char name[0xF];
+    u8 flag;
+} StreamEntry;
+
+typedef struct MusicTrigger {
+    u16 id;
+    u16 track;
+    u16 fadeTime;
+    u16 speed;
+    u8 pad08[4];
+    u8 volume;
+    u8 priority;
+    u8 pad0E;
+    u8 pad0FHigh : 2;
+    u8 priorityGroup : 1;
+    u8 pad0FLow : 5;
+} MusicTrigger;
+
+STATIC_ASSERT(sizeof(MusicTrigger) == 0x10);
+
+typedef struct SfxLoopedObjectSoundTable {
+    u8 flags[0x80];
+    u16 ids[0x80];
+    GameObject* objects[0x80];
+} SfxLoopedObjectSoundTable;
+
+typedef struct SfxObjectChannel {
+    u32 handle;
+    u8 hasPosition;
+    u8 tracksObjectPosition;
+    u8 paused;
+    u8 volume;
+    u16 fxId;
+    u8 pad0a[0x02];
+    Vec pos;
+    GameObject* object;
+    u16 channelMask;
+    u16 sfxId;
+    f32 nearDistance;
+    f32 farDistance;
+    u8 globalCtrlDisabled;
+    u8 pad29[0x07];
+    u64 age;
+} SfxObjectChannel;
+
+typedef SynthPlayParams MusicSeqStartParams;
+
+typedef struct MusicChannel {
+    s32 trackId;
+    u32 seqHandle;
+    void* bankData;
+    int status;
+    u8 voiceId;
+    u8 priorityGroup;
+    u16 priority;
+    u16 volume;
+    u8 pad16[2];
+    u32 order;
+    MusicTrigger* trigger;
+    f32 fadeTimer;
+} MusicChannel;
+
+STATIC_ASSERT(sizeof(MusicChannel) == 0x24);
+STATIC_ASSERT(offsetof(MusicChannel, volume) == 0x14);
+STATIC_ASSERT(offsetof(MusicChannel, trigger) == 0x1C);
+
+typedef struct SfxTriggerFull {
+    u16 id;
+    u8 volBase;
+    u8 volRand;
+    u8 pitchBase;
+    u8 pitchRand;
+    u16 nearDistanceRaw;
+    u16 farDistanceRaw;
+    u16 sfxIds[6];
+    u8 weights[6];
+    u16 selectRange;
+    u8 e_tableIdx : 4;
+    u8 e_bit3 : 1;
+    u8 e_pad : 2;
+    u8 e_bit0 : 1;
+    u8 f_count : 4;
+    u8 f_curIdx : 4;
+} SfxTriggerFull;
+
+typedef struct SfxTrigger {
+    u16 id;
+    u8 pad[0x1e];
+} SfxTrigger;
+
+typedef struct SfxTriggerCacheEntry {
+    u16 key;
+    u16 index;
+} SfxTriggerCacheEntry;
+
+extern u8 gSfxLoopedObjectSoundFlags[];
+extern u16 gSfxLoopedObjectSoundIds[0x80];
+extern GameObject* gSfxLoopedObjectSoundObjects[0x80];
+extern u16 gSfxLoopedObjectSoundCount;
+extern SfxObjectChannel gSfxObjectChannels[];
+extern u8 gSfxGlobalReverbLevel;
+extern u32 gSfxObjectChannelMatchCount;
+extern u64 gSfxObjectChannelAge;
+extern const MusicSeqStartParams gMusicSeqStartParamsDefault;
+extern u8 gSfxTriggerExtraTable[];
+extern void* gSfxTriggersData;
+extern int gSfxTriggersCount;
+extern SfxTriggerCacheEntry gSfxTriggerLookupCache[];
+extern MusicChannel gMusicChannels[];
+extern int gMusicChannelCounterA;
+extern int gMusicChannelCounterB;
+extern s32 gMusicActivePriority;
+extern u32 gAudioResetting;
+extern u32 gAudioManagedChannelMask;
+extern u32 gAudioActiveChannelMask;
+extern u8 gAudioInitStarted;
+extern u8 gAudioStreamDefaultVolume;
+extern u8 gAudioStreamVolumeLeft;
+extern u8 gAudioStreamVolumeRight;
+extern u32 gAudioStreamMusicFadeFlagA;
+extern u32 gAudioStreamMusicFadeFlagB;
+extern void (*gAudioStreamPreparedCallback)(void);
+extern s32 gAudioStreamStartWhenPrepared;
+extern s32 gAudioStreamPreparingId;
+extern s32 gAudioStreamPreparedId;
+extern f32 gAudioStreamEndPos;
+extern f32 gAudioStreamPos;
+extern DVDCommandBlock gAudioStreamDvdBlockCurrent;
+extern AudioDvdStreamContext gAudioStreamDvdBlockPrepared;
+extern char sDvdCancelStreamWarning[];
+extern volatile int gAudioArqRequestDone;
+extern int gAudioArqRequestIndex;
+extern AudioArqRequestEntry gAudioArqRequests[];
+extern u32 gAudioPendingLoadFlags;
+extern volatile u32 gAudioCompletedLoadFlags;
+extern char sMidiWadLoadedCallbackLoadError[];
+extern u8 gMidiWadLoadStarted;
+extern int gMidiWadLoadedSize;
+extern void* gMidiWadFileData;
+extern void* gMidiWadPayloadStart;
+extern int gMidiWadPayloadSize;
+extern int gMidiWadArenaSize;
+extern char sMidiWadPath[];
+extern MusicTrackSlot sMusicTrackTable[];
+extern char sMusicTrackNameBarren[];
+extern char sMusicTrackNameBarrels[];
+extern char sMusicTrackNameBloop[];
+extern char sMusicTrackNameDIMDay[];
+extern char sMusicTrackNameDrako1[];
+extern char sMusicTrackNameDrako2[];
+extern char sMusicTrackNameDrako3[];
+extern char sMusicTrackNameKptext[];
+extern char sMusicTrackNameKpwin[];
+extern char sMusicTrackNameSlope[];
+extern char sMusicTrackNameTrex2a[];
+extern char sPoolDataMLoadedCallbackLoadError[];
+extern char sPoolDataSLoadedCallbackLoadError[];
+extern char sProjectDataMLoadedCallbackLoadError[];
+extern char sProjectDataSLoadedCallbackLoadError[];
+extern char sSampleBufferMLoadedCallbackLoadError[];
+extern char sSampleBufferSLoadedCallbackLoadError[];
+extern char sSampleDirectoryMLoadedCallbackLoadError[];
+extern char sSampleDirectorySLoadedCallbackLoadError[];
+extern char sSfxTriggersLoadedCallbackLoadError[];
+extern char sMusicTriggersLoadedCallbackLoadError[];
+extern char sStreamsLoadedCallbackLoadError[];
+extern StreamEntry* gStreamsData;
+extern int gStreamsCount;
+extern int gAudioStreamFadeTable[];
+extern MusicTrigger* gMusicTriggersData;
+extern int gMusicTriggersCount;
+extern s8 gAudioSoundMode;
+extern u8 gAudioHardwareInitialized;
+extern u8 gAudioMusicGroupReady;
+extern u8 gAudioSfxGroupsReady;
+extern u8 gAudioReady;
+extern void* gAudioStarfoxMPoolDataHandle;
+extern void* gAudioStarfoxMProjectDataHandle;
+extern void* gAudioStarfoxMSampleDirectoryHandle;
+extern void* gAudioStarfoxMSampleBufferHandle;
+extern void* gAudioStarfoxSPoolDataHandle;
+extern void* gAudioStarfoxSProjectDataHandle;
+extern void* gAudioStarfoxSSampleDirectoryHandle;
+extern void* gAudioStarfoxSSampleBufferHandle;
+extern ReverbState gAudioReverbSettings;
+extern u32 gAudioAramBlock[0x2C / sizeof(u32)];
+
+SfxObjectChannel* Sfx_FindObjectChannel(GameObject* obj, u32 channel, u16 sfxId, s32 mode);
+void Sfx_UpdateObjectChannel3D(SfxObjectChannel* objectChannel);
+void Music_Update(void);
+void Sfx_UpdateObjectSounds(void);
+void Sfx_StopAllObjectSounds(void);
+void AudioStream_UpdateFadeTimer(void);
+void AudioAramReadCompleteCallback(uintptr_t request);
+void Music_LoadChannelForTrigger(MusicTrigger* trigger);
+void Music_ChannelLoadedCallback(MusicTrackSlot* slot, MusicChannel* channel, MusicTrigger* trigger);
+u32 audioIsChannelUnavailable(u32 mask);
+void audioFree(void* ptr);
+void* _audioAlloc(u32 size);
+s32 Music_GetActivePriority(void);
+int concatThreeStrings(char* dst, void* unused, const char* first, const char* second, const char* third);
+void AudioAramWriteCompleteCallback(uintptr_t request);
+u8 musicInitMidiWad(void);
+void poolDataMLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void poolDataSLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void projectDataMLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void projectDataSLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void sampleBufferMLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void sampleBufferSLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void sampleDirectoryMLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void sampleDirectorySLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void sfxTriggersLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void musicTriggersLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+void streamsLoadedCallback(s32 status, DVDFileInfo* fileInfo);
+int Sfx_ReadTriggerParams(SfxTriggerFull* trigger, u16* outSfxId, u8* outVol, f32* outF6, f32* outF7, f32* outF8,
+                          int* outI9, int* outI10, int* outI11);
+SfxTrigger* Sfx_FindTrigger(u16 id);
+SfxObjectChannel* Sfx_AllocObjectChannel(u16 fxId, u8 volume, double pitch, u8 pan, int globalCtrlDisabled);
+void AudioAramReadAllocAsync(u32 source, u32 size, void** outBuf, AudioArqRequestCallback callback,
+                             MusicTrackSlot* callbackArg1, MusicChannel* callbackArg2, MusicTrigger* callbackArg3);
+void audioLoadTriggerData(void);
+void AudioAramWriteSync(void* addr, u32 dest, u32 size);
+
+#endif /* MAIN_AUDIO_INTERNAL_H_ */

@@ -1,0 +1,39 @@
+#ifndef MAIN_DLL_ARW_DLL_02A3_H
+#define MAIN_DLL_ARW_DLL_02A3_H
+
+#include "global.h"
+#include "game/objects/object.h"
+#include "main/vec_types.h"
+
+typedef struct Dll2A3State {
+    f32 lifetime;
+    s16 spinRateX;
+    s16 spinRateY;
+    s16 spinRateZ;
+    u8 pad0A[2];
+} Dll2A3State;
+
+STATIC_ASSERT(sizeof(Dll2A3State) == 0x0c);
+STATIC_ASSERT(offsetof(Dll2A3State, spinRateX) == 0x04);
+STATIC_ASSERT(offsetof(Dll2A3State, spinRateY) == 0x06);
+STATIC_ASSERT(offsetof(Dll2A3State, spinRateZ) == 0x08);
+
+extern int gDll2A3InstanceCount;
+extern int gDll2A3UpdatedThisFrame;
+
+void dll_2A3_setLifetime(GameObject* obj, int lifetime);
+void dll_2A3_setVelocity(GameObject* obj, Vec3f* velocity);
+int dll_2A3_getExtraSize_ret_12(void);
+int dll_2A3_getObjectTypeId(void);
+void dll_2A3_free(void);
+void dll_2A3_render(GameObject* obj, int p2, int p3, int p4, int p5);
+void dll_2A3_hitDetect(void);
+void dll_2A3_update(GameObject* obj);
+void dll_2A3_init(GameObject* obj);
+void dll_2A3_release_nop(void);
+void dll_2A3_initialise_nop(void);
+
+void dll_2A4_setLifetime(GameObject* obj, int lifetime);
+void dll_2A4_setVelocity(GameObject* obj, Vec3f* velocity);
+
+#endif

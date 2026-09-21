@@ -1,0 +1,11 @@
+build/
+build-*/
+cmake-build-*/
+.cache/
+.DS_Store
+.idea/
+.vscode/
+compile_commands.json
+CMakeUserPresets.json
+*.log
+mods/*/lib/

@@ -1,0 +1,7 @@
+build/
+build-*/
+.cache/
+.DS_Store
+compile_commands.json
+cmake-build-*/
+.idea/

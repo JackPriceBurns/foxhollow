@@ -1,0 +1,4 @@
+#ifndef FOXHOLLOW_SHIM_MW_RUNTIME_H
+#define FOXHOLLOW_SHIM_MW_RUNTIME_H
+
+#endif

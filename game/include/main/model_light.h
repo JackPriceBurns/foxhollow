@@ -1,0 +1,155 @@
+#ifndef MAIN_MODEL_LIGHT_H_
+#define MAIN_MODEL_LIGHT_H_
+
+#include "types.h"
+#include "main/vec_types.h"
+#include "dolphin/gx/GXStruct.h"
+#include "main/modellight.h"
+
+typedef struct GameObject GameObject;
+
+typedef struct ModelLightStruct {
+    void* owner;
+    f32 localX;
+    f32 localY;
+    f32 localZ;
+    f32 worldX;
+    f32 worldY;
+    f32 worldZ;
+    f32 viewX;
+    f32 viewY;
+    f32 viewZ;
+    f32 localDirX;
+    f32 localDirY;
+    f32 localDirZ;
+    f32 worldDirX;
+    f32 worldDirY;
+    f32 worldDirZ;
+    f32 viewDirX;
+    f32 viewDirY;
+    f32 viewDirZ;
+    u8 enabled;
+    u8 field4D;
+    u8 pad4e[0x50 - 0x4e];
+    int lightKind;
+    int projectedLightChannelPreference;
+    int activeState;
+    int objectLightMaskIndex;
+    int transformMode;
+    u8 objectLightMask;
+    u8 pad65[3];
+    GXLightObj diffuseLightObj;
+    u8 diffuseColor[4];
+    u8 diffuseFadeStartColor[4];
+    u8 diffuseFadeTargetColor[4];
+    f32 spotCutoff;
+    int spotFunction;
+    u8 fieldBC;
+    u8 padBD[3];
+    GXLightObj specularLightObj;
+    u8 specularColor[4];
+    u8 specularFadeStartColor[4];
+    u8 specularFadeTargetColor[4];
+    f32 specularAttenuationScale;
+    f32 specularBrightness;
+    u8 field114;
+    u8 pad115[0x124 - 0x115];
+    f32 attenuationK0;
+    f32 attenuationK1;
+    f32 attenuationK2;
+    f32 selectionScore;
+    f32 lightAmount;
+    f32 activeIntensity;
+    f32 activeIntensityStep;
+    f32 attenuationNear;
+    f32 attenuationFar;
+    f32 projectionFovY;
+    f32 projectionAspect;
+    f32 projectionTop;
+    f32 projectionBottom;
+    f32 projectionLeft;
+    f32 projectionRight;
+    f32 projectionNearZ;
+    f32 projectionFarZ;
+    int projectionType;
+    void* projectionTexture;
+    f32 inverseWorldProjectionMtx[16];
+    f32 lightProjectionTexMtx[16];
+    f32 lightProjectionClipMtx[16];
+    f32 projectionTexMtx[16];
+    int projectionTevColorMode;
+    int projectionTevAlphaMode;
+    u8 pad278[0x2d8 - 0x278];
+    int colorFadeMode;
+    f32 colorFadeStep;
+    f32 colorFadeProgress;
+    f32 colorFadeTimer;
+    void* glowTexture;
+    u8 glowColor[4];
+    f32 glowScale;
+    f32 glowProjectionRadius;
+    u8 glowType;
+    u8 glowAlpha;
+    s8 glowAlphaStep;
+    u8 affectsAabbLightSelection;
+    u8 selectionPriority;
+    u8 pad2fd[0x300 - 0x2fd];
+} ModelLightStruct;
+
+STATIC_ASSERT(offsetof(ModelLightStruct, diffuseLightObj) == 0x68);
+STATIC_ASSERT(offsetof(ModelLightStruct, specularLightObj) == 0xc0);
+STATIC_ASSERT(sizeof(ModelLightStruct) == 0x300);
+
+typedef ModelLightStruct ModelLight;
+
+enum ModelLightKind {
+    MODEL_LIGHT_KIND_POINT = 2,
+    MODEL_LIGHT_KIND_DIRECTIONAL = 4,
+    MODEL_LIGHT_KIND_PROJECTED = 8
+};
+
+ModelLightStruct* objCreateLight(void* owner, u8 addToList);
+ModelLightStruct* modelLightStruct_createPointLight(void* owner, u8 red, u8 green, u8 blue, u8 setFlag);
+void lightSetColor(int index, u8 red, u8 green, u8 blue);
+void modelLightStruct_freeSlot(ModelLightStruct** lightSlot);
+void modelLightStruct_setTransformMode(ModelLightStruct* light, int mode);
+void ModelLightStruct_free(ModelLightStruct* light);
+
+void queueGlowRender(ModelLightStruct* light);
+void modelLightStruct_updateGlowAlpha(ModelLightStruct* light);
+void modelLightStruct_updateColorFade(ModelLightStruct* light);
+void modelLightStruct_startColorFade(ModelLightStruct* light, int mode, s16 frames);
+void modelLightStruct_setEnabled(ModelLightStruct* light, u8 enabled, f32 duration);
+void modelLightStruct_setLightKind(ModelLightStruct* light, int lightKind);
+void modelLightStruct_setObjectLightMaskIndex(ModelLightStruct* light, int objectLightMaskIndex);
+void modelLightStruct_setDistanceAttenuation(ModelLightStruct* light, f32 near, f32 far);
+void modelLightStruct_setDiffuseTargetColor(ModelLightStruct* light, int red, int green, int blue, int alpha);
+void modelLightStruct_setDiffuseColor(ModelLightStruct* light, int red, int green, int blue, int alpha);
+void modelLightStruct_setSpecularColor(ModelLightStruct* light, u8 red, u8 green, u8 blue, u8 alpha);
+void modelLightStruct_setSpotAttenuation(ModelLightStruct* light, f32 cutoff, int spotFunction);
+void modelLightStruct_setPosition(ModelLightStruct* light, f32 x, f32 y, f32 z);
+void modelLightStruct_setDirection(ModelLightStruct* light, f32 x, f32 y, f32 z);
+f32 modelLightStruct_getRadius(ModelLightStruct* light);
+void modelLightStruct_getPosition(ModelLightStruct* light, f32* x, f32* y, f32* z);
+void modelLightStruct_getWorldPosition(ModelLightStruct* light, f32* x, f32* y, f32* z);
+void modelLightStruct_selectBrightestAabbLights(f32 minX, f32 minY, f32 minZ, f32 maxX, f32 maxY, f32 maxZ,
+                                                ModelLightStruct** outLights, int maxLights, int* outCount);
+void modelLightStruct_selectObjectLights(GameObject* object, ModelLightStruct** outLights, int maxLights, s32* outCount,
+                                         int typeMask);
+void modelLightStruct_loadChannelLight(int channel, ModelLightStruct* light, GameObject* object);
+int modelLightStruct_getProjectedLightChannelPreference(ModelLightStruct* light);
+void modelLightStruct_setProjectedLightChannelPreference(ModelLightStruct* light, int preference);
+void modelLightStruct_setSelectionPriority(ModelLightStruct* light, u8 priority);
+f32* modelLightStruct_getProjectionTexMtx(ModelLightStruct* light);
+void* modelLightStruct_getProjectionTexture(ModelLightStruct* light);
+void modelLightStruct_setProjectionTexture(ModelLightStruct* light, void* texture);
+void modelLightStruct_getProjectionTevModes(ModelLightStruct* light, int* colorMode, int* alphaMode);
+void modelLightStruct_setProjectionTevModes(ModelLightStruct* light, int colorMode, int alphaMode);
+void modelLightStruct_setProjectionNearZ(ModelLightStruct* light, f32 nearZ);
+void modelLightStruct_setProjectionFarZ(ModelLightStruct* light, f32 farZ);
+void modelLightStruct_setupPerspectiveProjection(ModelLightStruct* light, f32 fovY, f32 aspect);
+void modelLightStruct_setupOrthoProjection(ModelLightStruct* light, f32 top, f32 bottom, f32 left, f32 right,
+                                           f32 scaleS, f32 scaleT);
+void modelLightStruct_setupGlow(ModelLightStruct* light, u32 textureId, u8 red, u8 green, u8 blue, u8 alpha, f32 scale);
+
+#endif /* MAIN_MODEL_LIGHT_H_ */

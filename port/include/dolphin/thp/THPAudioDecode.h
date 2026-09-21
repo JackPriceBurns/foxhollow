@@ -1,0 +1,26 @@
+#ifndef _THP_THPAUDIODECODE_H
+#define _THP_THPAUDIODECODE_H
+
+#include "dolphin/os.h"
+#include "dolphin/thp/THPAudio.h"
+#include "dolphin/thp/THPRead.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+BOOL CreateAudioDecodeThread(OSPriority prio, void* param);
+void AudioDecodeThreadStart();
+void AudioDecodeThreadCancel();
+
+void PushFreeAudioBuffer(void* buf);
+void PushDecodedAudioBuffer(void* buf);
+
+void* PopFreeAudioBuffer();
+void* PopDecodedAudioBuffer(s32 flags);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

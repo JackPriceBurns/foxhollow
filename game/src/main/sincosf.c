@@ -1,0 +1,48 @@
+#include "dolphin.h"
+#include "dolphin/math.h"
+
+extern const float gSinCosCosCoeff0 = 1.0f;
+extern const float gSinCosSinCoeff1 = 0.78539425f;
+extern const float gSinCosCosCoeff2 = -0.30842426f;
+extern const float gSinCosSinCoeff3 = -0.08071397f;
+extern const float gSinCosCosCoeff4 = 0.015849913f;
+extern const float gSinCosSinCoeff5 = 0.0024270867f;
+extern const float gSinCosCosCoeff6 = -0.000318879f;
+
+void mathSinCosf(float angle, float* outSin, float* outCos) {
+    u16 quadrant;
+    float reducedAngle = trigReduceQuadrant(&quadrant, angle);
+    float reducedSquared = reducedAngle * reducedAngle;
+    float sinApprox =
+        reducedAngle * (reducedSquared * (gSinCosSinCoeff5 * reducedSquared + gSinCosSinCoeff3) + gSinCosSinCoeff1);
+    float cosApprox =
+        reducedSquared * (reducedSquared * (gSinCosCosCoeff6 * reducedSquared + gSinCosCosCoeff4) + gSinCosCosCoeff2) +
+        gSinCosCosCoeff0;
+
+    switch (quadrant & 6) {
+        case 0:
+            sinApprox = angle >= 0.0f ? sinApprox : -sinApprox;
+            *outSin = sinApprox;
+            *outCos = cosApprox;
+            break;
+        case 2:
+            cosApprox = angle >= 0.0f ? cosApprox : -cosApprox;
+            *outSin = cosApprox;
+            *outCos = -sinApprox;
+            break;
+        case 4:
+            if (angle >= 0.0f) {
+                sinApprox = -sinApprox;
+            }
+            *outSin = sinApprox;
+            *outCos = -cosApprox;
+            break;
+        default:
+            if (angle >= 0.0f) {
+                cosApprox = -cosApprox;
+            }
+            *outSin = cosApprox;
+            *outCos = sinApprox;
+            break;
+    }
+}

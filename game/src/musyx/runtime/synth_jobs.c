@@ -1,0 +1,244 @@
+#include "musyx/data_ref.h"
+#include "musyx/mcmd.h"
+#include "musyx/synth_job.h"
+#include "musyx/synth_config.h"
+#include "musyx/sal_dsp.h"
+#include "musyx/voice_manage.h"
+#include "musyx/hw_voice_start.h"
+#include "dolphin/os/OSCache.h"
+#include "musyx/hw_sample.h"
+#include "musyx/hw_init.h"
+#include "musyx/hw_stream.h"
+#include "musyx/hw_volume.h"
+#include "musyx/hw_voice_params.h"
+#include "musyx/synth_jobs.h"
+#include "musyx/synth_job_init.h"
+
+static f32 streamGainFromVolume(u8 volume) {
+    return volume * (1 / 127.0f);
+}
+
+void streamHandle(void) {
+    u32 i;
+    u32 cpos;
+    u32 len;
+    SAMPLE_INFO newsmp;
+    SynthJob* si;
+    f32 f;
+
+    if (streamCallCnt != 0) {
+        --streamCallCnt;
+        return;
+    }
+    streamCallCnt = streamCallDelay;
+    si = streamInfo;
+    for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; ++i, ++si) {
+        switch (si->state) {
+        case SYNTH_JOB_STATE_PENDING:
+            newsmp.info = si->frq | 0x40000000;
+            newsmp.addr = hwFlushStream(si->streamHandle);
+            newsmp.offset = 0;
+            newsmp.length = si->size;
+            newsmp.loop = 0;
+            newsmp.loopLength = si->size;
+            si->adpcm.loopPS = si->adpcm.initialPS = *si->buffer;
+            DCInvalidateRange(si->buffer, 1);
+            switch (si->format) {
+            case SYNTH_JOB_FORMAT_PCM:
+                newsmp.compType = SAMPLE_TYPE_PCM16;
+                break;
+            case SYNTH_JOB_FORMAT_ADPCM:
+                newsmp.extraData = &si->adpcm;
+                newsmp.compType = SAMPLE_TYPE_STREAM_ADPCM;
+                break;
+            }
+            hwInitSamplePlayback(si->voice, 0xFFFF, &newsmp, 1, -1, synthVoice[si->voice].id, 1, 1);
+            f = (f32)si->frq / (f32)SYNTH_CONFIGURATION->sampleRate;
+            hwSetPitch(si->voice, f * 4096.0f);
+            hwSetVolume(si->voice, 0, si->volume * (1 / 127.0f), si->pan << 16, si->surroundPan << 16,
+                        si->auxAVolume * (1 / 127.0f), si->auxBVolume * (1 / 127.0f));
+            hwStart(si->voice, si->studio);
+            si->state = SYNTH_JOB_STATE_PLAYING;
+            if (!(si->flags & 0x20000)) {
+                hwGetPos(si->buffer, 0, si->bytes, si->streamHandle, 0, 0);
+            }
+            break;
+        case SYNTH_JOB_STATE_PLAYING:
+            cpos = hwChangeStudio(si->voice);
+
+            if (si->format == 1) {
+                cpos = (cpos / 14) * 14;
+            }
+
+            if (si->last != cpos) {
+                if (si->last < cpos) {
+                    switch (si->format) {
+                    case 0:
+                        if ((len = si->callback(si->buffer + si->last * 2, cpos - si->last, 0, 0, si->callbackUser)) !=
+                                0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (cpos != 0) {
+                                    hwGetPos(si->buffer, si->last * 2, (cpos - si->last) * 2, si->streamHandle, 0, 0);
+                                } else {
+                                    hwGetPos(si->buffer, si->last * 2, (si->size - si->last) * 2, si->streamHandle, 0,
+                                             0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    case 1: {
+                        u32 off = (si->last / 14) * 8;
+                        if ((len = si->callback(si->buffer + off, cpos - si->last, 0, 0, si->callbackUser)) != 0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (cpos != 0) {
+                                    hwGetPos(si->buffer, off, ((cpos + 13) / 14) * 8 - off, si->streamHandle, 0, 0);
+                                } else {
+                                    hwGetPos(si->buffer, off, si->bytes - off, si->streamHandle, 0, 0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    }
+                    }
+                } else if (cpos == 0) {
+                    switch (si->format) {
+                    case 0:
+                        if ((len = si->callback(si->buffer + si->last * 2, si->size - si->last, 0, 0,
+                                                si->callbackUser)) != 0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (cpos == 0) {
+                                    hwGetPos(si->buffer, si->last * 2, si->bytes - si->last * 2, si->streamHandle, 0,
+                                             0);
+                                } else {
+                                    hwGetPos(si->buffer, si->last * 2, (cpos - si->last) * 2, si->streamHandle, 0, 0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    case 1: {
+                        u32 off = (si->last / 14) * 8;
+                        if ((len = si->callback(si->buffer + off, si->size - si->last, 0, 0, si->callbackUser)) != 0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (cpos == 0) {
+                                    hwGetPos(si->buffer, off, si->bytes - off, si->streamHandle, 0, 0);
+                                } else {
+                                    hwGetPos(si->buffer, off, ((cpos + 13) / 14) * 8 - off, si->streamHandle, 0, 0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    }
+                    }
+                } else {
+                    switch (si->format) {
+                    case 0:
+                        if ((len = si->callback(si->buffer + si->last * 2, si->size - si->last, si->buffer, cpos,
+                                                si->callbackUser)) != 0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (len > si->size - si->last) {
+                                    hwGetPos(si->buffer, si->last * 2, si->bytes - si->last * 2, si->streamHandle, 0,
+                                             0);
+                                    hwGetPos(si->buffer, 0, cpos * 2, si->streamHandle, 0, 0);
+                                } else if (cpos == 0) {
+                                    hwGetPos(si->buffer, si->last * 2, si->bytes - si->last * 2, si->streamHandle, 0,
+                                             0);
+                                } else {
+                                    hwGetPos(si->buffer, si->last * 2, (cpos - si->last) * 2, si->streamHandle, 0, 0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    case 1: {
+                        u32 off = (si->last / 14) * 8;
+                        if ((len = si->callback(si->buffer + off, si->size - si->last, si->buffer, cpos,
+                                                si->callbackUser)) != 0 &&
+                            si->state == SYNTH_JOB_STATE_PLAYING) {
+                            cpos = (si->last + len) % si->size;
+                            if (!(si->flags & 0x20000)) {
+                                if (len > si->size - si->last) {
+                                    hwGetPos(si->buffer, off, si->bytes - off, si->streamHandle, 0, 0);
+                                    hwGetPos(si->buffer, 0, (cpos / 14) * 8, si->streamHandle, 0, 0);
+                                } else if (cpos == 0) {
+                                    hwGetPos(si->buffer, off, si->bytes - off, si->streamHandle, 0, 0);
+                                } else {
+                                    hwGetPos(si->buffer, off, ((cpos + 13) / 14) * 8 - off, si->streamHandle, 0, 0);
+                                }
+                            }
+                            si->last = cpos;
+                        }
+                        break;
+                    }
+                    }
+                }
+
+                if (si->state == SYNTH_JOB_STATE_PLAYING && !(si->flags & 0x20000) &&
+                    si->format == SYNTH_JOB_FORMAT_ADPCM) {
+                    hwSetStreamLoopPS(si->voice, *(u8*)((u32)si->buffer + 0x40000000));
+                }
+            }
+            break;
+        }
+    }
+}
+
+void streamCorrectLoops(void) {
+}
+
+void streamKill(u32 voice) {
+    SynthJob* job;
+    int state;
+
+    job = streamInfo + voice;
+    state = job->state;
+    switch (state) {
+    case SYNTH_JOB_STATE_PENDING:
+    case SYNTH_JOB_STATE_PLAYING:
+        if ((u32)state == SYNTH_JOB_STATE_PLAYING) {
+            voiceUnblock(job->voice);
+        }
+        job->state = SYNTH_JOB_STATE_DONE;
+        job->callback(0, 0, 0, 0, job->callbackUser);
+        break;
+    }
+}
+
+void streamOutputModeChanged(void) {
+    u32 i;
+    f32 volumeScale;
+
+    sndBegin();
+    volumeScale = 1 / 127.0f;
+    for (i = 0; i < SYNTH_CONFIGURATION->voiceCount; i++) {
+        if (streamInfo[i].state != SYNTH_JOB_STATE_FREE) {
+            streamInfo[i].pan = streamInfo[i].savedPan;
+            streamInfo[i].surroundPan = streamInfo[i].savedSurroundPan;
+            if ((synthFlags & 1) != 0) {
+                streamInfo[i].pan = 0x40;
+                streamInfo[i].surroundPan = 0;
+            } else if ((synthFlags & 2) == 0) {
+                streamInfo[i].surroundPan = 0;
+            }
+            if (streamInfo[i].state != SYNTH_JOB_STATE_DONE) {
+                hwSetVolume(streamInfo[i].voice, 0, volumeScale * streamInfo[i].volume, streamInfo[i].pan << 0x10,
+                            streamInfo[i].surroundPan << 0x10, volumeScale * streamInfo[i].auxAVolume,
+                            volumeScale * streamInfo[i].auxBVolume);
+            }
+        }
+    }
+    sndEnd();
+}

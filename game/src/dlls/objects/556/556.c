@@ -1,0 +1,277 @@
+/*
+ * DLL 0x22C (dll22c) - a vertically-moving placed object (Dll22CState,
+ * extraSize 0x10).
+ *
+ * init seeds the state from the placement record (rotX, two game bits,
+ * raise height, an init flag) and sinks the object by 1228.0f.
+ * The update state-machine (dll_22C_update) drives a rise/hold/fall cycle
+ * relative to the player:
+ *   mode 0  armed - once gameBit is set and the player is within
+ *           230.0f, rise by timeDelta to posY+60.0f,
+ *           looping SFX 0x116 on object channel 8 -> mode 1.
+ *   mode 1  -> mode 2 with a 100-frame hold (pauseTimer).
+ *   mode 2  after the hold, pick descend (mode 3) or ascend (mode 4)
+ *           by the player's Y vs placement posY (SFX 0x1cb).
+ *   mode 3  fall by timeDelta to posY-1228.0f, then hold (mode 2).
+ *   mode 4  rise by timeDelta to posY+60.0f, then hold (mode 2).
+ *
+ * Render (dll_22C_render) draws via objRenderModelAndHitVolumes; hitDetect,
+ * release, initialise and the SeqFn are stubs. dll_22C_free frees the
+ * object's expgfx source. The remaining handlers are descriptor
+ * callbacks (getExtraSize=0x10, getObjectTypeId=0).
+ *
+ * The STATIC_ASSERTs below pin sibling-DLL control-record layouts that
+ * this family of DLLs shares.
+ */
+#include "main/dll/dll22cstate_struct.h"
+#include "sys/objects.h"
+#include "main/dll/dbholecontrol1state_struct.h"
+#include "main/dll/dfptorchstate_struct.h"
+#include "main/dll/dbeggstate_struct.h"
+#include "main/dll/drakorenergystate_struct.h"
+#include "main/dll/dbstealerwormcontrol_struct.h"
+#include "main/dll/blastflags4_types.h"
+#include "main/dll/dfp_types.h"
+#include "main/dll_000A_expgfx.h"
+#include "main/gamebits.h"
+#include "main/audio/sfx_trigger_ids.h"
+#include "main/audio/sfx_ids.h"
+#include "main/frame_timing.h"
+#include "main/vecmath_distance.h"
+#include "main/dll/dll_022C_dll22c.h"
+#include "main/object_render.h"
+#include "dlls/object_descriptor.h"
+#include "main/audio/sfx.h"
+#include "main/render_lactions.h"
+
+/*
+ * DbStealerwormControl - the per-family control record hung off
+ * GroundBaddieState.control (state+0x40C) for dbstealerworm
+ * (extraSize 0x460 = GroundBaddieState 0x410 + a 0x50 private tail;
+ * the control record itself is memset(0x50) in dbstealerworm_init).
+ */
+
+STATIC_ASSERT(sizeof(DbStealerwormControl) == 0x50);
+
+STATIC_ASSERT(sizeof(DfpLevelControlState) == 0xC);
+
+STATIC_ASSERT(sizeof(DfpTorchState) == 0x10);
+
+STATIC_ASSERT(sizeof(Dll22CState) == 0x10);
+
+STATIC_ASSERT(offsetof(DbEggState, mode) == 0x118);
+
+STATIC_ASSERT(sizeof(DfpSeqPointState) == 0x10);
+
+STATIC_ASSERT(sizeof(DrakorEnergyState) == 0xC);
+
+STATIC_ASSERT(sizeof(GCRobotBlastState) == 0x8);
+
+STATIC_ASSERT(sizeof(DbHoleControl1State) == 0xC);
+
+/* Dll22CState.mode rise/hold/fall cycle (see file-header comment). */
+#define DLL22C_MODE_ARMED      0 /* wait for gameBit + player proximity, then rise -> HOLD_SETUP */
+#define DLL22C_MODE_HOLD_SETUP 1 /* one-frame: arm the 100-frame pauseTimer -> HOLD */
+#define DLL22C_MODE_HOLD       2 /* hold, then pick DESCEND or ASCEND by player Y */
+#define DLL22C_MODE_DESCEND    3 /* fall to posY-1228.0f, then -> HOLD */
+#define DLL22C_MODE_ASCEND     4 /* rise to posY+60.0f, then -> HOLD */
+
+int dll_22C_SeqFn(void) {
+    return 0x0;
+}
+int dll_22C_getExtraSize_ret_16(void) {
+    return 0x10;
+}
+int dll_22C_getObjectTypeId(void) {
+    return 0x0;
+}
+
+void dll_22C_free(GameObject* obj) {
+    (*gExpgfxInterface)->freeSource2((uintptr_t)obj);
+    getLActions((void*)obj, (void*)obj, 0, 0, 0, 0);
+}
+
+void dll_22C_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible) {
+    if (visible != 0) {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void dll_22C_hitDetect_nop(void) {
+}
+
+void dll_22C_update(GameObject* obj) {
+    GameObject* object = obj;
+    ObjPlacement* placement = object->anim.placement;
+    Dll22CState* blob = object->extra;
+    GameObject* player;
+    int pauseTimer;
+    f32 dist;
+    f32 heightOffset;
+    f32 posY;
+
+    player = Obj_GetPlayerObject();
+    if (player == NULL) {
+        return;
+    }
+    switch (blob->mode) {
+    case DLL22C_MODE_ARMED:
+        if (mainGetBit(blob->gameBit) != 0 && blob->raiseMode != 1 &&
+            Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX) < 230.0f) {
+            if (object->anim.localPosY < 60.0f + placement->posY) {
+                if (Sfx_IsPlayingFromObjectChannel(obj, 8) == 0) {
+                    Sfx_PlayFromObject(obj, SFXTRIG_id_116);
+                    blob->sfxLatch = 1;
+                }
+                object->anim.localPosY += timeDelta;
+                if (object->anim.localPosY >= 60.0f + placement->posY) {
+                    object->anim.localPosY = 60.0f + placement->posY;
+                    blob->mode = DLL22C_MODE_HOLD_SETUP;
+                    Sfx_StopObjectChannel(obj, 8);
+                }
+            }
+        } else if (blob->raiseMode == 1) {
+            if (Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX) < 230.0f) {
+                posY = object->anim.localPosY;
+                heightOffset = 60.0f;
+                if (posY < heightOffset + placement->posY) {
+                    object->anim.localPosY = posY + timeDelta;
+                    if (object->anim.localPosY >= heightOffset + placement->posY) {
+                        object->anim.localPosY = heightOffset + placement->posY;
+                        blob->mode = DLL22C_MODE_HOLD_SETUP;
+                    }
+                }
+            }
+        }
+        break;
+    case DLL22C_MODE_HOLD_SETUP:
+        blob->mode = DLL22C_MODE_HOLD;
+        blob->pauseTimer = 0x64;
+        break;
+    case DLL22C_MODE_HOLD:
+        pauseTimer = blob->pauseTimer;
+        if (pauseTimer != 0) {
+            blob->pauseTimer -= (s16)timeDelta;
+            if (blob->pauseTimer <= 0) {
+                blob->pauseTimer = 0;
+            }
+        } else {
+            dist = Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX);
+            if (dist < 50.0f) {
+                if (object->anim.localPosY == 60.0f + placement->posY) {
+                    blob->mode = DLL22C_MODE_DESCEND;
+                    if (Sfx_IsPlayingFromObjectChannel(obj, 8) == 0) {
+                        Sfx_PlayFromObject(obj, SFXTRIG_liftloop);
+                        blob->sfxLatch = 1;
+                    }
+                } else if (object->anim.localPosY == placement->posY - 1228.0f) {
+                    blob->mode = DLL22C_MODE_ASCEND;
+                    if (Sfx_IsPlayingFromObjectChannel(obj, 8) == 0) {
+                        Sfx_PlayFromObject(obj, SFXTRIG_liftloop);
+                        blob->sfxLatch = 1;
+                    }
+                }
+            } else {
+                if (player->anim.localPosY < placement->posY) {
+                    blob->mode = DLL22C_MODE_DESCEND;
+                    if (blob->sfxLatch == 1) {
+                        blob->sfxLatch = 0;
+                    }
+                } else if (player->anim.localPosY > placement->posY) {
+                    blob->mode = DLL22C_MODE_ASCEND;
+                    if (blob->sfxLatch == 1) {
+                        blob->sfxLatch = 0;
+                    }
+                }
+            }
+        }
+        break;
+    case DLL22C_MODE_DESCEND:
+        if (object->anim.localPosY > placement->posY - (heightOffset = 1228.0f)) {
+            object->anim.localPosY -= timeDelta;
+            if (object->anim.localPosY <= placement->posY - heightOffset) {
+                object->anim.localPosY = placement->posY - heightOffset;
+                blob->mode = DLL22C_MODE_HOLD;
+                Sfx_StopObjectChannel(obj, 8);
+                blob->pauseTimer = 0x64;
+            }
+            Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX);
+        } else {
+            Sfx_StopObjectChannel(obj, 8);
+            Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX);
+            blob->mode = DLL22C_MODE_HOLD;
+            blob->pauseTimer = 0x64;
+        }
+        break;
+    case DLL22C_MODE_ASCEND:
+        posY = object->anim.localPosY;
+        heightOffset = 60.0f;
+        if (posY < heightOffset + placement->posY) {
+            object->anim.localPosY = posY + timeDelta;
+            if (object->anim.localPosY >= heightOffset + placement->posY) {
+                object->anim.localPosY = heightOffset + placement->posY;
+                blob->mode = DLL22C_MODE_HOLD;
+                blob->pauseTimer = 0x64;
+                Sfx_StopObjectChannel(obj, 8);
+            }
+            Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX);
+        } else {
+            blob->mode = DLL22C_MODE_HOLD;
+            blob->pauseTimer = 0x64;
+            Sfx_StopObjectChannel(obj, 8);
+            Vec_xzDistance(&object->anim.worldPosX, &player->anim.worldPosX);
+        }
+        break;
+    }
+}
+
+void dll_22C_init(GameObject* obj, char* def) {
+    Dll22CState* state;
+    Dll22CMapData* md = (Dll22CMapData*)def;
+
+    state = obj->extra;
+    obj->animEventCallback = dll_22C_SeqFn;
+    obj->anim.rotX = (s16)(md->rotXByte << 8);
+    state->mode = DLL22C_MODE_ARMED;
+    state->gameBit = ObjAnim_ReadPlacementS16(&obj->anim, &(md->gameBit));
+    state->gameBit2 = ObjAnim_ReadPlacementS16(&obj->anim, &(md->gameBit2));
+    state->raiseHeight = ObjAnim_ReadPlacementS16(&obj->anim, &(md->raiseHeight));
+    state->raiseMode = ObjAnim_ReadPlacementS16(&obj->anim, &(md->raiseMode));
+    obj->anim.localPosY = obj->anim.localPosY - 1228.0f;
+    obj->objectFlags = obj->objectFlags | OBJECT_OBJFLAG_HITDETECT_DISABLED;
+}
+
+void dll_22C_release_nop(void) {
+}
+
+void dll_22C_initialise_nop(void) {
+}
+
+OBJECT_INIT_ADAPTER(gDll22CObjDescriptorInitAdapter, dll_22C_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gDll22CObjDescriptorHitDetectAdapter, dll_22C_hitDetect_nop)
+OBJECT_FREE_ADAPTER(gDll22CObjDescriptorFreeAdapter, dll_22C_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDll22CObjDescriptorTypeIdAdapter, dll_22C_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll22CObjDescriptorExtraSizeAdapter, dll_22C_getExtraSize_ret_16)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll22CObjDescriptorAcquire, dll_22C_initialise_nop)
+
+ObjectDescriptor gDll22CObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll22CObjDescriptorAcquire,
+        dll_22C_release_nop,
+    },
+    0,
+    gDll22CObjDescriptorInitAdapter,
+    dll_22C_update,
+    gDll22CObjDescriptorHitDetectAdapter,
+    dll_22C_render,
+    gDll22CObjDescriptorFreeAdapter,
+    gDll22CObjDescriptorTypeIdAdapter,
+    gDll22CObjDescriptorExtraSizeAdapter,
+};

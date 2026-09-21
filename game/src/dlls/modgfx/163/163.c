@@ -1,0 +1,231 @@
+/*
+ * dll_00A3 (DLL 163 / 0xA3) - bone-particle effect spawner.
+ *
+ * dll_A3_spawnEffect builds a 14-command effect description and submits it
+ * through the modgfx interface.
+ */
+#include "main/dll/dll_00A3_modgfx.h"
+#include "main/dll/modgfx_interface.h"
+#include "main/dll/modgfx_types.h"
+#include "main/dll/partfx_interface.h"
+
+typedef struct DllA3EffectResourceView {
+    ModgfxEffectVertex vertices[21];
+    u8 padD2[2];
+    s16 colors[24][3];
+    s16 firstGroupIndices[8];
+    s16 secondGroupIndices[8];
+    s16 thirdGroupIndices[8];
+    s16 firstAndThirdGroupIndices[14];
+    s16 allVertexIndices[22];
+    s16 sequenceParams[7];
+    u8 pad1EA[2];
+} DllA3EffectResourceView;
+
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, vertices) == 0x000);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, colors) == 0x0D4);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, firstGroupIndices) == 0x164);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, secondGroupIndices) == 0x174);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, thirdGroupIndices) == 0x184);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, firstAndThirdGroupIndices) == 0x194);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, allVertexIndices) == 0x1B0);
+STATIC_ASSERT(offsetof(DllA3EffectResourceView, sequenceParams) == 0x1DC);
+STATIC_ASSERT(sizeof(DllA3EffectResourceView) == 0x1EC);
+
+u16 gDllA3EffectResourceData[sizeof(DllA3EffectResourceView) / sizeof(u16)] = {
+    0x0000, 0x0000, 0x03e8, 0x0000, 0x0000, 0x0362, 0x0000, 0x01f4, 0x000b,
+    0x0000, 0x0362, 0x0000, 0xfe0c, 0x0016, 0x0000, 0x0000, 0x0000, 0xfc18,
+    0x0020, 0x0000, 0xfc9e, 0x0000, 0xfe0c, 0x002a, 0x0000, 0xfc9e, 0x0000,
+    0x01f4, 0x0034, 0x0000, 0x0000, 0x0000, 0x03e8, 0x003f, 0x0000, 0x0000,
+    0x0640, 0x03e8, 0x0000, 0x000f, 0x0362, 0x0640, 0x01f4, 0x000b, 0x000f,
+    0x0362, 0x0640, 0xfe0c, 0x0016, 0x000f, 0x0000, 0x0640, 0xfc18, 0x0020,
+    0x000f, 0xfc9e, 0x0640, 0xfe0c, 0x002a, 0x000f, 0xfc9e, 0x0640, 0x01f4,
+    0x0034, 0x000f, 0x0000, 0x0640, 0x03e8, 0x003f, 0x000f, 0x0000, 0x1770,
+    0x03e8, 0x0000, 0x001f, 0x0362, 0x1770, 0x01f4, 0x000b, 0x001f, 0x0362,
+    0x1770, 0xfe0c, 0x0016, 0x001f, 0x0000, 0x1770, 0xfc18, 0x0020, 0x001f,
+    0xfc9e, 0x1770, 0xfe0c, 0x002a, 0x001f, 0xfc9e, 0x1770, 0x01f4, 0x0034,
+    0x001f, 0x0000, 0x1770, 0x03e8, 0x003f, 0x001f, 0x0000, 0x0000, 0x0001,
+    0x0008, 0x0000, 0x0008, 0x0007, 0x0001, 0x0002, 0x0009, 0x0001, 0x0009,
+    0x0008, 0x0002, 0x0003, 0x000a, 0x0002, 0x000a, 0x0009, 0x0003, 0x0004,
+    0x000b, 0x0003, 0x000b, 0x000a, 0x0004, 0x0005, 0x000c, 0x0004, 0x000c,
+    0x000b, 0x0005, 0x0006, 0x000d, 0x0005, 0x000d, 0x000c, 0x0007, 0x0008,
+    0x000f, 0x0007, 0x000f, 0x000e, 0x0008, 0x0009, 0x0010, 0x0008, 0x0010,
+    0x000f, 0x0009, 0x000a, 0x0011, 0x0009, 0x0011, 0x0010, 0x000a, 0x000b,
+    0x0012, 0x000a, 0x0012, 0x0011, 0x000b, 0x000c, 0x0013, 0x000b, 0x0013,
+    0x0012, 0x000c, 0x000d, 0x0014, 0x000c, 0x0014, 0x0013, 0x0000, 0x0001,
+    0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0000, 0x0007, 0x0008, 0x0009,
+    0x000a, 0x000b, 0x000c, 0x000d, 0x0000, 0x000e, 0x000f, 0x0010, 0x0011,
+    0x0012, 0x0013, 0x0014, 0x0000, 0x0000, 0x0001, 0x0002, 0x0003, 0x0004,
+    0x0005, 0x0006, 0x000e, 0x000f, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014,
+    0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008,
+    0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x000e, 0x000f, 0x0010, 0x0011,
+    0x0012, 0x0013, 0x0014, 0x0000, 0x0000, 0x0104, 0x003c, 0x003c, 0x0001,
+    0x0104, 0x0000, 0x0000,
+};
+
+void dll_A3_spawnEffect(GameObject* sourceObj, int variant, void* spawnParams, u32 spawnFlags) {
+    ModgfxSpawnPacket packet;
+    GfxCmd* commands = packet.entries;
+    u8* resourceData = (u8*)gDllA3EffectResourceData;
+    u32 variantByte = (u8)variant;
+
+    commands[0].layer = 0;
+    commands[0].flags = 0x15;
+    commands[0].tex = &resourceData[offsetof(DllA3EffectResourceView, allVertexIndices)];
+    commands[0].mode = 4;
+    commands[0].x = 0.0f;
+    commands[0].y = 0.0f;
+    commands[0].z = 0.0f;
+    commands[1].layer = 0;
+    commands[1].flags = 0xe;
+    commands[1].tex = &resourceData[offsetof(DllA3EffectResourceView, firstAndThirdGroupIndices)];
+    commands[1].mode = 2;
+    commands[1].x = 0.95f;
+    commands[1].y = 0.4f;
+    commands[1].z = 0.95f;
+    commands[2].layer = 0;
+    commands[2].flags = 7;
+    commands[2].tex = &resourceData[offsetof(DllA3EffectResourceView, secondGroupIndices)];
+    commands[2].mode = 2;
+    commands[2].x = 0.95f;
+    commands[2].y = 0.4f;
+    commands[2].z = 0.95f;
+    commands[3].layer = 1;
+    commands[3].flags = 7;
+    commands[3].tex = &resourceData[offsetof(DllA3EffectResourceView, secondGroupIndices)];
+    commands[3].mode = 4;
+    commands[3].x = 255.0f;
+    commands[3].y = 0.0f;
+    commands[3].z = 0.0f;
+    commands[4].layer = 1;
+    commands[4].flags = 7;
+    commands[4].tex = &resourceData[offsetof(DllA3EffectResourceView, thirdGroupIndices)];
+    commands[4].mode = 4;
+    commands[4].x = 255.0f;
+    commands[4].y = 0.0f;
+    commands[4].z = 0.0f;
+    commands[5].layer = 1;
+    commands[5].flags = 0x15;
+    commands[5].tex = &resourceData[offsetof(DllA3EffectResourceView, allVertexIndices)];
+    commands[5].mode = 0x100;
+    commands[5].x = 0.0f;
+    commands[5].y = 0.0f;
+    commands[5].z = 10.0f;
+    commands[6].layer = 2;
+    commands[6].flags = 0x3a;
+    commands[6].tex = NULL;
+    commands[6].mode = 0x1800000;
+    commands[6].x = 0.0f;
+    commands[6].y = 0.0f;
+    commands[6].z = 5.0f;
+    commands[7].layer = 2;
+    commands[7].flags = 0x15;
+    commands[7].tex = &resourceData[offsetof(DllA3EffectResourceView, allVertexIndices)];
+    commands[7].mode = 0x100;
+    commands[7].x = 0.0f;
+    commands[7].y = 0.0f;
+    commands[7].z = 10.0f;
+    commands[8].layer = 3;
+    commands[8].flags = 0x3a;
+    commands[8].tex = NULL;
+    commands[8].mode = 0x1800000;
+    commands[8].x = 0.0f;
+    commands[8].y = 0.0f;
+    commands[8].z = 5.0f;
+    commands[9].layer = 3;
+    commands[9].flags = 0x15;
+    commands[9].tex = &resourceData[offsetof(DllA3EffectResourceView, allVertexIndices)];
+    commands[9].mode = 0x100;
+    commands[9].x = 0.0f;
+    commands[9].y = 0.0f;
+    commands[9].z = 10.0f;
+    commands[10].layer = 4;
+    commands[10].flags = 2;
+    commands[10].tex = NULL;
+    commands[10].mode = 0x2000;
+    commands[10].x = 0.0f;
+    commands[10].y = 0.0f;
+    commands[10].z = 0.0f;
+    commands[11].layer = 5;
+    commands[11].flags = 7;
+    commands[11].tex = &resourceData[offsetof(DllA3EffectResourceView, secondGroupIndices)];
+    commands[11].mode = 4;
+    commands[11].x = 0.0f;
+    commands[11].y = 0.0f;
+    commands[11].z = 0.0f;
+    commands[12].layer = 5;
+    commands[12].flags = 7;
+    commands[12].tex = &resourceData[offsetof(DllA3EffectResourceView, thirdGroupIndices)];
+    commands[12].mode = 4;
+    commands[12].x = 0.0f;
+    commands[12].y = 0.0f;
+    commands[12].z = 0.0f;
+    commands[13].layer = 5;
+    commands[13].flags = 0x15;
+    commands[13].tex = &resourceData[offsetof(DllA3EffectResourceView, allVertexIndices)];
+    commands[13].mode = 0x100;
+    commands[13].x = 0.0f;
+    commands[13].y = 0.0f;
+    commands[13].z = 10.0f;
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    if (variantByte != 0) {
+        packet.context.scale = 0.1f * variantByte;
+    } else {
+        packet.context.scale = 1.0f;
+    }
+    packet.context.drawGroupCount = 2;
+    packet.context.drawGroupStride = 7;
+    packet.context.initialStateByte = 0xe;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x1e;
+    packet.context.commandCount = 14;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(DllA3EffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0xc0400c0;
+    packet.context.flags |= spawnFlags;
+    if ((packet.context.flags & 1) != 0) {
+        if (packet.context.attachedSource != NULL) {
+            packet.context.position[0] += packet.context.attachedSource->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
+        } else {
+            PartFxSpawnParams* params = (PartFxSpawnParams*)spawnParams;
+
+            packet.context.position[0] += params->posX;
+            packet.context.position[1] += params->posY;
+            packet.context.position[2] += params->posZ;
+        }
+    }
+    (*gModgfxInterface)
+        ->spawnEffect(&packet.context, 0, 0x15, (u8*)gDllA3EffectResourceData, 0x18,
+                      &resourceData[offsetof(DllA3EffectResourceView, colors)], 0x5e0, 0);
+}
+
+void dll_A3_release(void) {
+}
+
+void dll_A3_initialise(void) {
+}
+
+RESOURCE_ACQUIRE_ADAPTER(gDllA3ResourceDescriptorAcquire, dll_A3_initialise)
+
+DllA3ResourceDescriptor gDllA3ResourceDescriptor = {
+    { {0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDllA3ResourceDescriptorAcquire, dll_A3_release },
+    NULL,
+    dll_A3_spawnEffect,
+    0,
+};

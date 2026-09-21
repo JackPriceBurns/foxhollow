@@ -1,0 +1,149 @@
+/*
+ * DLL 149 / 0x95 - a seven-command layered modgfx effect spawner.
+ */
+#include "main/dll/dll_0095_modgfx.h"
+#include "main/dll/modgfx_interface.h"
+#include "main/dll/modgfx_types.h"
+
+typedef struct Dll95EffectResourceView {
+    ModgfxEffectVertex vertices[8];
+    s16 triangles[8][3];
+    s16 allVertexIndices[8];
+    s16 sequenceParams[7];
+    s16 opaqueTail;
+} Dll95EffectResourceView;
+
+STATIC_ASSERT(offsetof(Dll95EffectResourceView, vertices) == 0x00);
+STATIC_ASSERT(offsetof(Dll95EffectResourceView, triangles) == 0x50);
+STATIC_ASSERT(offsetof(Dll95EffectResourceView, allVertexIndices) == 0x80);
+STATIC_ASSERT(offsetof(Dll95EffectResourceView, sequenceParams) == 0x90);
+STATIC_ASSERT(offsetof(Dll95EffectResourceView, opaqueTail) == 0x9E);
+STATIC_ASSERT(sizeof(Dll95EffectResourceView) == 0xA0);
+
+s16 gDll95VertexIndices[4] = {4, 5, 6, 7};
+
+extern u16 gDll95EffectResourceData[sizeof(Dll95EffectResourceView) / sizeof(u16)];
+
+void dll_95_spawnEffect(GameObject* sourceObj, int variant, PartFxSpawnParams* spawnParams) {
+    ModgfxSpawnPacket packet;
+    u8* resourceData = (u8*)gDll95EffectResourceData;
+    GfxCmd* commands = packet.entries;
+    GameObject* anchorObj = sourceObj;
+    PartFxSpawnParams* anchorParams = spawnParams;
+
+    commands[0].layer = 0;
+    commands[0].flags = 8;
+    commands[0].tex = &resourceData[offsetof(Dll95EffectResourceView, allVertexIndices)];
+    commands[0].mode = 0x2;
+    commands[0].x = 0.014f;
+    commands[0].y = 0.03f;
+    commands[0].z = 0.014f;
+    commands[1].layer = 0;
+    commands[1].flags = 4;
+    commands[1].tex = gDll95VertexIndices;
+    commands[1].mode = 0x8;
+    commands[1].x = 255.0f;
+    commands[1].y = 255.0f;
+    commands[1].z = 0.0f;
+    commands[2].layer = 0;
+    commands[2].flags = 4;
+    commands[2].tex = &resourceData[offsetof(Dll95EffectResourceView, allVertexIndices)];
+    commands[2].mode = 0x8;
+    commands[2].x = 255.0f;
+    commands[2].y = 85.0f;
+    commands[2].z = 0.0f;
+    commands[3].layer = 0;
+    commands[3].flags = 0;
+    commands[3].tex = NULL;
+    commands[3].mode = 0x400000;
+    commands[3].x = 0.0f;
+    commands[3].y = 80.0f;
+    commands[3].z = 0.0f;
+    commands[4].layer = 1;
+    commands[4].flags = 8;
+    commands[4].tex = &resourceData[offsetof(Dll95EffectResourceView, allVertexIndices)];
+    commands[4].mode = 0x2;
+    commands[4].x = 100.0f;
+    commands[4].y = 100.0f;
+    commands[4].z = 100.0f;
+    commands[5].layer = 1;
+    commands[5].flags = 0;
+    commands[5].tex = NULL;
+    commands[5].mode = 0x400000;
+    commands[5].x = 0.0f;
+    commands[5].y = -80.0f;
+    commands[5].z = 0.0f;
+    commands[6].layer = 2;
+    commands[6].flags = 8;
+    commands[6].tex = &resourceData[offsetof(Dll95EffectResourceView, allVertexIndices)];
+    commands[6].mode = 0x4;
+    commands[6].x = 0.0f;
+    commands[6].y = 0.0f;
+    commands[6].z = 0.0f;
+    packet.context.modeByte = 0;
+    packet.context.attachedSource = sourceObj;
+    packet.context.sourceMode = variant;
+    packet.context.position[0] = 0.0f;
+    packet.context.position[1] = 0.0f;
+    packet.context.position[2] = 0.0f;
+    packet.context.velocity[0] = 0.0f;
+    packet.context.velocity[1] = 0.0f;
+    packet.context.velocity[2] = 0.0f;
+    packet.context.scale = 2.0f;
+    packet.context.drawGroupCount = 1;
+    packet.context.drawGroupStride = 0;
+    packet.context.initialStateByte = 8;
+    packet.context.byte5A = 0;
+    packet.context.textureFrameTimer = 0x3C;
+    packet.context.commandCount = (GfxCmd*)((u8*)commands + sizeof(GfxCmd) * 7) - commands;
+    packet.context.sequenceParams[0] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[0])];
+    packet.context.sequenceParams[1] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[1])];
+    packet.context.sequenceParams[2] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[2])];
+    packet.context.sequenceParams[3] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[3])];
+    packet.context.sequenceParams[4] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[4])];
+    packet.context.sequenceParams[5] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[5])];
+    packet.context.sequenceParams[6] = *(s16*)&resourceData[offsetof(Dll95EffectResourceView, sequenceParams[6])];
+    packet.context.commands = packet.entries;
+    packet.context.flags = 0x4002400;
+    if ((packet.context.flags & 1) != 0) {
+        if ((u32)sourceObj != 0 && (u32)spawnParams != 0) {
+            packet.context.position[0] += anchorObj->anim.worldPosX + anchorParams->posX;
+            packet.context.position[1] += anchorObj->anim.worldPosY + anchorParams->posY;
+            packet.context.position[2] += anchorObj->anim.worldPosZ + anchorParams->posZ;
+        } else if ((u32)sourceObj != 0) {
+            packet.context.position[0] += anchorObj->anim.worldPosX;
+            packet.context.position[1] += packet.context.attachedSource->anim.worldPosY;
+            packet.context.position[2] += packet.context.attachedSource->anim.worldPosZ;
+        } else if ((u32)spawnParams != 0) {
+            packet.context.position[0] += anchorParams->posX;
+            packet.context.position[1] += anchorParams->posY;
+            packet.context.position[2] += anchorParams->posZ;
+        }
+    }
+    (*gModgfxInterface)
+        ->spawnEffect(&packet.context, 0, 8, resourceData, 8,
+                      &resourceData[offsetof(Dll95EffectResourceView, triangles)], 0x46, 0);
+}
+
+void dll_95_release(void) {
+}
+
+void dll_95_initialise(void) {
+}
+
+u16 gDll95EffectResourceData[sizeof(Dll95EffectResourceView) / sizeof(u16)] = {
+    0xfce0, 0x01f4, 0xfce0, 0x0008, 0x001f, 0x0320, 0x01f4, 0xfce0, 0x0078, 0x001f, 0x0320, 0x01f4, 0x0320, 0x0008,
+    0x001f, 0xfce0, 0x01f4, 0x0320, 0x0078, 0x001f, 0xfc18, 0x0000, 0xfc18, 0x0008, 0x0000, 0x03e8, 0x0000, 0xfc18,
+    0x0078, 0x0000, 0x03e8, 0x0000, 0x03e8, 0x0008, 0x0000, 0xfc18, 0x0000, 0x03e8, 0x0078, 0x0000, 0x0000, 0x0001,
+    0x0005, 0x0000, 0x0005, 0x0004, 0x0001, 0x0002, 0x0006, 0x0001, 0x0006, 0x0005, 0x0002, 0x0003, 0x0007, 0x0002,
+    0x0007, 0x0006, 0x0003, 0x0000, 0x0004, 0x0003, 0x0004, 0x0007, 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005,
+    0x0006, 0x0007, 0x0000, 0x0316, 0x000a, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+};
+
+RESOURCE_ACQUIRE_ADAPTER(gDll95ResourceDescriptorAcquire, dll_95_initialise)
+
+Dll95ResourceDescriptor gDll95ResourceDescriptor = {
+    {{0x00000000, 0x00000000, 0x00000000, 0x00030000}, gDll95ResourceDescriptorAcquire, dll_95_release},
+    NULL,
+    dll_95_spawnEffect,
+};

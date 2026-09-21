@@ -1,0 +1,108 @@
+/*
+ * WM_LaserTar (DLL 0x01FD) - the Krazoa Palace laser target.
+ *
+ * A priority hit queues a toggle. Once the cooldown expires, the target
+ * switches its model bank and its paired game bits, then rearms the cooldown
+ * from its placement.
+ */
+#include "dlls/objects/509_WM_LaserTar.h"
+#include "game/objects/object.h"
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/objhits.h"
+#include "main/object_render.h"
+#include "sys/objects.h"
+
+int WM_LaserTarget_getExtraSize(void) {
+    return sizeof(WMLaserTargetState);
+}
+
+int WM_LaserTarget_getObjectTypeId(void) {
+    return 0;
+}
+
+void WM_LaserTarget_free(void) {
+}
+
+void WM_LaserTarget_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5,
+                           s8 visible) {
+    if (visible == 0) {
+        return;
+    }
+
+    objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+}
+
+void WM_LaserTarget_hitDetect(void) {
+}
+
+void WM_LaserTarget_update(GameObject* obj) {
+    WMLaserTargetPlacement* placement = (WMLaserTargetPlacement*)obj->anim.placementData;
+    WMLaserTargetState* state = obj->extra;
+    if (ObjHits_GetPriorityHit(obj, NULL, NULL, NULL) != 0) {
+        state->toggleQueued = 1;
+        state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &placement->cooldown);
+    }
+
+    if (state->cooldown > 0 || state->toggleQueued == 0) {
+        if (state->cooldown > 0) {
+            state->cooldown -= framesThisStep;
+        }
+        return;
+    }
+
+    if (mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit)) != 0) {
+        Obj_SetActiveModelIndex(obj, 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit), 0);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->pairedGameBit), 0);
+    } else {
+        Obj_SetActiveModelIndex(obj, 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit), 1);
+        mainSetBits(ObjAnim_ReadPlacementS16(&obj->anim, &placement->pairedGameBit), 1);
+    }
+
+    state->toggleQueued = 0;
+    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &(placement->cooldown));
+}
+
+void WM_LaserTarget_init(GameObject* obj, const WMLaserTargetPlacement* placement) {
+    WMLaserTargetState* state = obj->extra;
+    obj->anim.bankIndex = mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->toggleGameBit));
+    state->cooldown = ObjAnim_ReadPlacementS16(&obj->anim, &placement->cooldown);
+    state->toggleQueued = 0;
+}
+
+void WM_LaserTarget_release(void) {
+}
+
+void WM_LaserTarget_initialise(void) {
+}
+
+OBJECT_INIT_ADAPTER(gWM_LaserTargetObjDescriptorInitAdapter, WM_LaserTarget_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gWM_LaserTargetObjDescriptorHitDetectAdapter, WM_LaserTarget_hitDetect)
+OBJECT_FREE_ADAPTER(gWM_LaserTargetObjDescriptorFreeAdapter, WM_LaserTarget_free)
+OBJECT_TYPE_ID_ADAPTER(gWM_LaserTargetObjDescriptorTypeIdAdapter, WM_LaserTarget_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gWM_LaserTargetObjDescriptorExtraSizeAdapter, WM_LaserTarget_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gWM_LaserTargetObjDescriptorAcquire, WM_LaserTarget_initialise)
+
+ObjectDescriptor gWM_LaserTargetObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gWM_LaserTargetObjDescriptorAcquire,
+        WM_LaserTarget_release,
+    },
+    0,
+    gWM_LaserTargetObjDescriptorInitAdapter,
+    WM_LaserTarget_update,
+    gWM_LaserTargetObjDescriptorHitDetectAdapter,
+    WM_LaserTarget_render,
+    gWM_LaserTargetObjDescriptorFreeAdapter,
+    gWM_LaserTargetObjDescriptorTypeIdAdapter,
+    gWM_LaserTargetObjDescriptorExtraSizeAdapter,
+};

@@ -1,0 +1,116 @@
+/*
+ * DLL 676 - a short-lived spinning debris object spawned around the
+ * on-rails Arwing flight sections.
+ *
+ * dll_2A4_setLifetime / dll_2A4_setVelocity are the launch helpers the enemy generator's
+ * spawn modes use to hand a freshly loaded ship its fade lifetime and
+ * direction vector.
+ *
+ * The object itself (init/update/render) seeds random start rotations and
+ * random per-axis spin rates, then each frame integrates the rotation,
+ * drifts along its anim velocity, and fades out a timer in the first word
+ * of its state block; when the timer reaches zero it frees itself.
+ */
+#include "main/frame_timing.h"
+#include "main/dll/ARW/dll_02A3.h"
+#include "main/dll/ARW/dll_02A4.h"
+#include "dlls/object_descriptor.h"
+#include "main/object_render.h"
+#include "sys/objects.h"
+#include "main/vecmath.h"
+#include "sys/objects/lifecycle.h"
+
+void dll_2A4_setLifetime(GameObject* obj, int lifetime) {
+    Dll2A3State* state = obj->extra;
+    state->lifetime = lifetime;
+}
+
+void dll_2A4_setVelocity(GameObject* obj, Vec3f* velocity) {
+    obj->anim.velocityX = velocity->x;
+    obj->anim.velocityY = velocity->y;
+    obj->anim.velocityZ = velocity->z;
+}
+
+int dll_2A4_getExtraSize_ret_12(void) {
+    return sizeof(Dll2A3State);
+}
+
+int dll_2A4_getObjectTypeId(void) {
+    return 0x0;
+}
+
+void dll_2A4_free_nop(void) {
+}
+
+void dll_2A4_render(GameObject* obj, int p2, int p3, int p4, int p5) {
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void dll_2A4_hitDetect_nop(void) {
+}
+
+void dll_2A4_update(GameObject* obj) {
+    Dll2A3State* state = obj->extra;
+
+    if (state->lifetime > 0.0f) {
+        state->lifetime -= timeDelta;
+        if (state->lifetime <= 0.0f) {
+            state->lifetime = 0.0f;
+            Obj_FreeObject(obj);
+            return;
+        }
+    }
+
+    obj->anim.rotX = (s16)((f32)state->spinRateX * timeDelta + (f32)obj->anim.rotX);
+    obj->anim.rotY = (s16)((f32)state->spinRateY * timeDelta + (f32)obj->anim.rotY);
+    obj->anim.rotZ = (s16)((f32)state->spinRateZ * timeDelta + (f32)obj->anim.rotZ);
+
+    objMove(obj, obj->anim.velocityX * timeDelta, obj->anim.velocityY * timeDelta, obj->anim.velocityZ * timeDelta);
+}
+
+void dll_2A4_init(GameObject* obj) {
+    Dll2A3State* state = obj->extra;
+
+    obj->anim.rotX = randomGetRange(0, 65535);
+    obj->anim.rotY = randomGetRange(0, 65535);
+    obj->anim.rotZ = randomGetRange(0, 65535);
+    state->spinRateX = randomGetRange(-20, 20);
+    state->spinRateY = randomGetRange(-20, 20);
+    state->spinRateZ = randomGetRange(-20, 20);
+}
+
+void dll_2A4_release_nop(void) {
+}
+
+void dll_2A4_initialise_nop(void) {
+}
+
+OBJECT_INIT_ADAPTER(gDll2A4ObjDescriptorInitAdapter, dll_2A4_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDll2A4ObjDescriptorHitDetectAdapter, dll_2A4_hitDetect_nop)
+OBJECT_RENDER_ADAPTER(gDll2A4ObjDescriptorRenderAdapter, dll_2A4_render, obj, arg2, arg3, arg4, arg5)
+OBJECT_FREE_ADAPTER(gDll2A4ObjDescriptorFreeAdapter, dll_2A4_free_nop)
+OBJECT_TYPE_ID_ADAPTER(gDll2A4ObjDescriptorTypeIdAdapter, dll_2A4_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDll2A4ObjDescriptorExtraSizeAdapter, dll_2A4_getExtraSize_ret_12)
+
+RESOURCE_ACQUIRE_ADAPTER(gDll2A4ObjDescriptorAcquire, dll_2A4_initialise_nop)
+
+ObjectDescriptor gDll2A4ObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDll2A4ObjDescriptorAcquire,
+        dll_2A4_release_nop,
+    },
+    0,
+    gDll2A4ObjDescriptorInitAdapter,
+    dll_2A4_update,
+    gDll2A4ObjDescriptorHitDetectAdapter,
+    gDll2A4ObjDescriptorRenderAdapter,
+    gDll2A4ObjDescriptorFreeAdapter,
+    gDll2A4ObjDescriptorTypeIdAdapter,
+    gDll2A4ObjDescriptorExtraSizeAdapter,
+};

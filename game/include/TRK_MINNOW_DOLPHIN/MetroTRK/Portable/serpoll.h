@@ -1,0 +1,8 @@
+#ifndef METROTRK_PORTABLE_SERPOLL_H
+#define METROTRK_PORTABLE_SERPOLL_H
+
+#include "PowerPC_EABI_Support/MetroTRK/trk.h"
+
+MessageBufferID TRKTestForPacket();
+
+#endif /* METROTRK_PORTABLE_SERPOLL_H */

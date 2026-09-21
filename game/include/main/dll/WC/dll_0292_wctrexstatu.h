@@ -1,0 +1,24 @@
+#ifndef MAIN_DLL_WC_DLL_0292_WCTREXSTATU_H
+#define MAIN_DLL_WC_DLL_0292_WCTREXSTATU_H
+
+#include "global.h"
+#include "game/objects/object_fwd.h"
+#include "dlls/object_descriptor.h"
+#include "main/objseq.h"
+
+typedef struct WcTrexStatuePlacement WcTrexStatuePlacement;
+
+extern ObjectDescriptor gWCTrexStatuObjDescriptor;
+
+int wctrexstatu_interactCallback(GameObject* obj, int unused, ObjSeqState* animUpdate);
+int wctrexstatu_getExtraSize(void);
+int wctrexstatu_getObjectTypeId(GameObject* obj);
+void wctrexstatu_free(void);
+void wctrexstatu_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible);
+void wctrexstatu_hitDetect(GameObject* obj);
+void wctrexstatu_update(void);
+void wctrexstatu_init(GameObject* obj, const WcTrexStatuePlacement* placement, int fromLoad);
+void wctrexstatu_release(void);
+void wctrexstatu_initialise(void);
+
+#endif

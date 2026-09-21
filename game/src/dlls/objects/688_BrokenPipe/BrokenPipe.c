@@ -1,0 +1,64 @@
+/*
+ * BrokenPipe (DLL 688) - a static, breakable pipe prop.
+ *
+ * init applies the placement's packed Z/Y/X rotation bytes (1/256 turns)
+ * and an optional uniform scale: the scale byte is normalised, and if the
+ * normalised value equals a sentinel constant it is replaced with a safe
+ * fallback, then used to scale the hitbox sphere radius, then folded into
+ * the model's base root-motion scale. update polls the priority hit-react
+ * system, flashing a light-blue hit effect on a cooldown.
+ */
+#include "main/dll/dll_02B0_brokenpipe.h"
+#include "main/objhits.h"
+
+int brokenpipe_getExtraSize(void) {
+    return sizeof(BrokenPipeState);
+}
+
+void brokenpipe_update(GameObject* obj) {
+    BrokenPipeState* state = obj->extra;
+
+    ObjHits_PollPriorityHitEffectWithCooldown(obj, 8, 0xb4, 0xf0, 0xff, 0x6f, &state->hitEffectCooldown);
+}
+
+void brokenpipe_init(GameObject* obj, BrokenPipeSetup* setup) {
+    obj->anim.rotZ = setup->rotZ << 8;
+    obj->anim.rotY = setup->rotY << 8;
+    obj->anim.rotX = setup->rotX << 8;
+
+    if (setup->scale != 0) {
+        obj->anim.rootMotionScale = setup->scale / 255.0f;
+        if (obj->anim.rootMotionScale == 0.0f) {
+            obj->anim.rootMotionScale = 1.0f;
+        }
+        ObjHitbox_SetSphereRadius(&obj->anim, ((ObjHitsPriorityState*)obj->anim.hitReactState)->primaryRadius *
+                                                  obj->anim.rootMotionScale);
+        obj->anim.rootMotionScale = obj->anim.rootMotionScale * obj->anim.modelInstance->rootMotionScaleBase;
+    }
+
+    obj->objectFlags |= OBJECT_OBJFLAG_HIDDEN;
+}
+
+OBJECT_INIT_ADAPTER(gBrokenPipeObjDescriptorInitAdapter, brokenpipe_init, obj, placement)
+OBJECT_EXTRA_SIZE_ADAPTER(gBrokenPipeObjDescriptorExtraSizeAdapter, brokenpipe_getExtraSize)
+
+ObjectDescriptor gBrokenPipeObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        NULL,
+        NULL,
+    },
+    NULL,
+    gBrokenPipeObjDescriptorInitAdapter,
+    brokenpipe_update,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    gBrokenPipeObjDescriptorExtraSizeAdapter,
+};

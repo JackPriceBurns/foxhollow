@@ -1,0 +1,108 @@
+/*
+ * DR_Chimmey (DLL 619) - a chimney/altar that accepts a number of
+ * offerings. Each Tricky interaction decrements offeringsRemaining
+ * (drchimmey_countdownCallback); once it reaches zero the event fires,
+ * the completion game bit is set and a countdown timer resets the
+ * altar back to its idle state.
+ */
+#include "main/dll/DR/dll_026B_drchimmey.h"
+#include "main/gamebits.h"
+#include "sys/objects/lifecycle.h"
+#include "main/maketex_timer.h"
+#include "main/object_render.h"
+#include "main/dll/dll_00C4_tricky.h"
+#include "main/objprint_render.h"
+
+#define DRCHIMMEY_RESET_GAMEBIT 0xEA4
+
+int drchimmey_countdownCallback(GameObject* obj, int amount) {
+    DRChimmeyState* state = obj->extra;
+    state->offeringsRemaining -= amount;
+    return state->offeringsRemaining <= 0;
+}
+
+int DR_Chimmey_getExtraSize(void) {
+    return sizeof(DRChimmeyState);
+}
+
+void DR_Chimmey_render(GameObject* obj, u32 p2, u32 p3, u32 p4, u32 p5, char visible) {
+    if (visible == 0) {
+        return;
+    }
+
+    objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+}
+
+void DR_Chimmey_update(GameObject* obj) {
+    DRChimmeySetup* setup = (DRChimmeySetup*)obj->anim.placementData;
+    DRChimmeyState* state = obj->extra;
+
+    obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
+
+    s16 enableGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->enableGameBit);
+    if (enableGameBit != -1 && mainGetBit(enableGameBit) == 0) {
+        return;
+    }
+
+    if (timerIsActive(&state->timer) == 0) {
+        if (state->offeringsRemaining <= 0) {
+            state->eventActive = 1;
+            s16toFloat(&state->timer, state->timerDuration);
+            mainSetBits(state->completionGameBit, 1);
+        } else {
+            GameObject* tricky = getTrickyObject();
+            if (tricky != NULL) {
+                if ((obj->anim.resetHitboxFlags & INTERACT_FLAG_IN_RANGE) != 0) {
+                    TRICKY_INTERFACE(tricky)->sideCommandEnable(tricky, obj, 1, 4);
+                }
+                obj->anim.resetHitboxFlags &= ~INTERACT_FLAG_DISABLED;
+                objUpdateHitVolumeTransforms(obj);
+            }
+        }
+    }
+
+    if (timerCountDown(&state->timer) == 0) {
+        return;
+    }
+
+    state->linkedObject = NULL;
+    state->timer = 0.0f;
+    state->eventActive = 0;
+    state->offeringsRemaining = 1;
+    mainSetBits(state->completionGameBit, 0);
+    mainSetBits(DRCHIMMEY_RESET_GAMEBIT, 0);
+}
+
+void DR_Chimmey_init(GameObject* obj, DRChimmeySetup* setup) {
+    obj->anim.rotX = setup->initialRotX << 8;
+    DRChimmeyState* state = obj->extra;
+    state->timerDuration = 90.0f;
+    state->completionGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &setup->completionGameBit);
+    state->offeringsRemaining = 3;
+    storeZeroToFloatParam(&state->timer);
+}
+
+OBJECT_INIT_ADAPTER(gDrChimmeyObjDescriptorInitAdapter, DR_Chimmey_init, obj, placement)
+OBJECT_RENDER_ADAPTER(gDrChimmeyObjDescriptorRenderAdapter, DR_Chimmey_render, obj, arg2, arg3, arg4, arg5, visible)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrChimmeyObjDescriptorExtraSizeAdapter, DR_Chimmey_getExtraSize)
+
+ObjectDescriptor gDrChimmeyObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    gDrChimmeyObjDescriptorInitAdapter,
+    DR_Chimmey_update,
+    0,
+    gDrChimmeyObjDescriptorRenderAdapter,
+    0,
+    0,
+    gDrChimmeyObjDescriptorExtraSizeAdapter,
+};

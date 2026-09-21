@@ -1,0 +1,191 @@
+/* Proximity-triggered sliding door. */
+
+#include "dlls/objects/349.h"
+
+#include "main/gamebits.h"
+#include "main/object_render.h"
+#include "main/objseq.h"
+#include "main/vecmath_distance.h"
+#include "sys/objects.h"
+#include "sys/objects/lifecycle.h"
+
+#define SLIDING_DOOR_PROXIMITY_RADIUS       130.0f
+#define SLIDING_DOOR_GATE_GAMEBIT_NONE      -1
+#define SLIDING_DOOR_PREEMPT_TRIGGER_NONE   0
+#define SLIDING_DOOR_STARTUP_SEQUENCE_NONE  -1
+#define SLIDING_DOOR_SEQUENCE_FLAGS_DEFAULT -1
+#define SLIDING_DOOR_TRIGGER_CLOSE_COMPLETE 1
+#define SLIDING_DOOR_TRIGGER_OPEN_COMPLETE  2
+#define SLIDING_DOOR_SCALE_DIVISOR          64.0f
+#define SLIDING_DOOR_UPDATE_LATCHED         1
+
+int slidingDoor_sequenceCallback(GameObject* obj, int unused, ObjSeqState* animUpdate) {
+    register int playerNear;
+    register int trickyNear;
+    register SlidingDoorState* state;
+    SlidingDoorPlacement* placement;
+    u32 mode;
+    int result;
+    GameObject* player;
+    GameObject* tricky;
+    s16 gateGameBit;
+    s16 openGameBit;
+    s16 openedGameBit;
+
+    player = Obj_GetPlayerObject();
+    tricky = getTrickyObject();
+
+    if (player != NULL) {
+        playerNear = Vec_xzDistance(&obj->anim.worldPosX, &player->anim.worldPosX) < SLIDING_DOOR_PROXIMITY_RADIUS;
+    } else {
+        playerNear = 0;
+    }
+
+    if (tricky != NULL) {
+        trickyNear = Vec_xzDistance(&obj->anim.worldPosX, &tricky->anim.worldPosX) < SLIDING_DOOR_PROXIMITY_RADIUS;
+    } else {
+        trickyNear = 0;
+    }
+
+    state = obj->extra;
+    placement = (SlidingDoorPlacement*)obj->anim.placementData;
+    gateGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->gateGameBit);
+    openGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->openGameBit);
+    openedGameBit = ObjAnim_ReadPlacementS16(&obj->anim, &placement->openedGameBit);
+    mode = state->mode;
+
+    if (mode == SLIDING_DOOR_MODE_CLOSED) {
+        if (mainGetBit(openGameBit) != 0 &&
+            (gateGameBit == SLIDING_DOOR_GATE_GAMEBIT_NONE || mainGetBit(gateGameBit) != 0)) {
+            mainSetBits(openedGameBit, TRUE);
+            if (playerNear != 0 || trickyNear != 0) {
+                state->mode = SLIDING_DOOR_MODE_OPENING;
+            }
+        }
+    } else if (mode == SLIDING_DOOR_MODE_OPEN) {
+        if ((mainGetBit(openGameBit) != 0 ||
+             (gateGameBit != SLIDING_DOOR_GATE_GAMEBIT_NONE && mainGetBit(gateGameBit) != 0)) &&
+            playerNear == 0 && trickyNear == 0) {
+            state->mode = SLIDING_DOOR_MODE_CLOSING;
+        }
+    }
+
+    {
+        register SlidingDoorState* transitionState = state;
+        if (transitionState->mode == SLIDING_DOOR_MODE_OPENING) {
+            if (animUpdate->curEventId == SLIDING_DOOR_TRIGGER_OPEN_COMPLETE) {
+                transitionState->mode = SLIDING_DOOR_MODE_OPEN;
+            }
+        } else if (transitionState->mode == SLIDING_DOOR_MODE_CLOSING) {
+            if (animUpdate->curEventId == SLIDING_DOOR_TRIGGER_CLOSE_COMPLETE) {
+                transitionState->mode = SLIDING_DOOR_MODE_CLOSED;
+            }
+        }
+    }
+
+    result = 0;
+    {
+        u32 modeAfter = state->mode;
+        if (modeAfter != SLIDING_DOOR_MODE_OPENING) {
+            if (modeAfter != SLIDING_DOOR_MODE_CLOSING) {
+                result = 1;
+            }
+        }
+    }
+    return result;
+}
+
+int slidingDoor_getExtraSize(void) {
+    return sizeof(SlidingDoorState);
+}
+
+int slidingDoor_getObjectTypeId(void) {
+    return 0;
+}
+
+void slidingDoor_free(void) {
+}
+
+void slidingDoor_render(GameObject* obj, int renderArg2, int renderArg3, int renderArg4, int renderArg5, s8 visible) {
+    if (visible != 0) {
+        objRenderModelAndHitVolumes(obj, renderArg2, renderArg3, renderArg4, renderArg5, 1.0f);
+    }
+}
+
+void slidingDoor_hitDetect(void) {
+}
+
+void slidingDoor_update(GameObject* obj) {
+    SlidingDoorState* state;
+    SlidingDoorPlacement* placement;
+    if (obj->userData1 != 0) {
+        return;
+    }
+    state = obj->extra;
+    placement = (SlidingDoorPlacement*)obj->anim.placementData;
+    {
+        s16 preemptTriggerId = ObjAnim_ReadPlacementS16(&obj->anim, &placement->preemptTriggerId);
+        if (preemptTriggerId != SLIDING_DOOR_PREEMPT_TRIGGER_NONE) {
+            u32 mode = state->mode;
+            if (mode != SLIDING_DOOR_MODE_CLOSED) {
+                (*gObjectTriggerInterface)->preempt((uintptr_t)obj, preemptTriggerId);
+            }
+        }
+    }
+    {
+        s8 startupSequenceId = placement->startupSequenceId;
+        if (startupSequenceId != SLIDING_DOOR_STARTUP_SEQUENCE_NONE) {
+            (*gObjectTriggerInterface)->runSequence(startupSequenceId, obj, SLIDING_DOOR_SEQUENCE_FLAGS_DEFAULT);
+        }
+    }
+    obj->userData1 = SLIDING_DOOR_UPDATE_LATCHED;
+}
+
+void slidingDoor_init(GameObject* obj, SlidingDoorPlacement* placement) {
+    SlidingDoorState* state;
+    f32 scale;
+    u32 doorState = SLIDING_DOOR_MODE_CLOSED;
+    obj->userData1 = doorState;
+    obj->anim.rotX = (s16)(placement->rotXByte << 8);
+    obj->animEventCallback = slidingDoor_sequenceCallback;
+    scale = (f32)(u32)placement->scaleByte / SLIDING_DOOR_SCALE_DIVISOR;
+    obj->anim.rootMotionScale = scale;
+    obj->anim.rootMotionScale = obj->anim.rootMotionScale * obj->anim.modelInstance->rootMotionScaleBase;
+    state = obj->extra;
+    state->mode = doorState;
+}
+
+void slidingDoor_release(void) {
+}
+
+void slidingDoor_initialise(void) {
+}
+
+OBJECT_INIT_ADAPTER(gSlidingDoorObjDescriptorInitAdapter, slidingDoor_init, obj, placement)
+OBJECT_HIT_DETECT_ADAPTER(gSlidingDoorObjDescriptorHitDetectAdapter, slidingDoor_hitDetect)
+OBJECT_FREE_ADAPTER(gSlidingDoorObjDescriptorFreeAdapter, slidingDoor_free)
+OBJECT_TYPE_ID_ADAPTER(gSlidingDoorObjDescriptorTypeIdAdapter, slidingDoor_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gSlidingDoorObjDescriptorExtraSizeAdapter, slidingDoor_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gSlidingDoorObjDescriptorAcquire, slidingDoor_initialise)
+
+ObjectDescriptor gSlidingDoorObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gSlidingDoorObjDescriptorAcquire,
+        slidingDoor_release,
+    },
+    0,
+    gSlidingDoorObjDescriptorInitAdapter,
+    slidingDoor_update,
+    gSlidingDoorObjDescriptorHitDetectAdapter,
+    slidingDoor_render,
+    gSlidingDoorObjDescriptorFreeAdapter,
+    gSlidingDoorObjDescriptorTypeIdAdapter,
+    gSlidingDoorObjDescriptorExtraSizeAdapter,
+};

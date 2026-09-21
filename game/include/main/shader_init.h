@@ -1,0 +1,11 @@
+#ifndef MAIN_SHADER_INIT_H_
+#define MAIN_SHADER_INIT_H_
+
+#include "types.h"
+
+typedef struct GameObject GameObject;
+typedef struct ModelRenderOpTextureRefs ModelRenderOpTextureRefs;
+
+void shaderInit(u8* definition, ModelRenderOpTextureRefs* textures, GameObject* object, int shaderFlags);
+
+#endif /* MAIN_SHADER_INIT_H_ */

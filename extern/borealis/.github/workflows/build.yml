@@ -1,0 +1,155 @@
+name: Build
+
+on:
+  push:
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+
+jobs:
+  build-test:
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.runner}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux GCC x86_64
+            runner: ubuntu-24.04
+            flags: -DBOREALIS_ENABLE_SENTRY=ON
+          - name: Linux GCC aarch64
+            runner: ubuntu-24.04-arm
+          - name: Linux GCC x86_64 (minimal)
+            runner: ubuntu-24.04
+            minimal: true
+            flags: >-
+              -DBOREALIS_ENABLE_DATA=OFF
+              -DBOREALIS_ENABLE_FILE_SELECT=OFF
+              -DBOREALIS_ENABLE_DISC=OFF
+              -DBOREALIS_HTTP_BACKEND=none
+          - name: macOS AppleClang arm64
+            runner: macos-latest
+          - name: Windows MSVC x86_64
+            runner: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux' && !matrix.minimal
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install ninja-build libcurl4-openssl-dev zlib1g-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+            libxinerama-dev libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev \
+            libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev wayland-protocols libwayland-dev \
+            libdecor-0-dev libasound2-dev libpulse-dev libjack-dev libsndio-dev \
+            libibus-1.0-dev libudev-dev libdbus-1-dev libpipewire-0.3-dev
+
+      - name: Install dependencies (Linux minimal)
+        if: runner.os == 'Linux' && matrix.minimal
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install ninja-build
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ninja
+
+      - name: Enable Visual Studio environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Configure CMake
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          ${{matrix.flags}}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  build-cross:
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.runner}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Android Clang arm64
+            runner: ubuntu-latest
+            rust_target: aarch64-linux-android
+            flags: >-
+              -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake
+              -DANDROID_ABI=arm64-v8a
+              -DANDROID_PLATFORM=android-28
+              -DRust_CARGO_TARGET=aarch64-linux-android
+          - name: iOS AppleClang arm64
+            runner: macos-latest
+            rust_target: aarch64-apple-ios
+            flags: >-
+              -DCMAKE_SYSTEM_NAME=iOS
+              -DCMAKE_OSX_ARCHITECTURES=arm64
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
+              -DRust_CARGO_TARGET=aarch64-apple-ios
+              -DCMAKE_IGNORE_PREFIX_PATH=/opt/homebrew
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install ninja-build
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Install Rust target
+        run: rustup target add ${{matrix.rust_target}}
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Configure CMake
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON
+          -DBOREALIS_BUILD_TESTS=OFF
+          ${{matrix.flags}}
+
+      - name: Build
+        run: cmake --build build

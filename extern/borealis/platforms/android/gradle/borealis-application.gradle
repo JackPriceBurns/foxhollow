@@ -1,0 +1,178 @@
+import java.util.Properties
+
+def androidConfig = project.ext.borealisAndroid
+def propertiesFile = project.file(androidConfig.propertiesFile)
+if (!propertiesFile.isFile()) {
+    throw new GradleException(
+        "Borealis Android properties are missing: ${propertiesFile}. Configure CMake first.")
+}
+
+def nativeProperties = new Properties()
+propertiesFile.withInputStream { nativeProperties.load(it) }
+def requiredProperty = { String name ->
+    def value = nativeProperties.getProperty(name)
+    if (!value) {
+        throw new GradleException("Missing ${name} in ${propertiesFile}")
+    }
+    value
+}
+
+def nativeLibrary = project.file(requiredProperty('borealis.nativeLibrary'))
+def androidAbi = requiredProperty('borealis.androidAbi')
+def androidPlatform = requiredProperty('borealis.androidPlatform')
+def nativeApiLevel = androidPlatform.replaceFirst('^android-', '').toInteger()
+def sdlJavaDir = project.file(requiredProperty('borealis.sdlJavaDir'))
+def auroraJavaDir = project.file(requiredProperty('borealis.auroraJavaDir'))
+def borealisJavaDir = project.file(requiredProperty('borealis.javaDir'))
+def versionNameValue = requiredProperty('borealis.versionName').replaceFirst('^v', '')
+def versionCodeValue = requiredProperty('borealis.versionCode').toInteger()
+
+[sdlJavaDir, auroraJavaDir, borealisJavaDir].each { sourceDir ->
+    if (!sourceDir.isDirectory()) {
+        throw new GradleException("Android Java source directory is missing: ${sourceDir}")
+    }
+}
+
+def sdkPath = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+if (!sdkPath) {
+    throw new GradleException('ANDROID_HOME or ANDROID_SDK_ROOT is not available')
+}
+def sdkDir = new File(sdkPath)
+if (!sdkDir.isDirectory()) {
+    throw new GradleException("Android SDK directory is missing: ${sdkDir}")
+}
+
+def ndkVersionValue = androidConfig.ndkVersion ?: System.getenv('ANDROID_NDK_VERSION')
+if (!ndkVersionValue) {
+    throw new GradleException('ANDROID_NDK_VERSION is not available')
+}
+def ndkDir = new File(sdkDir, "ndk/${ndkVersionValue}")
+if (!new File(ndkDir, 'build/cmake/android.toolchain.cmake').isFile()) {
+    throw new GradleException("Android NDK ${ndkVersionValue} is missing at ${ndkDir}")
+}
+
+def ndkTriples = [
+    'arm64-v8a': 'aarch64-linux-android',
+    'armeabi-v7a': 'arm-linux-androideabi',
+    'x86': 'i686-linux-android',
+    'x86_64': 'x86_64-linux-android'
+]
+def ndkTriple = ndkTriples[androidAbi]
+if (!ndkTriple) {
+    throw new GradleException("Unsupported Android ABI for libc++ staging: ${androidAbi}")
+}
+def prebuiltRoot = new File(ndkDir, 'toolchains/llvm/prebuilt')
+def llvmPrebuiltDir = (prebuiltRoot.listFiles()?.findAll { it.isDirectory() } ?: [])
+    .sort { it.name }
+    .find { candidate ->
+        new File(candidate, "sysroot/usr/lib/${ndkTriple}/libc++_shared.so").isFile()
+    }
+if (!llvmPrebuiltDir) {
+    throw new GradleException("Cannot find libc++_shared.so under ${prebuiltRoot}")
+}
+def stlLibrary = new File(
+    llvmPrebuiltDir, "sysroot/usr/lib/${ndkTriple}/libc++_shared.so")
+
+def stagedJniLibsDir = layout.buildDirectory.dir('generated/jniLibs/borealis')
+def stageJniLibs = tasks.register('stageBorealisJniLibs', Sync) {
+    from(nativeLibrary) {
+        rename { 'libmain.so' }
+        into androidAbi
+    }
+    from(stlLibrary) {
+        rename { 'libc++_shared.so' }
+        into androidAbi
+    }
+    into(stagedJniLibsDir)
+    doFirst {
+        if (!nativeLibrary.isFile()) {
+            throw new GradleException(
+                "Native library is missing: ${nativeLibrary}. Build the CMake target first.")
+        }
+    }
+}
+
+def generatedAssetsDir = layout.buildDirectory.dir('generated/assets/borealis')
+def syncAssets = tasks.register('syncBorealisAssets', Sync) {
+    (androidConfig.assets ?: []).each { asset ->
+        from(project.file(asset.from)) {
+            if (asset.into) {
+                into asset.into
+            }
+            if (asset.includes) {
+                include asset.includes
+            }
+            if (asset.excludes) {
+                exclude asset.excludes
+            }
+        }
+    }
+    into(generatedAssetsDir)
+}
+
+def androidAbis = androidConfig.abis ?: [androidAbi]
+def stripValue = providers.gradleProperty('ANDROID_STAGE_STRIP')
+    .orElse(providers.gradleProperty('androidStageStrip'))
+    .orElse(providers.environmentVariable('ANDROID_STAGE_STRIP'))
+    .orElse('1')
+def borealisRules = new File(
+    project.file(androidConfig.borealisDir), 'platforms/android/proguard-rules.pro')
+
+android {
+    namespace androidConfig.namespace
+    compileSdk androidConfig.compileSdk ?: 36
+    ndkVersion ndkVersionValue
+
+    defaultConfig {
+        applicationId androidConfig.applicationId
+        minSdk androidConfig.minSdk ?: nativeApiLevel
+        targetSdk androidConfig.targetSdk ?: 36
+        versionCode versionCodeValue
+        versionName versionNameValue
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                borealisRules,
+                project.file(androidConfig.proguardRules ?: 'proguard-rules.pro')
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = [stagedJniLibsDir]
+            assets.srcDirs += [generatedAssetsDir]
+            java.srcDirs += [sdlJavaDir, auroraJavaDir, borealisJavaDir]
+        }
+    }
+
+    packaging {
+        jniLibs {
+            if (stripValue.get() == '0') {
+                keepDebugSymbols += '**/libmain.so'
+            }
+        }
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            androidAbis.each { value -> include value }
+            universalApk false
+        }
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn(stageJniLibs, syncAssets)
+}

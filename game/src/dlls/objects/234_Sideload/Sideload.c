@@ -1,0 +1,53 @@
+/*
+ * Sideload object (DLL slot 234 / 0xEA).
+ *
+ * This deferred spawner creates Tricky once loading is unlocked, the player
+ * exists, Tricky is absent, and the placement's arming game bit is set. The
+ * spawned Tricky inherits the spawner's position and placement rotation.
+ */
+#include "dlls/objects/234_Sideload.h"
+#include "main/gamebits.h"
+#include "sys/objects.h"
+#include "sys/objects/lifecycle.h"
+
+#define SIDELOAD_TRICKY_SEQ_ID 0x24
+#define SIDELOAD_SETUP_FLAGS   5
+
+void sideload_update(GameObject* obj) {
+    SideloadPlacement* placement = (SideloadPlacement*)obj->anim.placementData;
+    if (Obj_IsLoadingLocked() == 0 || Obj_GetPlayerObject() == NULL || getTrickyObject() != NULL ||
+        mainGetBit(ObjAnim_ReadPlacementS16(&obj->anim, &placement->armingGameBit)) == 0) {
+        return;
+    }
+
+    ObjPlacement* setup = Obj_AllocObjectSetup(sizeof(ObjPlacement), SIDELOAD_TRICKY_SEQ_ID);
+    setup->loadFlags = 2;
+    setup->mapActFlagsHi = 4;
+    setup->unk07 = 0xFF;
+    setup->posX = obj->anim.localPosX;
+    setup->posY = obj->anim.localPosY;
+    setup->posZ = obj->anim.localPosZ;
+    GameObject* tricky = objSetupObject(setup, SIDELOAD_SETUP_FLAGS, -1, -1, NULL);
+    tricky->anim.rotX = placement->childRotXByte << 8;
+}
+
+ObjectDescriptor gSideloadObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        0,
+        0,
+    },
+    0,
+    0,
+    sideload_update,
+    0,
+    0,
+    0,
+    0,
+    0,
+};

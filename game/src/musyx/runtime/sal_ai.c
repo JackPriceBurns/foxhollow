@@ -1,0 +1,123 @@
+#include "musyx/sal_ai.h"
+#include "musyx/synth_config.h"
+
+#include "musyx/sal_dsp.h"
+#include "musyx/snd_reverb.h"
+#include "string.h"
+#include "dolphin/os/OSCache.h"
+#include "dolphin/ai.h"
+#include "dolphin/os.h"
+#include "dolphin/os/OSInterrupt.h"
+
+#define SAL_AI_BUFFER_COUNT        4
+#define SAL_AI_DMA_CHUNK_SIZE      0x280
+#define SAL_AI_DMA_BUFFER_SIZE     (SAL_AI_BUFFER_COUNT * SAL_AI_DMA_CHUNK_SIZE)
+#define SAL_AI_OUTPUT_SAMPLE_COUNT 0x7d00
+
+u8 salAIBufferIndex;
+u32 oldState;
+u16 hwIrqLevel;
+volatile u32 salDspInitIsDone;
+volatile u32 salLastTick;
+volatile u32 salCallbackActive;
+volatile u32 salDspCallbackPending;
+volatile u32 salDspCallbackEnabled;
+uintptr_t salAiDmaBuffer;
+SalAiCallback salAiCallback;
+
+static inline void callUserCallback(void) {
+    if (salCallbackActive != 0) {
+        return;
+    }
+
+    salCallbackActive = 1;
+    OSEnableInterrupts();
+    salAiCallback();
+    OSDisableInterrupts();
+    salCallbackActive = 0;
+}
+
+/*
+ * AI DMA done callback: bumps the round-robin buffer index and
+ * re-issues AIInitDMA on the next 0x280-byte chunk. If a higher-
+ * level user callback is registered, runs it under a re-entrancy
+ * guard with interrupts re-enabled.
+ */
+void salCallback(u32 p1, u32 p2, u32 p3, int p4, u32 p5, u32 p6) {
+    salAIBufferIndex = (salAIBufferIndex + 1) % SAL_AI_BUFFER_COUNT;
+    AIInitDMA(salAiDmaBuffer + salAIBufferIndex * SAL_AI_DMA_CHUNK_SIZE, SAL_AI_DMA_CHUNK_SIZE);
+    salLastTick = OSGetTick();
+    if (salDspCallbackEnabled != 0) {
+        callUserCallback();
+    } else {
+        salDspCallbackPending = 1;
+    }
+}
+
+/*
+ * Mark "needs callback" + "frame done".
+ */
+void dspInitCallback(void* task) {
+    salDspCallbackEnabled = 1;
+    salDspInitIsDone = 1;
+}
+
+/*
+ * Run pending user callback (if any) under a re-entrancy guard.
+ */
+void dspResumeCallback(void* task) {
+    struct {
+        u32 pending;
+    } d;
+    salDspCallbackEnabled = 1;
+    d.pending = salDspCallbackPending;
+    if (d.pending != 0) {
+        salDspCallbackPending = 0;
+        callUserCallback();
+    }
+}
+
+/*
+ * Audio output setup: allocate 0xa00-byte (4 x 0x280) DMA buffer,
+ * zero it, register the AI DMA callback, and kick off the first DMA.
+ * Returns 1 on success, 0 if allocation failed.
+ */
+int salInitAi(SalAiCallback userCallback, u32 unused, u32* outSampleCount) {
+    if ((salAiDmaBuffer = (uintptr_t)salMalloc(SAL_AI_DMA_BUFFER_SIZE)) == 0) {
+        return 0;
+    }
+
+    memset((void*)salAiDmaBuffer, 0, SAL_AI_DMA_BUFFER_SIZE);
+    DCFlushRange((void*)salAiDmaBuffer, SAL_AI_DMA_BUFFER_SIZE);
+    salAIBufferIndex = 1;
+    salDspCallbackPending = 0;
+    salDspCallbackEnabled = 1;
+    salCallbackActive = 0;
+    salAiCallback = userCallback;
+    AIRegisterDMACallback(salCallback);
+    AIInitDMA(salAiDmaBuffer + salAIBufferIndex * SAL_AI_DMA_CHUNK_SIZE, SAL_AI_DMA_CHUNK_SIZE);
+    SYNTH_CONFIGURATION->numSamples = 0x20;
+    *outSampleCount = SAL_AI_OUTPUT_SAMPLE_COUNT;
+    return 1;
+}
+
+/*
+ * Start AI DMA.
+ */
+void salStartAi(void) {
+    AIStartDMA();
+}
+
+int salExitAi(void) {
+    AIRegisterDMACallback(0);
+    AIStopDMA();
+    salFree((void*)salAiDmaBuffer);
+    return 1;
+}
+
+s16* salAiGetDest(void) {
+    int nextBuffer;
+
+    nextBuffer = salAIBufferIndex + 2;
+    return (s16*)(salAiDmaBuffer + (u8)(nextBuffer % SAL_AI_BUFFER_COUNT) * SAL_AI_DMA_CHUNK_SIZE);
+}

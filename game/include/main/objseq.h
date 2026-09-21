@@ -1,0 +1,271 @@
+#ifndef MAIN_OBJSEQ_H_
+#define MAIN_OBJSEQ_H_
+
+#include "global.h"
+#include "main/objanim_internal.h"
+#include "main/objseq_control.h"
+
+/*
+ * ObjSeqState - per-object sequence playback state, stored in the obj+0xB8
+ * extra block of sequence-driven objects (seq = *(u8 **)(obj + 0xb8) in
+ * objseq.c). Only fields with read/write evidence in objseq.c are named;
+ * everything else is padded.
+ */
+
+typedef struct SeqByte136 {
+    u8 modelSlot : 4;
+    u8 pad3 : 1;
+    u8 mapEvent : 1;
+    u8 rest : 2;
+} SeqByte136;
+
+typedef struct ObjSeqState ObjSeqState;
+struct GameObject;
+
+typedef int (*ObjSeqTurnToPlayerFn)(struct GameObject* obj, struct ObjSeqState* state, s16 turnDegrees,
+                                    s16 yawThreshold, s16 maxAngle, s16 animRight, s16 animLeft);
+
+struct ObjAnimComponent;
+
+typedef struct ObjectTriggerInterface {
+    void* unusedSlot02;
+    void (*onMapSetup)(void);
+    void (*addBgCommand)(int index, int xrot, int yrot);
+    void (*setFlag)(int index, int value);
+    int (*getBool)(int index);
+    int (*update)(u8* obj, f32 timeStep);
+    void (*updateCamera)(void);
+    void (*loadAnimData)(u8* seq, u8* obj, const struct ObjAnimComponent* objAnim);
+    void (*initState)(u8* seq);
+    void (*freeState)(u8* seq);
+    void (*run)(void);
+    int (*resolveAndAssignTargetObject)(u8* obj);
+    int (*func14Ret0)(void);
+    int (*func15Ret1)(void);
+    int (*getGlobal4)(void);
+    void (*setGlobal4)(int value);
+    int (*func18Ret0)(void);
+    void (*func19Nop)(void);
+    int (*runSequence)(int seqIndex, void* obj, int flags);
+    void (*endSequence)(int seqIndex);
+    void (*setCamVars)(int camA, int camB, uintptr_t camC, int camD);
+    void (*preempt)(uintptr_t obj, int triggerId);
+    void (*yield)(ObjSeqState* seq, int value);
+    u8 (*getGlobal3)(void);
+    void (*setGlobal3)(u8 value);
+    s16 (*getGlobal1)(void);
+    void (*setGlobal1)(s16 value);
+    s16 (*getGlobal2)(void);
+    void (*setGlobal2)(s16 value);
+    void (*setXrot)(int index, int xrot);
+    ObjSeqTurnToPlayerFn func20;
+    int (*setObjects)(int a, struct GameObject* b, int c);
+    int (*setOverridePos)(f32 x, f32 y, f32 z);
+    int (*setRunSequenceWorldSpace)(uintptr_t unused, int mode);
+} ObjectTriggerInterface;
+
+extern ObjectTriggerInterface** gObjectTriggerInterface;
+
+int ObjSeq_takeXrotChanged(int index);
+
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, onMapSetup) == 0x04);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, addBgCommand) == 0x08);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setFlag) == 0x0C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, getBool) == 0x10);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, update) == 0x14);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, updateCamera) == 0x18);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, loadAnimData) == 0x1C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, initState) == 0x20);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, freeState) == 0x24);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, run) == 0x28);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, resolveAndAssignTargetObject) == 0x2C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, func14Ret0) == 0x30);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, func15Ret1) == 0x34);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, getGlobal4) == 0x38);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setGlobal4) == 0x3C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, func18Ret0) == 0x40);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, func19Nop) == 0x44);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, runSequence) == 0x48);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, endSequence) == 0x4C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setCamVars) == 0x50);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, preempt) == 0x54);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, yield) == 0x58);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, getGlobal3) == 0x5C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setGlobal3) == 0x60);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, getGlobal1) == 0x64);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setGlobal1) == 0x68);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, getGlobal2) == 0x6C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setGlobal2) == 0x70);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setXrot) == 0x74);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, func20) == 0x78);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setObjects) == 0x7C);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setOverridePos) == 0x80);
+STATIC_ASSERT(offsetof(ObjectTriggerInterface, setRunSequenceWorldSpace) == 0x84);
+
+/* One record of ObjSeqState.cmds: a sequence action opcode, the frame advance
+ * it contributes, and its packed 16-bit parameter. */
+typedef struct ObjSeqCommand {
+    s8 opcode;
+    u8 frameDelta;
+    s16 param;
+} ObjSeqCommand;
+
+struct ObjSeqState {
+    void* targetObj;
+    f32 posStepX;
+    f32 posStepY;
+    f32 posStepZ;
+    f32 unk10;
+    s16 rotStepX; /* added to obj rotation each step */
+    s16 rotStepY;
+    s16 rotStepZ;
+    s16 heading;
+    u8 unk1C[4];
+    f32 fade;
+    f32 posOffsetDecay; /* posOffsetScale -= posOffsetDecay * timeDelta */
+    s32 curveId;
+    void* curveInterp; /* RomCurveInterpState* */
+    s16 sfxTimer[4];   /* slot 3 = -1 while looped sfx active */
+    s16 sfxId[4];
+    f32 posOffsetX; /* seqObj pos = posOffset * posOffsetScale + base */
+    f32 posOffsetY;
+    f32 posOffsetZ;
+    f32 posOffsetScale;
+    s16 rotOffsetX; /* scaled by posOffsetScale, added to base rotation */
+    s16 rotOffsetY;
+    s16 rotOffsetZ;
+    s8 movementState;
+    s8 slot; /* index into per-slot sequence globals */
+    s16 curFrame;
+    s16 prevFrame;
+    s16 endFrame;
+    s16 pendingStartFrame; /* frame stashed with runState=2; restored into curFrame on start */
+    s16 seqCounter; /* signed script register: set/added by sequence opcodes, sign-tested by ObjSeq_EvaluateCondition */
+    s16 cmdCount;
+    s16 animCount;
+    s16 cmdCursor;
+    s16 retriggerFrame; /* curFrame threshold for a repeating command; advances by cmd stride */
+    s16 gameBit;
+    s16 moveId; /* masked to 0xfff; compared to anim.currentMove; passed to ObjAnim_SetCurrentMove */
+    s16 flags;
+    s16 savedFlags; /* snapshot of flags, restored on state transitions */
+    u8 unk72[2];
+    s32 savedFrame;        /* saved frame value restored into curFrame */
+    s8 useRootMotionSpeed; /* 0x78: script-toggled; when set (and isCameraSeq==0) movement speed comes from ObjAnim_SampleRootCurvePhase (root-motion) instead of the track-9 speed curve */
+    s8 targetAttached;
+    u8 groundSnapEnabled; /* 0x7A: script-toggled; when set, the seq object is snapped to the detected floor (trackGetNearestGroundOffset / RomCurveInterp_EvaluateOffsetPosition ground adjust) */
+    s8 isCameraSeq; /* 0x7B: set when placement targetType==3 (camera): FOV track clamped 35..125, gObjSeqCameraSourceObj assigned, object movement/root-motion suppressed */
+    s8 pendingConditionId; /* 1-based; ObjSeq_EvaluateCondition(pendingConditionId-1), cleared when satisfied */
+    s8 unk7D;
+    u8 runState;   /* 0=inactive, 1=running, 2=start/setup, 3=defer-attach-to-parent */
+    u8 stateFlags; /* bit 1 set on jump, bit 2/4 = pending transitions */
+    u8 curEventId;
+    u8 eventIds[0xA];
+    u8 eventCount;
+    u8 moveBlendParam; /* (cmd>>8)&0xf0; scaled and passed as ObjAnim_SetCurrentMove blend arg */
+    u8 texId5;         /* texture id for objFindTexture channel 5 (<<8 into textureId) */
+    u8 texId4;         /* texture id for objFindTexture channel 4 (<<8 into textureId) */
+    u8 unk8F;
+    u8 sequenceControlFlags;
+    u8 unk91[3];
+    u8* cmds;        /* 4-byte command records */
+    u8* animEntries; /* 8-byte anim records */
+    s16 trackAnimStart[19];
+    s16 trackRunLength[19];
+    ObjAnimSequenceFreeCallback freeCallback;
+    ObjAnimSequenceConditionCallback conditionCallback;
+    ObjAnimEventList animEvents;
+    s32 targetObjId; /* object id resolved via ObjList_FindObjectById into targetObj */
+    void* callbackContext;
+    s16 baseRotY; /* base rotation added to interpolated curve angle (vec[1]) */
+    s16 baseRotX; /* base rotation added to interpolated curve angle (vec[0]) */
+    s16 conditionFrames[10];
+    u8 conditionOpcodes[10];
+    SeqByte136 flags136; /* 0x136 */
+    u8 pad137;
+};
+
+enum ObjSeqFlag {
+    OBJSEQ_APPLY_JOINT_ROTATION_TRACKS = 1 << 3,
+    OBJSEQ_APPLY_TEXTURE_SCROLL_TRACK = 1 << 6,
+};
+
+STATIC_ASSERT(sizeof(ObjSeqCommand) == 0x04);
+STATIC_ASSERT(sizeof(ObjSeqState) == 0x138);
+STATIC_ASSERT(offsetof(ObjSeqState, curFrame) == 0x58);
+STATIC_ASSERT(offsetof(ObjSeqState, eventIds) == 0x81);
+STATIC_ASSERT(offsetof(ObjSeqState, eventCount) == 0x8B);
+STATIC_ASSERT(offsetof(ObjSeqState, sequenceControlFlags) == 0x90);
+STATIC_ASSERT(offsetof(ObjSeqState, cmds) == 0x94);
+STATIC_ASSERT(offsetof(ObjSeqState, trackRunLength) == 0xC2);
+STATIC_ASSERT(offsetof(ObjSeqState, freeCallback) == 0xE8);
+STATIC_ASSERT(offsetof(ObjSeqState, conditionCallback) == 0xEC);
+STATIC_ASSERT(offsetof(ObjSeqState, animEvents) == 0xF0);
+STATIC_ASSERT(offsetof(ObjSeqState, callbackContext) == 0x110);
+STATIC_ASSERT(offsetof(ObjSeqState, conditionFrames) == 0x118);
+STATIC_ASSERT(offsetof(ObjSeqState, conditionOpcodes) == 0x12C);
+
+/* Sequence-action opcodes (ObjSeqState.cmds[i][0]) dispatched by
+ * ObjSeq_ExecuteActionCommand's top-level switch in objseq.c. */
+enum SeqActionOpcode {
+    SEQACT_SETTIME = 0x00,
+    SEQACT_MOVEMODE = 0x01,
+    SEQACT_ANIM = 0x02,
+    SEQACT_OVERRIDE = 0x03,
+    SEQACT_VTXANIM = 0x04,
+    SEQACT_SOFTWARE = 0x05,
+    SEQACT_SFX = 0x06,
+    SEQACT_GROUND_MODE = 0x07,
+    SEQACT_TUNE = 0x08,
+    SEQACT_ANGLE_MODE = 0x09,
+    SEQACT_LOOK_AT = 0x0A,
+    SEQACT_CONDITION = 0x0B,
+    SEQACT_SPEECH = 0x0C,
+    SEQACT_ENVFX = 0x0D,
+    SEQACT_STORYBOARD = 0x0E,
+    SEQACT_SFX_WITH_DURATION = 0x0F,
+    SEQACT_NOP = 0x7F,
+    SEQACT_SET_MAX_TIME = 0xFF
+};
+
+/* Condition codes dispatched by ObjSeq_EvaluateCondition's switch in objseq.c;
+ * 0, 15 and any other value fall through to "always true". */
+enum ObjSeqConditionCode {
+    OBJSEQ_COND_SEQCOUNTER_LT1 = 1, /* seqCounter <= 0 */
+    OBJSEQ_COND_SEQCOUNTER_GT0 = 2,
+    OBJSEQ_COND_DAYTIME = 3,
+    OBJSEQ_COND_NIGHTTIME = 4,
+    OBJSEQ_COND_BOOL_EQ0 = 5, /* gObjSeqBoolFlags[slot] == 0 */
+    OBJSEQ_COND_BOOL_EQ1 = 6, /* gObjSeqBoolFlags[slot] == 1 */
+    OBJSEQ_COND_VAR1_EQ0 = 7, /* gObjSeqCondFlags[slot] == 0 */
+    OBJSEQ_COND_VAR1_NE0 = 8, /* gObjSeqCondFlags[slot] != 0 */
+    OBJSEQ_COND_GLOBAL1_LE0 = 9,
+    OBJSEQ_COND_GLOBAL1_GT0 = 10,
+    OBJSEQ_COND_GLOBAL2_LE0 = 11,
+    OBJSEQ_COND_GLOBAL2_GT0 = 12,
+    OBJSEQ_COND_TIMER_DISABLED = 13,
+    OBJSEQ_COND_TIMER_ENABLED = 14,
+    OBJSEQ_COND_GLOBAL3_NE0 = 16,
+    OBJSEQ_COND_GLOBAL3_EQ0 = 17
+};
+
+#include "types.h"
+#include "dolphin/gx/GXStruct.h"
+#include "game/objects/object_fwd.h"
+
+int getCurSeqNo(void);
+void ObjSeq_copyDefaultColor(GXColor* colorOut);
+
+extern GameObject* focusedNpc;
+extern u8 curSeqNo;
+extern s16 seqGlobal1;
+extern s16 seqGlobal2;
+extern int objSeqObjs;
+extern int gObjSeqStreamSuppressed;
+extern GXColor gObjSeqDefaultColor;
+extern s16 gObjSeqSlotSeqIdTable[];
+extern f32 gObjSeqSlotStreamTimeTable[];
+extern f32 objSeqOverridePos[];
+extern char sEndObjSequenceMaxFreesError[];
+
+#endif

@@ -1,0 +1,248 @@
+/*
+ * DRMusicCont (DLL 638) - an invisible music/ambience controller for
+ * its map.
+ *
+ * update overrides the cloud position, runs a one-shot env-fx and sky
+ * setup the first frame, and drives several game-bit latches
+ * (GameBitLatch_*). It watches two quads of "switch" game bits and a
+ * third quad: completing the first two quads sets a progress bit and
+ * plays a stinger, any change within a quad plays a mutter cue, and a
+ * change in the third quad arms a short countdown (unk4) that fires a
+ * one-shot sfx on expiry. It also toggles a map restart point based on
+ * two more game bits. State: a f32 countdown at 0x4 and the
+ * DrMusicContFlags cache at 0x8.
+ */
+#include "main/audio/sfx.h"
+#include "main/frame_timing.h"
+#include "main/gamebits.h"
+#include "main/mapEventTypes.h"
+#include "main/render_envfx.h"
+#include "main/newclouds.h"
+#include "main/sky.h"
+#include "main/audio/sfx_trigger_ids.h"
+
+#include "main/dll/DR/dll_027E_drmusiccont.h"
+#include "dlls/object_descriptor.h"
+#include "main/object_render.h"
+
+#define DRMUSICCONT_CLOUD_OVERRIDE_POS_X -15350.0f
+#define DRMUSICCONT_CLOUD_OVERRIDE_POS_Y -1550.0f
+#define DRMUSICCONT_CLOUD_OVERRIDE_POS_Z 10875.0f
+#define DRMUSICCONT_STINGER_TIMER_DURATION 60.0f
+#define DRMUSICCONT_RESTART_POINT_X -15697.0f
+#define DRMUSICCONT_RESTART_POINT_Y -1501.0f
+#define DRMUSICCONT_RESTART_POINT_Z 12928.0f
+
+#define DRMUSICCONT_ENVFX_A 0x210
+#define DRMUSICCONT_ENVFX_B 0x20f
+#define DRMUSICCONT_ENVFX_C 0x212
+#define DRMUSICCONT_ENVFX_D 0x1ea
+
+int drmusiccont_getExtraSize(void)
+{
+    return sizeof(DrmusiccontState);
+}
+
+int drmusiccont_getObjectTypeId(void)
+{
+    return 0;
+}
+
+void drmusiccont_free(GameObject* obj)
+{
+    cloudClearOverridePosition();
+}
+
+void drmusiccont_render(GameObject* obj, int p2, int p3, int p4, int p5, s8 visible)
+{
+    if (visible != 0)
+    {
+        objRenderModelAndHitVolumes(obj, p2, p3, p4, p5, 1.0f);
+    }
+}
+
+void drmusiccont_hitDetect(void)
+{
+}
+
+void drmusiccont_update(GameObject* obj)
+{
+    DrmusiccontState* state = obj->extra;
+    DrMusicContFlags* flags = &state->flags;
+    u8 bitE30;
+    u8 bitE31;
+    u8 bitE32;
+    u8 bitE33;
+    u8 bitE38;
+    u8 bitE3C;
+    u8 bitE3D;
+    u8 bitE3E;
+    u8 bit9E0;
+    u8 bit9E1;
+    u8 bit9E2;
+    u8 bit9E7;
+
+    cloudSetOverridePosition(DRMUSICCONT_CLOUD_OVERRIDE_POS_X, DRMUSICCONT_CLOUD_OVERRIDE_POS_Y,
+                             DRMUSICCONT_CLOUD_OVERRIDE_POS_Z);
+    if ((obj)->userData1 == 0)
+    {
+        if (mainGetBit(GAMEBIT_DRArwingRelated0E7B) == 0)
+        {
+            getEnvfxActImmediately(obj, obj, DRMUSICCONT_ENVFX_A, 0);
+            getEnvfxActImmediately(obj, obj, DRMUSICCONT_ENVFX_B, 0);
+            getEnvfxActImmediately(obj, obj, DRMUSICCONT_ENVFX_C, 0);
+            getEnvfxActImmediately(obj, obj, DRMUSICCONT_ENVFX_D, 0);
+            skySetLightIndex(0, 0.0f);
+            mainSetBits(GAMEBIT_DRArwingRelated0E7B, 1);
+        }
+        (obj)->userData1 = 1;
+    }
+
+    GameBitLatch_Update(&state->gameBitLatch, 2, 0x1a7, 0x64b, 0xf0e, 0xe5);
+    GameBitLatch_UpdateInverted(&state->gameBitLatch, 1, -1, -1, 0xe26, 0xb8);
+    GameBitLatch_Update(&state->gameBitLatch, 4, -1, -1, 0xcbb, 0xc4);
+
+    bitE30 = (u8)mainGetBit(0xe30);
+    bitE31 = (u8)mainGetBit(0xe31);
+    bitE32 = (u8)mainGetBit(0xe32);
+    bitE33 = (u8)mainGetBit(0xe33);
+    if (flags->b_e9c == 0 && bitE30 && bitE31 && bitE32 && bitE33)
+    {
+        flags->b_e9c = 1;
+        mainSetBits(GAMEBIT_DR_ShutDownRobotShields, 1);
+        Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
+    }
+    else if (bitE30 != flags->b_e30 || bitE31 != flags->b_e31 || bitE32 != flags->b_e32 || bitE33 != flags->b_e33)
+    {
+        Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
+    }
+    flags->b_e30 = bitE30;
+    flags->b_e31 = bitE31;
+    flags->b_e32 = bitE32;
+    flags->b_e33 = bitE33;
+
+    bitE38 = (u8)mainGetBit(0xe38);
+    bitE3C = (u8)mainGetBit(0xe3c);
+    bitE3D = (u8)mainGetBit(0xe3d);
+    bitE3E = (u8)mainGetBit(0xe3e);
+    if (flags->b_e39 == 0 && bitE38 && bitE3C && bitE3D && bitE3E)
+    {
+        flags->b_e39 = 1;
+        Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
+    }
+    else if (bitE38 != flags->b_e38 || bitE3C != flags->b_e3c || bitE3D != flags->b_e3d || bitE3E != flags->b_e3e)
+    {
+        Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
+    }
+    flags->b_e38 = bitE38;
+    flags->b_e3c = bitE3C;
+    flags->b_e3d = bitE3D;
+    flags->b_e3e = bitE3E;
+
+    bit9E0 = (u8)mainGetBit(0x9e0);
+    bit9E1 = (u8)mainGetBit(0x9e1);
+    bit9E2 = (u8)mainGetBit(0x9e2);
+    bit9E7 = (u8)mainGetBit(0x9e7);
+    if (!(bit9E0 && bit9E1 && bit9E2 && bit9E7))
+    {
+        if (bit9E0 != flags->b_9e0 || bit9E1 != flags->b_9e1 || bit9E2 != flags->b_9e2 || bit9E7 != flags->b_9e7)
+        {
+            state->stingerTimer = DRMUSICCONT_STINGER_TIMER_DURATION;
+        }
+    }
+    {
+        f32 st = state->stingerTimer;
+        f32 zero = 0.0f;
+        if (st > zero)
+        {
+            state->stingerTimer = st - timeDelta;
+            if (state->stingerTimer <= zero)
+            {
+                Sfx_PlayFromObject(0, SFXTRIG_sc_menuups16k_4bd);
+            }
+        }
+    }
+    flags->b_9e0 = bit9E0;
+    flags->b_9e1 = bit9E1;
+    flags->b_9e2 = bit9E2;
+    flags->b_9e7 = bit9E7;
+
+    if (flags->b_state != 0)
+    {
+        if (mainGetBit(0x9f0) == 0 || mainGetBit(GAMEBIT_DR_RescuedHighTop) != 0)
+        {
+            (*gMapEventInterface)->clearRestartPoint();
+            flags->b_state = 0;
+        }
+    }
+    else
+    {
+        if (mainGetBit(0x9f0) != 0 && mainGetBit(GAMEBIT_DR_RescuedHighTop) == 0)
+        {
+            f32 vec[3];
+            vec[0] = DRMUSICCONT_RESTART_POINT_X;
+            vec[1] = DRMUSICCONT_RESTART_POINT_Y;
+            vec[2] = DRMUSICCONT_RESTART_POINT_Z;
+            (*gMapEventInterface)->restartPoint(vec, 0x7fff, 0, 0);
+            flags->b_state = 1;
+        }
+    }
+}
+
+void drmusiccont_init(GameObject* obj)
+{
+    DrmusiccontState* state = obj->extra;
+    DrMusicContFlags* flags = &state->flags;
+
+    flags->b_e30 = mainGetBit(0xe30);
+    flags->b_e31 = mainGetBit(0xe31);
+    flags->b_e32 = mainGetBit(0xe32);
+    flags->b_e33 = mainGetBit(0xe33);
+    flags->b_e9c = mainGetBit(GAMEBIT_DR_ShutDownRobotShields);
+    flags->b_e38 = mainGetBit(0xe38);
+    flags->b_e3c = mainGetBit(0xe3c);
+    flags->b_e3d = mainGetBit(0xe3d);
+    flags->b_e3e = mainGetBit(0xe3e);
+    flags->b_e39 = mainGetBit(0xe39);
+    flags->b_9e0 = mainGetBit(0x9e0);
+    flags->b_9e1 = mainGetBit(0x9e1);
+    flags->b_9e2 = mainGetBit(0x9e2);
+    flags->b_9e7 = mainGetBit(0x9e7);
+}
+
+void drmusiccont_release(void)
+{
+}
+
+void drmusiccont_initialise(void)
+{
+}
+
+OBJECT_INIT_ADAPTER(gDrMusicContObjDescriptorInitAdapter, drmusiccont_init, obj)
+OBJECT_HIT_DETECT_ADAPTER(gDrMusicContObjDescriptorHitDetectAdapter, drmusiccont_hitDetect)
+OBJECT_FREE_ADAPTER(gDrMusicContObjDescriptorFreeAdapter, drmusiccont_free, obj)
+OBJECT_TYPE_ID_ADAPTER(gDrMusicContObjDescriptorTypeIdAdapter, drmusiccont_getObjectTypeId)
+OBJECT_EXTRA_SIZE_ADAPTER(gDrMusicContObjDescriptorExtraSizeAdapter, drmusiccont_getExtraSize)
+
+RESOURCE_ACQUIRE_ADAPTER(gDrMusicContObjDescriptorAcquire, drmusiccont_initialise)
+
+ObjectDescriptor gDrMusicContObjDescriptor = {
+    {
+        {
+            0,
+            0,
+            0,
+            OBJECT_DESCRIPTOR_FLAGS_10_SLOTS,
+        },
+        gDrMusicContObjDescriptorAcquire,
+        drmusiccont_release,
+    },
+    0,
+    gDrMusicContObjDescriptorInitAdapter,
+    drmusiccont_update,
+    gDrMusicContObjDescriptorHitDetectAdapter,
+    drmusiccont_render,
+    gDrMusicContObjDescriptorFreeAdapter,
+    gDrMusicContObjDescriptorTypeIdAdapter,
+    gDrMusicContObjDescriptorExtraSizeAdapter,
+};

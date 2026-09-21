@@ -1,0 +1,140 @@
+#ifndef MAIN_VOXMAPS_H_
+#define MAIN_VOXMAPS_H_
+
+#include "types.h"
+
+struct CurveHeapNode;
+struct GameObject;
+typedef struct Texture Texture;
+
+typedef struct VoxMapSlotOrigin {
+    s16 gridX;
+    s16 gridZ;
+} VoxMapSlotOrigin;
+
+typedef struct VoxMapFile {
+    u8 pad00[4];
+    int minY;
+    u8 pad08[4];
+    int maxY;
+    u8 pad10[4];
+    u32 nodeBase;
+    int f18;
+    u32 rowCounts;
+    int f20;
+    u32 bitmap;
+    int f28;
+} VoxMapFile;
+
+typedef struct VoxMaps {
+    VoxMapSlotOrigin slotOrigin[6];
+    int timer[6];
+    int blockId[6];
+    int blockOriginWorld[2];
+    int blockOriginGrid[2];
+    VoxMapFile* activeMap;
+    VoxMapFile* mapBuffer[6];
+} VoxMaps;
+
+typedef struct VoxPos {
+    s16 x;
+    s16 y;
+    s16 z;
+} VoxPos;
+
+typedef struct VoxState {
+    int blockOriginWorldX;
+    int blockOriginWorldZ;
+    int originX;
+    int originZ;
+    VoxMapFile* activeMap;
+} VoxState;
+
+typedef struct VoxBoxArg {
+    s16 x;
+    s16 y;
+    s16 z;
+    s16 pad6;
+    u16 cost;
+} VoxBoxArg;
+
+typedef struct RouteNode {
+    s16 x;
+    s16 y;
+    s16 z;
+    u16 hCost;
+    u16 gCost;
+    u8 parentNodeIndex;
+    u8 nextNodeIndex;
+    u8 flag;
+    u8 unkD;
+} RouteNode;
+
+typedef struct RouteState {
+    RouteNode* nodes;
+    struct CurveHeapNode* queue;
+    f32* pathPoints;
+    s16 tgtX;
+    s16 tgtY;
+    s16 tgtZ;
+    s16 startX;
+    s16 startY;
+    s16 startZ;
+    int cur;
+    s16 nodeCount;
+    s16 queueCount;
+    s16 pathCount;
+    s16 pad22;
+    s16 minHCost;
+    u8 mode26;
+    u8 pad27;
+} RouteState;
+
+typedef struct RouteNav {
+    f32 destPos[3];
+    f32 curPos[3];
+    f32 tgtPos[3];
+    u8 navState;
+    u8 flag25;
+    u8 maxIters;
+    u8 budget;
+} RouteNav;
+
+extern int gVoxMapsSlotTimers[];
+extern struct GameObject* gVoxMapsTransformObj;
+extern VoxMaps gVoxMaps;
+extern u8 gVoxMapsSlotInUse[8];
+extern int* gVoxMapsMapList;
+extern int gVoxMapsMaxMapIndex;
+extern u8* gVoxMapsScratchBuffer;
+extern u8* gVoxMapsScratchBufferPtr;
+extern Texture* gVoxMapsLargeTextures[2];
+extern Texture* gVoxMapsSmallTextures[2];
+extern int gMapBlockOriginWorldX;
+extern int gMapBlockOriginWorldZ;
+#define gVoxMapsRouteState (*(VoxState*)&gVoxMaps.blockOriginWorld[0])
+extern char sVoxmapsRouteNodesListOverflow[];
+extern char sVoxMapsDebugStrings[];
+
+u8* voxmaps_getRouteNode(u8* rowCounts, int* nodeBase, u8* bitmap, int tileX, int ySlot, int tileZ);
+void voxmaps_freeRouteWork(RouteState* state);
+void voxmaps_allocRouteWork(RouteState* state);
+void voxmaps_updateTimers(void);
+void voxmaps_gridToWorld(f32* out, s16* grid);
+void voxmaps_worldToGrid(f32* in, s16* out);
+void voxmaps_resetLoadedMaps(void);
+void voxmaps_initialise(void);
+int* voxmaps_updateActiveMap(VoxPos* obj);
+int voxmaps_traceLine(VoxPos* start, VoxPos* end, VoxPos* coordOut, u8* occOut, u8 skipFirst);
+int voxmaps_traceWorldLine(void* startPos, void* endPos);
+void voxmaps_traceScaledVectorEnd(f32* out, void* origin, f32* dir, f32 scale);
+void voxmaps_expandRouteNeighbors(RouteState* state, VoxBoxArg* box, int parentNodeIndex);
+void voxmaps_visitRouteNeighbor(RouteState* state, VoxBoxArg* srcBox, int parentNodeIndex, u16 count, s16* box);
+int voxmaps_processRouteQueue(RouteState* state, int count);
+int voxmaps_updateRoutePath(RouteNav* nav, RouteState* state);
+int voxmaps_buildRouteWaypoints(RouteState* state, int maxPathPoints);
+void loadVoxMaps(int handle, int* outCount, int* outSize);
+VoxMapFile* voxLoadVoxMapActual(int mapArg, int slot, int b9, int b8);
+int voxmaps_traceTraversableRoute(s16* dest, s16* start, s16* lastReachableOut);
+
+#endif /* MAIN_VOXMAPS_H_ */
