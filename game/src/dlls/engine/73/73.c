@@ -96,9 +96,7 @@ static void CameraModeCombat_traceMove(f32* prevPos, CameraObject* camera, Camco
 
 void CameraModeCombat_update(CameraObject* camera) {
     Vec movement;
-    f32 prevZ;
-    f32 prevY;
-    f32 prevX;
+    f32 prevPos[3];
     f32 dy;
     f32 ty;
     f32 dx;
@@ -219,7 +217,7 @@ void CameraModeCombat_update(CameraObject* camera) {
                             }
                             (*gCameraInterface)->setMode(CAMCONTROL_ACTION_DEFAULT, 0, 1, 0, NULL, 0x1e, 0xff);
                         } else {
-                            cameraGetPrevPos2(focus, &prevX, &prevY, &prevZ);
+                            cameraGetPrevPos2(focus, &prevPos[0], &prevPos[1], &prevPos[2]);
                             px = 0.35f * dx + focus->anim.worldPosX;
                             py = 5.0f + ty;
                             pz = 0.35f * dz + focus->anim.worldPosZ;
@@ -305,7 +303,7 @@ void CameraModeCombat_update(CameraObject* camera) {
                             }
                             PSVECScale(&movement, &movement, (mag < 0.0f) ? 0.0f : ((mag > 20.0f) ? 20.0f : mag));
                             PSVECAdd((Vec*)&camera->anim.worldPosX, &movement, (Vec*)&camera->anim.worldPosX);
-                            CameraModeCombat_traceMove(&prevX, camera, &traceWork);
+                            CameraModeCombat_traceMove(prevPos, camera, &traceWork);
                             t = 0.1f * dz + focus->anim.worldPosZ;
                             fb = currentView->x - (0.1f * dx + focus->anim.worldPosX);
                             dy = currentView->y - py;

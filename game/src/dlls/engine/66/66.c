@@ -998,12 +998,8 @@ void CameraModeNormal_update(CameraObject* camera) {
     int val;
     u32 angleDelta;
     int yaw;
-    float aimZ2;
-    float aimY2;
-    float aimX2;
-    float aimZ;
-    float aimY;
-    float aimX;
+    f32 wallTraceFrom[3];
+    f32 probeTraceFrom[3];
     float dx2;
     u8 relPosScratch[4];
     float dz;
@@ -1093,13 +1089,13 @@ void CameraModeNormal_update(CameraObject* camera) {
         }
         if (gCameraModeNormalState->wallAvoidanceTimer > 10) {
             if (target[0]->anim.classId == 1) {
-                cameraGetPrevPos2(target[0], &aimX2, &aimY2, &aimZ2);
+                cameraGetPrevPos2(target[0], &wallTraceFrom[0], &wallTraceFrom[1], &wallTraceFrom[2]);
             } else {
-                aimX2 = target[0]->anim.worldPosX;
-                aimY2 = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
-                aimZ2 = target[0]->anim.worldPosZ;
+                wallTraceFrom[0] = target[0]->anim.worldPosX;
+                wallTraceFrom[1] = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
+                wallTraceFrom[2] = target[0]->anim.worldPosZ;
             }
-            camcontrol_traceMove(&aimX2, &camera->anim.worldPosX, &camera->anim.worldPosX, &wallTraceWork, 3, 1, 1,
+            camcontrol_traceMove(wallTraceFrom, &camera->anim.worldPosX, &camera->anim.worldPosX, &wallTraceWork, 3, 1, 1,
                                  4.0f);
             camera->probePos.x = camera->anim.worldPosX;
             camera->probePos.y = camera->anim.worldPosY;
@@ -1115,13 +1111,13 @@ void CameraModeNormal_update(CameraObject* camera) {
         }
         if (gCameraModeNormalState->collisionProbeTimer > 5) {
             if (target[0]->anim.classId == 1) {
-                cameraGetPrevPos2(target[0], &aimX, &aimY, &aimZ);
+                cameraGetPrevPos2(target[0], &probeTraceFrom[0], &probeTraceFrom[1], &probeTraceFrom[2]);
             } else {
-                aimX = target[0]->anim.worldPosX;
-                aimY = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
-                aimZ = target[0]->anim.worldPosZ;
+                probeTraceFrom[0] = target[0]->anim.worldPosX;
+                probeTraceFrom[1] = target[0]->anim.worldPosY + gCameraModeNormalState->targetHeight;
+                probeTraceFrom[2] = target[0]->anim.worldPosZ;
             }
-            camcontrol_traceMove(&aimX, &camera->anim.worldPosX, &camera->anim.worldPosX, &probeTraceWork, 3, 1, 1,
+            camcontrol_traceMove(probeTraceFrom, &camera->anim.worldPosX, &camera->anim.worldPosX, &probeTraceWork, 3, 1, 1,
                                  4.0f);
             camera->probePos.x = camera->anim.worldPosX;
             camera->probePos.y = camera->anim.worldPosY;
