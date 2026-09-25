@@ -232,7 +232,8 @@ void gpu_synchronize();
 void after_present() noexcept;
 float calculate_fps() noexcept;
 void resolve_pass_into(TextureHandle texture, ClipRect rect, bool clearColor, bool clearAlpha, bool clearDepth,
-                       Vec4<float> clearColorValue, float clearDepthValue, GXTexFmt resolveFormat = GX_TF_RGBA8);
+                       Vec4<float> clearColorValue, float clearDepthValue, GXTexFmt resolveFormat = GX_TF_RGBA8,
+                       Vec2<uint32_t> logicalSize = {});
 
 struct ColorPassDescriptor {
   const char* label = nullptr;

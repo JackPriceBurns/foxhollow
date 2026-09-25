@@ -25,6 +25,7 @@ static constexpr std::string_view ShaderPreamble = R"(
 struct UVTransform {
     offset: vec2f,
     scale: vec2f,
+    blur: vec4f,
 };
 @group(0) @binding(2) var<uniform> uv_xf: UVTransform;
 
@@ -213,7 +214,25 @@ static constexpr std::string_view FragG8 = R"(
 // GX_CTF_B8: 8-bit blue -> R8Unorm
 static constexpr std::string_view FragB8 = R"(
 @fragment fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    let b = textureSample(src, src_samp, in.uv).b;
+    let window = i32(uv_xf.blur.x);
+    if (window <= 1) {
+        let b = textureSample(src, src_samp, in.uv).b;
+        return vec4f(b, b, b, b);
+    }
+    let step = uv_xf.scale / uv_xf.blur.zw;
+    let lo = uv_xf.offset;
+    let hi = uv_xf.offset + uv_xf.scale;
+    let half = window / 2;
+    var sum = 0.0;
+    for (var y: i32 = -half; y < window - half; y = y + 1) {
+        for (var x: i32 = -half; x < window - half; x = x + 1) {
+            let uv = in.uv + vec2f(f32(x), f32(y)) * step;
+            let inside = all(uv >= lo) && all(uv < hi);
+            let v = textureSampleLevel(src, src_samp, clamp(uv, lo, hi), 0.0).b;
+            sum = sum + select(0.0, v, inside);
+        }
+    }
+    let b = sum / f32(window * window);
     return vec4f(b, b, b, b);
 }
 )"sv;
@@ -468,7 +487,7 @@ void initialize() {
       },
       wgpu::BindGroupLayoutEntry{
           .binding = 2,
-          .visibility = wgpu::ShaderStage::Vertex,
+          .visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment,
           .buffer =
               wgpu::BufferBindingLayout{
                   .type = wgpu::BufferBindingType::Uniform,

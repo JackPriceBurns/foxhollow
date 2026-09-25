@@ -825,7 +825,8 @@ PipelineRef pipeline_ref(const clear::PipelineConfig& config) {
 }
 
 void resolve_pass_into(TextureHandle texture, ClipRect rect, bool clearColor, bool clearAlpha, bool clearDepth,
-                       Vec4<float> clearColorValue, float clearDepthValue, GXTexFmt resolveFormat) {
+                       Vec4<float> clearColorValue, float clearDepthValue, GXTexFmt resolveFormat,
+                       Vec2<uint32_t> logicalSize) {
   // Resolve current render pass
   auto& prevPass = current_render_passes()[g_currentRenderPass];
   prevPass.resolveTarget = std::move(texture);
@@ -834,11 +835,16 @@ void resolve_pass_into(TextureHandle texture, ClipRect rect, bool clearColor, bo
   // Push UV transform uniform for tex_copy_conv (crop region in UV space)
   const auto srcW = static_cast<float>(prevPass.targetSize.width);
   const auto srcH = static_cast<float>(prevPass.targetSize.height);
+  const float blurWindow = resolveFormat == GX_CTF_B8 && logicalSize.x != 0 && logicalSize.y != 0 ? 16.f : 0.f;
   const std::array uvTransform{
       static_cast<float>(rect.x) / srcW,
       static_cast<float>(rect.y) / srcH,
       static_cast<float>(rect.width) / srcW,
       static_cast<float>(rect.height) / srcH,
+      blurWindow,
+      0.f,
+      static_cast<float>(logicalSize.x),
+      static_cast<float>(logicalSize.y),
   };
   prevPass.resolveUniformRange = push_uniform(uvTransform);
   enqueue_pass(current_frame_packet(), g_recordingFrameSlot, g_currentRenderPass);

@@ -104,7 +104,8 @@ void copy_tex(const void* dest, GXBool clear) noexcept {
     clearColorValue.w() = 1.f;
   }
   gfx::resolve_pass_into(handle.handle, rect, clearColor, clearAlpha, clearDepth, clearColorValue,
-                         clear_depth_value(), texCopyFmt);
+                         clear_depth_value(), texCopyFmt,
+                         {g_gxState.texCopyDstWidth, g_gxState.texCopyDstHeight});
   ++handle.revision;
   g_gxState.copyTextures[dest] = handle;
   texture::invalidate_bindings();
