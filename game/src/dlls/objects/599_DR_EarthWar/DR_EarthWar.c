@@ -73,10 +73,6 @@ static f32 gDREarthWarriorSegmentRadii[4];
 static f32 gDREarthWarriorLocalPointPositions[6];
 static f32 gDREarthWarriorLocalPointRadii[4];
 
-static const EWSpeedRange* DR_EarthWarrior_getSpeedRanges(const EarthWarriorSub* warrior) {
-    return (const EWSpeedRange*)DR_EarthWarrior_getSpeedRanges(warrior);
-}
-
 static void DR_EarthWarrior_setupPathState(u8* pathState, DREarthWarriorInitData* base, EarthWarriorSub* warrior) {
     (*gPathControlInterface)
         ->setup(pathState, 4, base->segmentLocalPoints, base->segmentRadii, (void*)gDREarthWarriorPathSetupParam);
@@ -99,10 +95,12 @@ void DR_EarthWarrior_feed(GameObject* obj, int mode) {
 }
 
 int DR_EarthWarrior_updateLeap(GameObject* obj, EarthWarriorSub* warrior, BaddieState* baddie) {
+    const EWSpeedRange* speedRanges = (const EWSpeedRange*)warrior->playerMotion.moveParamValues;
     warrior->playerMotion.flags360 |= 0x1000000LL;
     baddie->moveSpeed = 0.035f;
+
     if (obj->anim.currentMoveProgress > 0.1f && obj->anim.currentMoveProgress < 0.25f &&
-        baddie->animSpeedC > DR_EarthWarrior_getSpeedRanges(warrior)[3].maxSpeed - 0.4f &&
+        baddie->animSpeedC > speedRanges[3].maxSpeed - 0.4f &&
         baddie->inputMagnitude > 0.8f && warrior->playerMotion.yawRateSigned >= 0x96) {
         warrior->playerMotion.flags3F0.b40 = 1;
         warrior->playerMotion.flags3F0.b80 = 0;
@@ -112,21 +110,21 @@ int DR_EarthWarrior_updateLeap(GameObject* obj, EarthWarriorSub* warrior, Baddie
         ObjAnim_SetCurrentEventStepFrames(&obj->anim, 0x10);
         warrior->playerMotion.unk858 = warrior->playerMotion.yaw;
         warrior->playerMotion.animSpeedRate =
-            (0.2f + (DR_EarthWarrior_getSpeedRanges(warrior)[2].maxSpeed + baddie->animSpeedC)) / 60.0f;
+            (0.2f + (speedRanges[2].maxSpeed + baddie->animSpeedC)) / 60.0f;
         warrior->playerMotion.targetYaw = warrior->playerMotion.yaw;
         warrior->playerMotion.yaw += 0x8000;
         baddie->animSpeedC = -baddie->animSpeedC;
         baddie->animSpeedA = -baddie->animSpeedA;
     }
+
     if (warrior->playerMotion.flags3F0.b80 != 0) {
-        f32 lim;
-        if (baddie->animSpeedC <= (lim = DR_EarthWarrior_getSpeedRanges(warrior)[2].minSpeed) &&
-            baddie->animSpeedA <= lim) {
+        if (baddie->animSpeedC <= speedRanges[2].minSpeed && baddie->animSpeedA <= speedRanges[2].minSpeed) {
             warrior->playerMotion.lastInputHeading = warrior->playerMotion.yaw;
             warrior->playerMotion.flags3F0.b40 = 0;
             warrior->playerMotion.flags3F0.b80 = 0;
             return 1;
         }
+
         warrior->playerMotion.currentSpeed = 0.0f;
         warrior->playerMotion.velSmoothRate = warrior->playerMotion.velSmoothRateBase;
         warrior->playerMotion.pendingFxFlags |= 8;
@@ -162,14 +160,8 @@ static inline void DR_EarthWarrior_updateAim(EarthWarriorSub* warrior, BaddieSta
     warrior->playerMotion.bodyLeanAngle += angleDelta * timeDelta;
     warrior->playerMotion.bodyLeanHalf = warrior->playerMotion.bodyLeanAngle / 2;
     {
-        f32 step;
-        f32 scale;
-        f32 ph;
-
-        ph = (f32)(s32)baddie->spawnRotY / 8192.0f;
-        scale = 182.0f;
-        step = 10.0f;
-        horizontalDelta = (int)(scale * (step * -((ph < -1.0f) ? -1.0f : ((ph > 1.0f) ? 1.0f : ph))));
+        f32 ph = (f32)(s32)baddie->spawnRotY / 8192.0f;
+        horizontalDelta = (int)(182.0f * (10.0f * -CLAMP_EXPR(ph, -1.0f, 1.0f)));
         horizontalDelta -= (u16)warrior->playerMotion.headYaw;
     }
     if (horizontalDelta > 0x8000) {
@@ -182,33 +174,27 @@ static inline void DR_EarthWarrior_updateAim(EarthWarriorSub* warrior, BaddieSta
 }
 
 static void DR_EarthWarrior_updateSteeringPose(GameObject* obj, EarthWarriorSub* warrior, BaddieState* baddie) {
-    int targetAngle;
     s16* primaryLookBone;
     s16* secondaryLookBone;
 
-    targetAngle = warrior->playerMotion.targetYawRate << 1;
+    int targetAngle = warrior->playerMotion.targetYawRate << 1;
     DR_EarthWarrior_updateAim(warrior, baddie, targetAngle);
     primaryLookBone = objFindJointPoseVector(obj, 0);
     secondaryLookBone = objFindJointPoseVector(obj, 9);
     objFindJointPoseVector(obj, 4);
     objFindJointPoseVector(obj, 5);
+
     if (primaryLookBone != NULL) {
-        int clampedY;
         primaryLookBone[0] = -warrior->playerMotion.headYaw;
         primaryLookBone[1] = warrior->playerMotion.bodyLeanAngle / 2;
-        clampedY = primaryLookBone[1];
-        clampedY = (clampedY < -4000) ? -4000 : ((clampedY > 4000) ? 4000 : clampedY);
-        primaryLookBone[1] = clampedY;
+        primaryLookBone[1] = CLAMP_EXPR(primaryLookBone[1], -4000, 4000);
         primaryLookBone[2] = 0;
     }
+
     if (secondaryLookBone != NULL) {
-        int clampedY;
-        int absoluteHalfY;
         secondaryLookBone[1] = warrior->playerMotion.bodyLeanHalf;
-        clampedY = secondaryLookBone[1];
-        clampedY = (clampedY < -3000) ? -3000 : ((clampedY > 3000) ? 3000 : clampedY);
-        secondaryLookBone[1] = clampedY;
-        absoluteHalfY = warrior->playerMotion.bodyLeanHalf;
+        secondaryLookBone[1] = CLAMP_EXPR(secondaryLookBone[1], -3000, 3000);
+        int absoluteHalfY = warrior->playerMotion.bodyLeanHalf;
         if (absoluteHalfY < 0) {
             absoluteHalfY = -absoluteHalfY;
         }
@@ -217,7 +203,7 @@ static void DR_EarthWarrior_updateSteeringPose(GameObject* obj, EarthWarriorSub*
 }
 
 int DR_EarthWarrior_defaultStateHandler(void) {
-    return 0x0;
+    return 0;
 }
 
 int DR_EarthWarrior_stateHandler03(GameObject* obj, BaddieState* baddie) {
@@ -268,6 +254,7 @@ int DR_EarthWarrior_stateHandler03(GameObject* obj, BaddieState* baddie) {
 int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controllerState) {
     EarthWarriorState* state = obj->extra;
     EarthWarriorSub* warrior = &state->sub;
+    const EWSpeedRange* speedRanges = (const EWSpeedRange*)warrior->playerMotion.moveParamValues;
     warrior->playerMotion.flags3F1.b04 = 0;
     warrior->playerMotion.flags3F1.b08 = 0;
     warrior->playerMotion.flags3F2.b10 = 0;
@@ -294,28 +281,25 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
         warrior->playerMotion.yawRateSigned = 0;
         warrior->playerMotion.yawRate = 0;
     }
-    {
-        f32 a;
-        f32 ph = (controllerState->baddie.inputMagnitude - 0.2f) / 0.8f;
-        f32 t;
-        a = warrior->playerMotion.maxSpeed - 0.05f;
-        t = (ph < 0.0f) ? 0.0f : ((ph > 1.0f) ? 1.0f : ph);
-        warrior->playerMotion.currentSpeed = a * (t * warrior->playerMotion.speedScale);
-    }
+
+    f32 ph = (controllerState->baddie.inputMagnitude - 0.2f) / 0.8f;
+    warrior->playerMotion.currentSpeed =
+        (warrior->playerMotion.maxSpeed - 0.05f) * (CLAMP_EXPR(ph, 0.0f, 1.0f) * warrior->playerMotion.speedScale);
+
     if (warrior->playerMotion.flags3F0.b40) {
         warrior->playerMotion.flags360 |= 0x1000000LL;
         controllerState->baddie.moveSpeed = 0.0165f;
+
         {
             s16 yaw = (32768.0f * obj->anim.currentMoveProgress + (f32)warrior->playerMotion.unk858);
             warrior->playerMotion.targetYaw = yaw;
             warrior->playerMotion.lastInputHeading = yaw;
         }
+
         if (controllerState->baddie.moveDone != 0) {
-            s16 sw;
             warrior->playerMotion.flags3F0.b40 = 0;
-            sw = warrior->playerMotion.yaw;
-            warrior->playerMotion.targetYaw = sw;
-            warrior->playerMotion.lastInputHeading = sw;
+            warrior->playerMotion.targetYaw = warrior->playerMotion.yaw;
+            warrior->playerMotion.lastInputHeading = warrior->playerMotion.yaw;
             warrior->playerMotion.gaitLevel = 0xc;
             warrior->playerMotion.flags3F1.b04 = 1;
             warrior->playerMotion.flags3F1.b08 = 1;
@@ -332,28 +316,26 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
         }
     } else if (state->sub.flags994.b01) {
         controllerState->baddie.moveSpeed = 0.02f;
+
         if (controllerState->baddie.moveDone != 0) {
             state->sub.flags994.b01 = 0;
             warrior->playerMotion.flags3F1.b08 = 1;
             ObjAnim_GetPriorityHitState(&obj->anim)->suppressOutgoingHits = 0;
         }
-        {
-            f32 m2;
-            f32 m1;
-            warrior->playerMotion.targetYawSmoothRate *= (m1 = 2.0f);
-            warrior->playerMotion.targetYawRateLimit *= (m2 = 0.5f);
-            warrior->playerMotion.yawSmoothRate *= m1;
-            warrior->playerMotion.yawRateLimit *= m2;
-        }
+
+        warrior->playerMotion.targetYawSmoothRate *= 2.0f;
+        warrior->playerMotion.targetYawRateLimit *= 0.5f;
+        warrior->playerMotion.yawSmoothRate *= 2.0f;
+        warrior->playerMotion.yawRateLimit *= 0.5f;
         warrior->playerMotion.currentSpeed *= 0.75f;
-        if (warrior->playerMotion.currentSpeed < DR_EarthWarrior_getSpeedRanges(warrior)[1].maxSpeed) {
-            warrior->playerMotion.currentSpeed = DR_EarthWarrior_getSpeedRanges(warrior)[1].maxSpeed;
+        if (warrior->playerMotion.currentSpeed < speedRanges[1].maxSpeed) {
+            warrior->playerMotion.currentSpeed = speedRanges[1].maxSpeed;
         }
         ObjAnim_GetPriorityHitState(&obj->anim)->hitVolumePriority = 0x15;
         ObjAnim_GetPriorityHitState(&obj->anim)->hitVolumeId = 2;
     }
     if (!state->sub.flags994.b01 && !warrior->playerMotion.flags3F0.b40 && !warrior->playerMotion.flags3F0.b80 &&
-        controllerState->baddie.animSpeedC > 0.3f + DR_EarthWarrior_getSpeedRanges(warrior)[2].maxSpeed &&
+        controllerState->baddie.animSpeedC > 0.3f + speedRanges[2].maxSpeed &&
         (warrior->playerMotion.inputMagnitude < -0.3f || warrior->playerMotion.yawRateSigned >= 0x96)) {
         warrior->playerMotion.flags3F0.b80 = 1;
         warrior->playerMotion.flags360 |= 0x1000000LL;
@@ -385,33 +367,24 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
                 v = -v;
             }
             warrior->playerMotion.yaw = (182.044f * v + (f32)warrior->playerMotion.yaw);
-        } else if (controllerState->baddie.animSpeedC <= DR_EarthWarrior_getSpeedRanges(warrior)[0].maxSpeed &&
-                   controllerState->baddie.animSpeedA <= DR_EarthWarrior_getSpeedRanges(warrior)[1].maxSpeed) {
+        } else if (controllerState->baddie.animSpeedC <= speedRanges[0].maxSpeed &&
+                   controllerState->baddie.animSpeedA <= speedRanges[1].maxSpeed) {
             warrior->playerMotion.yaw += warrior->playerMotion.yawRate * 0xb6;
         }
     }
     if (!warrior->playerMotion.flags3F0.b40 && !warrior->playerMotion.flags3F1.b04) {
         f32 r = interpolate(warrior->playerMotion.currentSpeed - controllerState->baddie.animSpeedC,
                             warrior->playerMotion.velSmoothRate, timeDelta);
-        r = r < -0.1f * timeDelta ? -0.1f * timeDelta : r > 0.1f * timeDelta ? 0.1f * timeDelta : r;
+        r = CLAMP_EXPR(r, -0.1f * timeDelta, 0.1f * timeDelta);
         if (warrior->playerMotion.yawRateSigned >= 0x96 && r > 0.0f) {
             r = 2.0f * -r;
         }
         controllerState->baddie.animSpeedC += r;
-        controllerState->baddie.animSpeedC =
-            (controllerState->baddie.animSpeedC < DR_EarthWarrior_getSpeedRanges(warrior)[0].minSpeed)
-                ? DR_EarthWarrior_getSpeedRanges(warrior)[0].minSpeed
-                : ((controllerState->baddie.animSpeedC > warrior->playerMotion.maxSpeed)
-                       ? warrior->playerMotion.maxSpeed
-                       : controllerState->baddie.animSpeedC);
+        controllerState->baddie.animSpeedC = CLAMP_EXPR(controllerState->baddie.animSpeedC, speedRanges[0].minSpeed, warrior->playerMotion.maxSpeed);
         controllerState->baddie.animSpeedB = 0.0f;
     } else {
-        controllerState->baddie.animSpeedC =
-            (controllerState->baddie.animSpeedC < -warrior->playerMotion.maxSpeed)
-                ? -warrior->playerMotion.maxSpeed
-                : ((controllerState->baddie.animSpeedC > warrior->playerMotion.maxSpeed)
-                       ? warrior->playerMotion.maxSpeed
-                       : controllerState->baddie.animSpeedC);
+        controllerState->baddie.animSpeedC = CLAMP_EXPR(controllerState->baddie.animSpeedC,
+                                                       -warrior->playerMotion.maxSpeed, warrior->playerMotion.maxSpeed);
     }
     controllerState->baddie.animSpeedA +=
         interpolate(controllerState->baddie.animSpeedC - controllerState->baddie.animSpeedA,
@@ -434,16 +407,16 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
         warrior->playerMotion.animSoundId = (warrior->playerMotion.gaitStepLevel > 3) ? 0xa : 8;
         {
             f32 animSpeedC = controllerState->baddie.animSpeedC;
-            if (animSpeedC < (&DR_EarthWarrior_getSpeedRanges(warrior)[0].minSpeed)[i2]) {
+            if (animSpeedC < (&speedRanges[0].minSpeed)[i2]) {
                 if (warrior->playerMotion.gaitLevel == 4) {
-                    if (controllerState->baddie.animSpeedA < DR_EarthWarrior_getSpeedRanges(warrior)[2].minSpeed &&
+                    if (controllerState->baddie.animSpeedA < speedRanges[2].minSpeed &&
                         controllerState->baddie.inputMagnitude < 0.2f) {
                         return 2;
                     }
                 } else {
                     warrior->playerMotion.gaitLevel -= 4;
                 }
-            } else if (animSpeedC >= (&DR_EarthWarrior_getSpeedRanges(warrior)[0].maxSpeed)[i2]) {
+            } else if (animSpeedC >= (&speedRanges[0].maxSpeed)[i2]) {
                 if (warrior->playerMotion.gaitLevel < 0x14) {
                     if (warrior->playerMotion.gaitLevel == 0) {
                         blend = 0.85f;
@@ -457,7 +430,7 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
         if ((skip != 0 || warrior->playerMotion.prevMoveAnimIds != warrior->playerMotion.moveAnimIds ||
              obj->anim.currentMove != warrior->playerMotion.moveAnimIds[warrior->playerMotion.gaitLevel]) &&
             (ObjAnim_GetCurrentEventCountdown(&obj->anim) == 0 || warrior->playerMotion.flags3F2.b10 != 0)) {
-            if ((obj)->anim.currentMove == 0x14) {
+            if (obj->anim.currentMove == 0x14) {
                 blend = 0.85f;
             }
             ObjAnim_SetCurrentMove(obj, warrior->playerMotion.moveAnimIds[warrior->playerMotion.gaitLevel], blend, 0);
@@ -476,7 +449,8 @@ int DR_EarthWarrior_stateHandler02(GameObject* obj, EarthWarriorState* controlle
 int DR_EarthWarrior_stateHandler01(GameObject* obj, BaddieState* baddie) {
     EarthWarriorState* state = obj->extra;
     EarthWarriorSub* warrior = &state->sub;
-    int moveId;
+    const EWSpeedRange* speedRanges = (const EWSpeedRange*)warrior->playerMotion.moveParamValues;
+
     if (baddie->moveJustStartedA != 0) {
         baddie->animSpeedC = 0.0f;
     }
@@ -484,12 +458,9 @@ int DR_EarthWarrior_stateHandler01(GameObject* obj, BaddieState* baddie) {
     if (baddie->animSpeedA <= gDREarthWarriorSpeedRows[1].minSpeed) {
         baddie->animSpeedA = 0.0f;
     }
-    {
-        f32 z = 0.0f;
-        baddie->animSpeedB = z;
-        obj->anim.velocityX = z;
-        obj->anim.velocityZ = z;
-    }
+    baddie->animSpeedB = 0.0f;
+    obj->anim.velocityX = 0.0f;
+    obj->anim.velocityZ = 0.0f;
     if (!warrior->playerMotion.flags3F0.b80 && !warrior->playerMotion.flags3F0.b40 && !state->sub.flags994.b01 &&
         (baddie->pressedButtons & 0x100)) {
         buttonDisable(0, PAD_BUTTON_A);
@@ -500,20 +471,15 @@ int DR_EarthWarrior_stateHandler01(GameObject* obj, BaddieState* baddie) {
         return 3;
     }
     if (baddie->previousInputMagnitude >= 0.22f && baddie->inputMagnitude >= 0.22f &&
-        baddie->animSpeedC >= DR_EarthWarrior_getSpeedRanges(warrior)[0].maxSpeed) {
+        baddie->animSpeedC >= speedRanges[0].maxSpeed) {
         return 3;
     }
-    moveId = warrior->playerMotion.moveAnimIds[0];
+    int moveId = warrior->playerMotion.moveAnimIds[0];
     baddie->stateId = 0;
     warrior->playerMotion.maxSpeed = 4.32f;
-    {
-        f32 a;
-        f32 ph = (baddie->inputMagnitude - 0.2f) / 0.8f;
-        f32 t;
-        a = warrior->playerMotion.maxSpeed - 0.05f;
-        t = (ph < 0.0f) ? 0.0f : ((ph > 1.0f) ? 1.0f : ph);
-        warrior->playerMotion.currentSpeed = a * (t * warrior->playerMotion.speedScale);
-    }
+    f32 ph = (baddie->inputMagnitude - 0.2f) / 0.8f;
+    warrior->playerMotion.currentSpeed =
+        (warrior->playerMotion.maxSpeed - 0.05f) * (CLAMP_EXPR(ph, 0.0f, 1.0f) * warrior->playerMotion.speedScale);
     baddie->animSpeedC += interpolate(warrior->playerMotion.currentSpeed - baddie->animSpeedC,
                                       warrior->playerMotion.velSmoothRate, timeDelta);
     if (baddie->moveJustStartedA != 0) {
@@ -526,7 +492,7 @@ int DR_EarthWarrior_stateHandler01(GameObject* obj, BaddieState* baddie) {
         baddie->velSmoothTime = 8.0f;
         baddie->moveSpeed = 0.005f;
     }
-    if ((obj)->anim.currentMove == warrior->playerMotion.moveAnimIds[0x18] ||
+    if (obj->anim.currentMove == warrior->playerMotion.moveAnimIds[0x18] ||
         obj->anim.currentMove == warrior->playerMotion.moveAnimIds[0x19]) {
         if (baddie->moveDone != 0 && ObjAnim_GetCurrentEventCountdown(&obj->anim) == 0 && !state->sub.flags994.b01) {
             ObjAnim_SetCurrentMove(obj, moveId, 0.0f, 0);
@@ -569,7 +535,6 @@ int DR_EarthWarrior_stateHandler00(GameObject* obj) {
 int DR_EarthWarrior_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
     EarthWarriorState* state = obj->extra;
     int i;
-    f32 fz;
     obj->anim.resetHitboxFlags |= INTERACT_FLAG_DISABLED;
     if (dll_2E_updateSequenceTurn(obj, animUpdate, &state->moveLib, 0, 0) != 0) {
         return 1;
@@ -592,13 +557,12 @@ int DR_EarthWarrior_SeqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) 
     }
     state->sub.playerMotion.flags360 |= 0x800000LL;
     (*gPathControlInterface)->attachObject(obj, &state->baddie.curvesCollision);
-    fz = 0.0f;
-    state->baddie.animSpeedC = fz;
-    state->baddie.animSpeedB = fz;
-    state->baddie.animSpeedA = fz;
-    obj->anim.velocityX = fz;
-    obj->anim.velocityY = fz;
-    obj->anim.velocityZ = fz;
+    state->baddie.animSpeedC = 0.0f;
+    state->baddie.animSpeedB = 0.0f;
+    state->baddie.animSpeedA = 0.0f;
+    obj->anim.velocityX = 0.0f;
+    obj->anim.velocityY = 0.0f;
+    obj->anim.velocityZ = 0.0f;
     return 0;
 }
 
@@ -628,9 +592,8 @@ int DR_EarthWarrior_getRacePosition(void) {
 
 f32 DR_EarthWarrior_func19(GameObject* obj, f32* out) {
     EarthWarriorState* state = obj->extra;
-    f32 animSpeed;
-    animSpeed = 0.001f * state->baddie.animSpeedC + 0.005f;
-    *out = -(animSpeed < 0.005f ? 0.005f : animSpeed > 0.01f ? 0.01f : animSpeed);
+    f32 animSpeed = 0.001f * state->baddie.animSpeedC + 0.005f;
+    *out = -CLAMP_EXPR(animSpeed, 0.005f, 0.01f);
     return 0.0f;
 }
 
@@ -650,13 +613,12 @@ void DR_EarthWarrior_setMountState(GameObject* obj, enum VehicleMountState mount
         state->sub.flags994.b02 = 0;
         (*gGameUIInterface)->airMeterShutdown();
     } else {
-        EarthWarriorState* reloadedState = obj->extra;
         DREarthWarriorPlacement* placement = (DREarthWarriorPlacement*)obj->anim.placementData;
-        reloadedState->sub.flags994.b02 = 1;
+        state->sub.flags994.b02 = 1;
         (*gGameUIInterface)
             ->initAirMeter(ObjAnim_ReadPlacementS16(&obj->anim, &(placement->energyCapacity)),
                            DREARTHWARRIOR_AIRMETER_BGTEXTURE);
-        (*gGameUIInterface)->runAirMeter(reloadedState->sub.energy);
+        (*gGameUIInterface)->runAirMeter(state->sub.energy);
         mainSetBits(GAMEBIT_DR_EarthWarriorUnknown_2, 1);
         mainSetBits(GAMEBIT_DR_EarthWarriorUnknown_3, 0);
     }
@@ -674,10 +636,7 @@ void DR_EarthWarrior_getCameraPosition(GameObject* obj, f32* x, f32* y, f32* z) 
 
 int DR_EarthWarrior_getDismountSide(GameObject* obj) {
     EarthWarriorState* state = obj->extra;
-    if (state->sub.dismountSide != 0) {
-        return 2;
-    }
-    return 1;
+    return state->sub.dismountSide != 0 ? 2 : 1;
 }
 
 int DR_EarthWarrior_canDismount(void) {
@@ -693,10 +652,7 @@ void DR_EarthWarrior_getRiderPosition(GameObject* obj, f32* x, f32* y, f32* z) {
 
 int DR_EarthWarrior_getMountSide(GameObject* obj) {
     EarthWarriorState* state = obj->extra;
-    if (state->sub.mountSide != 0) {
-        return 1;
-    }
-    return 2;
+    return state->sub.mountSide != 0 ? 1 : 2;
 }
 
 int DR_EarthWarrior_canMount(void) {
@@ -728,15 +684,13 @@ void DR_EarthWarrior_free(GameObject* obj) {
 
 void DR_EarthWarrior_render(GameObject* obj, int gdl, int mtxs, int vtxs, int pols, s8 visibility) {
     EarthWarriorState* state = obj->extra;
-    if (visibility == -1) {
+    if (visibility != 0) {
         objRenderModelAndHitVolumes(obj, gdl, mtxs, vtxs, pols, 1.0f);
         ObjPath_GetPointWorldPosition(obj, 0xb, &state->sub.riderPosX, &state->sub.riderPosY, &state->sub.riderPosZ, 0);
         ObjPath_GetPointWorldPositionArray(obj, 3, 4, (f32*)state->pathPoints);
-    } else if (visibility != 0) {
-        objRenderModelAndHitVolumes(obj, gdl, mtxs, vtxs, pols, 1.0f);
-        ObjPath_GetPointWorldPosition(obj, 0xb, &state->sub.riderPosX, &state->sub.riderPosY, &state->sub.riderPosZ, 0);
-        ObjPath_GetPointWorldPositionArray(obj, 3, 4, (f32*)state->pathPoints);
-        dll_2E_setTargetFromPathPoint(obj, &state->moveLib, 0);
+        if (visibility != -1) {
+            dll_2E_setTargetFromPathPoint(obj, &state->moveLib, 0);
+        }
     }
 }
 
@@ -755,8 +709,7 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
     }
 
     if (hitState->contactFlags != 0) {
-        int i = hitState->contactHitVolume;
-        i = i < 0 ? 0 : i > 0x23 ? 0x23 : i;
+        int i = CLAMP_EXPR(hitState->contactHitVolume, 0, 0x23);
         spawnParams.scale = 1.0f;
         spawnParams.rotZ = 0;
         spawnParams.rotY = 0;
@@ -765,7 +718,7 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
         spawnParams.posY = hitState->contactPosY;
         spawnParams.posZ = hitState->contactPosZ;
         (*gEarthWarriorResource)->spawn(NULL, 1, &spawnParams, 0x401, -1, &rows.rows[gDREarthWarriorRowIndices[i]]);
-        ((ObjHitsPriorityState*)obj->anim.hitReactState)->suppressOutgoingHits = 1;
+        hitState->suppressOutgoingHits = 1;
         doRumble(10.0f);
     }
 
@@ -785,26 +738,18 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
                 hitObj->anim.romDefNo == DREARTHWARRIOR_ATTACKER_SEQID_SWORD) {
                 return;
             }
-            {
-                objSoundStartTimed(obj, &state->modelSoundState, 0x28e, 0x1000, -1, 1);
-                {
-                    s16 d = obj->anim.rotX - (u16)hitObj->anim.rotX;
-                    if (d > 0x8000) {
-                        d = (s16)(d - 0xffff);
-                    }
-                    if (d < -0x8000) {
-                        d += 0xffff;
-                    }
-                    if (d > 0x4000 || d < -0x4000) {
-                        state->sub.flags994.b80 = 0;
-                    } else {
-                        state->sub.flags994.b80 = 1;
-                    }
-                }
-
-                state->sub.savedControlMode = state->baddie.controlMode;
-                (*gPlayerInterface)->setState(obj, state, 3);
+            objSoundStartTimed(obj, &state->modelSoundState, 0x28e, 0x1000, -1, 1);
+            s16 d = obj->anim.rotX - (u16)hitObj->anim.rotX;
+            if (d > 0x8000) {
+                d = (s16)(d - 0xffff);
             }
+            if (d < -0x8000) {
+                d += 0xffff;
+            }
+            state->sub.flags994.b80 = d <= 0x4000 && d >= -0x4000;
+
+            state->sub.savedControlMode = state->baddie.controlMode;
+            (*gPlayerInterface)->setState(obj, state, 3);
         }
     }
 
@@ -816,7 +761,7 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
             Sfx_PlayFromObject(obj, SFXTRIG_foot_run_jingle4);
         }
 
-        if (state->baddie.groundContact != 0 || ((ObjHitsPriorityState*)obj->anim.hitReactState)->flags & 8) {
+        if (state->baddie.groundContact != 0 || hitState->flags & 8) {
             f32 spd;
             f32 vcos;
             f32 vsin;
@@ -827,13 +772,8 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
             vsin = mathCosf(3.1415927f * state->sub.playerMotion.yaw / 32768.0f);
             state->baddie.animSpeedA = -obj->anim.velocityZ * vsin - obj->anim.velocityX * vcos;
             state->baddie.animSpeedA *= 2.0f;
-            state->baddie.animSpeedA = state->baddie.animSpeedA < 1.2960001f ? 1.2960001f
-                                       : state->baddie.animSpeedA > state->sub.playerMotion.maxSpeed
-                                           ? state->sub.playerMotion.maxSpeed
-                                           : state->baddie.animSpeedA;
-            state->baddie.animSpeedA = state->baddie.animSpeedA < 0.0f  ? 0.0f
-                                       : state->baddie.animSpeedA > spd ? spd
-                                                                        : state->baddie.animSpeedA;
+            state->baddie.animSpeedA = CLAMP_EXPR(state->baddie.animSpeedA, 1.2960001f, state->sub.playerMotion.maxSpeed);
+            state->baddie.animSpeedA = CLAMP_EXPR(state->baddie.animSpeedA, 0.0f, spd);
 
             if (!state->sub.playerMotion.flags3F0.b40) {
                 state->baddie.animSpeedC = state->baddie.animSpeedA;
@@ -848,16 +788,11 @@ void DR_EarthWarrior_hitDetect(GameObject* obj) {
         state->sub.playerMotion.rumbleCooldown = 0.0f;
     }
 
-    if (state != NULL) {
-        ObjModelChain_AdvancePhase(state->sub.modelChain);
-    }
+    ObjModelChain_AdvancePhase(state->sub.modelChain);
 }
 
 void DR_EarthWarrior_runController(GameObject* obj, int updateRate, int frameIndex) {
     EarthWarriorState* state = obj->extra;
-    // Dinosaur Planet fossil: the earth warrior used to follow the player, but
-    // that code was stripped but they left in the call to get the player.
-    GameObject* player = Obj_GetPlayerObject();
     EarthWarriorSub* sub = &state->sub;
     Camera* camera = Camera_GetCurrent();
     state->baddie.hitPoints = 0;
@@ -921,22 +856,20 @@ void DR_EarthWarrior_update(GameObject* obj) {
         ObjAnim_GetPriorityHitState(&obj->anim)->axialResponseWeight = 0xf4;
         DR_EarthWarrior_runController(obj, timeDelta, -1);
     } else {
-        f32 z;
         ObjAnim_GetPriorityHitState(&obj->anim)->lateralResponseWeight = 0;
         ObjAnim_GetPriorityHitState(&obj->anim)->axialResponseWeight = 0;
-        z = 0.0f;
-        state->baddie.animSpeedC = z;
-        state->baddie.animSpeedB = z;
-        state->baddie.animSpeedA = z;
-        obj->anim.velocityX = z;
-        obj->anim.velocityY = z;
-        obj->anim.velocityZ = z;
+        state->baddie.animSpeedC = 0.0f;
+        state->baddie.animSpeedB = 0.0f;
+        state->baddie.animSpeedA = 0.0f;
+        obj->anim.velocityX = 0.0f;
+        obj->anim.velocityY = 0.0f;
+        obj->anim.velocityZ = 0.0f;
         DR_EarthWarrior_runController(obj, framesThisStep, -1);
     }
     characterDoEyeAnims(obj, &state->eyeAnimState);
     objSoundUpdateMouth(obj, &state->modelSoundState);
     dll_2E_updateLookAt(obj, &state->moveLib);
-    if ((obj)->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) {
+    if (obj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED) {
         state->sub.flags994.b10 = 1;
         if ((*gGameUIInterface)->isItemBeingUsed(0xc1) != 0) {
             (*gObjectTriggerInterface)->runSequence(1, obj, -1);
