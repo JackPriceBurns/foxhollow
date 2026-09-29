@@ -21,6 +21,7 @@ int fhConfigFullscreen(void);
 int fhConfigVsync(void);
 int fhConfigFrameLimit(void);
 int fhConfigRevision(void);
+int fhConfigLanguage(void);
 const char* fhConfigMemoryCardPath(void);
 const char* fhConfigAutosavePath(void);
 

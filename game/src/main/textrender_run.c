@@ -24,6 +24,7 @@
 #include "main/dll/dll_0015_save_settings.h"
 #include "track/intersect.h"
 #include "main/lightmap.h"
+#include "foxhollow_config.h"
 
 TextFont* gameTextFonts;
 int gameTextCharset;
@@ -833,7 +834,7 @@ void gameTextBuildSystemFontAtlas(void)
     case 0:
         sizeA = 0x3000;
         sizeB = 0x10120;
-        curLanguage = 0;
+        curLanguage = fhConfigLanguage() >= 0 ? fhConfigLanguage() : 0;
         gGameTextFontIsSjis = 0;
         break;
     case 1:

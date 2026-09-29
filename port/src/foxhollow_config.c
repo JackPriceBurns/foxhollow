@@ -13,6 +13,7 @@ static int sFullscreen;
 static int sVsync = 1;
 static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
 static int sRevision;
+static int sLanguage = -1;
 static char sMemoryCardPath[1024];
 static int sHasMemoryCardPath;
 static char sAutosavePath[1024];
@@ -42,6 +43,20 @@ static int read_path(const char* name, char* out, size_t capacity) {
   memcpy(out, value, length);
   out[length] = '\0';
   return 1;
+}
+
+static int parse_language(const char* value) {
+  static const char* const codes[] = {"en", "fr", "de", "it", NULL, "es"};
+  size_t i;
+  if (value == NULL || value[0] == '\0') {
+    return -1;
+  }
+  for (i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+    if (codes[i] != NULL && strcmp(value, codes[i]) == 0) {
+      return (int)i;
+    }
+  }
+  return -1;
 }
 
 static void load(void) {
@@ -76,6 +91,8 @@ static void load(void) {
       sRevision = -1;
     }
   }
+
+  sLanguage = parse_language(getenv("FOXHOLLOW_LANGUAGE"));
 
   sHasMemoryCardPath = read_path("FOXHOLLOW_MEMORY_CARD", sMemoryCardPath, sizeof(sMemoryCardPath));
   sHasAutosavePath = read_path("FOXHOLLOW_AUTOSAVE", sAutosavePath, sizeof(sAutosavePath));
@@ -127,6 +144,11 @@ int fhConfigFrameLimit(void) {
 int fhConfigRevision(void) {
   load();
   return sRevision;
+}
+
+int fhConfigLanguage(void) {
+  load();
+  return sLanguage;
 }
 
 const char* fhConfigMemoryCardPath(void) {
