@@ -87,6 +87,11 @@ jobs:
           if [ "${{ matrix.platform }}" = "linux" ]; then
             args+=(-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFOXHOLLOW_STATIC_JPEG=ON)
           fi
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            args+=(-DFOXHOLLOW_STATIC_JPEG=ON -DBUILD_SHARED_LIBS=OFF -DAURORA_SDL3_PROVIDER=vendor
+              -DCMAKE_DISABLE_FIND_PACKAGE_PNG=ON -DCMAKE_DISABLE_FIND_PACKAGE_Freetype=ON
+              -DCMAKE_DISABLE_FIND_PACKAGE_zstd=ON -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON)
+          fi
           cmake "${args[@]}"
 
       - name: Build
