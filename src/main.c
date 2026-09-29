@@ -4,6 +4,7 @@
 #include <aurora/main.h>
 #include <dolphin/dvd.h>
 #include <dolphin/gx/GXAurora.h>
+#include <dolphin/vi.h>
 #include <SDL3/SDL_filesystem.h>
 
 #include "foxhollow_config.h"
@@ -140,6 +141,7 @@ int main(int argc, char* argv[]) {
 
   AuroraSetViewportPolicy(AURORA_VIEWPORT_FIT);
   AuroraSetDisplayAspect(fhConfigDisplayAspect());
+  VISetFrameBufferScale(fhConfigRenderScale());
 
   if (!aurora_dvd_open(disc)) {
     fprintf(stderr, "foxhollow: failed to open disc image: %s\n", disc);

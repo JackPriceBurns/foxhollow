@@ -20,6 +20,7 @@ f32 fhConfigDisplayAspect(void);
 int fhConfigFullscreen(void);
 int fhConfigVsync(void);
 int fhConfigFrameLimit(void);
+f32 fhConfigRenderScale(void);
 int fhConfigRevision(void);
 int fhConfigLanguage(void);
 const char* fhConfigMemoryCardPath(void);
