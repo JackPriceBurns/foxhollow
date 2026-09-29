@@ -896,7 +896,7 @@ void Music_Update(void) {
     do {
         int status = ch->status;
         if (status != 0 && status != 4) {
-            if (seqInstance[ch->voiceId].state == 0) {
+            if (ch->voiceId >= SYNTH_MAX_VOICES || seqInstance[ch->voiceId].state == 0) {
                 if (status == 4 || status == 5) {
                     ch->status = 5;
                 } else {
