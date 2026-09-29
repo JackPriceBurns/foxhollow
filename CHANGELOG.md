@@ -3,6 +3,11 @@
 Entries must be in the format `v1.0.0 - yyyy-mm-dd`. Then push a tag with the `v1.0.0` version and that triggers a
 new GitHub release the version to be built and published to the Foxhollow Launcher.
 
+## v1.0.8 - 2026-09-29
+
+### Added
+- Ability to control user and shader cache folders through env vars
+
 ## v1.0.7 - 2026-09-29
 
 ### Fixed

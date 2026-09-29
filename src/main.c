@@ -4,6 +4,7 @@
 #include <aurora/main.h>
 #include <dolphin/dvd.h>
 #include <dolphin/gx/GXAurora.h>
+#include <SDL3/SDL_filesystem.h>
 
 #include "foxhollow_config.h"
 #include "foxhollow_crash.h"
@@ -97,6 +98,17 @@ static const char* shader_cache_path(void) {
   return path;
 }
 
+static const char* prepare_directory(const char* path) {
+  if (path == NULL) {
+    return NULL;
+  }
+  if (!SDL_CreateDirectory(path)) {
+    fprintf(stderr, "foxhollow: failed to create directory %s: %s\n", path, SDL_GetError());
+    return NULL;
+  }
+  return path;
+}
+
 int main(int argc, char* argv[]) {
   const char* disc;
   fhInstallCrashHandler();
@@ -114,6 +126,8 @@ int main(int argc, char* argv[]) {
 
   const AuroraConfig config = {
       .appName = "Foxhollow",
+      .userPath = prepare_directory(fhConfigUserPath()),
+      .cachePath = prepare_directory(fhConfigCachePath()),
       .resourcesPath = shader_cache_path(),
       .logCallback = &log_callback,
       .vsync = fhConfigVsync() != 0,

@@ -18,6 +18,10 @@ static char sMemoryCardPath[1024];
 static int sHasMemoryCardPath;
 static char sAutosavePath[1024];
 static int sHasAutosavePath;
+static char sUserPath[1024];
+static int sHasUserPath;
+static char sCachePath[1024];
+static int sHasCachePath;
 
 static int read_flag(const char* name, int fallback) {
   const char* value = getenv(name);
@@ -96,6 +100,8 @@ static void load(void) {
 
   sHasMemoryCardPath = read_path("FOXHOLLOW_MEMORY_CARD", sMemoryCardPath, sizeof(sMemoryCardPath));
   sHasAutosavePath = read_path("FOXHOLLOW_AUTOSAVE", sAutosavePath, sizeof(sAutosavePath));
+  sHasUserPath = read_path("FOXHOLLOW_USER_DIR", sUserPath, sizeof(sUserPath));
+  sHasCachePath = read_path("FOXHOLLOW_CACHE_DIR", sCachePath, sizeof(sCachePath));
 
   frameLimit = getenv("FOXHOLLOW_FRAME_LIMIT");
   if (frameLimit != NULL && frameLimit[0] != '\0') {
@@ -159,4 +165,14 @@ const char* fhConfigMemoryCardPath(void) {
 const char* fhConfigAutosavePath(void) {
   load();
   return sHasAutosavePath ? sAutosavePath : NULL;
+}
+
+const char* fhConfigUserPath(void) {
+  load();
+  return sHasUserPath ? sUserPath : NULL;
+}
+
+const char* fhConfigCachePath(void) {
+  load();
+  return sHasCachePath ? sCachePath : NULL;
 }

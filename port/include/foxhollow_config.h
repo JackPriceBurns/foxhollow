@@ -24,6 +24,8 @@ int fhConfigRevision(void);
 int fhConfigLanguage(void);
 const char* fhConfigMemoryCardPath(void);
 const char* fhConfigAutosavePath(void);
+const char* fhConfigUserPath(void);
+const char* fhConfigCachePath(void);
 
 #ifdef __cplusplus
 }
