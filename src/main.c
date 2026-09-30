@@ -6,6 +6,7 @@
 #include <dolphin/gx/GXAurora.h>
 #include <dolphin/vi.h>
 #include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_video.h>
 
 #include "foxhollow_config.h"
 #include "foxhollow_crash.h"
@@ -134,6 +135,8 @@ int main(int argc, char* argv[]) {
       .vsync = fhConfigVsync() != 0,
       .startFullscreen = fhConfigFullscreen() != 0,
       .allowTextureDumps = texture_dumps_enabled() != 0,
+      .windowPosX = SDL_WINDOWPOS_CENTERED,
+      .windowPosY = SDL_WINDOWPOS_CENTERED,
       .mem1Size = 128 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
