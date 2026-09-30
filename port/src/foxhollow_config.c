@@ -12,6 +12,7 @@ static FhScreenStyle sScreenStyle;
 static int sFullscreen;
 static int sVsync = 1;
 static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
+static f32 sRenderScale;
 static int sRevision;
 static int sLanguage = -1;
 static char sMemoryCardPath[1024];
@@ -67,6 +68,7 @@ static void load(void) {
   const char* style;
   const char* frameLimit;
   const char* revision;
+  const char* renderScale;
 
   if (sLoaded) {
     return;
@@ -110,6 +112,14 @@ static void load(void) {
       sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
     }
   }
+
+  renderScale = getenv("FOXHOLLOW_RENDER_SCALE");
+  if (renderScale != NULL && renderScale[0] != '\0') {
+    sRenderScale = (f32)atof(renderScale);
+    if (sRenderScale < 0.0f) {
+      sRenderScale = 0.0f;
+    }
+  }
 }
 
 FhScreenStyle fhConfigScreenStyle(void) {
@@ -145,6 +155,11 @@ int fhConfigVsync(void) {
 int fhConfigFrameLimit(void) {
   load();
   return sFrameLimit;
+}
+
+f32 fhConfigRenderScale(void) {
+  load();
+  return sRenderScale;
 }
 
 int fhConfigRevision(void) {
