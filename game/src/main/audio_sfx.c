@@ -1,4 +1,5 @@
 #include "main/audio/sfx.h"
+#include "foxhollow_cutscene_skip.h"
 #include "musyx/mcmd.h"
 #include "musyx/snd_synth.h"
 #include "main/audio_internal.h"
@@ -381,6 +382,9 @@ void Sfx_PlayFromObjectEx(GameObject* obj, Vec* pos, u32 channel, u16 sfxId) {
     int tracksObj;
 
     tracksObj = 0;
+    if (gFhCutsceneSkipMuteSfx != 0) {
+        return;
+    }
     if (!Sfx_ResolveObjectSfxId(&obj, &sfxId)) {
         return;
     }

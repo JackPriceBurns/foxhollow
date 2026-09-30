@@ -8,6 +8,7 @@
 #include "foxhollow_autosave.h"
 #include "foxhollow_compat.h"
 #include "foxhollow_config.h"
+#include "foxhollow_cutscene_skip.h"
 #include "foxhollow_mods.h"
 #include "foxhollow_quit.h"
 #include "shim_log.h"
@@ -78,6 +79,9 @@ static void pump_events(void) {
     if (event->type == AURORA_EXIT) {
       quitting = 1;
     }
+    if (event->type == AURORA_SDL_EVENT && event->sdl.type == SDL_EVENT_KEY_DOWN && !event->sdl.key.repeat) {
+      fhCutsceneSkipKeyDown(event->sdl.key.scancode);
+    }
     ++event;
   }
   if (quitting) {
@@ -96,6 +100,7 @@ void VIWaitForRetrace(void) {
     fhDebugOverlayDraw();
     fhGalleryDrawOverlay();
 #endif
+    fhCutsceneSkipDrawNotification();
     fhGXCompleteFrame();
     aurora_end_frame();
 #if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
@@ -112,6 +117,7 @@ void VIWaitForRetrace(void) {
     pump_events();
   }
   sFrameOpen = 1;
+  fhCutsceneSkipUpdate();
 #if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
   fhDebugOverlayFrameBegin();
 #endif

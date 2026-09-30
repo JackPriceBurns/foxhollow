@@ -1,4 +1,5 @@
 #include "track/intersect_hud.h"
+#include "foxhollow_cutscene_skip.h"
 #include "main/gametext_shared_internal.h"
 #include "main/gametext.h"
 #include "main/gametext_task.h"
@@ -98,6 +99,8 @@ void subtitleStart(int x) {
         gGameTextPendingDir = getCurGameText();
         gGameTextSequenceMode = 0;
         gGameTextSavedDir = -1;
+        gFhCutsceneSkipHideSubtitles = 0;
+        gFhCutsceneSkipEndSubtitles = 0;
         gSubtitleActive = 1;
         gSubtitleColorR = 0xff;
         gSubtitleColorG = 0xff;
@@ -140,6 +143,8 @@ void gameTextLoadTaskText(int taskId) {
             gameTextLoadDir(gGameTextPendingDir);
             gGameTextSequenceMode = 0;
         }
+        gFhCutsceneSkipHideSubtitles = 0;
+        gFhCutsceneSkipEndSubtitles = 0;
         gSubtitleActive = 1;
         gSubtitleColorR = 0xff;
         gSubtitleColorG = 0xff;

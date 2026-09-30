@@ -255,6 +255,8 @@ enum ObjSeqConditionCode {
 
 int getCurSeqNo(void);
 void ObjSeq_copyDefaultColor(GXColor* colorOut);
+void ObjSeq_advanceSlotFrame(int slot);
+void ObjSeq_releaseSlotStream(int slot);
 
 extern GameObject* focusedNpc;
 extern u8 curSeqNo;

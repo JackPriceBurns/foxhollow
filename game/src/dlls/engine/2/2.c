@@ -63,8 +63,11 @@
 #include "main/object_transform.h"
 #include "main/maketex_yield.h"
 #include "dolphin/os.h"
+#include "dolphin/ai.h"
 #include "main/pi_dolphin.h"
 #include "main/audio/music.h"
+#include "main/audio_internal.h"
+#include "foxhollow_cutscene_skip.h"
 
 typedef struct SeqRunFlags
 {
@@ -481,6 +484,7 @@ void endObjSequence(int seq)
     int nFree;
     GameObject** ret;
 
+    gFhCutsceneSkipWorldEffect = 1;
     ret = ObjList_GetObjects(&objIdx, &objCount);
     nFree = 0;
     i = 0;
@@ -979,6 +983,7 @@ int ObjSeq_start(int seqIdx, GameObject* obj, int flags)
     f32 y;
     f32 z;
 
+    gFhCutsceneSkipWorldEffect = 1;
     srcSeq = (u8*)obj->anim.placementData;
     camArg = 0;
     doCam = 0;
@@ -1731,6 +1736,25 @@ void ObjSeq_runBgCmds(void)
         keepBase++;
     }
     gObjSeqBgCmdCount = keepCount;
+    fhCutsceneSkipRunFrame();
+}
+
+void ObjSeq_advanceSlotFrame(int slot)
+{
+    if (slot < 0 || slot >= OBJSEQ_SLOT_COUNT)
+    {
+        return;
+    }
+    gObjSeqSlotPendingFrames[slot] = 0;
+    if (gObjSeqSlotResults[slot] != 0 && gObjSeqSlotPrevResults[slot] == 0)
+    {
+        gObjSeqSlotPendingFrames[slot] = (s8)framesThisStep;
+    }
+    gObjSeqSlotPrevResults[slot] = gObjSeqSlotResults[slot];
+    gObjSeqSlotResults[slot] = 0;
+    gObjSeqSlotStreamTimeTable[slot] = gObjSeqSlotDistances[slot];
+    gObjSeqSlotDistances[slot] = -1.0f;
+    gObjSeqSlotMarks[slot] = gObjSeqSlotMarks[slot] == 2 ? 1 : 0;
 }
 
 static inline f32 ObjSeq_SampleTrackCurve(u8* seq, int track, int frame)
@@ -1952,6 +1976,50 @@ static u32* ObjSeq_FindStreamIds(ObjSeqStreamMapEntry* entries, int trackId)
         }
     }
     return NULL;
+}
+
+void ObjSeq_releaseSlotStream(int slot)
+{
+    int trackId;
+    int current;
+    int owned;
+
+    if (slot < 0 || slot >= OBJSEQ_SLOT_COUNT || gObjSeqSlotSeqIdTable[slot] == 0)
+    {
+        return;
+    }
+    trackId = (gObjSeqSlotSeqIdTable[slot] - 1) & 0x3fff;
+    if (slot == gObjSeqPreparingStreamSlot)
+    {
+        AudioStream_CancelPrepared();
+        gObjSeqPreparingStreamSlot = -1;
+        gObjSeqStreamStopped = 0;
+        gObjSeqSubtitleId = -1;
+        if (gObjSeqDeferredTaskTextId != -1)
+        {
+            gameTextLoadTaskText(gObjSeqDeferredTaskTextId);
+            gObjSeqDeferredTaskTextId = -1;
+            gObjSeqTaskTextId = -1;
+        }
+        return;
+    }
+    current = AudioStream_GetCurrentId();
+    if (current <= 0 || current > gStreamsCount || gStreamsData == NULL)
+    {
+        return;
+    }
+    owned = gStreamsData[current - 1].id == trackId;
+    if (owned == 0 && gObjSeqCurrentTrackId == (u32)trackId &&
+        ObjSeq_FindStreamIds(gObjSeqStreamTableA, trackId) != NULL)
+    {
+        owned = 1;
+    }
+    if (owned == 0)
+    {
+        return;
+    }
+    AudioStream_StopCurrent();
+    AISetStreamPlayState(AI_STREAM_STOP);
 }
 
 s16 gObjSeqSlotValues[86] = {0};
@@ -2718,7 +2786,7 @@ int objSeqExecCmd06(GameObject* obj, GameObject* sourceObj, u8* seq, int cmd, s8
         break;
     case 40:
         slot = ((ObjSeqState*)seq)->slot;
-        if (lbl_80399C4C[slot] == 0)
+        if (lbl_80399C4C[slot] == 0 && gObjSeqStreamSuppressed == 0)
         {
             trackId = (u32)(gObjSeqSlotSeqIdTable[slot] - 1) & 0x3fff;
             gObjSeqCurrentTrackId = trackId;
@@ -2797,6 +2865,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
         switch (opcode)
         {
         case 6:
+            gFhCutsceneSkipWorldEffect = 1;
             if (objSeqExecCmd06(obj, sourceObj, seq, operand | (top16 << 8), flag2) == 0)
             {
                 return 1;
@@ -2807,6 +2876,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
         case 7:
             if (sourceObj != obj)
             {
+                gFhCutsceneSkipWorldEffect = 1;
                 switch ((s8)gObjSeqMsgSendModes[operand])
                 {
                 case 1:
@@ -2889,6 +2959,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
                 switch (subId)
                 {
                 case 0:
+                    gFhCutsceneSkipWorldEffect = 1;
                     eventId = top16;
                     ((ObjSeqState*)seq)->curEventId = eventId;
                     eventIdx = ((ObjSeqState*)seq)->eventCount;
@@ -2911,6 +2982,7 @@ int seqDoSubCmd0B(GameObject* obj, GameObject* sourceObj, u8* seq, u8* cmdsArg, 
                     gObjSeqBoolFlags[(s8)((ObjSeqState*)seq)->slot] = top16;
                     break;
                 case 6:
+                    gFhCutsceneSkipWorldEffect = 1;
                     mainSetBits(((ObjSeqState*)seq)->gameBit, top16 != 0);
                     break;
                 case 2:
@@ -3513,6 +3585,10 @@ void objCallSeqFn(GameObject* obj, GameObject* sourceObj, ObjSeqState* seq, int 
 
     if (obj->animEventCallback != NULL)
     {
+        if (seq->eventCount != 0)
+        {
+            gFhCutsceneSkipWorldEffect = 1;
+        }
         callbackResult = (*(int (**)(GameObject*, GameObject*, ObjSeqState*, int))&obj->animEventCallback)(obj, sourceObj, seq, action);
         if (callbackResult == 4)
         {
@@ -3612,6 +3688,7 @@ void objSeqDoBgCmds0D(u8* seq, GameObject* obj, int skipSpawns)
 
     while (gObjSeqDeferredCmdCount > 0)
     {
+        gFhCutsceneSkipWorldEffect = 1;
         gObjSeqDeferredCmdCount--;
         cmd = &gObjSeqDeferredCmds[gObjSeqDeferredCmdCount];
         cmdParam = cmd->param;

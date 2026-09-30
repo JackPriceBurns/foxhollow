@@ -1,4 +1,5 @@
 #include "main/gametext.h"
+#include "foxhollow_cutscene_skip.h"
 #include "main/gametext_color.h"
 #include "main/gametext_charset.h"
 #include "main/gametext_show_str.h"
@@ -27,6 +28,9 @@ void subtitleUpdateAndDraw(int unused) {
     int lineIndex;
     f32 currentTime;
 
+    if (gFhCutsceneSkipEndSubtitles != 0) {
+        subtitleStop();
+    }
     if (gSubtitleActive == 2) {
         if (gGameTextSequenceMode != 0) {
             savedCharset = gameTextGetCharset();
@@ -65,8 +69,10 @@ void subtitleUpdateAndDraw(int unused) {
                 return;
             }
         }
-        gameTextSetColor(gSubtitleColorR, gSubtitleColorG, gSubtitleColorB, gSubtitleColorA);
-        gameTextShowStr(gSubtitleLines.lines[gSubtitleLineIndex], 10, 0, 0);
+        if (gFhCutsceneSkipHideSubtitles == 0) {
+            gameTextSetColor(gSubtitleColorR, gSubtitleColorG, gSubtitleColorB, gSubtitleColorA);
+            gameTextShowStr(gSubtitleLines.lines[gSubtitleLineIndex], 10, 0, 0);
+        }
         if (gGameTextSequenceMode != 0) {
             gameTextSetCharset(savedCharset, 2);
         }
@@ -92,6 +98,8 @@ void subtitleStop(void) {
     int oldDelay;
     int savedDir;
 
+    gFhCutsceneSkipHideSubtitles = 0;
+    gFhCutsceneSkipEndSubtitles = 0;
     if (gSubtitleActive != 0) {
         zero[0] = 0;
         gSubtitleActive = zero[0];
