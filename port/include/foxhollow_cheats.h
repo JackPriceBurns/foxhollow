@@ -8,6 +8,7 @@ extern "C" {
 struct GameObject;
 
 int fhCheatsGameplayActive(void);
+void fhCheatsUpdateSession(void);
 
 int fhCheatsGodModeEnabled(void);
 void fhCheatsSetGodMode(int enabled);

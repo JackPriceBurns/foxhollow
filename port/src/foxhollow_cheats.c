@@ -22,6 +22,8 @@
 
 #define FH_CHEATS_GAME_STATE_RUNNING 1
 #define FH_CHEATS_UI_DLL_GAMEPLAY 1
+#define FH_CHEATS_UI_DLL_FRONTEND_FIRST 2
+#define FH_CHEATS_UI_DLL_FRONTEND_LAST 7
 #define FH_CHEATS_ARWING_BOMBS 3
 #define FH_CHEATS_ARWING_RINGS 10
 #define FH_CHEATS_MAX_SCARABS 200
@@ -53,10 +55,41 @@ static int sArwingMaxRings;
 static u32 sArwingBombLaunchRetrace;
 static GameObject* sCloudRunner;
 static int sCloudRunnerRapidFire;
+static int sSessionActive;
 
 int fhCheatsGameplayActive(void) {
   return getGameState() == FH_CHEATS_GAME_STATE_RUNNING && getCurUiDll() == FH_CHEATS_UI_DLL_GAMEPLAY &&
          getSaveGameLoadStatus() == 0 && (Obj_GetPlayerObject() != NULL || getArwing() != NULL);
+}
+
+static void reset_cheats(void) {
+  sGodMode = 0;
+  sInfiniteMagic = 0;
+  sFastMovement = 0;
+  sInfiniteItems = 0;
+  sInfiniteTrickyEnergy = 0;
+  sArwingGodMode = 0;
+  sArwingInfiniteBombs = 0;
+  sArwingRapidFire = 0;
+  sArwingMaxRings = 0;
+  sArwingBombLaunchRetrace = 0;
+  sCloudRunner = NULL;
+  sCloudRunnerRapidFire = 0;
+}
+
+void fhCheatsUpdateSession(void) {
+  int uiDll;
+
+  if (fhCheatsGameplayActive()) {
+    sSessionActive = 1;
+    return;
+  }
+  uiDll = getCurUiDll();
+  if (sSessionActive && (getGameState() != FH_CHEATS_GAME_STATE_RUNNING ||
+                         (uiDll >= FH_CHEATS_UI_DLL_FRONTEND_FIRST && uiDll <= FH_CHEATS_UI_DLL_FRONTEND_LAST))) {
+    sSessionActive = 0;
+    reset_cheats();
+  }
 }
 
 int fhCheatsGodModeEnabled(void) { return sGodMode; }
@@ -228,7 +261,7 @@ static void refill_items(GameObject* player) {
   int i;
 
   for (i = 0; i < (int)(sizeof(sItems) / sizeof(sItems[0])); i++) {
-    if ((int)mainGetBit(sItems[i].gameBit) != sItems[i].max) {
+    if ((int)mainGetBit(sItems[i].gameBit) < sItems[i].max) {
       mainSetBits(sItems[i].gameBit, sItems[i].max);
     }
   }

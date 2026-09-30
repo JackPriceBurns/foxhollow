@@ -79,7 +79,7 @@ void draw_menu_contents() {
       fhCheatsSetArwingRapidFire(rapidFire ? 1 : 0);
     }
     bool maxRings = fhCheatsArwingMaxRingsEnabled() != 0;
-    if (ImGui::Checkbox("Max Rings", &maxRings)) {
+    if (ImGui::Checkbox("Complete Rings", &maxRings)) {
       fhCheatsSetArwingMaxRings(maxRings ? 1 : 0);
     }
   }
@@ -124,6 +124,7 @@ extern "C" void fhCheatsDrawOverlay(void) {
   const bool toggleKeyDown = keys != nullptr && keyCount > SDL_SCANCODE_F11 && keys[SDL_SCANCODE_F11];
   const bool toggled = toggleKeyDown && !sToggleKeyWasDown;
   sToggleKeyWasDown = toggleKeyDown;
+  fhCheatsUpdateSession();
   const bool gameplay = fhCheatsGameplayActive() != 0;
   if (gameplay) {
     fhCheatsUpdate();
