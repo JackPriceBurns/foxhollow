@@ -13,6 +13,7 @@ static int sFullscreen;
 static int sVsync = 1;
 static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
 static f32 sRenderScale;
+static AuroraBackend sBackend = BACKEND_AUTO;
 static int sRevision;
 static int sLanguage = -1;
 static char sMemoryCardPath[1024];
@@ -64,6 +65,27 @@ static int parse_language(const char* value) {
   return -1;
 }
 
+static AuroraBackend parse_backend(const char* value) {
+  static const struct {
+    const char* name;
+    AuroraBackend backend;
+  } backends[] = {
+      {"auto", BACKEND_AUTO},         {"d3d11", BACKEND_D3D11},   {"d3d12", BACKEND_D3D12},
+      {"metal", BACKEND_METAL},       {"vulkan", BACKEND_VULKAN}, {"opengl", BACKEND_OPENGL},
+      {"opengles", BACKEND_OPENGLES}, {"webgpu", BACKEND_WEBGPU}, {"null", BACKEND_NULL},
+  };
+  size_t i;
+  if (value == NULL || value[0] == '\0') {
+    return BACKEND_AUTO;
+  }
+  for (i = 0; i < sizeof(backends) / sizeof(backends[0]); i++) {
+    if (strcmp(value, backends[i].name) == 0) {
+      return backends[i].backend;
+    }
+  }
+  return BACKEND_AUTO;
+}
+
 static void load(void) {
   const char* style;
   const char* frameLimit;
@@ -99,6 +121,7 @@ static void load(void) {
   }
 
   sLanguage = parse_language(getenv("FOXHOLLOW_LANGUAGE"));
+  sBackend = parse_backend(getenv("FOXHOLLOW_RENDERER"));
 
   sHasMemoryCardPath = read_path("FOXHOLLOW_MEMORY_CARD", sMemoryCardPath, sizeof(sMemoryCardPath));
   sHasAutosavePath = read_path("FOXHOLLOW_AUTOSAVE", sAutosavePath, sizeof(sAutosavePath));
@@ -160,6 +183,11 @@ int fhConfigFrameLimit(void) {
 f32 fhConfigRenderScale(void) {
   load();
   return sRenderScale;
+}
+
+AuroraBackend fhConfigBackend(void) {
+  load();
+  return sBackend;
 }
 
 int fhConfigRevision(void) {

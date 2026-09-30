@@ -131,6 +131,7 @@ int main(int argc, char* argv[]) {
       .userPath = prepare_directory(fhConfigUserPath()),
       .cachePath = prepare_directory(fhConfigCachePath()),
       .resourcesPath = shader_cache_path(),
+      .desiredBackend = fhConfigBackend(),
       .logCallback = &log_callback,
       .vsync = fhConfigVsync() != 0,
       .startFullscreen = fhConfigFullscreen() != 0,
