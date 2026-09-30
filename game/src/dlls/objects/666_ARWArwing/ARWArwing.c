@@ -71,6 +71,7 @@
 #include "main/map_load.h"
 #include "main/rcp_dolphin.h"
 #include "main/pi_dolphin.h"
+#include "foxhollow_cheats.h"
 
 GameObject* gArwing;
 
@@ -172,6 +173,7 @@ void arwarwing_readControls(GameObject* obj, ArwingState* state) {
     aw->inputFlags = getButtonsJustPressed(0);
     aw->inputFlagsPrev = getButtonsJustPressedIfNotBusy(0);
     aw->inputFlags2 = getButtonsHeld(0);
+    aw->inputFlags = fhCheatsArwingFireInput(aw->inputFlags, aw->inputFlags2);
     if (aw->mode == 0) {
         btn = aw->inputFlags;
         if ((btn & PAD_TRIGGER_R) != 0) {
@@ -487,6 +489,7 @@ void arwarwing_spawnBomb(GameObject* obj, ArwingState* state, int side) {
     ((ArwingBombSetup*)setup)->base.color[0] = 1;
     ((ArwingBombSetup*)setup)->base.color[1] = 1;
     arwing->activeBombObj = loadObjectAtObject(obj, &setup->base);
+    fhCheatsArwingBombLaunched();
     arwprojectile_setParamScalar(arwing->activeBombObj, arwing->bombProjectileParam);
     arwprojectile_launchForward(arwing->activeBombObj, arwing->bombProjectileLifetime);
     Sfx_PlayFromObject(obj, SFXTRIG_ar_badhit16);
@@ -666,6 +669,7 @@ void arwarwing_handlePathDamage(GameObject* obj, ArwingState* state) {
         } else {
             state->health--;
         }
+        fhCheatsArwingRefillHealth(obj);
         doRumble(10.0f);
         if ((s8)state->health <= 0) {
             arwarwingbo_setActiveVisible(state->bombObj, 0, 0);
@@ -733,6 +737,7 @@ void arwarwing_handleObjectDamage(GameObject* obj, ArwingState* state) {
             CameraShake_SetOffset(10.0f);
         }
     }
+    fhCheatsArwingRefillHealth(obj);
     if (state->mode != ARWING_MODE_DEAD && state->mode != ARWING_MODE_EXPLODE && state->mode != ARWING_MODE_WARPOUT &&
         (s8)state->health <= 0) {
         arwarwingbo_setActiveVisible(state->bombObj, 0, 0);
@@ -1461,6 +1466,7 @@ void arwarwing_update(GameObject* obj) {
         arwarwing_initAttachments(obj, state);
         return;
     }
+    fhCheatsArwingUpdate(obj);
     mode = state->mode;
     if (mode == ARWING_MODE_EXPLODE) {
         timer = state->modeTimer - timeDelta;

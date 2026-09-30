@@ -46,6 +46,7 @@
 #include "sys/objects/lifecycle.h"
 #include "main/objseq.h"
 #include "dlls/objects/488_SB_Galleon.h"
+#include "foxhollow_cheats.h"
 
 
 typedef struct SBCloudRunnerBurstSetup
@@ -480,6 +481,10 @@ void SB_CloudRunner_UpdateSteer(GameObject* obj, SBCloudRunnerState* state)
     }
 
     doSpawn = 0;
+    if (fhCheatsCloudRunnerRapidFire(state->aButtonHeld))
+    {
+        state->aButtonHeld = 0;
+    }
     if (state->aButtonHeld)
     {
         if ((getButtonsHeld(0) & A_BUTTON_MASK) == 0)
@@ -710,6 +715,7 @@ void SB_CloudRunner_free(GameObject* obj)
     Resource_Release(state->resource);
     state->resource = NULL;
     objFreeObjectType(obj, SBCLOUDRUNNER_OBJGROUP);
+    fhCheatsSetCloudRunner(obj, 0);
 }
 
 
@@ -836,6 +842,7 @@ void SB_CloudRunner_init(GameObject* obj)
     state->resource = Resource_Acquire(121, 1);
     ObjHits_SetTargetMask(obj, 1);
     objAddObjectType(obj, SBCLOUDRUNNER_OBJGROUP);
+    fhCheatsSetCloudRunner(obj, 1);
 }
 
 

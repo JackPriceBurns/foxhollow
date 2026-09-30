@@ -29,6 +29,7 @@
 #include "sys/objects.h"
 #include "sys/objects/lifecycle.h"
 #include "dolphin/pad.h"
+#include "foxhollow_cheats.h"
 
 #define ARWARWINGBO_OBJGROUP        0x52
 #define ARWARWINGBO_PARTFX          0x79e
@@ -124,9 +125,11 @@ void arwarwingbo_update(GameObject* obj) {
         return;
     }
     ObjHits_SetHitVolumeSlot(&obj->anim, 0xf, 0, 0);
-    if (((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject != 0 ||
+    if ((((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject != 0 &&
+         !fhCheatsArwingBombIgnoreHit(
+             obj, (GameObject*)((ObjHitsPriorityState*)objAnim->hitReactState)->lastHitObject)) ||
         ((ObjHitsPriorityState*)objAnim->hitReactState)->contactFlags != 0 ||
-        (getButtonsJustPressed(0) & PAD_BUTTON_B)) {
+        ((getButtonsJustPressed(0) & PAD_BUTTON_B) && !fhCheatsArwingBombIgnoreButton())) {
         arwarwingbo_detonate(obj);
     }
     objMove(obj, objAnim->velocityX * timeDelta, objAnim->velocityY * timeDelta, objAnim->velocityZ * timeDelta);

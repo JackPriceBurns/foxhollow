@@ -120,6 +120,7 @@
 #include "main/dll/dll_005A_staffcollision.h"
 #include "main/gameloop_gamebit.h"
 #include "track/intersect_render_setup.h"
+#include "foxhollow_cheats.h"
 
 #define CLAMP_EXPR(value, low, high) ((value) < (low) ? (low) : ((value) > (high) ? (high) : (value)))
 
@@ -494,7 +495,7 @@ static inline void Player_ApplyStatusDamage(GameObject* obj, int param) {
     in2 = obj->extra;
     pc = in2->playerStatus;
     v = pc->health;
-    v -= param;
+    v -= fhCheatsPlayerDamage(param);
     if (v < 0) {
         v = 0;
     } else if (v > pc->maxHealth) {
@@ -2451,6 +2452,9 @@ int playerGetCurMagic(GameObject* player) {
 void playerAddRemoveMagic(GameObject* obj, int amount) {
     PlayerState* inner = obj->extra;
     PlayerStatus* status = inner->playerStatus;
+    if (amount < 0) {
+        amount = -fhCheatsMagicCost(-amount);
+    }
     status->magic = CLAMP_EXPR(status->magic + amount, 0, status->maxMagic);
     if (amount > 0) {
         Sfx_PlayFromObject(0, SFXTRIG_id_21c);
@@ -2486,6 +2490,9 @@ int playerGetCurHealth(GameObject* obj) {
 
 void playerAddHealth(GameObject* obj, int amount) {
     PlayerState* inner = obj->extra;
+    if (amount < 0) {
+        amount = -fhCheatsPlayerDamage(-amount);
+    }
     inner->playerStatus->health = CLAMP_EXPR(inner->playerStatus->health + amount, 0, inner->playerStatus->maxHealth);
 
     if (inner->playerStatus->health <= 0) {
@@ -3223,7 +3230,7 @@ int playerStateSuperQuake(GameObject* obj, PlayerState* state, f32 fv) {
             PlayerStatus* r35c;
             int v;
             Sfx_PlayFromObject(obj, SFXTRIG_fox_roll2);
-            amt = -inner->chargeCapacity;
+            amt = -fhCheatsMagicCost(inner->chargeCapacity);
             r35c = ((PlayerState*)obj->extra)->playerStatus;
             v = r35c->magic + amt;
             if (v < 0) {
@@ -3621,7 +3628,7 @@ int playerStateStaffBoost(GameObject* obj, PlayerState* state, f32 fv) {
                 int v;
                 inner->chargeLevel = 0.0f;
                 sub = ((PlayerState*)obj->extra)->playerStatus;
-                v = sub->magic - 0xa;
+                v = sub->magic - fhCheatsMagicCost(0xa);
                 if (v < 0) {
                     v = 0;
                 } else if (v > sub->maxMagic) {
@@ -3824,7 +3831,7 @@ int playerState30(GameObject* obj, PlayerState* state, f32 fv) {
         inner->stateTimer = timer;
         if (timer <= 0.0f) {
             PlayerStatus* sub = ((PlayerState*)obj->extra)->playerStatus;
-            int v = sub->magic - 1;
+            int v = sub->magic - fhCheatsMagicCost(1);
             if (v < 0) {
                 v = 0;
             } else if (v > sub->maxMagic) {
@@ -4079,7 +4086,7 @@ int playerStateShootFireball(GameObject* obj, PlayerState* state, f32 fv) {
         inner->stateTimer = timer;
         if (timer <= 0.0f) {
             PlayerStatus* sub = ((PlayerState*)obj->extra)->playerStatus;
-            int v = sub->magic - 1;
+            int v = sub->magic - fhCheatsMagicCost(1);
             if (v < 0) {
                 v = 0;
             } else if (v > sub->maxMagic) {
@@ -4155,7 +4162,7 @@ int playerStateShootFireball(GameObject* obj, PlayerState* state, f32 fv) {
             (*gPartfxInterface)->spawnObject(gPlayerPathObject, 0x3ed, &pfx2, 0x200001, -1, NULL);
         }
         sub = ((PlayerState*)obj->extra)->playerStatus;
-        v = sub->magic - 2;
+        v = sub->magic - fhCheatsMagicCost(2);
         if (v < 0) {
             v = 0;
         } else if (v > sub->maxMagic) {
@@ -4201,7 +4208,7 @@ int playerStateTryCastSpell(GameObject* obj, PlayerState* state, f32 fv) {
         inner->stateTimer = timer;
         if (timer <= 0.0f) {
             PlayerStatus* sub = ((PlayerState*)obj->extra)->playerStatus;
-            int v = sub->magic - 1;
+            int v = sub->magic - fhCheatsMagicCost(1);
             if (v < 0) {
                 v = 0;
             } else if (v > sub->maxMagic) {
@@ -4298,7 +4305,7 @@ int playerStateTryCastSpell(GameObject* obj, PlayerState* state, f32 fv) {
                         lbl_803DE430 = 0.0f;
                         inner->stateTimer = 15.0f;
                         statusAfterCast = ((PlayerState*)obj->extra)->playerStatus;
-                        magic = statusAfterCast->magic - 1;
+                        magic = statusAfterCast->magic - fhCheatsMagicCost(1);
                         if (magic < 0) {
                             magic = 0;
                         } else if (magic > statusAfterCast->maxMagic) {
@@ -4399,7 +4406,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv) {
             inner->stateTimer = x;
             if (x <= 0.0f) {
                 PlayerStatus* sub = ((PlayerState*)obj->extra)->playerStatus;
-                int v = sub->magic - 1;
+                int v = sub->magic - fhCheatsMagicCost(1);
                 if (v < 0) {
                     v = 0;
                 } else if (v > sub->maxMagic) {
@@ -4487,7 +4494,7 @@ int playerStateAimStaff(GameObject* obj, PlayerState* state, f32 fv) {
                         lbl_803DE430 = 0.0f;
                         inner->stateTimer = 15.0f;
                         sub2 = ((PlayerState*)obj->extra)->playerStatus;
-                        v = sub2->magic - 1;
+                        v = sub2->magic - fhCheatsMagicCost(1);
                         if (v < 0) {
                             v = 0;
                         } else if (v > sub2->maxMagic) {
@@ -6884,7 +6891,7 @@ int playerStateClimbWall(GameObject* obj, PlayerState* stateArg) {
         playerPlayClimbingSound(obj, stateArg);
         break;
     }
-    state->baddie.moveSpeed = ph;
+    state->baddie.moveSpeed = ph * fhCheatsMoveScale(obj);
     {
         s16 cur;
         cur = gPlayerCurrentMoveId;
@@ -7550,7 +7557,7 @@ int playerStateOnLadder(GameObject* obj, PlayerState* state) {
         }
         break;
     }
-    state->baddie.moveSpeed = ph;
+    state->baddie.moveSpeed = ph * fhCheatsMoveScale(obj);
     if (gPlayerPrevMoveId != gPlayerCurrentMoveId) {
         ObjAnim_SetCurrentMove(obj, lbl_80332F2C[gPlayerCurrentMoveId], spd, 1);
         if (gPlayerCurrentMoveId <= 1 && inner->climbSampleDone == 0) {
@@ -11302,7 +11309,7 @@ void playerCastSpell(GameObject* a, PlayerState* b, int c) {
         b->stateTimer = 300.0f;
         {
             PlayerStatus* sub = ((PlayerState*)a->extra)->playerStatus;
-            int v = sub->magic - 0xa;
+            int v = sub->magic - fhCheatsMagicCost(0xa);
             if (v < 0) {
                 v = 0;
             } else if (v > sub->maxMagic) {
@@ -11317,7 +11324,7 @@ void playerCastSpell(GameObject* a, PlayerState* b, int c) {
         c = -1;
         {
             PlayerStatus* sub = ((PlayerState*)a->extra)->playerStatus;
-            int v = sub->magic - 0x14;
+            int v = sub->magic - fhCheatsMagicCost(0x14);
             if (v < 0) {
                 v = 0;
             } else if (v > sub->maxMagic) {
@@ -13172,6 +13179,9 @@ void playerProcessHitResponse(GameObject* obj, PlayerState* inner, PlayerState* 
                 int v;
                 char* hb = obj->extra;
                 s8* hp = (s8*)((PlayerState*)hb)->playerStatus;
+                if (work != 1) {
+                    damage = fhCheatsPlayerDamage(damage);
+                }
                 v = *hp - damage;
                 if (v < 0) {
                     v = 0;
@@ -13914,7 +13924,7 @@ void playerUpdateSurfaceResponse(GameObject* obj, PlayerState* state, PlayerStat
                     PlayerState* inner = obj->extra;
                     PlayerStatus* p = inner->playerStatus;
                     iv = p->health;
-                    iv = iv - 1;
+                    iv = iv - fhCheatsPlayerDamage(1);
                     if (iv < 0) {
                         iv = 0;
                     } else if (iv > p->maxHealth) {
@@ -15591,7 +15601,10 @@ void playerUpdate(GameObject* obj) {
     if (ym > 10.0f) {
         ym = 10.0f;
     }
-    objMove(obj, obj->anim.velocityX * dt, ym, obj->anim.velocityZ * dt);
+    {
+        f32 moveScale = fhCheatsMoveScale(obj);
+        objMove(obj, obj->anim.velocityX * dt * moveScale, ym, obj->anim.velocityZ * dt * moveScale);
+    }
     obj->anim.rotX = inner->targetYaw;
     m = (UiMsgBlock){{0, 1, 2, 3, 4, 5}};
     (*gGameUIInterface)->isOneOfItemsBeingUsed((s32*)&m, 6);
