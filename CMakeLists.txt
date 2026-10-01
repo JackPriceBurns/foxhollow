@@ -62,6 +62,8 @@ endfunction()
 set(AURORA_ENABLE_DVD ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
+set(MUSYX_ENABLE_SDL OFF CACHE BOOL "" FORCE)
+add_subdirectory(extern/musyx EXCLUDE_FROM_ALL)
 
 find_package(ZLIB REQUIRED)
 
@@ -81,7 +83,7 @@ if (FOXHOLLOW_GAME_SOURCES)
     list(TRANSFORM FOXHOLLOW_GAME_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/game/src/)
     add_library(game STATIC ${FOXHOLLOW_GAME_SOURCES})
     target_include_directories(game PRIVATE port/include extern/aurora/include game/include game)
-    target_link_libraries(game PRIVATE ZLIB::ZLIB aurora::core)
+    target_link_libraries(game PRIVATE ZLIB::ZLIB aurora::core musyx)
     target_compile_definitions(game PRIVATE BUILD_VERSION=0 VERSION_GSAE01 NDEBUG=1)
     target_compile_options(game PRIVATE
             ${FOXHOLLOW_C_DIALECT_FLAGS} ${FOXHOLLOW_NO_WARN_FLAGS} ${FOXHOLLOW_FORCE_INCLUDE_FLAGS}
@@ -93,6 +95,7 @@ target_include_directories(foxhollow PRIVATE port/include)
 target_link_libraries(foxhollow PRIVATE
         ZLIB::ZLIB
         port_shims
+        musyx
         aurora::core aurora::gx aurora::main aurora::vi
         aurora::os aurora::pad aurora::dvd aurora::card
         aurora::mtx aurora::si aurora::gd aurora::ms)
@@ -137,12 +140,12 @@ endif ()
 target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
-target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash nlohmann_json::nlohmann_json)
+target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash nlohmann_json::nlohmann_json musyx)
 
 if (WIN32 AND TARGET game)
     find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
     set(FOXHOLLOW_EXPORTS_DEF ${CMAKE_BINARY_DIR}/foxhollow_exports.def)
-    set(FOXHOLLOW_EXPORT_TARGETS game port_shims
+    set(FOXHOLLOW_EXPORT_TARGETS game port_shims musyx
             aurora::gx aurora::os aurora::pad aurora::mtx aurora::vi
             aurora::si aurora::dvd aurora::card aurora::gd aurora::ms)
     set(FOXHOLLOW_EXPORT_LIB_FILES "")
@@ -166,6 +169,7 @@ if (TARGET game)
     target_link_libraries(linkcheck PRIVATE
             ZLIB::ZLIB
             port_shims
+            musyx
             aurora::core aurora::gx aurora::main aurora::vi
             aurora::os aurora::pad aurora::dvd aurora::card
             aurora::mtx aurora::si aurora::gd aurora::ms)

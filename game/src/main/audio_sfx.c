@@ -1,6 +1,5 @@
 #include "main/audio/sfx.h"
-#include "musyx/mcmd.h"
-#include "musyx/snd_synth.h"
+#include <musyx/musyx.h>
 #include "main/audio_internal.h"
 #include "main/camera.h"
 #include "main/gamebits.h"
@@ -9,7 +8,6 @@
 #include "main/objseq.h"
 #include "main/vecmath.h"
 #define SYNTH_INTERNAL_USE_PROJECT_TYPES
-#include "src/musyx/runtime/synth_internal.h"
 #include "game/objects/object.h"
 #include "main/audio/music_trigger_ids.h"
 #include "main/gamebit_ids.h"
@@ -110,7 +108,7 @@ void Sfx_SetObjectReverbPreset(u32 preset) {
     i = SFX_OBJECT_CHANNEL_COUNT - 1;
     do {
         if ((objectChannel->handle != (u32)-1) && (objectChannel->globalCtrlDisabled == 0)) {
-            sndFXCtrl(objectChannel->handle, MCMD_CTRL_REVERB, gSfxGlobalReverbLevel);
+            sndFXCtrl(objectChannel->handle, SND_MIDICTRL_REVERB, gSfxGlobalReverbLevel);
         }
         objectChannel++;
     } while (i-- != 0);
@@ -128,9 +126,9 @@ void Sfx_SetObjectSoundsPaused(s32 paused) {
     do {
         if (objectChannel->handle != (u32)-1) {
             if (paused != 0) {
-                sndFXCtrl(objectChannel->handle, MCMD_CTRL_VOLUME, 0);
+                sndFXCtrl(objectChannel->handle, SND_MIDICTRL_VOLUME, 0);
             } else if (objectChannel->paused != 0) {
-                sndFXCtrl(objectChannel->handle, MCMD_CTRL_VOLUME, objectChannel->volume);
+                sndFXCtrl(objectChannel->handle, SND_MIDICTRL_VOLUME, objectChannel->volume);
             }
             objectChannel->paused = pausedByte;
         }
@@ -195,7 +193,7 @@ void Sfx_SetObjectChannelVolume(GameObject* obj, u32 channel, u8 volume, f32 vol
                 } else {
                     ctrlVolume = volumeByte;
                 }
-                sndFXCtrl(objectChannel->handle, MCMD_CTRL_VOLUME, (u8)ctrlVolume);
+                sndFXCtrl(objectChannel->handle, SND_MIDICTRL_VOLUME, (u8)ctrlVolume);
             }
         }
 
@@ -236,7 +234,7 @@ void Sfx_SetObjectSfxVolume(GameObject* obj, u16 sfxId, u8 volume, f32 volumeSca
                 } else {
                     ctrlVolume = volumeByte;
                 }
-                sndFXCtrl(objectChannel->handle, MCMD_CTRL_VOLUME, (u8)ctrlVolume);
+                sndFXCtrl(objectChannel->handle, SND_MIDICTRL_VOLUME, (u8)ctrlVolume);
             }
         }
 
@@ -312,7 +310,7 @@ void Sfx_UpdateObjectSounds(void) {
         i = SFX_OBJECT_CHANNEL_COUNT;
         while (i-- != 0) {
             if ((objectChannel->handle != (u32)-1) && (objectChannel->globalCtrlDisabled == 0)) {
-                sndFXCtrl(objectChannel->handle, MCMD_CTRL_REVERB, gSfxGlobalReverbLevel);
+                sndFXCtrl(objectChannel->handle, SND_MIDICTRL_REVERB, gSfxGlobalReverbLevel);
             }
             objectChannel++;
         }
@@ -349,7 +347,7 @@ static inline void Sfx_SetGlobalReverbLevel(u8 level) {
     i = SFX_OBJECT_CHANNEL_COUNT;
     while (i-- != 0) {
         if ((objectChannel->handle != (u32)-1) && (objectChannel->globalCtrlDisabled == 0)) {
-            sndFXCtrl(objectChannel->handle, MCMD_CTRL_REVERB, gSfxGlobalReverbLevel);
+            sndFXCtrl(objectChannel->handle, SND_MIDICTRL_REVERB, gSfxGlobalReverbLevel);
         }
         objectChannel++;
     }
@@ -584,7 +582,7 @@ SfxObjectChannel* Sfx_AllocObjectChannel(u16 fxId, u8 volume, double pitch, u8 p
     handle = sndFXStartEx(fxId, volume, pan, 0);
     if (handle != (u32)-1) {
         if (gSfxGlobalReverbLevel != 0 && globalCtrlDisabled == 0) {
-            sndFXCtrl(handle, MCMD_CTRL_REVERB, gSfxGlobalReverbLevel);
+            sndFXCtrl(handle, SND_MIDICTRL_REVERB, gSfxGlobalReverbLevel);
         }
 
         ch->object = 0;

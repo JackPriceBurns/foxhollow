@@ -1,7 +1,5 @@
 #include "main/audio/music.h"
-#include "musyx/hw_samplemem.h"
 #include "main/audio_internal.h"
-#include "musyx/snd_groups.h"
 #include "main/attract_movie.h"
 #include "main/fileio.h"
 #include "main/frame_timing.h"
@@ -14,28 +12,13 @@
 #include "dolphin/os/OSCache.h"
 #include "dolphin/os/OSReport.h"
 #include "dolphin/os/OSRtc.h"
-#include "src/musyx/runtime/synth_internal.h"
+#include <musyx/seq.h>
+#include <stdlib.h>
 #include "main/gamebits.h"
 #include "main/audio/sfx.h"
 #include "main/audio/stream.h"
-#include "musyx/snd3d.h"
-#include "musyx/snd_core.h"
 #include "musyx/endian.h"
 
-/* Local prototypes: this TU declares sndMasterVolume with int volume/time,
-   which disagrees with the musyx definition -- retail calls it directly with
-   both unnarrowed, which only that declaration produces. */
-void sndMasterVolume(int volume, int time, u8 musicFlag, u8 fxFlag);
-void sndSeqVolume(u8 volume, u16 time, u32 seqId, u8 mode);
-void sndVolume(u8 volume, u16 time, u8 group);
-void sndOutputMode(int mode);
-void sndSeqStop(u32 handle);
-void sndSeqContinue(u32 handle);
-void sndSeqMute(u32 handle, u32 mute, u32 time);
-void sndSetAuxProcessingCallbacks(u8 studio, SynthAuxCallback auxACallback, void* auxAUser, u8 auxAIndex,
-                                  void* auxAData, SynthAuxCallback auxBCallback, void* auxBUser, u8 auxBIndex,
-                                  void* auxBData);
-#define SYNTH_INTERNAL_USE_PROJECT_TYPES
 
 const MusicSeqStartParams gMusicSeqStartParamsDefault = {4,   {0xFFFFFFFF, 0xFFFFFFFF}, 0x100, {0, 0x7F}, 0, NULL, 0,
                                                          NULL};
@@ -107,7 +90,7 @@ int gAudioArqRequestIndex;
 AudioArqRequestEntry gAudioArqRequests[AUDIO_ARQ_REQUEST_COUNT];
 ReverbState gAudioReverbSettings;
 
-const SalHooks gAudioMemHooks = {_audioAlloc, audioFree};
+const SND_HOOKS gAudioMemHooks = {malloc, free};
 
 static void audioConvertMusicTriggers(void) {
     int i;
@@ -586,6 +569,7 @@ void audioStopByMask(int mask) {
 
 void audioReset(void) {
     if (gAudioInitStarted != 0) {
+        fhMusyxStopOutput();
         sndQuit();
     }
     AIReset();
@@ -616,8 +600,7 @@ void audioUpdate(void) {
 }
 
 int audioInit(void) {
-    SalHooks hooks;
-    void* reverbWork;
+    SND_HOOKS hooks;
     int delay;
     int group;
 
@@ -636,7 +619,9 @@ int audioInit(void) {
         AIInit(0);
         AISetDSPSampleRate(0);
         sndSetHooks(&hooks);
+        fhMusyxConfigure();
         sndInit(0x30, 0x30, 0x18, 1, 1, 0x1000000);
+        fhMusyxStartOutput();
         sndSetMaxVoices(0x30, 0x18);
         if (OSGetSoundMode() == 0) {
             gAudioSoundMode = 2;
@@ -651,10 +636,9 @@ int audioInit(void) {
         gAudioReverbSettings.damping = 0.5f;
         gAudioReverbSettings.coloration = 0.5f;
         gAudioReverbSettings.mix = 0.9f;
-        sndAuxCallbackUpdateSettingsReverbSTD(&gAudioReverbSettings);
-        reverbWork = NULL;
-        sndSetAuxProcessingCallbacks(0, sndAuxCallbackReverbSTD, &gAudioReverbSettings, 0xff, 0, 0, 0, 0xff,
-                                     reverbWork);
+        sndAuxCallbackPrepareReverbSTD(&gAudioReverbSettings);
+        sndSetAuxProcessingCallbacks(0, sndAuxCallbackReverbSTD, &gAudioReverbSettings, 0xff, 0, NULL, NULL, 0xff,
+                                     0);
         {
             if (!sndIsInstalled()) {
                 OSReport("audioInit: sndIsInstalled() returned FALSE!\n");
@@ -747,17 +731,6 @@ u32 audioIsChannelUnavailable(u32 mask) {
         return 1;
     }
     return (gAudioActiveChannelMask & mask) != 0;
-}
-
-void audioFree(void* ptr) {
-    mm_free(ptr);
-}
-
-void* _audioAlloc(u32 size) {
-    if (fhConfigRevision() == 1 && size == 11712) {
-        return (u8*)mmAlloc(size + 256, 0xb, 0) + 256;
-    }
-    return mmAlloc(size, 0xb, 0);
 }
 
 int concatThreeStrings(char* dst, void* unused, const char* first, const char* second, const char* third) {
@@ -896,7 +869,7 @@ void Music_Update(void) {
     do {
         int status = ch->status;
         if (status != 0 && status != 4) {
-            if (ch->voiceId >= SYNTH_MAX_VOICES || seqInstance[ch->voiceId].state == 0) {
+            if (ch->voiceId >= SND_MAX_SEQINSTANCES || seqInstance[ch->voiceId].state == 0) {
                 if (status == 4 || status == 5) {
                     ch->status = 5;
                 } else {

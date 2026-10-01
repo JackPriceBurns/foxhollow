@@ -4,8 +4,7 @@
 #include "global.h"
 #include "dolphin/ar.h"
 #include "dolphin/dvd.h"
-#include "musyx/snd_reverb.h"
-#include "musyx/synth_queue.h"
+#include <musyx/musyx.h>
 #include "dolphin/mtx/vec.h"
 #include "game/objects/object.h"
 
@@ -22,7 +21,7 @@
 #define STREAM_VOLBITS_CHANMASK_BIT   7
 #define STREAM_VOLBITS_VOLUME_MASK    0x7F
 
-STATIC_ASSERT(sizeof(ReverbState) == 0x154);
+typedef SND_AUX_REVERBSTD ReverbState;
 
 struct MusicTrackSlot;
 struct MusicChannel;
@@ -124,7 +123,7 @@ typedef struct SfxObjectChannel {
     u64 age;
 } SfxObjectChannel;
 
-typedef SynthPlayParams MusicSeqStartParams;
+typedef SND_PLAYPARA MusicSeqStartParams;
 
 typedef struct MusicChannel {
     s32 trackId;
@@ -276,8 +275,6 @@ void AudioAramReadCompleteCallback(uintptr_t request);
 void Music_LoadChannelForTrigger(MusicTrigger* trigger);
 void Music_ChannelLoadedCallback(MusicTrackSlot* slot, MusicChannel* channel, MusicTrigger* trigger);
 u32 audioIsChannelUnavailable(u32 mask);
-void audioFree(void* ptr);
-void* _audioAlloc(u32 size);
 s32 Music_GetActivePriority(void);
 int concatThreeStrings(char* dst, void* unused, const char* first, const char* second, const char* third);
 void AudioAramWriteCompleteCallback(uintptr_t request);
