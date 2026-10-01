@@ -589,7 +589,7 @@ u32 Link_update(void)
         return -1;
     }
 
-    padGetAnalogInput(0, &horizontalInput, &verticalInput);
+    padGetMenuInput(0, &horizontalInput, &verticalInput);
     if (linkIsRotated != 0)
     {
         s8 oldHorizontal = horizontalInput;

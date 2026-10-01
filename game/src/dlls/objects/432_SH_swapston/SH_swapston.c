@@ -270,7 +270,7 @@ static int warpstone_testEvent(void* context, u8* object, int option) {
     (void)context;
     (void)object;
     Obj_GetPlayerObject();
-    padGetAnalogInput(0, &horizontal, &vertical);
+    padGetMenuInput(0, &horizontal, &vertical);
 
     switch (option) {
     case 0x14:

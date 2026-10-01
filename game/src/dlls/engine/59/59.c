@@ -38,7 +38,7 @@ int Menu_poll(int* sel) {
         gMenuScrollTimer -= 200.0f;
     }
 
-    padGetAnalogInput(0, &xInput, &yInput);
+    padGetMenuInput(0, &xInput, &yInput);
     if (yInput < 0) {
         *sel++;
     } else if (yInput > 0) {

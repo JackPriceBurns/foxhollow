@@ -5960,7 +5960,7 @@ void pauseMenuUpdate(void)
         case 1:
         {
             u16 b2;
-            padGetAnalogInput(0, (s8*)&analogX, (s8*)&analogY);
+            padGetMenuInput(0, (s8*)&analogX, (s8*)&analogY);
             pauseMenuSetupTitle(0x2b1, gPauseMenuPageIndex, 1, 3);
             if ((s8)gPauseMenuCloseAnimIndex != 0 && AudioStream_GetCurrentId() == 0 && AudioStream_IsPreparing() == 0)
             {
@@ -6702,7 +6702,7 @@ void pauseMenuRunSubmenu(int p1)
             u8 analogY;
             int navX;
             int navY;
-            padGetAnalogInput(0, (s8*)&analogX, (s8*)&analogY);
+            padGetMenuInput(0, (s8*)&analogX, (s8*)&analogY);
             navY = analogY;
             if ((s8)navY == 1)
             {
@@ -6810,7 +6810,7 @@ void timeListPromptUpdate(void)
         u16 b = getButtonsJustPressed(0);
         buttons = b;
     }
-    padGetAnalogInput(0, (s8*)&buf[1], (s8*)&buf[0]);
+    padGetMenuInput(0, (s8*)&buf[1], (s8*)&buf[0]);
     {
         int analog = buf[0];
         if ((s8)analog == 1)

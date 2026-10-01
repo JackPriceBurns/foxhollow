@@ -87,7 +87,7 @@ u32 EnterSaveNameScreen_run(void) {
     u8 slotIndex;
     char* selectedText;
 
-    stickX = padGetStickX(0);
+    stickX = padGetMenuStickX(0);
     padClearAnalogInputX(0);
     if (stickX != 0) {
         gEnterSaveNameAutoScrolling = 0;
