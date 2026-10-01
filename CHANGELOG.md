@@ -3,6 +3,36 @@
 Entries must be in the format `v1.0.0 - yyyy-mm-dd`. Then push a tag with the `v1.0.0` version and that triggers a
 new GitHub release the version to be built and published to the Foxhollow Launcher.
 
+## v1.0.13 - 2026-09-30
+
+### Added
+- Ability to choose renderer backend
+
+## v1.0.12 - 2026-09-30
+
+### Fixed
+- In windowed mode, start the port in the center of the screen (thanks @saulob !)
+
+## v1.0.11 - 2026-09-29
+
+### Fixed
+- The build - forgot to commit a file -_-
+
+## v1.0.10 - 2026-09-29
+
+### Fixed
+- Increased index buffer size for planar reflections mod
+
+## v1.0.9 - 2026-09-29
+
+### Added
+- Ability to control render scale through env var
+
+## v1.0.8 - 2026-09-29
+
+### Added
+- Ability to control user and shader cache folders through env vars
+
 ## v1.0.7 - 2026-09-29
 
 ### Fixed

@@ -1,6 +1,7 @@
 #ifndef FOXHOLLOW_CONFIG_H_
 #define FOXHOLLOW_CONFIG_H_
 
+#include <aurora/aurora.h>
 #include <dolphin/types.h>
 
 #ifdef __cplusplus
@@ -20,10 +21,14 @@ f32 fhConfigDisplayAspect(void);
 int fhConfigFullscreen(void);
 int fhConfigVsync(void);
 int fhConfigFrameLimit(void);
+f32 fhConfigRenderScale(void);
+AuroraBackend fhConfigBackend(void);
 int fhConfigRevision(void);
 int fhConfigLanguage(void);
 const char* fhConfigMemoryCardPath(void);
 const char* fhConfigAutosavePath(void);
+const char* fhConfigUserPath(void);
+const char* fhConfigCachePath(void);
 
 #ifdef __cplusplus
 }

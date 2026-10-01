@@ -4,6 +4,9 @@
 #include <aurora/main.h>
 #include <dolphin/dvd.h>
 #include <dolphin/gx/GXAurora.h>
+#include <dolphin/vi.h>
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_video.h>
 
 #include "foxhollow_config.h"
 #include "foxhollow_crash.h"
@@ -97,6 +100,17 @@ static const char* shader_cache_path(void) {
   return path;
 }
 
+static const char* prepare_directory(const char* path) {
+  if (path == NULL) {
+    return NULL;
+  }
+  if (!SDL_CreateDirectory(path)) {
+    fprintf(stderr, "foxhollow: failed to create directory %s: %s\n", path, SDL_GetError());
+    return NULL;
+  }
+  return path;
+}
+
 int main(int argc, char* argv[]) {
   const char* disc;
   fhInstallCrashHandler();
@@ -114,11 +128,16 @@ int main(int argc, char* argv[]) {
 
   const AuroraConfig config = {
       .appName = "Foxhollow",
+      .userPath = prepare_directory(fhConfigUserPath()),
+      .cachePath = prepare_directory(fhConfigCachePath()),
       .resourcesPath = shader_cache_path(),
+      .desiredBackend = fhConfigBackend(),
       .logCallback = &log_callback,
       .vsync = fhConfigVsync() != 0,
       .startFullscreen = fhConfigFullscreen() != 0,
       .allowTextureDumps = texture_dumps_enabled() != 0,
+      .windowPosX = SDL_WINDOWPOS_CENTERED,
+      .windowPosY = SDL_WINDOWPOS_CENTERED,
       .mem1Size = 128 * 1024 * 1024,
       .mem2Size = ARAM_DEFAULT_SIZE,
   };
@@ -126,6 +145,7 @@ int main(int argc, char* argv[]) {
 
   AuroraSetViewportPolicy(AURORA_VIEWPORT_FIT);
   AuroraSetDisplayAspect(fhConfigDisplayAspect());
+  VISetFrameBufferScale(fhConfigRenderScale());
 
   if (!aurora_dvd_open(disc)) {
     fprintf(stderr, "foxhollow: failed to open disc image: %s\n", disc);
