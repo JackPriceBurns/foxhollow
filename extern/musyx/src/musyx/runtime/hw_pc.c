@@ -49,6 +49,7 @@ static void resetStudioHistory(u8 studio) {
 #define POLYPHASE_TAPS 32
 #define POLYPHASE_BANDS 64
 #define POLYPHASE_SCALE (1 << 23)
+#define VOICE_TAPS 4
 typedef struct VoiceResamplerState {
   MusyPCMReader reader;
   u32 phase;
@@ -62,6 +63,7 @@ typedef struct VoiceResamplerState {
 
 static VoiceResamplerState voiceResampler[SYNTH_MAX_VOICES];
 static s32 polyphaseTable[POLYPHASE_BANDS][POLYPHASE_PHASES][POLYPHASE_TAPS];
+static s32 voicePolyphaseTable[3][POLYPHASE_PHASES][VOICE_TAPS];
 static u8 resampleTablesInitialized = 0;
 
 // Mix accumulation buffers
@@ -87,6 +89,17 @@ static double sincUnit(double x) {
     return 1.0;
   const double pix = x * M_PI;
   return sin(pix) / pix;
+}
+
+static double besselI0(double x) {
+  double sum = 1, term = 1;
+
+  for (u32 k = 1; k < 32; ++k) {
+    term *= (x / (2 * k)) * (x / (2 * k));
+    sum += term;
+  }
+
+  return sum;
 }
 
 static void initResampleTables(void) {
@@ -116,6 +129,37 @@ static void initResampleTables(void) {
       polyphaseTable[band][phase][POLYPHASE_TAPS / 2] += POLYPHASE_SCALE - total;
     }
   }
+
+  static const double voiceCutoffs[3] = {0.5, 0.75, 1.0};
+
+  for (u32 set = 0; set < 3; ++set) {
+    double coefficients[POLYPHASE_PHASES][VOICE_TAPS];
+    double maxSum = 0;
+
+    for (u32 phase = 0; phase < POLYPHASE_PHASES; ++phase) {
+      double center = VOICE_TAPS / 2 - 1 + (double)phase / POLYPHASE_PHASES;
+      double sum = 0;
+
+      for (u32 tap = 0; tap < VOICE_TAPS; ++tap) {
+        double offset = tap - center;
+        double position = offset / (VOICE_TAPS / 2);
+        double window = set == 1
+                            ? besselI0(9 * M_PI / 4 * sqrt(fmax(0.0, 1 - position * position))) /
+                                  besselI0(9 * M_PI / 4)
+                            : 0.54 + 0.46 * cos(M_PI * position);
+        coefficients[phase][tap] = sincUnit(voiceCutoffs[set] * offset) * window;
+        sum += coefficients[phase][tap];
+      }
+
+      maxSum = fmax(maxSum, sum);
+    }
+
+    for (u32 phase = 0; phase < POLYPHASE_PHASES; ++phase)
+      for (u32 tap = 0; tap < VOICE_TAPS; ++tap)
+        voicePolyphaseTable[set][phase][tap] =
+            (s32)lround(coefficients[phase][tap] / maxSum * POLYPHASE_SCALE);
+  }
+
   resampleTablesInitialized = 1;
 }
 
@@ -188,14 +232,6 @@ static int resampleVoice(DSPvoice *voice, u32 voiceIdx, s32 *out, int numSamples
   if (mode == SAL_SRC_NONE)
     pitch = 65536; /* SDK SRC_NONE always runs at the mixing rate. */
   u32 filter = voice->srcCoefSelect;
-  u32 cutoff = filter == 0 ? 32768 : filter == 1 ? 52428 : 65536;
-  if (pitch > 65536)
-    cutoff = (u32)(((u64)cutoff * 65536) / pitch);
-  u32 band = cutoff * POLYPHASE_BANDS / 65536;
-  if (!band)
-    band = 1;
-  if (band > POLYPHASE_BANDS)
-    band = POLYPHASE_BANDS;
   for (int i = 0; i < numSamples; ++i) {
     state->phase += pitch;
     while (state->phase >= 65536) {
@@ -214,7 +250,7 @@ static int resampleVoice(DSPvoice *voice, u32 voiceIdx, s32 *out, int numSamples
       }
       s16 sample = salPCReadSample(&state->reader, &voice->smp_info, voice->streamLoopPS);
       state->history[state->historyIndex++ & (POLYPHASE_TAPS - 1)] = sample;
-      if (state->reader.ended && state->tail < POLYPHASE_TAPS)
+      if (state->reader.ended && state->tail < VOICE_TAPS)
         ++state->tail;
       state->phase -= 65536;
     }
@@ -225,10 +261,10 @@ static int resampleVoice(DSPvoice *voice, u32 voiceIdx, s32 *out, int numSamples
       s32 newer = state->history[(state->historyIndex - 1) & (POLYPHASE_TAPS - 1)];
       out[i] = older + (s32)((s64)(newer - older) * state->phase / 65536);
     } else {
-      const s32 *coefficients = polyphaseTable[band - 1][state->phase >> 9];
+      const s32 *coefficients = voicePolyphaseTable[filter < 3 ? filter : 2][state->phase >> 9];
       s64 result = 0;
-      for (u32 tap = 0; tap < POLYPHASE_TAPS; ++tap)
-        result += (s64)state->history[(state->historyIndex + tap) & (POLYPHASE_TAPS - 1)] *
+      for (u32 tap = 0; tap < VOICE_TAPS; ++tap)
+        result += (s64)state->history[(state->historyIndex - VOICE_TAPS + tap) & (POLYPHASE_TAPS - 1)] *
                   coefficients[tap];
       out[i] = clamp16((s32)(result >> 23));
     }
@@ -293,7 +329,7 @@ static int renderVoiceSegment(DSPvoice *vp, s32 *mainL, s32 *mainR, s32 *mainS, 
   int nSamples = resampleVoice(vp, voiceIdx, voiceDecodeBuf, frameSamples, pitch);
   u32 tail = vp->srcTypeSelect == SAL_SRC_NONE     ? 1
              : vp->srcTypeSelect == SAL_SRC_LINEAR ? 2
-                                                   : POLYPHASE_TAPS;
+                                                   : VOICE_TAPS;
   int voiceDone = state->tail >= tail;
 
 #if MUSY_VERSION >= MUSY_VERSION_CHECK(2, 0, 1)

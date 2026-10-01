@@ -3,6 +3,11 @@
 Entries must be in the format `v1.0.0 - yyyy-mm-dd`. Then push a tag with the `v1.0.0` version and that triggers a
 new GitHub release the version to be built and published to the Foxhollow Launcher.
 
+## v1.0.15 - 2026-10-01
+
+### Fixed
+- Copy the way Dolphin handles audio sampling, AxioDL/musyx stripped out a lot of the highs
+
 ## v1.0.14 - 2026-10-01
 
 ### Added
