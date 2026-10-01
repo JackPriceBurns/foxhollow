@@ -174,7 +174,7 @@ void TitleMenuItem_update(TitleMenuItem* item)
     switch (item->kind)
     {
     case TITLE_MENU_KIND_WINDOW:
-        stickX = padGetStickX(0);
+        stickX = padGetMenuStickX(0);
         if (stickX > 0x23)
         {
             move = 1;
@@ -209,7 +209,7 @@ void TitleMenuItem_update(TitleMenuItem* item)
         }
         break;
     case TITLE_MENU_KIND_SLIDER:
-        stickX = padGetStickX(0);
+        stickX = padGetMenuStickX(0);
         sliderDelta = (s16)(stickX / 16) * 0xa0;
 
         if (((s16)sliderDelta != 0) && (!(gTitleMenuSliderValue < item->minValue) || ((s16)sliderDelta >= 0)) &&

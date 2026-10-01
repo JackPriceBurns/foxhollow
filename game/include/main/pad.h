@@ -40,6 +40,8 @@ void padClearAnalogInputX(int port);
 void padClearAnalogInputY(int port);
 void padSetStickRepeatDelay(int delay);
 void padGetAnalogInput(int port, s8* x, s8* y);
+void padGetMenuInput(int port, s8* x, s8* y);
+s8 padGetMenuStickX(int port);
 s8 padGetCY(int port);
 s8 padGetCX(int port);
 s8 padGetStickY(int port);

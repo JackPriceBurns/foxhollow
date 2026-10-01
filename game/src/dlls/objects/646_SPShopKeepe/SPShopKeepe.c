@@ -537,7 +537,7 @@ int ShopKeeper_handlePromptChoice(GameObject* obj, void* param2, int dispatch)
     state = obj->extra;
     if (dispatch == SHOPKEEPER_PROMPT_ADJUST_PRICE)
     {
-        padGetAnalogInput(0, &stickHi, &stickLo);
+        padGetMenuInput(0, &stickHi, &stickLo);
         if (stickLo < 0)
         {
             state->priceShown--;
@@ -573,7 +573,7 @@ int ShopKeeper_handlePromptChoice(GameObject* obj, void* param2, int dispatch)
     }
     else if (dispatch == SHOPKEEPER_PROMPT_ADJUST_AMOUNT)
     {
-        padGetAnalogInput(0, &stickHi, &stickLo);
+        padGetMenuInput(0, &stickHi, &stickLo);
         if (stickLo < 0)
         {
             state->amount--;

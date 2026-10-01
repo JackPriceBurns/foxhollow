@@ -124,6 +124,12 @@ u16 gPadTriggersPressed[4];
 u16 gPadTriggersReleased[4];
 u16 gPadTriggers[4];
 u16 gPadPrevTriggers[4];
+static s8 gPadMenuDpadLastX[4];
+static s8 gPadMenuDpadLastY[4];
+static s8 gPadMenuDpadXHoldTimer[4];
+static s8 gPadMenuDpadYHoldTimer[4];
+static s8 gPadMenuDpadXSign[4];
+static s8 gPadMenuDpadYSign[4];
 u32 gPadResetMask;
 f32 gRumbleTimer;
 u8 rumbleEnabled;
@@ -171,10 +177,12 @@ void buttonDisable(int port, u32 mask) {
 
 void padClearAnalogInputY(int port) {
     gPadMenuStickYSign[port] = 0;
+    gPadMenuDpadYSign[port] = 0;
 }
 
 void padClearAnalogInputX(int port) {
     gPadMenuStickXSign[port] = 0;
+    gPadMenuDpadXSign[port] = 0;
 }
 
 void padGetAnalogInput(int port, s8* x, s8* y) {
@@ -185,6 +193,99 @@ void padGetAnalogInput(int port, s8* x, s8* y) {
     }
     *x = gPadMenuStickXSign[port];
     *y = gPadMenuStickYSign[port];
+}
+
+static s8 padGetMenuDpadAxis(u32 buttons, u32 negativeButton, u32 positiveButton) {
+    s8 dir = 0;
+
+    if ((buttons & negativeButton) != 0) {
+        dir--;
+    }
+    if ((buttons & positiveButton) != 0) {
+        dir++;
+    }
+    return dir;
+}
+
+static void padUpdateMenuDpadAxis(s8 dir, s8* last, s8* holdTimer, s8* sign) {
+    *sign = 0;
+    if (dir != 0 && dir != *last) {
+        *sign = dir;
+        *holdTimer = 0;
+    }
+    *last = dir;
+    if (dir != 0) {
+        (*holdTimer)++;
+    } else {
+        *holdTimer = 0;
+    }
+    if (*holdTimer > gPadMenuStickRepeatDelay) {
+        *last = 0;
+        *holdTimer = 0;
+    }
+}
+
+static void padUpdateMenuDpad(int port, u32 buttons) {
+    padUpdateMenuDpadAxis(padGetMenuDpadAxis(buttons, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT), &gPadMenuDpadLastX[port],
+                          &gPadMenuDpadXHoldTimer[port], &gPadMenuDpadXSign[port]);
+    padUpdateMenuDpadAxis(padGetMenuDpadAxis(buttons, PAD_BUTTON_DOWN, PAD_BUTTON_UP), &gPadMenuDpadLastY[port],
+                          &gPadMenuDpadYHoldTimer[port], &gPadMenuDpadYSign[port]);
+}
+
+static void padResetMenuDpad(int port) {
+    gPadMenuDpadLastX[port] = 0;
+    gPadMenuDpadLastY[port] = 0;
+    gPadMenuDpadXHoldTimer[port] = 0;
+    gPadMenuDpadYHoldTimer[port] = 0;
+    gPadMenuDpadXSign[port] = 0;
+    gPadMenuDpadYSign[port] = 0;
+}
+
+void padGetMenuInput(int port, s8* x, s8* y) {
+    u32 mask;
+    s8 dpadX;
+    s8 dpadY;
+
+    padGetAnalogInput(port, x, y);
+    if (joypadDisabled != 0 || port > 0 || gDvdErrorPauseActive != 0) {
+        return;
+    }
+    mask = gPadButtonMask[port];
+    dpadX = gPadMenuDpadXSign[port];
+    dpadY = gPadMenuDpadYSign[port];
+    if ((dpadX < 0 && (mask & PAD_BUTTON_LEFT) == 0) || (dpadX > 0 && (mask & PAD_BUTTON_RIGHT) == 0)) {
+        dpadX = 0;
+    }
+    if ((dpadY < 0 && (mask & PAD_BUTTON_DOWN) == 0) || (dpadY > 0 && (mask & PAD_BUTTON_UP) == 0)) {
+        dpadY = 0;
+    }
+    if (*x == 0) {
+        *x = dpadX;
+    }
+    if (*y == 0) {
+        *y = dpadY;
+    }
+}
+
+#define PAD_MENU_DPAD_STICK_VALUE 72
+
+s8 padGetMenuStickX(int port) {
+    s8 stickX;
+    u32 buttons;
+
+    stickX = padGetStickX(port);
+    if (stickX != 0) {
+        return stickX;
+    }
+    buttons = getButtonsHeld(port);
+    switch (padGetMenuDpadAxis(buttons, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT)) {
+    case -1:
+        return -PAD_MENU_DPAD_STICK_VALUE;
+    case 1:
+        return PAD_MENU_DPAD_STICK_VALUE;
+    default:
+        return 0;
+    }
 }
 
 s8 padGetCY(int port) {
@@ -405,6 +506,7 @@ void padUpdate(void) {
             *triggers = 0;
             *triggersReleased = 0;
             *triggersPressed = 0;
+            padResetMenuDpad(i);
             memset(statuses, 0, sizeof(PADStatus));
             memset(secondStatus, 0, sizeof(PADStatus));
             gPadResetMask |= PAD_CHAN0_BIT >> i;
@@ -429,6 +531,7 @@ void padUpdate(void) {
             *pressedButtons = *currentButtons & (*currentButtons ^ *previousButtons);
             *releasedButtons = *previousButtons & (*currentButtons ^ *previousButtons);
             *previousButtons = *currentButtons;
+            padUpdateMenuDpad(i, *currentButtons);
 
             *triggers = 0;
             if (currentStatus->triggerRight > 10) {
@@ -639,6 +742,7 @@ int initControllers(void) {
         *triggers = 0;
         *triggersReleased = 0;
         *triggersPressed = 0;
+        padResetMenuDpad(i);
         memset(statuses, 0, sizeof(PADStatus));
         memset(secondStatus, 0, sizeof(PADStatus));
 
