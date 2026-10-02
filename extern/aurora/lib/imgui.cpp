@@ -152,9 +152,14 @@ void new_frame(const AuroraWindowSize& size) noexcept {
     }
     ImGui_ImplWGPU_NewFrame();
   }
+  ImGuiIO& io = ImGui::GetIO();
+  if (window::is_cursor_hidden()) {
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+  } else {
+    io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+  }
   ImGui_ImplSDL3_NewFrame();
 
-  ImGuiIO& io = ImGui::GetIO();
   io.DisplayFramebufferScale = framebufferScale;
   ImGui::GetIO().DisplaySize = displaySize;
   ImGui::NewFrame();
