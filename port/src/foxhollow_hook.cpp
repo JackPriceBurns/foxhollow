@@ -382,6 +382,7 @@ extern "C" void* fhHookResolveSymbol(const char* name) {
 namespace aurora::gx::fifo::detail {
 extern uint8_t* sBufferData;
 extern uint32_t sBufferSize;
+extern uint32_t sDlWritePos;
 }
 
 struct __GXData_struct;
@@ -401,4 +402,8 @@ uint32_t* fhGXGetFifoSizeAddress(void) {
 
 void* fhGXGetShadowAddress(void) {
     return &__gx;
+}
+
+uint32_t* fhGXGetDisplayListSizeAddress(void) {
+    return &aurora::gx::fifo::detail::sDlWritePos;
 }

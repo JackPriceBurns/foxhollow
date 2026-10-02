@@ -6,7 +6,6 @@
 #include "gx.hpp"
 #include "../../window.hpp"
 
-#include "../../gfx/common.hpp"
 #include "../../gx/fifo.hpp"
 
 static void GXWriteString(const char* label) {
@@ -34,8 +33,7 @@ void GXInsertDebugMarker(const char* label) {
 }
 
 void AuroraSetViewportPolicy(AuroraViewportPolicy policy) {
-  g_gxState.viewportPolicy = policy;
-  aurora::window::set_frame_buffer_aspect_fit(policy == AURORA_VIEWPORT_FIT);
+  aurora::gx::set_viewport_policy(policy);
 }
 
 void AuroraSetDisplayAspect(f32 aspect) { aurora::window::set_frame_buffer_target_aspect(aspect); }
@@ -48,6 +46,11 @@ void AuroraGetRenderSize(u32* width, u32* height) {
   if (height != nullptr) {
     *height = windowSize.fb_height;
   }
+}
+
+void AuroraGXSync() {
+  GXFlush();
+  aurora::gx::fifo::drain();
 }
 
 void GXSetViewportRender(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz) {
@@ -89,8 +92,10 @@ void GXCreateFrameBuffer(u32 width, u32 height) {
   GX_WRITE_AURORA(GX_AURORA_BEGIN_OFFSCREEN);
   GX_WRITE_U32(width);
   GX_WRITE_U32(height);
+  aurora::gx::fifo::publish();
 }
 
 void GXRestoreFrameBuffer() {
   GX_WRITE_AURORA(GX_AURORA_END_OFFSCREEN);
+  aurora::gx::fifo::publish();
 }

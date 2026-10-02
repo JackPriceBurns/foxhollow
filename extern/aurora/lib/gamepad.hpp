@@ -10,9 +10,7 @@
 
 #include <absl/container/flat_hash_map.h>
 
-namespace aurora::input {
-extern Module Log;
-
+namespace aurora::gamepad {
 struct GameController {
   SDL_Gamepad* m_controller = nullptr;
   bool m_isGameCube = false;
@@ -66,4 +64,4 @@ void set_mouse_scroll(float scrollX, float scrollY) noexcept;
 void get_mouse_scroll(float* scrollX, float* scrollY) noexcept;
 
 void shutdown() noexcept;
-} // namespace aurora::input
+} // namespace aurora::gamepad

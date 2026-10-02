@@ -3,8 +3,8 @@
 
 #include "../../gfx/tex_copy_conv.hpp"
 #include "../../gfx/texture.hpp"
+#include "../../gfx/recording.hpp"
 #include "../../window.hpp"
-#include "../../gfx/clear.hpp"
 #include "../../webgpu/gpu.hpp"
 #include "../../gx/texture.hpp"
 #include "../vi/vi_internal.hpp"
@@ -70,41 +70,17 @@ void copy_tex(const void* dest, GXBool clear) noexcept {
     if (gfx::tex_copy_conv::needs_conversion(texCopyFmt)) {
       handle = gfx::new_conv_texture(dstWidth, dstHeight, texCopyFmt, "Copy Conv Texture");
     } else {
-      // Configure the texture swizzle to use alpha 1.0 if targeting RGB565 or EFB doesn't have alpha
-      const auto fmt = texCopyFmt == GX_TF_RGB565 || g_gxState.pixelFmt == GX_PF_RGB8_Z24 ||
-                               g_gxState.pixelFmt == GX_PF_RGB565_Z16
-                           ? GX_TF_RGB565
-                           : GX_TF_RGBA8;
-      handle = gfx::new_render_texture(dstWidth, dstHeight, fmt, "Resolved Texture");
+      handle = gfx::new_render_texture(dstWidth, dstHeight, GX_TF_RGBA8, "Resolved Texture");
     }
     it = g_gxState.copyTextureCache.emplace(key, GXState::CopyTextureRef{.handle = handle, .revision = 0}).first;
   }
   auto& handle = it->second;
 
-  if (efb_has_alpha() && g_gxState.alphaUpdate && g_gxState.dstAlpha != UINT32_MAX) {
-    if (!clear) {
-      // TODO: figure out the right behavior here.
-      // should the copy have a specific alpha value but the EFB remains untouched?
-    }
-    // Overwrite alpha before resolving
-    gfx::push_draw_command(gfx::clear::DrawData{
-        .pipeline = gfx::pipeline_ref(gfx::clear::PipelineConfig{
-            .clearColor = false,
-            .clearAlpha = true,
-            .clearDepth = false,
-        }),
-        .color = wgpu::Color{0.f, 0.f, 0.f, g_gxState.dstAlpha / 255.f},
-    });
-  }
   const auto clearColor = clear && g_gxState.colorUpdate;
-  const auto clearAlpha = clear && g_gxState.alphaUpdate;
+  const auto clearAlpha = clear && g_gxState.alphaUpdate && efb_has_alpha(g_gxState.pixelFmt);
   const auto clearDepth = clear && g_gxState.depthUpdate;
-  auto clearColorValue = g_gxState.clearColor;
-  if (!efb_has_alpha()) {
-    clearColorValue.w() = 1.f;
-  }
-  gfx::resolve_pass_into(handle.handle, rect, clearColor, clearAlpha, clearDepth, clearColorValue,
-                         clear_depth_value(), texCopyFmt,
+  gfx::resolve_pass_into(handle.handle, rect, clearColor, clearAlpha, clearDepth, g_gxState.clearColor,
+                         clear_depth_value(), texCopyFmt, g_gxState.pixelFmt,
                          {g_gxState.texCopyDstWidth, g_gxState.texCopyDstHeight});
   ++handle.revision;
   g_gxState.copyTextures[dest] = handle;
@@ -175,11 +151,25 @@ GXRenderModeObj GXMpal480IntDf = {
 };
 
 void GXAdjustForOverscan(GXRenderModeObj* rmin, GXRenderModeObj* rmout, u16 hor, u16 ver) {
-  *rmout = *rmin;
-  const auto size = aurora::window::get_window_size();
-  rmout->fbWidth = size.fb_width;
-  rmout->efbHeight = size.fb_height;
-  rmout->xfbHeight = size.fb_height;
+  const GXRenderModeObj in = *rmin;
+  const u16 hor2 = hor * 2;
+  const u16 ver2 = ver * 2;
+  const u32 efbHeight = in.efbHeight;
+
+  *rmout = in;
+  rmout->fbWidth = in.fbWidth - hor2;
+  rmout->efbHeight = efbHeight - (ver2 * efbHeight) / in.xfbHeight;
+
+  if (in.xFBmode == VI_XFBMODE_SF && (in.viTVmode & 2) != 2) {
+    rmout->xfbHeight = in.xfbHeight - ver;
+  } else {
+    rmout->xfbHeight = in.xfbHeight - ver2;
+  }
+
+  rmout->viWidth = in.viWidth - hor2;
+  rmout->viHeight = in.viHeight - ver2;
+  rmout->viXOrigin = in.viXOrigin + hor;
+  rmout->viYOrigin = in.viYOrigin + ver;
 }
 
 void GXSetDispCopySrc(u16 left, u16 top, u16 wd, u16 ht) {
@@ -256,6 +246,7 @@ void GXCopyTex(void* dest, GXBool clear) {
   SET_REG_FIELD(0, __gx->cpTex, 1, 14, 0);
   SET_REG_FIELD(0, __gx->cpTex, 8, 24, 0x52);
   GX_WRITE_RAS_REG(__gx->cpTex);
+  aurora::gx::fifo::publish();
 }
 
 // TODO GXGetYScaleFactor

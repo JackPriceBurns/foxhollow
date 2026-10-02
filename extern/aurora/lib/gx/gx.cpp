@@ -5,13 +5,17 @@
 #include "../dolphin/vi/vi_internal.hpp"
 #include "../webgpu/gpu.hpp"
 #include "../internal.hpp"
-#include "../gfx/common.hpp"
+#include "../window.hpp"
+#include "../gfx/resources.hpp"
+#include "../gfx/recording.hpp"
+#include "../gfx/resource_cache.hpp"
 #include "../gfx/texture.hpp"
 #include "gx_fmt.hpp"
 
 #include <absl/container/flat_hash_map.h>
 #include <tracy/Tracy.hpp>
 
+#include <atomic>
 #include <bit>
 #include <cfloat>
 #include <cmath>
@@ -25,19 +29,21 @@ using webgpu::g_device;
 using webgpu::g_graphicsConfig;
 
 GXState g_gxState{};
-
-static wgpu::Sampler sEmptySampler;
-static wgpu::Texture sEmptyTexture;
-static wgpu::TextureView sEmptyTextureView;
-static std::mutex sBindGroupLayoutMutex;
-static absl::flat_hash_map<u32, wgpu::BindGroupLayout> sUniformBindGroupLayouts;
-static absl::flat_hash_map<u32, std::pair<wgpu::BindGroupLayout, wgpu::BindGroupLayout>> sTextureBindGroupLayouts;
-static wgpu::BindGroupLayout sTextureBindGroupLayout;
-static wgpu::BindGroupLayout sSamplerBindGroupLayout;
-static wgpu::PipelineLayout sPipelineLayout;
 wgpu::BindGroup g_emptyTextureBindGroup;
 
 namespace {
+wgpu::Sampler sEmptySampler;
+wgpu::Texture sEmptyTexture;
+wgpu::TextureView sEmptyTextureView;
+std::mutex sBindGroupLayoutMutex;
+absl::flat_hash_map<u32, wgpu::BindGroupLayout> sUniformBindGroupLayouts;
+absl::flat_hash_map<u32, std::pair<wgpu::BindGroupLayout, wgpu::BindGroupLayout>> sTextureBindGroupLayouts;
+wgpu::BindGroupLayout sTextureBindGroupLayout;
+wgpu::BindGroupLayout sSamplerBindGroupLayout;
+wgpu::PipelineLayout sPipelineLayout;
+
+std::atomic<int> sPendingViewportPolicy{-1};
+
 template <typename T>
 T round_away_from_zero(float value) noexcept {
   return static_cast<T>(value < 0.0f ? std::floor(value) : std::ceil(value));
@@ -49,7 +55,192 @@ std::pair<f32, f32> polygon_offset_for_cull_mode(GXCullMode cullMode) noexcept {
   }
   return {g_gxState.frontOffset, g_gxState.frontScale};
 }
+
+wgpu::BlendFactor to_blend_factor(GXBlendFactor fac, bool isDst) {
+  switch (fac) {
+    DEFAULT_FATAL("invalid blend factor {}", underlying(fac));
+  case GX_BL_ZERO:
+    return wgpu::BlendFactor::Zero;
+  case GX_BL_ONE:
+    return wgpu::BlendFactor::One;
+  case GX_BL_SRCCLR: // + GX_BL_DSTCLR
+    if (isDst) {
+      return wgpu::BlendFactor::Src;
+    } else {
+      return wgpu::BlendFactor::Dst;
+    }
+  case GX_BL_INVSRCCLR: // + GX_BL_INVDSTCLR
+    if (isDst) {
+      return wgpu::BlendFactor::OneMinusSrc;
+    } else {
+      return wgpu::BlendFactor::OneMinusDst;
+    }
+  case GX_BL_SRCALPHA:
+    return wgpu::BlendFactor::SrcAlpha;
+  case GX_BL_INVSRCALPHA:
+    return wgpu::BlendFactor::OneMinusSrcAlpha;
+  case GX_BL_DSTALPHA:
+    return wgpu::BlendFactor::DstAlpha;
+  case GX_BL_INVDSTALPHA:
+    return wgpu::BlendFactor::OneMinusDstAlpha;
+  }
+}
+
+wgpu::CompareFunction to_compare_function(GXCompare func) {
+  switch (func) {
+    DEFAULT_FATAL("invalid depth fn {}", underlying(func));
+  case GX_NEVER:
+    return wgpu::CompareFunction::Never;
+  case GX_LESS:
+    return UseReversedZ ? wgpu::CompareFunction::Greater : wgpu::CompareFunction::Less;
+  case GX_EQUAL:
+    return wgpu::CompareFunction::Equal;
+  case GX_LEQUAL:
+    return UseReversedZ ? wgpu::CompareFunction::GreaterEqual : wgpu::CompareFunction::LessEqual;
+  case GX_GREATER:
+    return UseReversedZ ? wgpu::CompareFunction::Less : wgpu::CompareFunction::Greater;
+  case GX_NEQUAL:
+    return wgpu::CompareFunction::NotEqual;
+  case GX_GEQUAL:
+    return UseReversedZ ? wgpu::CompareFunction::LessEqual : wgpu::CompareFunction::GreaterEqual;
+  case GX_ALWAYS:
+    return wgpu::CompareFunction::Always;
+  }
+}
+
+wgpu::BlendState to_blend_state(GXBlendMode mode, GXBlendFactor srcFac, GXBlendFactor dstFac, GXLogicOp op,
+                                u32 dstAlpha, bool dualSource) {
+  wgpu::BlendComponent colorBlendComponent;
+  switch (mode) {
+    DEFAULT_FATAL("unsupported blend mode {}", underlying(mode));
+  case GX_BM_NONE:
+    colorBlendComponent = {
+        .operation = wgpu::BlendOperation::Add,
+        .srcFactor = wgpu::BlendFactor::One,
+        .dstFactor = wgpu::BlendFactor::Zero,
+    };
+    break;
+  case GX_BM_BLEND:
+    colorBlendComponent = {
+        .operation = wgpu::BlendOperation::Add,
+        .srcFactor = to_blend_factor(srcFac, false),
+        .dstFactor = to_blend_factor(dstFac, true),
+    };
+    break;
+  case GX_BM_SUBTRACT:
+    colorBlendComponent = {
+        .operation = wgpu::BlendOperation::ReverseSubtract,
+        .srcFactor = wgpu::BlendFactor::One,
+        .dstFactor = wgpu::BlendFactor::One,
+    };
+    break;
+  case GX_BM_LOGIC:
+    switch (op) {
+      DEFAULT_FATAL("unsupported logic op {}", underlying(op));
+    case GX_LO_CLEAR:
+      colorBlendComponent = {
+          .operation = wgpu::BlendOperation::Add,
+          .srcFactor = wgpu::BlendFactor::Zero,
+          .dstFactor = wgpu::BlendFactor::Zero,
+      };
+      break;
+    case GX_LO_COPY:
+      colorBlendComponent = {
+          .operation = wgpu::BlendOperation::Add,
+          .srcFactor = wgpu::BlendFactor::One,
+          .dstFactor = wgpu::BlendFactor::Zero,
+      };
+      break;
+    case GX_LO_NOOP:
+      colorBlendComponent = {
+          .operation = wgpu::BlendOperation::Add,
+          .srcFactor = wgpu::BlendFactor::Zero,
+          .dstFactor = wgpu::BlendFactor::One,
+      };
+      break;
+    case GX_LO_OR:
+      colorBlendComponent = {
+          .operation = wgpu::BlendOperation::Add,
+          .srcFactor = wgpu::BlendFactor::One,
+          .dstFactor = wgpu::BlendFactor::One,
+      };
+      break;
+    }
+    break;
+  }
+  if (dualSource) {
+    const auto remap = [](wgpu::BlendFactor factor) {
+      if (factor == wgpu::BlendFactor::SrcAlpha) {
+        return wgpu::BlendFactor::Src1Alpha;
+      }
+      if (factor == wgpu::BlendFactor::OneMinusSrcAlpha) {
+        return wgpu::BlendFactor::OneMinusSrc1Alpha;
+      }
+      return factor;
+    };
+    colorBlendComponent.srcFactor = remap(colorBlendComponent.srcFactor);
+    colorBlendComponent.dstFactor = remap(colorBlendComponent.dstFactor);
+  }
+  wgpu::BlendComponent alphaBlendComponent;
+  if (dstAlpha != UINT32_MAX) {
+    alphaBlendComponent = wgpu::BlendComponent{
+        .operation = wgpu::BlendOperation::Add,
+        .srcFactor = wgpu::BlendFactor::Constant,
+        .dstFactor = wgpu::BlendFactor::Zero,
+    };
+  } else {
+    alphaBlendComponent = colorBlendComponent;
+  }
+  return {
+      .color = colorBlendComponent,
+      .alpha = alphaBlendComponent,
+  };
+}
+
+wgpu::ColorWriteMask to_write_mask(bool colorUpdate, bool alphaUpdate) {
+  wgpu::ColorWriteMask writeMask = wgpu::ColorWriteMask::None;
+  if (colorUpdate) {
+    writeMask |= wgpu::ColorWriteMask::Red | wgpu::ColorWriteMask::Green | wgpu::ColorWriteMask::Blue;
+  }
+  if (alphaUpdate) {
+    writeMask |= wgpu::ColorWriteMask::Alpha;
+  }
+  return writeMask;
+}
+
+wgpu::PrimitiveState to_primitive_state(GXCullMode gx_cullMode) {
+  auto cullMode = wgpu::CullMode::None;
+  switch (gx_cullMode) {
+    DEFAULT_FATAL("unsupported cull mode {}", underlying(gx_cullMode));
+  case GX_CULL_FRONT:
+    cullMode = wgpu::CullMode::Front;
+    break;
+  case GX_CULL_BACK:
+    cullMode = wgpu::CullMode::Back;
+    break;
+  case GX_CULL_NONE:
+    break;
+  }
+  return {
+      .topology = wgpu::PrimitiveTopology::TriangleList,
+      .stripIndexFormat = wgpu::IndexFormat::Undefined,
+      .frontFace = wgpu::FrontFace::CW,
+      .cullMode = cullMode,
+  };
+}
 } // namespace
+
+void set_viewport_policy(AuroraViewportPolicy policy) noexcept {
+  sPendingViewportPolicy.store(policy, std::memory_order_release);
+}
+
+void update() noexcept {
+  if (const int pending = sPendingViewportPolicy.exchange(-1, std::memory_order_acq_rel); pending != -1) {
+    const auto policy = static_cast<AuroraViewportPolicy>(pending);
+    g_gxState.viewportPolicy = policy;
+    window::set_frame_buffer_aspect_fit(policy == AURORA_VIEWPORT_FIT);
+  }
+}
 
 Vec2<uint32_t> logical_fb_size() noexcept {
   return gfx::is_offscreen() ? gfx::get_render_target_size() : vi::configured_fb_size();
@@ -113,11 +304,19 @@ gfx::ClipRect map_logical_scissor(const gfx::ClipRect& logicalScissor) noexcept 
 }
 
 void set_logical_viewport(const gfx::Viewport& viewport) noexcept {
+  if (viewport.left != g_gxState.logicalViewport.left || viewport.width != g_gxState.logicalViewport.width ||
+      viewport.height != g_gxState.logicalViewport.height) {
+    g_gxState.dirty |= DirtyUniform;
+  }
   g_gxState.logicalViewport = viewport;
   set_render_viewport(map_logical_viewport(viewport));
 }
 
 void set_render_viewport(const gfx::Viewport& viewport) noexcept {
+  if (viewport.left != g_gxState.renderViewport.left || viewport.width != g_gxState.renderViewport.width ||
+      viewport.height != g_gxState.renderViewport.height) {
+    g_gxState.dirty |= DirtyUniform;
+  }
   g_gxState.renderViewport = viewport;
   gfx::set_viewport(viewport);
 }
@@ -134,191 +333,39 @@ void set_render_scissor(const gfx::ClipRect& scissor) noexcept {
 
 const gfx::TextureBind& get_texture(GXTexMapID id) noexcept { return g_gxState.textures[static_cast<size_t>(id)]; }
 
-static inline wgpu::BlendFactor to_blend_factor(GXBlendFactor fac, bool isDst) {
-  switch (fac) {
-    DEFAULT_FATAL("invalid blend factor {}", underlying(fac));
-  case GX_BL_ZERO:
-    return wgpu::BlendFactor::Zero;
-  case GX_BL_ONE:
-    return wgpu::BlendFactor::One;
-  case GX_BL_SRCCLR: // + GX_BL_DSTCLR
-    if (isDst) {
-      return wgpu::BlendFactor::Src;
-    } else {
-      return wgpu::BlendFactor::Dst;
-    }
-  case GX_BL_INVSRCCLR: // + GX_BL_INVDSTCLR
-    if (isDst) {
-      return wgpu::BlendFactor::OneMinusSrc;
-    } else {
-      return wgpu::BlendFactor::OneMinusDst;
-    }
-  case GX_BL_SRCALPHA:
-    return wgpu::BlendFactor::SrcAlpha;
-  case GX_BL_INVSRCALPHA:
-    return wgpu::BlendFactor::OneMinusSrcAlpha;
-  case GX_BL_DSTALPHA:
-    return wgpu::BlendFactor::DstAlpha;
-  case GX_BL_INVDSTALPHA:
-    return wgpu::BlendFactor::OneMinusDstAlpha;
-  }
-}
-
-static inline wgpu::CompareFunction to_compare_function(GXCompare func) {
-  switch (func) {
-    DEFAULT_FATAL("invalid depth fn {}", underlying(func));
-  case GX_NEVER:
-    return wgpu::CompareFunction::Never;
-  case GX_LESS:
-    return UseReversedZ ? wgpu::CompareFunction::Greater : wgpu::CompareFunction::Less;
-  case GX_EQUAL:
-    return wgpu::CompareFunction::Equal;
-  case GX_LEQUAL:
-    return UseReversedZ ? wgpu::CompareFunction::GreaterEqual : wgpu::CompareFunction::LessEqual;
-  case GX_GREATER:
-    return UseReversedZ ? wgpu::CompareFunction::Less : wgpu::CompareFunction::Greater;
-  case GX_NEQUAL:
-    return wgpu::CompareFunction::NotEqual;
-  case GX_GEQUAL:
-    return UseReversedZ ? wgpu::CompareFunction::LessEqual : wgpu::CompareFunction::GreaterEqual;
-  case GX_ALWAYS:
-    return wgpu::CompareFunction::Always;
-  }
-}
-
-static inline wgpu::BlendState to_blend_state(GXBlendMode mode, GXBlendFactor srcFac, GXBlendFactor dstFac,
-                                              GXLogicOp op, u32 dstAlpha) {
-  wgpu::BlendComponent colorBlendComponent;
-  switch (mode) {
-    DEFAULT_FATAL("unsupported blend mode {}", underlying(mode));
-  case GX_BM_NONE:
-    colorBlendComponent = {
-        .operation = wgpu::BlendOperation::Add,
-        .srcFactor = wgpu::BlendFactor::One,
-        .dstFactor = wgpu::BlendFactor::Zero,
-    };
-    break;
-  case GX_BM_BLEND:
-    colorBlendComponent = {
-        .operation = wgpu::BlendOperation::Add,
-        .srcFactor = to_blend_factor(srcFac, false),
-        .dstFactor = to_blend_factor(dstFac, true),
-    };
-    break;
-  case GX_BM_SUBTRACT:
-    colorBlendComponent = {
-        .operation = wgpu::BlendOperation::ReverseSubtract,
-        .srcFactor = wgpu::BlendFactor::One,
-        .dstFactor = wgpu::BlendFactor::One,
-    };
-    break;
-  case GX_BM_LOGIC:
-    switch (op) {
-      DEFAULT_FATAL("unsupported logic op {}", underlying(op));
-    case GX_LO_CLEAR:
-      colorBlendComponent = {
-          .operation = wgpu::BlendOperation::Add,
-          .srcFactor = wgpu::BlendFactor::Zero,
-          .dstFactor = wgpu::BlendFactor::Zero,
-      };
-      break;
-    case GX_LO_COPY:
-      colorBlendComponent = {
-          .operation = wgpu::BlendOperation::Add,
-          .srcFactor = wgpu::BlendFactor::One,
-          .dstFactor = wgpu::BlendFactor::Zero,
-      };
-      break;
-    case GX_LO_NOOP:
-      colorBlendComponent = {
-          .operation = wgpu::BlendOperation::Add,
-          .srcFactor = wgpu::BlendFactor::Zero,
-          .dstFactor = wgpu::BlendFactor::One,
-      };
-      break;
-    case GX_LO_OR:
-      colorBlendComponent = {
-          .operation = wgpu::BlendOperation::Add,
-          .srcFactor = wgpu::BlendFactor::One,
-          .dstFactor = wgpu::BlendFactor::One,
-      };
-      break;
-    }
-    break;
-  }
-  wgpu::BlendComponent alphaBlendComponent;
-  if (dstAlpha != UINT32_MAX) {
-    alphaBlendComponent = wgpu::BlendComponent{
-        .operation = wgpu::BlendOperation::Add,
-        .srcFactor = wgpu::BlendFactor::Constant,
-        .dstFactor = wgpu::BlendFactor::Zero,
-    };
-  } else {
-    alphaBlendComponent = colorBlendComponent;
-  }
-  return {
-      .color = colorBlendComponent,
-      .alpha = alphaBlendComponent,
-  };
-}
-
-static inline wgpu::ColorWriteMask to_write_mask(bool colorUpdate, bool alphaUpdate) {
-  wgpu::ColorWriteMask writeMask = wgpu::ColorWriteMask::None;
-  if (colorUpdate) {
-    writeMask |= wgpu::ColorWriteMask::Red | wgpu::ColorWriteMask::Green | wgpu::ColorWriteMask::Blue;
-  }
-  if (alphaUpdate) {
-    writeMask |= wgpu::ColorWriteMask::Alpha;
-  }
-  return writeMask;
-}
-
-static inline wgpu::PrimitiveState to_primitive_state(GXCullMode gx_cullMode) {
-  auto cullMode = wgpu::CullMode::None;
-  switch (gx_cullMode) {
-    DEFAULT_FATAL("unsupported cull mode {}", underlying(gx_cullMode));
-  case GX_CULL_FRONT:
-    cullMode = wgpu::CullMode::Front;
-    break;
-  case GX_CULL_BACK:
-    cullMode = wgpu::CullMode::Back;
-    break;
-  case GX_CULL_NONE:
-    break;
-  }
-  return {
-      .topology = wgpu::PrimitiveTopology::TriangleList,
-      .stripIndexFormat = wgpu::IndexFormat::Undefined,
-      .frontFace = wgpu::FrontFace::CW,
-      .cullMode = cullMode,
-  };
-}
-
-wgpu::RenderPipeline build_pipeline(const PipelineConfig& config, ArrayRef<wgpu::VertexBufferLayout> vtxBuffers,
+wgpu::RenderPipeline build_pipeline(const PipelineConfig& config, const gfx::RenderTargetLayout& layout,
+                                    const PipelineOptions& options, ArrayRef<wgpu::VertexBufferLayout> vtxBuffers,
                                     wgpu::ShaderModule shader, const char* label) noexcept {
   ZoneScoped;
   const float depthBias = (UseReversedZ ? -1.0f : 1.0f) * std::bit_cast<float>(config.polygonOffsetBits);
   const float depthBiasSlopeScale = (UseReversedZ ? -1.0f : 1.0f) * std::bit_cast<float>(config.polygonOffsetScaleBits);
   const float depthBiasClamp = webgpu::g_hasCoreFeatures ? std::bit_cast<float>(config.polygonOffsetClampBits) : 0.0f;
+  const bool writesDepth = config.depthCompare && options.depthUpdate;
   const wgpu::DepthStencilState depthStencil{
-      .format = g_graphicsConfig.depthFormat,
-      .depthWriteEnabled = config.depthCompare && config.depthUpdate,
+      .format = layout.depthStencilFormat,
+      .depthWriteEnabled = writesDepth,
       .depthCompare = config.depthCompare ? to_compare_function(config.depthFunc) : wgpu::CompareFunction::Always,
       .depthBias = round_away_from_zero<int32_t>(depthBias),
       .depthBiasSlopeScale = depthBiasSlopeScale,
       .depthBiasClamp = depthBiasClamp,
   };
-  const auto blendState =
-      to_blend_state(config.blendMode, config.blendFacSrc, config.blendFacDst, config.blendOp, config.dstAlpha);
-  const std::array colorTargets{wgpu::ColorTargetState{
-      .format = g_graphicsConfig.surfaceConfiguration.format,
-      .blend = &blendState,
-      .writeMask = to_write_mask(config.colorUpdate, config.alphaUpdate),
-  }};
+  const auto blendState = to_blend_state(config.blendMode, config.blendFacSrc, config.blendFacDst, config.blendOp,
+                                         config.dstAlpha, options.dstAlphaMode == DstAlphaMode::DualSource);
+  std::array<wgpu::ColorTargetState, gfx::MaxColorAttachments> colorTargets{};
+  for (uint32_t i = 0; i < layout.colorAttachmentCount; ++i) {
+    colorTargets[i] = {
+        .format = layout.colorAttachments[i].format,
+        .writeMask = layout.colorAttachments[i].semantic == gfx::ColorAttachmentSemantic::Normal && writesDepth
+                         ? wgpu::ColorWriteMask::All
+                         : wgpu::ColorWriteMask::None,
+    };
+  }
+  colorTargets[gfx::SceneColorAttachmentIndex].blend = &blendState;
+  colorTargets[gfx::SceneColorAttachmentIndex].writeMask = to_write_mask(options.colorUpdate, options.alphaUpdate);
   const wgpu::FragmentState fragmentState{
       .module = shader,
       .entryPoint = "fs_main",
-      .targetCount = colorTargets.size(),
+      .targetCount = layout.colorAttachmentCount,
       .targets = colorTargets.data(),
   };
   const wgpu::RenderPipelineDescriptor descriptor{
@@ -332,11 +379,8 @@ wgpu::RenderPipeline build_pipeline(const PipelineConfig& config, ArrayRef<wgpu:
               .buffers = vtxBuffers.data(),
           },
       .primitive = to_primitive_state(config.cullMode),
-      .depthStencil = &depthStencil,
-      .multisample =
-          wgpu::MultisampleState{
-              .count = config.msaaSamples,
-          },
+      .depthStencil = layout.depthStencilFormat != wgpu::TextureFormat::Undefined ? &depthStencil : nullptr,
+      .multisample = wgpu::MultisampleState{.count = layout.sampleCount},
       .fragment = &fragmentState,
   };
   return g_device.CreateRenderPipeline(&descriptor);
@@ -346,7 +390,9 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
   ZoneScoped;
 
   const auto& vtxFmt = g_gxState.vtxFmts[fmt];
+  config.shaderConfig = {};
   config.shaderConfig.fogType = g_gxState.fog.type;
+  config.shaderConfig.fogRangeEnabled = g_gxState.fog.rangeEnabled;
   u8 vtxOffset = 0;
   for (int i = GX_VA_PNMTXIDX; i <= GX_VA_TEX7; ++i) {
     const auto attr = static_cast<GXAttr>(i);
@@ -426,22 +472,34 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
   }
   const auto cullMode = config.shaderConfig.lineMode == 0 ? g_gxState.cullMode : GX_CULL_NONE;
   const auto [polygonOffset, polygonOffsetScale] = polygon_offset_for_cull_mode(cullMode);
+  const bool hasAlpha = efb_has_alpha(g_gxState.pixelFmt);
+  const bool alphaUpdate = hasAlpha && g_gxState.alphaUpdate;
+  const auto blendFactor = [hasAlpha](GXBlendFactor factor) {
+    if (!hasAlpha) {
+      if (factor == GX_BL_DSTALPHA) {
+        return GX_BL_ONE;
+      }
+      if (factor == GX_BL_INVDSTALPHA) {
+        return GX_BL_ZERO;
+      }
+    }
+    return factor;
+  };
   config = {
-      .msaaSamples = gfx::get_sample_count(),
       .shaderConfig = config.shaderConfig,
       .depthFunc = g_gxState.depthFunc,
       .cullMode = cullMode,
       .blendMode = g_gxState.blendMode,
-      .blendFacSrc = g_gxState.blendFacSrc,
-      .blendFacDst = g_gxState.blendFacDst,
+      .blendFacSrc = blendFactor(g_gxState.blendFacSrc),
+      .blendFacDst = blendFactor(g_gxState.blendFacDst),
       .blendOp = g_gxState.blendOp,
-      .dstAlpha = efb_has_alpha() ? g_gxState.dstAlpha : UINT32_MAX,
+      .dstAlpha = alphaUpdate ? g_gxState.dstAlpha : UINT32_MAX,
       .polygonOffsetBits = std::bit_cast<uint32_t>(polygonOffset),
       .polygonOffsetScaleBits = std::bit_cast<uint32_t>(polygonOffsetScale),
       .polygonOffsetClampBits = std::bit_cast<uint32_t>(g_gxState.clamp),
       .depthCompare = g_gxState.depthCompare,
       .depthUpdate = g_gxState.depthUpdate,
-      .alphaUpdate = g_gxState.alphaUpdate && efb_has_alpha(),
+      .alphaUpdate = alphaUpdate,
       .colorUpdate = g_gxState.colorUpdate,
   };
 }
@@ -543,14 +601,15 @@ void initialize() noexcept {
   }
   {
     const std::array layouts{
-        gfx::g_staticBindGroupLayout,
-        gfx::g_uniformBindGroupLayout,
+        gfx::detail::resources().staticBindGroupLayout,
+        gfx::detail::resources().uniformBindGroupLayout,
         sTextureBindGroupLayout,
     };
     const wgpu::PipelineLayoutDescriptor desc{
         .label = "GX Pipeline Layout",
         .bindGroupLayoutCount = layouts.size(),
         .bindGroupLayouts = layouts.data(),
+        .immediateSize = sizeof(DrawImmediateData),
     };
     sPipelineLayout = g_device.CreatePipelineLayout(&desc);
   }
@@ -573,85 +632,4 @@ void shutdown() noexcept {
   clear_copy_texture_cache();
   texture::shutdown();
 }
-} // namespace aurora::gx
-
-static wgpu::AddressMode wgpu_address_mode(GXTexWrapMode mode) {
-  switch (mode) {
-    DEFAULT_FATAL("invalid wrap mode {}", underlying(mode));
-  case GX_CLAMP:
-    return wgpu::AddressMode::ClampToEdge;
-  case GX_REPEAT:
-    return wgpu::AddressMode::Repeat;
-  case GX_MIRROR:
-    return wgpu::AddressMode::MirrorRepeat;
-  }
-}
-
-static std::pair<wgpu::FilterMode, wgpu::MipmapFilterMode> wgpu_filter_mode(GXTexFilter filter) {
-  switch (filter) {
-    DEFAULT_FATAL("invalid filter mode {}", static_cast<int>(filter));
-  case GX_NEAR:
-    return {wgpu::FilterMode::Nearest, wgpu::MipmapFilterMode::Undefined};
-  case GX_LINEAR:
-    return {wgpu::FilterMode::Linear, wgpu::MipmapFilterMode::Undefined};
-  case GX_NEAR_MIP_NEAR:
-    return {wgpu::FilterMode::Nearest, wgpu::MipmapFilterMode::Nearest};
-  case GX_LIN_MIP_NEAR:
-    return {wgpu::FilterMode::Linear, wgpu::MipmapFilterMode::Nearest};
-  case GX_NEAR_MIP_LIN:
-    return {wgpu::FilterMode::Nearest, wgpu::MipmapFilterMode::Linear};
-  case GX_LIN_MIP_LIN:
-    return {wgpu::FilterMode::Linear, wgpu::MipmapFilterMode::Linear};
-  }
-}
-
-static u16 wgpu_aniso(GXAnisotropy aniso) {
-  switch (aniso) {
-    DEFAULT_FATAL("invalid aniso {}", static_cast<int>(aniso));
-  case GX_ANISO_1:
-  case GX_MAX_ANISOTROPY:
-    return 1;
-  case GX_ANISO_2:
-    return std::max<u16>(aurora::webgpu::g_graphicsConfig.textureAnisotropy / 2, 1);
-  case GX_ANISO_4:
-    return std::max<u16>(aurora::webgpu::g_graphicsConfig.textureAnisotropy, 1);
-  }
-}
-
-wgpu::SamplerDescriptor aurora::gfx::TextureBind::get_descriptor() const noexcept {
-  auto [minFilter, mipFilter] = wgpu_filter_mode(texObj.min_filter());
-  auto [magFilter, _] = wgpu_filter_mode(texObj.mag_filter());
-  const bool mipsEnabled = mipFilter != wgpu::MipmapFilterMode::Undefined;
-  float minLod = texObj.min_lod();
-  float maxLod = texObj.max_lod();
-  u16 maxAnisotropy = wgpu_aniso(texObj.max_aniso());
-  if (ref && ref->isReplacement) {
-    minLod = 0.f;
-    maxLod = 1000.f;
-    if (!mipsEnabled) {
-      mipFilter = wgpu::MipmapFilterMode::Nearest;
-    }
-  } else if (mipFilter == wgpu::MipmapFilterMode::Undefined) {
-    minLod = 0.f;
-    maxLod = 0.f;
-  }
-  if ((ref && ref->hasArbitraryMips) || !mipsEnabled) {
-    maxAnisotropy = 1;
-  } else if (maxAnisotropy > 1) {
-    magFilter = wgpu::FilterMode::Linear;
-    minFilter = wgpu::FilterMode::Linear;
-    mipFilter = wgpu::MipmapFilterMode::Linear;
-  }
-  return {
-      .label = "Generated Filtering Sampler",
-      .addressModeU = wgpu_address_mode(texObj.wrap_s()),
-      .addressModeV = wgpu_address_mode(texObj.wrap_t()),
-      .addressModeW = wgpu::AddressMode::Repeat,
-      .magFilter = magFilter,
-      .minFilter = minFilter,
-      .mipmapFilter = mipFilter,
-      .lodMinClamp = minLod,
-      .lodMaxClamp = maxLod,
-      .maxAnisotropy = maxAnisotropy,
-  };
 } // namespace aurora::gx

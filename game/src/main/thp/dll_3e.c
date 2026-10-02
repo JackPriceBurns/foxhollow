@@ -49,8 +49,6 @@ s32 gAttractMovieAudioMode;
 AIDCallback gAttractMovieAudioPrevDmaCallback;
 static VIRetraceCallback OldVIPostCallback;
 
-extern void fhTHPVideoSetCompressedSize(u32 size);
-
 static u32 sPcMovieReadOffset;
 static u32 sPcMovieReadSize;
 static u32 sPcMovieFrame;
@@ -78,7 +76,6 @@ static BOOL DecodeNextMovieFramePC(void) {
         u32 componentSize = fhSwap32(componentSizes[i]);
         if (player->compInfo.mFrameComp[i] == 0) {
             s32 decodeError;
-            fhTHPVideoSetCompressedSize(componentSize);
             decodeError = THPVideoDecode(componentData, textureSet->yTexture, textureSet->uTexture,
                                          textureSet->vTexture, player->thpWorkArea);
             if (decodeError != 0 && player->curTextureSet == NULL) {

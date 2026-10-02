@@ -7,6 +7,10 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
+#include <limits>
+#include <span>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -23,60 +27,114 @@ using namespace std::string_view_literals;
 #endif
 #endif
 
+#ifndef ALWAYS_INLINE
+#if defined(__GNUC__) || defined(__clang__)
+#define ALWAYS_INLINE __attribute__((always_inline)) inline
+#elif defined(_MSC_VER)
+#define ALWAYS_INLINE __forceinline inline
+#else
+#define ALWAYS_INLINE inline
+#endif
+#endif
+
 template <typename T>
   requires(sizeof(T) == sizeof(uint16_t) && std::is_arithmetic_v<T>)
-constexpr T bswap(T val) noexcept {
-  union {
-    uint16_t u;
-    T t;
-  } v{.t = val};
-#if __GNUC__
-  v.u = __builtin_bswap16(v.u);
-#elif _WIN32
-  v.u = _byteswap_ushort(v.u);
+ALWAYS_INLINE constexpr T bswap(T val) noexcept {
+  auto bits = std::bit_cast<uint16_t>(val);
+#if defined(__GNUC__) || defined(__clang__)
+  bits = __builtin_bswap16(bits);
+#elif defined(_WIN32)
+  bits = _byteswap_ushort(bits);
 #else
-  v.u = (v.u << 8) | ((v.u >> 8) & 0xFF);
+  bits = static_cast<uint16_t>((bits << 8) | (bits >> 8));
 #endif
-  return v.t;
+  return std::bit_cast<T>(bits);
 }
 
 template <typename T>
   requires(sizeof(T) == sizeof(uint32_t) && std::is_arithmetic_v<T>)
-constexpr T bswap(T val) noexcept {
-  union {
-    uint32_t u;
-    T t;
-  } v{.t = val};
-#if __GNUC__
-  v.u = __builtin_bswap32(v.u);
-#elif _WIN32
-  v.u = _byteswap_ulong(v.u);
+ALWAYS_INLINE constexpr T bswap(T val) noexcept {
+  auto bits = std::bit_cast<uint32_t>(val);
+#if defined(__GNUC__) || defined(__clang__)
+  bits = __builtin_bswap32(bits);
+#elif defined(_WIN32)
+  bits = _byteswap_ulong(bits);
 #else
-  v.u = ((v.u & 0x0000FFFF) << 16) | ((v.u & 0xFFFF0000) >> 16) | ((v.u & 0x00FF00FF) << 8) | ((v.u & 0xFF00FF00) >> 8);
+  bits = ((bits & 0x000000ffU) << 24) | ((bits & 0x0000ff00U) << 8) | ((bits & 0x00ff0000U) >> 8) |
+         ((bits & 0xff000000U) >> 24);
 #endif
-  return v.t;
+  return std::bit_cast<T>(bits);
 }
 
 template <typename T>
   requires(sizeof(T) == sizeof(uint64_t) && std::is_arithmetic_v<T>)
-constexpr T bswap(T val) noexcept {
-  union {
-    uint64_t u;
-    T t;
-  } v{.t = val};
-#if __GNUC__
-  v.u = __builtin_bswap64(v.u);
-#elif _WIN32
-  v.u = _byteswap_uint64(v.u);
+ALWAYS_INLINE constexpr T bswap(T val) noexcept {
+  auto bits = std::bit_cast<uint64_t>(val);
+#if defined(__GNUC__) || defined(__clang__)
+  bits = __builtin_bswap64(bits);
+#elif defined(_WIN32)
+  bits = _byteswap_uint64(bits);
 #else
-  static_assert(false, "bswap 64bit not implemented on this target");
+  bits = ((bits & 0x00000000000000ffULL) << 56) | ((bits & 0x000000000000ff00ULL) << 40) |
+         ((bits & 0x0000000000ff0000ULL) << 24) | ((bits & 0x00000000ff000000ULL) << 8) |
+         ((bits & 0x000000ff00000000ULL) >> 8) | ((bits & 0x0000ff0000000000ULL) >> 24) |
+         ((bits & 0x00ff000000000000ULL) >> 40) | ((bits & 0xff00000000000000ULL) >> 56);
 #endif
-  return v.t;
+  return std::bit_cast<T>(bits);
+}
+
+template <typename T>
+  requires(std::is_trivially_copyable_v<T>)
+ALWAYS_INLINE T unaligned_load(const void* ptr) noexcept {
+  T value;
+  std::memcpy(&value, ptr, sizeof(value));
+  return value;
+}
+
+template <typename T>
+  requires(std::is_integral_v<T> && !std::is_same_v<T, bool>)
+ALWAYS_INLINE T read_bits(const void* ptr, const std::endian e = std::endian::big) noexcept {
+  using U = std::make_unsigned_t<T>;
+  U val = unaligned_load<U>(ptr);
+  if constexpr (sizeof(U) > 1) {
+    if (e != std::endian::native) {
+      val = bswap(val);
+    }
+  }
+  return std::bit_cast<T>(val);
+}
+
+template <size_t N>
+struct uint_of_size;
+template <>
+struct uint_of_size<1> {
+  using type = uint8_t;
+};
+template <>
+struct uint_of_size<2> {
+  using type = uint16_t;
+};
+template <>
+struct uint_of_size<4> {
+  using type = uint32_t;
+};
+template <>
+struct uint_of_size<8> {
+  using type = uint64_t;
+};
+template <size_t N>
+using uint_of_size_t = uint_of_size<N>::type;
+
+template <typename T>
+  requires(std::is_floating_point_v<T> && requires { typename uint_of_size_t<sizeof(T)>; })
+ALWAYS_INLINE T read_bits(const void* ptr, const std::endian e = std::endian::big) noexcept {
+  using U = uint_of_size_t<sizeof(T)>;
+  return std::bit_cast<T>(read_bits<U>(ptr, e));
 }
 
 template <typename T>
   requires(std::is_enum_v<T>)
-auto underlying(T value) -> std::underlying_type_t<T> {
+ALWAYS_INLINE constexpr auto underlying(T value) noexcept -> std::underlying_type_t<T> {
   return static_cast<std::underlying_type_t<T>>(value);
 }
 
@@ -184,5 +242,183 @@ public:
 private:
   const T* ptr = nullptr;
   size_t length = 0;
+};
+
+class ByteBuffer {
+public:
+  constexpr ByteBuffer() noexcept = default;
+  explicit ByteBuffer(size_t size) noexcept
+  : m_data(static_cast<uint8_t*>(calloc(1, size))), m_length(size), m_capacity(size) {}
+  explicit ByteBuffer(uint8_t* data, size_t size) noexcept : m_data(data), m_capacity(size), m_owned(false) {}
+  ~ByteBuffer() noexcept { release(); }
+
+  ByteBuffer(ByteBuffer&& rhs) noexcept
+  : m_data(rhs.m_data), m_length(rhs.m_length), m_capacity(rhs.m_capacity), m_owned(rhs.m_owned) {
+    rhs.m_data = nullptr;
+    rhs.m_length = 0;
+    rhs.m_capacity = 0;
+    rhs.m_owned = true;
+  }
+
+  ByteBuffer& operator=(ByteBuffer&& rhs) noexcept {
+    if (this == &rhs) {
+      return *this;
+    }
+    release();
+    m_data = rhs.m_data;
+    m_length = rhs.m_length;
+    m_capacity = rhs.m_capacity;
+    m_owned = rhs.m_owned;
+    rhs.m_data = nullptr;
+    rhs.m_length = 0;
+    rhs.m_capacity = 0;
+    rhs.m_owned = true;
+    return *this;
+  }
+
+  ByteBuffer(const ByteBuffer&) = delete;
+  ByteBuffer& operator=(const ByteBuffer&) = delete;
+  operator ArrayRef<uint8_t>() const noexcept { return {m_data, m_length}; }
+
+  [[nodiscard]] uint8_t* data() noexcept { return m_data; }
+  [[nodiscard]] const uint8_t* data() const noexcept { return m_data; }
+  [[nodiscard]] size_t size() const noexcept { return m_length; }
+  [[nodiscard]] bool empty() const noexcept { return m_length == 0; }
+
+  void append(const void* data, size_t size) {
+    resize(m_length + size, false);
+    memcpy(m_data + m_length, data, size);
+    m_length += size;
+  }
+
+  template <typename T>
+  void append(const T& obj) {
+    append(&obj, sizeof(T));
+  }
+
+  void append_zeroes(size_t size) {
+    resize(m_length + size, true);
+    m_length += size;
+  }
+
+  void release() {
+    if (m_data != nullptr && m_owned) {
+      free(m_data);
+    }
+    m_data = nullptr;
+    m_length = 0;
+    m_capacity = 0;
+    m_owned = true;
+  }
+
+  void clear() { m_length = 0; }
+  void reserve_extra(size_t size) { resize(m_length + size, true); }
+
+  ByteBuffer clone() const {
+    ByteBuffer clone{m_length};
+    std::memcpy(clone.data(), m_data, m_length);
+    return clone;
+  }
+
+private:
+  uint8_t* m_data = nullptr;
+  size_t m_length = 0;
+  size_t m_capacity = 0;
+  bool m_owned = true;
+
+  void resize(size_t size, bool zeroed) {
+    if (size == 0) {
+      clear();
+    } else if (m_data == nullptr) {
+      m_data = static_cast<uint8_t*>(zeroed ? calloc(1, size) : malloc(size));
+      m_owned = true;
+    } else if (size > m_capacity) {
+      if (!m_owned) {
+        abort();
+      }
+      if (size < m_capacity * 2) {
+        size = m_capacity * 2;
+      }
+      m_data = static_cast<uint8_t*>(realloc(m_data, size));
+      if (zeroed) {
+        memset(m_data + m_capacity, 0, size - m_capacity);
+      }
+    } else {
+      return;
+    }
+    m_capacity = size;
+  }
+};
+
+class ByteReader {
+public:
+  explicit ByteReader(std::span<const uint8_t> data) noexcept : ByteReader{data.data(), data.size()} {}
+  ByteReader(const uint8_t* data, size_t size) noexcept : mData{data}, mSize{size} {}
+
+  static ByteReader unbounded(const void* data) noexcept {
+    return {static_cast<const uint8_t*>(data), std::numeric_limits<size_t>::max()};
+  }
+
+  [[nodiscard]] bool empty() const noexcept { return mPosition == mSize; }
+  [[nodiscard]] size_t offset() const noexcept { return mPosition; }
+  [[nodiscard]] size_t size() const noexcept { return mSize; }
+  [[nodiscard]] size_t remaining() const noexcept { return mSize - mPosition; }
+  [[nodiscard]] const uint8_t* data() const noexcept { return mData; }
+
+  template <typename T>
+    requires(std::is_arithmetic_v<T>)
+  T read() noexcept {
+    const auto bytes = take(sizeof(T));
+    return read_bits<T>(bytes.data());
+  }
+
+  template <typename T>
+    requires(std::is_arithmetic_v<T>)
+  bool try_read(T& value) noexcept {
+    std::span<const uint8_t> bytes;
+    if (!try_take(sizeof(T), bytes)) {
+      return false;
+    }
+    value = read_bits<T>(bytes.data());
+    return true;
+  }
+
+  std::span<const uint8_t> take(size_t count) noexcept {
+    AURORA_ASSERT(can_read(count), "Reader overrun: need {} bytes at offset {}, have {}", count, mPosition,
+                  remaining());
+    const std::span bytes{mData + mPosition, count};
+    mPosition += count;
+    return bytes;
+  }
+
+  bool try_take(size_t count, std::span<const uint8_t>& bytes) noexcept {
+    if (!can_read(count)) {
+      return false;
+    }
+    bytes = {mData + mPosition, count};
+    mPosition += count;
+    return true;
+  }
+
+  void skip(size_t count) noexcept {
+    AURORA_ASSERT(can_read(count), "Reader overrun: need {} bytes at offset {}, have {}", count, mPosition,
+                  remaining());
+    mPosition += count;
+  }
+
+  std::string read_string() noexcept {
+    const auto length = read<uint16_t>();
+    const auto bytes = take(length);
+    return {reinterpret_cast<const char*>(bytes.data()), bytes.size()};
+  }
+
+private:
+  static constexpr aurora::Module Log{"aurora::reader"};
+
+  [[nodiscard]] bool can_read(size_t count) const noexcept { return mPosition <= mSize && count <= mSize - mPosition; }
+
+  const uint8_t* mData;
+  size_t mSize;
+  size_t mPosition = 0;
 };
 } // namespace aurora

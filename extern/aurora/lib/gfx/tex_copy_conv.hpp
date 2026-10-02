@@ -1,8 +1,10 @@
 #pragma once
 
-#include "common.hpp"
+#include "types.hpp"
 
 #include <dolphin/gx/GXEnum.h>
+
+#include <array>
 
 namespace aurora::gfx::tex_copy_conv {
 
@@ -11,10 +13,20 @@ enum class SampleFilter : uint8_t {
   Linear,
 };
 
+struct alignas(16) Uniforms {
+  Vec2<float> offset;
+  Vec2<float> scale{1.f, 1.f};
+  uint32_t opaqueAlpha = 0;
+  std::array<uint32_t, 3> _pad{};
+  Vec4<float> blur{};
+};
+static_assert(sizeof(Uniforms) == 48);
+
 struct ConvRequest {
   GXTexFmt fmt;
+  GXPixelFmt srcFmt;
   wgpu::TextureView srcView; // View of resolved EFB / offscreen color/depth
-  Range uniformRange;        // UV transform uniform (offset + scale)
+  Range uniformRange;        // Uniforms
   TextureHandle dst;         // Destination texture
   SampleFilter sampleFilter = SampleFilter::Nearest;
 };

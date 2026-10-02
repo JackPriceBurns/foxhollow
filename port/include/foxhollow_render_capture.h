@@ -11,6 +11,7 @@ const uint8_t* fhGXGetFifoData(void);
 uint32_t fhGXGetFifoSize(void);
 uint32_t* fhGXGetFifoSizeAddress(void);
 void* fhGXGetShadowAddress(void);
+uint32_t* fhGXGetDisplayListSizeAddress(void);
 
 #ifdef __cplusplus
 }

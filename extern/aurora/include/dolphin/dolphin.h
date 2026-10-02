@@ -12,6 +12,7 @@
 #include <dolphin/card.h>
 #include <dolphin/perf.h>
 #include <dolphin/ar.h>
+#include <dolphin/arq.h>
 #include <dolphin/base/PPCArch.h>
 #include <dolphin/db.h>
 #include <dolphin/pad.h>
@@ -20,5 +21,6 @@
 // #include <dolphin/demo.h>
 #include <dolphin/exi.h>
 #include <dolphin/si.h>
+#include <dolphin/thp.h>
 
 #endif

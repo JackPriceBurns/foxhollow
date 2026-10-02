@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../gfx/common.hpp"
+#include "../gfx/types.hpp"
 #include "WebGPURenderInterface.hpp"
 
 #include <array>
@@ -24,6 +24,7 @@ enum class PipelineKind : uint32_t {
   DropShadow,
   MaskImage,
   Glass,
+  ImageEffects,
 };
 
 enum class VertexLayoutKind : uint32_t {
