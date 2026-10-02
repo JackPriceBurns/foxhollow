@@ -215,6 +215,11 @@ void process_event(SDL_Event& event) {
       input::set_mouse_scroll(event.wheel.x, event.wheel.y);
     }
     break;
+  case SDL_EVENT_KEY_DOWN:
+    if (primaryWindow && event.key.scancode == SDL_SCANCODE_F11 && !event.key.repeat) {
+      set_fullscreen(!get_fullscreen());
+    }
+    break;
   case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
     if (primaryWindow) {
       g_events.push_back(AuroraEvent{
