@@ -1,4 +1,5 @@
 #include <dolphin/types.h>
+#include <dolphin/gx/GXAurora.h>
 #include <dolphin/vi.h>
 #include <aurora/aurora.h>
 #include <aurora/dvd.h>
@@ -32,6 +33,8 @@ static int sFrameOpen;
 static Uint64 sNextRetraceNs;
 
 void fhGXCompleteFrame(void);
+int isWidescreen(void);
+int setWidescreen(u8 enabled);
 
 enum { VI_RETRACE_DEFAULT_HZ = 60 };
 
@@ -77,6 +80,11 @@ static void pump_events(void) {
   while (event != NULL && event->type != AURORA_NONE) {
     if (event->type == AURORA_EXIT) {
       quitting = 1;
+    } else if (event->type == AURORA_SDL_EVENT && event->sdl.type == SDL_EVENT_KEY_DOWN &&
+               event->sdl.key.scancode == SDL_SCANCODE_F12 && !event->sdl.key.repeat) {
+      fhConfigSetScreenStyleOverride(isWidescreen() ? FH_SCREEN_STYLE_NARROW : FH_SCREEN_STYLE_WIDE);
+      setWidescreen((u8)fhConfigScreenStyleIsWide());
+      AuroraSetDisplayAspect(fhConfigDisplayAspect());
     }
     ++event;
   }

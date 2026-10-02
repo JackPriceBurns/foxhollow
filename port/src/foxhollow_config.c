@@ -9,6 +9,7 @@
 
 static int sLoaded;
 static FhScreenStyle sScreenStyle;
+static FhScreenStyle sScreenStyleOverride;
 static int sFullscreen;
 static int sVsync = 1;
 static int sFrameLimit = FH_DEFAULT_FRAME_LIMIT;
@@ -147,8 +148,10 @@ static void load(void) {
 
 FhScreenStyle fhConfigScreenStyle(void) {
   load();
-  return sScreenStyle;
+  return sScreenStyleOverride != FH_SCREEN_STYLE_AUTO ? sScreenStyleOverride : sScreenStyle;
 }
+
+void fhConfigSetScreenStyleOverride(FhScreenStyle style) { sScreenStyleOverride = style; }
 
 int fhConfigScreenStyleIsForced(void) { return fhConfigScreenStyle() != FH_SCREEN_STYLE_AUTO; }
 
