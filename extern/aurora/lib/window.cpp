@@ -16,6 +16,8 @@
 #include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_pixels.h>
@@ -53,6 +55,8 @@ std::atomic_bool g_surfaceReady = true;
 #endif
 bool g_lastPaused = false;
 bool g_gotFocus = false;
+bool g_cursorHidden = false;
+Uint64 g_lastMouseMotion = 0;
 
 bool operator==(const AuroraWindowSize& lhs, const AuroraWindowSize& rhs) {
   return lhs.width == rhs.width && lhs.height == rhs.height && lhs.fb_width == rhs.fb_width &&
@@ -150,6 +154,23 @@ void sync_paused() {
   });
 }
 
+void update_cursor() {
+  const Uint64 now = SDL_GetTicks();
+  if (g_lastMouseMotion == 0 || !get_fullscreen()) {
+    g_lastMouseMotion = now;
+  }
+  const bool hide = now - g_lastMouseMotion >= 5000;
+  if (hide == g_cursorHidden) {
+    return;
+  }
+  g_cursorHidden = hide;
+  if (hide) {
+    SDL_HideCursor();
+  } else {
+    SDL_ShowCursor();
+  }
+}
+
 void process_event(SDL_Event& event) {
   const bool primaryWindow = targets_primary_window(&event);
   if (primaryWindow) {
@@ -210,6 +231,11 @@ void process_event(SDL_Event& event) {
     });
     break;
   }
+  case SDL_EVENT_MOUSE_MOTION:
+    if (primaryWindow) {
+      g_lastMouseMotion = SDL_GetTicks();
+    }
+    break;
   case SDL_EVENT_MOUSE_WHEEL:
     if (primaryWindow) {
       input::set_mouse_scroll(event.wheel.x, event.wheel.y);
@@ -281,6 +307,7 @@ const AuroraEvent* poll_events() {
       break;
     }
   }
+  update_cursor();
   g_events.push_back(AuroraEvent{
       .type = AURORA_NONE,
   });
@@ -511,6 +538,8 @@ void set_fullscreen(bool fullscreen) {
 }
 
 bool get_fullscreen() { return (SDL_GetWindowFlags(g_window) & SDL_WINDOW_FULLSCREEN) != 0u; }
+
+bool is_cursor_hidden() { return g_cursorHidden; }
 
 void set_window_size(uint32_t width, uint32_t height) {
   TRY_WARN(SDL_RestoreWindow(g_window), "Failed to un-maximize window: {}", SDL_GetError());
