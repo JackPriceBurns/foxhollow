@@ -103,6 +103,8 @@ jobs:
           version="${{ inputs.tag || github.event.release.tag_name }}"
           mkdir -p dist
           if [ "${{ matrix.platform }}" = "windows" ]; then
+            crt_dir="$(ls -d "$(cygpath -u "$VCToolsRedistDir")"/x64/Microsoft.VC*.CRT | head -1)"
+            cp "$crt_dir"/*.dll build/
             archive="$(pwd)/dist/foxhollow-${version}-windows.zip"
             (cd build && 7z a "$archive" foxhollow.exe *.dll)
             if ! 7z l -slt "$archive" | grep -qx "Path = foxhollow.exe"; then
