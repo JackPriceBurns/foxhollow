@@ -15,6 +15,7 @@ typedef enum {
 } FhScreenStyle;
 
 FhScreenStyle fhConfigScreenStyle(void);
+void fhConfigSetScreenStyleOverride(FhScreenStyle style);
 int fhConfigScreenStyleIsForced(void);
 int fhConfigScreenStyleIsWide(void);
 f32 fhConfigDisplayAspect(void);
