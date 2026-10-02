@@ -16,7 +16,6 @@ permissions:
 env:
   AWS_REGION: eu-west-1
   API_HOST: api.foxhollow.dev
-  RELEASE_CHANNEL: stable
 
 jobs:
   build:
@@ -150,5 +149,13 @@ jobs:
           TAG: ${{ inputs.tag || github.event.release.tag_name }}
           COMMIT: ${{ github.sha }}
         run: |
+          if [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            export RELEASE_CHANNEL=stable
+          elif [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+            export RELEASE_CHANNEL=beta
+          else
+            echo "::error::${TAG} is neither vX.Y.Z nor vX.Y.Z-beta.N"
+            exit 1
+          fi
           export RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           python3 .github/scripts/publish_release.py

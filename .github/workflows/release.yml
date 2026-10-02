@@ -27,10 +27,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            channel_flags=(--latest)
+          elif [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+            channel_flags=(--prerelease --latest=false)
+          else
+            echo "::error::${GITHUB_REF_NAME} is neither vX.Y.Z nor vX.Y.Z-beta.N"
+            exit 1
+          fi
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
             --notes-file "${RUNNER_TEMP}/notes.md" \
-            --verify-tag
+            --verify-tag \
+            "${channel_flags[@]}"
 
       - name: Start the publish workflow
         env:
