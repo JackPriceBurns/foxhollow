@@ -6,6 +6,7 @@
 #include <SDL3/SDL_timer.h>
 #include <stdlib.h>
 #include "foxhollow_autosave.h"
+#include "foxhollow_cheats.h"
 #include "foxhollow_compat.h"
 #include "foxhollow_config.h"
 #include "foxhollow_mods.h"
@@ -96,6 +97,7 @@ void VIWaitForRetrace(void) {
     fhDebugOverlayDraw();
     fhGalleryDrawOverlay();
 #endif
+    fhCheatsDrawOverlay();
     fhGXCompleteFrame();
     aurora_end_frame();
 #if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
