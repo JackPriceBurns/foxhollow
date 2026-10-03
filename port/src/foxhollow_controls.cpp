@@ -83,10 +83,16 @@ struct DeadZoneOverrides {
   std::optional<u16> triggerR;
 };
 
+struct RumbleOverride {
+  u16 low;
+  u16 high;
+};
+
 struct Controls {
   std::vector<PADButtonMapping> buttons;
   std::vector<PADAxisMapping> axes;
   DeadZoneOverrides deadZones;
+  std::optional<RumbleOverride> rumble;
   std::vector<PADKeyButtonBinding> keyButtons;
   std::vector<PADKeyAxisBinding> keyAxes;
 };
@@ -160,6 +166,13 @@ std::optional<u16> dead_zone(const nlohmann::json& value) {
   return static_cast<u16>(std::clamp<long>(std::lround(value.get<double>()), 0, 32767));
 }
 
+std::optional<u16> rumble_intensity(const nlohmann::json& value) {
+  if (!value.is_number()) {
+    return std::nullopt;
+  }
+  return static_cast<u16>(std::clamp<long>(std::lround(value.get<double>()), 0, 65535));
+}
+
 void parse_gamepad(const nlohmann::json& gamepad, Controls& controls) {
   if (const auto buttons = gamepad.find("buttons"); buttons != gamepad.end() && buttons->is_object()) {
     for (const auto& [name, value] : buttons->items()) {
@@ -204,6 +217,16 @@ void parse_gamepad(const nlohmann::json& gamepad, Controls& controls) {
     controls.deadZones.c = dead_zone(zones->value("c", nlohmann::json{}));
     controls.deadZones.triggerL = dead_zone(zones->value("triggerL", nlohmann::json{}));
     controls.deadZones.triggerR = dead_zone(zones->value("triggerR", nlohmann::json{}));
+  }
+
+  if (const auto rumble = gamepad.find("rumble"); rumble != gamepad.end() && rumble->is_object()) {
+    const auto low = rumble_intensity(rumble->value("low", nlohmann::json{}));
+    const auto high = rumble_intensity(rumble->value("high", nlohmann::json{}));
+    if (low && high) {
+      controls.rumble = RumbleOverride{*low, *high};
+    } else {
+      log_warning("rumble needs numeric low and high intensities");
+    }
   }
 }
 
@@ -273,6 +296,9 @@ void apply_gamepad(const Controls& controls) {
     zones->substickDeadZone = controls.deadZones.c.value_or(zones->substickDeadZone);
     zones->leftTriggerActivationZone = controls.deadZones.triggerL.value_or(zones->leftTriggerActivationZone);
     zones->rightTriggerActivationZone = controls.deadZones.triggerR.value_or(zones->rightTriggerActivationZone);
+  }
+  if (controls.rumble) {
+    PADSetRumbleIntensity(PAD_CHAN0, controls.rumble->low, controls.rumble->high);
   }
 }
 

@@ -60,6 +60,7 @@ endfunction()
 
 set(AURORA_ENABLE_DVD ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
+find_package(nlohmann_json 3 CONFIG QUIET)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
 set(MUSYX_ENABLE_SDL OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/musyx EXCLUDE_FROM_ALL)

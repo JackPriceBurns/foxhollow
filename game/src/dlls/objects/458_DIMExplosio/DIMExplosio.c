@@ -76,7 +76,6 @@ STATIC_ASSERT(sizeof(DimExplosionTextureTable) == 0x10);
 #define DIM_EXPLOSION_TEXTURE_COUNT      4
 
 void* gExplosionTextures[DIM_EXPLOSION_TEXTURE_COUNT];
-extern int lbl_803E8468;
 f32 gExplosionDebrisSpeedScale;
 f32 gExplosionDebrisAlphaScale;
 f32 gExplosionDebrisColorScale;
@@ -245,7 +244,7 @@ void explosion_render(GameObject* obj, int renderArg2, int renderArg3, int rende
     int i;
     uintptr_t cursor;
     colA = sExplosionQuadColorA[0];
-    colB = lbl_803E8468;
+    colB = 0;
     state = obj->extra;
     model = Obj_GetActiveModel(obj);
     cursor = (uintptr_t)state;
