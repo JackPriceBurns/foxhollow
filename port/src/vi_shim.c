@@ -10,6 +10,7 @@
 #include "foxhollow_config.h"
 #include "foxhollow_mods.h"
 #include "foxhollow_quit.h"
+#include "foxhollow_splash.h"
 #include "shim_log.h"
 
 typedef void (*VIRetraceCallback)(u32 retraceCount);
@@ -29,6 +30,7 @@ static VIRetraceCallback sPostRetraceCallback;
 static void* sNextFrameBuffer;
 static u32 sRetraceCount;
 static int sFrameOpen;
+static int sBlack;
 static Uint64 sNextRetraceNs;
 
 void fhGXCompleteFrame(void);
@@ -96,6 +98,9 @@ void VIWaitForRetrace(void) {
     fhDebugOverlayDraw();
     fhGalleryDrawOverlay();
 #endif
+    if (sBlack) {
+      fhDrawBlackScreen();
+    }
     fhGXCompleteFrame();
     aurora_end_frame();
 #if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
@@ -140,7 +145,7 @@ VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb) {
 
 void VISetNextFrameBuffer(void* fb) { sNextFrameBuffer = fb; }
 void* VIGetNextFrameBuffer(void) { return sNextFrameBuffer; }
-void VISetBlack(BOOL black) { (void)black; }
+void VISetBlack(BOOL black) { sBlack = black ? 1 : 0; }
 u32 VIGetRetraceCount(void) { return sRetraceCount; }
 u32 VIGetNextField(void) { return 0; }
 u32 VIGetDTVStatus(void) { return 1; }

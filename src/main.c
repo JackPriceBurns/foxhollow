@@ -11,6 +11,7 @@
 #include "foxhollow_config.h"
 #include "foxhollow_crash.h"
 #include "foxhollow_mods.h"
+#include "foxhollow_splash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,6 +167,13 @@ int main(int argc, char* argv[]) {
           revision);
 
   fhModsInit(argc, argv, info.userPath);
+
+  if (!fhSplashRun()) {
+    fhModsShutdown();
+    aurora_dvd_close();
+    aurora_shutdown();
+    return 0;
+  }
 
   foxhollowFramePumpInit();
   return gameMain(argc, argv);
