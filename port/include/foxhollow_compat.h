@@ -93,6 +93,8 @@ void fhLoadIdentityPosMtx(void);
 void fhAIPump(void);
 uintptr_t fhAIGetDMAStartAddr(void);
 int fhAIPrepareStream(void* fileInfo);
+void fhControlsInit(void);
+void fhControlsUpdate(void);
 void fhMusyxConfigure(void);
 void fhMusyxStartOutput(void);
 void fhMusyxStopOutput(void);

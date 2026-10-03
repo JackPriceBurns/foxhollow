@@ -350,6 +350,7 @@ void padUpdate(void) {
     gPadStatusBufferIndex ^= 1;
     readPad = gPadStatuses[gPadStatusBufferIndex];
     fhInputTraceInit();
+    fhControlsUpdate();
     if (PADRead(readPad) == PAD_ERR_TRANSFER && gFhInputReplayFile == NULL) {
         return;
     }
@@ -601,6 +602,7 @@ int initControllers(void) {
     gPadResetMask = 0xF0000000;
     PADInit();
     initKeyboardControls();
+    fhControlsInit();
     PADRecalibrate(gPadResetMask);
     if (PADReset(gPadResetMask) != 0) {
         gPadResetMask = 0;
