@@ -4,6 +4,7 @@
 #include <atomic>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -798,6 +799,16 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
     dawnInstanceDescriptor.nextInChain = &instanceTogglesDescriptor;
     dawnInstanceDescriptor.backendValidationLevel = dawn::native::BackendValidationLevel::Disabled;
     dawnInstanceDescriptor.SetLoggingCallback(wgpu_log);
+#if _WIN32
+    static const std::string systemSearchPath = [] {
+      const char* systemRoot = std::getenv("SystemRoot");
+      return std::string{systemRoot != nullptr && systemRoot[0] != '\0' ? systemRoot : "C:\\Windows"} +
+             "\\System32\\";
+    }();
+    static const char* const runtimeSearchPaths[] = {systemSearchPath.c_str()};
+    dawnInstanceDescriptor.additionalRuntimeSearchPathsCount = 1;
+    dawnInstanceDescriptor.additionalRuntimeSearchPaths = runtimeSearchPaths;
+#endif
 #ifdef TRACY_ENABLE
     dawnInstanceDescriptor.platform = tracy_dawn_platform();
 #endif
