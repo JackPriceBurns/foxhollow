@@ -91,15 +91,7 @@ struct Controls {
   std::vector<PADKeyAxisBinding> keyAxes;
 };
 
-struct AppliedController {
-  s32 index = -1;
-  u32 vid = 0;
-  u32 pid = 0;
-  u32 count = 0;
-};
-
 std::optional<Controls> sControls;
-AppliedController sApplied;
 
 void log_warning(const std::string& message) { std::fprintf(stderr, "[foxhollow] controls: %s\n", message.c_str()); }
 
@@ -266,6 +258,10 @@ std::optional<Controls> load_controls(const char* path) {
 }
 
 void apply_gamepad(const Controls& controls) {
+  u32 count = 0;
+  if (PADGetButtonMappings(PAD_CHAN0, &count) == nullptr || PADGetAxisMappings(PAD_CHAN0, &count) == nullptr) {
+    return;
+  }
   for (const auto& mapping : controls.buttons) {
     PADSetButtonMapping(PAD_CHAN0, mapping);
   }
@@ -304,16 +300,7 @@ extern "C" void fhControlsUpdate(void) {
   if (!sControls) {
     return;
   }
-  AppliedController current{.index = PADGetIndexForPort(PAD_CHAN0), .count = PADCount()};
-  if (current.index >= 0) {
-    PADGetVidPid(PAD_CHAN0, &current.vid, &current.pid);
-  }
-  if (current.index == sApplied.index && current.vid == sApplied.vid && current.pid == sApplied.pid &&
-      current.count == sApplied.count) {
-    return;
-  }
-  sApplied = current;
-  if (current.index >= 0 && !PADIsGCAdapter(PAD_CHAN0)) {
+  if (PADGetIndexForPort(PAD_CHAN0) >= 0 && !PADIsGCAdapter(PAD_CHAN0)) {
     apply_gamepad(*sControls);
   }
 }
