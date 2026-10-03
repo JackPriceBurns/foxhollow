@@ -55,6 +55,7 @@ aurora::Vec2<uint32_t> scale_copy_dst(u32 logicalWidth, u32 logicalHeight) {
 namespace aurora::gx {
 void copy_tex(const void* dest, GXBool clear) noexcept {
   const auto rect = map_logical_scissor(g_gxState.texCopySrc);
+  const auto sourceRect = map_logical_rect(g_gxState.texCopySrc, false);
   const auto [dstWidth, dstHeight] = scale_copy_dst(g_gxState.texCopyDstWidth, g_gxState.texCopyDstHeight);
   const auto texCopyFmt = g_gxState.texCopyFmt;
 
@@ -79,7 +80,7 @@ void copy_tex(const void* dest, GXBool clear) noexcept {
   const auto clearColor = clear && g_gxState.colorUpdate;
   const auto clearAlpha = clear && g_gxState.alphaUpdate && efb_has_alpha(g_gxState.pixelFmt);
   const auto clearDepth = clear && g_gxState.depthUpdate;
-  gfx::resolve_pass_into(handle.handle, rect, clearColor, clearAlpha, clearDepth, g_gxState.clearColor,
+  gfx::resolve_pass_into(handle.handle, rect, sourceRect, clearColor, clearAlpha, clearDepth, g_gxState.clearColor,
                          clear_depth_value(), texCopyFmt, g_gxState.pixelFmt,
                          {g_gxState.texCopyDstWidth, g_gxState.texCopyDstHeight});
   ++handle.revision;

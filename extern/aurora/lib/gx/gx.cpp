@@ -270,6 +270,10 @@ gfx::Viewport map_logical_viewport(const gfx::Viewport& logicalViewport) noexcep
 }
 
 gfx::ClipRect map_logical_scissor(const gfx::ClipRect& logicalScissor) noexcept {
+  return map_logical_rect(logicalScissor, true);
+}
+
+gfx::ClipRect map_logical_rect(const gfx::ClipRect& logicalScissor, bool clampToTarget) noexcept {
   if (g_gxState.viewportPolicy == AURORA_VIEWPORT_NATIVE) {
     return logicalScissor;
   }
@@ -287,6 +291,16 @@ gfx::ClipRect map_logical_scissor(const gfx::ClipRect& logicalScissor) noexcept 
   const float top = static_cast<float>(logicalScissor.y) * scaleY;
   const float right = static_cast<float>(logicalScissor.x + logicalScissor.width) * scaleX;
   const float bottom = static_cast<float>(logicalScissor.y + logicalScissor.height) * scaleY;
+  if (!clampToTarget) {
+    const auto unclampedLeft = static_cast<int32_t>(std::floor(left));
+    const auto unclampedTop = static_cast<int32_t>(std::floor(top));
+    return {
+        .x = unclampedLeft,
+        .y = unclampedTop,
+        .width = static_cast<int32_t>(std::ceil(right)) - unclampedLeft,
+        .height = static_cast<int32_t>(std::ceil(bottom)) - unclampedTop,
+    };
+  }
 
   const auto mappedLeft = std::clamp(static_cast<int32_t>(std::floor(left)), 0, static_cast<int32_t>(targetWidth));
   const auto mappedTop = std::clamp(static_cast<int32_t>(std::floor(top)), 0, static_cast<int32_t>(targetHeight));

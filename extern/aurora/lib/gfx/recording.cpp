@@ -823,20 +823,21 @@ PipelineRef pipeline_ref(const clear::PipelineConfig& config) {
   return find_pipeline(config, get_render_target_layout());
 }
 
-void resolve_pass_into(TextureHandle texture, ClipRect rect, bool clearColor, bool clearAlpha, bool clearDepth,
+void resolve_pass_into(TextureHandle texture, ClipRect rect, ClipRect sourceRect, bool clearColor, bool clearAlpha, bool clearDepth,
                        Vec4<float> clearColorValue, float clearDepthValue, GXTexFmt resolveFormat,
                        GXPixelFmt sourceFormat, Vec2<uint32_t> logicalSize) {
   // Resolve current render pass
   auto& prevPass = current_render_passes()[g_recorder.currentRenderPass];
   prevPass.resolveTarget = std::move(texture);
   prevPass.resolveRect = rect;
+  prevPass.resolvePartial = sourceRect != rect;
   prevPass.resolveFormat = resolveFormat;
   prevPass.resolveSourceFormat = sourceFormat;
   const auto srcW = static_cast<float>(prevPass.colorAttachments[SceneColorAttachmentIndex].size.width);
   const auto srcH = static_cast<float>(prevPass.colorAttachments[SceneColorAttachmentIndex].size.height);
   const tex_copy_conv::Uniforms uniforms{
-      .offset = {static_cast<float>(rect.x) / srcW, static_cast<float>(rect.y) / srcH},
-      .scale = {static_cast<float>(rect.width) / srcW, static_cast<float>(rect.height) / srcH},
+      .offset = {static_cast<float>(sourceRect.x) / srcW, static_cast<float>(sourceRect.y) / srcH},
+      .scale = {static_cast<float>(sourceRect.width) / srcW, static_cast<float>(sourceRect.height) / srcH},
       .opaqueAlpha = !gx::efb_has_alpha(sourceFormat),
       .blur = {resolveFormat == GX_CTF_B8 && logicalSize.x != 0 && logicalSize.y != 0 ? 16.f : 0.f, 0.f,
                static_cast<float>(logicalSize.x), static_cast<float>(logicalSize.y)},

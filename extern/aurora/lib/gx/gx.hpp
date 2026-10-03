@@ -444,6 +444,7 @@ void evict_tlut_object(u32 tlutObjId) noexcept;
 Vec2<uint32_t> logical_fb_size() noexcept;
 gfx::Viewport map_logical_viewport(const gfx::Viewport& logicalViewport) noexcept;
 gfx::ClipRect map_logical_scissor(const gfx::ClipRect& logicalScissor) noexcept;
+gfx::ClipRect map_logical_rect(const gfx::ClipRect& logicalScissor, bool clampToTarget) noexcept;
 void set_logical_viewport(const gfx::Viewport& viewport) noexcept;
 void set_render_viewport(const gfx::Viewport& viewport) noexcept;
 void set_logical_scissor(const gfx::ClipRect& scissor) noexcept;

@@ -56,7 +56,7 @@ var<private> uvs: array<vec2f, 3> = array(
 }
 
 fn sample_efb(uv: vec2f) -> vec4f {
-    let c = textureSample(src, src_samp, uv);
+    let c = select(textureSample(src, src_samp, uv), vec4f(0.0), any(uv < vec2f(0.0)) || any(uv > vec2f(1.0)));
     return vec4f(c.rgb, select(c.a, 1.0, ubuf.opaqueAlpha != 0u));
 }
 
@@ -103,6 +103,9 @@ var<private> uvs: array<vec2f, 3> = array(
 }
 )"s + (gx::UseReversedZ ? R"(
 fn gx_z24(uv: vec2f) -> u32 {
+    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0))) {
+        return 0x00ffffffu;
+    }
     let texSize = vec2i(textureDimensions(src));
     let coord = clamp(vec2i(floor(uv * vec2f(texSize))), vec2i(0), texSize - vec2i(1));
     let depth = textureLoad(src, coord, 0);
@@ -111,6 +114,9 @@ fn gx_z24(uv: vec2f) -> u32 {
 )"s
                         : R"(
 fn gx_z24(uv: vec2f) -> u32 {
+    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0))) {
+        return 0x00ffffffu;
+    }
     let texSize = vec2i(textureDimensions(src));
     let coord = clamp(vec2i(floor(uv * vec2f(texSize))), vec2i(0), texSize - vec2i(1));
     let depth = textureLoad(src, coord, 0);

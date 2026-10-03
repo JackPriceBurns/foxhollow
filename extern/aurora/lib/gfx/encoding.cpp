@@ -257,7 +257,8 @@ void render(wgpu::CommandEncoder& cmd, FramePacket& frame, RenderPass& passInfo,
   if (passInfo.resolveTarget) {
     const auto& dstSize = passInfo.resolveTarget->size;
     const bool needsConversion = tex_copy_conv::needs_conversion(passInfo.resolveFormat);
-    const bool needsScaling = dstSize.width != static_cast<uint32_t>(passInfo.resolveRect.width) ||
+    const bool needsScaling = passInfo.resolvePartial ||
+                              dstSize.width != static_cast<uint32_t>(passInfo.resolveRect.width) ||
                               dstSize.height != static_cast<uint32_t>(passInfo.resolveRect.height);
     const bool isDepth = gx::is_depth_format(passInfo.resolveFormat);
     if (isDepth && passInfo.msaaSamples > 1) {
