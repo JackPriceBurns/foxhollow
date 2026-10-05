@@ -147,6 +147,11 @@ void AuroraSetDisplayAspect(f32 aspect);
 void AuroraGetRenderSize(u32* width, u32* height);
 
 /**
+ * Flush pending GX state and wait for FIFO processing without signaling a draw-done callback.
+ */
+void AuroraGXSync(void);
+
+/**
  * Sets the actual render viewport in native framebuffer coordinates.
  * Overrides the automatically scaled values set by the logical GXSetViewport.
  */

@@ -136,9 +136,15 @@ void aurora_set_log_level(AuroraLogLevel level);
 void aurora_set_pause_on_focus_lost(bool value);
 void aurora_set_background_input(bool value);
 void aurora_set_resampler(AuroraSampler sampler);
+/** Sets the clock timescale. Default 1.0f. 0.0f is paused. Range 0.0f-16.0f. */
+void aurora_set_timescale(float scale);
+
+SDL_Window* aurora_get_window();
+AuroraWindowSize aurora_get_window_size();
 
 AuroraBackend aurora_get_backend();
 const AuroraBackend* aurora_get_available_backends(size_t* count);
+float aurora_get_timescale();
 
 #ifdef __cplusplus
 }

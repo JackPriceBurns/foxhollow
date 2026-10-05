@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "dolphin/ar.h"
+#include "dolphin/arq.h"
 #include "dolphin/dvd.h"
 #include <musyx/musyx.h>
 #include "dolphin/mtx/vec.h"

@@ -52,7 +52,6 @@ u8 gSky2RunFirstTime = 1;
 extern u8 gSkyConfigFieldIndices[];
 STATIC_ASSERT(sizeof(Vec) == 0xC);
 extern u16 lbl_803E8460;
-extern u8 lbl_803E8462;
 extern f32 lbl_8039A7B8[];
 const Vec sSky2BestWeightsInit = {-1000.0f, -1000.0f, -1000.0f};
 
@@ -534,7 +533,7 @@ void sky2_run(void)
     sb = r;
     height = r;
     *(u16*)&idx = lbl_803E8460;
-    idx.pad = lbl_803E8462;
+    idx.pad = 0;
     skyGetSunColor(0, &red, &green, &blue);
     if (gSky2RunFirstTime != 0)
     {

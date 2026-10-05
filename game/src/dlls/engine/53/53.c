@@ -770,6 +770,7 @@ int SaveSelectScreen_run(void)
                     if (data != NULL)
                     {
                         memcpy(gSaveGameWorkBuffer, data, 0x6ec);
+                        fhSwapSaveGameSlot(gSaveGameWorkBuffer);
                         if (fhConfigRevision() == 1)
                         {
                             mm_free(data);

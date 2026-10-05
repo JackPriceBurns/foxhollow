@@ -64,7 +64,7 @@ u8 gObjfsaWalkGroupActive[0xB8];
     *(po) = -(pl->normalX * (XA) + pl->normalZ * (ZA))
 
 static inline f32 RomCurveNode_GetHermiteTangent(void** nodePtr, int angleOffset, int useCos);
-inline f32 objfsaCorner(s8 ofs, f32 scl, f32* base);
+static inline f32 objfsaCorner(s8 ofs, f32 scl, f32* base);
 
 static inline ObjfsaPatch* Objfsa_GetPatch(int patchIndex) {
     return &gObjfsaPatches[patchIndex];
@@ -967,11 +967,11 @@ int Objfsa_FindWalkGroupIndexAtPoint(float* point) {
     }
     return 0;
 }
-inline f32 objfsaCorner(s8 ofs, f32 scl, f32* base) {
+static inline f32 objfsaCorner(s8 ofs, f32 scl, f32* base) {
     return (f32)((f32)ofs * scl + *base);
 }
 
-inline int objfsaExitOutside(ObjfsaWalkGroup* g, s16 ex, s16 ez) {
+static inline int objfsaExitOutside(ObjfsaWalkGroup* g, s16 ex, s16 ez) {
     f32 exitFz;
     f32 exitFx;
     f32 zero;

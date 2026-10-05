@@ -3,6 +3,20 @@
 Entries must be in the format `v1.0.0 - yyyy-mm-dd`. Then push a tag with the `v1.0.0` version and that triggers a
 new GitHub release the version to be built and published to the Foxhollow Launcher.
 
+## v1.0.17 - 2026-10-05
+
+### Added
+- Aurora upgrade
+- Support for controller mapping
+- Foxhollow splash screen
+
+### Fixed
+- Controller mapping on Windows (hopefully)
+- Shadows in Aurora
+- Issue with rumble and build
+- Dawn not finding vulkan correctly
+- Chapter select
+
 ## v1.0.16 - 2026-10-02
 
 ### Fixed

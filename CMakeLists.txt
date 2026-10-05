@@ -9,7 +9,6 @@ project(foxhollow LANGUAGES C CXX VERSION 0.5.8)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_DEBUG_INPUT_TIMING "Build the input timing overlay into the performance overlay" OFF)
-option(FOXHOLLOW_STATIC_JPEG "Link libjpeg statically so the binary is not tied to one distribution's soname" OFF)
 
 if (APPLE)
     enable_language(OBJC OBJCXX)
@@ -61,20 +60,12 @@ endfunction()
 
 set(AURORA_ENABLE_DVD ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
+find_package(nlohmann_json 3 CONFIG QUIET)
 add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
 set(MUSYX_ENABLE_SDL OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/musyx EXCLUDE_FROM_ALL)
 
 find_package(ZLIB REQUIRED)
-
-if (FOXHOLLOW_STATIC_JPEG)
-    set(FOXHOLLOW_SAVED_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-    find_package(JPEG REQUIRED)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${FOXHOLLOW_SAVED_LIBRARY_SUFFIXES})
-else ()
-    find_package(JPEG REQUIRED)
-endif ()
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS port/compiling.txt)
 file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/port/compiling.txt FOXHOLLOW_GAME_SOURCES)
@@ -98,7 +89,7 @@ target_link_libraries(foxhollow PRIVATE
         musyx
         aurora::core aurora::gx aurora::main aurora::vi
         aurora::os aurora::pad aurora::dvd aurora::card
-        aurora::mtx aurora::si aurora::gd aurora::ms)
+        aurora::mtx aurora::si aurora::gd aurora::ms aurora::thp)
 if (TARGET game)
     foxhollow_link_whole_archive(foxhollow game)
     add_dependencies(foxhollow game)
@@ -121,6 +112,23 @@ file(GLOB FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/*.c)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/crash_handler.cpp)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_mods.cpp)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_hook.cpp)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_controls.cpp)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_splash.cpp)
+
+include(FetchContent)
+FetchContent_GetProperties(imgui)
+set(FOXHOLLOW_SPLASH_FONT ${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf)
+if (NOT EXISTS ${FOXHOLLOW_SPLASH_FONT})
+    message(FATAL_ERROR "Splash font not found at ${FOXHOLLOW_SPLASH_FONT}")
+endif ()
+set(FOXHOLLOW_SPLASH_FONT_SOURCE ${CMAKE_BINARY_DIR}/generated/foxhollow_splash_font.c)
+file(READ ${FOXHOLLOW_SPLASH_FONT} FOXHOLLOW_SPLASH_FONT_HEX HEX)
+file(SIZE ${FOXHOLLOW_SPLASH_FONT} FOXHOLLOW_SPLASH_FONT_SIZE)
+string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," FOXHOLLOW_SPLASH_FONT_BYTES ${FOXHOLLOW_SPLASH_FONT_HEX})
+file(WRITE ${FOXHOLLOW_SPLASH_FONT_SOURCE}.tmp
+        "#include <stddef.h>\nconst unsigned char gFoxhollowSplashFont[] = {${FOXHOLLOW_SPLASH_FONT_BYTES}};\nconst size_t gFoxhollowSplashFontSize = ${FOXHOLLOW_SPLASH_FONT_SIZE};\n")
+configure_file(${FOXHOLLOW_SPLASH_FONT_SOURCE}.tmp ${FOXHOLLOW_SPLASH_FONT_SOURCE} COPYONLY)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${FOXHOLLOW_SPLASH_FONT_SOURCE})
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
     list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/debug_overlay.cpp)
     list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_gallery_ui.cpp)
@@ -140,14 +148,14 @@ endif ()
 target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
-target_link_libraries(port_shims PRIVATE aurora::core JPEG::JPEG borealis::crash nlohmann_json::nlohmann_json musyx)
+target_link_libraries(port_shims PRIVATE aurora::core borealis::crash nlohmann_json::nlohmann_json musyx)
 
 if (WIN32 AND TARGET game)
     find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
     set(FOXHOLLOW_EXPORTS_DEF ${CMAKE_BINARY_DIR}/foxhollow_exports.def)
     set(FOXHOLLOW_EXPORT_TARGETS game port_shims musyx
             aurora::gx aurora::os aurora::pad aurora::mtx aurora::vi
-            aurora::si aurora::dvd aurora::card aurora::gd aurora::ms)
+            aurora::si aurora::dvd aurora::card aurora::gd aurora::ms aurora::thp)
     set(FOXHOLLOW_EXPORT_LIB_FILES "")
     foreach (FOXHOLLOW_EXPORT_TARGET IN LISTS FOXHOLLOW_EXPORT_TARGETS)
         if (TARGET ${FOXHOLLOW_EXPORT_TARGET})
@@ -172,7 +180,7 @@ if (TARGET game)
             musyx
             aurora::core aurora::gx aurora::main aurora::vi
             aurora::os aurora::pad aurora::dvd aurora::card
-            aurora::mtx aurora::si aurora::gd aurora::ms)
+            aurora::mtx aurora::si aurora::gd aurora::ms aurora::thp)
     foxhollow_link_whole_archive(linkcheck game)
     add_dependencies(linkcheck game)
     set_target_properties(linkcheck PROPERTIES LINK_DEPENDS $<TARGET_FILE:game>)

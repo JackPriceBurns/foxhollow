@@ -31,11 +31,6 @@
 #include "main/vecmath.h"
 #include "sys/objects.h"
 
-typedef struct ECSHShrineWordPair {
-    u32 first;
-    u32 second;
-} ECSHShrineWordPair;
-
 typedef struct ECSHShrineCupPosition {
     f32 x;
     f32 z;
@@ -177,7 +172,6 @@ typedef enum ECSHShrinePhase {
 
 GameObject* gECSHShrineActiveObject;
 int lbl_803DDBC0;
-extern u32 lbl_803E8470;
 
 ECSHShrinePuzzleScratch gECSHShrinePuzzleScratch = {
     {0},
@@ -444,7 +438,8 @@ void ecshShrine_update(GameObject* obj) {
     puzzle = &gECSHShrinePuzzleScratch;
     state = obj->extra;
     player = Obj_GetPlayerObject();
-    *(ECSHShrineWordPair*)&cupPositionSwap[0] = *(ECSHShrineWordPair*)(void*)&lbl_803E8470;
+    cupPositionSwap[0] = 0.0f;
+    cupPositionSwap[1] = 0.0f;
     if (state->introTextLatch == 0) {
         byteValue = mainGetBit(GAMEBIT_K1_SHRINE_INTRO_TEXT_TRIGGER);
         state->introTextLatch = byteValue;

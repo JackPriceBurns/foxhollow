@@ -4,7 +4,9 @@
 #include "imgui.hpp"
 #include "webgpu/gpu.hpp"
 #endif
-#include "input.hpp"
+#include "gamepad.hpp"
+#include "input/router.hpp"
+#include "input/sdl_input.hpp"
 #include "internal.hpp"
 
 #include <aurora/aurora.h>
@@ -29,14 +31,17 @@ extern "C" void Android_UnlockActivityMutex(void);
 
 #include <algorithm>
 #include <atomic>
+#include <deque>
+#include <string>
 #include <vector>
 
 #include "rmlui.hpp"
+#include "time_internal.hpp"
 #include "dolphin/vi/vi_internal.hpp"
 
 namespace aurora::window {
 namespace {
-Module Log("aurora::window");
+constexpr Module Log{"aurora::window"};
 
 SDL_Window* g_window;
 SDL_Renderer* g_renderer;
@@ -45,6 +50,7 @@ bool g_frameBufferAspectFit = false;
 float g_frameBufferTargetAspect = 0.f;
 AuroraWindowSize g_windowSize;
 std::vector<AuroraEvent> g_events;
+std::deque<std::string> g_eventStrings;
 std::atomic_bool g_backgrounded = false;
 #if defined(SDL_PLATFORM_ANDROID)
 std::atomic_bool g_surfaceReady = false;
@@ -53,6 +59,27 @@ std::atomic_bool g_surfaceReady = true;
 #endif
 bool g_lastPaused = false;
 bool g_gotFocus = false;
+
+void retain_event_strings(SDL_Event& event) {
+  switch (event.type) {
+  case SDL_EVENT_DROP_BEGIN:
+  case SDL_EVENT_DROP_FILE:
+  case SDL_EVENT_DROP_TEXT:
+  case SDL_EVENT_DROP_COMPLETE:
+  case SDL_EVENT_DROP_POSITION:
+    break;
+  default:
+    return;
+  }
+  if (event.drop.source != nullptr) {
+    g_eventStrings.emplace_back(event.drop.source);
+    event.drop.source = g_eventStrings.back().c_str();
+  }
+  if (event.drop.data != nullptr) {
+    g_eventStrings.emplace_back(event.drop.data);
+    event.drop.data = g_eventStrings.back().c_str();
+  }
+}
 
 bool operator==(const AuroraWindowSize& lhs, const AuroraWindowSize& rhs) {
   return lhs.width == rhs.width && lhs.height == rhs.height && lhs.fb_width == rhs.fb_width &&
@@ -126,10 +153,12 @@ bool SDLCALL lifecycle_event_watch(void*, SDL_Event* event) {
     switch (event->type) {
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_APPLE)
     case SDL_EVENT_WINDOW_MINIMIZED:
+      time::internal::set_pause_reason(time::internal::PauseReason::Background, true);
       g_backgrounded.store(true, std::memory_order_relaxed);
       break;
     case SDL_EVENT_WINDOW_RESTORED:
       g_backgrounded.store(false, std::memory_order_relaxed);
+      time::internal::set_pause_reason(time::internal::PauseReason::Background, false);
       break;
 #endif
     default:
@@ -145,6 +174,7 @@ void sync_paused() {
     return;
   }
   g_lastPaused = paused;
+  time::internal::set_pause_reason(time::internal::PauseReason::Window, paused);
   g_events.push_back(AuroraEvent{
       .type = paused ? AURORA_PAUSED : AURORA_UNPAUSED,
   });
@@ -152,12 +182,13 @@ void sync_paused() {
 
 void process_event(SDL_Event& event) {
   const bool primaryWindow = targets_primary_window(&event);
-  if (primaryWindow) {
+  const bool routed = primaryWindow && input::sdl::is_routed_event(event);
+  if (primaryWindow && !routed) {
 #ifdef AURORA_ENABLE_GX
     imgui::process_event(event);
 #endif
 #ifdef AURORA_ENABLE_RMLUI
-    rmlui::handle_event(event);
+    rmlui::handle_window_event(event);
 #endif
   }
 
@@ -195,7 +226,10 @@ void process_event(SDL_Event& event) {
     break;
   }
   case SDL_EVENT_GAMEPAD_ADDED: {
-    auto instance = input::add_controller(event.gdevice.which);
+    auto instance = gamepad::add_controller(event.gdevice.which);
+    if (instance != 0 && instance != static_cast<SDL_JoystickID>(-1)) {
+      input::sdl::gamepad_added(instance);
+    }
     g_events.push_back(AuroraEvent{
         .type = AURORA_CONTROLLER_ADDED,
         .controller = instance,
@@ -203,16 +237,25 @@ void process_event(SDL_Event& event) {
     break;
   }
   case SDL_EVENT_GAMEPAD_REMOVED: {
-    input::remove_controller(event.gdevice.which);
+    input::sdl::gamepad_removed(event.gdevice.which);
+    gamepad::remove_controller(event.gdevice.which);
     g_events.push_back(AuroraEvent{
         .type = AURORA_CONTROLLER_REMOVED,
         .controller = event.gdevice.which,
     });
     break;
   }
+  case SDL_EVENT_GAMEPAD_REMAPPED:
+    input::sdl::gamepad_remapped(event.gdevice.which);
+    break;
   case SDL_EVENT_MOUSE_WHEEL:
     if (primaryWindow) {
-      input::set_mouse_scroll(event.wheel.x, event.wheel.y);
+      gamepad::set_mouse_scroll(event.wheel.x, event.wheel.y);
+    }
+    break;
+  case SDL_EVENT_WINDOW_FOCUS_LOST:
+    if (primaryWindow) {
+      input::detail::focus_lost();
     }
     break;
   case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
@@ -244,9 +287,13 @@ void process_event(SDL_Event& event) {
     break;
   }
 
+  if (routed) {
+    input::sdl::dispatch(event);
+  }
   if (primaryWindow) {
     sync_paused();
   }
+  retain_event_strings(event);
   g_events.push_back(AuroraEvent{
       .type = AURORA_SDL_EVENT,
       .sdl = event,
@@ -257,10 +304,11 @@ void process_event(SDL_Event& event) {
 const AuroraEvent* poll_events() {
   ZoneScoped;
   g_events.clear();
+  g_eventStrings.clear();
 
   SDL_Event event;
   // Clear out the previous scroll values to prevent ghost input
-  input::set_mouse_scroll(0, 0);
+  gamepad::set_mouse_scroll(0, 0);
   if (is_paused()) {
     ZoneScopedN("SDL_WaitEvent (paused)");
     if (SDL_WaitEvent(&event)) {
@@ -281,6 +329,8 @@ const AuroraEvent* poll_events() {
       break;
     }
   }
+  input::reconcile();
+  input::sdl::update_cursor();
   g_events.push_back(AuroraEvent{
       .type = AURORA_NONE,
   });
@@ -381,6 +431,8 @@ bool initialize() {
   TRY(SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight"), "Error setting {}: {}", SDL_HINT_ORIENTATIONS,
       SDL_GetError());
   TRY(SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO), "Error initializing SDL: {}", SDL_GetError());
+  time::internal::set_pause_reason(time::internal::PauseReason::Surface,
+                                   !g_surfaceReady.load(std::memory_order_acquire));
 
 #if !defined(_WIN32) && !defined(__APPLE__)
   TRY(SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"), "Error setting {}: {}",
@@ -390,6 +442,11 @@ bool initialize() {
       SDL_HINT_SCREENSAVER_INHIBIT_ACTIVITY_NAME, SDL_GetError());
   TRY(SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE_RUMBLE_BRAKE, "1"), "Error setting {}: {}",
       SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE_RUMBLE_BRAKE, SDL_GetError());
+  // Treat touch and mouse as separate input sources
+  TRY(SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0"), "Error setting {}: {}", SDL_HINT_TOUCH_MOUSE_EVENTS,
+      SDL_GetError());
+  TRY(SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0"), "Error setting {}: {}", SDL_HINT_MOUSE_TOUCH_EVENTS,
+      SDL_GetError());
 
   TRY(SDL_DisableScreenSaver(), "Error disabling screensaver: {}", SDL_GetError());
   if (g_config.allowJoystickBackgroundEvents) {
@@ -483,7 +540,10 @@ bool is_presentable() noexcept {
          g_surfaceReady.load(std::memory_order_acquire);
 }
 
-void set_surface_ready(bool ready) noexcept { g_surfaceReady.store(ready, std::memory_order_release); }
+void set_surface_ready(bool ready) noexcept {
+  g_surfaceReady.store(ready, std::memory_order_release);
+  time::internal::set_pause_reason(time::internal::PauseReason::Surface, !ready);
+}
 
 SurfaceLock::SurfaceLock() noexcept {
 #if defined(SDL_PLATFORM_ANDROID)
