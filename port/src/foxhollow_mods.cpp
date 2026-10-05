@@ -187,11 +187,11 @@ std::optional<nlohmann::json> stored_value(const NativeMod& mod, const OptionFie
     double number = value->get<double>();
 
     if (field.min) {
-      number = std::max(number, *field.min);
+      number = (std::max)(number, *field.min);
     }
 
     if (field.max) {
-      number = std::min(number, *field.max);
+      number = (std::min)(number, *field.max);
     }
 
     return nlohmann::json(number);
