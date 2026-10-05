@@ -17,11 +17,13 @@
 #endif
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <unordered_map>
@@ -46,6 +48,16 @@ struct ModEntry {
   std::string version;
   std::string author;
   fs::path root;
+  nlohmann::json optionFields = nlohmann::json::array();
+};
+
+struct OptionField {
+  std::string id;
+  std::string type;
+  nlohmann::json defaultValue;
+  std::optional<double> min;
+  std::optional<double> max;
+  std::vector<std::string> options;
 };
 
 #if !defined(FOXHOLLOW_VERSION)
@@ -64,12 +76,213 @@ struct NativeMod {
   void* handle = nullptr;
   FhModUpdateFn update = nullptr;
   FhModShutdownFn shutdown = nullptr;
+  FhModConfigChangedFn configChanged = nullptr;
   std::vector<ClassPatch> patches;
   std::vector<void*> hooks;
+  std::vector<OptionField> fields;
+  std::unordered_map<std::string, std::string> strings;
+  nlohmann::json snapshot;
 };
 
 std::vector<std::unique_ptr<NativeMod>> sNativeMods;
 uint64_t sFrameCount = 0;
+
+constexpr uint64_t kConfigPollFrames = 30;
+
+std::string sConfigPath;
+nlohmann::json sConfig = nlohmann::json::object();
+std::optional<fs::file_time_type> sConfigWriteTime;
+std::uintmax_t sConfigSize = 0;
+
+std::vector<OptionField> parse_fields(const std::string& modId, const nlohmann::json& fields) {
+  std::vector<OptionField> parsed;
+  for (const auto& field : fields) {
+    if (!field.is_object() || !field.contains("id") || !field["id"].is_string() || !field.contains("type") ||
+        !field["type"].is_string() || !field.contains("default")) {
+      std::fprintf(stderr, "foxhollow: mods: %s: skipping an option field without an id, type or default\n",
+                   modId.c_str());
+      continue;
+    }
+
+    OptionField option;
+    option.id = field["id"].get<std::string>();
+    option.type = field["type"].get<std::string>();
+    option.defaultValue = field["default"];
+    const bool duplicate = std::any_of(parsed.begin(), parsed.end(),
+                                       [&](const OptionField& existing) { return existing.id == option.id; });
+    if (duplicate) {
+      std::fprintf(stderr, "foxhollow: mods: %s: duplicate option \"%s\"\n", modId.c_str(), option.id.c_str());
+      continue;
+    }
+    if (option.type == "toggle") {
+      if (!option.defaultValue.is_boolean()) {
+        std::fprintf(stderr, "foxhollow: mods: %s: toggle \"%s\" needs a boolean default\n", modId.c_str(),
+                     option.id.c_str());
+        continue;
+      }
+    } else if (option.type == "slider") {
+      if (!option.defaultValue.is_number()) {
+        std::fprintf(stderr, "foxhollow: mods: %s: slider \"%s\" needs a numeric default\n", modId.c_str(),
+                     option.id.c_str());
+        continue;
+      }
+
+      if (!field.contains("min") || !field["min"].is_number() || !field.contains("max") ||
+          !field["max"].is_number() || field["max"].get<double>() <= field["min"].get<double>()) {
+        std::fprintf(stderr, "foxhollow: mods: %s: slider \"%s\" needs a numeric min below its max\n",
+                     modId.c_str(), option.id.c_str());
+        continue;
+      }
+
+      option.min = field["min"].get<double>();
+      option.max = field["max"].get<double>();
+      option.defaultValue = std::clamp(option.defaultValue.get<double>(), *option.min, *option.max);
+    } else if (option.type == "select") {
+      if (field.contains("options") && field["options"].is_array()) {
+        for (const auto& choice : field["options"]) {
+          if (choice.is_object() && choice.contains("id") && choice["id"].is_string()) {
+            option.options.push_back(choice["id"].get<std::string>());
+          }
+        }
+      }
+
+      const bool validDefault = option.defaultValue.is_string() &&
+                                std::find(option.options.begin(), option.options.end(),
+                                          option.defaultValue.get<std::string>()) != option.options.end();
+      if (!validDefault) {
+        std::fprintf(stderr, "foxhollow: mods: %s: select \"%s\" needs a default matching one of its options\n",
+                     modId.c_str(), option.id.c_str());
+        continue;
+      }
+    } else {
+      std::fprintf(stderr, "foxhollow: mods: %s: option \"%s\" has unknown type \"%s\"\n", modId.c_str(),
+                   option.id.c_str(), option.type.c_str());
+      continue;
+    }
+
+    parsed.push_back(std::move(option));
+  }
+
+  return parsed;
+}
+
+std::optional<nlohmann::json> stored_value(const NativeMod& mod, const OptionField& field) {
+  const auto modConfig = sConfig.find(mod.id);
+
+  if (modConfig == sConfig.end() || !modConfig->is_object()) {
+    return std::nullopt;
+  }
+
+  const auto value = modConfig->find(field.id);
+
+  if (value == modConfig->end()) {
+    return std::nullopt;
+  }
+
+  if (field.type == "toggle" && value->is_boolean()) {
+    return *value;
+  }
+
+  if (field.type == "slider" && value->is_number()) {
+    double number = value->get<double>();
+
+    if (field.min) {
+      number = std::max(number, *field.min);
+    }
+
+    if (field.max) {
+      number = std::min(number, *field.max);
+    }
+
+    return nlohmann::json(number);
+  }
+
+  if (field.type == "select" && value->is_string() &&
+      std::find(field.options.begin(), field.options.end(), value->get<std::string>()) != field.options.end()) {
+    return *value;
+  }
+
+  return std::nullopt;
+}
+
+const OptionField* find_field(const NativeMod& mod, const char* key) {
+  if (key == nullptr) {
+    return nullptr;
+  }
+
+  const auto it =
+      std::find_if(mod.fields.begin(), mod.fields.end(), [&](const OptionField& field) { return field.id == key; });
+
+  return it == mod.fields.end() ? nullptr : &*it;
+}
+
+std::optional<nlohmann::json> resolve(const NativeMod& mod, const char* key) {
+  const OptionField* field = find_field(mod, key);
+
+  if (field == nullptr) {
+    return std::nullopt;
+  }
+
+  if (auto value = stored_value(mod, *field)) {
+    return value;
+  }
+
+  return field->defaultValue;
+}
+
+nlohmann::json resolve_all(const NativeMod& mod) {
+  nlohmann::json values = nlohmann::json::object();
+
+  for (const auto& field : mod.fields) {
+    values[field.id] = *resolve(mod, field.id.c_str());
+  }
+
+  return values;
+}
+
+bool load_config() {
+  if (sConfigPath.empty()) {
+    return false;
+  }
+  const fs::path path = fs::u8path(sConfigPath);
+  std::error_code error;
+  const auto writeTime = fs::last_write_time(path, error);
+
+  if (error) {
+    const bool hadConfig = sConfigWriteTime.has_value();
+    sConfigWriteTime.reset();
+    sConfig = nlohmann::json::object();
+    return hadConfig;
+  }
+
+  const auto size = fs::file_size(path, error);
+  if (sConfigWriteTime && *sConfigWriteTime == writeTime && sConfigSize == size) {
+    return false;
+  }
+
+  std::FILE* file = std::fopen(sConfigPath.c_str(), "rb");
+  if (file == nullptr) {
+    return false;
+  }
+
+  std::string contents;
+  char buffer[4096];
+  size_t read = 0;
+  while ((read = std::fread(buffer, 1, sizeof(buffer), file)) > 0) {
+    contents.append(buffer, read);
+  }
+
+  std::fclose(file);
+  nlohmann::json parsed = nlohmann::json::parse(contents, nullptr, false);
+  if (parsed.is_discarded() || !parsed.is_object()) {
+    return false;
+  }
+
+  sConfigWriteTime = writeTime;
+  sConfigSize = size;
+  sConfig = std::move(parsed);
+  return true;
+}
 
 extern "C" {
 extern void* gResourceDescriptors[];
@@ -162,6 +375,59 @@ void host_log(FhMod* mod, FhLogLevel level, const char* message) {
 
 uint64_t host_frame_count(FhMod*) { return sFrameCount; }
 
+int host_config_bool(FhMod* mod, const char* key, int fallback) {
+  const auto value = resolve(*reinterpret_cast<NativeMod*>(mod), key);
+
+  if (value && value->is_boolean()) {
+    return value->get<bool>() ? 1 : 0;
+  }
+
+  if (value && value->is_number()) {
+    return value->get<double>() != 0.0 ? 1 : 0;
+  }
+
+  return fallback;
+}
+
+int32_t host_config_int(FhMod* mod, const char* key, int32_t fallback) {
+  const auto value = resolve(*reinterpret_cast<NativeMod*>(mod), key);
+
+  if (value && value->is_number()) {
+    return static_cast<int32_t>(std::lround(value->get<double>()));
+  }
+
+  if (value && value->is_boolean()) {
+    return value->get<bool>() ? 1 : 0;
+  }
+
+  return fallback;
+}
+
+float host_config_float(FhMod* mod, const char* key, float fallback) {
+  const auto value = resolve(*reinterpret_cast<NativeMod*>(mod), key);
+  if (value && value->is_number()) {
+    return static_cast<float>(value->get<double>());
+  }
+
+  if (value && value->is_boolean()) {
+    return value->get<bool>() ? 1.f : 0.f;
+  }
+
+  return fallback;
+}
+
+const char* host_config_string(FhMod* mod, const char* key, const char* fallback) {
+  auto* native = reinterpret_cast<NativeMod*>(mod);
+  const auto value = resolve(*native, key);
+  if (!value || !value->is_string()) {
+    return fallback;
+  }
+
+  auto& cached = native->strings[key];
+  cached = value->get<std::string>();
+  return cached.c_str();
+}
+
 uint32_t host_class_count(FhMod*) { return kResourceDescriptorCount; }
 
 int host_class_replace_callback(FhMod* mod, uint32_t classId, FhClassSlot slot, FhClassCallback replacement,
@@ -215,6 +481,10 @@ const FhModHost sHost{
     .symbolAddress = host_symbol_address,
     .hookInstall = host_hook_install,
     .hookRemove = host_hook_remove,
+    .configBool = host_config_bool,
+    .configInt = host_config_int,
+    .configFloat = host_config_float,
+    .configString = host_config_string,
 };
 
 void load_native(const ModEntry& mod) {
@@ -238,6 +508,10 @@ void load_native(const ModEntry& mod) {
   auto initialize = reinterpret_cast<FhModInitializeFn>(find_symbol(native->handle, "fh_mod_initialize"));
   native->update = reinterpret_cast<FhModUpdateFn>(find_symbol(native->handle, "fh_mod_update"));
   native->shutdown = reinterpret_cast<FhModShutdownFn>(find_symbol(native->handle, "fh_mod_shutdown"));
+  native->configChanged =
+      reinterpret_cast<FhModConfigChangedFn>(find_symbol(native->handle, "fh_mod_config_changed"));
+  native->fields = parse_fields(mod.id, mod.optionFields);
+  native->snapshot = resolve_all(*native);
   if (initialize == nullptr) {
     std::fprintf(stderr, "foxhollow: mods: %s: no fh_mod_initialize export\n", mod.id.c_str());
     close_library(native->handle);
@@ -249,6 +523,7 @@ void load_native(const ModEntry& mod) {
   if (initialize(reinterpret_cast<FhMod*>(raw), &sHost) != FH_MOD_OK) {
     std::fprintf(stderr, "foxhollow: mods: %s: fh_mod_initialize failed\n", mod.id.c_str());
     raw->update = nullptr;
+    raw->configChanged = nullptr;
     return;
   }
   std::fprintf(stderr, "foxhollow: mods: %s: code loaded from lib/%s\n", mod.id.c_str(), platform_directory());
@@ -450,6 +725,11 @@ bool read_manifest(const fs::path& manifestPath, ModEntry& outMod) {
   outMod.name = manifest.value("name", outMod.id);
   outMod.version = manifest.value("version", std::string{});
   outMod.author = manifest.value("author", std::string{});
+
+  if (manifest.contains("optionFields") && manifest["optionFields"].is_array()) {
+    outMod.optionFields = manifest["optionFields"];
+  }
+
   return true;
 }
 
@@ -606,6 +886,11 @@ extern "C" void fhModsInit(int argc, char** argv, const char* userPath) {
     return;
   }
 
+  if (const char* configPath = std::getenv("FOXHOLLOW_MOD_CONFIG"); configPath != nullptr && *configPath != '\0') {
+    sConfigPath = configPath;
+    load_config();
+  }
+
   std::vector<OverlayEntry> collected;
   size_t textureCount = 0;
   for (size_t i = 0; i < mods.size(); ++i) {
@@ -625,6 +910,20 @@ extern "C" void fhModsInit(int argc, char** argv, const char* userPath) {
 
 extern "C" void fhModsUpdate(void) {
   ++sFrameCount;
+  if (sFrameCount % kConfigPollFrames == 0 && load_config()) {
+    for (const auto& native : sNativeMods) {
+      nlohmann::json values = resolve_all(*native);
+      if (values == native->snapshot) {
+        continue;
+      }
+
+      native->snapshot = std::move(values);
+      if (native->configChanged != nullptr) {
+        native->configChanged(reinterpret_cast<FhMod*>(native.get()));
+      }
+    }
+  }
+
   for (const auto& native : sNativeMods) {
     if (native->update != nullptr) {
       native->update(reinterpret_cast<FhMod*>(native.get()));

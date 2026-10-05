@@ -64,11 +64,17 @@ typedef struct FhModHost {
   void* (*symbolAddress)(FhMod* mod, const char* name);
   int (*hookInstall)(FhMod* mod, void* target, void* replacement, void** outOriginal);
   int (*hookRemove)(FhMod* mod, void* target);
+
+  int (*configBool)(FhMod* mod, const char* key, int fallback);
+  int32_t (*configInt)(FhMod* mod, const char* key, int32_t fallback);
+  float (*configFloat)(FhMod* mod, const char* key, float fallback);
+  const char* (*configString)(FhMod* mod, const char* key, const char* fallback);
 } FhModHost;
 
 typedef int (*FhModInitializeFn)(FhMod* mod, const FhModHost* host);
 typedef void (*FhModUpdateFn)(FhMod* mod);
 typedef void (*FhModShutdownFn)(FhMod* mod);
+typedef void (*FhModConfigChangedFn)(FhMod* mod);
 
 #ifdef __cplusplus
 }
