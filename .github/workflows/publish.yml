@@ -50,7 +50,8 @@ jobs:
             libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
             libwayland-dev wayland-protocols libdecor-0-dev \
             libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
-            libdrm-dev libgbm-dev libgl1-mesa-dev libegl1-mesa-dev
+            libdrm-dev libgbm-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libcurl4-openssl-dev
 
       - name: Install Windows dependencies
         if: matrix.platform == 'windows'
