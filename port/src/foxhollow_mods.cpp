@@ -2,6 +2,7 @@
 
 #include "foxhollow_mod_api.h"
 #include "foxhollow_hook.h"
+#include "net/session.hpp"
 
 #include <dolphin/gx/GXStruct.h>
 
@@ -77,6 +78,13 @@ struct NativeMod {
   FhModUpdateFn update = nullptr;
   FhModShutdownFn shutdown = nullptr;
   FhModConfigChangedFn configChanged = nullptr;
+  FhModNetConnectedFn netConnected = nullptr;
+  FhModNetDisconnectedFn netDisconnected = nullptr;
+  FhModNetMessageFn netMessage = nullptr;
+  FhModNetPlayerJoinedFn netPlayerJoined = nullptr;
+  FhModNetPlayerLeftFn netPlayerLeft = nullptr;
+  FhModNetHostChangedFn netHostChanged = nullptr;
+  bool initialized = false;
   std::vector<ClassPatch> patches;
   std::vector<void*> hooks;
   std::vector<OptionField> fields;
@@ -90,6 +98,8 @@ uint64_t sFrameCount = 0;
 constexpr uint64_t kConfigPollFrames = 30;
 
 std::string sConfigPath;
+
+fs::path utf8_path(const std::string& text) { return fs::path(std::u8string(text.begin(), text.end())); }
 nlohmann::json sConfig = nlohmann::json::object();
 std::optional<fs::file_time_type> sConfigWriteTime;
 std::uintmax_t sConfigSize = 0;
@@ -244,7 +254,7 @@ bool load_config() {
   if (sConfigPath.empty()) {
     return false;
   }
-  const fs::path path = fs::u8path(sConfigPath);
+  const fs::path path = utf8_path(sConfigPath);
   std::error_code error;
   const auto writeTime = fs::last_write_time(path, error);
 
@@ -416,9 +426,49 @@ float host_config_float(FhMod* mod, const char* key, float fallback) {
   return fallback;
 }
 
+bool owns_session(FhMod* mod) {
+  const auto& owner = fh::net::session_mod_id();
+  return !owner.empty() && reinterpret_cast<NativeMod*>(mod)->id == owner;
+}
+
+int32_t host_net_local_player(FhMod* mod) { return owns_session(mod) ? fh::net::session_local_player() : 0; }
+
+int32_t host_net_host_player(FhMod* mod) { return owns_session(mod) ? fh::net::session_host_player() : 0; }
+
+uint32_t host_net_players(FhMod* mod, FhNetPlayer* out, uint32_t capacity) {
+  if (!owns_session(mod) || !fh::net::session_connected()) {
+    return 0;
+  }
+
+  const auto& players = fh::net::session_players();
+  const auto count = static_cast<uint32_t>(players.size());
+
+  if (out != nullptr) {
+    for (uint32_t i = 0; i < count && i < capacity; ++i) {
+      out[i].id = players[i].id;
+      std::snprintf(out[i].name, sizeof(out[i].name), "%s", players[i].name.c_str());
+    }
+  }
+
+  return count;
+}
+
+int host_net_send(FhMod* mod, int32_t toPlayer, const void* data, uint32_t size) {
+  if (!owns_session(mod)) {
+    return FH_MOD_ERROR;
+  }
+
+  return fh::net::session_send(toPlayer, data, size) ? FH_MOD_OK : FH_MOD_ERROR;
+}
+
+const char* host_net_room_code(FhMod* mod) {
+  return owns_session(mod) && fh::net::session_connected() ? fh::net::session_room_code().c_str() : nullptr;
+}
+
 const char* host_config_string(FhMod* mod, const char* key, const char* fallback) {
   auto* native = reinterpret_cast<NativeMod*>(mod);
   const auto value = resolve(*native, key);
+
   if (!value || !value->is_string()) {
     return fallback;
   }
@@ -485,7 +535,72 @@ const FhModHost sHost{
     .configInt = host_config_int,
     .configFloat = host_config_float,
     .configString = host_config_string,
+    .netLocalPlayer = host_net_local_player,
+    .netHostPlayer = host_net_host_player,
+    .netPlayers = host_net_players,
+    .netSend = host_net_send,
+    .netRoomCode = host_net_room_code,
 };
+
+NativeMod* session_owner() {
+  const auto& owner = fh::net::session_mod_id();
+  if (owner.empty()) {
+    return nullptr;
+  }
+
+  for (const auto& native : sNativeMods) {
+    if (native->initialized && native->id == owner) {
+      return native.get();
+    }
+  }
+
+  return nullptr;
+}
+
+void update_session() {
+  NativeMod* owner = session_owner();
+  FhMod* mod = reinterpret_cast<FhMod*>(owner);
+  fh::net::SessionCallbacks callbacks;
+  if (owner != nullptr) {
+    callbacks.connected = [owner, mod] {
+      if (owner->netConnected != nullptr) {
+        owner->netConnected(mod);
+      }
+    };
+
+    callbacks.disconnected = [owner, mod] {
+      if (owner->netDisconnected != nullptr) {
+        owner->netDisconnected(mod);
+      }
+    };
+
+    callbacks.message = [owner, mod](int32_t from, const uint8_t* data, uint32_t size) {
+      if (owner->netMessage != nullptr) {
+        owner->netMessage(mod, from, data, size);
+      }
+    };
+
+    callbacks.joined = [owner, mod](const fh::net::Player& player) {
+      if (owner->netPlayerJoined != nullptr) {
+        owner->netPlayerJoined(mod, player.id, player.name.c_str());
+      }
+    };
+
+    callbacks.left = [owner, mod](int32_t player) {
+      if (owner->netPlayerLeft != nullptr) {
+        owner->netPlayerLeft(mod, player);
+      }
+    };
+
+    callbacks.hostChanged = [owner, mod](int32_t player) {
+      if (owner->netHostChanged != nullptr) {
+        owner->netHostChanged(mod, player);
+      }
+    };
+  }
+
+  fh::net::session_update(callbacks);
+}
 
 void load_native(const ModEntry& mod) {
   const fs::path libraryPath = mod.root / "lib" / platform_directory() / library_name();
@@ -510,6 +625,15 @@ void load_native(const ModEntry& mod) {
   native->shutdown = reinterpret_cast<FhModShutdownFn>(find_symbol(native->handle, "fh_mod_shutdown"));
   native->configChanged =
       reinterpret_cast<FhModConfigChangedFn>(find_symbol(native->handle, "fh_mod_config_changed"));
+  native->netConnected = reinterpret_cast<FhModNetConnectedFn>(find_symbol(native->handle, "fh_mod_net_connected"));
+  native->netDisconnected =
+      reinterpret_cast<FhModNetDisconnectedFn>(find_symbol(native->handle, "fh_mod_net_disconnected"));
+  native->netMessage = reinterpret_cast<FhModNetMessageFn>(find_symbol(native->handle, "fh_mod_net_message"));
+  native->netPlayerJoined =
+      reinterpret_cast<FhModNetPlayerJoinedFn>(find_symbol(native->handle, "fh_mod_net_player_joined"));
+  native->netPlayerLeft = reinterpret_cast<FhModNetPlayerLeftFn>(find_symbol(native->handle, "fh_mod_net_player_left"));
+  native->netHostChanged =
+      reinterpret_cast<FhModNetHostChangedFn>(find_symbol(native->handle, "fh_mod_net_host_changed"));
   native->fields = parse_fields(mod.id, mod.optionFields);
   native->snapshot = resolve_all(*native);
   if (initialize == nullptr) {
@@ -526,6 +650,8 @@ void load_native(const ModEntry& mod) {
     raw->configChanged = nullptr;
     return;
   }
+
+  raw->initialized = true;
   std::fprintf(stderr, "foxhollow: mods: %s: code loaded from lib/%s\n", mod.id.c_str(), platform_directory());
 }
 
@@ -886,6 +1012,8 @@ extern "C" void fhModsInit(int argc, char** argv, const char* userPath) {
     return;
   }
 
+  fh::net::session_init(std::getenv("FOXHOLLOW_MULTIPLAYER"));
+
   if (const char* configPath = std::getenv("FOXHOLLOW_MOD_CONFIG"); configPath != nullptr && *configPath != '\0') {
     sConfigPath = configPath;
     load_config();
@@ -910,6 +1038,7 @@ extern "C" void fhModsInit(int argc, char** argv, const char* userPath) {
 
 extern "C" void fhModsUpdate(void) {
   ++sFrameCount;
+  update_session();
   if (sFrameCount % kConfigPollFrames == 0 && load_config()) {
     for (const auto& native : sNativeMods) {
       nlohmann::json values = resolve_all(*native);
@@ -932,6 +1061,7 @@ extern "C" void fhModsUpdate(void) {
 }
 
 extern "C" void fhModsShutdown(void) {
+  fh::net::session_shutdown();
   for (auto it = sNativeMods.rbegin(); it != sNativeMods.rend(); ++it) {
     NativeMod* native = it->get();
     if (native->shutdown != nullptr) {

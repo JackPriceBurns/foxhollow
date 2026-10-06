@@ -29,6 +29,15 @@ extern "C" {
 
 typedef struct FhMod FhMod;
 
+#define FH_NET_BROADCAST 0
+#define FH_NET_MAX_PAYLOAD 1024
+#define FH_NET_NAME_CAPACITY 32
+
+typedef struct FhNetPlayer {
+  int32_t id;
+  char name[FH_NET_NAME_CAPACITY];
+} FhNetPlayer;
+
 typedef enum FhLogLevel {
   FH_LOG_INFO = 0,
   FH_LOG_WARN = 1,
@@ -69,12 +78,24 @@ typedef struct FhModHost {
   int32_t (*configInt)(FhMod* mod, const char* key, int32_t fallback);
   float (*configFloat)(FhMod* mod, const char* key, float fallback);
   const char* (*configString)(FhMod* mod, const char* key, const char* fallback);
+
+  int32_t (*netLocalPlayer)(FhMod* mod);
+  int32_t (*netHostPlayer)(FhMod* mod);
+  uint32_t (*netPlayers)(FhMod* mod, FhNetPlayer* out, uint32_t capacity);
+  int (*netSend)(FhMod* mod, int32_t toPlayer, const void* data, uint32_t size);
+  const char* (*netRoomCode)(FhMod* mod);
 } FhModHost;
 
 typedef int (*FhModInitializeFn)(FhMod* mod, const FhModHost* host);
 typedef void (*FhModUpdateFn)(FhMod* mod);
 typedef void (*FhModShutdownFn)(FhMod* mod);
 typedef void (*FhModConfigChangedFn)(FhMod* mod);
+typedef void (*FhModNetConnectedFn)(FhMod* mod);
+typedef void (*FhModNetDisconnectedFn)(FhMod* mod);
+typedef void (*FhModNetMessageFn)(FhMod* mod, int32_t fromPlayer, const void* data, uint32_t size);
+typedef void (*FhModNetPlayerJoinedFn)(FhMod* mod, int32_t player, const char* name);
+typedef void (*FhModNetPlayerLeftFn)(FhMod* mod, int32_t player);
+typedef void (*FhModNetHostChangedFn)(FhMod* mod, int32_t player);
 
 #ifdef __cplusplus
 }

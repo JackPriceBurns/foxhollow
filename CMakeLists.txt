@@ -114,6 +114,18 @@ list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollo
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_hook.cpp)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_controls.cpp)
 list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/foxhollow_splash.cpp)
+list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/net/session.cpp)
+if (WIN32)
+    list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/net/websocket_winhttp.cpp)
+elseif (APPLE)
+    enable_language(OBJCXX)
+    list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/net/websocket_url_session.mm)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/port/src/net/websocket_url_session.mm
+            PROPERTIES COMPILE_FLAGS -fobjc-arc)
+else ()
+    find_package(CURL 7.86 REQUIRED)
+    list(APPEND FOXHOLLOW_SHIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/port/src/net/websocket_curl.cpp)
+endif ()
 
 include(FetchContent)
 FetchContent_GetProperties(imgui)
@@ -149,6 +161,14 @@ target_compile_options(port_shims PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${FOXHOLLOW_C_DIALECT_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${FOXHOLLOW_CXX_DIALECT_FLAGS}>)
 target_link_libraries(port_shims PRIVATE aurora::core borealis::crash nlohmann_json::nlohmann_json musyx)
+if (WIN32)
+    target_link_libraries(port_shims PRIVATE winhttp)
+elseif (APPLE)
+    find_library(FOXHOLLOW_FOUNDATION_FRAMEWORK Foundation REQUIRED)
+    target_link_libraries(port_shims PRIVATE ${FOXHOLLOW_FOUNDATION_FRAMEWORK})
+else ()
+    target_link_libraries(port_shims PRIVATE CURL::libcurl)
+endif ()
 
 if (WIN32 AND TARGET game)
     find_program(FOXHOLLOW_LLVM_NM llvm-nm REQUIRED)
