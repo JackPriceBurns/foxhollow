@@ -77,7 +77,8 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          args=(-B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF)
+          tag="${{ inputs.tag || github.event.release.tag_name }}"
+          args=(-B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFOXHOLLOW_DEBUG_SHORTCUTS=OFF -DFOXHOLLOW_VERSION="${tag#v}")
           if [ -n "${CMAKE_TOOLCHAIN_FILE:-}" ]; then
             args+=(-DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}")
           fi

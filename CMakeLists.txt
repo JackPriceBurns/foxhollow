@@ -5,7 +5,7 @@ if (NOT CMAKE_BUILD_TYPE)
             "Build type options: Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif ()
 
-project(foxhollow LANGUAGES C CXX VERSION 0.5.8)
+project(foxhollow LANGUAGES C CXX VERSION 1.0.19)
 
 option(FOXHOLLOW_DEBUG_SHORTCUTS "Enable Foxhollow development shortcuts" ON)
 option(FOXHOLLOW_DEBUG_INPUT_TIMING "Build the input timing overlay into the performance overlay" OFF)
@@ -147,8 +147,20 @@ if (FOXHOLLOW_DEBUG_SHORTCUTS)
 endif ()
 add_library(port_shims STATIC ${FOXHOLLOW_SHIM_SOURCES})
 if (NOT FOXHOLLOW_VERSION)
+    find_package(Git QUIET)
+    if (GIT_FOUND)
+        execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0 --match "v[0-9]*"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                OUTPUT_VARIABLE FOXHOLLOW_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET)
+    endif ()
+endif ()
+if (NOT FOXHOLLOW_VERSION)
     set(FOXHOLLOW_VERSION ${PROJECT_VERSION})
 endif ()
+string(REGEX REPLACE "^v" "" FOXHOLLOW_VERSION "${FOXHOLLOW_VERSION}")
+message(STATUS "Foxhollow version: ${FOXHOLLOW_VERSION}")
 target_compile_definitions(port_shims PRIVATE FOXHOLLOW_VERSION="${FOXHOLLOW_VERSION}")
 target_include_directories(port_shims PRIVATE port/src port/include extern/aurora/include game/include game)
 if (FOXHOLLOW_DEBUG_SHORTCUTS)
