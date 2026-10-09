@@ -9,6 +9,7 @@
 #include "tex_palette_conv.hpp"
 #include "../gx/gx.hpp"
 #include "../gx/pipeline.hpp"
+#include "../gx/viewport_depth.hpp"
 #ifdef AURORA_ENABLE_RMLUI
 #include "../rmlui/pipeline.hpp"
 #endif
@@ -35,9 +36,8 @@ constexpr Module Log{"aurora::gfx"};
 WGPURenderPipeline g_currentPipeline = nullptr;
 
 void apply_viewport(const wgpu::RenderPassEncoder& pass, const Viewport& vp) {
-  const float minDepth = gx::UseReversedZ ? 1.f - vp.zfar : vp.znear;
-  const float maxDepth = gx::UseReversedZ ? 1.f - vp.znear : vp.zfar;
-  pass.SetViewport(vp.left, vp.top, vp.width, vp.height, minDepth, maxDepth);
+  const auto depth = gx::viewport_depth(vp.znear, vp.zfar, gx::UseReversedZ);
+  pass.SetViewport(vp.left, vp.top, vp.width, vp.height, depth.min, depth.max);
 }
 
 void apply_scissor(const wgpu::RenderPassEncoder& pass, const ClipRect& sc, const wgpu::Extent3D& size) {

@@ -328,7 +328,8 @@ void set_logical_viewport(const gfx::Viewport& viewport) noexcept {
 
 void set_render_viewport(const gfx::Viewport& viewport) noexcept {
   if (viewport.left != g_gxState.renderViewport.left || viewport.width != g_gxState.renderViewport.width ||
-      viewport.height != g_gxState.renderViewport.height) {
+      viewport.height != g_gxState.renderViewport.height || viewport.znear != g_gxState.renderViewport.znear ||
+      viewport.zfar != g_gxState.renderViewport.zfar) {
     g_gxState.dirty |= DirtyUniform;
   }
   g_gxState.renderViewport = viewport;

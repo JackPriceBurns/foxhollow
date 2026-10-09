@@ -1,6 +1,7 @@
 #include "shader_info.hpp"
 
 #include "../gfx/recording.hpp"
+#include "viewport_depth.hpp"
 
 #include <cmath>
 
@@ -396,6 +397,11 @@ static void fill_uniform(ByteBuffer& buf, const ShaderInfo& info) noexcept {
     proj.m2 = proj.m2 * Vec4{-1.f, -1.f, -1.f, -1.f};
   } else {
     proj.m2 = proj.m2 + proj.m3;
+  }
+  const auto depth = viewport_depth(g_gxState.renderViewport.znear, g_gxState.renderViewport.zfar, UseReversedZ);
+  if (depth.scale != 1.f || depth.offset != 0.f) {
+    proj.m2 = proj.m2 * Vec4{depth.scale, depth.scale, depth.scale, depth.scale} +
+              proj.m3 * Vec4{depth.offset, depth.offset, depth.offset, depth.offset};
   }
   buf.append(proj);
 
