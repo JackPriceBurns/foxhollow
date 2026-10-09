@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 
 namespace {
 // Error codes
@@ -390,16 +389,16 @@ struct OddHalf {
 };
 
 EvenHalf aan_even(float sum04, float dif04, float sum26, float dif26) noexcept {
-  const float rotated = std::fma(dif26, kSqrt2, -sum26);
+  const float rotated = dif26 * kSqrt2 - sum26;
   return {sum04 + sum26, dif04 + rotated, dif04 - rotated, sum04 - sum26};
 }
 
 OddHalf aan_odd(float z10, float z11, float z12, float z13) noexcept {
   const float out7 = z11 + z13;
   const float z5 = (z10 + z12) * kC2;
-  const float out6 = std::fma(-z10, kC2PlusC6, z5) - out7;
-  const float out5 = std::fma(z11 - z13, kSqrt2, -out6);
-  const float out4 = std::fma(-z12, kC2MinusC6, z5) - out5;
+  const float out6 = (z5 - z10 * kC2PlusC6) - out7;
+  const float out5 = (z11 - z13) * kSqrt2 - out6;
+  const float out4 = (z5 - z12 * kC2MinusC6) - out5;
   return {out7, out6, out5, out4};
 }
 
@@ -419,25 +418,27 @@ FloatRow transform_row(const s16* coefficients, const float* quant) noexcept {
   const auto c5 = static_cast<float>(coefficients[5]);
   const auto c6 = static_cast<float>(coefficients[6]);
   const auto c7 = static_cast<float>(coefficients[7]);
-  const EvenHalf even = aan_even(std::fma(c4, quant[4], x0), std::fma(-c4, quant[4], x0), std::fma(c6, quant[6], x2),
-                                 std::fma(-c6, quant[6], x2));
-  const OddHalf odd = aan_odd(std::fma(c5, quant[5], -x3), std::fma(c7, quant[7], x1), std::fma(-c7, quant[7], x1),
-                              std::fma(c5, quant[5], x3));
+  const float x4 = c4 * quant[4];
+  const float x5 = c5 * quant[5];
+  const float x6 = c6 * quant[6];
+  const float x7 = c7 * quant[7];
+  const EvenHalf even = aan_even(x0 + x4, x0 - x4, x2 + x6, x2 - x6);
+  const OddHalf odd = aan_odd(x5 - x3, x1 + x7, x1 - x7, x5 + x3);
   return combine(even, odd);
 }
 
 FloatRow transform_row_low4(const FloatRow& x) noexcept {
   const float sum02 = x[0] + x[2];
   const float dif02 = x[0] - x[2];
-  const EvenHalf even{sum02, std::fma(x[2], kSqrt2, dif02), std::fma(-x[2], kSqrt2, sum02), dif02};
+  const EvenHalf even{sum02, x[2] * kSqrt2 + dif02, sum02 - x[2] * kSqrt2, dif02};
   const OddHalf odd = aan_odd(-x[3], x[1], x[1], x[3]);
   return combine(even, odd);
 }
 
 FloatRow transform_row_dc_ac(float dc, float ac) noexcept {
-  const float a1 = std::fma(ac, kC2, -ac);
-  const float a2 = std::fma(ac, kSqrt2, -a1);
-  const float a3 = std::fma(-ac, kC6, a2);
+  const float a1 = ac * kC2 - ac;
+  const float a2 = ac * kSqrt2 - a1;
+  const float a3 = a2 - ac * kC6;
   if constexpr (kBuggyQuarterIdct) {
     return {dc + ac, dc + a1, dc + a2, dc + a3, dc - a3, dc - a2, dc - a1, dc - ac};
   }
