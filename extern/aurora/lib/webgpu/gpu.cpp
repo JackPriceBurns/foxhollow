@@ -68,6 +68,7 @@ wgpu::AdapterInfo g_adapterInfo;
 static wgpu::SurfaceCapabilities g_surfaceCapabilities;
 bool g_hasCoreFeatures = false;
 bool g_dualSourceBlendingSupported = false;
+bool g_gxClipEmulationSupported = false;
 bool g_bcTexturesSupported = false;
 bool g_astcTexturesSupported = false;
 bool g_textureComponentSwizzleSupported = false;
@@ -941,6 +942,9 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
     g_astcTexturesSupported = false;
     g_textureComponentSwizzleSupported = false;
     g_dualSourceBlendingSupported = false;
+    g_gxClipEmulationSupported = false;
+    bool depthClipControlSupported = false;
+    bool clipDistancesSupported = false;
     wgpu::SupportedFeatures supportedFeatures;
     g_adapter.GetFeatures(&supportedFeatures);
     for (size_t i = 0; i < supportedFeatures.featureCount; ++i) {
@@ -961,11 +965,21 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
         }
         requiredFeatures.push_back(feature);
       }
+      if (feature == wgpu::FeatureName::DepthClipControl) {
+        depthClipControlSupported = true;
+      } else if (feature == wgpu::FeatureName::ClipDistances) {
+        clipDistancesSupported = true;
+      }
 #ifdef TRACY_ENABLE
       if (feature == wgpu::FeatureName::TimestampQuery) {
         requiredFeatures.push_back(feature);
       }
 #endif
+    }
+    if (depthClipControlSupported && clipDistancesSupported) {
+      requiredFeatures.push_back(wgpu::FeatureName::DepthClipControl);
+      requiredFeatures.push_back(wgpu::FeatureName::ClipDistances);
+      g_gxClipEmulationSupported = true;
     }
     std::string featureList;
     for (auto featureName : requiredFeatures) {

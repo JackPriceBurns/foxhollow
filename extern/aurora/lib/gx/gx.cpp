@@ -226,6 +226,7 @@ wgpu::PrimitiveState to_primitive_state(GXCullMode gx_cullMode) {
       .stripIndexFormat = wgpu::IndexFormat::Undefined,
       .frontFace = wgpu::FrontFace::CW,
       .cullMode = cullMode,
+      .unclippedDepth = webgpu::g_gxClipEmulationSupported,
   };
 }
 } // namespace

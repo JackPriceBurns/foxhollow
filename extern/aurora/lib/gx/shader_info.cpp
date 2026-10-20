@@ -216,7 +216,7 @@ ShaderInfo build_shader_info(const ShaderConfig& config) noexcept {
 
   ShaderInfo info{
       // render/logical viewport size, proj
-      .uniformSize = 8 + 8 + 64,
+      .uniformSize = 8 + 8 + 64 + 16,
   };
 
   if (config.lineMode != 0) {
@@ -404,6 +404,7 @@ static void fill_uniform(ByteBuffer& buf, const ShaderInfo& info) noexcept {
               proj.m3 * Vec4{depth.offset, depth.offset, depth.offset, depth.offset};
   }
   buf.append(proj);
+  buf.append(Vec4<float>{depth.scale, depth.offset, 0.f, 0.f});
 
   for (int i = 0; i < MaxPnMtx; i++) {
     buf.append(g_gxState.pnMtx[i].pos);

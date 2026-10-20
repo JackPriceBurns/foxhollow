@@ -945,6 +945,13 @@ std::string build_shader_source(const ShaderConfig& config, DstAlphaMode dstAlph
         "\n    let clip_base = select(clip_a, clip_b, use_b);"
         "\n    out.pos = vec4f(clip_base.xy + offset_ndc * clip_base.w, clip_base.zw);";
   }
+  std::string vtxClipOut;
+  if (webgpu::g_gxClipEmulationSupported) {
+    vtxClipOut = "\n    @builtin(clip_distances) clip_dist: array<f32, 2>,";
+    vtxXfrAttrsPre +=
+        "\n    let gx_clip_z = (out.pos.z - out.pos.w * ubuf.depth_remap.y) / ubuf.depth_remap.x;"
+        "\n    out.clip_dist = array<f32, 2>(gx_clip_z, out.pos.w - gx_clip_z);";
+  }
   vtxXfrAttrsPre += fmt::format(
       "\n    let nrm_tmp = vec4f({}, 0.0) * ubuf.nrm_mtx[in_pnmtxidx];"
       "\n    let mv_nrm = select(nrm_tmp, normalize(nrm_tmp), dot(nrm_tmp, nrm_tmp) > 1e-10);",
@@ -960,6 +967,7 @@ std::string build_shader_source(const ShaderConfig& config, DstAlphaMode dstAlph
   }
 
   uniBufAttrs += "\n    proj: mat4x4f,";
+  uniBufAttrs += "\n    depth_remap: vec4f,";
   uniBufAttrs += fmt::format("\n    postex_mtx: array<mat3x4f, {}>,", MaxPnMtx + MaxTexMtx);
   uniBufAttrs += fmt::format("\n    nrm_mtx: array<mat3x4f, {}>,", MaxPnMtx);
   std::string fragmentFnPre;
@@ -1911,6 +1919,10 @@ var<storage, read> abuf: array<u32>;
 var<uniform> ubuf: Uniform;{1}
 
 struct VertexOutput {{
+    @builtin(position) pos: vec4f,{2}{12}
+}};
+
+struct FragmentInput {{
     @builtin(position) pos: vec4f,{2}
 }};
 
@@ -1924,13 +1936,16 @@ fn vs_main(
 
 {9}
 @fragment
-fn fs_main(in: VertexOutput) -> {10} {{{6}{5}{11}
+fn fs_main(in: FragmentInput) -> {10} {{{6}{5}{11}
 }}
 )""",
                   uniBufAttrs, texBindings, vtxOutAttrs, vtxInAttrs, vtxXfrAttrs, fragmentFn, fragmentFnPre,
-                  vtxXfrAttrsPre, uniformPre, fragmentOutput, fragmentOutputType, fragmentReturn);
+                  vtxXfrAttrsPre, uniformPre, fragmentOutput, fragmentOutputType, fragmentReturn, vtxClipOut);
   if (dstAlphaMode == DstAlphaMode::DualSource) {
     shaderSource.insert(0, "enable dual_source_blending;\n");
+  }
+  if (webgpu::g_gxClipEmulationSupported) {
+    shaderSource.insert(0, "enable clip_distances;\n");
   }
   if (EnableDebugPrints) {
     Log.info("Generated shader (hash {:x}): {}", hash, shaderSource);
