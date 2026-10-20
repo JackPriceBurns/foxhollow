@@ -8222,11 +8222,15 @@ void GameUI_hudDraw(int a, int b, int c)
     void* player = Obj_GetPlayerObject();
     void* arwing = (void*)getArwing();
     TextSlot* box;
+    GXColor noFogColor = {0, 0, 0, 0};
 
     if (getScreenBlankFrameCount() != 0)
     {
         return;
     }
+
+    GXSetFog(GX_FOG_NONE, 0.0f, 0.0f, 0.0f, 0.0f, noFogColor);
+    Camera_ApplyFullViewport();
 
     if (arwing != 0)
     {
