@@ -796,7 +796,7 @@ int Objfsa_GetWalkGroupIndexAtPoint(float* point, ObjfsaWalkGroupPatchInfo* patc
     u8 k;
     u8 mask;
     u32 pidx;
-    u8 i;
+    u8 i = 0;
     u8 j;
     ObjfsaPatch* patch;
     f32 y;
