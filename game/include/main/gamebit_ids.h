@@ -770,7 +770,13 @@ enum GameBitId {
     GAMEBIT_ITEM_MapDR_Got = 0x7DD,            /* table 2 */
     GAMEBIT_ITEM_MapWM_Got = 0x7E5,            /* table 2 */
     GAMEBIT_ITEM_MapOFP_Got = 0x7E9,           /* table 2 */
+    GAMEBIT_WC_SunPadPressed = 0x7ED,
+    GAMEBIT_WC_MoonPadPressed = 0x7EE,
+    GAMEBIT_WC_SunPuzzleActive = 0x7EF,
+    GAMEBIT_WC_MoonPuzzleActive = 0x7F0,
     GAMEBIT_WC_LitBeacons = 0x7F8,             /* table 2; hint 362; ref wallcity/HitAnimator target */
+    GAMEBIT_WC_SunPuzzleDone = 0x7F9,
+    GAMEBIT_WC_MoonPuzzleDone = 0x7FA,
     GAMEBIT_WC_FoundKing = 0x7FC,              /* table 2; hint 363 */
     GAMEBIT_WC_OpenedSunMoonAreas = 0x817,     /* table 2; hint 410; ref wallcity/HitAnimator target */
     GAMEBIT_WC_FlewTo = 0x818,                 /* table 2; hint 360; ref wallcity/Landed_Arwi Visible */
@@ -938,7 +944,7 @@ enum GameBitId {
     GAMEBIT_ITEM_Scarab_ShowCount = 0xB9C,     /* table 2 */
     GAMEBIT_ECSH_TestObservRunning = 0xB9D,    /* table 0; ref ecshrine/HitAnimator target */
     GAMEBIT_ECSH_Entered = 0xBA5,              /* table 1; hint 248; Krystal entered shrine */
-    GAMEBIT_WC_PushBlockTimerActive =
+    GAMEBIT_WC_SunMoonPuzzleTimerActive =
         0xBA6, /* Set while either Walled City push-block timed puzzle (A or B) is actively counting down/up; cleared on completion, timeout, or reset; gates the ambient-music latch in wclevelcont_syncProgressBits */
     GAMEBIT_LINKI_ActNo = 0xBC7,               /* table 0; This seems wrong... */
     GAMEBIT_ITEM_LVBlock3_Used = 0xBDE,        /* table 2; ref swapcircle/SC_blockpla open */
@@ -959,6 +965,7 @@ enum GameBitId {
     GAMEBIT_CannonRelated0C2D = 0xC2D,     /* table 2 */
     GAMEBIT_CannonRelated0C2E = 0xC2E,     /* table 2 */
     GAMEBIT_PlayerIsDisguised = 0xC30,     /* table 0 */
+    GAMEBIT_WC_SilverToothPortcullisOpen = 0xC37,
     GAMEBIT_LV_ChallengeGate1Target0 = 0xC38,
     GAMEBIT_LV_ChallengeGate1Target1 = 0xC39,
     GAMEBIT_LV_ChallengeGate1Target2 = 0xC3A,
@@ -1003,6 +1010,8 @@ enum GameBitId {
     GAMEBIT_ITEM_CCGoldBar2_NotReturned = 0xCA4,       /* table 2 */
     GAMEBIT_ITEM_CCGoldBar3_NotReturned = 0xCA5,       /* table 2 */
     GAMEBIT_ITEM_CCGoldBar4_NotReturned = 0xCA6,       /* table 2 */
+    GAMEBIT_WC_SilverRingRaceWon = 0xCAC,
+    GAMEBIT_WC_SilverRingRaceStarted = 0xCAD,
     GAMEBIT_IM_BombPlanted = 0xCB2,                    /* table 2; in front of cheat well cave */
     GAMEBIT_IM_OpenedCheatWell = 0xCB3,                /* table 2; ref newicemount/HitAnimator target */
     GAMEBIT_IM_CheatWellCaveRelated0CB4 = 0xCB4,       /* table 2; ref newicemount/ExplodeWall onExplode */
@@ -1053,7 +1062,9 @@ enum GameBitId {
     GAMEBIT_LINKH_ObjGroups = 0xD75,           /* table 3; size 32 */
     GAMEBIT_WC_MagicCaveVisible = 0xD7D,       /* table 2; ref wallcity/MagicCaveTo Visible */
     GAMEBIT_NW_GotPastBribeClaw = 0xD83,       /* table 2; hint 266 */
+    GAMEBIT_WC_SilverRingRaceSwitchesDone = 0xD96,
     GAMEBIT_ITEM_FuelCell_ShowCount = 0xD97,   /* table 2; on HUD */
+    GAMEBIT_WC_SilverRingRaceTimerActive = 0xDA9,
     GAMEBIT_CFRelated0DB8 = 0xDB8,             /* table 3 */
     GAMEBIT_VFP_OpenedPathTo = 0xDBF,          /* table 2; hint 300; ref moonpass/HitAnimator target */
     GAMEBIT_CFRelated0DCA = 0xDCA,             /* table 0 */
@@ -1144,6 +1155,8 @@ enum GameBitId {
     GAMEBIT_FoundSpellStoneWarpPad_0ECF = 0xECF, /* table 0; hint 304 */
     GAMEBIT_OFP_FoundSpellStoneWarpPad = 0xED0,  /* table 0; hint 341 */
     GAMEBIT_DR_OnCloudRunner = 0xED7,            /* table 0 */
+    GAMEBIT_WC_SunPadLocked = 0xEDC,
+    GAMEBIT_WC_MoonPadLocked = 0xEDD,
     GAMEBIT_SH_Related0EDE = 0xEDE, /* table 2; Triggers a communication after pushing switch at bottom of well */
     GAMEBIT_ITEM_SnowHornArtifactEE5 = 0xEE5,   /* table 2; set when using artifact */
     GAMEBIT_ITEM_SnowHornArtifactEE6 = 0xEE6,   /* table 2; set when using artifact */

@@ -177,75 +177,75 @@ void wclevelcont_updateAct1State(GameObject* obj, WcLevelControlState* state) {
     }
     state->previousMode = state->mode;
     switch (state->mode) {
-    case WCLEVELCTL_MODE_PUZZLE_A:
+    case WCLEVELCTL_MODE_SUN_PUZZLE:
         if (state->completionFlags & WCLEVELCTL_FLAG_TRIGGERED) {
             gameTimerInit(0x1d, 0x3c);
             timerSetToCountUp();
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 1);
-            mainSetBits(0xedd, 1);
-        } else if (mainGetBit(0x7f9) != 0) {
-            state->completionFlags |= WCLEVELCTL_FLAG_PUZZLE_A;
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 1);
+            mainSetBits(GAMEBIT_WC_MoonPadLocked, 1);
+        } else if (mainGetBit(GAMEBIT_WC_SunPuzzleDone) != 0) {
+            state->completionFlags |= WCLEVELCTL_FLAG_SUN_PUZZLE;
             gameTimerStop();
-            if (mainGetBit(0x7fa) != 0) {
+            if (mainGetBit(GAMEBIT_WC_MoonPuzzleDone) != 0) {
                 Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
             } else {
                 Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
             }
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-            mainSetBits(0xedd, 0);
-            if (mainGetBit(0x7fa) != 0) {
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+            mainSetBits(GAMEBIT_WC_MoonPadLocked, 0);
+            if (mainGetBit(GAMEBIT_WC_MoonPuzzleDone) != 0) {
                 (*gObjectTriggerInterface)->runSequence(0, obj, -1);
-                state->mode = WCLEVELCTL_MODE_SEQUENCE;
+                state->mode = WCLEVELCTL_MODE_AWAIT_RACE;
             } else {
                 (*gObjectTriggerInterface)->runSequence(1, obj, -1);
                 state->mode = WCLEVELCTL_MODE_IDLE;
             }
             state->completionFlags |= WCLEVELCTL_FLAG_EVENT_ACTIVE;
         } else if (isGameTimerDisabled() != 0) {
-            mainSetBits(0x7ef, 0);
-            mainSetBits(0x7ed, 0);
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-            mainSetBits(0xedd, 0);
+            mainSetBits(GAMEBIT_WC_SunPuzzleActive, 0);
+            mainSetBits(GAMEBIT_WC_SunPadPressed, 0);
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+            mainSetBits(GAMEBIT_WC_MoonPadLocked, 0);
             state->mode = WCLEVELCTL_MODE_IDLE;
         }
         break;
-    case WCLEVELCTL_MODE_PUZZLE_B:
+    case WCLEVELCTL_MODE_MOON_PUZZLE:
         if (state->completionFlags & WCLEVELCTL_FLAG_TRIGGERED) {
             gameTimerInit(0x1d, 0x50);
             timerSetToCountUp();
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 1);
-            mainSetBits(0xedc, 1);
-        } else if (mainGetBit(0x7fa) != 0) {
-            state->completionFlags |= WCLEVELCTL_FLAG_PUZZLE_B;
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 1);
+            mainSetBits(GAMEBIT_WC_SunPadLocked, 1);
+        } else if (mainGetBit(GAMEBIT_WC_MoonPuzzleDone) != 0) {
+            state->completionFlags |= WCLEVELCTL_FLAG_MOON_PUZZLE;
             gameTimerStop();
-            if (mainGetBit(0x7f9) != 0) {
+            if (mainGetBit(GAMEBIT_WC_SunPuzzleDone) != 0) {
                 Sfx_PlayFromObject(0, SFXTRIG_mpick1_b);
             } else {
                 Sfx_PlayFromObject(0, SFXTRIG_menuups16k);
             }
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-            mainSetBits(0xedc, 0);
-            if (mainGetBit(0x7f9) != 0) {
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+            mainSetBits(GAMEBIT_WC_SunPadLocked, 0);
+            if (mainGetBit(GAMEBIT_WC_SunPuzzleDone) != 0) {
                 (*gObjectTriggerInterface)->runSequence(0, obj, -1);
-                state->mode = WCLEVELCTL_MODE_SEQUENCE;
+                state->mode = WCLEVELCTL_MODE_AWAIT_RACE;
             } else {
                 (*gObjectTriggerInterface)->runSequence(1, obj, -1);
                 state->mode = WCLEVELCTL_MODE_IDLE;
             }
             state->completionFlags |= WCLEVELCTL_FLAG_EVENT_ACTIVE;
         } else if (isGameTimerDisabled() != 0) {
-            mainSetBits(0x7f0, 0);
-            mainSetBits(0x7ee, 0);
-            mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-            mainSetBits(0xedc, 0);
+            mainSetBits(GAMEBIT_WC_MoonPuzzleActive, 0);
+            mainSetBits(GAMEBIT_WC_MoonPadPressed, 0);
+            mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+            mainSetBits(GAMEBIT_WC_SunPadLocked, 0);
             state->mode = WCLEVELCTL_MODE_IDLE;
         }
         break;
-    case WCLEVELCTL_MODE_SEQUENCE:
-        if (mainGetBit(0xcac) != 0) {
+    case WCLEVELCTL_MODE_AWAIT_RACE:
+        if (mainGetBit(GAMEBIT_WC_SilverRingRaceWon) != 0) {
             GameObject* player;
-            mainSetBits(0xda9, 0);
-            mainSetBits(0xc37, 1);
+            mainSetBits(GAMEBIT_WC_SilverRingRaceTimerActive, 0);
+            mainSetBits(GAMEBIT_WC_SilverToothPortcullisOpen, 1);
             player = (GameObject*)Obj_GetPlayerObject();
             (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 1, 0);
             state->mode = WCLEVELCTL_MODE_DONE;
@@ -254,17 +254,17 @@ void wclevelcont_updateAct1State(GameObject* obj, WcLevelControlState* state) {
     case WCLEVELCTL_MODE_DONE:
         break;
     default:
-        if (!(state->completionFlags & WCLEVELCTL_FLAG_PUZZLE_A) && mainGetBit(0x7ed) != 0) {
-            mainSetBits(0x7ef, 1);
+        if (!(state->completionFlags & WCLEVELCTL_FLAG_SUN_PUZZLE) && mainGetBit(GAMEBIT_WC_SunPadPressed) != 0) {
+            mainSetBits(GAMEBIT_WC_SunPuzzleActive, 1);
             state->eventTimer = 70.0f;
-            state->mode = WCLEVELCTL_MODE_PUZZLE_A;
+            state->mode = WCLEVELCTL_MODE_SUN_PUZZLE;
             state->completionFlags |= WCLEVELCTL_FLAG_EVENT_ACTIVE;
             break;
         }
-        if (!(state->completionFlags & WCLEVELCTL_FLAG_PUZZLE_B) && mainGetBit(0x7ee) != 0) {
-            mainSetBits(0x7f0, 1);
+        if (!(state->completionFlags & WCLEVELCTL_FLAG_MOON_PUZZLE) && mainGetBit(GAMEBIT_WC_MoonPadPressed) != 0) {
+            mainSetBits(GAMEBIT_WC_MoonPuzzleActive, 1);
             state->eventTimer = 70.0f;
-            state->mode = WCLEVELCTL_MODE_PUZZLE_B;
+            state->mode = WCLEVELCTL_MODE_MOON_PUZZLE;
             state->completionFlags |= WCLEVELCTL_FLAG_EVENT_ACTIVE;
         }
         break;
@@ -278,7 +278,7 @@ int wclevelcont_seqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
 
     state->completionFlags |= WCLEVELCTL_FLAG_TRIGGERED;
     state->completionFlags &= ~WCLEVELCTL_FLAG_EVENT_ACTIVE;
-    if (state->previousMode == WCLEVELCTL_MODE_PUZZLE_A) {
+    if (state->previousMode == WCLEVELCTL_MODE_SUN_PUZZLE) {
         f32 t = state->eventTimer - timeDelta;
         state->eventTimer = t;
         if (t <= gWcLevelContZero[0]) {
@@ -287,7 +287,7 @@ int wclevelcont_seqFn(GameObject* obj, int unused, ObjSeqState* animUpdate) {
             player = (GameObject*)Obj_GetPlayerObject();
             (*gMapEventInterface)->savePoint(&player->anim.localPosX, player->anim.rotX, 1, 0);
         }
-    } else if (state->previousMode == WCLEVELCTL_MODE_PUZZLE_B) {
+    } else if (state->previousMode == WCLEVELCTL_MODE_MOON_PUZZLE) {
         f32 t = state->eventTimer - timeDelta;
         state->eventTimer = t;
         if (t <= gWcLevelContZero[0]) {
@@ -630,15 +630,15 @@ void wclevelcont_free(GameObject* obj) {
     objFreeObjectType(obj, WCLEVELCONT_OBJGROUP);
     mode = state->mode;
     if (mode == 1) {
-        mainSetBits(0x7ef, 0);
-        mainSetBits(0x7ed, 0);
-        mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-        mainSetBits(0xedd, 0);
+        mainSetBits(GAMEBIT_WC_SunPuzzleActive, 0);
+        mainSetBits(GAMEBIT_WC_SunPadPressed, 0);
+        mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+        mainSetBits(GAMEBIT_WC_MoonPadLocked, 0);
     } else if (mode == 2) {
-        mainSetBits(0x7f0, 0);
-        mainSetBits(0x7ee, 0);
-        mainSetBits(GAMEBIT_WC_PushBlockTimerActive, 0);
-        mainSetBits(0xedc, 0);
+        mainSetBits(GAMEBIT_WC_MoonPuzzleActive, 0);
+        mainSetBits(GAMEBIT_WC_MoonPadPressed, 0);
+        mainSetBits(GAMEBIT_WC_SunMoonPuzzleTimerActive, 0);
+        mainSetBits(GAMEBIT_WC_SunPadLocked, 0);
     }
     gameTimerStop();
 }
@@ -679,7 +679,8 @@ void wclevelcont_syncProgressBits(WcLevelControlState* state) {
     GameBitLatch_Update(&state->gameBitLatch, 0x10, -1, -1, 0xcd0, 0xd4);
     GameBitLatch_Update(&state->gameBitLatch, 0x40, -1, -1, 0xcbb, 0xc4);
     flag = 0;
-    if (mainGetBit(GAMEBIT_WC_PushBlockTimerActive) == 0 && (mainGetBit(0xda9) != 0 || gameTimerIsRunning() != 0)) {
+    if (mainGetBit(GAMEBIT_WC_SunMoonPuzzleTimerActive) == 0 &&
+        (mainGetBit(GAMEBIT_WC_SilverRingRaceTimerActive) != 0 || gameTimerIsRunning() != 0)) {
         flag = 1;
     }
     mainSetBits(GAMEBIT_TIMER_MUSIC_LOCK, flag);
@@ -741,11 +742,11 @@ void wclevelcont_init(GameObject* obj) {
     memcpy(gWcTileGridA, gWcTileGridAInitial.g, 0x40);
     mainSetBits(0x811, 0);
     memcpy(gWcTileGridB, gWcTileGridBInitial.g, 0x40);
-    if (mainGetBit(0x7fa) != 0) {
-        state->completionFlags |= WCLEVELCTL_FLAG_PUZZLE_B;
+    if (mainGetBit(GAMEBIT_WC_MoonPuzzleDone) != 0) {
+        state->completionFlags |= WCLEVELCTL_FLAG_MOON_PUZZLE;
     }
-    if (mainGetBit(0x7f9) != 0) {
-        state->completionFlags |= WCLEVELCTL_FLAG_PUZZLE_A;
+    if (mainGetBit(GAMEBIT_WC_SunPuzzleDone) != 0) {
+        state->completionFlags |= WCLEVELCTL_FLAG_SUN_PUZZLE;
     }
     if (mainGetBit(0x813) != 0) {
         state->completionFlags |= WCLEVELCTL_FLAG_TILE_B;
@@ -762,14 +763,14 @@ void wclevelcont_init(GameObject* obj) {
     if (mainGetBit(0xbcf) != 0) {
         state->completionFlags |= WCLEVELCTL_FLAG_FINAL;
     }
-    if (mainGetBit(0xcac) != 0) {
-        state->completionFlags |= WCLEVELCTL_FLAG_EXTRA;
+    if (mainGetBit(GAMEBIT_WC_SilverRingRaceWon) != 0) {
+        state->completionFlags |= WCLEVELCTL_FLAG_RACE_WON;
     }
     flags = state->completionFlags;
-    if (flags & WCLEVELCTL_FLAG_EXTRA) {
+    if (flags & WCLEVELCTL_FLAG_RACE_WON) {
         state->mode = WCLEVELCTL_MODE_DONE;
-    } else if ((flags & WCLEVELCTL_FLAG_PUZZLE_A) && (flags & WCLEVELCTL_FLAG_PUZZLE_B)) {
-        state->mode = WCLEVELCTL_MODE_SEQUENCE;
+    } else if ((flags & WCLEVELCTL_FLAG_SUN_PUZZLE) && (flags & WCLEVELCTL_FLAG_MOON_PUZZLE)) {
+        state->mode = WCLEVELCTL_MODE_AWAIT_RACE;
     }
     objAddObjectType(obj, WCLEVELCONT_OBJGROUP);
     mainSetBits(0x226, 1);
