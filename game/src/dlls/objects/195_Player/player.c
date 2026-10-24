@@ -13823,6 +13823,7 @@ void playerUpdateSurfaceResponse(GameObject* obj, PlayerState* state, PlayerStat
     f32 pushZ;
 
     found = 0;
+    velMag = dt;
     {
         f32 z = lbl_803E7EE0;
         state->targetAnimSpeed = z;
