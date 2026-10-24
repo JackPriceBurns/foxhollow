@@ -693,6 +693,7 @@ int isPointWithinPatchGroup(float* point, u32 patchGroupIndex, int groupId) {
         if (pidx != 0) {
             patch = &gObjfsaPatches[pidx];
             if (patch->groupId == groupId) {
+                i = (u8)patchGroupIndex;
                 y = point[1];
                 if (y < patch->maxY && y > patch->minY) {
                     i = 0;

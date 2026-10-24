@@ -1173,7 +1173,7 @@ int dbstealerworm_stateHandlerA08(GameObject* obj, BaddieState* baddie, f32 t)
     s16* vec;
     s16 sa;
     s16 sb;
-    f32 frac;
+    f32 frac = t;
     intptr_t msgA[3];
     intptr_t msgB[3];
     intptr_t msgC[3];

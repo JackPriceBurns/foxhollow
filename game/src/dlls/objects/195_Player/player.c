@@ -4724,7 +4724,7 @@ int playerStateAttack(GameObject* obj, PlayerState* state, f32 fv) {
     void* path;
     PlayerState* inner = obj->extra;
     PlayerMoveSlot* slot = playerGetMoveSlot(inner, inner->moveSlotIndex);
-    f32 amt;
+    f32 amt = fv;
 
     r = playerState28(obj, state, fv);
     if (r != 0) {

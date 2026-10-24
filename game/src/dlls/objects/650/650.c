@@ -186,7 +186,7 @@ void earthwalker_update(GameObject* obj)
     case 2:
         if (ewObj->anim.resetHitboxFlags & INTERACT_FLAG_ACTIVATED)
         {
-            int newState;
+            int newState = 0x38;
             switch (ewState->encounterType)
             {
             case 0:
