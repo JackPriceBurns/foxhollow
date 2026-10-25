@@ -3,6 +3,8 @@
 #include <SDL3/SDL.h>
 #include <stdio.h>
 
+#include "foxhollow_compat.h"
+
 #define AI_DMA_SAMPLE_RATE 32028
 #define AI_STREAM_SAMPLE_RATE 48043
 #define AI_STREAM_BLOCK_SIZE 32
@@ -55,7 +57,7 @@ static void aiUpdateMuteToggle(void) {
   const bool* keys = SDL_GetKeyboardState(&keyCount);
   u32 muteKeyDown = keyCount > SDL_SCANCODE_M && keys[SDL_SCANCODE_M];
 
-  if (muteKeyDown != 0 && sMuteKeyWasDown == 0) {
+  if (muteKeyDown != 0 && sMuteKeyWasDown == 0 && !fhKeyboardCaptured()) {
     aiSetMuted(sMuted == 0);
   }
   sMuteKeyWasDown = muteKeyDown;

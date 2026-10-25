@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+extern "C" int fhKeyboardCaptured(void);
+
 #if defined(FOXHOLLOW_DEBUG_INPUT_TIMING)
 extern "C" {
 extern uint32_t gPadButtonsJustPressed[];
@@ -413,7 +415,7 @@ extern "C" void fhDebugOverlayDraw(void) {
     int keyCount;
     const bool* keys = SDL_GetKeyboardState(&keyCount);
     const bool toggleKeyDown = keyCount > SDL_SCANCODE_COMMA && keys[SDL_SCANCODE_COMMA];
-    if (toggleKeyDown && !sToggleKeyWasDown) {
+    if (toggleKeyDown && !sToggleKeyWasDown && !fhKeyboardCaptured()) {
         sVisible = !sVisible;
     }
     sToggleKeyWasDown = toggleKeyDown;

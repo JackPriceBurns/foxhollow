@@ -95,6 +95,7 @@ uintptr_t fhAIGetDMAStartAddr(void);
 int fhAIPrepareStream(void* fileInfo);
 void fhControlsInit(void);
 void fhControlsUpdate(void);
+int fhKeyboardCaptured(void);
 void fhMusyxConfigure(void);
 void fhMusyxStartOutput(void);
 void fhMusyxStopOutput(void);

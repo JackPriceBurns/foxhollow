@@ -1,3 +1,4 @@
+#include <aurora/input.hpp>
 #include <dolphin/pad.h>
 #include <nlohmann/json.hpp>
 #include <SDL3/SDL_gamepad.h>
@@ -329,4 +330,9 @@ extern "C" void fhControlsUpdate(void) {
   if (PADGetIndexForPort(PAD_CHAN0) >= 0 && !PADIsGCAdapter(PAD_CHAN0)) {
     apply_gamepad(*sControls);
   }
+}
+
+extern "C" int fhKeyboardCaptured(void) {
+  const aurora::input::InputSource keyboard = aurora::input::keyboard_source();
+  return aurora::input::captured_above(keyboard.id, aurora::input::kGameLayerPriority) ? 1 : 0;
 }
