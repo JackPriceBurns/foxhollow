@@ -3,6 +3,7 @@
 #include "foxhollow_mod_api.h"
 #include "foxhollow_hook.h"
 #include "net/session.hpp"
+#include "foxhollow_ui.h"
 
 #include <dolphin/gx/GXStruct.h>
 
@@ -84,6 +85,7 @@ struct NativeMod {
   FhModNetPlayerJoinedFn netPlayerJoined = nullptr;
   FhModNetPlayerLeftFn netPlayerLeft = nullptr;
   FhModNetHostChangedFn netHostChanged = nullptr;
+  FhModDrawFn draw = nullptr;
   bool initialized = false;
   std::vector<ClassPatch> patches;
   std::vector<void*> hooks;
@@ -94,6 +96,7 @@ struct NativeMod {
 
 std::vector<std::unique_ptr<NativeMod>> sNativeMods;
 uint64_t sFrameCount = 0;
+bool sUiStarted = false;
 
 constexpr uint64_t kConfigPollFrames = 30;
 
@@ -634,6 +637,7 @@ void load_native(const ModEntry& mod) {
   native->netPlayerLeft = reinterpret_cast<FhModNetPlayerLeftFn>(find_symbol(native->handle, "fh_mod_net_player_left"));
   native->netHostChanged =
       reinterpret_cast<FhModNetHostChangedFn>(find_symbol(native->handle, "fh_mod_net_host_changed"));
+  native->draw = reinterpret_cast<FhModDrawFn>(find_symbol(native->handle, "fh_mod_draw"));
   native->fields = parse_fields(mod.id, mod.optionFields);
   native->snapshot = resolve_all(*native);
   if (initialize == nullptr) {
@@ -648,6 +652,7 @@ void load_native(const ModEntry& mod) {
     std::fprintf(stderr, "foxhollow: mods: %s: fh_mod_initialize failed\n", mod.id.c_str());
     raw->update = nullptr;
     raw->configChanged = nullptr;
+    raw->draw = nullptr;
     return;
   }
 
@@ -1032,6 +1037,11 @@ extern "C" void fhModsInit(int argc, char** argv, const char* userPath) {
   }
 
   register_overlays(collected);
+  if (std::any_of(sNativeMods.begin(), sNativeMods.end(),
+                  [](const auto& native) { return native->initialized && native->draw != nullptr; })) {
+    fhUiInit();
+    sUiStarted = true;
+  }
   std::fprintf(stderr, "foxhollow: mods: %zu mod(s), %zu overlay file(s), %zu texture replacement(s) from %s\n",
                mods.size(), sOverlayFiles.size(), textureCount, path_to_utf8(root).c_str());
 }
@@ -1060,6 +1070,19 @@ extern "C" void fhModsUpdate(void) {
   }
 }
 
+extern "C" void fhModsDraw(void) {
+  if (!sUiStarted) {
+    return;
+  }
+  fhUiFrameBegin();
+  for (const auto& native : sNativeMods) {
+    if (native->initialized && native->draw != nullptr) {
+      fhUiDrawMod(reinterpret_cast<FhMod*>(native.get()), native->id.c_str(), native->draw);
+    }
+  }
+  fhUiFrameEnd();
+}
+
 extern "C" void fhModsShutdown(void) {
   fh::net::session_shutdown();
   for (auto it = sNativeMods.rbegin(); it != sNativeMods.rend(); ++it) {
@@ -1082,6 +1105,10 @@ extern "C" void fhModsShutdown(void) {
     }
   }
   sNativeMods.clear();
+  if (sUiStarted) {
+    fhUiShutdown();
+    sUiStarted = false;
+  }
 
   for (const auto& group : sTextureGroups) {
     aurora::texture::unregister_replacements(group);

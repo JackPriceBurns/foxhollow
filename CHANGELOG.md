@@ -3,6 +3,11 @@
 Entries must be in the format `v1.0.0 - yyyy-mm-dd`. Then push a tag with the `v1.0.0` version and that triggers a
 new GitHub release the version to be built and published to the Foxhollow Launcher.
 
+## v1.0.29 - 2026-10-25
+
+### Added
+- Overlay API for mods
+
 ## v1.0.28 - 2026-10-24
 
 ### Fixed

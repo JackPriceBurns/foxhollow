@@ -7,6 +7,7 @@ extern "C" {
 
 void fhModsInit(int argc, char** argv, const char* userPath);
 void fhModsUpdate(void);
+void fhModsDraw(void);
 void fhModsShutdown(void);
 
 #ifdef __cplusplus

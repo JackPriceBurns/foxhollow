@@ -57,6 +57,87 @@ typedef enum FhClassSlot {
 
 typedef void (*FhClassCallback)(void);
 
+typedef enum FhUiWindowFlags {
+  FH_UI_WINDOW_MODAL = 1u << 0,
+  FH_UI_WINDOW_PASSIVE = 1u << 1,
+  FH_UI_WINDOW_NO_TITLE = 1u << 2,
+  FH_UI_WINDOW_TRANSPARENT = 1u << 3,
+  FH_UI_WINDOW_FIXED = 1u << 4,
+  FH_UI_WINDOW_AUTO_HEIGHT = 1u << 5,
+  FH_UI_WINDOW_RELATIVE = 1u << 6,
+  FH_UI_WINDOW_ANCHOR_BOTTOM = 1u << 7
+} FhUiWindowFlags;
+
+typedef enum FhUiInputFlags {
+  FH_UI_INPUT_FOCUS = 1u << 0
+} FhUiInputFlags;
+
+typedef enum FhUiInputResult {
+  FH_UI_INPUT_NONE = 0,
+  FH_UI_INPUT_EDITED = 1,
+  FH_UI_INPUT_SUBMITTED = 2,
+  FH_UI_INPUT_HISTORY_PREVIOUS = 3,
+  FH_UI_INPUT_HISTORY_NEXT = 4
+} FhUiInputResult;
+
+typedef enum FhUiKey {
+  FH_UI_KEY_F1 = 0x101,
+  FH_UI_KEY_F2 = 0x102,
+  FH_UI_KEY_F3 = 0x103,
+  FH_UI_KEY_F4 = 0x104,
+  FH_UI_KEY_F5 = 0x105,
+  FH_UI_KEY_F6 = 0x106,
+  FH_UI_KEY_F7 = 0x107,
+  FH_UI_KEY_F8 = 0x108,
+  FH_UI_KEY_F9 = 0x109,
+  FH_UI_KEY_F10 = 0x10A,
+  FH_UI_KEY_F11 = 0x10B,
+  FH_UI_KEY_F12 = 0x10C
+} FhUiKey;
+
+typedef struct FhUiWindow {
+  uint32_t structSize;
+  const char* title;
+  float x;
+  float y;
+  float width;
+  float height;
+  uint32_t flags;
+} FhUiWindow;
+
+typedef struct FhUi FhUi;
+
+struct FhUi {
+  uint32_t structSize;
+  float displayWidth;
+  float displayHeight;
+  float gameX;
+  float gameY;
+  float gameWidth;
+  float gameHeight;
+
+  int (*begin)(const FhUi* ui, const char* id, const FhUiWindow* window, int* open);
+  void (*end)(const FhUi* ui);
+
+  void (*text)(const FhUi* ui, const char* text);
+  int (*button)(const FhUi* ui, const char* label);
+  int (*checkbox)(const FhUi* ui, const char* label, int* value);
+  int (*slider)(const FhUi* ui, const char* label, float* value, float minimum, float maximum);
+  int (*input)(const FhUi* ui, const char* label, char* buffer, uint32_t capacity, uint32_t flags);
+  int (*beginSection)(const FhUi* ui, const char* label);
+  void (*endSection)(const FhUi* ui);
+  int (*beginScroll)(const FhUi* ui, const char* id);
+  void (*endScroll)(const FhUi* ui);
+  void (*sameLine)(const FhUi* ui);
+  void (*separator)(const FhUi* ui);
+
+  int (*keyPressed)(const FhUi* ui, uint32_t key);
+
+  void (*drawText)(const FhUi* ui, float x, float y, uint32_t rgba, const char* text);
+  void (*drawRect)(const FhUi* ui, float x0, float y0, float x1, float y1, uint32_t rgba, float rounding);
+  void (*measureText)(const FhUi* ui, const char* text, float* outWidth, float* outHeight);
+};
+
 typedef struct FhModHost {
   uint32_t structSize;
   uint32_t abiVersion;
@@ -96,6 +177,7 @@ typedef void (*FhModNetMessageFn)(FhMod* mod, int32_t fromPlayer, const void* da
 typedef void (*FhModNetPlayerJoinedFn)(FhMod* mod, int32_t player, const char* name);
 typedef void (*FhModNetPlayerLeftFn)(FhMod* mod, int32_t player);
 typedef void (*FhModNetHostChangedFn)(FhMod* mod, int32_t player);
+typedef void (*FhModDrawFn)(FhMod* mod, const FhUi* ui);
 
 #ifdef __cplusplus
 }

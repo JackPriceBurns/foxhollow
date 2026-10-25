@@ -94,6 +94,7 @@ void foxhollowFramePumpInit(void) {
 
 void VIWaitForRetrace(void) {
   if (sFrameOpen) {
+    fhModsDraw();
 #if defined(FOXHOLLOW_DEBUG_SHORTCUTS)
     fhDebugOverlayDraw();
     fhGalleryDrawOverlay();
