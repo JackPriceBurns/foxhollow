@@ -98,6 +98,11 @@ endif ()
 
 set_target_properties(foxhollow PROPERTIES ENABLE_EXPORTS ON)
 
+if (WIN32)
+    target_sources(foxhollow PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/foxhollow.rc)
+endif ()
+
 if (APPLE)
     add_custom_command(TARGET foxhollow POST_BUILD
             COMMAND codesign -s - --entitlements
