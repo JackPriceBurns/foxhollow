@@ -1076,7 +1076,7 @@ static void renderOpMatrix(ModelFileHeader* hdr, int* model, MtxBitStream* bs, f
             count = (w >> (pos & 7)) & 0xf;
         }
         if (count < 0 || count > 20) {
-            OSReport((char*)&posMtxIds[0][0x48], count);
+            OSReport("<renderOpMatrix> ERROR CASE numMatrices = %d\n", count);
         }
         i = 0;
         texMtxIds = gObjGxTexMtxIdTable;
