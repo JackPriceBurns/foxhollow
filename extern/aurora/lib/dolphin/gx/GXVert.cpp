@@ -85,7 +85,7 @@ void GXEnd() {
       // We don't know the vertex size without processing the FIFO for vtxFmt changes
       // so this is just a best-effort check to find obvious issues
       if (bytesWritten % sBeginNVerts != 0) {
-        Log.warn("GXEnd: vertex data not evenly divisible: {} bytes for {} vertices", bytesWritten, sBeginNVerts);
+        Log.debug("GXEnd: vertex data not evenly divisible: {} bytes for {} vertices", bytesWritten, sBeginNVerts);
       }
     }
     sInBegin = false;
