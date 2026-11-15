@@ -752,6 +752,7 @@ void objFuzzSetupGxState(GameObject* obj) {
 }
 
 extern u8 gObjGxPosMtxIdTable[12];
+extern u8 gObjGxTexMtxIdTable[12];
 
 void objRenderAttachment(GameObject* obj, int* p2) {
     f32 wm[16];
@@ -1078,7 +1079,7 @@ static void renderOpMatrix(ModelFileHeader* hdr, int* model, MtxBitStream* bs, f
             OSReport((char*)&posMtxIds[0][0x48], count);
         }
         i = 0;
-        texMtxIds = posMtxIds[0] + 0xc;
+        texMtxIds = gObjGxTexMtxIdTable;
         for (; i < count; i++) {
             int idx;
             {
