@@ -79,8 +79,10 @@ static void log_callback(AuroraLogLevel level, const char* module, const char* m
 }
 
 static const char* disc_path(int argc, char* argv[]) {
-  if (argc > 1) {
-    return argv[1];
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] != '-') {
+      return argv[i];
+    }
   }
   return getenv("FOXHOLLOW_DISC");
 }
