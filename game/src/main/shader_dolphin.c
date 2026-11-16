@@ -328,6 +328,7 @@ void addWarpedNoiseTevStages(void* p1, void* mtx)
             }
         }
         DCFlushRange(sWarpNoiseTexture + sizeof(Texture), ((Texture*)sWarpNoiseTexture)->dataSize);
+        GXInitTexObjData((GXTexObj*)((Texture*)sWarpNoiseTexture)->gxTexObj, (u8*)sWarpNoiseTexture + sizeof(Texture));
     }
     newshadows_getReflectionScrollOffsets(&sx, &sy);
     wave = mathSinf(3.142f * sx);
