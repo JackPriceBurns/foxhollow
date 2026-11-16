@@ -31,6 +31,7 @@
 #include "dolphin/gx/GXBump.h"
 #include "dolphin/gx/GXPixel.h"
 #include "dolphin/gx/GXTev.h"
+#include "dolphin/gx/GXTexture.h"
 #include "main/camera.h"
 #include "main/sky_state.h"
 #include "main/track_dolphin.h"
@@ -219,6 +220,7 @@ void blendTextures(Texture* src1, Texture* src2, f32 blend, Texture* dst)
             }
         }
         DCStoreRange((u8*)dst + sizeof(Texture), dst->dataSize);
+        GXInitTexObjData((GXTexObj*)dst->gxTexObj, (u8*)dst + sizeof(Texture));
     }
 }
 
@@ -256,6 +258,7 @@ void updateHeavyFogTexture(int intensity)
         }
     }
     memcpyToCache((u8*)gNewShadowHeavyFogTexture + sizeof(Texture), cache, 0);
+    GXInitTexObjData((GXTexObj*)gNewShadowHeavyFogTexture->gxTexObj, (u8*)gNewShadowHeavyFogTexture + sizeof(Texture));
     gNewShadowHeavyFogIntensity = intensity;
 }
 

@@ -276,17 +276,20 @@ void GXSetDrawDone() {
 GXDrawDoneCallback GXSetDrawDoneCallback(GXDrawDoneCallback cb) { return aurora::gx::fifo::set_draw_done_callback(cb); }
 
 void GXFlush() {
+  GXEnd();
   if (__gx->dirtyState) {
     __GXSetDirtyState();
   }
 }
 
 void GXPixModeSync() {
+  GXEnd();
   GX_WRITE_RAS_REG(__gx->peCtrl);
   __gx->bpSent = 1;
 }
 
 void GXTexModeSync() {
+  GXEnd();
   GX_WRITE_RAS_REG(0x63000000);
   __gx->bpSent = 1;
 }

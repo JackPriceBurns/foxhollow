@@ -49,7 +49,19 @@ static const FoxhollowDiscMapping* disc_mapping(const DVDDiskID* id) {
   return NULL;
 }
 
+static int debug_logs_enabled(void) {
+  static int cached = -1;
+  if (cached == -1) {
+    const char* value = getenv("FOXHOLLOW_DEBUG_LOG");
+    cached = (value != NULL && value[0] != '\0' && strcmp(value, "0") != 0 && strcmp(value, "false") != 0 && strcmp(value, "off") != 0);
+  }
+  return cached;
+}
+
 static void log_callback(AuroraLogLevel level, const char* module, const char* message, unsigned int len) {
+  if (level == LOG_DEBUG && !debug_logs_enabled()) {
+    return;
+  }
   const char* levelStr;
   FILE* out = stdout;
   switch (level) {
@@ -79,8 +91,10 @@ static void log_callback(AuroraLogLevel level, const char* module, const char* m
 }
 
 static const char* disc_path(int argc, char* argv[]) {
-  if (argc > 1) {
-    return argv[1];
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] != '-') {
+      return argv[i];
+    }
   }
   return getenv("FOXHOLLOW_DISC");
 }

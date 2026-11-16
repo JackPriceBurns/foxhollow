@@ -11,6 +11,8 @@ extern "C" {
 void GXBeginDisplayList(void* list, u32 size) {
   CHECK(!aurora::gx::fifo::in_display_list(), "Display list began twice!");
 
+  GXEnd();
+
   // Flush any pending dirty state before recording
   if (__gx->dirtyState != 0) {
     __GXSetDirtyState();
@@ -28,6 +30,8 @@ void GXBeginDisplayList(void* list, u32 size) {
 }
 
 u32 GXEndDisplayList() {
+  GXEnd();
+
   // Flush any pending dirty state into the display list
   if (__gx->dirtyState != 0) {
     __GXSetDirtyState();
@@ -47,6 +51,8 @@ u32 GXEndDisplayList() {
 }
 
 void GXCallDisplayList(const void* data, u32 nbytes) {
+  GXEnd();
+
   // Flush any pending dirty state before calling
   if (__gx->dirtyState != 0) {
     __GXSetDirtyState();

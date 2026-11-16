@@ -12,7 +12,9 @@ u32 sBeginSizeOffset = 0;
 bool sBeginAuto = false;
 
 void pre_begin() {
-  CHECK(!sInBegin, "GXBegin: called without matching GXEnd");
+  if (sInBegin) {
+    GXEnd();
+  }
 
   // Flush dirty state before starting a draw
   if (__gx->dirtyState != 0) {
@@ -75,16 +77,11 @@ void GXBeginIndexed(GXVtxFmt vtxFmt, u16 nVerts, const u16* indices, u32 nIndice
 
 void GXEnd() {
   if (sInBegin) {
-    u32 bytesWritten = aurora::gx::fifo::get_buffer_size() - sBeginFifoSize;
+    const u32 bufSize = aurora::gx::fifo::get_buffer_size();
+    const u32 bytesWritten = bufSize >= sBeginFifoSize ? bufSize - sBeginFifoSize : 0;
     if (sBeginAuto) {
       aurora::gx::fifo::patch_u32(sBeginSizeOffset, bytesWritten);
       sBeginAuto = false;
-    } else if (sBeginNVerts > 0 && bytesWritten > 0) {
-      // We don't know the vertex size without processing the FIFO for vtxFmt changes
-      // so this is just a best-effort check to find obvious issues
-      if (bytesWritten % sBeginNVerts != 0) {
-        Log.warn("GXEnd: vertex data not evenly divisible: {} bytes for {} vertices", bytesWritten, sBeginNVerts);
-      }
     }
     sInBegin = false;
     aurora::gx::fifo::finish_draw();

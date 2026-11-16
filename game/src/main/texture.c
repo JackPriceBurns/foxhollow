@@ -952,7 +952,7 @@ void* textureAlloc(u16 w, u16 h, int fmt, u8 mip, u8 maxLod, u8 wrapS, u8 wrapT,
     obj = (u8*)mmAlloc(size, 6, 0);
     if (obj == NULL)
         return NULL;
-    memset(obj, 0, sizeof(Texture) + 4);
+    memset(obj, 0, size);
     ((Texture*)obj)->format = fmt;
     ((Texture*)obj)->width = w;
     ((Texture*)obj)->height = h;
